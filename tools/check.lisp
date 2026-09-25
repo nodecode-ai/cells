@@ -31,7 +31,8 @@
                    (unless (nlk:json-value item :text "license")
                      (fail "~a: no license" name))
                    (unless (find name offers :key #'nlk:offer-name :test #'equal)
-                     (format report "skip ~a: not offered on this platform~%" name))))
+                     (format report "skip ~a: ~:[not offered on this platform~;this release ships it~]~%"
+                             name (find name (nlk:shipped-addons) :key #'nlk:offer-name :test #'equal)))))
                (dolist (offer offers)
                  (let ((name (nlk:offer-name offer)))
                    (handler-case

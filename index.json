@@ -1,4 +1,25 @@
 {
   "format": 1,
-  "addons": []
+  "addons": [
+    {
+      "name": "nodecode-cline",
+      "git": "https://github.com/nodecode-ai/nodecode-cline",
+      "commit": "8cf38323318fdd7e9a6f7d2c2cab5583cb9545ad",
+      "description": "Cline's API: the client header its free models need, and its model feed",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ]
+    },
+    {
+      "name": "nodecode-codex-auth",
+      "git": "https://github.com/nodecode-ai/nodecode-codex-auth",
+      "commit": "7d66673bb708bf3acbfe94dea8faa6a3a9bd9f87",
+      "description": "ChatGPT Codex OAuth credentials for openai-family lanes",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ]
+    }
+  ]
 }
