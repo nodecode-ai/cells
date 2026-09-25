@@ -3,8 +3,9 @@
   "addons": [
     {
       "name": "nodecode-channel-slack",
-      "git": "https://github.com/nodecode-ai/nodecode-channel-slack",
-      "commit": "f1ac55a89b5423d4ace3c90b02d53353715c1c24",
+      "git": "https://github.com/nodecode-ai/addons",
+      "commit": "c1e7763424a6a26723f0aae2053b6d79644f127d",
+      "path": "nodecode-channel-slack",
       "description": "Talk to nodecode through a Slack app",
       "license": "MIT",
       "depends_on": [
@@ -13,8 +14,9 @@
     },
     {
       "name": "nodecode-cline",
-      "git": "https://github.com/nodecode-ai/nodecode-cline",
-      "commit": "8cf38323318fdd7e9a6f7d2c2cab5583cb9545ad",
+      "git": "https://github.com/nodecode-ai/addons",
+      "commit": "c1e7763424a6a26723f0aae2053b6d79644f127d",
+      "path": "nodecode-cline",
       "description": "Cline's API: the client header its free models need, and its model feed",
       "license": "MIT",
       "depends_on": [
@@ -23,8 +25,9 @@
     },
     {
       "name": "nodecode-codex-auth",
-      "git": "https://github.com/nodecode-ai/nodecode-codex-auth",
-      "commit": "7d66673bb708bf3acbfe94dea8faa6a3a9bd9f87",
+      "git": "https://github.com/nodecode-ai/addons",
+      "commit": "c1e7763424a6a26723f0aae2053b6d79644f127d",
+      "path": "nodecode-codex-auth",
       "description": "ChatGPT Codex OAuth credentials for openai-family lanes",
       "license": "MIT",
       "depends_on": [
