@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this add-on —
+// documentation, not config: the folder gets pushed and holds no secret (the
+// login itself lives in the shared auth.json, where `codex login' and the
+// nodecode cloud gateway write it). A present section is enabled;
+// "enabled": false vetoes it.
+{
+  "codex-auth": {
+    "enabled": true,
+
+    // Where a saved ChatGPT login is served: the Codex backend. An operator
+    // who reaches it through a relay names the relay's address here. It is
+    // used only when the provider's own endpoint is the OpenAI API's
+    // (api.openai.com); a provider pointed anywhere else keeps its address.
+    "endpoint": "https://chatgpt.com/backend-api/codex/responses"
+  }
+}
