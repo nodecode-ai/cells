@@ -2,6 +2,16 @@
   "format": 1,
   "addons": [
     {
+      "name": "nodecode-channel-slack",
+      "git": "https://github.com/nodecode-ai/nodecode-channel-slack",
+      "commit": "f1ac55a89b5423d4ace3c90b02d53353715c1c24",
+      "description": "Talk to nodecode through a Slack app",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode-channel-kit"
+      ]
+    },
+    {
       "name": "nodecode-cline",
       "git": "https://github.com/nodecode-ai/nodecode-cline",
       "commit": "8cf38323318fdd7e9a6f7d2c2cab5583cb9545ad",
