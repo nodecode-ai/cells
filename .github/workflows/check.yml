@@ -24,5 +24,13 @@ jobs:
             || { curl -sI https://preview.nodecode.ai/install.sh; exit 1; }
           sh "$RUNNER_TEMP/install.sh"
           rm ~/.curlrc
+      - name: Reach the private entries
+        # Each private entry's repository carries a read-only deploy key, its
+        # private half the secret DEPLOY_KEY_<NAME>. Only this step sees the
+        # secrets; the check after it runs add-on code. Pull requests from
+        # forks get no secrets, so a private entry cannot be cloned there.
+        env:
+          SECRETS: ${{ toJSON(secrets) }}
+        run: tools/deploy-keys.sh
       - name: Install and load every entry
         run: tools/check.sh "$HOME/.local/bin/nodecode"
