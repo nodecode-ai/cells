@@ -1,0 +1,23 @@
+// The section ~/.nodecode/config.jsonc may carry for this add-on —
+// documentation, not config: the folder gets pushed and holds no secret (the
+// key itself lives in the shared auth.json, where /connect writes it). A
+// present section is enabled; "enabled": false vetoes it.
+{
+  "cline": {
+    "enabled": true,
+
+    // The lane a Cline API key serves: its requests carry the client header,
+    // and its /models listing gains the feed below.
+    "provider": "cline-pass",
+
+    // What X-CLIENT-TYPE names this client. api.cline.bot serves its free
+    // models (cline-free/...) only to a request that names one.
+    "client_type": "nodecode",
+
+    // The public feed of the models Cline serves by plan, and the lists of it
+    // the listing takes: clinePass (the Pass), free, recommended (billed per
+    // use), clineCloud.
+    "feed": "https://api.cline.bot/api/v1/ai/cline/recommended-models",
+    "buckets": ["clinePass", "free"]
+  }
+}
