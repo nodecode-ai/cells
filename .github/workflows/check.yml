@@ -11,6 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Nodecode
-        run: curl -fsSL https://preview.nodecode.ai/install.sh | sh
+        # Downloaded first, so a refused download fails the step instead of
+        # piping nothing into sh; the headers say who refused it.
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/install.sh" https://preview.nodecode.ai/install.sh \
+            || { curl -sI https://preview.nodecode.ai/install.sh; exit 1; }
+          sh "$RUNNER_TEMP/install.sh"
       - name: Install and load every entry
         run: tools/check.sh "$HOME/.local/bin/nodecode"
