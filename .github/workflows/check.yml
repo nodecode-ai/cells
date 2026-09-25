@@ -1,0 +1,16 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nodecode
+        run: curl -fsSL https://preview.nodecode.ai/install.sh | sh
+      - name: Install and load every entry
+        run: tools/check.sh "$HOME/.local/bin/nodecode"
