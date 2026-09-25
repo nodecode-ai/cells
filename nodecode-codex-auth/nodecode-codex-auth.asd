@@ -17,10 +17,10 @@
 ;;;; keeps its requests in a shard of their own). None of it is in the kernel.
 ;;;;
 ;;;; Every dependency is already in the serving image (shasht, cl-base64,
-;;;; uiop ride with nodecode). The .asd sits at the top of this repository:
-;;;; install it from the add-on hub (/setup, Choose), or clone the repository
-;;;; into ~/.nodecode/addons/. Presence is enabled; the package is named after
-;;;; the system, which is how the loader finds START-ADDON.
+;;;; uiop ride with nodecode). The .asd sits at the top of this folder, one of
+;;;; nodecode-ai/addons: install it from the add-on hub (/setup, Choose), or
+;;;; copy the folder into ~/.nodecode/addons/. Presence is enabled; the package
+;;;; is named after the system, which is how the loader finds START-ADDON.
 
 (defsystem "nodecode-codex-auth"
   :description "ChatGPT Codex OAuth credentials for openai-family lanes"

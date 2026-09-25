@@ -11,8 +11,8 @@ The login itself lives in Nodecode's shared `auth.json`, written by
 
 ## Install
 
-In Nodecode, run `/setup` → **Choose** and pick **codex-auth**. Or clone this
-repository into `~/.nodecode/addons/nodecode-codex-auth/`.
+In Nodecode, run `/setup` → **Choose** and pick **codex-auth**. Or copy this
+folder into `~/.nodecode/addons/nodecode-codex-auth/`.
 
 ## Configure
 
@@ -38,7 +38,7 @@ From a Nodecode checkout's `src/`:
 ```sh
 sbcl --non-interactive --eval '(require :asdf)' \
   --eval '(push (truename ".") asdf:*central-registry*)' \
-  --eval '(push #p"/path/to/nodecode-codex-auth/" asdf:*central-registry*)' \
+  --eval '(push #p"/path/to/addons/nodecode-codex-auth/" asdf:*central-registry*)' \
   --eval '(asdf:test-system :nodecode-codex-auth)'
 ```
 

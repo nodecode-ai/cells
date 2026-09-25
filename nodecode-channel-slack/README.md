@@ -19,7 +19,7 @@ machine needs no public address.
 ## Install
 
 In Nodecode, run `/setup` → **Choose** and pick **nodecode-channel-slack**.
-Or clone this repository into `~/.nodecode/addons/nodecode-channel-slack/`.
+Or copy this folder into `~/.nodecode/addons/nodecode-channel-slack/`.
 Either way, the channel kit that ships with Nodecode comes with it.
 
 ## Make the Slack app
@@ -71,7 +71,7 @@ From a Nodecode checkout's `src/`:
 sbcl --non-interactive --eval '(require :asdf)' \
   --eval '(push (truename ".") asdf:*central-registry*)' \
   --eval '(push (truename "addons/channels/kit/") asdf:*central-registry*)' \
-  --eval '(push #p"/path/to/nodecode-channel-slack/" asdf:*central-registry*)' \
+  --eval '(push #p"/path/to/addons/nodecode-channel-slack/" asdf:*central-registry*)' \
   --eval '(asdf:test-system :nodecode-channel-slack)'
 ```
 

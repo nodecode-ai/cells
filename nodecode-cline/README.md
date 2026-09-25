@@ -15,8 +15,8 @@ writes it. This add-on stores nothing.
 
 ## Install
 
-In Nodecode, run `/setup` → **Choose** and pick **cline**. Or clone this
-repository into `~/.nodecode/addons/nodecode-cline/`.
+In Nodecode, run `/setup` → **Choose** and pick **cline**. Or copy this
+folder into `~/.nodecode/addons/nodecode-cline/`.
 
 ## Configure
 
@@ -43,7 +43,7 @@ From a Nodecode checkout's `src/`:
 ```sh
 sbcl --non-interactive --eval '(require :asdf)' \
   --eval '(push (truename ".") asdf:*central-registry*)' \
-  --eval '(push #p"/path/to/nodecode-cline/" asdf:*central-registry*)' \
+  --eval '(push #p"/path/to/addons/nodecode-cline/" asdf:*central-registry*)' \
   --eval '(asdf:test-system :nodecode-cline)'
 ```
 

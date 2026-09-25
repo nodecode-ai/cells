@@ -15,9 +15,10 @@
 ;;;; folder is that knowledge. It names nodecode as the client, never Cline.
 ;;;;
 ;;;; Every dependency is already in the serving image (dexador, shasht ride
-;;;; with nodecode). Install it from the add-on hub (/setup, Choose), or clone
-;;;; this repository into ~/.nodecode/addons/. Presence is enabled; the package
-;;;; is named after the system, which is how the loader finds START-ADDON.
+;;;; with nodecode). Install it from the add-on hub (/setup, Choose), or copy
+;;;; this folder of nodecode-ai/addons into ~/.nodecode/addons/. Presence is
+;;;; enabled; the package is named after the system, which is how the loader
+;;;; finds START-ADDON.
 
 (defsystem "nodecode-cline"
   :description "Cline's API: the client header its free models need, and its model feed"
