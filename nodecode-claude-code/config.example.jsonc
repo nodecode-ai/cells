@@ -1,0 +1,22 @@
+// The section ~/.nodecode/config.jsonc may carry for this add-on --
+// documentation, not config: the folder gets pushed and holds no secret (the
+// login is the claude CLI's own, where `claude' then /login wrote it). A
+// present section is enabled; "enabled": false vetoes it. Every member is
+// optional.
+{
+  "claude-code": {
+    "enabled": true,
+
+    // The Claude Code CLI: a name on PATH, or a path.
+    "command": "claude",
+
+    // What /models lists under claude-code/. Anthropic model ids: a model's
+    // window, output ceiling and effort ladder are read off Anthropic's own
+    // catalog row, and a model whose window is past 200K runs on its 1M route.
+    "models": ["claude-opus-5-5", "claude-sonnet-5", "claude-haiku-4-5", "claude-fable-5-1"],
+
+    // How long the CLI may take to write one round's request, replaying the
+    // session's history included (about 20 ms a user turn).
+    "timeout_seconds": 120
+  }
+}
