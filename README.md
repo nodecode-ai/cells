@@ -9,6 +9,7 @@ Nodecode's own add-ons of this kind live here, one folder each:
 | Folder | What it does |
 | --- | --- |
 | [`nodecode-channel-slack`](nodecode-channel-slack) | Talk to Nodecode through a Slack app. |
+| [`nodecode-claude-code`](nodecode-claude-code) | Claude models through your own logged-in Claude Code CLI. Linux and macOS. |
 | [`nodecode-cline`](nodecode-cline) | Cline's API: the client header its free models need, and its model feed. |
 | [`nodecode-codex-auth`](nodecode-codex-auth) | A ChatGPT subscription's login on OpenAI-family lanes. |
 
