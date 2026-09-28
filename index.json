@@ -13,6 +13,21 @@
       ]
     },
     {
+      "name": "nodecode-claude-code",
+      "git": "https://github.com/nodecode-ai/addons",
+      "commit": "e1f39e444d0399d7a27e675de476be7aae174a94",
+      "path": "nodecode-claude-code",
+      "description": "Claude Code's own login as a provider lane: the claude CLI writes each request, Nodecode sends it",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "platforms": [
+        "linux",
+        "macos"
+      ]
+    },
+    {
       "name": "nodecode-cline",
       "git": "https://github.com/nodecode-ai/addons",
       "commit": "c1e7763424a6a26723f0aae2053b6d79644f127d",
