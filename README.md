@@ -8,10 +8,43 @@ Nodecode's own add-ons of this kind live here, one folder each:
 
 | Folder | What it does |
 | --- | --- |
+| [`nodecode-alibaba-coding-plan`](nodecode-alibaba-coding-plan) | Alibaba Coding Plan: Model Studio's coding subscription as a Nodecode provider. |
+| [`nodecode-alibaba-token-plan`](nodecode-alibaba-token-plan) | QwenCloud Token Plan: Alibaba's regional token subscription as a Nodecode provider. |
+| [`nodecode-amazon-bedrock`](nodecode-amazon-bedrock) | Amazon Bedrock: the Converse Stream wire, SigV4 signing and the AWS event stream, on a lane of its own. |
+| [`nodecode-anthropic`](nodecode-anthropic) | Anthropic (Claude Pro/Max): sign in, and serve the anthropic provider on the subscription when no key is set. |
+| [`nodecode-apple`](nodecode-apple) | Apple Foundation Models: the on-device model, through omp's Swift bridge, as a provider lane (macOS only). |
+| [`nodecode-azure`](nodecode-azure) | Azure OpenAI: the Responses API on an Azure resource, with its api-version and api-key. |
 | [`nodecode-channel-slack`](nodecode-channel-slack) | Talk to Nodecode through a Slack app. |
 | [`nodecode-claude-code`](nodecode-claude-code) | Claude models through your own logged-in Claude Code CLI. Linux and macOS. |
 | [`nodecode-cline`](nodecode-cline) | Cline's API: the client header its free models need, and its model feed. |
+| [`nodecode-cline-pass`](nodecode-cline-pass) | ClinePass: Cline's model subscription as a Nodecode provider. |
+| [`nodecode-cloudflare-ai-gateway`](nodecode-cloudflare-ai-gateway) | Cloudflare AI Gateway: Anthropic, OpenAI and Workers AI models through one gateway. |
 | [`nodecode-codex-auth`](nodecode-codex-auth) | A ChatGPT subscription's login on OpenAI-family lanes. |
+| [`nodecode-cursor`](nodecode-cursor) | Cursor: a browser sign-in, and Cursor's Agent protocol (Connect over HTTP, protobuf) as a lane of its own. |
+| [`nodecode-devin`](nodecode-devin) | Devin: a browser sign-in, and Codeium's Cascade wire (Connect over protobuf) as a lane of its own. |
+| [`nodecode-factory-droid`](nodecode-factory-droid) | Factory Droid: Factory's model subscription as a Nodecode provider, signed in with a WorkOS device code. |
+| [`nodecode-github-copilot`](nodecode-github-copilot) | GitHub Copilot: a GitHub device sign-in, and Copilot's Messages, chat and Responses wires as one provider. |
+| [`nodecode-gitlab-duo`](nodecode-gitlab-duo) | GitLab Duo Non-Agentic: Duo's chat models through GitLab's AI gateway, as a Nodecode provider. |
+| [`nodecode-gitlab-duo-agent`](nodecode-gitlab-duo-agent) | GitLab Duo Agent: the Duo Workflow Service as a Nodecode provider lane. |
+| [`nodecode-google-antigravity`](nodecode-google-antigravity) | Antigravity: a Google sign-in, and Antigravity's Cloud Code Assist wire as a lane of its own. |
+| [`nodecode-google-gemini-cli`](nodecode-google-gemini-cli) | Google Cloud Code Assist: a Google sign-in, and the Gemini CLI's wire as a lane of its own. |
+| [`nodecode-google-vertex`](nodecode-google-vertex) | Google Vertex AI: Gemini, Claude and partner models on a Google Cloud project, with an API key or Application Default Credentials. |
+| [`nodecode-kilo`](nodecode-kilo) | Kilo Gateway: sign in with a device code, and serve its models. |
+| [`nodecode-kimi-code`](nodecode-kimi-code) | Kimi Code: Moonshot's coding subscription as a Nodecode provider, signed in with a device code. |
+| [`nodecode-local`](nodecode-local) | Local models: omp's tiny-model workers (ONNX, MLX) as a Nodecode provider lane. |
+| [`nodecode-lsp`](nodecode-lsp) | Language servers for Nodecode: diagnostics on write, navigation and rename verbs. |
+| [`nodecode-muse-code`](nodecode-muse-code) | Muse Code: Meta's Muse subscription as a Nodecode provider, signed in with a device code. |
+| [`nodecode-ollama-cloud`](nodecode-ollama-cloud) | Ollama Cloud: Ollama's native /api/chat wire as a Nodecode provider lane. |
+| [`nodecode-openai-codex`](nodecode-openai-codex) | ChatGPT Plus/Pro (Codex subscription): sign in, and serve the Codex models. |
+| [`nodecode-openai-codex-device`](nodecode-openai-codex-device) | ChatGPT Plus/Pro (Codex, headless/device): sign in with a device code, and serve the Codex models. |
+| [`nodecode-openrouter`](nodecode-openrouter) | OpenRouter, with its browser sign-in, as a Nodecode provider. |
+| [`nodecode-perplexity`](nodecode-perplexity) | Perplexity web search: sign in with a Pro/Max account, or use a key, and search from eval. |
+| [`nodecode-snowflake`](nodecode-snowflake) | Snowflake Cortex: Claude and GPT models on a Snowflake account, signed in or with a PAT. |
+| [`nodecode-typesafe`](nodecode-typesafe) | TypeSafe: typed judgments over a state (System One), called through eval. |
+| [`nodecode-web-provider`](nodecode-web-provider) | Web search engines: Google, Startpage, DuckDuckGo, Ecosia, Mojeek, SearXNG and their merge, keyless. |
+| [`nodecode-xai-oauth`](nodecode-xai-oauth) | XAI Grok through a SuperGrok or X Premium+ sign-in, as a Nodecode provider. |
+| [`nodecode-xiaomi`](nodecode-xiaomi) | Xiaomi MiMo: its models, on a pay-as-you-go key or a regional Token Plan key. |
+| [`nodecode-zai-coding-plan`](nodecode-zai-coding-plan) | Z.AI GLM Coding Plan, signed in from the browser, as a Nodecode provider. |
 
 **What an entry is.** A folder in a public git repository, pinned at one
 commit that a person here read before merging. The folder is the whole

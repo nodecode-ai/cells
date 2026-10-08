@@ -15,14 +15,14 @@ test -x "$binary" || { echo "check: no nodecode binary (pass its path)" >&2; exi
 
 home="$(mktemp -d)"
 trap 'rm -rf "$home"' EXIT
-mkdir -p "$home/.nodecode/addons"
+mkdir -p "$home/.nodecode/cells"
 printf '{ "update": { "mode": "off" } }\n' > "$home/.nodecode/config.jsonc"
 
 score="$(HOME="$home" NODECODE_HOME="$home/.nodecode" \
   XDG_CACHE_HOME="$home/.cache" XDG_DATA_HOME="$home/.local/share" \
   XDG_CONFIG_HOME="$home/.config" \
   HUB_CHECK_INDEX="$here/index.json" \
-  HUB_CHECK_ADDONS="$home/.nodecode/addons/" \
+  HUB_CHECK_CELLS="$home/.nodecode/cells/" \
   HUB_CHECK_REPORT="$home/report.txt" \
   "$binary" trial < "$here/tools/check.lisp" | sed -n 's/^nodecode-trial-score //p' || true)"
 
