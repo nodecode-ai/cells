@@ -71,43 +71,6 @@
       ]
     },
     {
-      "name": "nodecode-channel-slack",
-      "git": "https://github.com/nodecode-ai/addons",
-      "commit": "c1e7763424a6a26723f0aae2053b6d79644f127d",
-      "path": "nodecode-channel-slack",
-      "description": "Talk to nodecode through a Slack app",
-      "license": "MIT",
-      "depends_on": [
-        "nodecode-channel-kit"
-      ]
-    },
-    {
-      "name": "nodecode-claude-code",
-      "git": "https://github.com/nodecode-ai/addons",
-      "commit": "e1f39e444d0399d7a27e675de476be7aae174a94",
-      "path": "nodecode-claude-code",
-      "description": "Claude Code's own login as a provider lane: the claude CLI writes each request, Nodecode sends it",
-      "license": "MIT",
-      "depends_on": [
-        "nodecode"
-      ],
-      "platforms": [
-        "linux",
-        "macos"
-      ]
-    },
-    {
-      "name": "nodecode-cline",
-      "git": "https://github.com/nodecode-ai/addons",
-      "commit": "c1e7763424a6a26723f0aae2053b6d79644f127d",
-      "path": "nodecode-cline",
-      "description": "Cline's API: the client header its free models need, and its model feed",
-      "license": "MIT",
-      "depends_on": [
-        "nodecode"
-      ]
-    },
-    {
       "name": "nodecode-cline-pass",
       "git": "https://github.com/nodecode-ai/addons",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
@@ -124,17 +87,6 @@
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-cloudflare-ai-gateway",
       "description": "Cloudflare AI Gateway: Anthropic, OpenAI and Workers AI models through one gateway",
-      "license": "MIT",
-      "depends_on": [
-        "nodecode"
-      ]
-    },
-    {
-      "name": "nodecode-codex-auth",
-      "git": "https://github.com/nodecode-ai/addons",
-      "commit": "c1e7763424a6a26723f0aae2053b6d79644f127d",
-      "path": "nodecode-codex-auth",
-      "description": "ChatGPT Codex OAuth credentials for openai-family lanes",
       "license": "MIT",
       "depends_on": [
         "nodecode"
