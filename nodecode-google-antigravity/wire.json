@@ -1,0 +1,730 @@
+[
+ {
+  "id": "claude-opus-4-5",
+  "request_model_id": "claude-opus-4-5-thinking",
+  "class": "anthropic",
+  "reasoning": true,
+  "output": 64000,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "routing": {
+    "off": "claude-opus-4-5",
+    "minimal": "claude-opus-4-5-thinking",
+    "low": "claude-opus-4-5-thinking",
+    "medium": "claude-opus-4-5-thinking",
+    "high": "claude-opus-4-5-thinking"
+   }
+  },
+  "compat": {
+   "function_part_id": true,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": true,
+   "legacy_parameters": true,
+   "multimodal_function_response": false,
+   "flash_leak": false,
+   "claude_thinking_beta": true,
+   "claude_tool_mode": true,
+   "usage_label": "true"
+  }
+ },
+ {
+  "id": "claude-opus-4-6",
+  "request_model_id": "claude-opus-4-6-thinking",
+  "class": "anthropic",
+  "reasoning": true,
+  "output": 64000,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ]
+  },
+  "compat": {
+   "function_part_id": true,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": true,
+   "legacy_parameters": true,
+   "multimodal_function_response": false,
+   "flash_leak": false,
+   "claude_thinking_beta": true,
+   "claude_tool_mode": true,
+   "usage_label": "true"
+  }
+ },
+ {
+  "id": "claude-opus-5-5",
+  "request_model_id": "claude-opus-5-5-low",
+  "class": "anthropic",
+  "reasoning": true,
+  "output": 128000,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "low",
+    "medium",
+    "high"
+   ],
+   "routing": {
+    "low": "claude-opus-5-5-low",
+    "medium": "claude-opus-5-5-medium",
+    "high": "claude-opus-5-5-high"
+   },
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": true,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": true,
+   "legacy_parameters": true,
+   "multimodal_function_response": false,
+   "flash_leak": false,
+   "claude_thinking_beta": true,
+   "claude_tool_mode": true,
+   "usage_label": "true",
+   "sampling": false
+  }
+ },
+ {
+  "id": "claude-sonnet-4-5",
+  "request_model_id": "claude-sonnet-4-5",
+  "class": "anthropic",
+  "reasoning": true,
+  "output": 64000,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "routing": {
+    "off": "claude-sonnet-4-5",
+    "minimal": "claude-sonnet-4-5-thinking",
+    "low": "claude-sonnet-4-5-thinking",
+    "medium": "claude-sonnet-4-5-thinking",
+    "high": "claude-sonnet-4-5-thinking"
+   }
+  },
+  "compat": {
+   "function_part_id": true,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": true,
+   "legacy_parameters": true,
+   "multimodal_function_response": false,
+   "flash_leak": false,
+   "claude_thinking_beta": true,
+   "claude_tool_mode": true,
+   "usage_label": "true"
+  }
+ },
+ {
+  "id": "claude-sonnet-4-6",
+  "class": "anthropic",
+  "reasoning": true,
+  "output": 64000,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ]
+  },
+  "compat": {
+   "function_part_id": true,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": true,
+   "legacy_parameters": true,
+   "multimodal_function_response": false,
+   "flash_leak": false,
+   "claude_thinking_beta": true,
+   "claude_tool_mode": true,
+   "usage_label": "true"
+  }
+ },
+ {
+  "id": "claude-sonnet-5-5",
+  "request_model_id": "claude-sonnet-5-5-low",
+  "class": "anthropic",
+  "reasoning": true,
+  "output": 128000,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "low",
+    "medium",
+    "high"
+   ],
+   "routing": {
+    "low": "claude-sonnet-5-5-low",
+    "medium": "claude-sonnet-5-5-medium",
+    "high": "claude-sonnet-5-5-high"
+   },
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": true,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": true,
+   "legacy_parameters": true,
+   "multimodal_function_response": false,
+   "flash_leak": false,
+   "claude_thinking_beta": true,
+   "claude_tool_mode": true,
+   "usage_label": "true",
+   "sampling": false
+  }
+ },
+ {
+  "id": "gemini-2.5-flash",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65535,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "routing": {
+    "off": "gemini-2.5-flash",
+    "minimal": "gemini-2.5-flash-thinking",
+    "low": "gemini-2.5-flash-thinking",
+    "medium": "gemini-2.5-flash-thinking",
+    "high": "gemini-2.5-flash-thinking"
+   }
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": false,
+   "flash_leak": true,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-2.5-flash-lite",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65535,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ]
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": false,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-2.5-pro",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65536,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": false,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3-flash",
+  "request_model_id": "gemini-3.5-flash-extra-low",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65536,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "routing": {
+    "off": "gemini-3.5-flash-extra-low",
+    "minimal": "gemini-3.5-flash-extra-low",
+    "low": "gemini-3.5-flash-extra-low",
+    "medium": "gemini-3.5-flash-low",
+    "high": "gemini-3-flash-agent"
+   },
+   "budgets": {
+    "minimal": 1000,
+    "low": 1000,
+    "medium": 4000,
+    "high": 10000
+   },
+   "suppress_when_off": true,
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": true,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3-pro",
+  "request_model_id": "gemini-3-pro-low",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65535,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "google-level",
+   "efforts": [
+    "low",
+    "high"
+   ],
+   "routing": {
+    "off": "gemini-3-pro-low",
+    "low": "gemini-3-pro-low",
+    "high": "gemini-3-pro-high"
+   },
+   "suppress_when_off": true,
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3-pro-image",
+  "class": "gemini",
+  "reasoning": false,
+  "output": 32768,
+  "images": true,
+  "tools": false,
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3.1-flash-image",
+  "class": "gemini",
+  "reasoning": false,
+  "output": 64000,
+  "images": true,
+  "tools": false,
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": true,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3.1-flash-lite",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65535,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "google-level",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3.1-pro",
+  "request_model_id": "gemini-3.1-pro-low",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65535,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "low",
+    "high"
+   ],
+   "routing": {
+    "off": "gemini-3.1-pro-low",
+    "low": "gemini-3.1-pro-low",
+    "high": "gemini-pro-agent"
+   },
+   "budgets": {
+    "low": 1001,
+    "high": 10001
+   },
+   "suppress_when_off": true,
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3.5-flash",
+  "request_model_id": "gemini-3.5-flash-extra-low",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65536,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "routing": {
+    "off": "gemini-3.5-flash-extra-low",
+    "minimal": "gemini-3.5-flash-extra-low",
+    "low": "gemini-3.5-flash-extra-low",
+    "medium": "gemini-3.5-flash-low",
+    "high": "gemini-3-flash-agent"
+   },
+   "budgets": {
+    "minimal": 1000,
+    "low": 1000,
+    "medium": 4000,
+    "high": 10000
+   },
+   "suppress_when_off": true,
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": true,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3.5-flash-lite",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65535,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "google-level",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3.6-flash",
+  "request_model_id": "gemini-3.6-flash-low",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65536,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "google-level",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "routing": {
+    "minimal": "gemini-3.6-flash-low",
+    "low": "gemini-3.6-flash-low",
+    "medium": "gemini-3.6-flash-medium",
+    "high": "gemini-3.6-flash-high"
+   },
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": true,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3.7-flash",
+  "request_model_id": "gemini-3.7-flash-low",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65536,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "google-level",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "routing": {
+    "minimal": "gemini-3.7-flash-low",
+    "low": "gemini-3.7-flash-low",
+    "medium": "gemini-3.7-flash-medium",
+    "high": "gemini-3.7-flash-high"
+   },
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": true,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3.8-flash",
+  "request_model_id": "gemini-3.8-flash-low",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65536,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "google-level",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "routing": {
+    "minimal": "gemini-3.8-flash-low",
+    "low": "gemini-3.8-flash-low",
+    "medium": "gemini-3.8-flash-medium",
+    "high": "gemini-3.8-flash-high"
+   },
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": true,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gpt-oss-120b",
+  "request_model_id": "gpt-oss-120b-medium",
+  "class": "gpt-oss",
+  "reasoning": true,
+  "output": 32768,
+  "images": false,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ]
+  },
+  "compat": {
+   "function_part_id": true,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": false,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "tab_flash_lite_preview",
+  "class": "unknown",
+  "reasoning": false,
+  "output": 4096,
+  "images": false,
+  "tools": true,
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": false,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "tab_jump_flash_lite_preview",
+  "class": "unknown",
+  "reasoning": false,
+  "output": 4096,
+  "images": false,
+  "tools": true,
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": false,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ }
+]

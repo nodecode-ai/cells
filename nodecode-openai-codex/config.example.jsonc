@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The sign-in lives in auth.json (/openai-codex login), or a token
+// in OPENAI_CODEX_OAUTH_TOKEN.
+{
+  "openai-codex": {
+    "enabled": true,
+
+    // The Codex backend: its root, its /codex, or its /codex/responses. A
+    // relay's address goes here.
+    "base_url": "https://chatgpt.com/backend-api",
+
+    // The client name the sign-in and every request carry.
+    "originator": "codex_cli_rs"
+  }
+}

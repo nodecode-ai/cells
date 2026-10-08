@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The sign-in, and the Model API key it mints, live in auth.json
+// (/muse-code login).
+{
+  "muse-code": {
+    "enabled": true,
+
+    // Where Meta's Model API is served. The Responses lane appends /responses.
+    "base_url": "https://api.meta.ai/v1"
+  }
+}

@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The GitLab token lives in auth.json under oauth_tokens.gitlab-duo
+// (/gitlab-duo login), or in GITLAB_TOKEN (a personal access token, scope api).
+{
+  "gitlab-duo": {
+    "enabled": true,
+
+    // The GitLab instance the sign-in and the Duo direct-access exchange go
+    // to. The bundled OAuth application is gitlab.com's: another instance
+    // needs GITLAB_CLIENT_ID (and GITLAB_REDIRECT_URI) of its own.
+    "gitlab_url": "https://gitlab.com",
+
+    // GitLab's AI gateway. Claude models go to <gateway>/ai/v1/proxy/anthropic,
+    // GPT models to <gateway>/ai/v1/proxy/openai/v1.
+    "gateway_url": "https://cloud.gitlab.com"
+  }
+}

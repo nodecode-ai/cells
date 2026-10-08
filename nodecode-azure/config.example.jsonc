@@ -1,0 +1,23 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key lives in auth.json (/connect) or AZURE_OPENAI_API_KEY.
+{
+  "azure": {
+    "enabled": true,
+
+    // The Azure OpenAI resource: https://<resource_name>.openai.azure.com/openai/v1
+    // (else AZURE_OPENAI_RESOURCE_NAME).
+    "resource_name": "my-resource",
+
+    // Any other Responses base, a gateway's say; outranks resource_name
+    // (else AZURE_OPENAI_BASE_URL).
+    // "base_url": "https://my-gateway.example/openai/v1",
+
+    // The api-version query parameter (else AZURE_OPENAI_API_VERSION, else v1).
+    "api_version": "v1",
+
+    // model=deployment pairs joined by commas; a model not named is its own
+    // deployment (else AZURE_OPENAI_DEPLOYMENT_NAME_MAP).
+    "deployment_map": "gpt-5.5=prod-gpt55,gpt-6-sol=sol-east"
+  }
+}

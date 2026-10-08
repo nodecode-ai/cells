@@ -1,0 +1,29 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. Local models take no key.
+{
+  "local": {
+    "enabled": true,
+
+    // Which worker serves a model: "auto" is MLX when PI_TINY_DEVICE says
+    // mlx (or metal), else ONNX, as omp chooses; "onnx" or "mlx" pins one.
+    "backend": "auto",
+
+    // The omp executable an ONNX worker is started from
+    // (omp __omp_worker_tiny_inference).
+    "omp_command": "omp",
+
+    // The Python with mlx-lm an MLX worker runs under; empty is omp's own
+    // venv (~/.omp/agent/cache/tiny-mlx-runtime/mlx-lm-0.31.3), else python3.
+    "python": "",
+
+    // Where the workers own their sockets; empty is omp's
+    // ($XDG_STATE_HOME/omp/run/tiny, else ~/.omp/run/tiny), so a worker omp
+    // started serves Nodecode too.
+    "runtime_dir": "",
+
+    // Whether a round starts a worker that is not running; false only uses
+    // one already up.
+    "spawn": true
+  }
+}

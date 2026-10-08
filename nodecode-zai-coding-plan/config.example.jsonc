@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key itself lives in auth.json: the sign-in
+// (/zai-coding-plan login) keeps the key it mints under
+// oauth_tokens.zai-coding-plan, /connect a pasted one under api_keys; or set
+// ZAI_API_KEY.
+{
+  "zai-coding-plan": {
+    "enabled": true,
+
+    // Z.AI's chat endpoint. The chat lane appends /chat/completions; it
+    // carries GLM-5.3-Flash and every model only models.dev lists.
+    "base_url": "https://api.z.ai/api/coding/paas/v4",
+
+    // Z.AI's Anthropic Messages endpoint. The anthropic lane appends
+    // /messages; it carries every other GLM model omp knows.
+    "anthropic_base_url": "https://api.z.ai/api/anthropic/v1"
+  }
+}

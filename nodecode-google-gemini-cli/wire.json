@@ -1,0 +1,197 @@
+[
+ {
+  "id": "gemini-2.0-flash",
+  "class": "gemini",
+  "reasoning": false,
+  "output": 8192,
+  "images": true,
+  "tools": true,
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": false,
+   "flash_leak": true,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-2.5-flash",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65536,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "routing": {
+    "off": "gemini-2.5-flash",
+    "minimal": "gemini-2.5-flash-thinking",
+    "low": "gemini-2.5-flash-thinking",
+    "medium": "gemini-2.5-flash-thinking",
+    "high": "gemini-2.5-flash-thinking"
+   }
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": false,
+   "flash_leak": true,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-2.5-pro",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65536,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "budget",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": false,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": false,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3-flash-preview",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65536,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "google-level",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": true,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3-pro-preview",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 64000,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "google-level",
+   "efforts": [
+    "low",
+    "high"
+   ],
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3.1-flash-lite-preview",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65536,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "google-level",
+   "efforts": [
+    "minimal",
+    "low",
+    "medium",
+    "high"
+   ],
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ },
+ {
+  "id": "gemini-3.1-pro-preview",
+  "class": "gemini",
+  "reasoning": true,
+  "output": 65536,
+  "images": true,
+  "tools": true,
+  "thinking": {
+   "mode": "google-level",
+   "efforts": [
+    "low",
+    "high"
+   ],
+   "requires_effort": true
+  },
+  "compat": {
+   "function_part_id": false,
+   "skip_signature": false,
+   "skip_signature_first_call": true,
+   "drop_unsigned_thinking": false,
+   "legacy_parameters": false,
+   "multimodal_function_response": true,
+   "flash_leak": false,
+   "claude_thinking_beta": false,
+   "claude_tool_mode": false
+  }
+ }
+]

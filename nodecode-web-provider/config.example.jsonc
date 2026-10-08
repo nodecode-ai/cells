@@ -1,0 +1,27 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key is web-provider: `web' is the core's own, `websearch'
+// the shipped websearch cell's.
+{
+  "web-provider": {
+    "enabled": true,
+
+    // The engine a search asks when it names none: public (Startpage,
+    // Google, DuckDuckGo, Ecosia and Mojeek at once, merged), google,
+    // startpage, duckduckgo, ecosia, mojeek or searxng.
+    "engine": "public",
+
+    // How many results by default; unset is 15 for public, 10 otherwise.
+    // "max_results": 10,
+
+    // A SearXNG instance of your own (empty reads SEARXNG_ENDPOINT), and how
+    // it wants to be asked. A token or a password is a secret: prefer
+    // SEARXNG_TOKEN, or SEARXNG_BASIC_USERNAME and SEARXNG_BASIC_PASSWORD.
+    "searxng_endpoint": "",
+    "searxng_basic_username": "",
+    "searxng_categories": "",
+    "searxng_engines": "",          // names or shortcuts: "duckduckgo, br, sp"
+    "searxng_language": "",         // en, zh-CN, ...
+    "searxng_safesearch": ""        // "0" off, "1" moderate, "2" strict
+  }
+}

@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The sign-in lives in auth.json (/factory-droid login); Factory's
+// API keys do not reach its LLM proxy, so there is no key to set.
+{
+  "factory-droid": {
+    "enabled": true,
+
+    // Factory's host. Each wire has its own path under it (/api/llm/o/v1 for
+    // chat and Responses, /api/llm/a/v1 for Messages, /api/llm/g/v1 for
+    // Gemini); an account whose residency is the EU moves to
+    // https://api.eu.factory.ai on its own while this is Factory's host.
+    "base_url": "https://api.factory.ai"
+  }
+}

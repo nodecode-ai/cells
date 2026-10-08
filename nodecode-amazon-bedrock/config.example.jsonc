@@ -1,0 +1,25 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The credential is the AWS credential chain on this machine, or
+// a Bedrock API key in auth.json (/connect) or AWS_BEARER_TOKEN_BEDROCK.
+{
+  "amazon-bedrock": {
+    "enabled": true,
+
+    // The region every round goes to (else AWS_REGION, AWS_DEFAULT_REGION,
+    // the profile's region, or the inference profile's geo default).
+    "region": "us-west-2",
+
+    // The AWS profile in ~/.aws/config and ~/.aws/credentials (else
+    // AWS_PROFILE, else default).
+    "profile": "work",
+
+    // A runtime origin of its own, used verbatim: a VPC endpoint, a gateway.
+    // "base_url": "https://vpce-0123.bedrock-runtime.us-west-2.vpce.amazonaws.com",
+
+    // A guardrail every request carries, for accounts that require one.
+    // "guardrail_identifier": "arn:aws:bedrock:us-west-2:123456789012:guardrail/abc",
+    // "guardrail_version": "DRAFT",
+    // "guardrail_trace": "enabled"
+  }
+}

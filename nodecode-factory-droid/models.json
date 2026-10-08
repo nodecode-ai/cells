@@ -1,0 +1,1758 @@
+[
+ {
+  "id": "claude-opus-5-5",
+  "name": "Opus 5.5",
+  "api": "anthropic-messages",
+  "context": 872000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "medium",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 4,
+   "output": 20,
+   "cacheRead": 0.2,
+   "cacheWrite": 5
+  },
+  "upstreams": {
+   "global": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic",
+    "azure_anthropic",
+    "snowflake"
+   ],
+   "us": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "eu": [
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ]
+  }
+ },
+ {
+  "id": "claude-opus-5",
+  "name": "Opus 5",
+  "api": "anthropic-messages",
+  "context": 867000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 5,
+   "output": 25,
+   "cacheRead": 0.5,
+   "cacheWrite": 6.25
+  },
+  "upstreams": {
+   "global": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic",
+    "azure_anthropic",
+    "snowflake"
+   ],
+   "us": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "eu": [
+    "bedrock_anthropic"
+   ]
+  }
+ },
+ {
+  "id": "claude-opus-5-fast",
+  "name": "Opus 5 Fast Mode",
+  "api": "anthropic-messages",
+  "context": 867000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "upstreams": {
+   "global": [
+    "anthropic"
+   ],
+   "us": [
+    "anthropic"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "claude-opus-4-8",
+  "name": "Opus 4.8",
+  "api": "anthropic-messages",
+  "context": 867000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 5,
+   "output": 25,
+   "cacheRead": 0.5,
+   "cacheWrite": 6.25
+  },
+  "upstreams": {
+   "global": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic",
+    "azure_anthropic",
+    "snowflake"
+   ],
+   "us": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "eu": [
+    "bedrock_anthropic"
+   ]
+  }
+ },
+ {
+  "id": "claude-opus-4-8-fast",
+  "name": "Opus 4.8 Fast Mode",
+  "api": "anthropic-messages",
+  "context": 867000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "upstreams": {
+   "global": [
+    "anthropic"
+   ],
+   "us": [
+    "anthropic"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "claude-opus-4-7",
+  "name": "Opus 4.7",
+  "api": "anthropic-messages",
+  "context": 867000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 5,
+   "output": 25,
+   "cacheRead": 0.5,
+   "cacheWrite": 6.25
+  },
+  "upstreams": {
+   "global": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "us": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "eu": [
+    "bedrock_anthropic"
+   ]
+  }
+ },
+ {
+  "id": "claude-opus-4-6",
+  "name": "Opus 4.6",
+  "api": "anthropic-messages",
+  "context": 867000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 5,
+   "output": 25,
+   "cacheRead": 0.5,
+   "cacheWrite": 6.25
+  },
+  "upstreams": {
+   "global": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic",
+    "azure_anthropic",
+    "snowflake"
+   ],
+   "us": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "eu": [
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ]
+  }
+ },
+ {
+  "id": "claude-opus-4-5-20251101",
+  "name": "Opus 4.5",
+  "api": "anthropic-messages",
+  "context": 180000,
+  "output": 64000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high"
+  ],
+  "default_off": true,
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 5,
+   "output": 25,
+   "cacheRead": 0.5,
+   "cacheWrite": 6.25
+  },
+  "upstreams": {
+   "global": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "us": [
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "eu": [
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ]
+  }
+ },
+ {
+  "id": "claude-sonnet-5",
+  "name": "Sonnet 5",
+  "api": "anthropic-messages",
+  "context": 872000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 2,
+   "output": 10,
+   "cacheRead": 0.2,
+   "cacheWrite": 2.5
+  },
+  "upstreams": {
+   "global": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic",
+    "azure_anthropic"
+   ],
+   "us": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "eu": [
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ]
+  }
+ },
+ {
+  "id": "claude-sonnet-4-6",
+  "name": "Sonnet 4.6",
+  "api": "anthropic-messages",
+  "context": 931000,
+  "output": 64000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 3,
+   "output": 15,
+   "cacheRead": 0.3,
+   "cacheWrite": 3.75
+  },
+  "upstreams": {
+   "global": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "us": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "eu": [
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ]
+  }
+ },
+ {
+  "id": "claude-sonnet-4-5-20250929",
+  "name": "Sonnet 4.5",
+  "api": "anthropic-messages",
+  "context": 180000,
+  "output": 32000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high"
+  ],
+  "default_off": true,
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 3,
+   "output": 15,
+   "cacheRead": 0.3,
+   "cacheWrite": 3.75
+  },
+  "upstreams": {
+   "global": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "us": [
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "eu": [
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ]
+  }
+ },
+ {
+  "id": "claude-haiku-4-5-20251001",
+  "name": "Haiku 4.5",
+  "api": "anthropic-messages",
+  "context": 180000,
+  "output": 32000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high"
+  ],
+  "default_off": true,
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 1,
+   "output": 5,
+   "cacheRead": 0.1,
+   "cacheWrite": 1.25
+  },
+  "upstreams": {
+   "global": [
+    "anthropic",
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "us": [
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ],
+   "eu": [
+    "vertex_anthropic",
+    "bedrock_anthropic"
+   ]
+  }
+ },
+ {
+  "id": "gpt-6-astra",
+  "name": "GPT-6 Astra",
+  "api": "openai-responses",
+  "context": 922000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "medium",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 10,
+   "output": 50,
+   "cacheRead": 1,
+   "cacheWrite": 12.5
+  },
+  "upstreams": {
+   "global": [
+    "openai",
+    "bedrock_openai",
+    "snowflake",
+    "azure_openai"
+   ],
+   "us": [
+    "openai",
+    "bedrock_openai"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "gpt-6-sol",
+  "name": "GPT-6 Sol",
+  "api": "openai-responses",
+  "context": 922000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "medium",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 2,
+   "output": 10,
+   "cacheRead": 0.2,
+   "cacheWrite": 2.5
+  },
+  "upstreams": {
+   "global": [
+    "openai",
+    "bedrock_openai",
+    "azure_openai"
+   ],
+   "us": [
+    "openai",
+    "bedrock_openai"
+   ],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.6-sol",
+  "name": "GPT-5.6 Sol",
+  "api": "openai-responses",
+  "context": 922000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "medium",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 4,
+   "output": 20,
+   "cacheRead": 0.4,
+   "cacheWrite": 5
+  },
+  "upstreams": {
+   "global": [
+    "openai",
+    "bedrock_openai",
+    "azure_openai",
+    "snowflake",
+    "databricks"
+   ],
+   "us": [
+    "openai",
+    "bedrock_openai"
+   ],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.6-sol-fast",
+  "name": "GPT-5.6 Sol Fast Mode",
+  "api": "openai-responses",
+  "context": 922000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "medium",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "upstreams": {
+   "global": [
+    "openai",
+    "azure_openai"
+   ],
+   "us": [
+    "openai"
+   ],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.6-terra",
+  "name": "GPT-5.6 Terra",
+  "api": "openai-responses",
+  "context": 922000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "medium",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 2,
+   "output": 12,
+   "cacheRead": 0.2,
+   "cacheWrite": 2.5
+  },
+  "upstreams": {
+   "global": [
+    "openai",
+    "bedrock_openai",
+    "azure_openai",
+    "snowflake",
+    "databricks"
+   ],
+   "us": [
+    "openai",
+    "bedrock_openai"
+   ],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.6-luna",
+  "name": "GPT-5.6 Luna",
+  "api": "openai-responses",
+  "context": 922000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "medium",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0.2,
+   "output": 1.2,
+   "cacheRead": 0.02,
+   "cacheWrite": 0.25
+  },
+  "upstreams": {
+   "global": [
+    "openai",
+    "bedrock_openai",
+    "azure_openai",
+    "snowflake",
+    "databricks"
+   ],
+   "us": [
+    "openai",
+    "bedrock_openai"
+   ],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.5",
+  "name": "GPT-5.5",
+  "api": "openai-responses",
+  "context": 922000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh"
+  ],
+  "default_effort": "medium",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 5,
+   "output": 30,
+   "cacheRead": 0.5,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "openai",
+    "bedrock_openai",
+    "azure_openai",
+    "snowflake",
+    "databricks"
+   ],
+   "us": [
+    "openai",
+    "bedrock_openai"
+   ],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.5-fast",
+  "name": "GPT-5.5 Fast Mode",
+  "api": "openai-responses",
+  "context": 922000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh"
+  ],
+  "default_effort": "medium",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "upstreams": {
+   "global": [
+    "openai",
+    "azure_openai"
+   ],
+   "us": [
+    "openai"
+   ],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.5-pro",
+  "name": "GPT-5.5 Pro",
+  "api": "openai-responses",
+  "context": 922000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "medium",
+   "high",
+   "xhigh"
+  ],
+  "default_effort": "medium",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 30,
+   "output": 180,
+   "cacheRead": 0,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "openai"
+   ],
+   "us": [
+    "openai"
+   ],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.4",
+  "name": "GPT-5.4",
+  "api": "openai-responses",
+  "context": 922000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh"
+  ],
+  "default_effort": "medium",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 2.5,
+   "output": 15,
+   "cacheRead": 0.25,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "openai",
+    "bedrock_openai",
+    "azure_openai",
+    "databricks"
+   ],
+   "us": [
+    "openai",
+    "bedrock_openai"
+   ],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.4-fast",
+  "name": "GPT-5.4 Fast Mode",
+  "api": "openai-responses",
+  "context": 922000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh"
+  ],
+  "default_effort": "medium",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "upstreams": {
+   "global": [
+    "openai",
+    "azure_openai"
+   ],
+   "us": [
+    "openai"
+   ],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.4-mini",
+  "name": "GPT-5.4 Mini",
+  "api": "openai-responses",
+  "context": 272000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh"
+  ],
+  "default_effort": "high",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0.75,
+   "output": 4.5,
+   "cacheRead": 0.075,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "openai",
+    "azure_openai"
+   ],
+   "us": [
+    "openai"
+   ],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.4-mini-fast",
+  "name": "GPT-5.4 Mini Fast Mode",
+  "api": "openai-responses",
+  "context": 272000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh"
+  ],
+  "default_effort": "high",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "upstreams": {
+   "global": [
+    "openai",
+    "azure_openai"
+   ],
+   "us": [
+    "openai"
+   ],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.3-codex",
+  "name": "GPT-5.3-Codex",
+  "api": "openai-responses",
+  "context": 272000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh"
+  ],
+  "default_effort": "medium",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 1.75,
+   "output": 14,
+   "cacheRead": 0.175,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "openai",
+    "azure_openai"
+   ],
+   "us": [],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.3-codex-fast",
+  "name": "GPT-5.3-Codex Fast Mode",
+  "api": "openai-responses",
+  "context": 272000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh"
+  ],
+  "default_effort": "medium",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "upstreams": {
+   "global": [
+    "openai"
+   ],
+   "us": [],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gpt-5.2",
+  "name": "GPT-5.2",
+  "api": "openai-responses",
+  "context": 272000,
+  "output": 128000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh"
+  ],
+  "default_effort": "low",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 1.75,
+   "output": 14,
+   "cacheRead": 0.175,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "openai",
+    "azure_openai"
+   ],
+   "us": [
+    "openai"
+   ],
+   "eu": [
+    "openai"
+   ]
+  }
+ },
+ {
+  "id": "gemini-3.1-pro-preview",
+  "name": "Gemini 3.1 Pro",
+  "api": "google-generate",
+  "context": 1000000,
+  "output": 65536,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high"
+  ],
+  "default_effort": "high",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 2,
+   "output": 12,
+   "cacheRead": 0.2,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "google"
+   ],
+   "us": [],
+   "eu": []
+  }
+ },
+ {
+  "id": "gemini-3.8-flash",
+  "name": "Gemini 3.8 Flash",
+  "api": "google-generate",
+  "context": 1000000,
+  "output": 65536,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high"
+  ],
+  "default_effort": "high",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0.75,
+   "output": 3.75,
+   "cacheRead": 0.075,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "google"
+   ],
+   "us": [
+    "google"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "gemini-3.7-flash",
+  "name": "Gemini 3.7 Flash",
+  "api": "google-generate",
+  "context": 1000000,
+  "output": 65536,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high"
+  ],
+  "default_effort": "high",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0.75,
+   "output": 3.75,
+   "cacheRead": 0.075,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "google"
+   ],
+   "us": [
+    "google"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "gemini-3.6-flash",
+  "name": "Gemini 3.6 Flash",
+  "api": "google-generate",
+  "context": 1000000,
+  "output": 65536,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high"
+  ],
+  "default_effort": "high",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0.75,
+   "output": 3.75,
+   "cacheRead": 0.075,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "google"
+   ],
+   "us": [
+    "google"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "gemini-3.5-flash",
+  "name": "Gemini 3.5 Flash",
+  "api": "google-generate",
+  "context": 1000000,
+  "output": 65536,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "default_effort": "high",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 1.5,
+   "output": 9,
+   "cacheRead": 0.15,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "google"
+   ],
+   "us": [
+    "google"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "gemini-3-flash-preview",
+  "name": "Gemini 3 Flash",
+  "api": "google-generate",
+  "context": 1000000,
+  "output": 65536,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "default_effort": "high",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0.5,
+   "output": 3,
+   "cacheRead": 0.05,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "google"
+   ],
+   "us": [],
+   "eu": []
+  }
+ },
+ {
+  "id": "inkling",
+  "name": "Inkling",
+  "api": "openai-completions",
+  "context": 1007232,
+  "output": 32768,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high",
+   "xhigh",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 1,
+   "output": 4.05,
+   "cacheRead": 0.17,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "fireworks"
+   ],
+   "us": [],
+   "eu": []
+  }
+ },
+ {
+  "id": "mistral-medium-3.5",
+  "name": "Mistral Medium 3.5",
+  "api": "openai-completions",
+  "context": 192000,
+  "output": 64000,
+  "reasoning": true,
+  "efforts": [
+   "high"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "upstreams": {
+   "global": [
+    "mistral"
+   ],
+   "us": [],
+   "eu": [
+    "mistral"
+   ]
+  }
+ },
+ {
+  "id": "glm-5.3-flash",
+  "name": "GLM-5.3-Flash",
+  "api": "openai-completions",
+  "context": 917504,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "high",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0.15,
+   "output": 0.5,
+   "cacheRead": 0.03,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "fireworks",
+    "baseten",
+    "databricks"
+   ],
+   "us": [
+    "baseten"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "glm-5.3",
+  "name": "GLM-5.3",
+  "api": "openai-completions",
+  "context": 908928,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "high",
+   "max"
+  ],
+  "default_effort": "max",
+  "requires_effort": true,
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 1.4,
+   "output": 4.4,
+   "cacheRead": 0.26,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "fireworks",
+    "baseten",
+    "databricks"
+   ],
+   "us": [
+    "baseten"
+   ],
+   "eu": [
+    "mistral"
+   ]
+  }
+ },
+ {
+  "id": "glm-5.2",
+  "name": "GLM-5.2",
+  "api": "openai-completions",
+  "context": 908928,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "high",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 1.4,
+   "output": 4.4,
+   "cacheRead": 0.26,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "baseten"
+   ],
+   "us": [
+    "baseten"
+   ],
+   "eu": [
+    "mistral"
+   ]
+  },
+  "limits_eu": {
+   "context": 200000,
+   "output": 65536
+  }
+ },
+ {
+  "id": "kimi-k3",
+  "name": "Kimi K3",
+  "api": "openai-completions",
+  "context": 196608,
+  "output": 65536,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "high",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 3,
+   "output": 15,
+   "cacheRead": 0.3,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "fireworks",
+    "baseten",
+    "databricks"
+   ],
+   "us": [
+    "baseten"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "qwen3.8-max",
+  "name": "Qwen3.8 Max",
+  "api": "openai-completions",
+  "context": 131072,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "xhigh"
+  ],
+  "default_effort": "xhigh",
+  "requires_effort": true,
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 2,
+   "output": 6,
+   "cacheRead": 0.25,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "fireworks"
+   ],
+   "us": [],
+   "eu": []
+  }
+ },
+ {
+  "id": "nemotron-3-ultra",
+  "name": "Nemotron 3 Ultra",
+  "api": "openai-completions",
+  "context": 136464,
+  "output": 65536,
+  "reasoning": true,
+  "efforts": [
+   "high"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 0.6,
+   "output": 2.4,
+   "cacheRead": 0.12,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "baseten",
+    "fireworks"
+   ],
+   "us": [
+    "baseten"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "deepseek-v4-flash-0731",
+  "name": "DeepSeek V4 Flash 0731",
+  "api": "openai-completions",
+  "context": 908928,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "high",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 0.175,
+   "output": 0.35,
+   "cacheRead": 0.035,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "fireworks",
+    "baseten"
+   ],
+   "us": [
+    "baseten"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "deepseek-v4-pro",
+  "name": "DeepSeek V4 Pro",
+  "api": "openai-completions",
+  "context": 908928,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "high",
+   "max"
+  ],
+  "default_effort": "high",
+  "requires_effort": false,
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 0.435,
+   "output": 0.87,
+   "cacheRead": 0.003625,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "fireworks",
+    "baseten"
+   ],
+   "us": [
+    "baseten"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "grok-4.7",
+  "name": "Grok 4.7",
+  "api": "openai-responses",
+  "context": 436644,
+  "output": 63356,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh"
+  ],
+  "default_effort": "high",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 2,
+   "output": 6,
+   "cacheRead": 0.5,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "xai"
+   ],
+   "us": [
+    "xai"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "grok-4.6",
+  "name": "Grok 4.6",
+  "api": "openai-responses",
+  "context": 200000,
+  "output": 63356,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high",
+   "xhigh"
+  ],
+  "default_effort": "high",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 2,
+   "output": 6,
+   "cacheRead": 0.5,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "xai"
+   ],
+   "us": [
+    "xai"
+   ],
+   "eu": []
+  }
+ },
+ {
+  "id": "grok-4.5",
+  "name": "Grok 4.5",
+  "api": "openai-responses",
+  "context": 200000,
+  "output": 63356,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "high"
+  ],
+  "default_effort": "high",
+  "requires_effort": true,
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 2,
+   "output": 6,
+   "cacheRead": 0.3,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "xai"
+   ],
+   "us": [],
+   "eu": []
+  }
+ },
+ {
+  "id": "minimax-m2.7",
+  "name": "MiniMax M2.7",
+  "api": "anthropic-messages",
+  "context": 196600,
+  "output": 64000,
+  "reasoning": true,
+  "efforts": [
+   "high"
+  ],
+  "default_effort": "high",
+  "requires_effort": true,
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 0.3,
+   "output": 1.2,
+   "cacheRead": 0.06,
+   "cacheWrite": 0
+  },
+  "upstreams": {
+   "global": [
+    "fireworks"
+   ],
+   "us": [],
+   "eu": []
+  }
+ }
+]

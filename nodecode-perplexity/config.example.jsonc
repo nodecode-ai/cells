@@ -1,0 +1,22 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The sign-in lives in auth.json under oauth_tokens.perplexity
+// (/perplexity login EMAIL, then /perplexity code CODE); a browser's Cookie
+// header in PERPLEXITY_COOKIES; an API key in auth.json (/connect) or
+// PERPLEXITY_API_KEY.
+{
+  "perplexity": {
+    "enabled": true,
+
+    // The subscription model a signed-in or cookie search asks the ask
+    // endpoint for. experimental is Perplexity's Sonar.
+    "model": "experimental",
+
+    // The API model a key search asks api.perplexity.ai for.
+    "api_model": "sonar-pro",
+
+    // On macOS, whether /perplexity login takes the legacy Perplexity app's
+    // session before it mails a code.
+    "borrow_app_session": true
+  }
+}

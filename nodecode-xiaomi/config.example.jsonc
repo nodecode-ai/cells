@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key itself lives in auth.json (/connect) or XIAOMI_API_KEY:
+// a pay-as-you-go key (sk-...) or a Token Plan key (tp-...).
+{
+  "xiaomi": {
+    "enabled": true,
+
+    // Where a pay-as-you-go key is served. The chat lane appends
+    // /chat/completions. A tp- key never goes here.
+    "base_url": "https://api.xiaomimimo.com/v1",
+
+    // Where a Token Plan key is served: sgp (Singapore), ams (Amsterdam) or
+    // cn (China). auto tries them in that order and keeps the first whose
+    // /models takes the key.
+    "token_plan_region": "auto"
+  }
+}

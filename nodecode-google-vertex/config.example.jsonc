@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The credential is Application Default Credentials on this
+// machine, or for Gemini an API key in auth.json (/connect) or
+// GOOGLE_CLOUD_API_KEY.
+{
+  "google-vertex": {
+    "enabled": true,
+
+    // The Google Cloud project (else GOOGLE_CLOUD_PROJECT, GCP_PROJECT or
+    // GCLOUD_PROJECT).
+    "project": "my-project",
+
+    // global, us, eu, or a region such as us-central1 (else
+    // GOOGLE_VERTEX_LOCATION, GOOGLE_CLOUD_LOCATION or VERTEX_LOCATION).
+    "location": "us-central1"
+  }
+}

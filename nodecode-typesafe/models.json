@@ -1,0 +1,18 @@
+[
+ {
+  "id": "jev-latest",
+  "name": "TypeSafe jev",
+  "api": "typesafe",
+  "base": "https://api.typesafe.ai",
+  "reasoning": false,
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 0.042,
+   "output": 0,
+   "cacheRead": 0,
+   "cacheWrite": 0
+  }
+ }
+]

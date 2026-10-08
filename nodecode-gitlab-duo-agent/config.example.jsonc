@@ -1,0 +1,28 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it (no lane, no hook). The GitLab token lives in auth.json under
+// oauth_tokens.gitlab-duo-agent (/gitlab-duo-agent login), or in GITLAB_TOKEN
+// (a personal access token, scope api).
+{
+  "gitlab-duo-agent": {
+    "enabled": true,
+
+    // The GitLab instance: the sign-in, the REST setup and the workflow
+    // socket (<instance>/api/v4/ai/duo_workflows/ws).
+    "gitlab_url": "https://gitlab.com",
+
+    // The root group the workflow runs in: an id, or gid://gitlab/Group/N.
+    // Empty: the project's root, else the session directory's GitLab
+    // remote's, else the first top-level group with Duo. omp's
+    // GITLAB_DUO_NAMESPACE_ID does the same.
+    "namespace_id": "",
+
+    // The project the workflow runs in: a numeric id, or group/project.
+    // Empty: the remote's project, else the latest one you can develop in.
+    // omp's GITLAB_DUO_PROJECT_ID and GITLAB_DUO_PROJECT_PATH do the same.
+    "project": "",
+
+    // The Duo flow a round runs; ambient is the inline flow omp runs.
+    "workflow_definition": "ambient"
+  }
+}

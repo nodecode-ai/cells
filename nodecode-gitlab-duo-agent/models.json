@@ -1,0 +1,19 @@
+[
+ {
+  "id": "claude_sonnet_4_6_vertex",
+  "name": "Claude Sonnet 4.6 - Vertex",
+  "api": "gitlab-duo-agent",
+  "base": "https://gitlab.com",
+  "context": 1000000,
+  "reasoning": false,
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 0,
+   "output": 0,
+   "cacheRead": 0,
+   "cacheWrite": 0
+  }
+ }
+]

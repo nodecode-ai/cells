@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The gateway token lives in auth.json (/connect) or
+// CLOUDFLARE_AI_GATEWAY_API_KEY.
+{
+  "cloudflare-ai-gateway": {
+    "enabled": true,
+
+    // The Cloudflare account id (else CLOUDFLARE_ACCOUNT_ID).
+    "account_id": "0123456789abcdef0123456789abcdef",
+
+    // The AI Gateway id (else CLOUDFLARE_GATEWAY_ID).
+    "gateway_id": "default",
+
+    // The gateway's root, before /<account>/<gateway>.
+    "base_url": "https://gateway.ai.cloudflare.com/v1"
+  }
+}

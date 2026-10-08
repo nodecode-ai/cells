@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key lives in auth.json (api_keys.typesafe) or
+// TYPESAFE_API_KEY, never here.
+{
+  "typesafe": {
+    "enabled": true,
+
+    // The TypeSafe API root. Empty reads TYPESAFE_BASE_URL, else
+    // https://api.typesafe.ai; a gateway that holds the key goes here.
+    "base_url": "",
+
+    // The judgment model. Empty reads TYPESAFE_DEFAULT_MODEL, else jev-latest.
+    "model": ""
+  }
+}

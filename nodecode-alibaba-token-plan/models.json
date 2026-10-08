@@ -1,0 +1,197 @@
+[
+ {
+  "id": "deepseek-v4-pro",
+  "name": "DeepSeek V4 Pro",
+  "api": "openai-completions",
+  "base": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+  "context": 1000000,
+  "output": 384000,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "high",
+   "max"
+  ],
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 0,
+   "output": 0,
+   "cacheRead": 0,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "glm-5.2",
+  "name": "GLM-5.2",
+  "api": "openai-completions",
+  "base": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+  "context": 1000000,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high",
+   "max"
+  ],
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 0,
+   "output": 0,
+   "cacheRead": 0,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "qwen3.6-flash",
+  "name": "Qwen3.6 Flash",
+  "api": "openai-completions",
+  "base": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+  "context": 1000000,
+  "output": 65536,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0,
+   "output": 0,
+   "cacheRead": 0,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "qwen3.7-max",
+  "name": "Qwen3.7 Max",
+  "api": "openai-completions",
+  "base": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+  "context": 1000000,
+  "output": 65536,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 0,
+   "output": 0,
+   "cacheRead": 0,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "qwen3.7-plus",
+  "name": "Qwen3.7 Plus",
+  "api": "openai-completions",
+  "base": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+  "context": 1000000,
+  "output": 64000,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0,
+   "output": 0,
+   "cacheRead": 0,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "qwen3.8-flash",
+  "name": "Qwen3.8 Flash",
+  "api": "openai-completions",
+  "base": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+  "context": 1000000,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0,
+   "output": 0,
+   "cacheRead": 0,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "qwen3.8-max",
+  "name": "Qwen3.8 Max",
+  "api": "openai-completions",
+  "base": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+  "context": 1000000,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "medium",
+   "xhigh"
+  ],
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0,
+   "output": 0,
+   "cacheRead": 0,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "qwen3.8-max-preview",
+  "name": "Qwen3.8 Max Preview",
+  "api": "openai-completions",
+  "base": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+  "context": 983616,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "low",
+   "high",
+   "xhigh"
+  ],
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0,
+   "output": 0,
+   "cacheRead": 0,
+   "cacheWrite": 0
+  }
+ }
+]

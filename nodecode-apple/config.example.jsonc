@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The on-device model takes no key.
+{
+  "apple": {
+    "enabled": true,
+
+    // A bridge helper already built (sh bridge/build.sh OUT builds one).
+    // Empty builds it into the user cache on first use, with Xcode 27 or its
+    // Command Line Tools.
+    "helper": ""
+  }
+}

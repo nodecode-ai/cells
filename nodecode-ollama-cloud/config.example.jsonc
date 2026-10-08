@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key itself lives in auth.json (/connect) or
+// OLLAMA_CLOUD_API_KEY.
+{
+  "ollama-cloud": {
+    "enabled": true,
+
+    // Where Ollama's native API is served. The lane appends /api/chat; a
+    // trailing /api is dropped. A self-hosted Ollama behind a key works too.
+    "base_url": "https://ollama.com"
+  }
+}

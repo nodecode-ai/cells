@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The credential lives in auth.json (/github-copilot login) or in
+// COPILOT_GITHUB_TOKEN, a GitHub token.
+{
+  "github-copilot": {
+    "enabled": true,
+
+    // Where Copilot is served. Chat appends /chat/completions, Responses
+    // /responses, Messages /v1/messages. While it is Copilot's own host, a
+    // personal plan's host or an Enterprise instance's is used instead.
+    "base_url": "https://api.githubcopilot.com"
+  }
+}

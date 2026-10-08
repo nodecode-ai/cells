@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The credential lives in auth.json (/google-antigravity login).
+{
+  "google-antigravity": {
+    "enabled": true,
+
+    // Where Antigravity's Cloud Code Assist is served. The lane appends
+    // /v1internal:streamGenerateContent?alt=sse. Another address than the
+    // daily or sandbox host is used alone.
+    "base_url": "https://daily-cloudcode-pa.googleapis.com",
+
+    // auto: the daily host, then the sandbox host when the daily one fails
+    // before answering, the last host that answered first next time.
+    // production: the daily host only. sandbox: the sandbox host only.
+    "endpoint_mode": "auto"
+  }
+}

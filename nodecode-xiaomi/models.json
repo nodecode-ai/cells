@@ -1,0 +1,223 @@
+[
+ {
+  "id": "mimo-v2-flash",
+  "name": "MiMo-V2-Flash",
+  "api": "openai-completions",
+  "base": "https://api.xiaomimimo.com/v1",
+  "context": 262144,
+  "output": 65536,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 0.14,
+   "output": 0.28,
+   "cacheRead": 0.0028,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "mimo-v2-omni",
+  "name": "MiMo-V2-Omni",
+  "api": "openai-completions",
+  "base": "https://api.xiaomimimo.com/v1",
+  "context": 262144,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0.14,
+   "output": 0.28,
+   "cacheRead": 0.0028,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "mimo-v2-pro",
+  "name": "MiMo-V2-Pro",
+  "api": "openai-completions",
+  "base": "https://api.xiaomimimo.com/v1",
+  "context": 1048576,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 0.435,
+   "output": 0.87,
+   "cacheRead": 0.0036,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "mimo-v2.5",
+  "name": "MiMo-V2.5",
+  "api": "openai-completions",
+  "base": "https://api.xiaomimimo.com/v1",
+  "context": 1048576,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0.14,
+   "output": 0.28,
+   "cacheRead": 0.0028,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "mimo-v2.5-pro",
+  "name": "MiMo-V2.5-Pro",
+  "api": "openai-completions",
+  "base": "https://api.xiaomimimo.com/v1",
+  "context": 1048576,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 0.435,
+   "output": 0.87,
+   "cacheRead": 0.0036,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "mimo-v2.5-pro-ultraspeed",
+  "name": "MiMo-V2.5-Pro-UltraSpeed",
+  "api": "openai-completions",
+  "base": "https://api.xiaomimimo.com/v1",
+  "context": 1048576,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "input": [
+   "text"
+  ],
+  "cost": {
+   "input": 1.305,
+   "output": 2.61,
+   "cacheRead": 0.0108,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "mimo-v2.6-flash",
+  "name": "MiMo-V2.6-Flash",
+  "api": "openai-completions",
+  "base": "https://api.xiaomimimo.com/v1",
+  "context": 1048576,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0.14,
+   "output": 0.28,
+   "cacheRead": 0.0028,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "mimo-v2.6-pro",
+  "name": "MiMo-V2.6-Pro",
+  "api": "openai-completions",
+  "base": "https://api.xiaomimimo.com/v1",
+  "context": 1048576,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 0.435,
+   "output": 0.87,
+   "cacheRead": 0.0036,
+   "cacheWrite": 0
+  }
+ },
+ {
+  "id": "mimo-v2.6-pro-ultraspeed",
+  "name": "MiMo-V2.6-Pro-UltraSpeed",
+  "api": "openai-completions",
+  "base": "https://api.xiaomimimo.com/v1",
+  "context": 1048576,
+  "output": 131072,
+  "reasoning": true,
+  "efforts": [
+   "minimal",
+   "low",
+   "medium",
+   "high"
+  ],
+  "input": [
+   "text",
+   "image"
+  ],
+  "cost": {
+   "input": 4.35,
+   "output": 8.7,
+   "cacheRead": 0.036,
+   "cacheWrite": 0
+  }
+ }
+]

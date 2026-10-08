@@ -1,0 +1,41 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it, and an absent one runs on these defaults.
+{
+  "lsp": {
+    "enabled": true,
+
+    // After an eval that wrote files through edit or write-file, append what
+    // the language servers say about them to its result.
+    "diagnostics_on_write": true,
+
+    // How long that eval waits for the servers, in milliseconds. A server
+    // that has not answered by then is reported as still checking.
+    "wait_ms": 3000,
+
+    // Stop a language server nobody has used for this long.
+    "idle_minutes": 15,
+
+    // Laid over the 55 servers servers.json defines (omp's defaults). A name
+    // it knows overrides that server member by member; a new name adds one,
+    // which needs command, file_types and root_markers.
+    "servers": {
+      "pyright": {
+        // a path, or a name searched in the project's bins, then PATH
+        "command": "pyright-langserver",
+        "args": ["--stdio"],
+        // extensions with or without the dot, or whole file names
+        "file_types": [".py", ".pyi"],
+        // a root holds one of these; * matches within a name
+        "root_markers": ["pyproject.toml", "pyrightconfig.json", "setup.py"],
+        // answered to workspace/configuration and sent once at start
+        "settings": {},
+        // initializationOptions
+        "init_options": {},
+        // a linter's diagnostics are kept; the verbs ask a non-linter
+        "is_linter": false,
+        "disabled": false
+      }
+    }
+  }
+}

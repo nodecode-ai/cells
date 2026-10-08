@@ -1,0 +1,23 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key itself lives in auth.json under api_keys.openrouter:
+// the sign-in (/openrouter login) saves the key it obtains there, as /connect
+// saves a pasted one; or set OPENROUTER_API_KEY.
+{
+  "openrouter": {
+    "enabled": true,
+
+    // Where OpenRouter is served. The chat lane appends /chat/completions.
+    "base_url": "https://openrouter.ai/api/v1",
+
+    // The routing variant every model id is sent with, unless the id names
+    // one already: default (none), nitro (throughput), floor (price),
+    // online (web search), exacto (curated providers).
+    "variant": "default",
+
+    // Upstream providers OpenRouter may route to, and no other ...
+    "only": [],
+    // ... and the ones it tries first, in order.
+    "order": []
+  }
+}
