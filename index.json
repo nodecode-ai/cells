@@ -3,7 +3,7 @@
   "cells": [
     {
       "name": "nodecode-alibaba-coding-plan",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-alibaba-coding-plan",
       "description": "Alibaba Coding Plan: Model Studio's coding subscription as a Nodecode provider",
@@ -14,7 +14,7 @@
     },
     {
       "name": "nodecode-alibaba-token-plan",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-alibaba-token-plan",
       "description": "QwenCloud Token Plan: Alibaba's regional token subscription as a Nodecode provider",
@@ -25,7 +25,7 @@
     },
     {
       "name": "nodecode-amazon-bedrock",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-amazon-bedrock",
       "description": "Amazon Bedrock: the Converse Stream wire, SigV4 signing and the AWS event stream, on a lane of its own",
@@ -36,7 +36,7 @@
     },
     {
       "name": "nodecode-anthropic",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-anthropic",
       "description": "Anthropic (Claude Pro/Max): sign in, and serve the anthropic provider on the subscription when no key is set",
@@ -47,7 +47,7 @@
     },
     {
       "name": "nodecode-apple",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-apple",
       "description": "Apple Foundation Models: the on-device model, through omp's Swift bridge, as a provider lane (macOS only)",
@@ -61,7 +61,7 @@
     },
     {
       "name": "nodecode-azure",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-azure",
       "description": "Azure OpenAI: the Responses API on an Azure resource, with its api-version and api-key",
@@ -72,7 +72,7 @@
     },
     {
       "name": "nodecode-cline-pass",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-cline-pass",
       "description": "ClinePass: Cline's model subscription as a Nodecode provider",
@@ -83,7 +83,7 @@
     },
     {
       "name": "nodecode-cloudflare-ai-gateway",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-cloudflare-ai-gateway",
       "description": "Cloudflare AI Gateway: Anthropic, OpenAI and Workers AI models through one gateway",
@@ -94,7 +94,7 @@
     },
     {
       "name": "nodecode-cursor",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-cursor",
       "description": "Cursor: a browser sign-in, and Cursor's Agent protocol (Connect over HTTP, protobuf) as a lane of its own",
@@ -105,7 +105,7 @@
     },
     {
       "name": "nodecode-devin",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-devin",
       "description": "Devin: a browser sign-in, and Codeium's Cascade wire (Connect over protobuf) as a lane of its own",
@@ -116,7 +116,7 @@
     },
     {
       "name": "nodecode-factory-droid",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-factory-droid",
       "description": "Factory Droid: Factory's model subscription as a Nodecode provider, signed in with a WorkOS device code",
@@ -127,7 +127,7 @@
     },
     {
       "name": "nodecode-github-copilot",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-github-copilot",
       "description": "GitHub Copilot: a GitHub device sign-in, and Copilot's Messages, chat and Responses wires as one provider",
@@ -138,7 +138,7 @@
     },
     {
       "name": "nodecode-gitlab-duo",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-gitlab-duo",
       "description": "GitLab Duo Non-Agentic: Duo's chat models through GitLab's AI gateway, as a Nodecode provider",
@@ -149,7 +149,7 @@
     },
     {
       "name": "nodecode-gitlab-duo-agent",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-gitlab-duo-agent",
       "description": "GitLab Duo Agent: the Duo Workflow Service as a Nodecode provider lane",
@@ -160,7 +160,7 @@
     },
     {
       "name": "nodecode-google-antigravity",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-google-antigravity",
       "description": "Antigravity: a Google sign-in, and Antigravity's Cloud Code Assist wire as a lane of its own",
@@ -171,7 +171,7 @@
     },
     {
       "name": "nodecode-google-gemini-cli",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-google-gemini-cli",
       "description": "Google Cloud Code Assist: a Google sign-in, and the Gemini CLI's wire as a lane of its own",
@@ -182,7 +182,7 @@
     },
     {
       "name": "nodecode-google-vertex",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-google-vertex",
       "description": "Google Vertex AI: Gemini, Claude and partner models on a Google Cloud project, with an API key or Application Default Credentials",
@@ -193,7 +193,7 @@
     },
     {
       "name": "nodecode-kilo",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-kilo",
       "description": "Kilo Gateway: sign in with a device code, and serve its models",
@@ -204,7 +204,7 @@
     },
     {
       "name": "nodecode-kimi-code",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-kimi-code",
       "description": "Kimi Code: Moonshot's coding subscription as a Nodecode provider, signed in with a device code",
@@ -215,7 +215,7 @@
     },
     {
       "name": "nodecode-local",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-local",
       "description": "Local models: omp's tiny-model workers (ONNX, MLX) as a Nodecode provider lane",
@@ -226,7 +226,7 @@
     },
     {
       "name": "nodecode-lsp",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-lsp",
       "description": "Language servers for Nodecode: diagnostics on write, navigation and rename verbs",
@@ -237,7 +237,7 @@
     },
     {
       "name": "nodecode-muse-code",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-muse-code",
       "description": "Muse Code: Meta's Muse subscription as a Nodecode provider, signed in with a device code",
@@ -248,7 +248,7 @@
     },
     {
       "name": "nodecode-ollama-cloud",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-ollama-cloud",
       "description": "Ollama Cloud: Ollama's native /api/chat wire as a Nodecode provider lane",
@@ -259,7 +259,7 @@
     },
     {
       "name": "nodecode-openai-codex",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-openai-codex",
       "description": "ChatGPT Plus/Pro (Codex subscription): sign in, and serve the Codex models",
@@ -270,7 +270,7 @@
     },
     {
       "name": "nodecode-openai-codex-device",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-openai-codex-device",
       "description": "ChatGPT Plus/Pro (Codex, headless/device): sign in with a device code, and serve the Codex models",
@@ -281,7 +281,7 @@
     },
     {
       "name": "nodecode-openrouter",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-openrouter",
       "description": "OpenRouter, with its browser sign-in, as a Nodecode provider",
@@ -292,7 +292,7 @@
     },
     {
       "name": "nodecode-perplexity",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-perplexity",
       "description": "Perplexity web search: sign in with a Pro/Max account, or use a key, and search from eval",
@@ -303,7 +303,7 @@
     },
     {
       "name": "nodecode-snowflake",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-snowflake",
       "description": "Snowflake Cortex: Claude and GPT models on a Snowflake account, signed in or with a PAT",
@@ -314,7 +314,7 @@
     },
     {
       "name": "nodecode-typesafe",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-typesafe",
       "description": "TypeSafe: typed judgments over a state (System One), called through eval",
@@ -325,7 +325,7 @@
     },
     {
       "name": "nodecode-web-provider",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-web-provider",
       "description": "Web search engines: Google, Startpage, DuckDuckGo, Ecosia, Mojeek, SearXNG and their merge, keyless",
@@ -336,7 +336,7 @@
     },
     {
       "name": "nodecode-xai-oauth",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-xai-oauth",
       "description": "xAI Grok through a SuperGrok or X Premium+ sign-in, as a Nodecode provider",
@@ -347,7 +347,7 @@
     },
     {
       "name": "nodecode-xiaomi",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-xiaomi",
       "description": "Xiaomi MiMo: its models, on a pay-as-you-go key or a regional Token Plan key",
@@ -358,7 +358,7 @@
     },
     {
       "name": "nodecode-zai-coding-plan",
-      "git": "https://github.com/nodecode-ai/addons",
+      "git": "https://github.com/nodecode-ai/cells",
       "commit": "914a3fe3f41334d8706fc53a7712dc28a983cde7",
       "path": "nodecode-zai-coding-plan",
       "description": "Z.AI GLM Coding Plan, signed in from the browser, as a Nodecode provider",
