@@ -36,14 +36,18 @@
                (dolist (offer offers)
                  (let ((name (nlk::offer-name offer)))
                    (handler-case
-                       (let ((closure (nlk:offer-closure (list name) all)))
+                       (let ((closure (nlk:offer-closure (list name) all))
+                             (loaded t))
                          (dolist (folder closure)
                            (nlk:install-cell folder :offers all))
                          (dolist (record (apply #'nlk:load-cell closure))
                            (unless (eq :loaded (nlk::cell-state record))
+                             (setf loaded nil)
                              (fail "~a: ~a ~s" (nlk::cell-name record) (nlk::cell-state record)
                                    (nlk::cell-failures record))))
-                         (format report "ok ~a at ~a~%" name (nlk::offer-commit offer)))
+                         ;; An entry that failed is not also reported as ok.
+                         (when loaded
+                           (format report "ok ~a at ~a~%" name (nlk::offer-commit offer))))
                      (error (condition) (fail "~a: ~a" name condition))))))
            (error (condition) (fail "index: ~a" condition)))
       (close report)))
