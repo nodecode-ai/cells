@@ -59,6 +59,8 @@ the model or the operator calls), a room (a chat surface).
 
 | Folder | What it does |
 | --- | --- |
+| [`nodecode-channel-discord`](rooms/nodecode-channel-discord) | Talk to nodecode through a Discord bot Ships with Nodecode: the release builds it in from here, at the commit `src/cells/bundle.json` pins. |
+| [`nodecode-channel-telegram`](rooms/nodecode-channel-telegram) | Talk to nodecode through a Telegram bot Ships with Nodecode: the release builds it in from here, at the commit `src/cells/bundle.json` pins. |
 | [`nodecode-channel-slack`](rooms/nodecode-channel-slack) | Talk to Nodecode through a Slack app. |
 
 **What an entry is.** A folder in a public git repository, pinned at one
