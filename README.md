@@ -1,12 +1,15 @@
 # Nodecode cells
 
-The index of cells for [Nodecode](https://nodecode.ai) that don't ship with
-it. `nodecode add nc://NAME`, `/cells` and the setup walk read
-[`index.json`](index.json) and list these after the cells Nodecode ships.
+Every cell of [Nodecode](https://nodecode.ai), one folder each, under the
+kind it is: a provider (a model subscription, a sign-in, a wire), a tool (a
+verb the model or the operator calls), a room (a chat surface).
 
-Nodecode's own cells of this kind live here, one folder each, under the kind
-it is: a provider (a model subscription, a sign-in, a wire), a tool (a verb
-the model or the operator calls), a room (a chat surface).
+Two sorts live side by side. The ones marked **ships** are built into every
+Nodecode release: the release reads them from here at the one commit its
+`src/cells/bundle.json` pins, so they are never index entries. The rest are
+in [`index.json`](index.json), which `nodecode add nc://NAME`, `/cells` and
+the setup walk read and list after the shipped ones. [`template/`](template)
+is what a new cell is copied from.
 
 
 ## Providers (`providers/`)
@@ -50,18 +53,31 @@ the model or the operator calls), a room (a chat surface).
 
 | Folder | What it does |
 | --- | --- |
+| [`nodecode-chrome`](tools/nodecode-chrome) | **ships** Drive Chrome; needs the companion extension. |
+| [`nodecode-cron`](tools/nodecode-cron) | **ships** Prompts that run on a schedule. |
+| [`nodecode-experience`](tools/nodecode-experience) | **ships** Learns from each turn: reflection and recaps. |
+| [`nodecode-guard`](tools/nodecode-guard) | **ships** Refuses risky shell commands before they run. |
+| [`nodecode-import-kit`](tools/nodecode-import-kit) | **ships** Bring another coding agent's home into this one. |
 | [`nodecode-lsp`](tools/nodecode-lsp) | Language servers for Nodecode: diagnostics on write, navigation and rename verbs. |
+| [`nodecode-mcp`](tools/nodecode-mcp) | **ships** Tools from MCP servers you list in the config. |
 | [`nodecode-perplexity`](tools/nodecode-perplexity) | Perplexity web search: sign in with a Pro/Max account, or use a key, and search from eval. |
+| [`nodecode-prs`](tools/nodecode-prs) | **ships** Pull requests ranked and reviewed minutes after each push. |
+| [`nodecode-qa`](tools/nodecode-qa) | **ships** Anonymous usage counts, one page a week, sent only if you say so. |
+| [`nodecode-team`](tools/nodecode-team) | **ships** Several sessions work one task together in a shared folder. |
 | [`nodecode-typesafe`](tools/nodecode-typesafe) | TypeSafe: typed judgments over a state (System One), called through eval. |
 | [`nodecode-web-provider`](tools/nodecode-web-provider) | Web search engines: Google, Startpage, DuckDuckGo, Ecosia, Mojeek, SearXNG and their merge, keyless. |
+| [`nodecode-websearch`](tools/nodecode-websearch) | **ships** Web search and page fetch; no key needed. |
 
 ## Rooms (`rooms/`)
 
 | Folder | What it does |
 | --- | --- |
-| [`nodecode-channel-discord`](rooms/nodecode-channel-discord) | Talk to nodecode through a Discord bot Ships with Nodecode: the release builds it in from here, at the commit `src/cells/bundle.json` pins. |
-| [`nodecode-channel-telegram`](rooms/nodecode-channel-telegram) | Talk to nodecode through a Telegram bot Ships with Nodecode: the release builds it in from here, at the commit `src/cells/bundle.json` pins. |
+| [`nodecode-channel-discord`](rooms/nodecode-channel-discord) | **ships** Talk to nodecode through a Discord bot. |
+| [`nodecode-channel-kit`](rooms/nodecode-channel-kit) | **ships** Shared plumbing for the chat bots; comes with Discord or Telegram. |
 | [`nodecode-channel-slack`](rooms/nodecode-channel-slack) | Talk to Nodecode through a Slack app. |
+| [`nodecode-channel-telegram`](rooms/nodecode-channel-telegram) | **ships** Talk to nodecode through a Telegram bot. |
+| [`nodecode-link`](rooms/nodecode-link) | **ships** Open this machine's page from anywhere; `/link on` turns it on. |
+| [`nodecode-web`](rooms/nodecode-web) | **ships** Use nodecode in a browser tab; `nodecode web` opens it. |
 
 **What an entry is.** A folder in a public git repository, pinned at one
 commit that a person here read before merging. The folder is the whole
@@ -76,7 +92,7 @@ change to one is a new pull request that gets read the same way.
 1. Put your cell in a public repository with its `.asd` at the top, or at
    the top of one folder of it. The
    folder contract is in Nodecode's `src/CELLS.md`; start from
-   `src/cells/template/`. Vendor anything beyond `nodecode` and the shipped
+   [`template/`](template). Vendor anything beyond `nodecode` and the shipped
    cells under `vendor/`. An entry never depends on another entry here.
 2. Open a pull request that adds one entry to `index.json`, keeping the list
    sorted by name:
@@ -122,3 +138,11 @@ To update your cell, open a pull request that changes `commit` (and
 ```
 
 It works in a scratch home and never touches your own `~/.nodecode`.
+
+One cell's own tests run against a Nodecode source tree (the commit
+`.github/nodecode-rev` names, read from `~/nodecode/nodecode` or
+`NODECODE_SRC`), offline, in a scratch home:
+
+```sh
+.github/test-cell.sh tools/nodecode-guard
+```
