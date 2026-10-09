@@ -1,4 +1,4 @@
-;;;; addon.lisp --- the add-on: one :CREDENTIAL hook.
+;;;; cell.lisp --- the cell: one :CREDENTIAL hook.
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
@@ -20,7 +20,7 @@
 
 (in-package #:nodecode-codex-auth)
 
-(nle:define-addon codex-auth
+(nle:define-cell codex-auth
   (:section ("codex-auth")
     (:guide "endpoint is the ChatGPT backend a saved login is served at")
     ("endpoint" :string :default "https://chatgpt.com/backend-api/codex/responses"

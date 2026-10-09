@@ -1,4 +1,4 @@
-// The section ~/.nodecode/config.jsonc may carry for this add-on —
+// The section ~/.nodecode/config.jsonc may carry for this cell —
 // documentation, not config: the folder gets pushed and holds no secret (the
 // login itself lives in the shared auth.json, where `codex login' and the
 // nodecode cloud gateway write it). A present section is enabled;
