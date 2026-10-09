@@ -117,8 +117,8 @@ To update your cell, open a pull request that changes `commit` (and
 ## Run the check yourself
 
 ```sh
-tools/check.sh              # nodecode on PATH
-tools/check.sh ./nodecode   # or a binary you name
+.github/check.sh              # nodecode on PATH
+.github/check.sh ./nodecode   # or a binary you name
 ```
 
 It works in a scratch home and never touches your own `~/.nodecode`.

@@ -2,9 +2,9 @@
 # check.sh --- install and load every entry of index.json against a Nodecode
 # release, the way an operator's /setup would, in a scratch home.
 #
-# usage: tools/check.sh [NODECODE]    (default: nodecode on PATH)
+# usage: .github/check.sh [NODECODE]    (default: nodecode on PATH)
 #
-# The release's `trial' verb evaluates tools/check.lisp in a fresh process of
+# The release's `trial' verb evaluates .github/check.lisp in a fresh process of
 # a scratch home: nothing here reads or writes the operator's own home, and
 # the update poller is off. Exit 0 when every entry installs and loads.
 set -euo pipefail
@@ -24,7 +24,7 @@ score="$(HOME="$home" NODECODE_HOME="$home/.nodecode" \
   HUB_CHECK_INDEX="$here/index.json" \
   HUB_CHECK_CELLS="$home/.nodecode/cells/" \
   HUB_CHECK_REPORT="$home/report.txt" \
-  "$binary" trial < "$here/tools/check.lisp" | sed -n 's/^nodecode-trial-score //p' || true)"
+  "$binary" trial < "$here/.github/check.lisp" | sed -n 's/^nodecode-trial-score //p' || true)"
 
 if [ -s "$home/report.txt" ]; then
   sed 's/^/check: /' "$home/report.txt"
