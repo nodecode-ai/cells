@@ -93,6 +93,17 @@
       ]
     },
     {
+      "name": "nodecode-codex-auth",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "c0830979e3cac8bc4231969b1ac32b4b2213768d",
+      "path": "providers/nodecode-codex-auth",
+      "description": "ChatGPT Codex OAuth credentials for openai-family lanes",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ]
+    },
+    {
       "name": "nodecode-cursor",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
