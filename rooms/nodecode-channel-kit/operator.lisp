@@ -561,9 +561,12 @@ and a menu of the providers, each saying /models PROVIDER."
                       current-provider current-model (length providers))
               (list* (list :menu "Select provider"
                            (loop for (provider . count) in shown
+                                 ;; This menu navigates; selecting the current
+                                 ;; provider must still open its model list.
                                  collect (menu-choice provider (format nil "/models ~a" provider)
-                                                      :description (format nil "~d model~:p" count)
-                                                      :current (equal provider current-provider))))
+                                                      :description (format nil "~d model~:p~@[ · ~a~]" count
+                                                                           (and (equal provider current-provider)
+                                                                                "current")))))
                      (picker-pager "/models" page pages))))))
 
 (defun models-card (host room target agent provider page)

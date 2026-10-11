@@ -524,6 +524,51 @@ then TAIL."
   (is (null (ncd:interaction-response-plan (nlk:json-object "source" (nlk:json-object))
                                            nil))))
 
+(deftest channel-discord-provider-navigation-opens-model-list ()
+  (with-temp-store ()
+    (with-stubbed-fdefinition (nle:models (&optional provider)
+                                (if provider
+                                    (values (loop for i from 1 to 30 collect (format nil "m~d" i)) nil)
+                                    '(("p1" . 30))))
+      (with-stubbed-fdefinition (nle:gateway-target (session-id)
+                                  (values "p1" "m1"))
+        (let* ((executor (nck:make-recording-executor))
+               (host (test-host :name "discord-provider-navigation" :executor executor
+                                :platform (ncd:discord-platform :bot-user-id "999" :application-id (lambda () "app1"))))
+               (candidate (test-candidate :channel "100")))
+          (multiple-value-bind (text controls)
+              (nck::room-models-command host candidate "" "discord-100")
+            (declare (ignore text))
+            (let* ((menu (aref (nlk:json-array (aref (ncd::controls-components controls) 0) "components") 0))
+                   (option (aref (nlk:json-array menu "options") 0)))
+              (is (null (nlk:json-value option :any "default")) "provider navigation starts unselected on the Discord wire")
+              (flet ((press (line)
+                       (ncd:route-discord-interaction
+                        (nlk:json-object "op" 0 "t" "INTERACTION_CREATE"
+                         "d" (nlk:json-object "id" "i1" "token" "tok" "application_id" "app1"
+                              "type" 3 "channel_id" "100" "guild_id" "g1"
+                              "member" (nlk:json-object "user" (nlk:json-object "id" "u1"))
+                              "message" (nlk:json-object "id" "picker" "flags" 64)
+                              "data" (nlk:json-object "custom_id" "nck:menu:0" "component_type" 3
+                                      "values" (vector line)))))))
+                (dolist (line (list (nlk:json-value option :string "value")
+                                   "nck:say:/models p1 page 2"))
+                  (let ((pick (press line)))
+                    (nck::respond host pick
+                                  (lambda () (nck::run-command host pick (gethash "text" pick)))))))
+              (let* ((plans (nck:recording-executor-plans executor))
+                     (updates (remove-if-not (lambda (plan)
+                                               (equal "interaction_response" (nck:request-plan-audit-label plan))) plans))
+                     (first-body (nck:request-plan-body (first updates)))
+                     (last-body (nck:request-plan-body (second updates))))
+                (is (= 4 (length plans)) "provider choice and paging each defer then update")
+                (is-plan (first plans) "type" 6 "data" nil)
+                (is-plan (first updates) :method "PATCH" :path "/webhooks/app1/tok/messages/@original")
+                (is (search "Select a p1 model" (nlk:json-value first-body :string "content")))
+                (is (= 25 (length (nlk:json-array (aref (nlk:json-array (aref (nlk:json-array first-body "components") 0) "components") 0) "options"))))
+                (is (= 5 (length (nlk:json-array (aref (nlk:json-array (aref (nlk:json-array last-body "components") 0) "components") 0) "options"))))
+                (is (null (nth-value 1 (nck::room-model host "discord-100"))) "provider navigation never changes the room model")))))))))
+
 (deftest channel-discord-interaction-ack-plan ()
   ;; A control press is answered by deferring the interaction update: the
   ;; spinner on the pressed button stops and the message stays as it is;

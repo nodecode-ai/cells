@@ -255,6 +255,30 @@ p2 serving m2 and shared."
           (is (search "runs p1/m1 from its next ask" (models channel "default")))
           (is (equal '("p1" "m1" :agent) (lane-model "chat-100" '(:channel-id "100")))))))))
 
+(deftest channel-operator-provider-navigation-is-not-preselected ()
+  ;; Provider selection navigates; it must not start selected just because
+  ;; the current model uses that provider. Otherwise choosing it again can
+  ;; be a no-op in the client instead of opening its model list.
+  (with-temp-store ()
+    (with-catalog
+      (with-stubbed-fdefinition (nle:gateway-target (session-id)
+                                  (values "p1" "m1"))
+        (let* ((host (test-host :name "provider-navigation"
+                                :platform (test-platform :choices t)))
+               (candidate (test-candidate :channel "100")))
+          (multiple-value-bind (text controls)
+              (nck::room-models-command host candidate "" "chat-100")
+            (let ((options (third (first controls))))
+              (is (search "Current model: p1/m1" text))
+              (is (notany #'fourth options) "provider navigation has no default selection")
+              (is (search "current" (third (first options))) "the current provider remains visibly identified")
+              (multiple-value-bind (next-text next-controls)
+                  (nck::run-command host candidate (nck:said-line (second (first options))))
+                (is (search "Select a p1 model" next-text))
+                (is (equal '("m1" "shared")
+                           (mapcar #'first (third (first next-controls)))) "choosing the current provider opens its models")
+                (is (null (nth-value 1 (nck::room-model host "chat-100"))) "navigation does not change the room model")))))))))
+
 (deftest channel-operator-models-is-a-picker-where-messages-carry-choices ()
   ;; Bare /models where messages carry choices is OpenClaw's picker: a menu
   ;; of the providers, then of one provider's models with the way back and
@@ -275,7 +299,7 @@ p2 serving m2 and shared."
               (is (search "Current model: p1/m1" text) "the organism's default, named")
               (is (search "Select a provider (2 available)." text))
               (is (equal '((:menu "Select provider"
-                            (("p1" "nck:say:/models p1" "2 models" t)
+                            (("p1" "nck:say:/models p1" "2 models · current" nil)
                              ("p2" "nck:say:/models p2" "2 models" nil))))
                          controls)))
             (destructuring-bind (text controls) (models "p2")
