@@ -1673,3 +1673,30 @@ LANE, as the one running channel."
               (:task "Fix the red lint on main") (:state :done))
             (is (equal '("Details") (mapcar #'first (plan-field retitle "controls"))))
             (is (equal '(("step-1.png" . "900")) (plan-field retitle "media")))))))))
+
+
+(deftest channel-host-failed-tool-results-are-not-successful-steps ()
+  ;; Fold the durable flag, not words that happen to mention an error.
+  (with-digest-host (host lane)
+    (fact "turn.started" (nlk:json-object))
+    (called "failed" "{\"form\": \"(error \\\"boom\\\")\"}")
+    (fact "turn.tool_result" (nlk:json-object "call-id" "failed" "result" "boom" "failed" t))
+    (called "ok")
+    (fact "turn.tool_result" (nlk:json-object "call-id" "ok" "result" "error count: 0" "failed" nil))
+    (called "stopped")
+    (fact "turn.tool_result"
+          (nlk:json-object "call-id" "stopped" "result" "interrupted by user" "failed" nil
+                           "metadata" (nlk:json-object "stopped" (nlk:json-object "by" "user"))))
+    (called "open")
+    (let* ((digest (nck:lane-digest lane))
+           (card (nck:digest-card digest (nck:now-ms)))
+           (details (nck:digest-details digest (nck:now-ms))))
+      (is (equal '(:failed :done :stopped :running) (mapcar #'first (getf card :steps))))
+      (is (equal '(:failed :done :stopped :running) (mapcar #'first (getf details :steps))))
+      (is (search "❌" (nck:card-text card)))
+      (is (search "1. ❌" (nck:details-text details 2000)))
+      (is (search "❌" (nck::step-text (first (getf details :steps)) 2000)))
+      ;; Settling the turn changes only its still-open call, not past outcomes.
+      (nck:digest-note-terminal digest :completed nil (nck:now-ms))
+      (is (equal '(:failed :done :stopped :stopped)
+                 (mapcar #'first (getf (nck:digest-card digest (nck:now-ms)) :steps)))))))

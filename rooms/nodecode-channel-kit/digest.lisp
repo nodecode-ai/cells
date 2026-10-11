@@ -263,6 +263,12 @@ still names them.")
 
 (nlk:access (call digest-step))
 
+;; Live-only derived state, weakly held for exactly the lifetime of its step.
+;; Keep it beside the step rather than redefining structures a running image
+;; already holds. The durable tool-result fact remains the status authority.
+(nlk:define-side-table step-outcome (:test #'eq :weakness :key :synchronized t)
+  "A landed step's outcome, :done / :failed / :stopped, from its result fact.")
+
 (defun digest-open-step (digest)
   "The newest of DIGEST's calls still running, or NIL."
   (find 0 digest.steps :key #'digest-step-ended-ms :from-end t))
@@ -517,14 +523,18 @@ its answer (+STEP-OUTPUT-CHARS+), and a card of the words a turn says."
             path
             (subseq path (1+ (or (position #\/ path :from-end t) -1)))))))
 
-(defun digest-note-call-result (digest call-id now &key metadata output)
+(defun digest-note-call-result (digest call-id now &key metadata output failed)
   "One call landed: its step settles into the past tense, taking whatever
 words the result added — the receipts on METADATA name what a snippet of free
 Lisp did (activity.lisp), read as the transcript's row reads them at the same
 moment — and keeps the end of OUTPUT, what the call answered, and the picture
-it looked at."
+it looked at. FAILED is the result fact's verdict, never inferred from OUTPUT;
+structured stop metadata distinguishes interruption from success."
   (nlk:when-let (call (find call-id digest.steps :key #'digest-step-call-id :test #'equal))
-    (setf call.settled (or (and call.name
+    (setf (step-outcome call) (cond ((nlk:json-value metadata :object "stopped") :stopped)
+                                   (failed :failed)
+                                   (t :done))
+          call.settled (or (and call.name
                                 (step-words (nle:tool-arguments-activity
                                              call.name (or call.arguments "") :metadata metadata)))
                            call.running)
@@ -617,7 +627,7 @@ its own, else its newest whole sentence, cut at a word past
 ;;;   :HEADLINE  what the turn is doing now, or how it ended
 ;;;   :THOUGHT   the headline of the thought that chose it, or NIL
 ;;;   :STEPS     the newest steps, oldest first, each (MARK WORDS TIME PRESS):
-;;;              MARK :done, :running or :stopped, TIME how long it ran,
+;;;              MARK :done, :failed, :running or :stopped, TIME how long it ran,
 ;;;              PRESS the data its Output button carries (STEP-PRESS) once
 ;;;              it landed with something to show, else NIL
 ;;;   :EARLIER   how many older steps the card leaves to its details
@@ -695,9 +705,11 @@ steers first; the next to run says when."
 
 (defun step-row (call now &optional (end-mark :done))
   "CALL as a card's step, (MARK WORDS TIME): running at NOW while it has not
-ended, else END-MARK."
+ended, then its result's outcome; END-MARK stops an unreturned call."
   (let ((open (zerop call.ended-ms)))
-    (list (cond ((not open) :done) ((eq end-mark :done) :running) (t end-mark))
+    (list (cond ((not open) (or (step-outcome call) :done))
+                ((eq end-mark :done) :running)
+                (t end-mark))
           (nlk:clip (if open call.running (or call.settled call.running)) +digest-step-cap+
                     :ellipsis "…")
           (elapsed-label (- (if open now call.ended-ms) call.started-ms)))))
@@ -787,7 +799,7 @@ for a turn a steer cut short: the next turn raises its own."
 
 (defun step-mark (mark)
   "The character a step's MARK reads as in text."
-  (ecase mark (:done "✓") (:running "›") (:stopped "×")))
+  (ecase mark (:done "✓") (:failed "❌") (:running "›") (:stopped "×")))
 
 (defun card-text (card)
   "CARD as plain lines, for a platform that draws nothing richer — and for the

@@ -559,3 +559,19 @@ it now" (nck:digest-final-text digest)))
     (is-carrying (text (nck:details-text details 60))
       (:absent "1. ✓" "then the oldest steps") "… 1 earlier" "2. › Reading" (is (<= (length text) 60))))
   (is (equal "**Steps** · none yet" (nck:details-text (nck:digest-details (nck:make-turn-digest) 0) 2000))))
+
+
+(deftest channel-digest-failure-outcomes-belong-to-the-call (with-digest ())
+  (note-eval digest "c1" "(error \"boom\")" 1000)
+  (nck:digest-note-call-result digest "c1" 2000 :failed t)
+  (is (eq :failed (first (first (getf (nck:digest-card digest 2000) :steps)))))
+  ;; A new step reusing the id cannot inherit the earlier step's failure.
+  (note-eval digest "c1" "(+ 1 1)" 3000)
+  (is (eq :running (first (first (getf (nck:digest-card digest 3000) :steps)))))
+  (nck:digest-note-call-result digest "c1" 4000 :output "error count: 0" :failed nil)
+  (is (eq :done (first (first (getf (nck:digest-card digest 4000) :steps)))))
+  ;; As in the TUI, structured interruption is distinct even if failed is set.
+  (note-eval digest "c2" "(sleep 10)" 5000)
+  (nck:digest-note-call-result digest "c2" 6000 :failed t
+                               :metadata (nlk:json-object "stopped" (nlk:json-object "by" "user")))
+  (is (eq :stopped (first (second (getf (nck:digest-card digest 6000) :steps))))))

@@ -130,9 +130,10 @@ inside the message, Stop red. Its pictures are left out."
                                            (loop for (mark words time) in steps
                                                  collect (format nil "<li><input type=\"checkbox\"~:[~; checked~]>~a · ~a</li>"
                                                                  (eq mark :done)
-                                                                 (if (eq mark :stopped)
-                                                                     (format nil "<s>~a</s>" (esc words))
-                                                                     (esc words))
+                                                                 (case mark
+                                                                   (:failed (format nil "~a ~a" (nck:step-mark mark) (esc words)))
+                                                                   (:stopped (format nil "<s>~a</s>" (esc words)))
+                                                                   (otherwise (esc words)))
                                                                  time))))
                               (and pending (format nil "<p><b>Waiting</b><br>~{~a~^<br>~}</p>" (mapcar #'esc pending)))
                               (and footer (format nil "<hr/><footer>~{~a~^ · ~}</footer>" footer))

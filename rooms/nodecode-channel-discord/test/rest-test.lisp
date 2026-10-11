@@ -779,3 +779,19 @@ its section included."
          (choices (nlk:json-value (nck:request-plan-body plan)
                                   :array "data" "choices")))
     (is (= 0 (length choices)) "no choices is an answer: nothing to show")))
+
+
+(deftest channel-discord-failed-steps-have-a-red-cross ()
+  ;; Existing application success/spinner emojis must not hide a failure.
+  (let ((ncd:*card-marks* '(:done "<:nc_done:1>" :running "<a:nc_running:2>" :stopped "<:nc_stopped:3>")))
+    (is (equal '("<a:nc_running:2>" "❌ Eval failed · 1s" "<:nc_done:1> Eval passed · 1s"
+                 "<:nc_stopped:3> Eval stopped · 1s" "<a:nc_running:2> Eval running · 1s")
+               (rest (card-texts (list :state :working :headline "Checking"
+                                       :steps '((:failed "Eval failed" "1s" nil)
+                                                (:done "Eval passed" "1s" nil)
+                                                (:stopped "Eval stopped" "1s" nil)
+                                                (:running "Eval running" "1s" nil))))))))
+  (let ((ncd:*card-marks* nil))
+    (is (equal "❌ Eval failed · 1s"
+               (second (card-texts (list :state :done :headline "Done"
+                                         :steps '((:failed "Eval failed" "1s" nil)))))))))

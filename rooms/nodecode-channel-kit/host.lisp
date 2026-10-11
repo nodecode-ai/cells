@@ -1612,11 +1612,12 @@ enqueueing a reaction step."
      ;; what it answered is kept for the card's details.
     ("turn.tool_result" (let ((call-id (nlk:json-value payload :string "call-id"))
                               (metadata (nlk:json-value payload :object "metadata"))
-                              (output (nlk:json-value payload :string "result")))
+                              (output (nlk:json-value payload :string "result"))
+                              (failed (nlk:json-value payload :boolean "failed")))
                           (when call-id
                             (with-turn-digest (digest lane turn-id now)
                               (digest-note-call-result digest call-id now :metadata metadata
-                                                                          :output output)))))
+                                                                          :output output :failed failed)))))
      ;; The round moved to another model: the card says so, with the
      ;; reason, until the turn settles — the visible half of the durable
      ;; fact the engine's failover policy records.

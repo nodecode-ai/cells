@@ -447,3 +447,15 @@ written twice, so a probe that names each once is seen to."
                       :text (format nil "**Steps** · 1~%1. ✓ Ran just lint · 3s~%```~%clean~%```~%**Thinking**~%> All clean.")))))
     (is-plan plan "show_alert" t
              "text" (format nil "Steps · 1~%1. ✓ Ran just lint · 3s~%clean~%Thinking~%All clean."))))
+
+
+(deftest channel-telegram-failed-steps-have-a-red-cross ()
+  (let ((html (nct::card-html (list :state :working :headline "Checking"
+                                   :steps '((:failed "Eval failed" "1s" nil)
+                                            (:done "Eval passed" "1s" nil)
+                                            (:stopped "Eval stopped" "1s" nil)
+                                            (:running "Eval running" "1s" nil))))))
+    (is (search "<li><input type=\"checkbox\">❌ Eval failed · 1s</li>" html))
+    (is (search "<li><input type=\"checkbox\" checked>Eval passed · 1s</li>" html))
+    (is (search "<li><input type=\"checkbox\"><s>Eval stopped</s> · 1s</li>" html))
+    (is (search "<li><input type=\"checkbox\">Eval running · 1s</li>" html))))
