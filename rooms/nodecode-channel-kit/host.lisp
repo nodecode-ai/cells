@@ -2290,12 +2290,14 @@ PANEL when the answer is a card (OFFER-CARD)."
         (ensure-room host room :parent (room-parent-session-id host target))
         (if (equal name "models")
             (room-models-command host candidate args room)
-            (let ((*command-source* (candidate-source candidate))
+            (if (member name '("think" "effort") :test #'equal)
+                (room-effort-command host candidate args room)
+                (let ((*command-source* (candidate-source candidate))
                   (*command-card* nil))
               (values (nle:slash line :session-id room)
-                      (getf *command-card* :controls) (getf *command-card* :panel))))))))
+                      (getf *command-card* :controls) (getf *command-card* :panel)))))))))
 
-(defparameter +private-commands+ '("stop" "channels" "models")
+(defparameter +private-commands+ '("stop" "channels" "models" "think" "effort")
   "Commands whose answer only acknowledges what the room sees happen anyway —
 the stopped turn's own line says it stopped — or is a picker the person who
 ran it works alone, and so is said to that person alone, where the platform
@@ -3010,8 +3012,10 @@ the line."
         (apply-soul (host-id host) ask.lane
                     (or (getf (agent-of host ask.agent) :soul-path) host.soul-path))
         ;; The model too: a /models in the room since the last ask is live on
-        ;; this one.
+        ;; this one. Its reasoning effort is the same room-level overlay,
+        ;; applied after the model so the provider ladder is authoritative.
         (apply-lane-model host ask)
+        (apply-lane-effort host ask)
         (bt2:with-lock-held ((lane-lock lane))
           (let ((digest lane.digest))
             (setf (turn-digest-ask-id

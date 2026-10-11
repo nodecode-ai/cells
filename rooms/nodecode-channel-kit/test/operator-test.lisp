@@ -320,6 +320,61 @@ p2 serving m2 and shared."
                (nck::picker-pager "/models p1" 2 2)))
     (is (null (nck::picker-pager "/models" 1 1)))))
 
+(deftest channel-operator-effort-is-a-room-picker ()
+  ;; Discord's /think mirrors /models: the bare command opens a private menu,
+  ;; a pick belongs to this room, and a thread inherits its channel's pick.
+  (with-temp-store ()
+    (with-stubbed-fdefinition (nle:gateway-target (session-id)
+                                (values (or session-id "p1") "m1"))
+      (with-stubbed-fdefinition (nle::effort-ladder (provider model)
+                                  (if (or provider model)
+                                      '("off" "low" "high")
+                                      '("off" "low" "high")))
+        (let* ((host (test-host :name "effort-picker" :platform (test-platform :choices t)))
+               (channel (test-candidate :channel "100"))
+               (thread (test-candidate :channel "100" :thread "42" :parent "100")))
+          (flet ((think (candidate args room)
+                   (multiple-value-list (nck::room-effort-command host candidate args room))))
+            (destructuring-bind (text controls) (think channel "" "chat-100")
+              (is (search "## Reasoning Effort" text))
+              (is (search "Current: provider default" text))
+              (is (equal '((:menu "Select effort"
+                            (("off" "nck:say:/think off" "Answer without reasoning." nil)
+                             ("low" "nck:say:/think low" "" nil)
+                             ("high" "nck:say:/think high" "" nil)))
+                           ("Provider default" "nck:say:/think default" :secondary t))
+                         controls)))
+            (is (search "uses p1/m1 at high from its next ask"
+                        (first (think channel "high" "chat-100"))))
+            (destructuring-bind (text controls) (think channel "" "chat-100")
+              (is (search "Current: high" text))
+              (is (fourth (third (third (first controls)))) "the selected effort is marked current")
+              (is (null (fourth (second controls))) "provider default is not disabled after a pick"))
+            (is (search "Current: high" (first (think thread "" "chat-100-t42"))))
+            (is (search "follows p1/m1's provider default"
+                        (first (think thread "default" "chat-100-t42"))))
+            (is (equal "high" (nck::lane-effort host "chat-100-t42" '(:channel-id "100" :thread-id "42")))
+                "clearing a thread reveals the inherited channel pick")))))))
+
+(deftest channel-operator-a-room-effort-reaches-its-lane ()
+  ;; The room setting is projected onto each lane's durable model selection
+  ;; just before its turn starts, and clearing it removes the lane pick.
+  (with-temp-store ()
+    (with-stubbed-fdefinition (nle::effort-ladder (provider model)
+                                (if (or provider model)
+                                    '("off" "low" "high")
+                                    '("off" "low" "high")))
+      (let* ((host (test-host :name "lane-effort"))
+             (ask (nck:make-ask :room "chat-100" :lane "chat-100-m5"
+                                :target '(:channel-id "100"))))
+        (nlk:create-session :id "chat-100-m5")
+        (nck::set-room-effort host "chat-100" "high")
+        (nck::apply-lane-effort host ask)
+        (is (equal "high" (nlk:session-model-effort "chat-100-m5")))
+        (nck::set-room-effort host "chat-100" nil)
+        (nck::apply-lane-effort host ask)
+        (is (null (nlk:session-model-effort "chat-100-m5")))))))
+
 (deftest channel-operator-a-lane-runs-on-its-rooms-model ()
   ;; A lane is a session of its own, and a pin does not ride a fork: the
   ;; lane is pinned to its room's model at each ask, and let go of it when

@@ -204,6 +204,9 @@ the skills to view — or NIL when it sets neither."
 (defparameter +room-models-key+ "room-models"
   "The state key the models /models set in rooms are kept under.")
 
+(defparameter +room-efforts-key+ "room-efforts"
+  "The state key the reasoning effort /think sets in rooms are kept under.")
+
 (defparameter +room-voices-key+ "room-voices"
   "The state key the voice replies /voice set in rooms are kept under.")
 
@@ -309,6 +312,37 @@ then default — none outside a channel's room."
   "Make ROOM run on PROVIDER's MODEL; MODEL NIL clears ROOM's."
   (set-room-setting host +room-models-key+ room
                     (and model (nlk:json-object "provider" provider "model" model))))
+
+(defun room-effort (host room)
+  "ROOM's reasoning-effort pick, or NIL when it follows the provider default."
+  (and room (gethash room (room-settings host +room-efforts-key+))))
+
+(defun set-room-effort (host room effort)
+  "Make ROOM use EFFORT from its next ask; NIL follows the provider default."
+  (set-room-setting host +room-efforts-key+ room effort))
+
+(defun lane-effort (host room target)
+  "ROOM's effort pick, inherited by a thread from its channel, or NIL."
+  (loop for candidate in (list room (room-parent-session-id host target))
+        for effort = (room-effort host candidate)
+        when effort do (return effort)))
+
+(defun effort-target (host room target agent)
+  "(values PROVIDER MODEL LADDER): the target ROOM's next lane binds."
+  (multiple-value-bind (provider model) (lane-model host room target agent)
+    (unless model
+      (multiple-value-setq (provider model) (nle:gateway-target nil)))
+    (values provider model (nle::effort-ladder provider model))))
+
+(defun apply-lane-effort (host ask)
+  "Apply ASK's room effort after its room model has been applied."
+  (let ((effort (lane-effort host ask.room ask.target)))
+    (multiple-value-bind (provider model) (nlk:session-model-selection ask.lane)
+      (unless (equal effort (nlk:session-model-effort ask.lane))
+        (nlk:record-session-model-selection ask.lane
+                                            :provider provider
+                                            :model model
+                                            :effort effort)))))
 
 (defun lane-model (host room target agent)
   "(values PROVIDER MODEL WHY) a lane of ROOM at TARGET, run as AGENT (a
@@ -428,6 +462,57 @@ picker card, (values TEXT CONTROLS)."
          (set-room-model host room provider model)
          (format nil "this ~a runs ~a/~a from its next ask; the organism's default is unchanged"
                  here provider model))))))
+
+;;; --- the effort picker (a /think card) ---------------------------------------------------
+
+(defun room-effort-command (host candidate args room
+                            &aux (words (nlk:split-words (or args "")))
+                                  (target (channel-target candidate))
+                                  (agent (agent-of host (agent-for host room target
+                                                                    (candidate-source candidate))))
+                                  (here (if (getf target :thread-id) "thread" "channel"))
+                                  (cards (platform-choices host.platform)))
+  "Worker thread: the room's /think ARGS — a reasoning effort for ROOM alone,
+or a picker card where the platform carries choices."
+  (multiple-value-bind (provider model ladder) (effort-target host room target agent)
+    (let ((current (lane-effort host room target)))
+      (cond
+        ((and cards (null words))
+         (effort-card host room provider model ladder current))
+        ((null words)
+         (format nil "this ~a uses ~a/~a at ~a~%/think <rung> changes it; /think default follows the provider"
+                 here provider model (or current "provider default")))
+        ((and (null (rest words))
+              (member (first words) '("default" "reset") :test #'string-equal))
+         (set-room-effort host room nil)
+         (format nil "this ~a follows ~a/~a's provider default from its next ask"
+                 here provider model))
+        ((rest words)
+         "usage: /think [off | minimal | low | medium | high | xhigh | max | default]")
+        ((null ladder)
+         (format nil "~a/~a offers no reasoning control" provider model))
+        ((not (member (first words) ladder :test #'string-equal))
+         (error "~s is not a reasoning effort ~a/~a offers; the ladder: ~{~a~^ ~}"
+                (first words) provider model ladder))
+        (t
+         (set-room-effort host room (first words))
+         (format nil "this ~a uses ~a/~a at ~a from its next ask; the organism's default is unchanged"
+                 here provider model (first words)))))))
+
+(defun effort-card (host room provider model ladder current)
+  "(values TEXT CONTROLS): the room's reasoning-effort picker."
+  (declare (ignore host room))
+  (values (format nil "## Reasoning Effort~%Target: ~a/~a~%Current: ~a~%Select the effort for this room's next asks."
+                  provider model (or current "provider default"))
+          (list (list :menu "Select effort"
+                      (loop for rung in ladder
+                            collect (menu-choice rung (format nil "/think ~a" rung)
+                                                 :description (if (equal rung "off")
+                                                                  "Answer without reasoning."
+                                                                  "")
+                                                 :current (equal rung current))))
+                (choice "Provider default" "/think default"
+                        :disabled (null current)))))
 
 ;;; --- the model picker (a /models card) ---------------------------------------------------
 ;;; Where a platform's messages carry choices, bare /models answers with a
