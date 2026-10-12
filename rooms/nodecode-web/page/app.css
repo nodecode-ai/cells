@@ -460,7 +460,7 @@ code, pre, kbd { font-family: var(--mono); }
 .prose.thought strong { color: var(--thought-strong); }
 .act .title.prose :is(p, h1, h2, h3, h4, h5, h6) { margin: 0; font: inherit; }
 /* Explicit foreground overrides token accents, not their other attributes. */
-.prose .inline-color :is(strong, a, code) { color: inherit; }
+.prose .inline-color :is(strong, em, a, code) { color: inherit; }
 .prose em { font-style: italic; font-synthesis: style; color: var(--primary); }
 .prose a { color: var(--primary); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent-fill) 50%, transparent); text-underline-offset: 0.18em; }
 .prose code { background: var(--subtle); padding: 2px 6px; font-size: 0.9em; color: var(--foreground); }
