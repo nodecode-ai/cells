@@ -36,6 +36,7 @@
   --tertiary: #959595;
   --faint: #575757;
   --dim: #3a3a3a;
+  --thought-strong: #4D6174;
   --accent: #fa8b3e;
   --danger-lit: #ff9159;
   /* The accent as a mark rather than a word: a lamp, a switch's line, a hatch.
@@ -105,6 +106,7 @@
   --tertiary: #626262;
   --faint: #8e8e8e;
   --dim: #c4c4c4;
+  --thought-strong: #4D6174;
   --accent: #9e4400;
   --danger-lit: #ad3419;
   --accent-fill: #dd6408;
@@ -455,6 +457,10 @@ code, pre, kbd { font-family: var(--mono); }
 .prose > :is(h1, h2, h3, h4, h5, h6) { margin-bottom: -6px; }
 .prose > :is(h1, h2, h3, h4, h5, h6):not(:first-child) { margin-top: 10px; }
 .prose strong { font-weight: 600; color: var(--primary); }
+.prose.thought strong { color: var(--thought-strong); }
+.act .title.prose :is(p, h1, h2, h3, h4, h5, h6) { margin: 0; font: inherit; }
+/* Explicit foreground overrides token accents, not their other attributes. */
+.prose .inline-color :is(strong, a, code) { color: inherit; }
 .prose em { font-style: italic; font-synthesis: style; color: var(--primary); }
 .prose a { color: var(--primary); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent-fill) 50%, transparent); text-underline-offset: 0.18em; }
 .prose code { background: var(--subtle); padding: 2px 6px; font-size: 0.9em; color: var(--foreground); }

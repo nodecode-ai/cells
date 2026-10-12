@@ -23,6 +23,7 @@
   :pathname "test/"
   :serial t
   :components ((:file "support")
-               (:file "cell-test"))
+               (:file "cell-test")
+               (:file "inline-color-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-web-tests)))

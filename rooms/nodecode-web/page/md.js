@@ -28,13 +28,61 @@ const TARGET = String.raw`\((?:&lt;((?:(?!&[lg]t;)[^\u0000])+)&gt;|((?!&lt;)[^)\
 const IMAGE = new RegExp(String.raw`!\[([^\]]*)\]${TARGET}`, "g");
 const LINK = new RegExp(String.raw`\[([^\]]+)\]${TARGET}`, "g");
 
-function inline(text) {
+// The hex-only foreground contract is shared with the TUI and locked by
+// src/src/tui/inline-colors.json in Nodecode. Nothing else is raw HTML.
+const COLOR_OPEN = /^<span style="color: *(#[0-9a-fA-F]{6})">/;
+function colorRun(text, start) {
+  const open = text.slice(start).match(COLOR_OPEN);
+  if (!open) return null;
+  const body = start + open[0].length;
+  let at = body, depth = 1;
+  while (at < text.length) {
+    if (text[at] === "\\") { at += 2; continue; }
+    if (text[at] === "`") {
+      const close = text.indexOf("`", at + 1);
+      at = close < 0 ? at + 1 : close + 1;
+      continue;
+    }
+    if (text.startsWith("</span>", at)) {
+      if (--depth === 0) return { body, close: at, end: at + 7, color: open[1] };
+      at += 7;
+      continue;
+    }
+    const nested = text.slice(at).match(COLOR_OPEN);
+    if (nested) {
+      if (++depth > 16) return null;
+      at += nested[0].length;
+    } else at++;
+  }
+  return null;
+}
+
+function colored(text, hold, depth) {
+  if (depth >= 16) return text;
+  let out = "", from = 0, at = 0;
+  while (at < text.length) {
+    if (text[at] === "\\") { at += 2; continue; }
+    if (text[at] === "`") {
+      const close = text.indexOf("`", at + 1);
+      at = close < 0 ? at + 1 : close + 1;
+      continue;
+    }
+    const run = text[at] === "<" && colorRun(text, at);
+    if (run) {
+      out += text.slice(from, at) + hold(`<span class="inline-color" data-color="${run.color}">${inline(text.slice(run.body, run.close), depth + 1)}</span>`);
+      at = from = run.end;
+    } else at++;
+  }
+  return out + text.slice(from);
+}
+
+function inline(text, depth = 0) {
   // Backslash escapes and code spans first, held aside so nothing in them is
   // read as a mark: an escaped character is itself, and a backslash inside a
   // code span is only a backslash.
   const held = [];
   const hold = (html) => `\u0000${held.push(html) - 1}\u0000`;
-  let out = text.replace(/\\([!-/:-@[-`{-~])|(`+)([^`]|[^`][\s\S]*?[^`])\2(?!`)/g,
+  let out = colored(text, hold, depth).replace(/\\([!-/:-@[-`{-~])|(`+)([^`]|[^`][\s\S]*?[^`])\2(?!`)/g,
     (_, escaped, _ticks, code) => hold(escaped ? escapeHtml(escaped) : `<code>${escapeHtml(code.trim())}</code>`));
   out = escapeHtml(out)
     // The page loads no picture from elsewhere (its img-src is its own), so an

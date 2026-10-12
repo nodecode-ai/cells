@@ -689,8 +689,8 @@ const plainLine = (text) => oneLine((text || "")
 // its way past. It opens only when the row could not hold it.
 function proseAct(row, kind) {
   const text = row.text || "";
-  const line = el("span", `title ${kind}`, plainLine(text));
-  if (text.length <= ONE_LINE && !text.includes("\n")) {
+  const line = proseOf(`title ${kind} prose`, text.split("\n")[0]);
+  if (line.textContent.length <= ONE_LINE && !text.includes("\n")) {
     const div = el("div", "act act-line");
     div.append(gutter(kind === "thought" ? "think" : "said"), line);
     return div;
@@ -698,7 +698,7 @@ function proseAct(row, kind) {
   const details = fold("act", `act-${row.id}`, false);
   const summary = el("summary");
   summary.append(gutter(kind === "thought" ? "think" : "said"), line);
-  details.append(summary, el("p", "prose-note", text));
+  details.append(summary, proseOf(`prose prose-note ${kind}`, text));
   return details;
 }
 
@@ -707,7 +707,7 @@ function thinking(row) {
   const div = el("div", "act thinking");
   const body = el("div");
   const tail = el("div", "tail");
-  tail.append(el("p", "", row.text || ""));
+  tail.append(proseOf("prose thought", row.text || ""));
   body.append(el("span", "head", t("Thinking…")), tail);
   div.append(gutter("think"), body);
   return div;
@@ -1190,6 +1190,11 @@ function cutLine(prose) {
 function proseOf(className, text, images = []) {
   const prose = el("div", className);
   prose.innerHTML = markdown(text || "", images.map((image) => image.target));
+  // A hex-only foreground fact, not an inline style attribute: assigning the
+  // property keeps the page's style-src 'self' policy intact.
+  for (const span of prose.querySelectorAll(".inline-color[data-color]")) {
+    if (/^#[0-9a-fA-F]{6}$/.test(span.dataset.color)) span.style.color = span.dataset.color;
+  }
   for (const mark of prose.querySelectorAll("span.picture")) {
     const image = images.find((each) => each.target === mark.dataset.target);
     mark.replaceWith(figureOf(image, image.id, mark.textContent));
