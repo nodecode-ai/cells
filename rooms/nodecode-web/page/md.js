@@ -57,7 +57,7 @@ function colorRun(text, start) {
   return null;
 }
 
-function colored(text, hold, depth) {
+function colored(text, hold, depth, held) {
   if (depth >= 16) return text;
   let out = "", from = 0, at = 0;
   while (at < text.length) {
@@ -69,22 +69,22 @@ function colored(text, hold, depth) {
     }
     const run = text[at] === "<" && colorRun(text, at);
     if (run) {
-      out += text.slice(from, at) + hold(`<span class="inline-color" data-color="${run.color}">${inline(text.slice(run.body, run.close), depth + 1)}</span>`);
+      out += text.slice(from, at) + hold(`<span class="inline-color" data-color="${run.color}">${inline(text.slice(run.body, run.close), depth + 1, held)}</span>`);
       at = from = run.end;
     } else at++;
   }
   return out + text.slice(from);
 }
 
-function inline(text, depth = 0) {
+function inline(text, depth = 0, held = []) {
   // Backslash escapes and code spans first, held aside so nothing in them is
   // read as a mark: an escaped character is itself, and a backslash inside a
   // code span is only a backslash.
-  const held = [];
+  if (depth === 0) text = text.replace(/\u0000/g, "␀");
   const hold = (html) => `\u0000${held.push(html) - 1}\u0000`;
-  let out = colored(text, hold, depth).replace(/\\([!-/:-@[-`{-~])|(`+)([^`]|[^`][\s\S]*?[^`])\2(?!`)/g,
+  let out = text.replace(/\\([!-/:-@[-`{-~])|(`+)([^`]|[^`][\s\S]*?[^`])\2(?!`)/g,
     (_, escaped, _ticks, code) => hold(escaped ? escapeHtml(escaped) : `<code>${escapeHtml(code.trim())}</code>`));
-  out = escapeHtml(out)
+  out = escapeHtml(colored(out, hold, depth, held))
     // The page loads no picture from elsewhere (its img-src is its own), so an
     // image is a link to it, named by its alt text -- but for a target among
     // PICTURES, which leaves a mark where the caller puts the picture.
