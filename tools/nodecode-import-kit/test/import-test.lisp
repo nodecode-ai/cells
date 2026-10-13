@@ -86,6 +86,10 @@
       (is (= 3 (length (directory (merge-pathnames "tester-memory/hermes-*.lisp" nlk::*cells-directory*)))))
       (is (search "— session hermes import"
                   (nlk::git-in-layer (nlk:knowledge-directory) "log" "--format=%s" "-1")) "kept under the import's name")
+      (is (= 1 (count-if (lambda (line) (search "— session hermes import" line))
+                         (uiop:split-string (nlk::git-in-layer (nlk:knowledge-directory) "log" "--format=%s")
+                                            :separator '(#\Newline))))
+          "the memories and the skill are one commit, not one each")
       (is (= 2 (length (symbol-value (find-symbol "*JOBS*" "NODECODE-CRON")))))
       (is (nlk:session-exists-p "hermes-20260623_150503_55c2a9"))
       (is (probe-file (nik::plan-report-path plan)) "the report is on disk")))))
@@ -919,5 +923,9 @@
                  (read-from-string text))))
     (is (equal description (third form)) "the description reads back as written")
     (is (equal '(:type :lesson :sources ("s-1")) (cdddr form)) "the options, and the prose is comments")
-    (nik::keep-definition "test" "kn-round" text)
+    ;; Kept as a member of its run's PROGN: the scribe files the member's own span, comments whole.
+    (let ((item (nik::make-item :kind "memory" :status "imported" :destination "kn-round"
+                                :world "test" :keep (list text))))
+      (nik::keep-definitions (list (cons item (nik::evaluate-definition text))))
+      (is (equal "imported" (nik::item-status item))))
     (is (equal (format nil "~{~a~^~%~}" lines) (nlk::knowledge-prose (nlk:knowledge-entry-named "kn-round" nil))))))

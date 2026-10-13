@@ -62,8 +62,9 @@ before the folders that read them — comes first.")
   "One thing the import would do."
   ;; STATUS is imported, skipped, conflict or error; REASON says why for the
   ;; last three and what for the first; DETAIL a plist of counts the report
-  ;; shows; ACTION the thunk that lands it.
-  kind status reason source destination world (detail '()) action)
+  ;; shows; ACTION the thunk that lands it, or KEEP for a definition: its
+  ;; text and the ledger's seed, (TEXT &key AT HOT SEED), kept with its run.
+  kind status reason source destination world (detail '()) action keep)
 
 (nlk:define-record (plan (:copier nil) (:constructor %make-plan) (:export items))
   "One import: the HOMES read newest first, the switches (OVERWRITE,
@@ -74,9 +75,10 @@ report went."
   stopped applied report-path)
 
 (defun add-item (plan kind status &key fact reason (source (and fact fact.source))
-                                       destination (world (and fact fact.world)) detail action)
+                                       destination (world (and fact fact.world)) detail action keep)
   (first (push (make-item :kind kind :status status :reason reason :source source
-                          :destination destination :world world :detail detail :action action)
+                          :destination destination :world world :detail detail :action action
+                          :keep keep)
                plan.items)))
 
 (defun kind-wanted-p (plan kind)
@@ -542,22 +544,41 @@ of it would refuse."
                               (dolist (entry (nlk:knowledge-entries) table)
                                 (setf (gethash (nlk:knowledge-entry-name entry) table) t)))))))
 
-(defun keep-definition (world name text &key at hot (seed t))
-  "TEXT, one definition, evaluated and kept by the scribe under the session
-`WORLD import'; the ledger seeded with its keep at AT unless SEED is NIL,
-and with a view now when the home's index had it HOT."
+(defun evaluate-definition (text)
+  "TEXT, one definition, read and evaluated in the evolved package: => the form."
   (let* ((*package* (find-package '#:nodecode.evolved))
-         (form (let ((*read-eval* nil)) (read-from-string text)))
-         (session (format nil "~a import" world))
-         kept)
-    (let ((said (with-output-to-string (*standard-output*)
-                  (eval form)
-                  (setf kept (nlk:record-definitions form text (length text)
-                                                     :session-id session :ledger nil)))))
-      (unless kept
-        (fail "~a not kept: ~a" name (nlk:one-line said))))
-    (when seed (nlk:note-knowledge-use name "keep" :session session :at (or at (nlk:iso-now))))
-    (when hot (nlk:note-knowledge-use name "view" :session session))))
+         (form (let ((*read-eval* nil)) (read-from-string text))))
+    (with-output-to-string (*standard-output*) (eval form))
+    form))
+
+(defun keep-definitions (run)
+  "RUN, (ITEM . FORM) each FORM evaluated already, kept by the scribe as one
+form a world under the session `WORLD import'; each item's ledger seeded with
+its keep at :AT unless :SEED is NIL, and with a view now when the home's index
+had it :HOT. An item the scribe did not keep is an error."
+  ;; One form, so one commit a folder: kept one by one, an import of 1,100
+  ;; memories was 1,100 commits and a hundred seconds of `Importing…'.
+  (dolist (world (nlk:distinct (mapcar (lambda (pair) (item-world (car pair))) run)))
+    (let* ((*package* (find-package '#:nodecode.evolved))
+           (own (remove world run :key (lambda (pair) (item-world (car pair))) :test-not #'equal))
+           (session (format nil "~a import" world))
+           (text (format nil "(progn~{~%~a~})" (mapcar (lambda (pair) (first (item-keep (car pair)))) own)))
+           (kept '())
+           (said (with-output-to-string (*standard-output*)
+                   (setf kept (nlk:record-definitions (cons 'progn (mapcar #'cdr own)) text (length text)
+                                                      :session-id session :ledger nil)))))
+      (loop for (item . form) in own
+            do (destructuring-bind (&key at hot (seed t)) (rest item.keep)
+                 (handler-case
+                     (cond ((not (member (nlk:definition-key form) kept :test #'equal))
+                            (fail "~a not kept: ~a" item.destination (nlk:one-line said)))
+                           (t (when seed
+                                (nlk:note-knowledge-use item.destination "keep"
+                                                        :session session :at (or at (nlk:iso-now))))
+                              (when hot
+                                (nlk:note-knowledge-use item.destination "view" :session session))))
+                   (error (condition)
+                     (setf item.status "error" item.reason (princ-to-string condition)))))))))
 
 (defun plan-keep (plan kind fact name text &rest keys &key reason &allow-other-keys)
   "One item keeping TEXT, the definition of NAME a FACT became: a conflict
@@ -573,9 +594,7 @@ skip when this organism keeps NAME already and the plan does not overwrite."
          (add-item plan kind "skipped" :fact fact :destination name
                    :reason "already here (--overwrite replaces it)"))
         (t (add-item plan kind "imported" :fact fact :destination name :reason reason
-                     :action (lambda ()
-                               (apply #'keep-definition fact.world name text
-                                      (alexandria:remove-from-plist keys :reason)))))))
+                     :keep (cons text (alexandria:remove-from-plist keys :reason))))))
 
 (defun plan-memory (plan &aux (hot (mapcar #'fact-id (plan-facts plan :hot)))
                               (seen (make-hash-table :test #'equal)))
@@ -1118,11 +1137,20 @@ TAKEOVER, the default, stops a foreign gateway so its bots answer from here."
 
 (defun apply-plan (plan)
   "Run every imported item's action, in order; a failure is that item's
-error and the next item still runs. The report lands beside the markers."
-  (dolist (item plan.items)
-    (when (and (equal item.status "imported") item.action)
-      (handler-case (funcall item.action)
-        (error (condition) (setf item.status "error" item.reason (princ-to-string condition))))))
+error and the next item still runs. A definition is evaluated in that order
+and kept with its run (KEEP-DEFINITIONS) before the next action runs. The
+report lands beside the markers."
+  (let ((run '()))
+    (flet ((keep-run ()
+             (when run (keep-definitions (nreverse run)) (setf run '()))))
+      (dolist (item plan.items)
+        (when (equal item.status "imported")
+          (unless item.keep (keep-run))
+          (handler-case (if item.keep
+                            (push (cons item (evaluate-definition (first item.keep))) run)
+                            (when item.action (funcall item.action)))
+            (error (condition) (setf item.status "error" item.reason (princ-to-string condition))))))
+      (keep-run)))
   (setf plan.applied t)
   (write-report plan)
   plan)

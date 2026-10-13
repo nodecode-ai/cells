@@ -242,14 +242,26 @@ has none."
     (and (hash-table-p config) (hash-table-p (gethash "projects" config))
          (alexandria:hash-table-keys (gethash "projects" config)))))
 
+(defvar *project-roots* nil
+  "Claude Code's project roots by munged spelling, read once per walk (READ-FACTS binds it).")
+
 (defun trail-project (trail)
   "The project a memory under TRAIL is about when it sits in a folder named
 for one -- Claude Code's projects/<root, munged>/memory/: the root
 ~/.claude.json names whose munged spelling is that folder's, else NIL."
+  ;; Read per memory, ~/.claude.json (200 KB on a working box) was decoded
+  ;; once for each of 1,100 entries: ten seconds of a first frame's import.
   (let ((munged (second (member "projects" trail :test #'string=))))
     (and munged
-         (find-if (lambda (root) (string-equal munged (ppcre:regex-replace-all "[^A-Za-z0-9]" root "-")))
-                  (claude-projects)))))
+         (values (gethash (string-downcase munged)
+                          (or *project-roots*
+                              (setf *project-roots*
+                                    (let ((table (make-hash-table :test 'equal)))
+                                      (dolist (root (claude-projects) table)
+                                        (let ((key (string-downcase
+                                                    (ppcre:regex-replace-all "[^A-Za-z0-9]" root "-"))))
+                                          (unless (gethash key table)
+                                            (setf (gethash key table) root))))))))))))
 
 (defun memory-file-fact (home relative trail fields body)
   "One remembered entry from a memory file whose frontmatter names it: its
@@ -368,7 +380,8 @@ by the memory they name and its tool sightings as calls."
   "Everything the home holds, as facts, HOME filled in as it goes."
   ;; SESSIONS nil leaves the conversations alone — what the first frame wants,
   ;; since a transcript store is gigabytes and a provider key is bytes.
-  (let ((facts '()) (budget 6000) (first-root (uiop:ensure-directory-pathname (first home.roots))))
+  (let ((facts '()) (budget 6000) (first-root (uiop:ensure-directory-pathname (first home.roots)))
+        (*project-roots* nil))
     (labels ((visit (file relative trail)
                (cond
                  ((and (string-equal "SKILL.md" (file-namestring file))
