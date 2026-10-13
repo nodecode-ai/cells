@@ -970,3 +970,33 @@
                  ("importing" "bad" "imported") ("finished" "bad" "error"))
                (nreverse events)))
     (is (equal "error" (nik:item-status bad)))))
+
+(deftest import-route-streams-actual-outcomes-before-the-terminal-report (with-import-runtime (home box))
+  (import-write box ".claude/CLAUDE.md" "The fixture imports real instructions.")
+  (let* ((request (nlk:encode-json-object (nlk:json-object "method" "apply" "source" "claude"
+                                                       "only" "instructions" "keep_running" t "stream" t)))
+         (reply (nik::import-route (list :content-length (length request) :content-type "application/json"
+                                        :raw-body (make-string-input-stream request))))
+         (events '()) (closed nil))
+    (is (functionp reply))
+    (funcall reply
+             (lambda (response)
+               (is (= 200 (first response)))
+               (is (equal "text/event-stream" (getf (second response) :content-type)))
+               (is (= 2 (length response)) "the Clack responder must return a writer")
+               (lambda (chunk &key close)
+                 (if close
+                     (setf closed t)
+                     (nlk:read-events (make-string-input-stream chunk)
+                                      (lambda (data)
+                                        (let ((event (nlk:decode-json data)))
+                                          (when (equal "finished" (gethash "phase" event))
+                                            (is (probe-file (merge-pathnames "AGENTS.md" home))))
+                                          (push event events))
+                                        nil))))))
+    (setf events (nreverse events))
+    (is closed)
+    (is (equal '("item" "item" "result") (mapcar (lambda (event) (gethash "type" event)) events)))
+    (is (equal '("importing" "finished") (mapcar (lambda (event) (gethash "phase" event)) (butlast events))))
+    (is (equal "imported" (nlk:json-value (second events) :string "item" "status")))
+    (is (eq t (nlk:json-value (car (last events)) :any "result" "applied")))))
