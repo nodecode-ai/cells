@@ -12,7 +12,7 @@
   (multiple-value-bind (base sections tools)
       (nle::turn-prompt id (nle::snapshot-tool-bindings))
     (let ((turns (nle::history-turns-for-session (nle:intern-session id))))
-      (nodecode.task-proof::context-text
+      (nodecode.working-context-proof::context-text
        (nle::compile-turn-context
         (nle::make-context-request
          :session-id id
@@ -45,14 +45,14 @@
 
 (deftest context-cell-requests-survive-edits-eviction-and-forks ()
   (context-cell-install)
-  (nodecode.task-proof::with-database
+  (nodecode.working-context-proof::with-database
    (lambda ()
      (nlk:create-session :id "context-cell-parent" :cwd "/tmp/")
-     (nodecode.task-proof::enter "context-cell-parent" "OLD QUESTION")
+     (nodecode.working-context-proof::enter "context-cell-parent" "OLD QUESTION")
      (nlk:record-assistant-message nle::*current-durable-turn*
                                    (nle::message "assistant" "DISPOSABLE OLD OUTPUT"))
-     (nodecode.task-proof::finish)
-     (nodecode.task-proof::enter "context-cell-parent" "KEEP CURRENT ASK")
+     (nodecode.working-context-proof::finish)
+     (nodecode.working-context-proof::enter "context-cell-parent" "KEEP CURRENT ASK")
      ;; Even an empty ranked index and a removed durable section cannot cool the skill.
      (nlk:set-harness-section "context-cell-parent" "index" "")
      (nlk:set-harness-section "context-cell-parent" "context" "")
@@ -67,18 +67,18 @@
        (is (search "KEEP CURRENT ASK" request) "protected user input survives"))
      (is (context-cell-once "context-cell-parent") "empty edit cannot delete the skill")
      (let ((anchor (nlk:durable-turn-turn-id nle::*current-durable-turn*)))
-       (nodecode.task-proof::finish)
+       (nodecode.working-context-proof::finish)
        (nlk:create-session :id "context-cell-child" :parent "context-cell-parent" :anchor-turn-id anchor))
      (nlk:advance-history-floor "context-cell-parent"
                                 (1+ (nlk:session-log-cursor "context-cell-parent")))
-     (nodecode.task-proof::enter "context-cell-parent" "AFTER EVICTION")
+     (nodecode.working-context-proof::enter "context-cell-parent" "AFTER EVICTION")
      (is (context-cell-once "context-cell-parent") "history eviction repins the complete skill")
      (nle::clear-hydration-cache)
      (is (context-cell-once "context-cell-parent") "cache loss cannot cool the skill")
-     (nodecode.task-proof::finish)
-     (nodecode.task-proof::enter "context-cell-child" "FORK CONTINUATION")
+     (nodecode.working-context-proof::finish)
+     (nodecode.working-context-proof::enter "context-cell-child" "FORK CONTINUATION")
      (is (context-cell-once "context-cell-child") "fork keeps the same complete skill")
-     (nodecode.task-proof::finish))))
+     (nodecode.working-context-proof::finish))))
 
 (deftest context-cell-reopens-with-the-skill ()
   (context-cell-install)
@@ -86,15 +86,15 @@
     (ensure-directories-exist path)
     (unwind-protect
          (progn
-           (nodecode.task-proof::with-database
+           (nodecode.working-context-proof::with-database
             (lambda ()
               (nlk:create-session :id "context-cell-replay" :cwd "/tmp/")
-              (nodecode.task-proof::enter "context-cell-replay" "FIRST")
+              (nodecode.working-context-proof::enter "context-cell-replay" "FIRST")
               (is (context-cell-once "context-cell-replay") "first request pins full skill")
-              (nodecode.task-proof::finish)) :path path)
-           (nodecode.task-proof::with-database
+              (nodecode.working-context-proof::finish)) :path path)
+           (nodecode.working-context-proof::with-database
             (lambda ()
-              (nodecode.task-proof::enter "context-cell-replay" "AFTER REOPEN")
+              (nodecode.working-context-proof::enter "context-cell-replay" "AFTER REOPEN")
               (is (context-cell-once "context-cell-replay") "SQLite reopen retains full skill")
-              (nodecode.task-proof::finish)) :path path))
+              (nodecode.working-context-proof::finish)) :path path))
       (when (probe-file path) (delete-file path)))))
