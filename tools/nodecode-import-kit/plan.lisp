@@ -1135,21 +1135,30 @@ TAKEOVER, the default, stops a foreign gateway so its bots answer from here."
     (setf plan.items (nreverse plan.items))
     plan))
 
-(defun apply-plan (plan)
+(defun apply-plan (plan &key progress)
   "Run every imported item's action, in order; a failure is that item's
 error and the next item still runs. A definition is evaluated in that order
 and kept with its run (KEEP-DEFINITIONS) before the next action runs. The
 report lands beside the markers."
   (let ((run '()))
-    (flet ((keep-run ()
-             (when run (keep-definitions (nreverse run)) (setf run '()))))
+    (labels ((notify (phase item) (when progress (funcall progress phase item)))
+             (keep-run ()
+               (when run
+                 (let ((kept (nreverse run)))
+                   (keep-definitions kept)
+                   (dolist (pair kept) (notify "finished" (car pair))))
+                 (setf run '()))))
       (dolist (item plan.items)
         (when (equal item.status "imported")
           (unless item.keep (keep-run))
+          (notify "importing" item)
           (handler-case (if item.keep
                             (push (cons item (evaluate-definition (first item.keep))) run)
                             (when item.action (funcall item.action)))
-            (error (condition) (setf item.status "error" item.reason (princ-to-string condition))))))
+            (error (condition) (setf item.status "error" item.reason (princ-to-string condition))))
+          ;; Definitions finish only after the batch is persisted above.
+          (unless (find item run :key #'car)
+            (notify "finished" item))))
       (keep-run)))
   (setf plan.applied t)
   (write-report plan)

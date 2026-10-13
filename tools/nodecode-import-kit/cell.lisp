@@ -26,13 +26,13 @@
 
 ;;; --- the verbs ----------------------------------------------------------------------------
 
-(defun run-import (&key source overwrite (takeover t) only without apply)
+(defun run-import (&key source overwrite (takeover t) only without apply progress)
   "The plan for SOURCE, applied when APPLY — and then the watch started
 for any bot it held for a running foreign gateway. => the plan."
   (let ((plan (make-plan :source source :overwrite overwrite :takeover takeover
                          :only only :without without)))
     (cond (apply
-           (apply-plan plan)
+           (apply-plan plan :progress progress)
            (funcall *start-watch*))
           (t (write-report plan)))
     plan))
@@ -177,7 +177,7 @@ said as a notice too."
 (defun param-flag (params key)
   (eq (nlk:json-value params :any key) t))
 
-(defun run-method (method params)
+(defun run-method (method params &key progress)
   "The wizard's methods over the params object {source, only, without,
 overwrite, keep_running}, source a world name, a path or a list of world
 names: `plan' previews, `apply' writes, `scan' answers the same plan with
@@ -191,7 +191,7 @@ nothing written — the pasteable report."
                          :without (nlk:json-value params :text "without")
                          :overwrite (param-flag params "overwrite")
                          :takeover (not (param-flag params "keep_running"))
-                         :apply (equal method "apply"))))
+                         :apply (equal method "apply") :progress progress)))
 
 (defun import-route (env &aux (request (nle::gateway-request-json env))
                                (method (nlk:json-value request :string "method")))
@@ -211,10 +211,27 @@ target) -- and answers its value."
              (nlk:json-object "ok" :false "reason" (redact-secrets (princ-to-string condition)
                                                                    (target-secrets))))))
         ((member method '("plan" "apply" "scan") :test #'equal)
-         (handler-case (run-method method request)
-           (error (condition)
-             (nlk:json-object "status_text" (format nil "import: ~a" condition)
-                              "error" (princ-to-string condition)))))
+         (flet ((run (&optional progress)
+                  (handler-case (run-method method request :progress progress)
+                    (error (condition)
+                      (nlk:json-object "status_text" (format nil "import: ~a" condition)
+                                       "error" (princ-to-string condition))))))
+           (if (and (equal method "apply") (param-flag request "stream"))
+               ;; Live-only outcomes ride this response; the plan's report
+               ;; remains the durable authority. No sync frame or poll cache.
+               (lambda (responder)
+                 (let ((writer (funcall responder '(200 (:content-type "text/event-stream"
+                                                        :cache-control "no-cache")))))
+                   (flet ((send (event)
+                            (funcall writer (format nil "data: ~a~%~%" (nlk:encode-json-object event)))))
+                     (unwind-protect
+                          (send (nlk:json-object
+                                 "type" "result" "result"
+                                 (run (lambda (phase item)
+                                        (send (nlk:json-object "type" "item" "phase" phase
+                                                               "item" (item-json item)))))))
+                       (funcall writer "" :close t)))))
+               (run))))
         (t (fail "no method ~s; plan, apply, scan or verify" method))))
 
 ;;; --- the entry ----------------------------------------------------------------------------

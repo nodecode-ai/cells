@@ -948,3 +948,25 @@
       (nik::keep-definitions (list (cons item (nik::evaluate-definition text))))
       (is (equal "imported" (nik::item-status item))))
     (is (equal (format nil "~{~a~^~%~}" lines) (nlk::knowledge-prose (nlk:knowledge-entry-named "kn-round" nil))))))
+
+(deftest import-progress-follows-actions-and-persisted-keeps (with-import-runtime (home box))
+  (let* ((written nil) (events '())
+         (item (nik::make-item :kind "providers" :status "imported" :destination "fixture"
+                               :action (lambda () (setf written t))))
+         (bad (nik::make-item :kind "memory" :status "imported" :destination "bad"
+                              :action (lambda () (error "fixture failure"))))
+         (keep (nik::make-item :kind "memory" :status "imported" :destination "progress-note" :world "fixture"
+                               :keep (list "(define-memory progress-note \"fixture\" :type :reference)" :seed nil)))
+         (plan (nik::%make-plan :settings (list :home home) :items (list item keep bad))))
+    (nik:apply-plan plan :progress
+      (lambda (phase current)
+        (when (eq current item)
+          (is (eq written (equal phase "finished")) "completion follows the real writer"))
+        (when (and (eq current keep) (equal phase "finished"))
+          (is (probe-file (merge-pathnames "cells/tester-memory/progress-note.lisp" home)) "kept means persisted, not merely evaluated"))
+        (push (list phase (nik:item-destination current) (nik:item-status current)) events)))
+    (is (equal '(("importing" "fixture" "imported") ("finished" "fixture" "imported")
+                 ("importing" "progress-note" "imported") ("finished" "progress-note" "imported")
+                 ("importing" "bad" "imported") ("finished" "bad" "error"))
+               (nreverse events)))
+    (is (equal "error" (nik:item-status bad)))))
