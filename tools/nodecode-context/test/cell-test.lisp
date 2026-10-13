@@ -36,7 +36,11 @@
     (is (= 1 (count "context" sections :key #'car :test #'equal)) "loading twice installs one section")
     (is (equal nodecode-context::*skill* (cdr (assoc "context" sections :test #'equal))) "full skill, not just its name, is always supplied")
     (is (<= 1 (length nodecode-context::*skill*) 650) "the hot instruction stays small")
-    (is (search "Before your final answer" nodecode-context::*skill*) "review precedes the final answer")
+    (is (search "During substantial tool work" nodecode-context::*skill*) "review also happens during the turn")
+    (is (search "at useful checkpoints" nodecode-context::*skill*) "cleanup follows useful checkpoints, not a fixed schedule")
+    (is (search "after settling a subproblem" nodecode-context::*skill*) "a settled subproblem is a concrete checkpoint")
+    (is (search "before your final answer" nodecode-context::*skill*) "pre-final review remains")
+    (is (search "not after every tool call" nodecode-context::*skill*) "avoid a per-tool editing ritual")
     (is (search "none when unnecessary" nodecode-context::*skill*) "no deletion quota")))
 
 (deftest context-cell-requests-survive-edits-eviction-and-forks ()

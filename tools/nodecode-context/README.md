@@ -2,8 +2,9 @@
 
 A built-in, prompt-only cell, compiled into `nodecode/bin` even with an empty
 home or `--pristine`. Its one short rule asks the model to review its
-editable context before a final answer after substantial tool work, keep what
-matters, and remove redundant history only when useful.
+editable context at useful checkpoints during substantial tool work (for example,
+after settling a subproblem) and before a final answer. Keep what matters and
+remove redundant history only when useful, not after every tool call.
 
 The full rule is always in the protected `context` harness block. It is not a
 ranked knowledge entry: index budgets, aging, context-file edits and history
