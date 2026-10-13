@@ -86,10 +86,9 @@
       (is (= 3 (length (directory (merge-pathnames "tester-memory/hermes-*.lisp" nlk::*cells-directory*)))))
       (is (search "— session hermes import"
                   (nlk::git-in-layer (nlk:knowledge-directory) "log" "--format=%s" "-1")) "kept under the import's name")
-      (is (= 1 (count-if (lambda (line) (search "— session hermes import" line))
-                         (uiop:split-string (nlk::git-in-layer (nlk:knowledge-directory) "log" "--format=%s")
-                                            :separator '(#\Newline))))
-          "the memories and the skill are one commit, not one each")
+      (let ((subjects (uiop:split-string (nlk::git-in-layer (nlk:knowledge-directory) "log" "--format=%s")
+                                         :separator '(#\Newline))))
+        (is (= 1 (count-if (lambda (line) (search "— session hermes import" line)) subjects)) "the memories and the skill are one commit, not one each"))
       (is (= 2 (length (symbol-value (find-symbol "*JOBS*" "NODECODE-CRON")))))
       (is (nlk:session-exists-p "hermes-20260623_150503_55c2a9"))
       (is (probe-file (nik::plan-report-path plan)) "the report is on disk")))))
@@ -694,6 +693,26 @@
                 (nik:item-reason (import-item plan "providers" "general.default_model"))))
     (is (import-item plan "providers" "providers.llm-corp-example"))
     (is (null (import-item plan "providers" "providers.openai")))))
+
+(deftest import-files-an-endpoint-named-by-its-key-under-its-host (with-import-runtime (home box))
+  ;; An OpenCode home named a provider by its own key, and the key landed as
+  ;; a provider id the lists showed (2026-10-13). The endpoint lands under its
+  ;; host's words with its key and the model that named it, and no line the
+  ;; plan says carries the key.
+  (let ((named "sk-sel-0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"))
+    (import-write box ".config/opencode/opencode.json"
+                  (format nil "{\"model\": \"~a/kimi-k2.7-code\", \"provider\": {\"~a\": {\"npm\": \"@ai-sdk/openai-compatible\", \"models\": {\"kimi-k2.7-code\": {}}, \"options\": {\"baseURL\": \"https://api.select.example.test/v1\", \"apiKey\": \"~a\"}}}}"
+                          named named named))
+    (let ((plan (nik:make-plan :source "opencode" :settings (list :home home))))
+      (is (not (search named (with-output-to-string (out) (shasht:write-json (nik:plan-json plan) out)))) "the plan never says the key")
+      (nik:apply-plan plan)
+      (is-shape (import-config)
+        ((:text "providers" "select-example" "base_url") "https://api.select.example.test/v1")
+        ((:text "general" "default_model" "provider") "select-example"))
+      (is (null (nth-value 1 (nlk:json-value (import-config) :any "providers" named))))
+      (let ((auth (import-auth)))
+        (is (equal named (nlk:json-value auth :text "api_keys" "select-example" "key")))
+        (is (null (nth-value 1 (nlk:json-value auth :any "api_keys" named))) "no key is filed under itself")))))
 
 (deftest import-places-a-bare-model-on-the-one-provider-that-serves-it (with-import-runtime (home box))
   ;; am-04: Claude Code writes `opus' beside the Anthropic key it keeps, Codex

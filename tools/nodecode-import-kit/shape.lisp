@@ -217,14 +217,18 @@ the catalog's row when BASE is that provider's api, else the host's words
   ;; another provider that a home files under a wire's name -- Qwen Code lists
   ;; every OpenAI-compatible endpoint under `modelProviders.openai'. It lands
   ;; under an id of its own, CLAIMED remembering the name the home used, so an
-  ;; import never repoints the built-in and its key never files under it.
+  ;; import never repoints the built-in and its key never files under it. So
+  ;; does an endpoint a home names by its own key -- an OpenCode home's did,
+  ;; and the key landed as a provider id the lists showed (2026-10-13) --
+  ;; and the key leaves the source line; with no endpoint there is no id.
   (let* ((claimed (entry-provider-id index trail))
          (base (text-of-base index))
-         (id (if (and claimed base
-                      (nlk:when-let (own (builtin-endpoint claimed))
-                        (not (equal (endpoint-host base) (endpoint-host own)))))
-                 (endpoint-id base world)
-                 claimed))
+         (id (cond ((nle::key-shaped-p claimed) (and base (endpoint-id base world)))
+                   ((and claimed base
+                         (nlk:when-let (own (builtin-endpoint claimed))
+                           (not (equal (endpoint-host base) (endpoint-host own)))))
+                    (endpoint-id base world))
+                   (t claimed)))
          (key (apply #'text-of index +key-names+))
          (key-env (apply #'text-of index +key-env-names+))
          (wire (string-downcase
@@ -261,7 +265,8 @@ the catalog's row when BASE is that provider's api, else the host's words
                                 when id collect id))))))
     (when id
       (make-fact :kind :provider :id id :world world
-                 :source (format nil "~a~@[ ~{~a~^.~}~]" source trail)
+                 :source (format nil "~a~@[ ~{~a~^.~}~]" source
+                                 (mapcar (lambda (key) (if (nle::key-shaped-p key) "(its key)" key)) trail))
                  :value (list :id id :sdk sdk :base base :key key :key-env key-env
                               :models models :claimed (and (not (equal id claimed)) claimed))))))
 
