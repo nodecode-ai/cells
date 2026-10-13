@@ -143,15 +143,26 @@ resolved and nothing read yet."
       (member lower +skip-directories+ :test #'string=)
       (and home.world (member name (nlk:agent-world-skip home.world) :test #'string-equal))))
 
+(defun read-octets-capped (file cap)
+  "FILE's octets, or NIL when it is larger than CAP or will not read."
+  ;; One read: through a character stream the text was built in a buffer that
+  ;; grew, a fifth of what reading a home's config consed (2026-10-13).
+  (and (<= (or (nlk:file-bytes file) 0) cap)
+       (ignore-errors
+        (with-open-file (in file :element-type '(unsigned-byte 8))
+          (let* ((octets (make-array (file-length in) :element-type '(unsigned-byte 8)))
+                 (end (read-sequence octets in)))
+            (if (= end (length octets)) octets (subseq octets 0 end)))))))
+
 (defun read-capped (file cap)
   "FILE's text, or NIL when it is larger than CAP or will not read."
-  (and (<= (or (nlk:file-bytes file) 0) cap)
-       (ignore-errors (uiop:read-file-string file :external-format :utf-8))))
+  (let ((octets (read-octets-capped file cap)))
+    (and octets (ignore-errors (sb-ext:octets-to-string octets :external-format :utf-8)))))
 
 ;;; --- convention: a config file ----------------------------------------------
 
-(defun environment-file-p (file &aux (name (file-namestring file)))
-  "Whether FILE is an environment file: `.env', `.env.local', `x.env'."
+(defun environment-file-p (name)
+  "Whether a file NAME is an environment file's: `.env', `.env.local', `x.env'."
   (or (uiop:string-prefix-p ".env." name)
       (uiop:string-suffix-p name ".env")))
 
@@ -174,9 +185,11 @@ resolved and nothing read yet."
 
 ;;; --- convention: instructions and memory ------------------------------------
 
+(defparameter +markdown-types+ '("md" "markdown" "txt")
+  "The types a file of prose carries.")
+
 (defun markdown-base (file)
-  (and (member (string-downcase (or (pathname-type file) "")) '("md" "markdown" "txt")
-               :test #'string=)
+  (and (member (string-downcase (or (pathname-type file) "")) +markdown-types+ :test #'string=)
        (string-upcase (pathname-name file))))
 
 (defun one-line-of (text limit)
@@ -192,20 +205,26 @@ resolved and nothing read yet."
 
 (defun read-config-facts (home file relative)
   ;; A settings file is kilobytes: past 2 MB it is a log or a cache wearing a .json name.
-  (let* ((text (read-capped file (* 2 1024 1024)))
+  (let* ((octets (read-octets-capped file (* 2 1024 1024)))
          (type (string-downcase (or (pathname-type file) "")))
-         (tree (and text
+         (text nil)
+         (tree (and octets
                     (handler-case
-                        (cond ((environment-file-p file)
-                               (alexandria:alist-hash-table (read-env-file text) :test #'equal))
-                              ((string= type "toml") (read-toml text))
-                              ((member type '("yaml" "yml") :test #'string=) (read-yaml text))
-                              ;; JSONC too: half the homes on a real box write `.json' that is JSONC.
-                              (t (nlk:decode-json (nlk::normalize-jsonc text))))
+                        (flet ((text () (setf text (sb-ext:octets-to-string octets :external-format :utf-8))))
+                          (cond ((environment-file-p (file-namestring file))
+                                 (alexandria:alist-hash-table (read-env-file (text)) :test #'equal))
+                                ((string= type "toml") (read-toml (text)))
+                                ((member type '("yaml" "yml") :test #'string=) (read-yaml (text)))
+                                ;; JSON from its octets, whole; JSONC too, which half the homes
+                                ;; on a real box write as `.json'. Octets that read as JSON
+                                ;; whole are their own normal form: a cache of half a megabyte
+                                ;; made text, normalized and made octets again was 20 MB consed.
+                                (t (or (ignore-errors (nlk:decode-json octets :whole t))
+                                       (nlk:decode-json (nlk::normalize-jsonc (text)))))))
                       (error (condition)
                         (push (format nil "~a did not read: ~a" relative condition) home.notes)
                         nil)))))
-    (cond ((null text)
+    (cond ((null octets)
            (note-unmapped home relative
                           (format nil "~d bytes, past the cap" (or (nlk:file-bytes file) 0)))
            '())
@@ -376,63 +395,104 @@ by the memory they name and its tool sightings as calls."
                                      :persona (and (member base +persona-names+ :test #'string=)
                                                    t))))))))
 
-(defun read-facts (home &key (sessions t))
-  "Everything the home holds, as facts, HOME filled in as it goes."
+(defun name-type (name &aux (dot (position #\. name :from-end t)))
+  "The type a file NAME's pathname reads: what follows its last dot, NIL when
+no dot follows its first character (`.env')."
+  (and dot (plusp dot) (subseq name (1+ dot))))
+
+(defun directory-entries (directory &aux (files '()) (subdirectories '())
+                                         (stat (make-instance 'sb-posix:stat)))
+  "The native DIRECTORY's entries, `/'-ended, as (values FILES SUBDIRECTORIES):
+names, a link counted as what it reaches and one that reaches nothing left
+out, in UIOP:DIRECTORY-FILES's and UIOP:SUBDIRECTORIES's order."
+  ;; One readdir and a stat a name. Through UIOP each directory was listed
+  ;; twice and each entry made a pathname and resolved: 3,000 directories of
+  ;; a working box's homes, 340 ms of a first frame's import before a file
+  ;; was opened (2026-10-13).
+  (dolist (name (nlk::directory-names directory))
+    (when (ignore-errors (sb-posix:stat (concatenate 'string directory name) stat))
+      (if (= (logand (sb-posix:stat-mode stat) sb-posix:s-ifmt) sb-posix:s-ifdir)
+          (push name subdirectories)
+          (push name files))))
+  ;; SBCL's DIRECTORY sorts by namestring: a subdirectory's ends in `/'.
+  (values (sort files #'string<)
+          (sort subdirectories #'string< :key (lambda (name) (concatenate 'string name "/")))))
+
+(defun read-facts (home &key (sessions t) (text t))
+  "Everything the home holds, as facts, HOME filled in as it goes; TEXT nil
+leaves its prose -- instructions, memory, skills, ledgers -- unread."
   ;; SESSIONS nil leaves the conversations alone — what the first frame wants,
-  ;; since a transcript store is gigabytes and a provider key is bytes.
+  ;; since a transcript store is gigabytes and a provider key is bytes. TEXT
+  ;; nil is a plan of keys and config alone: the setup walk's first, which
+  ;; skipped past nothing but the 1,800 files it never wanted.
   (let ((facts '()) (budget 6000) (first-root (uiop:ensure-directory-pathname (first home.roots)))
-        (*project-roots* nil))
-    (labels ((visit (file relative trail)
-               (cond
-                 ((and (string-equal "SKILL.md" (file-namestring file))
-                       (some (lambda (name) (uiop:string-prefix-p "skills" name)) trail))
-                  (push (skill-fact file relative (home-world-name home)) facts))
-                 ((and (not (member (string-downcase (file-namestring file))
-                                    '("package.json" "package-lock.json" "bun.lock" "bun.lockb"
-                                      "yarn.lock" "tsconfig.json" "jsconfig.json" "composer.lock"
-                                      "pnpm-lock.yaml")
-                                    :test #'string=))
-                       (or (environment-file-p file)
-                           (member (string-downcase (or (pathname-type file) ""))
-                                   '("json" "jsonc" "json5" "yaml" "yml" "toml") :test #'string=)))
-                  (setf facts (revappend (read-config-facts home file relative) facts)))
-                 ((markdown-base file)
-                  (setf facts (revappend (read-text-facts home file relative trail) facts)))
-                 ((member (file-namestring file) '("usage.jsonl" "sightings.jsonl") :test #'string=)
-                  (setf facts (revappend (usage-facts home file relative) facts)))))
+        (*project-roots* nil)
+        (*normal-names* (make-hash-table :test #'equal)))
+    (labels ((visit (path name trail &optional relative
+                     &aux (type (string-downcase (or (name-type name) ""))))
+               ;; PATH native, RELATIVE its name in the report when not FIRST-ROOT's;
+               ;; a pathname is made only for a file that is read
+               (flet ((file () (uiop:parse-native-namestring path))
+                      (relative (file) (or relative (enough-namestring file first-root))))
+                 (cond
+                   ((and text (string-equal "SKILL.md" name)
+                         (some (lambda (name) (uiop:string-prefix-p "skills" name)) trail))
+                    (let ((file (file)))
+                      (push (skill-fact file (relative file) (home-world-name home))
+                            facts)))
+                   ((and (not (member (string-downcase name)
+                                      '("package.json" "package-lock.json" "bun.lock" "bun.lockb"
+                                        "yarn.lock" "tsconfig.json" "jsconfig.json" "composer.lock"
+                                        "pnpm-lock.yaml")
+                                      :test #'string=))
+                         (or (environment-file-p name)
+                             (member type '("json" "jsonc" "json5" "yaml" "yml" "toml") :test #'string=)))
+                    (let ((file (file)))
+                      (setf facts (revappend (read-config-facts home file (relative file))
+                                             facts))))
+                   ((and text (member type +markdown-types+ :test #'string=))
+                    (let ((file (file)))
+                      (setf facts (revappend (read-text-facts home file (relative file) trail)
+                                             facts))))
+                   ((and text (member name '("usage.jsonl" "sightings.jsonl") :test #'string=))
+                    (let ((file (file)))
+                      (setf facts (revappend (usage-facts home file (relative file))
+                                             facts)))))))
              ;; A conversation directory is crossed, never read (no settings) nor skipped (memory lives in one).
              (walk (directory trail depth crossing)
                (when (and (plusp budget) (<= depth +walk-file-depth+))
-                 (unless crossing
-                   (dolist (file (or (ignore-errors (uiop:directory-files directory)) '()))
-                     (when (plusp budget)
-                       (decf budget)
-                       (visit file (enough-namestring file first-root) trail))))
-                 (dolist (sub (or (ignore-errors (uiop:subdirectories directory)) '()))
-                   (let* ((name (nlk:folder-name sub))
-                          (lower (and name (string-downcase name)))
-                          (into (cond ((member lower +memory-directories+ :test #'equal) nil)
-                                      ;; a memory folder's projects/ holds memories, not transcripts
-                                      ((and (member lower '("sessions" "projects" "chats" "history" "storage"
-                                                            "conversations" "threads" "rollouts")
-                                                    :test #'equal)
-                                            (notany (lambda (name) (member name +memory-directories+
-                                                                           :test #'equal))
-                                                    trail))
-                                       t)
-                                      (t crossing))))
-                     (cond ((null name))
-                           ((skip-directory-p home name))
-                           (t (walk sub (append trail (list lower)) (1+ depth) into))))))))
+                 (multiple-value-bind (files subdirectories) (directory-entries directory)
+                   (unless crossing
+                     (dolist (name files)
+                       (when (plusp budget)
+                         (decf budget)
+                         (visit (concatenate 'string directory name) name trail))))
+                   (dolist (name subdirectories)
+                     (let* ((lower (string-downcase name))
+                            (into (cond ((member lower +memory-directories+ :test #'equal) nil)
+                                        ;; a memory folder's projects/ holds memories, not transcripts
+                                        ((and (member lower '("sessions" "projects" "chats" "history" "storage"
+                                                              "conversations" "threads" "rollouts")
+                                                      :test #'equal)
+                                              (notany (lambda (name) (member name +memory-directories+
+                                                                             :test #'equal))
+                                                      trail))
+                                         t)
+                                        (t crossing))))
+                       ;; crossed only for the memory folders it holds, prose
+                       (unless (or (skip-directory-p home name) (and into (not text)))
+                         (walk (concatenate 'string directory name "/") (append trail (list lower))
+                               (1+ depth) into))))))))
       ;; A root named for what it holds -- a memory folder, a skills library --
       ;; is read as what its name says, as a folder of that name inside one is.
       (dolist (root home.roots)
         (if (uiop:directory-pathname-p root)
             (let ((name (string-downcase (nlk:folder-name root))))
-              (walk root (and (member name (cons "skills" +memory-directories+) :test #'string=)
-                              (list name))
+              (walk (uiop:native-namestring root)
+                    (and (member name (cons "skills" +memory-directories+) :test #'string=)
+                         (list name))
                     0 nil))
-            (visit root (file-namestring root) '()))))
+            (visit (uiop:native-namestring root) (file-namestring root) '() (file-namestring root)))))
     (setf facts (nreverse facts))
     (when sessions
       (setf facts (append facts (session-facts home))))

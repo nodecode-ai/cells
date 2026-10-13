@@ -78,6 +78,7 @@
                (:file "toml-test")
                (:file "shape-test")
                (:file "world-test")
+               (:file "home-test")
                (:file "import-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-import-tests)))

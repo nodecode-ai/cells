@@ -57,7 +57,9 @@
   (and (stringp key)
        (string-downcase (remove-if-not #'alphanumericp key))))
 
-(defun object-index (object &aux (index (make-hash-table :test #'equal)))
+(defun object-index (object &aux (index (make-hash-table
+                                         :test #'equal
+                                         :size (if (hash-table-p object) (max 1 (hash-table-count object)) 1))))
   "OBJECT's members under their normalized keys => a hash table of
 NORMALIZED -> (ORIGINAL-KEY . VALUE). The first spelling wins."
   (when (hash-table-p object)
@@ -67,16 +69,32 @@ NORMALIZED -> (ORIGINAL-KEY . VALUE). The first spelling wins."
              object))
   index)
 
+(defvar *normal-names* nil
+  "Each member name a reader asked for, normalized (NORMAL-NAME), while a
+home is read (READ-FACTS binds it); NIL normalizes every ask.")
+
+(defun normal-name (name)
+  "NORMALIZE-KEY of NAME, a name a reader asks for, kept from the first ask
+while a home is read."
+  ;; Asked of every object a config file holds, up to 4,000 a file: made each
+  ;; time, the readers' own names were most of a keys-only plan's work.
+  (if *normal-names*
+      (or (gethash name *normal-names*)
+          (setf (gethash name *normal-names*) (normalize-key name)))
+      (normalize-key name)))
+
 (defun member-of (index &rest names)
   "The first of NAMES present in INDEX, as (values VALUE ORIGINAL-KEY)."
+  (declare (dynamic-extent names))
   (dolist (name names (values nil nil))
-    (nlk:when-let (pair (gethash (normalize-key name) index))
+    (nlk:when-let (pair (gethash (normal-name name) index))
       (return (values (cdr pair) (car pair))))))
 
 (defun text-of (index &rest names)
   "The first of NAMES whose value is a non-empty string."
+  (declare (dynamic-extent names))
   (dolist (name names nil)
-    (let* ((pair (gethash (normalize-key name) index))
+    (let* ((pair (gethash (normal-name name) index))
            (value (and pair (cdr pair))))
       (when (and (stringp value) (plusp (length (string-trim " " value))))
         (return (string-trim " " value))))))

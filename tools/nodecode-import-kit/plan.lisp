@@ -1120,11 +1120,16 @@ TAKEOVER, the default, stops a foreign gateway so its bots answer from here."
                            :overwrite overwrite :takeover takeover
                            :only (kind-list only) :without (kind-list without))))
     (dolist (home homes)
-      (handler-case (read-facts home :sessions (kind-wanted-p plan "sessions"))
+      (handler-case (read-facts home :sessions (kind-wanted-p plan "sessions")
+                                     :text (some (lambda (kind) (kind-wanted-p plan kind))
+                                                 '("instructions" "memory" "skills" "usage")))
         (error (condition)
           (push (princ-to-string condition) home.notes))))
-    (setf plan.running
-          (ignore-errors (funcall *running-probe* (plan-takeover-units plan))))
+    ;; Only a plan that brings bots over asks after a foreign gateway: the ask
+    ;; is a systemctl run.
+    (when (kind-wanted-p plan "channels")
+      (setf plan.running
+            (ignore-errors (funcall *running-probe* (plan-takeover-units plan)))))
     (let ((*kept* nil))
       (dolist (kind +kinds+)
         (when (kind-wanted-p plan kind)
