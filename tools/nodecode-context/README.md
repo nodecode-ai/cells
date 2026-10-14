@@ -3,8 +3,10 @@
 A built-in, prompt-only cell, compiled into `nodecode/bin` even with an empty
 home or `--pristine`. Its one short rule asks the model to review its
 editable context at useful checkpoints during substantial tool work (for example,
-after settling a subproblem) and before a final answer. Keep what matters and
-remove redundant history only when useful, not after every tool call.
+after settling a subproblem) and before a final answer, and says how: one call,
+`(context :drop SPANS :keep IDS :note TEXT)`, naming blocks by the `[seq N]` line
+every tool result ends with, with no export, read or print round. Keep what
+matters and remove redundant history only when useful, not after every tool call.
 
 The full rule is always in the protected `context` harness block. It is not a
 ranked knowledge entry: index budgets, aging, context-file edits and history
