@@ -41,7 +41,10 @@
     (is (search "after settling a subproblem" nodecode-context::*skill*) "a settled subproblem is a concrete checkpoint")
     (is (search "before your final answer" nodecode-context::*skill*) "pre-final review remains")
     (is (search "not after every tool call" nodecode-context::*skill*) "avoid a per-tool editing ritual")
-    (is (search "none when unnecessary" nodecode-context::*skill*) "no deletion quota")))
+    (is (search "none when unnecessary" nodecode-context::*skill*) "no deletion quota")
+    (is (search "(context :drop '(12 . 56) :note" nodecode-context::*skill*) "the skill says how: one call, named by seq")
+    (is (search "[seq 57]" nodecode-context::*skill*) "and where the seq is read")
+    (is (search "without exporting, reading or printing anything" nodecode-context::*skill*) "no export, read or print round")))
 
 (deftest context-cell-requests-survive-edits-eviction-and-forks ()
   (context-cell-install)
