@@ -166,6 +166,13 @@ resolved and nothing read yet."
   (or (uiop:string-prefix-p ".env." name)
       (uiop:string-suffix-p name ".env")))
 
+(defun cache-file-p (name)
+  "Whether a file NAME says it is a cache: `plugin-catalog-cache.json', `models_cache.json'."
+  ;; What a harness fetched and keeps, never what an operator set: on a working
+  ;; box, two of them were 200 ms of the setup walk's 310 ms read of keys, and
+  ;; not one fact came of either (2026-10-13).
+  (cl:search "cache" name :test #'char-equal))
+
 ;;; --- convention: a skill ----------------------------------------------------
 
 (defun skill-fact (file relative world)
@@ -445,6 +452,7 @@ leaves its prose -- instructions, memory, skills, ledgers -- unread."
                                         "yarn.lock" "tsconfig.json" "jsconfig.json" "composer.lock"
                                         "pnpm-lock.yaml")
                                       :test #'string=))
+                         (not (cache-file-p name))
                          (or (environment-file-p name)
                              (member type '("json" "jsonc" "json5" "yaml" "yml" "toml") :test #'string=)))
                     (let ((file (file)))

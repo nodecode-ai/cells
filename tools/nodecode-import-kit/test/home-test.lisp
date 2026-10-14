@@ -33,6 +33,23 @@
       (is (import-items plan "instructions"))
       (is (= 1 probes) "a plan that brings bots asks once"))))
 
+(deftest import-walk-opens-no-cache (with-import-runtime (home box))
+  ;; What a harness fetched and keeps is no setting of the operator's, even
+  ;; when it names a key: it is neither read nor listed as unmapped.
+  (import-write box ".claude/settings.json"
+                (format nil "{\"env\": {\"ANTHROPIC_API_KEY\": \"~a\"}}" +fixture-key+))
+  (import-write box ".claude/plugins/plugin-catalog-cache.json"
+                (format nil "{\"env\": {\"OPENROUTER_API_KEY\": \"~a\"}}" +fixture-key+))
+  (import-write box ".claude/Models_Cache.json"
+                (format nil "{\"env\": {\"OPENAI_API_KEY\": \"~a\"}}" +fixture-key+))
+  (let* ((plan (nik:make-plan :source "claude" :only "providers" :settings (list :home home)))
+         (walked (first (nik::plan-homes plan))))
+    (is (import-item plan "providers" "anthropic") "the settings file's key is planned")
+    (is (not (import-item plan "providers" "openrouter")) "a cache's key is not")
+    (is (not (import-item plan "providers" "openai")) "whatever case the name is in")
+    (is (notany (lambda (line) (search "cache" line :test #'char-equal)) (nik::home-unmapped walked))
+        "and a cache is not the backlog")))
+
 #-win32
 (deftest import-walk-lists-a-directory-as-uiop-did (with-temp-directory (box "walk-box"))
   ;; A link counts as what it reaches, its own path kept; a link to nothing

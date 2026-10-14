@@ -29,13 +29,17 @@
 (defun run-import (&key source overwrite (takeover t) only without apply progress)
   "The plan for SOURCE, applied when APPLY — and then the watch started
 for any bot it held for a running foreign gateway. => the plan."
-  (let ((plan (make-plan :source source :overwrite overwrite :takeover takeover
-                         :only only :without without)))
-    (cond (apply
-           (apply-plan plan :progress progress)
-           (funcall *start-watch*))
-          (t (write-report plan)))
-    plan))
+  ;; The import's nursery is the import's, as a load's is (NLK:LOAD-CELL): a
+  ;; plan of keys conses tens of megabytes, and under the organism's 2 MB
+  ;; its collections were 208 ms of the setup walk's 561 (2026-10-13).
+  (nlk:with-nursery ((* 64 1024 1024))
+    (let ((plan (make-plan :source source :overwrite overwrite :takeover takeover
+                           :only only :without without)))
+      (cond (apply
+             (apply-plan plan :progress progress)
+             (funcall *start-watch*))
+            (t (write-report plan)))
+      plan)))
 
 (defun worlds (&aux (found (nlk:detect-agent-worlds)))
   "Every coding-agent home on this box, most recently used first, as one
