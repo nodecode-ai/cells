@@ -607,8 +607,8 @@ hold every room it lands in to BUDGET (BOUND-ROOM)."
   ;; The agent the ask runs as (AGENT-FOR), NIL the channel itself. Appended
   ;; last, for the reason ATTACHMENTS is.
   (agent nil :type (or null string))
-  ;; The ask's own words, our mention taken off: what its title is written
-  ;; from (ASK-TITLE). Appended last, for the reason ATTACHMENTS is.
+  ;; The ask's own words, our mention taken off: what its lane's session is
+  ;; named from (NAMING-ADVICE). Appended last, for the reason ATTACHMENTS is.
   (said "" :type string))
 
 (nlk:access (ask channel-ask))

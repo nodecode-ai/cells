@@ -316,7 +316,7 @@
             (is (eq t (nlk:json-value (experience-input-payload loud) :boolean "announce")))))))))
 
 (define-cell-lifecycle-tests "experience"
-  (:hooks :frame :tool 'nle:turn-budget)
+  (:hooks :frame :tool 'nle:turn-budget 'nle:name-session)
   (:help :experience)
   (:command "experience")
   (:running (is nodecode-experience::*worker* "the reflector runs"))
@@ -415,5 +415,9 @@
       (is (equal '(:calls 40) (nle::live-turn-budget (nle::open-live-turn "experience-s-op-t1" "t")))))
     (is (null (nle::live-turn-budget (nle::open-live-turn "s-op" "t"))))
     (let ((nle::*turn-budget* '(:seconds 1800)))
-      (is (null (nle::live-turn-budget (nle::open-live-turn "experience-s-op-t1" "t"))))))
+      (is (null (nle::live-turn-budget (nle::open-live-turn "experience-s-op-t1" "t")))))
+    (flet ((next (session-id text) (declare (ignore session-id)) text))
+      ;; a reflection is never named
+      (is (null (nodecode-experience::naming-hook #'next "experience-s-op-t1" "[reflect] the turn")))
+      (is (equal "fix it" (nodecode-experience::naming-hook #'next "s-op" "fix it")))))
   (is (null (nle::live-turn-budget (nle::open-live-turn "experience-s-op-t1" "t")))))

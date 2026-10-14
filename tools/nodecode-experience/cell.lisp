@@ -210,6 +210,7 @@ thread: what the declaration's clauses do not carry."
   (:hook :frame (nlk:observer #'observe-frame "experience"))
   (:hook :tool #'fence-hook)
   (:hook 'nle:turn-budget #'budget-hook)
+  (:hook 'nle:name-session #'naming-hook)
   (:command "experience" #'run-slash
             :description "Experience across sessions: the sightings, reflect"
             :argument-hint "reflect"))

@@ -1608,71 +1608,61 @@ LANE, as the one running channel."
     (is (null (gethash "s9" nck::*replied-lines*)) "a reply to anything but the line marks nothing")))
 
 (deftest channel-host-the-card-wears-its-asks-title ()
-  ;; The card's title is the ask's task: its first words at once, then the
-  ;; title a model writes for it -- the one call its thread is named by too,
-  ;; so a thread's card costs no call of its own. An ask of five words or
-  ;; fewer is its own title, and costs none.
+  ;; A lane's session is named from its ask's own words, never the room's
+  ;; envelope its prompt carries, and the card opened under the ask's first
+  ;; words wears the title it is given. Every other session is the kernel's.
   (let ((asked '())
         (said "lint is red on main, find out why and fix it if it's small"))
-    (with-saved-globals ((nck::*ask-title-generation* :inline)
-                         (nck::*ask-titles* (make-hash-table :test #'equal :synchronized t)))
-      (with-stubbed-fdefinition (nle:complete (system user &key session-id max-tokens fallback-p)
-                                  (declare (ignore system session-id max-tokens fallback-p))
-                                  (push user asked)
-                                  "Fix the red lint on main")
-        (with-digest-host (host lane :responses (replies "s1" "s1"))
-          (setf (nck::lane-said lane) said
-                (nck::host-status-update-ms host) 0)
-          (earn-line)
-          (is-present (post (first (plans))) "the card opens under the ask's first words"
-            (is (equal "lint is red on main" (getf (gethash "card" (nck:request-plan-body post)) :task)))
-            (is (uiop:string-prefix-p (format nil "lint is red on main~%") (plan-content post))))
-          (nck::name-thread host "t9" "123" said "chat-123")
-          (is (equal (list said) asked) "one call names the card and the thread")
-          (nck:flush-now host lane)
-          (is-present (edit (second (plans))) "the card takes the written title"
-            (is-plan edit :label "edit_message")
-            (is (equal "Fix the red lint on main" (getf (gethash "card" (nck:request-plan-body edit)) :task)))))
-        (setf asked '())
-        (with-digest-host (host lane :responses (replies "s1"))
-          (setf (nck::lane-said lane) "fix the auth bug")
-          (earn-line)
-          (is (equal "fix the auth bug" (getf (gethash "card" (nck:request-plan-body (first (plans)))) :task)))
-          (is (null asked) "a short ask is its own title"))))))
+    (flet ((next (session-id text)
+             (push (list session-id text) asked)
+             "Fix the red lint on main"))
+      (with-digest-host (host lane :responses (replies "s1" "s1"))
+        (setf (nck::lane-said lane) said
+              (nck::host-status-update-ms host) 0)
+        (earn-line)
+        (is-present (post (first (plans))) "the card opens under the ask's first words"
+          (is (equal "lint is red on main" (getf (gethash "card" (nck:request-plan-body post)) :task)))
+          (is (uiop:string-prefix-p (format nil "lint is red on main~%") (plan-content post))))
+        (is (equal "Fix the red lint on main"
+                   (funcall (nck::naming-advice host) #'next "chat-123-m1" "[room] lint is red...")))
+        (is (equal (list (list "chat-123-m1" said)) asked) "named from the ask's own words")
+        (nck:flush-now host lane)
+        (is-present (edit (second (plans))) "the card takes the title"
+          (is-plan edit :label "edit_message")
+          (is (equal "Fix the red lint on main" (getf (gethash "card" (nck:request-plan-body edit)) :task))))
+        (funcall (nck::naming-advice host) #'next "chat-9-m2" "a shell's own prompt")
+        (is (equal '("chat-9-m2" "a shell's own prompt") (first asked)) "no lane's, the kernel's")))))
 
 (deftest channel-host-a-late-title-retitles-the-settled-card ()
-  ;; Naming never holds the turn: the call runs on a thread of its own, the
-  ;; turn answers meanwhile and its card settles under the ask's first words;
-  ;; the title, landing after, retitles the settled card in place — the whole
-  ;; card, its Details and the pictures its message holds restated.
-  (let* ((said "lint is red on main, find out why and fix it if it's small")
-         (gate (bt2:make-semaphore :name "title-gate")))
-    (with-saved-globals ((nck::*ask-title-generation* :thread)
-                         (nck::*ask-titles* (make-hash-table :test #'equal :synchronized t)))
-      (with-stubbed-fdefinition (nle:complete (system user &key session-id max-tokens fallback-p)
-                                  (declare (ignore system user session-id max-tokens fallback-p))
-                                  (bt2:wait-on-semaphore gate :timeout 10)
-                                  "Fix the red lint on main")
-        (with-digest-host (host lane :responses (make-list 8 :initial-element
-                                                           (reply 200 "id" "s1" "media" '(("step-1.png" . "900"))))
-                                     :host-keys (:platform (test-platform :choices t)))
-          (setf (nck::lane-said lane) said)
-          (earn-line)
-          (said "all clean")
-          (fact "turn.completed" (nlk:json-object))
-          (is (await-plan executor :content "all clean") "the answer did not wait on the title")
-          (is-present (settle (await-plan executor :label "edit_message" :content "Done in"))
-            "the card settled under the ask's first words"
-            (is (equal "lint is red on main" (getf (gethash "card" (nck:request-plan-body settle)) :task)))
-            (is (equal '(("step-1.png" . "900")) (plan-field settle "media")) "keeping what its message holds"))
-          (bt2:signal-semaphore gate)
-          (is-present (retitle (await-plan executor :label "edit_message" :content "Fix the red lint on main"))
-            "the late title retitled the settled card"
-            (is-plan retitle :path "/rooms/123/messages/s1")
-            (is-shape (gethash "card" (nck:request-plan-body retitle))
-              (:task "Fix the red lint on main") (:state :done))
-            (is (equal '("Details") (mapcar #'first (plan-field retitle "controls"))))
-            (is (equal '(("step-1.png" . "900")) (plan-field retitle "media")))))))))
+  ;; Naming never holds the turn: the turn answers meanwhile and its card
+  ;; settles under the ask's first words; the title, landing after, retitles
+  ;; the settled card in place — the whole card, its Details and the pictures
+  ;; its message holds restated.
+  (let ((said "lint is red on main, find out why and fix it if it's small"))
+    (with-digest-host (host lane :responses (make-list 8 :initial-element
+                                                       (reply 200 "id" "s1" "media" '(("step-1.png" . "900"))))
+                                 :host-keys (:platform (test-platform :choices t)))
+      (setf (nck::lane-said lane) said)
+      (earn-line)
+      (said "all clean")
+      (fact "turn.completed" (nlk:json-object))
+      (is (await-plan executor :content "all clean") "the answer did not wait on the title")
+      (is-present (settle (await-plan executor :label "edit_message" :content "Done in"))
+        "the card settled under the ask's first words"
+        (is (equal "lint is red on main" (getf (gethash "card" (nck:request-plan-body settle)) :task)))
+        (is (equal '(("step-1.png" . "900")) (plan-field settle "media")) "keeping what its message holds"))
+      (funcall (nck::naming-advice host)
+               (lambda (session-id text)
+                 (declare (ignore session-id text))
+                 "Fix the red lint on main")
+               "chat-123-m1" said)
+      (is-present (retitle (await-plan executor :label "edit_message" :content "Fix the red lint on main"))
+        "the late title retitled the settled card"
+        (is-plan retitle :path "/rooms/123/messages/s1")
+        (is-shape (gethash "card" (nck:request-plan-body retitle))
+          (:task "Fix the red lint on main") (:state :done))
+        (is (equal '("Details") (mapcar #'first (plan-field retitle "controls"))))
+        (is (equal '(("step-1.png" . "900")) (plan-field retitle "media")))))))
 
 
 (deftest channel-host-failed-tool-results-are-not-successful-steps ()

@@ -161,8 +161,8 @@ failover's note.")
   ;; moved; CONTEXT the prompt the newest round put in the window.
   (usage '() :type list)
   (context '() :type list)
-  ;; What the ask is, the card's title: its first words until a model writes
-  ;; its title (ASK-TITLE, host.lisp).
+  ;; What the ask is, the card's title: its first words until the title its
+  ;; session is named lands (WEAR-TITLE, host.lisp).
   (task nil :type (or null string))
   ;; The newest failover note (`fell back to alt-model (overloaded)'), shown
   ;; until the turn settles.

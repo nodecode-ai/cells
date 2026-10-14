@@ -349,6 +349,13 @@ other turn."
       *budget*
       (funcall next turn)))
 
+(defun naming-hook (next session-id text)
+  "Advice on NLE:NAME-SESSION: a session this cell made is never named -- a
+reflection is a fork a turn, and its name a model call a turn. Every other
+session is NEXT's."
+  (unless (ours-p session-id)
+    (funcall next session-id text)))
+
 ;;; --- the recap ----------------------------------------------------------------------
 
 (defparameter *recap-input*

@@ -612,26 +612,13 @@ origin noted — ORIGIN the keys past the three that place it."
       (is (await-plan executor :label "send_message" :path "/rooms/42/messages"
                                :content "the answer")))))
 
-(deftest channel-thread-written-title-reads-a-title ()
-  ;; What a naming call answered, as a thread's name: the first line that
-  ;; says something, its label, quotes and period off; an answer to the
-  ;; message instead of its name is no title.
-  (is-each (nck::written-thread-title)
-    ("Capital of Australia vs Sydney" "Capital of Australia vs Sydney" "a bare title")
-    ("Title: \"Fix the auth bug.\"" "Fix the auth bug" "label, quotes and period off")
-    ((format nil "~%**Deploy notes**~%more") "Deploy notes" "the first line that says something")
-    ("The capital of Australia is Canberra and not Sydney, which many assume since it is bigger"
-     nil "an answer, not a name")
-    ("" nil "nothing")
-    (nil nil "no reply")))
-
 (deftest channel-thread-a-model-names-the-thread ()
-  ;; The thread opens under the ask's first words; a side call writes its
-  ;; title while the turn runs, and the thread takes it. An ask of five words
-  ;; or fewer is its own name already, and costs no call.
+  ;; The thread opens under the ask's first words; the kernel names the
+  ;; lane's session from its first prompt (NLE:NAME-SESSION) while the turn
+  ;; runs, and the thread takes that title. An ask of five words or fewer is
+  ;; its own name already, and costs no call.
   (let ((asked '()))
-    (with-saved-globals ((nck::*ask-title-generation* :inline)
-                         (nck::*ask-titles* (make-hash-table :test #'equal :synchronized t)))
+    (with-saved-globals ((nle::*session-naming* :inline))
       (with-stubbed-fdefinition (nle:complete (system user &key session-id max-tokens fallback-p)
                                   (declare (ignore system session-id max-tokens fallback-p))
                                   (push user asked)

@@ -947,8 +947,8 @@ platform call it implies."
   (with-lane-digest (digest lane)
     (unless lane.flush-in-flight-p
       (setf controls (or (line-controls lane digest) :clear))
-      ;; The card opens titled the ask's first words; its written title
-      ;; replaces them once the card is up (NAME-CARD).
+      ;; The card opens titled the ask's first words; the title its session
+      ;; is named replaces them when it lands (NAMING-ADVICE).
       (unless (or digest.task (zerop (length lane.said)))
         (setf digest.task (first-words lane.said)))
       (multiple-value-setq (kind card)
@@ -1016,7 +1016,6 @@ card's message holds of its pictures."
                   (digest-status-refused digest card)))
               (warn-lane host lane "card post" error))
              (t (bind-addresses host lane target (list message-id))
-                (name-card host lane)
                 (let ((settled-p nil))
                   (with-lane-digest (digest lane)
                     (digest-status-delivered digest card message-id landed)
@@ -1044,30 +1043,46 @@ card's message holds of its pictures."
              (terminal-p (with-lane-digest (digest lane)
                            (digest-status-delivered digest card))))))))
 
-(defun name-card (host lane &aux digest said)
-  "Worker thread: LANE's card wears its ask's title once a model writes it
-(ASK-TITLE) — the title its thread was named, when the kit opened one."
-  ;; Asking never waits: the naming call runs on a thread of its own and the
-  ;; card goes on under the ask's first words meanwhile. A title that lands
-  ;; while the turn runs rides the card's next edit; one that lands after the
-  ;; card settled retitles it (RETITLE-CARD), the tick no longer editing it.
-  ;; The lane's session is named as its card is -- the ask's first words, then
-  ;; its title -- for what a shell's /sessions and the organism's note of a
-  ;; turn it picks up after a restart (NLE::BACK-NOTE) call it; its first
-  ;; prompt carries the room's envelope.
-  (bt2:with-lock-held ((lane-lock lane))
-    (setf digest lane.digest said lane.said))
-  (when (and digest (plusp (length said)))
-    (ignore-errors (nle:set-session-title lane.session-id (first-words said)))
-    (ask-title host said lane.session-id
-               (lambda (title)
-                 (when title
-                   (ignore-errors (nle:set-session-title lane.session-id title)))
-                 (when (and title
-                            (bt2:with-lock-held ((lane-lock lane))
-                              (setf (turn-digest-task digest) title)
-                              (not (member (turn-digest-phase digest) '(:queued :running)))))
-                   (retitle-card host lane digest title))))))
+(defun wear-title (host lane digest title &aux (origin (lane-origin lane))
+                                              (thread-id (getf origin :thread-id)))
+  "Naming thread: LANE's first ask is titled TITLE -- its card, DIGEST, wears
+it, and the thread the kit opened for it is renamed to it."
+  ;; A title that lands while the turn runs rides the card's next edit, one
+  ;; that lands before the card is up opens it, and one that lands after the
+  ;; card settled retitles it (RETITLE-CARD), the tick no longer editing it. A
+  ;; refused rename leaves the thread its first words, in the log alone.
+  (when (and digest
+             (bt2:with-lock-held ((lane-lock lane))
+               (setf (turn-digest-task digest) title)
+               (not (member (turn-digest-phase digest) '(:queued :running)))))
+    (retitle-card host lane digest title))
+  (let* ((plan (and thread-id
+                    (host-plan host #'platform-plan-thread
+                               (list :channel-id (getf origin :channel-id) :thread-id thread-id)
+                               title)))
+         (result (and plan (execute-plan host.executor plan))))
+    (when (and result (not result.ok-p))
+      (warn "~a: thread ~a keeps its first words, the rename was refused: ~a"
+            (host-id host) thread-id result.error))))
+
+(defun naming-advice (host)
+  "Advice on NLE:NAME-SESSION: a session of one of HOST's lanes is named from
+its ask's own words, not the room's envelope its prompt carries, and the
+title it is given is its ask's (WEAR-TITLE). Every other session is NEXT's."
+  ;; The kernel names a session once, from its first prompt: a lane's is the
+  ;; ask that opened it, so its thread and that ask's card wear the one title,
+  ;; and a later ask's card its own first words. An ask of five words or
+  ;; fewer is its own name: it costs no call, and wears nothing new.
+  (lambda (next session-id text &aux (lane (find-lane host.lanes session-id)) digest said)
+    (if (null lane)
+        (funcall next session-id text)
+        (progn
+          (bt2:with-lock-held ((lane-lock lane))
+            (setf digest lane.digest said lane.said))
+          (let ((title (funcall next session-id said)))
+            (when (and title (string/= title (format nil "~{~a~^ ~}" (nlk:split-words said))))
+              (wear-title host lane digest title))
+            title)))))
 
 (defun card-with (card &rest parts)
   "CARD with PARTS, (KEY VALUE)*, in place of its own."
@@ -2666,133 +2681,24 @@ choices go, and a line under its words says which answer it took."
 ;;; inside one — this half only decides WHICH asks open a thread.
 
 (defparameter +thread-title-length+ 80
-  "Characters a generated thread title keeps — Discord allows 100, and the
-margin is for a word that would be cut in half.")
+  "Characters the name an ask's thread opens with keeps — Discord allows
+100, and the margin is for a word that would be cut in half.")
 
 (defun thread-title (host candidate)
   "The name an ask's thread opens with: the ask's first words, our mention
 stripped, cut to +THREAD-TITLE-LENGTH+."
-  ;; A quick name the reader recognizes, until the one a model writes
-  ;; replaces it (NAME-THREAD).
+  ;; A quick name the reader recognizes, until the title its lane's session
+  ;; is named replaces it (WEAR-TITLE).
   (let* ((words (nlk:split-words (candidate-said host candidate)))
          (name (format nil "~{~a~^ ~}" (subseq words 0 (min (length words) 5)))))
     (if (zerop (length name))
         "a question"
         (string-right-trim '(#\Space) (nlk:clip name +thread-title-length+ :ellipsis "")))))
 
-(defparameter *ask-title-generation* :thread
-  ":THREAD writes an ask its title on a thread of its own, :INLINE in the
-call that asks for it (the test posture), NIL never.")
-
-(defparameter +thread-title-instruction+
-  "You name conversation threads. Given the message that opened one, answer with a title of three to seven words, in sentence case, that names what the person wants done: the words they would look for it by in a list. Keep names, numbers and technical terms exact. Never answer the message: name it. Answer with the title alone: no quotes, no trailing period, no preamble."
-  "The side call's whole instruction for an ask's title.")
-
-(defparameter +thread-title-max-tokens+ 512
-  "The naming call's completion ceiling. A model that thinks spends it
-reasoning before it names: at 64, deepseek-flash answered nothing at all
-(2026-09-28). Hermes gives its titles 512.")
-
-(defun written-thread-title (text)
-  "The title a naming call's TEXT holds, or NIL when it holds none: its first
-line, any label, quotes and trailing period taken off, cut to
-+THREAD-TITLE-LENGTH+ at a word."
-  ;; Past twelve words the model answered the message instead of naming it,
-  ;; and the thread keeps the ask's own first words.
-  (let* ((line (and (stringp text)
-                    (find-if (lambda (line) (plusp (length (nlk:trimmed line))))
-                             (uiop:split-string text :separator '(#\Newline)))))
-         (bare (and line (string-trim '(#\Space #\Tab #\" #\' #\` #\* #\.)
-                                      (ppcre:regex-replace "(?i)^[\\s\"'`*]*title:" line ""))))
-         (words (and bare (nlk:split-words bare))))
-    (when (<= 1 (length words) 12)
-      (let ((title (format nil "~{~a~^ ~}" words)))
-        (if (<= (length title) +thread-title-length+)
-            title
-            (string-right-trim " " (subseq title 0 (or (position #\Space title :from-end t
-                                                                            :end +thread-title-length+)
-                                                         +thread-title-length+))))))))
-
-;;; --- an ask's title: one naming call, read by its thread and its card ---------
-;;; A model names an ask once — what the person wants done, in three to seven
-;;; words — and whatever shows the ask reads that one title: the thread the
-;;; kit opened for it is renamed to it, and its turn's card wears it. The
-;;; first to ask starts the call and the rest wait on it, so a thread's card
-;;; costs no second call.
-
-(defvar *ask-titles* (make-hash-table :test #'equal :synchronized t)
-  "An ask's words -> the title a model wrote for them, NIL when it named
-nothing, or (:PENDING . WAITERS) while the naming call runs. Live-only.")
-
-(defparameter +ask-titles-kept+ 500
-  "Written titles kept before the oldest are let go.")
-
 (defun first-words (said)
-  "SAID's first five words, the name an ask carries until its title is written."
+  "SAID's first five words, the name an ask carries until its title lands."
   (let ((words (nlk:split-words said)))
     (string-right-trim ",.;:" (format nil "~{~a~^ ~}" (subseq words 0 (min 5 (length words)))))))
-
-(defun ask-title (host said room then &aux (words (nlk:split-words said)) state title)
-  "Call THEN with the title a model writes for the ask SAID: at once when it is
-written, when the naming call lands otherwise, starting that call when no one
-has. THEN gets NIL for an ask of five words or fewer, its own name already,
-and when nothing was named; it runs on the thread the title arrives on. ROOM
-is the room whose model the call runs on when no auxiliary one is set."
-  ;; One side call on the auxiliary model (NLE:COMPLETE), run beside the turn
-  ;; so the title usually lands while the answer is still being written
-  ;; (Hermes' timing). A title is a nicety: a model that cannot be reached or
-  ;; a reply that names nothing leaves the ask its first words, in the log alone.
-  (when (or (<= (length words) 5) (null *ask-title-generation*))
-    (return-from ask-title (funcall then nil)))
-  (sb-ext:with-locked-hash-table (*ask-titles*)
-    (multiple-value-bind (entry present) (gethash said *ask-titles*)
-      (cond ((and (consp entry) (eq (car entry) :pending))
-             (push then (cdr entry))
-             (setf state :waiting))
-            (present (setf state :known title entry))
-            (t (when (> (hash-table-count *ask-titles*) +ask-titles-kept+)
-                 (loop for key being the hash-keys of *ask-titles* using (hash-value value)
-                       unless (consp value) do (remhash key *ask-titles*)))
-               (setf (gethash said *ask-titles*) (list :pending then)
-                     state :start)))))
-  (flet ((name ()
-           (let ((written (nlk:with-handlers ((error (condition)
-                                                (warn "~a: an ask keeps its first words: ~a"
-                                                      (host-id host) condition)
-                                                nil))
-                            (written-thread-title
-                             (nle:complete +thread-title-instruction+
-                                           (nlk:clip said 1000 :ellipsis "")
-                                           :session-id room :max-tokens +thread-title-max-tokens+))))
-                 (waiters '()))
-             (sb-ext:with-locked-hash-table (*ask-titles*)
-               (setf waiters (cdr (gethash said *ask-titles*))
-                     (gethash said *ask-titles*) written))
-             (dolist (waiter (reverse waiters))
-               (nlk:with-handlers ((error (condition)
-                                     (warn "~a: an ask's title went unread: ~a" (host-id host) condition)))
-                 (funcall waiter written))))))
-    (case state
-      (:known (funcall then title))
-      (:start (if (eq *ask-title-generation* :inline)
-                  (name)
-                  (nlk:spawn (format nil "channel-~a-ask-title" (host-id host)) (name)))))))
-
-(defun name-thread (host thread-id channel-id said room)
-  "Give the thread THREAD-ID under CHANNEL-ID the title a model writes for
-the ask SAID (ASK-TITLE), when it says more than the ask's first words did."
-  ;; ROOM is the thread's room. A refused rename leaves the thread its first
-  ;; words and says so in the log alone.
-  (ask-title host said room
-             (lambda (title)
-               (let* ((plan (and title (string/= title (first-words said))
-                                 (host-plan host #'platform-plan-thread
-                                            (list :channel-id channel-id :thread-id thread-id)
-                                            title)))
-                      (result (and plan (execute-plan host.executor plan))))
-                 (when (and result (not result.ok-p))
-                   (warn "~a: thread ~a keeps its first words, the rename was refused: ~a"
-                         (host-id host) thread-id result.error))))))
 
 (defun thread-ask-p (host candidate)
   "Whether CANDIDATE — an ask that has opened no lane yet — gets a thread of
@@ -2927,9 +2833,7 @@ named from its first words — and admit the ask inside it."
                    ;; First ensure wins; the ask's own admission then finds
                    ;; the room already made.
                    (ensure-room host ask.room :parent parent-room)
-                   (gate-ask host ask)
-                   (name-thread host thread-id typed (candidate-said host candidate)
-                                ask.room))))))))))
+                   (gate-ask host ask))))))))))
 
 (defun message-target (lane message-id &aux (origin (lane-origin lane)))
   "The target a call about MESSAGE-ID needs: the lane's own, except for the
@@ -3400,6 +3304,7 @@ turns their budget."
                   (warn "~a frame fold failed: ~a" id condition)))
               (funcall next op)))
   (nle:hook 'nle:turn-budget (format nil "channel-~a" id) (budget-advice host))
+  (nle:hook 'nle:name-session (format nil "channel-~a" id) (naming-advice host))
   (pushnew host *hosts*)
   (when (nlk:store-open-p)
     (note-paired host (paired host)))
@@ -3417,6 +3322,7 @@ turns their budget."
   (setf *hosts* (remove host *hosts*))
   (nle:unhook :frame (format nil "channel-~a" (host-id host)))
   (nle:unhook 'nle:turn-budget (format nil "channel-~a" (host-id host)))
+  (nle:unhook 'nle:name-session (format nil "channel-~a" (host-id host)))
   (when host.worker
     (stop-delivery-worker host.worker))
   (nlk:with-handlers ((error (condition)

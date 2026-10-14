@@ -16,10 +16,6 @@
 ;; pass soul_file explicitly.
 (setf nck:*soul-default-path* (temp-path "absent-soul" "md"))
 
-;; Hermetic: a thread the kit opens is named by a side call on a model, and no
-;; test reaches one unless it says so (THREAD-TEST's naming test).
-(setf nck::*ask-title-generation* nil)
-
 (define-test-slice "channel" "CHANNEL" :recipe "channels")
 
 (defun is-inbound (policy candidate expected &optional reason note)
