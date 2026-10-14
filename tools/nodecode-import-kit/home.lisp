@@ -199,11 +199,16 @@ resolved and nothing read yet."
   (and (member (string-downcase (or (pathname-type file) "")) +markdown-types+ :test #'string=)
        (string-upcase (pathname-name file))))
 
-(defun one-line-of (text limit)
+(defun one-line-of (text limit &aux (text (or text "")))
   "The first non-empty line of TEXT, whitespace folded, cut to LIMIT."
-  (nlk:one-line (find-if (lambda (line)
-                           (plusp (length (string-trim '(#\Space #\Tab #\Return #\-) line))))
-                         (uiop:split-string (or text "") :separator '(#\Newline)))
+  ;; Line by line, as far as that line: split whole, every skill and memory
+  ;; was split into all its lines for its first (2026-10-14).
+  (nlk:one-line (loop for start = 0 then (1+ end)
+                      for end = (or (position #\Newline text :start start) (length text))
+                      for line = (subseq text start end)
+                      when (plusp (length (string-trim '(#\Space #\Tab #\Return #\-) line)))
+                        return line
+                      while (< end (length text)))
                 :cap limit :ellipsis "…"))
 
 ;;; --- the read ---------------------------------------------------------------
@@ -245,13 +250,11 @@ resolved and nothing read yet."
 ...), a key indented under a bare `key:' line read as `key.child' and a
 quoted value unquoted, and the text after the block; NIL and TEXT when it
 has none."
-  (let* ((lines (nlk:lines text))
-         (close (and lines (string= "---" (nlk:trimmed (first lines)))
-                     (position "---" (rest lines) :key #'nlk:trimmed :test #'string=))))
-    (if (null close)
+  (let ((block (frontmatter-block text)))
+    (if (null block)
         (values nil text)
         (let ((section nil) (fields '()))
-          (dolist (line (subseq (rest lines) 0 close))
+          (dolist (line (car block))
             (ppcre:register-groups-bind (indent key value)
                 ("^([ \\t]*)([A-Za-z0-9_.-]+):[ \\t]*(.*?)[ \\t\\r]*$" line)
               (let ((value (ppcre:regex-replace "^([\"'])(.*)\\1$" value "\\2")))
@@ -259,7 +262,36 @@ has none."
                        (when section (push (cons (format nil "~a.~a" section key) value) fields)))
                       ((string= value "") (setf section key))
                       (t (setf section nil) (push (cons key value) fields))))))
-          (values (nreverse fields) (format nil "~{~a~^~%~}" (nthcdr (+ 2 close) lines)))))))
+          ;; The body's lines as NLK:LINES gives them, joined: CRLF made LF and
+          ;; the trailing blank lines off.
+          (values (nreverse fields)
+                  (let ((body (cdr block)))
+                    (if (find #\Return body)
+                        (format nil "~{~a~^~%~}" (nlk:lines body))
+                        (string-right-trim '(#\Newline) body))))))))
+
+(defun frontmatter-block (text &aux (length (length text)))
+  "(LINES . BODY): the lines between TEXT's leading `---' line and the next
+one, each without the CR before its LF, and the text after that line; NIL
+when TEXT opens with no such block."
+  ;; Only the block is split: the whole text was, twice for every memory file
+  ;; of a home, to learn whether it opened with one (2026-10-14).
+  (flet ((line-end (start) (or (position #\Newline text :start start) length))
+         (line (start end)
+           (subseq text start (if (and (< end length) (> end start)
+                                       (char= #\Return (char text (1- end))))
+                                  (1- end)
+                                  end))))
+    (let ((opening (line-end 0)))
+      (when (and (< opening length) (string= "---" (nlk:trimmed (line 0 opening))))
+        (loop with lines = '()
+              for start = (1+ opening) then (1+ end)
+              for end = (line-end start)
+              for line = (line start end)
+              when (string= "---" (nlk:trimmed line))
+                return (cons (nreverse lines) (subseq text (min length (1+ end))))
+              do (push line lines)
+              until (= end length))))))
 
 (defun claude-projects ()
   "The project roots Claude Code's ~/.claude.json names, or NIL."
@@ -373,28 +405,37 @@ by the memory they name and its tool sightings as calls."
       ((null text)
        (note-unmapped home relative "past the text cap")
        '())
-      ;; A harness's own seed: nothing left once its comments and headings are out.
+      ;; A harness's own seed: nothing left once its comments and headings are
+      ;; out. Each pattern runs where its mark is: run on every file, these
+      ;; and the separator split were half of reading a home's 1,100 memories
+      ;; (2026-10-14).
       ((not (ppcre:scan "(?m)^[ \\t\\r]*[^# \\t\\r\\n]"
-                        (ppcre:regex-replace-all "(?s)<!--.*?(?:-->|\\z)" text "")))
+                        (if (cl:search "<!--" text)
+                            (ppcre:regex-replace-all "(?s)<!--.*?(?:-->|\\z)" text "")
+                            text)))
        '())
       ;; A home's hot index: links to its memory files, not memories of its own.
       ((and memory (string= base "MEMORY") (ppcre:scan "(?m)^\\s*-\\s*\\[[^\\]]+\\]\\([^)]*\\.md\\)" text))
        (hot-index-facts home relative text))
-      ;; A memory file that names itself is one entry, under that name.
-      ((and memory (assoc "name" (frontmatter text) :test #'string-equal))
-       (multiple-value-bind (fields body) (frontmatter text)
-         (list (memory-file-fact home relative trail fields body))))
       (memory
-       ;; One entry per run of lines between `§' separator lines, line-end CRs off.
-       (let ((type (if (string= base "USER") "user" "project")))
-         (loop for piece in (ppcre:split "(?m)^[ \\t\\r]*§[ \\t\\r]*$" text)
-               for entry = (nlk:trimmed (ppcre:regex-replace-all "\\r+(?=\\n|\\z)" piece ""))
-               when (plusp (length entry))
-               collect (make-fact :kind :memory
-                                  :id (format nil "~a-~a" (home-world-name home)
-                                              (nlk:short-digest entry 10))
-                                  :world (home-world-name home) :source relative
-                                  :value (list :text entry :type type)))))
+       (multiple-value-bind (fields body) (frontmatter text)
+         (if (assoc "name" fields :test #'string-equal)
+             ;; A memory file that names itself is one entry, under that name.
+             (list (memory-file-fact home relative trail fields body))
+             ;; One entry per run of lines between `§' separator lines, line-end CRs off.
+             (let ((type (if (string= base "USER") "user" "project")))
+               (loop for piece in (if (find #\§ text)
+                                      (ppcre:split "(?m)^[ \\t\\r]*§[ \\t\\r]*$" text)
+                                      (list text))
+                     for entry = (nlk:trimmed (if (find #\Return piece)
+                                                  (ppcre:regex-replace-all "\\r+(?=\\n|\\z)" piece "")
+                                                  piece))
+                     when (plusp (length entry))
+                       collect (make-fact :kind :memory
+                                          :id (format nil "~a-~a" (home-world-name home)
+                                                      (nlk:short-digest entry 10))
+                                          :world (home-world-name home) :source relative
+                                          :value (list :text entry :type type)))))))
       (t
        (list (make-fact :kind :instructions :id base
                         :world (home-world-name home) :source relative
@@ -412,15 +453,21 @@ no dot follows its first character (`.env')."
   "The native DIRECTORY's entries, `/'-ended, as (values FILES SUBDIRECTORIES):
 names, a link counted as what it reaches and one that reaches nothing left
 out, in UIOP:DIRECTORY-FILES's and UIOP:SUBDIRECTORIES's order."
-  ;; One readdir and a stat a name. Through UIOP each directory was listed
-  ;; twice and each entry made a pathname and resolved: 3,000 directories of
-  ;; a working box's homes, 340 ms of a first frame's import before a file
-  ;; was opened (2026-10-13).
-  (dolist (name (nlk::directory-names directory))
-    (when (ignore-errors (sb-posix:stat (concatenate 'string directory name) stat))
-      (if (= (logand (sb-posix:stat-mode stat) sb-posix:s-ifmt) sb-posix:s-ifdir)
-          (push name subdirectories)
-          (push name files))))
+  ;; One readdir, and a stat only for the names the listing leaves open -- a
+  ;; link, or a file system that does not say. Through UIOP each directory
+  ;; was listed twice and each entry made a pathname and resolved: 3,000
+  ;; directories of a working box's homes, 340 ms of a first frame's import
+  ;; before a file was opened (2026-10-13); with a stat a name, 16,000 of
+  ;; them, mostly transcripts in the folders the walk only crosses (2026-10-14).
+  (multiple-value-bind (names kinds) (nlk::directory-names directory)
+    (dolist (name names)
+      (case (pop kinds)
+        (:directory (push name subdirectories))
+        ((:file :other) (push name files))
+        (t (when (ignore-errors (sb-posix:stat (concatenate 'string directory name) stat))
+             (if (= (logand (sb-posix:stat-mode stat) sb-posix:s-ifmt) sb-posix:s-ifdir)
+                 (push name subdirectories)
+                 (push name files)))))))
   ;; SBCL's DIRECTORY sorts by namestring: a subdirectory's ends in `/'.
   (values (sort files #'string<)
           (sort subdirectories #'string< :key (lambda (name) (concatenate 'string name "/")))))

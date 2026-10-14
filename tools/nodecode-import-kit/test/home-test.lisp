@@ -75,3 +75,21 @@
         (is (equal (mapcar #'nlk:folder-name (uiop:subdirectories directory)) subdirectories))
         (is (equal '(".env" "a.json" "b.json" "linked.json") files))
         (is (equal '("abc-d" "abc" "linked") subdirectories))))))
+
+(deftest import-frontmatter-reads-the-block-alone
+    (let ((cr (string #\Return))))
+  ;; Only the block is split now; what comes back is what splitting the
+  ;; whole text gave: CRLF made LF, the trailing blank lines off.
+  (flet ((check (text fields body)
+           (multiple-value-bind (got-fields got-body) (nik::frontmatter text)
+             (is (equal fields got-fields) (format nil "fields of ~s" text))
+             (is (equal body got-body) (format nil "body of ~s" text)))))
+    (check (format nil "---~%name: a~%---~%body~%~%") '(("name" . "a")) "body")
+    (check (format nil "---~a~%name: a~a~%---~a~%x~a~%y~a~%" cr cr cr cr cr) '(("name" . "a")) (format nil "x~%y"))
+    (check (format nil "---~%name: a~%---") '(("name" . "a")) "")
+    (check (format nil "---~%metadata:~%  type: user~%---~%~%hi") '(("metadata.type" . "user")) (format nil "~%hi"))
+    (let ((open (format nil "---~%name: a~%")))
+      (check open nil open))
+    (check "no block" nil "no block"))
+  (is (equal "hello world" (nik::one-line-of (format nil "~%  ~%-- ~%  hello   world ~%next") 80)))
+  (is (equal "" (nik::one-line-of nil 80))))

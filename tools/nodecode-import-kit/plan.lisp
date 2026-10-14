@@ -643,20 +643,25 @@ report names, never a silent drop."
   "=> (values LINES NAMED): the small text files beside a skill's SKILL.md
 as ;; sections the definition carries, and every other file named with its
 size, hidden files and __pycache__ left out."
-  (labels ((walk (folder)
-             (dolist (file (ignore-errors (uiop:directory-files folder)))
-               (let ((relative (enough-namestring file directory))
-                     (bytes (or (nlk:file-bytes file) 0)))
-                 (unless (or (hidden-name-p (file-namestring file))
-                             (string-equal "SKILL.md" relative))
-                   (if (and (member (pathname-type file) '("md" "txt") :test #'equal) (<= bytes 8192))
-                       (setf inlined (append inlined (list (format nil "--- ~a ---" relative))
-                                             (nlk:lines (uiop:read-file-string file))))
-                       (push (format nil "~a (~d bytes)" relative bytes) named)))))
-             (dolist (sub (ignore-errors (uiop:subdirectories folder)))
-               (unless (or (hidden-directory-p sub) (string= "__pycache__" (nlk:folder-name sub)))
-                 (walk sub)))))
-    (walk directory))
+  ;; Listed as the home walk lists (DIRECTORY-ENTRIES): through UIOP, each of
+  ;; a library's 300 skill folders made and resolved a pathname a name, the
+  ;; bulk of the skills plan (2026-10-14).
+  (labels ((walk (folder trail)
+             ;; FOLDER native and `/'-ended, TRAIL where it sits under DIRECTORY
+             (multiple-value-bind (files subdirectories) (directory-entries folder)
+               (dolist (name files)
+                 (let* ((relative (concatenate 'string trail name))
+                        (file (uiop:parse-native-namestring (concatenate 'string folder name)))
+                        (bytes (or (nlk:file-bytes file) 0)))
+                   (unless (or (hidden-name-p name) (string-equal "SKILL.md" relative))
+                     (if (and (member (name-type name) '("md" "txt") :test #'equal) (<= bytes 8192))
+                         (setf inlined (append inlined (list (format nil "--- ~a ---" relative))
+                                               (nlk:lines (uiop:read-file-string file))))
+                         (push (format nil "~a (~d bytes)" relative bytes) named)))))
+               (dolist (name subdirectories)
+                 (unless (or (hidden-name-p name) (string= "__pycache__" name))
+                   (walk (concatenate 'string folder name "/") (concatenate 'string trail name "/")))))))
+    (walk (uiop:native-namestring (uiop:ensure-directory-pathname directory)) ""))
   (values (append inlined (and named (list (format nil "support files not carried: ~{~a~^, ~}"
                                                    (reverse named)))))
           (reverse named)))
