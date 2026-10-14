@@ -57,7 +57,6 @@ is what a new cell is copied from.
 | [`nodecode-cron`](tools/nodecode-cron) | **ships** Prompts that run on a schedule. |
 | [`nodecode-experience`](tools/nodecode-experience) | **ships** Learns from each turn: reflection and recaps. |
 | [`nodecode-guard`](tools/nodecode-guard) | **ships** Refuses risky shell commands before they run. |
-| [`nodecode-import-kit`](tools/nodecode-import-kit) | **ships** Bring another coding agent's home into this one. |
 | [`nodecode-lsp`](tools/nodecode-lsp) | Language servers for Nodecode: diagnostics on write, navigation and rename verbs. |
 | [`nodecode-mcp`](tools/nodecode-mcp) | **ships** Tools from MCP servers you list in the config. |
 | [`nodecode-perplexity`](tools/nodecode-perplexity) | Perplexity web search: sign in with a Pro/Max account, or use a key, and search from eval. |

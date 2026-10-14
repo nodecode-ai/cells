@@ -49,6 +49,7 @@
   :serial t
   :components ((:file "support")
                (:file "schedule-test")
-               (:file "cell-test"))
+               (:file "cell-test")
+               (:file "import-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-cron-tests)))
