@@ -298,8 +298,8 @@ one kept as :SERVING."
                                                 (config-present-p "providers" provider))))
                             facts)
                    (find-if (lambda (fact &aux (value fact.value))
-                              (nth-value 1 (nlk:json-value (catalog-entry (getf value :provider))
-                                                           :any "models" (getf value :model))))
+                              (nth-value 1 (nlk:json-value (nle::models-catalog-table)
+                                                           :any (getf value :provider) "models" (getf value :model))))
                             facts))))
     (destructuring-bind (&key provider model written &allow-other-keys) (and fact fact.value)
       (cond
@@ -516,7 +516,8 @@ in its place."
 on one line, the OPTIONS that carry a value, then each line of LINES as a ;;
 line, its trailing blanks off -- a string of several split as NLK:LINES
 splits one, an empty one an empty line -- the closing paren on a line of
-its own."
+its own. The second value is the form without its lines, which reads as
+the same form."
   ;; Made at its length, a line copied once from where it stands: split into
   ;; strings and written through a stream, a home's 1,100 memories consed
   ;; 72 MB for 5 of text (2026-10-14).
@@ -556,7 +557,7 @@ its own."
                      (replace text string :start1 (1+ at) :start2 start :end2 end)
                      (incf at (1+ (- end start))))))
       (replace text #.(format nil "~%  )") :start1 at)
-      text)))
+      (values text (concatenate 'string head ")")))))
 
 (defun definable-name-p (name)
   "Whether NAME reads as the symbol a definition takes: lower case, digits
@@ -623,7 +624,7 @@ when the home's index had it :HOT. An item the scribe did not keep is an error."
                    (setf (gethash key kept) t)))))
     (loop for (item . form) in run
           for session = (format nil "~a import" item.world)
-          do (destructuring-bind (&key at hot (seed t)) (rest item.keep)
+          do (destructuring-bind (&key at hot (seed t) &allow-other-keys) (rest item.keep)
                (handler-case
                    (cond ((not (gethash (nlk:definition-key form) kept))
                           (fail "~a not kept: ~a" item.destination (nlk:one-line said)))
@@ -701,12 +702,14 @@ PLAN-KEEP, HOT the names a home's hot index lists."
                                            (subseq body (length description))
                                            body)))
                             (and (plusp (length prose)) (list prose))))))
-      (list (definition-text "define-memory" name description lines
-                             :type type :project (getf value :project)
-                             :sources (getf value :sources))
-            :reason (format nil "~@[~(~a~): ~]~a" type (nlk:clip description 80))
-            :at (or (getf value :updated) (getf value :created))
-            :hot (gethash name hot)))))
+      (multiple-value-bind (text form)
+          (definition-text "define-memory" name description lines
+                           :type type :project (getf value :project)
+                           :sources (getf value :sources))
+        (list text :form form
+                   :reason (format nil "~@[~(~a~): ~]~a" type (nlk:clip description 80))
+                   :at (or (getf value :updated) (getf value :created))
+                   :hot (gethash name hot))))))
 
 (defun skill-project (directory &aux (path (namestring directory))
                                      (at (cl:search "/.nodecode/skills/" path)))
@@ -745,22 +748,24 @@ PLAN-KEEP, USED the names a home's ledger says were used."
                              (let ((line (one-line-of body 100)))
                                (and (plusp (length line)) line))
                              name)))
-        (list (definition-text "define-skill" name description
-                               (append (unless (assoc "origin" fields :test #'string-equal)
-                                         (list "origin: import"))
-                                       (loop for (key . value) in fields
-                                             unless (member key '("name" "description")
-                                                            :test #'string-equal)
-                                               collect (format nil "~a: ~a" key value))
-                                       (let ((prose (nlk:trimmed body)))
-                                         (and (plusp (length prose)) (list prose)))
-                                       support)
-                               :project (skill-project directory))
-              :reason (format nil "~a~@[ (not carried: ~{~a~^, ~})~]"
-                              (nlk:clip (nlk:one-line description) 80) named)
-              :at (ignore-errors (nlk:iso-time (- (file-write-date (merge-pathnames "SKILL.md" directory))
-                                                  nlk:+unix-epoch+)))
-              :seed (not (member name used :test #'string-equal)))))))
+        (multiple-value-bind (text form)
+            (definition-text "define-skill" name description
+                             (append (unless (assoc "origin" fields :test #'string-equal)
+                                       (list "origin: import"))
+                                     (loop for (key . value) in fields
+                                           unless (member key '("name" "description")
+                                                          :test #'string-equal)
+                                             collect (format nil "~a: ~a" key value))
+                                     (let ((prose (nlk:trimmed body)))
+                                       (and (plusp (length prose)) (list prose)))
+                                     support)
+                             :project (skill-project directory))
+          (list text :form form
+                     :reason (format nil "~a~@[ (not carried: ~{~a~^, ~})~]"
+                                     (nlk:clip (nlk:one-line description) 80) named)
+                     :at (ignore-errors (nlk:iso-time (- (file-write-date (merge-pathnames "SKILL.md" directory))
+                                                         nlk:+unix-epoch+)))
+                     :seed (not (member name used :test #'string-equal))))))))
 
 (defun plan-usage (plan &aux (facts (plan-facts plan :usage)))
   "The use a home's ledgers record, into this organism's use ledger as it
@@ -1210,7 +1215,14 @@ report lands beside the markers."
           (unless item.keep (keep-run))
           (notify "importing" item)
           (handler-case (if item.keep
-                            (push (cons item (evaluate-definition (first item.keep))) run)
+                            ;; read from its :FORM, the definition without its
+                            ;; prose (DEFINITION-TEXT), when the plan made one: a
+                            ;; memory's prose is ;; lines, each character of which
+                            ;; the reader walks to skip -- read whole, an import's
+                            ;; 1,300 were 60 ms of its apply (2026-10-14)
+                            (push (cons item (evaluate-definition (getf (rest item.keep) :form
+                                                                        (first item.keep))))
+                                  run)
                             (when item.action (funcall item.action)))
             (error (condition) (setf item.status "error" item.reason (princ-to-string condition))))
           ;; Definitions finish only after the batch is persisted above.

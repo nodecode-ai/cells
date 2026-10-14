@@ -934,20 +934,24 @@
     (is (equal '("grok-reasons") (fact-ids facts :hot)) "its MEMORY.md is the hot index")))
 
 (deftest import-definition-text-reads-back-whole (with-import-runtime (home box))
-  (let* ((description "A \"quoted\" path C:\\x; not a comment")
-         (lines (list "first (with parens)" "" "a ;; second comment" "\"quoted\" too"))
-         (text (nik::definition-text "define-memory" "kn-round" description lines
-                                     :type :lesson :sources '("s-1")))
-         (form (let ((*package* (find-package '#:nodecode.evolved)) (*read-eval* nil))
+  (let ((description "A \"quoted\" path C:\\x; not a comment")
+        (lines (list "first (with parens)" "" "a ;; second comment" "\"quoted\" too")))
+    (multiple-value-bind (text bare)
+        (nik::definition-text "define-memory" "kn-round" description lines
+                              :type :lesson :sources '("s-1"))
+      (flet ((read-in-evolved (text)
+               (let ((*package* (find-package '#:nodecode.evolved)) (*read-eval* nil))
                  (read-from-string text))))
-    (is (equal description (third form)) "the description reads back as written")
-    (is (equal '(:type :lesson :sources ("s-1")) (cdddr form)) "the options, and the prose is comments")
-    ;; Kept as a member of its run's PROGN: the scribe files the member's own span, comments whole.
-    (let ((item (nik::make-item :kind "memory" :status "imported" :destination "kn-round"
-                                :world "test" :keep (list text))))
-      (nik::keep-definitions (list (cons item (nik::evaluate-definition text))))
-      (is (equal "imported" (nik::item-status item))))
-    (is (equal (format nil "~{~a~^~%~}" lines) (nlk::knowledge-prose (nlk:knowledge-entry-named "kn-round" nil))))))
+        (let ((form (read-in-evolved text)))
+          (is (equal description (third form)) "the description reads back as written")
+          (is (equal '(:type :lesson :sources ("s-1")) (cdddr form)) "the options, and the prose is comments")
+          (is (equal form (read-in-evolved bare)) "without its prose, the same form")))
+      ;; Kept as a member of its run's PROGN: the scribe files the member's own span, comments whole.
+      (let ((item (nik::make-item :kind "memory" :status "imported" :destination "kn-round"
+                                  :world "test" :keep (list text))))
+        (nik::keep-definitions (list (cons item (nik::evaluate-definition text))))
+        (is (equal "imported" (nik::item-status item))))
+      (is (equal (format nil "~{~a~^~%~}" lines) (nlk::knowledge-prose (nlk:knowledge-entry-named "kn-round" nil)))))))
 
 (deftest import-progress-follows-actions-and-persisted-keeps (with-import-runtime (home box))
   (let* ((written nil) (events '())

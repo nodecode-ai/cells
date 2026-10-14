@@ -29,13 +29,38 @@
   "(ROOT ENV-TABLE BASE-TABLE) for the catalog root the indexes were built
 from; rebuilt when the root is a different object.")
 
+(defvar *providers-memo* nil
+  "The catalog's providers without their models (CATALOG-PROVIDERS), as
+NLE::READ-JSON-FILE-MEMO keeps a parse.")
+
+(defvar *providers-probe* nil
+  "When CATALOG-PROVIDERS last looked at the catalog file.")
+
+(defun catalog-providers ()
+  "The models.dev catalog's providers, each without its models: all a home's
+read asks of the catalog -- a provider's env, api, npm and name."
+  ;; Passed over, the models are most of the file: 20 ms against the
+  ;; organism's 125 of the whole, which a first launch's two imports had
+  ;; waited on, read done, for 130 ms (2026-10-14).
+  (nle::read-json-file-memo '*providers-memo* nle::*models-catalog-path*
+                            :max-bytes (* 8 1024 1024)
+                            :probe '*providers-probe*
+                            :probe-seconds nle::*models-catalog-probe-seconds*
+                            :decoder (lambda (octets)
+                                       (nlk:decode-json
+                                        octets
+                                        :keep (lambda (path)
+                                                (or (/= (length path) 2)
+                                                    (and (string/= (first path) "models")
+                                                         (nle::catalog-member-p path))))))))
+
 (defun catalog-normalize-base (url)
   "URL as a base for comparison: lowercased, trailing slashes off."
   (and (stringp url)
        (let ((text (string-right-trim "/" (string-downcase (string-trim " " url)))))
          (and (plusp (length text)) text))))
 
-(defun vocabulary (&aux (root (nle::models-catalog-table)))
+(defun vocabulary (&aux (root (catalog-providers)))
   "(ENV-TABLE BASE-TABLE) over the current catalog; both empty without one."
   (unless (and *vocabulary* (eq (first *vocabulary*) root))
     (let ((env-table (make-hash-table :test #'equal))
@@ -58,8 +83,8 @@ from; rebuilt when the root is a different object.")
   (and (stringp name) (gethash name (first (vocabulary)))))
 
 (defun catalog-entry (id)
-  "The catalog's providers.<ID> object, or NIL."
-  (nlk:json-value (nle::models-catalog-table) :object id))
+  "The catalog's providers.<ID> object without its models, or NIL."
+  (nlk:json-value (catalog-providers) :object id))
 
 (defun catalog-sdk (id &aux (entry (catalog-entry id)))
   "The wire ID's lane speaks, from its models.dev npm package, or NIL."
@@ -68,7 +93,7 @@ from; rebuilt when the root is a different object.")
 (defun catalog-base (id &aux (entry (catalog-entry id)))
   (and entry (nlk:json-value entry :text "api")))
 
-(defun catalog-model-id (id name &aux (models (nlk:json-value (catalog-entry id) :object "models")))
+(defun catalog-model-id (id name &aux (models (nlk:json-value (nle::models-catalog-table) :object id "models")))
   "The id provider ID's catalog serves the model NAME by, or NIL: NAME itself,
 or -- NAME one word, as a harness names a line of models (`opus', `sonnet[1m]')
 -- the newest model a turn runs on whose id carries that word."
