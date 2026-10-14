@@ -711,7 +711,8 @@ brace that closes it at the start of a line, or NIL."
 
 ;; The slash reply. A command the catalog says acts on no session runs from the
 ;; opener as it is, and no untitled session is left behind; the panel it
-;; answers with is drawn under its line, a row's command one click from the box.
+;; answers with is drawn under its line, a row's value one click from the box and
+;; a row's line one click from running.
 
 (deftest web-cell-a-sessionless-command-runs-without-a-session-and-shows-its-panel ()
   (let* ((app (web-page-text "app.js"))
@@ -722,4 +723,6 @@ brace that closes it at the start of a line, or NIL."
     (is (search ", \"\", answer?.dialog);" run) "the panel rides the reply")
     (is (search "qrCode(dialog.picture.rows)" panel) "its picture")
     (is (search "pick.dataset.value = row.value" panel) "its rows")
+    (is (search "pick.dataset.run = run" panel) "a row's line to run")
+    (is (search "if (pick.dataset.run) { runSlash(pick.dataset.run); return; }" app) "runs on a click")
     (is (search "id=\"slash-panel\"" (web-page-text "index.html")))))

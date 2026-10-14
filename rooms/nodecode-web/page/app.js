@@ -3932,7 +3932,8 @@ function closeSlash() {
 
 // The panel a command answered with, under its line: what it says of itself,
 // its picture (a QR code a phone's camera reads), and its rows, one with a
-// command line putting that line in the box, as Enter on it does in a shell.
+// value putting it in the box and one with a line to run running it, as Enter
+// on it does in a shell.
 function slashPanel(dialog) {
   const panel = $("slash-panel");
   panel.hidden = !dialog;
@@ -3941,8 +3942,10 @@ function slashPanel(dialog) {
   if (dialog.context) said.append(el("p", "reply-context", dialog.context));
   const rows = (dialog.rows || []).map((row) => {
     const li = el("li");
-    const pick = el(row.value ? "button" : "div", "reply-row");
-    if (row.value) { pick.type = "button"; pick.dataset.value = row.value; pick.title = row.value; }
+    const run = row.run?.enter;
+    const pick = el(run || row.value ? "button" : "div", "reply-row");
+    if (run) { pick.type = "button"; pick.dataset.run = run; pick.title = run; }
+    else if (row.value) { pick.type = "button"; pick.dataset.value = row.value; pick.title = row.value; }
     pick.append(el("span", `reply-mark${row.mark_tone === "accent" ? " lit" : ""}`, row.mark || ""),
       el("span", "reply-label", row.label), el("span", "reply-detail", row.detail));
     li.append(pick);
@@ -4063,8 +4066,9 @@ $("slash-list").addEventListener("click", (event) => {
 });
 $("slash-close").addEventListener("click", () => { closeSlash(); promptEl.focus(); });
 $("slash-panel").addEventListener("click", (event) => {
-  const pick = event.target.closest("button[data-value]");
+  const pick = event.target.closest("button[data-value], button[data-run]");
   if (!pick) return;
+  if (pick.dataset.run) { runSlash(pick.dataset.run); return; }
   closeSlash();
   promptEl.value = pick.dataset.value;
   fit();

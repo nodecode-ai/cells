@@ -16,11 +16,11 @@
 ;;;; operator's route (NLE:ROUTE), over the same verbs.
 ;;;;
 ;;;; Slash output: the answer is the list — one line per job — which a
-;;;; headless caller (NLE:SLASH, a room, a test) and a shell's notice read
-;;;; whole; its one-line form rides the composer inline hint a shell's
-;;;; placeholder shows. `/cron jobs' posts the whole table as a notice on
-;;;; every shell. Long-form reads are model-facing ((cron:jobs),
-;;;; (cron:show), (cron:runs)).
+;;;; headless caller (NLE:SLASH, a room, a test) reads whole, and the panel a
+;;;; shell opens over it: a row per job, Enter on one its record (`/cron show
+;;;; ID'), whose last rows run, pause or resume, and remove it. `/cron jobs'
+;;;; posts the whole table as a notice on every shell. Long-form reads are
+;;;; model-facing ((cron:jobs), (cron:show), (cron:runs)).
 ;;;;
 ;;;; Config, a sibling top-level key next to `notify' and `websearch':
 ;;;;   "cron": {"enabled": true, "timeout_minutes": 10}
@@ -213,7 +213,7 @@ registry is written after it -- the ticker woken too, with POKE."
 
 ;;; --- /cron -------------------------------------------------------------------------
 
-(defparameter +usage+ "/cron [jobs | run ID | pause ID | resume ID | remove ID]")
+(defparameter +usage+ "/cron [jobs | show ID | run ID | pause ID | resume ID | remove ID]")
 
 (defparameter +no-jobs-line+
   "cron: no jobs; (cron:add \"every day at 9am\" \"...\") through eval"
@@ -239,30 +239,131 @@ list naming each job, its state and its timing."
           (format nil "cron: ~d job~:p~%~{- ~a~^~%~}~@[~%+~d more (/cron jobs)~]"
                   (length ordered)
                   ;; Next fire while active, else the last outcome.
-                  (mapcar (lambda (job &aux (last job.last))
+                  (mapcar (lambda (job)
                             (format nil "~a — ~(~a~), ~a"
                                     job.id job.state
-                                    (cond ((eq (job-state job) :active)
-                                           (if job.next-at
-                                               (format nil "next ~a" (at-text job.next-at))
-                                               "no fire left"))
-                                          (last (format nil "last ~a ~a"
-                                                        (getf last :status)
-                                                        (subseq (local-text (getf last :at)) 5)))
-                                          (t "never fired"))))
+                                    (if (eq (job-state job) :active) (next-phrase job) (last-phrase job))))
                           shown)
                   (and (> (length ordered) 3) (- (length ordered) 3)))))))
+
+(defun next-phrase (job)
+  "JOB's next fire in a phrase: `next 2026-09-05 09:00 (in 23h)'."
+  (if job.next-at (format nil "next ~a" (at-text job.next-at)) "no fire left"))
+
+(defun last-phrase (job &aux (last job.last))
+  "JOB's last outcome in a phrase: `last ok 09-04 09:00'."
+  (if last
+      (format nil "last ~a ~a" (getf last :status) (subseq (local-text (getf last :at)) 5))
+      "never fired"))
+
+;;; The panel a shell opens on bare /cron: a row per job marked by how it
+;;; stands, Enter its record and Space a pause or a resume. The record ends in
+;;; the rows that move the job; every key runs a /cron line, so a shell, the
+;;; web page and a room reach the one set of verbs.
+
+(defun firing-p (job)
+  (find job.id *inflight* :key #'fire-job-id :test #'string=))
+
+(defun job-mark (job)
+  "=> (values MARK TONE): JOB in the panel's mark column -- firing now,
+paused, done, its last fire gone wrong, else waiting on its next."
+  (cond ((firing-p job) (values "▸" :accent))
+        ((eq job.state :paused) (values "‖" :muted))
+        ((eq job.state :done) (values "·" :muted))
+        ((member (getf job.last :status) '("failed" "cancelled" "missed") :test #'equal)
+         (values "!" :tool))
+        (t (values "●" :success))))
+
+(defun job-row (job width)
+  "JOB's row in the panel: its id, padded to WIDTH, schedule, timing and last
+outcome."
+  (multiple-value-bind (mark tone) (job-mark job)
+    (list :mark mark :mark-tone tone :label (format nil "~va" width job.id)
+          :detail (format nil "~a · ~a · ~a"
+                          (schedule-display job.schedule)
+                          (cond ((firing-p job) "firing now")
+                                ((eq job.state :active) (next-phrase job))
+                                (t (string-downcase job.state)))
+                          (last-phrase job))
+          :run (list :enter (format nil "/cron show ~a" job.id)
+                     :space (format nil "/cron ~:[resume~;pause~] ~a"
+                                    (eq job.state :active) job.id)))))
+
+(defun panel ()
+  "The dialog bare /cron answers: every job in the summary's order."
+  (with-cron-lock
+    (let ((jobs (summary-order (reverse *jobs*))))
+      (nle:list-dialog
+       :title (format nil "Cron (~d)" (length jobs))
+       :context (format nil "~:[no jobs~;~:*~{~a~^ · ~}~]"
+                        (loop for state in '(:active :paused :done)
+                              for count = (count state jobs :key #'job-state)
+                              when (plusp count)
+                                collect (format nil "~d ~(~a~)" count state)))
+       :rows (let ((width (reduce #'max jobs :key (lambda (job) (length job.id)) :initial-value 0)))
+               (mapcar (lambda (job) (job-row job width)) jobs))
+       :searchable t
+       :search-placeholder "Search jobs"
+       :empty-label "No jobs · ask for one, or (cron:add \"every day at 9am\" \"...\") through eval"
+       :hint "space pause/resume  enter details  esc close  ↑↓ navigate  type search"))))
+
+(defun wrapped (text width)
+  "TEXT as lines of at most WIDTH characters broken between words, its own
+line breaks kept; a longer word stands on a line of its own."
+  (loop for line in (nlk:lines text)
+        append (let ((out '()) (current nil))
+                 (dolist (word (nlk:split-words line))
+                   (if (and current (> (+ (length current) 1 (length word)) width))
+                       (setf out (cons current out) current word)
+                       (setf current (if current (format nil "~a ~a" current word) word))))
+                 (reverse (cons (or current "") out)))))
+
+(defun record-panel (job)
+  "The dialog `/cron show ID' answers: JOB's record a fact a row, the prompt
+a row a line, then the rows that run, pause or resume, and remove it."
+  (flet ((fact (key text) (list :mark " " :label (format nil "~8a" key) :detail text))
+         (act (mark tone label detail verb)
+           (list :mark mark :mark-tone tone :label (format nil "~8a" label) :detail detail
+                 :run (list :enter (format nil "/cron ~a ~a" verb job.id)))))
+    (nle:list-dialog
+     :title "Cron"
+     :context (format nil "~a~@[ · ~a~]" job.id (and (string/= job.name job.id) job.name))
+     :rows (append
+            (list (fact "state" (format nil "~(~a~)~:[~; · firing now~] · fired ~d time~:p"
+                                        job.state (firing-p job) job.fires))
+                  (fact "schedule" (schedule-display job.schedule))
+                  (fact "next" (if (eq job.state :active) (next-text job) (format nil "- (~(~a~))" job.state)))
+                  (fact "last" (last-text job)))
+            (loop for line in (wrapped job.prompt 72)
+                  for key = "prompt" then ""
+                  collect (fact key line))
+            (when job.cwd (list (fact "folder" job.cwd)))
+            (list (fact "session" job.session)
+                  (fact "timeout" (format nil "~a~:[~; (the section's)~]"
+                                          (duration-text (job-timeout-seconds job)) (null job.timeout))))
+            (when job.origin (list (fact "from" job.origin)))
+            (when job.report
+              (list (fact "report" (format nil "waiting to be sent since ~a"
+                                           (local-text (getf job.report :at))))))
+            (list (act "▸" :accent "Run now" "fire it once, beside its schedule" "run")
+                  (if (eq job.state :active)
+                      (act "‖" :muted "Pause" "hold it: nothing fires until it is resumed" "pause")
+                      (act "●" :success "Resume" "fire again from the next due time" "resume"))
+                  (act "×" :danger "Remove" "forget it; its session keeps its history" "remove")))
+     :hint "enter run the action  esc back  ↑↓ navigate")))
 
 (defun run-slash (args &aux (words (nlk:split-words args))
                             (head (first words))
                             (id (second words)))
-  "The answer to one /cron invocation, what every caller shows."
+  "The answer to one /cron invocation: what every caller shows, and the
+panel a shell opens over it, bare or for one job's record."
   (cond
-    ((null head) (summary-text))
+    ((null head) (values (summary-text) (panel)))
     ((member head '("jobs" "list") :test #'string=)
      (nle:notice (jobs-text) :level :info)
      (format nil "cron: ~d job~:p posted" (length *jobs*)))
     ((null id) (format nil "cron: ~a needs a job id; usage ~a" head +usage+))
+    ((string= head "show") (values (show id) (with-cron-lock (record-panel (require-job id)))))
     ((string= head "run") (run id))
     ((string= head "pause") (pause id))
     ((string= head "resume") (resume id))
@@ -338,5 +439,5 @@ thread, and the standing line for the jobs that keep the gateway up."
   (:command "cron" (lambda (args session-id)
                      (declare (ignore session-id))
                      (run-slash args))
-            :description "Scheduled jobs: summary, jobs, run ID, pause ID, resume ID, remove ID"
-            :argument-hint "jobs | run ID | pause ID | resume ID | remove ID"))
+            :description "Scheduled jobs: the list, jobs, show ID, run ID, pause ID, resume ID, remove ID"
+            :argument-hint "jobs | show ID | run ID | pause ID | resume ID | remove ID"))

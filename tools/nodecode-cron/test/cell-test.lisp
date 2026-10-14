@@ -243,6 +243,47 @@ session ORIGIN when given."
     (is (search (concatenate 'string (string #\Newline) "+3 more (/cron jobs)")
                 (nodecode-cron::summary-text)))))
 
+(deftest cron-cell-slash-panel-lists-the-jobs-and-a-row-opens-its-record (with-cron-runtime (:store t))
+  ;; Bare /cron answers the summary and the panel a shell opens over it: a row
+  ;; per job in the summary's order, marked by how it stands, its Enter the
+  ;; record and its Space a pause or a resume. The record ends in the rows that
+  ;; run, resume or pause, and remove the job.
+  (cron-add "every day at 9am"
+            "Summarize the inbox: the five messages that matter most, who sent them, and what each asks of me"
+            :name "Inbox digest")
+  (cron-add "30m" "Ping" :name "health")
+  (cron:pause "health")
+  (multiple-value-bind (text panel) (nodecode-cron::run-slash "")
+    (is (uiop:string-prefix-p "cron: 2 jobs" text) "the text is the summary")
+    (let ((rows (getf panel :rows)))
+      (is (equal "Cron (2)" (getf panel :title)))
+      (is (equal "1 active · 1 paused" (getf panel :context)))
+      ;; the ids padded to one width, so the columns after them line up
+      (is (equal '("inbox-digest" "health      ") (mapcar (lambda (row) (getf row :label)) rows)))
+      (is (equal '("●" "‖") (mapcar (lambda (row) (getf row :mark)) rows)))
+      (is (equal '(:enter "/cron show inbox-digest" :space "/cron pause inbox-digest")
+                 (getf (first rows) :run)))
+      (is (equal "/cron resume health" (getf (getf (second rows) :run) :space)) "a paused job's Space resumes it")))
+  (multiple-value-bind (text record) (nodecode-cron::run-slash "show inbox-digest")
+    (is (uiop:string-prefix-p "job inbox-digest" text) "the text is the whole record")
+    (let ((rows (getf record :rows)))
+      (is (equal "inbox-digest · Inbox digest" (getf record :context)))
+      (is-present (prompt (member "prompt  " rows :key (lambda (row) (getf row :label)) :test #'equal)) "a prompt row"
+        (is (equal "Summarize the inbox: the five messages that matter most, who sent them,"
+                   (getf (first prompt) :detail)))
+        ;; and its words wrap onto the rows under it
+        (is (equal '("        " "and what each asks of me")
+                   (list (getf (second prompt) :label) (getf (second prompt) :detail)))))
+      (is (equal '("/cron run inbox-digest" "/cron pause inbox-digest" "/cron remove inbox-digest")
+                 (loop for row in rows
+                       for line = (getf (getf row :run) :enter)
+                       when line collect line)))))
+  ;; a paused job's record resumes it, and names no next fire it will not make
+  (let ((record (format nil "~s" (nth-value 1 (nodecode-cron::run-slash "show health")))))
+    (is (search "/cron resume health" record))
+    (is (search "\"- (paused)\"" record)))
+  (is (signals-error cron:cron-error (nodecode-cron::run-slash "show nope"))))
+
 (deftest cron-cell-a-job-session-cannot-schedule (with-cron-runtime (:submits t))
   (cron-add "30m" "x" :name "loop")
   (let ((nlk:*scribe-session-id* "cron-loop"))
