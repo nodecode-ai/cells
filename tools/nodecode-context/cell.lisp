@@ -4,7 +4,7 @@
 (in-package #:nodecode-context)
 
 (defparameter *skill*
-  "During substantial tool work, review your context at useful checkpoints, such as after settling a subproblem, and before your final answer; not after every tool call, and none when unnecessary. Every tool result ends with its seq, [seq 57]. Edit in one call, without exporting, reading or printing anything: (context :drop '(12 . 56) :note \"…\") drops those blocks, (context :drop t :keep '(57) :note \"…\") keeps only seq 57. The note is your own words, kept at the end: constraints, decisions, verified state, unresolved work and exact evidence pointers. The next request takes the edit and reports it. Correctness outranks size.")
+  "During substantial tool work, review your context at useful checkpoints, such as after settling a subproblem, and before your final answer; not after every tool call, not while a subproblem is still open (if you must, :keep the blocks you still use), and none when unnecessary. Every tool result ends with its seq, [seq 57]. Edit in one call, without exporting, reading or printing anything: (context :drop '(12 . 56) :note \"…\") drops those blocks, (context :drop t :keep '(57) :note \"…\") keeps only seq 57. The note is your own words, kept at the end: constraints, decisions, verified state, open work, evidence pointers. Correctness outranks size.")
 
 (defun standing-skill (next session-id)
   "Always supply the full skill in protected standing context, never the ranked index."
