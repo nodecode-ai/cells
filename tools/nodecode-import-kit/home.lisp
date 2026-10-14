@@ -159,6 +159,35 @@ resolved and nothing read yet."
 
 ;;; --- convention: a skill ----------------------------------------------------
 
+(defun skill-support (directory &aux (inlined '()) (named '()))
+  "=> (values LINES NAMED): the small text files beside a skill's SKILL.md
+as ;; sections the definition carries, and every other file named with its
+size, hidden files and __pycache__ left out."
+  ;; Listed as the home walk lists (DIRECTORY-ENTRIES): through UIOP, each of
+  ;; a library's 300 skill folders made and resolved a pathname a name, the
+  ;; bulk of the skills plan (2026-10-14).
+  (labels ((walk (folder trail)
+             ;; FOLDER native and `/'-ended, TRAIL where it sits under DIRECTORY
+             (multiple-value-bind (files subdirectories) (directory-entries folder)
+               (dolist (name files)
+                 (let* ((relative (concatenate 'string trail name))
+                        (native (concatenate 'string folder name))
+                        (bytes (or (ignore-errors (sb-posix:stat-size (sb-posix:stat native))) 0)))
+                   (unless (or (hidden-name-p name) (string-equal "SKILL.md" relative))
+                     (if (and (member (name-type name) '("md" "txt") :test #'equal) (<= bytes 8192))
+                         (push (cons (format nil "--- ~a ---" relative)
+                                     (nlk:lines (nlk:read-text (uiop:parse-native-namestring native))))
+                               inlined)
+                         (push (format nil "~a (~d bytes)" relative bytes) named)))))
+               (dolist (name subdirectories)
+                 (unless (or (hidden-name-p name) (string= "__pycache__" name))
+                   (walk (concatenate 'string folder name "/") (concatenate 'string trail name "/")))))))
+    (walk (uiop:native-namestring (uiop:ensure-directory-pathname directory)) ""))
+  (values (append (loop for section in (reverse inlined) append section)
+                  (and named (list (format nil "support files not carried: ~{~a~^, ~}"
+                                           (reverse named)))))
+          (reverse named)))
+
 (defun skill-fact (file relative world)
   (let* ((directory (uiop:pathname-directory-pathname file))
          (text (nlk:read-text file +text-byte-cap+))
@@ -172,7 +201,9 @@ resolved and nothing read yet."
                    (nlk:folder-name directory))))
     (make-fact :kind :skill :id name :world world :source relative
                :value (list :name name :directory directory :text text
-                            :summary (and text (one-line-of text 80))))))
+                            :summary (and text (one-line-of text 80))
+                            ;; read with the skill, on its lane (READ-FACTS)
+                            :support (multiple-value-list (skill-support directory))))))
 
 ;;; --- convention: instructions and memory ------------------------------------
 
@@ -295,6 +326,13 @@ when TEXT opens with no such block."
 (defvar *project-roots* nil
   "Claude Code's project roots by munged spelling, read once per walk (READ-FACTS binds it).")
 
+(defun project-roots (&aux (table (make-hash-table :test 'equal)))
+  "Claude Code's project roots, by the munged spelling its projects/ folders take."
+  (dolist (root (claude-projects) table)
+    (let ((key (string-downcase (ppcre:regex-replace-all "[^A-Za-z0-9]" root "-"))))
+      (unless (gethash key table)
+        (setf (gethash key table) root)))))
+
 (defun trail-project (trail)
   "The project a memory under TRAIL is about when it sits in a folder named
 for one -- Claude Code's projects/<root, munged>/memory/: the root
@@ -304,14 +342,7 @@ for one -- Claude Code's projects/<root, munged>/memory/: the root
   (let ((munged (second (member "projects" trail :test #'string=))))
     (and munged
          (values (gethash (string-downcase munged)
-                          (or *project-roots*
-                              (setf *project-roots*
-                                    (let ((table (make-hash-table :test 'equal)))
-                                      (dolist (root (claude-projects) table)
-                                        (let ((key (string-downcase
-                                                    (ppcre:regex-replace-all "[^A-Za-z0-9]" root "-"))))
-                                          (unless (gethash key table)
-                                            (setf (gethash key table) root))))))))))))
+                          (or *project-roots* (setf *project-roots* (project-roots))))))))
 
 (defun memory-file-fact (home relative trail fields body)
   "One remembered entry from a memory file whose frontmatter names it: its
@@ -464,16 +495,28 @@ out, in UIOP:DIRECTORY-FILES's and UIOP:SUBDIRECTORIES's order."
   (values (sort files #'string<)
           (sort subdirectories #'string< :key (lambda (name) (concatenate 'string name "/")))))
 
-(defun read-facts (home &key (sessions t) (text t))
-  "Everything the home holds, as facts, HOME filled in as it goes; TEXT nil
-leaves its prose -- instructions, memory, skills, ledgers -- unread."
-  ;; SESSIONS nil leaves the conversations alone — what the first frame wants,
-  ;; since a transcript store is gigabytes and a provider key is bytes. TEXT
-  ;; nil is a plan of keys and config alone: the setup walk's first, which
-  ;; skipped past nothing but the 1,800 files it never wanted.
-  (let ((facts '()) (budget 6000) (first-root (uiop:ensure-directory-pathname (first home.roots)))
-        (*project-roots* nil)
-        (*normal-names* (make-hash-table :test #'equal)))
+(defun read-in (home job &aux (scratch (make-home :world home.world :name home.name)))
+  "What JOB, a function of a home it notes into, reads of HOME, as (FACTS
+UNMAPPED NOTES), its notes newest first: noted apart, jobs on several
+threads write nothing over each other and their notes keep the walk's order."
+  (list (funcall job scratch) (home-unmapped scratch) (home-notes scratch)))
+
+;; A home's read is in three parts, so that homes and files read side by
+;; side where nothing they read binds them: each home's walk (WALK-HOME) on
+;; a lane of its own; then every prose file of every home -- instructions,
+;; memories, skills, ledgers, a working box's 1,500 of 1,600 -- eight at a
+;; time; and beside those the settings files, read here, under this call's
+;; bindings, since what a setting means is the catalog's and the box's. Home
+;; by home and file by file, that was 210 ms of a warm import (2026-10-14).
+
+(defun walk-home (home text)
+  "The files of HOME a read wants, in walk order, as (KIND . JOB): JOB a
+function of the home it notes into, KIND :SETTINGS for one read under the
+caller's bindings, else :PROSE. The second value says whether a memory sits
+under a projects/ folder, which reads Claude Code's project roots."
+  ;; TEXT nil leaves its prose -- instructions, memory, skills, ledgers -- unread.
+  (let ((visits '()) (budget 6000) (projects nil)
+        (first-root (uiop:ensure-directory-pathname (first home.roots))))
     (labels ((visit (path name trail &optional relative
                      &aux (type (string-downcase (or (name-type name) ""))))
                ;; PATH native, RELATIVE its name in the report when not FIRST-ROOT's;
@@ -483,9 +526,9 @@ leaves its prose -- instructions, memory, skills, ledgers -- unread."
                  (cond
                    ((and text (string-equal "SKILL.md" name)
                          (some (lambda (name) (uiop:string-prefix-p "skills" name)) trail))
-                    (let ((file (file)))
-                      (push (skill-fact file (relative file) (home-world-name home))
-                            facts)))
+                    (let* ((file (file)) (relative (relative file)))
+                      (push (cons :prose (lambda (home) (list (skill-fact file relative (home-world-name home)))))
+                            visits)))
                    ((and (not (member (string-downcase name)
                                       '("package.json" "package-lock.json" "bun.lock" "bun.lockb"
                                         "yarn.lock" "tsconfig.json" "jsconfig.json" "composer.lock"
@@ -494,17 +537,17 @@ leaves its prose -- instructions, memory, skills, ledgers -- unread."
                          (not (cache-file-p name))
                          (or (environment-file-p name)
                              (member type '("json" "jsonc" "json5" "yaml" "yml" "toml") :test #'string=)))
-                    (let ((file (file)))
-                      (setf facts (revappend (read-config-facts home file (relative file))
-                                             facts))))
+                    (let* ((file (file)) (relative (relative file)))
+                      (push (cons :settings (lambda (home) (read-config-facts home file relative)))
+                            visits)))
                    ((and text (member type +markdown-types+ :test #'string=))
-                    (let ((file (file)))
-                      (setf facts (revappend (read-text-facts home file (relative file) trail)
-                                             facts))))
+                    (let* ((file (file)) (relative (relative file)))
+                      (when (member "projects" trail :test #'string=) (setf projects t))
+                      (push (cons :prose (lambda (home) (read-text-facts home file relative trail)))
+                            visits)))
                    ((and text (member name '("usage.jsonl" "sightings.jsonl") :test #'string=))
-                    (let ((file (file)))
-                      (setf facts (revappend (usage-facts home file (relative file))
-                                             facts)))))))
+                    (let* ((file (file)) (relative (relative file)))
+                      (push (cons :prose (lambda (home) (usage-facts home file relative))) visits))))))
              ;; A conversation directory is crossed, never read (no settings) nor skipped (memory lives in one).
              (walk (directory trail depth crossing)
                (when (and (plusp budget) (<= depth +walk-file-depth+))
@@ -540,8 +583,63 @@ leaves its prose -- instructions, memory, skills, ledgers -- unread."
                          (list name))
                     0 nil))
             (visit (uiop:native-namestring root) (file-namestring root) '() (file-namestring root)))))
-    (setf facts (nreverse facts))
-    (when sessions
-      (setf facts (append facts (session-facts home))))
-    (setf home.facts facts home.unmapped (nreverse home.unmapped) home.notes (nreverse home.notes))
-    facts))
+    (values (nreverse visits) projects)))
+
+(defun read-homes (homes &key (sessions t) (text t))
+  "Every one of HOMES read into facts, each HOME filled in as it goes; TEXT
+nil leaves their prose unread. A home whose read fails keeps the failure as
+a note, and no facts."
+  ;; SESSIONS nil leaves the conversations alone — what the first frame wants,
+  ;; since a transcript store is gigabytes and a provider key is bytes. TEXT
+  ;; nil is a plan of keys and config alone: the setup walk's first, which
+  ;; skipped past nothing but the 1,800 files it never wanted.
+  (flet ((guarded (function)
+           (lambda (&rest arguments)
+             (handler-case (apply function arguments) (error (condition) condition)))))
+    (let* ((walks (nlk:parallel-map (guarded (lambda (home) (multiple-value-list (walk-home home text))))
+                                    homes))
+           ;; each home's project roots, read here where the box is bound
+           (roots (mapcar (lambda (walk) (and (consp walk) (second walk) (project-roots))) walks))
+           (prose (nlk:spawn "import prose"
+                    (nlk:parallel-map (guarded (lambda (job)
+                                                 (destructuring-bind (home roots . function) job
+                                                   (let ((*project-roots* roots))
+                                                     (read-in home function)))))
+                                      (loop for home in homes
+                                            for walk in walks
+                                            for roots* in roots
+                                            when (consp walk)
+                                              append (loop for (kind . function) in (first walk)
+                                                           when (eq kind :prose)
+                                                             collect (list* home roots* function))))))
+           (settings (let ((*normal-names* (make-hash-table :test #'equal)))
+                       (loop for home in homes
+                             for walk in walks
+                             when (consp walk)
+                               append (loop for (kind . function) in (first walk)
+                                            when (eq kind :settings)
+                                              collect (funcall (guarded #'read-in) home function)))))
+           (prose (bt2:join-thread prose)))
+      (loop for home in homes
+            for walk in walks
+            do (let ((reads (and (consp walk)
+                                 (loop for (kind) in (first walk)
+                                       collect (if (eq kind :prose) (pop prose) (pop settings))))))
+                 (nlk:if-let (failure (if (consp walk) (find-if-not #'listp reads) walk))
+                   (push (princ-to-string failure) home.notes)
+                   (let ((facts '()))
+                     (loop for (found unmapped notes) in reads
+                           do (setf home.unmapped (append unmapped home.unmapped)
+                                    home.notes (append notes home.notes)
+                                    facts (revappend found facts)))
+                     (setf facts (nreverse facts))
+                     (when sessions
+                       (setf facts (append facts (session-facts home))))
+                     (setf home.facts facts
+                           home.unmapped (nreverse home.unmapped)
+                           home.notes (nreverse home.notes)))))))))
+
+(defun read-facts (home &key (sessions t) (text t))
+  "Everything the home holds, as facts, HOME filled in as it goes (READ-HOMES)."
+  (read-homes (list home) :sessions sessions :text text)
+  home.facts)

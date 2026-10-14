@@ -502,22 +502,61 @@ in its place."
 ;;; of each entry the home's hot index listed, so the first index lists that
 ;;; set.
 
-(defun definition-text (operator name description lines &rest options)
+(defun definition-text (operator name description lines &rest options
+                        &aux (head (let ((*print-pretty* nil))
+                                     (with-output-to-string (out)
+                                       (format out "(~(~a~) ~(~a~)~%  ~s" operator name (nlk:one-line description))
+                                       (loop for (key value) on options by #'cddr
+                                             when value
+                                               do (format out "~%  ~(~s~) ~a" key
+                                                          (if (keywordp value)
+                                                              (format nil "~(~s~)" value)
+                                                              (prin1-to-string value))))))))
   "OPERATOR's definition of NAME as the text the scribe keeps: DESCRIPTION
-on one line, the OPTIONS that carry a value, then LINES each as a ;; line,
-the closing paren on a line of its own."
-  (let ((*print-pretty* nil))
-    (with-output-to-string (out)
-      (format out "(~(~a~) ~(~a~)~%  ~s" operator name (nlk:one-line description))
-      (loop for (key value) on options by #'cddr
-            when value
-              do (format out "~%  ~(~s~) ~a" key (if (keywordp value)
-                                                     (format nil "~(~s~)" value)
-                                                     (prin1-to-string value))))
-      (dolist (line lines)
-        (let ((line (string-right-trim '(#\Space #\Tab #\Return) line)))
-          (format out "~%  ;;~:[ ~a~;~]" (zerop (length line)) line)))
-      (format out "~%  )"))))
+on one line, the OPTIONS that carry a value, then each line of LINES as a ;;
+line, its trailing blanks off -- a string of several split as NLK:LINES
+splits one, an empty one an empty line -- the closing paren on a line of
+its own."
+  ;; Made at its length, a line copied once from where it stands: split into
+  ;; strings and written through a stream, a home's 1,100 memories consed
+  ;; 72 MB for 5 of text (2026-10-14).
+  (flet ((each-line (function)
+           ;; FUNCTION over each line's (STRING START END), END past its trailing blanks
+           (dolist (string lines)
+             (let ((pieces '()))
+               (loop for start = 0 then (1+ newline)
+                     for newline = (position #\Newline string :start start)
+                     for end = (or newline (length string))
+                     do (push (cons start (if (and newline (> end start)
+                                                   (char= #\Return (char string (1- end))))
+                                              (1- end)
+                                              end))
+                              pieces)
+                     while newline)
+               (unless (zerop (length string))
+                 (loop while (and pieces (= (car (first pieces)) (cdr (first pieces)))) do (pop pieces)))
+               (loop for (start . end) in (nreverse pieces)
+                     do (funcall function string start
+                                 (let ((last (position-if-not (lambda (char) (member char '(#\Space #\Tab #\Return)))
+                                                              string :start start :end end :from-end t)))
+                                   (if last (1+ last) start))))))))
+    (let ((text (make-string (+ (length head) 4
+                                (let ((size 0))
+                                  (each-line (lambda (string start end)
+                                               (declare (ignore string))
+                                               (incf size (+ 5 (if (> end start) (1+ (- end start)) 0)))))
+                                  size))))
+          (at (length head)))
+      (replace text head)
+      (each-line (lambda (string start end)
+                   (replace text #.(format nil "~%  ;;") :start1 at)
+                   (incf at 5)
+                   (when (> end start)
+                     (setf (char text at) #\Space)
+                     (replace text string :start1 (1+ at) :start2 start :end2 end)
+                     (incf at (1+ (- end start))))))
+      (replace text #.(format nil "~%  )") :start1 at)
+      text)))
 
 (defun definable-name-p (name)
   "Whether NAME reads as the symbol a definition takes: lower case, digits
@@ -612,26 +651,40 @@ skip when this organism keeps NAME already and the plan does not overwrite."
         (t (add-item plan kind "imported" :fact fact :destination name :reason reason
                      :keep (cons text (alexandria:remove-from-plist keys :reason))))))
 
-(defun plan-memory (plan &aux (hot (mapcar #'fact-id (plan-facts plan :hot)))
+(defun plan-memory (plan &aux (hot (let ((table (make-hash-table :test #'equalp)))
+                                     (dolist (fact (plan-facts plan :hot) table)
+                                       (setf (gethash fact.id table) t))))
                               (seen (make-hash-table :test #'equal)))
   "Each remembered entry a home holds, as a define-memory: its name, or a
 digest of it for an entry that names none; its description, type, project
 and sources; the dates and the body as its prose. A second entry of one
 name -- a user's and a project's memory both called so -- is a conflict the
 report names, never a silent drop."
-  (dolist (fact (plan-facts plan :memory))
-    (let ((name (string-downcase (or (getf fact.value :name) fact.id))))
-      (cond ((null (gethash name seen))
-             (setf (gethash name seen) fact.source)
-             (plan-memory-entry plan fact name hot))
-            ;; an unnamed entry is named by its digest: the same text twice is one entry
-            ((getf fact.value :name)
-             (add-item plan "memory" "conflict" :fact fact :destination name
-                       :reason (format nil "a memory named ~a came from ~a first; rename one by hand"
-                                       name (gethash name seen))))))))
+  ;; Each entry's text is made on eight lanes, its item added in turn: one
+  ;; by one, a home's 1,100 were 30 ms of a warm plan (2026-10-14).
+  (let ((rows (loop for fact in (plan-facts plan :memory)
+                    for name = (string-downcase (or (getf fact.value :name) fact.id))
+                    when (cond ((null (gethash name seen))
+                                (setf (gethash name seen) fact.source)
+                                (list fact name))
+                               ;; an unnamed entry is named by its digest: the same text twice is one entry
+                               ((getf fact.value :name)
+                                (list fact name (gethash name seen))))
+                      collect it)))
+    (loop for (fact name first) in rows
+          for entry in (nlk:parallel-map (lambda (row)
+                                           (and (null (third row))
+                                                (memory-entry (first row) (second row) hot)))
+                                         rows)
+          do (if first
+                 (add-item plan "memory" "conflict" :fact fact :destination name
+                           :reason (format nil "a memory named ~a came from ~a first; rename one by hand"
+                                           name first))
+                 (apply #'plan-keep plan "memory" fact name entry)))))
 
-(defun plan-memory-entry (plan fact name hot)
-  "The item keeping FACT, a remembered entry, as the define-memory NAME."
+(defun memory-entry (fact name hot)
+  "FACT, a remembered entry, as the define-memory NAME: (TEXT . KEYS) for
+PLAN-KEEP, HOT the names a home's hot index lists."
   (let ((value fact.value))
     (let* ((body (getf value :text))
            (description (or (getf value :description) (one-line-of body 100)))
@@ -644,43 +697,16 @@ report names, never a silent drop."
                                              (getf value :updated))
                                      ""))
                           ;; the description is the docstring; what follows it is the prose
-                          (nlk:lines (if (uiop:string-prefix-p description body)
-                                         (subseq body (length description))
-                                         body)))))
-      (plan-keep plan "memory" fact name
-                 (definition-text "define-memory" name description lines
-                                  :type type :project (getf value :project)
-                                  :sources (getf value :sources))
-                 :reason (format nil "~@[~(~a~): ~]~a" type (nlk:clip description 80))
-                 :at (or (getf value :updated) (getf value :created))
-                 :hot (member name hot :test #'string-equal)))))
-
-(defun skill-support (directory &aux (inlined '()) (named '()))
-  "=> (values LINES NAMED): the small text files beside a skill's SKILL.md
-as ;; sections the definition carries, and every other file named with its
-size, hidden files and __pycache__ left out."
-  ;; Listed as the home walk lists (DIRECTORY-ENTRIES): through UIOP, each of
-  ;; a library's 300 skill folders made and resolved a pathname a name, the
-  ;; bulk of the skills plan (2026-10-14).
-  (labels ((walk (folder trail)
-             ;; FOLDER native and `/'-ended, TRAIL where it sits under DIRECTORY
-             (multiple-value-bind (files subdirectories) (directory-entries folder)
-               (dolist (name files)
-                 (let* ((relative (concatenate 'string trail name))
-                        (native (concatenate 'string folder name))
-                        (bytes (or (ignore-errors (sb-posix:stat-size (sb-posix:stat native))) 0)))
-                   (unless (or (hidden-name-p name) (string-equal "SKILL.md" relative))
-                     (if (and (member (name-type name) '("md" "txt") :test #'equal) (<= bytes 8192))
-                         (setf inlined (append inlined (list (format nil "--- ~a ---" relative))
-                                               (nlk:lines (nlk:read-text (uiop:parse-native-namestring native)))))
-                         (push (format nil "~a (~d bytes)" relative bytes) named)))))
-               (dolist (name subdirectories)
-                 (unless (or (hidden-name-p name) (string= "__pycache__" name))
-                   (walk (concatenate 'string folder name "/") (concatenate 'string trail name "/")))))))
-    (walk (uiop:native-namestring (uiop:ensure-directory-pathname directory)) ""))
-  (values (append inlined (and named (list (format nil "support files not carried: ~{~a~^, ~}"
-                                                   (reverse named)))))
-          (reverse named)))
+                          (let ((prose (if (uiop:string-prefix-p description body)
+                                           (subseq body (length description))
+                                           body)))
+                            (and (plusp (length prose)) (list prose))))))
+      (list (definition-text "define-memory" name description lines
+                             :type type :project (getf value :project)
+                             :sources (getf value :sources))
+            :reason (format nil "~@[~(~a~): ~]~a" type (nlk:clip description 80))
+            :at (or (getf value :updated) (getf value :created))
+            :hot (gethash name hot)))))
 
 (defun skill-project (directory &aux (path (namestring directory))
                                      (at (cl:search "/.nodecode/skills/" path)))
@@ -698,35 +724,43 @@ size, hidden files and __pycache__ left out."
   "Each skill a home holds, as a prose define-skill: SKILL.md's description
 its docstring, its other frontmatter and its procedure the prose, a small
 text file beside it carried along and anything else named."
-  (dolist (fact (plan-facts plan :skill))
-    (let* ((name fact.id)
-           (directory (getf fact.value :directory))
-           (path (merge-pathnames "SKILL.md" directory)))
-      (if (gethash name seen)
-          (add-item plan "skills" "conflict" :fact fact
-                    :reason (format nil "a skill named ~a came from ~a first" name (gethash name seen)))
-          (multiple-value-bind (fields body) (frontmatter (or (getf fact.value :text) ""))
-            (setf (gethash name seen) fact.world)
-            (multiple-value-bind (support named) (skill-support directory)
-              (let ((description (or (cdr (assoc "description" fields :test #'string-equal))
-                                     (let ((line (one-line-of body 100)))
-                                       (and (plusp (length line)) line))
-                                     name)))
-                (plan-keep plan "skills" fact name
-                           (definition-text "define-skill" name description
-                                            (append (unless (assoc "origin" fields :test #'string-equal)
-                                                      (list "origin: import"))
-                                                    (loop for (key . value) in fields
-                                                          unless (member key '("name" "description")
-                                                                         :test #'string-equal)
-                                                            collect (format nil "~a: ~a" key value))
-                                                    (nlk:lines (nlk:trimmed body))
-                                                    support)
-                                            :project (skill-project directory))
-                           :reason (format nil "~a~@[ (not carried: ~{~a~^, ~})~]"
-                                           (nlk:clip (nlk:one-line description) 80) named)
-                           :at (ignore-errors (nlk:iso-time (- (file-write-date path) nlk:+unix-epoch+)))
-                           :seed (not (member name used :test #'string-equal))))))))))
+  ;; Each skill's text is made on eight lanes, its item added in turn, as a
+  ;; memory's is (PLAN-MEMORY).
+  (let ((rows (loop for fact in (plan-facts plan :skill)
+                    collect (list fact (shiftf (gethash fact.id seen) (or (gethash fact.id seen) fact.world))))))
+    (loop for (fact first) in rows
+          for entry in (nlk:parallel-map (lambda (row) (and (null (second row)) (skill-entry (first row) used)))
+                                         rows)
+          do (if first
+                 (add-item plan "skills" "conflict" :fact fact
+                           :reason (format nil "a skill named ~a came from ~a first" fact.id first))
+                 (apply #'plan-keep plan "skills" fact fact.id entry)))))
+
+(defun skill-entry (fact used &aux (name fact.id) (directory (getf fact.value :directory)))
+  "FACT, a skill, as the prose define-skill of its name: (TEXT . KEYS) for
+PLAN-KEEP, USED the names a home's ledger says were used."
+  (multiple-value-bind (fields body) (frontmatter (or (getf fact.value :text) ""))
+    (multiple-value-bind (support named) (values-list (getf fact.value :support))
+      (let ((description (or (cdr (assoc "description" fields :test #'string-equal))
+                             (let ((line (one-line-of body 100)))
+                               (and (plusp (length line)) line))
+                             name)))
+        (list (definition-text "define-skill" name description
+                               (append (unless (assoc "origin" fields :test #'string-equal)
+                                         (list "origin: import"))
+                                       (loop for (key . value) in fields
+                                             unless (member key '("name" "description")
+                                                            :test #'string-equal)
+                                               collect (format nil "~a: ~a" key value))
+                                       (let ((prose (nlk:trimmed body)))
+                                         (and (plusp (length prose)) (list prose)))
+                                       support)
+                               :project (skill-project directory))
+              :reason (format nil "~a~@[ (not carried: ~{~a~^, ~})~]"
+                              (nlk:clip (nlk:one-line description) 80) named)
+              :at (ignore-errors (nlk:iso-time (- (file-write-date (merge-pathnames "SKILL.md" directory))
+                                                  nlk:+unix-epoch+)))
+              :seed (not (member name used :test #'string-equal)))))))
 
 (defun plan-usage (plan &aux (facts (plan-facts plan :usage)))
   "The use a home's ledgers record, into this organism's use ledger as it
@@ -1140,12 +1174,9 @@ TAKEOVER, the default, stops a foreign gateway so its bots answer from here."
          (plan (%make-plan :homes homes :settings settings
                            :overwrite overwrite :takeover takeover
                            :only (kind-list only) :without (kind-list without))))
-    (dolist (home homes)
-      (handler-case (read-facts home :sessions (kind-wanted-p plan "sessions")
-                                     :text (some (lambda (kind) (kind-wanted-p plan kind))
-                                                 '("instructions" "memory" "skills" "usage")))
-        (error (condition)
-          (push (princ-to-string condition) home.notes))))
+    (read-homes homes :sessions (kind-wanted-p plan "sessions")
+                      :text (some (lambda (kind) (kind-wanted-p plan kind))
+                                  '("instructions" "memory" "skills" "usage")))
     ;; Only a plan that brings bots over asks after a foreign gateway: the ask
     ;; is a systemctl run.
     (when (kind-wanted-p plan "channels")
