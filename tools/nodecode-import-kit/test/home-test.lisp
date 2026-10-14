@@ -47,8 +47,8 @@
     (is (import-item plan "providers" "anthropic") "the settings file's key is planned")
     (is (not (import-item plan "providers" "openrouter")) "a cache's key is not")
     (is (not (import-item plan "providers" "openai")) "whatever case the name is in")
-    (is (notany (lambda (line) (search "cache" line :test #'char-equal)) (nik::home-unmapped walked))
-        "and a cache is not the backlog")))
+    (let ((backlog (nik::home-unmapped walked)))
+      (is (notany (lambda (line) (search "cache" line :test #'char-equal)) backlog) "and a cache is not the backlog"))))
 
 #-win32
 (deftest import-walk-lists-a-directory-as-uiop-did (with-temp-directory (box "walk-box"))

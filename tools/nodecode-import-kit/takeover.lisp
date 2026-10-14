@@ -56,13 +56,15 @@ systemctl."
 words as the process holds them and COMM the name the kernel keeps for it --
 or, on a box without /proc, from `pgrep -fl' for each of PROGRAMS, ARGV the
 line it prints, the words joined by blanks, and COMM NIL."
-  (dolist (directory (ignore-errors (uiop:subdirectories #p"/proc/")))
-    (let ((pid (ignore-errors (parse-integer (nlk:folder-name directory)))))
+  ;; Listed and read without a pathname or a stream a process: through UIOP,
+  ;; a working box's 4,000 were 60 ms of an import (2026-10-14).
+  (dolist (entry (nlk::directory-names "/proc/"))
+    (let ((pid (ignore-errors (parse-integer entry))))
       (when (and pid (not (eql pid own)))
         (flet ((proc-file (name)
-                 (or (ignore-errors (uiop:read-file-string (merge-pathnames name directory)
-                                                           :external-format '(:utf-8 :replacement #\?)))
-                     "")))
+                 (nlk:if-let (octets (nlt:file-octets (format nil "/proc/~d/~a" pid name)))
+                   (sb-ext:octets-to-string octets :external-format '(:utf-8 :replacement #\?))
+                   "")))
           (nlk:when-let (argv (remove "" (uiop:split-string (proc-file "cmdline") :separator (list (code-char 0)))
                                       :test #'string=))
             (push (list pid (nlk:trimmed (proc-file "comm")) argv) found))))))

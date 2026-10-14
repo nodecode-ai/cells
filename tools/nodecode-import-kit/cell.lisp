@@ -26,20 +26,26 @@
 
 ;;; --- the verbs ----------------------------------------------------------------------------
 
-(defun run-import (&key source overwrite (takeover t) only without apply progress)
+(defun run-import (&key source overwrite (takeover t) only without apply progress (answer #'identity))
   "The plan for SOURCE, applied when APPLY — and then the watch started
-for any bot it held for a running foreign gateway. => the plan."
+for any bot it held for a running foreign gateway. => what ANSWER makes of
+the plan, the plan itself unless told otherwise."
   ;; The import's nursery is the import's, as a load's is (NLK:LOAD-CELL): a
   ;; plan of keys conses tens of megabytes, and under the organism's 2 MB
-  ;; its collections were 208 ms of the setup walk's 561 (2026-10-13).
-  (nlk:with-nursery ((* 64 1024 1024))
+  ;; its collections were 208 ms of the setup walk's 561 (2026-10-13). A
+  ;; box's full import conses 400 MB, and each collection inside it copies
+  ;; every fact read so far: at 64 MB that was 300 ms of its 1.5 s, at 256
+  ;; 150, at 512 nothing, for a peak of 490 MB that is back to 60 within a
+  ;; second (2026-10-14). ANSWER runs inside it, so the plan is garbage when
+  ;; the nursery comes back down.
+  (nlk:with-nursery ((* 512 1024 1024))
     (let ((plan (make-plan :source source :overwrite overwrite :takeover takeover
                            :only only :without without)))
       (cond (apply
              (apply-plan plan :progress progress)
              (funcall *start-watch*))
             (t (write-report plan)))
-      plan)))
+      (funcall answer plan))))
 
 (defun worlds (&aux (found (nlk:detect-agent-worlds)))
   "Every coding-agent home on this box, most recently used first, as one
@@ -57,7 +63,7 @@ line each: the world, where it sits, and when it was last used."
 (defun scan (&key source only)
   "What an import of SOURCE would do, as the report; nothing is written."
   ;; SOURCE names a world or a path; naming none reads every world on the box.
-  (report-text (run-import :source source :only only)))
+  (run-import :source source :only only :answer #'report-text))
 
 (defun import (&key source overwrite (takeover t) only)
   "Import SOURCE, keys and tokens with it: OVERWRITE replaces what is
@@ -66,8 +72,8 @@ skills, mcp, channels, cron, sessions, profiles) comma-separated."
   ;; A foreign gateway polling bots is stopped and disabled so they answer
   ;; from here; TAKEOVER nil leaves it running, and its bots land off and come
   ;; on by themselves once it stops. Answers the report.
-  (report-text (run-import :source source :overwrite overwrite :takeover takeover
-                           :only only :apply t)))
+  (run-import :source source :overwrite overwrite :takeover takeover
+              :only only :apply t :answer #'report-text))
 
 ;;; --- does the imported target answer ---------------------------------------------------
 ;;; A key an import carried over is a key that worked once, somewhere else.
@@ -189,13 +195,13 @@ nothing written — the pasteable report."
   ;; Nothing is posted: the wizard writes the answer's report into the
   ;; transcript of the shell that walks it. Posted, it was a toast cut at four
   ;; rows that left after five seconds (ip-01).
-  (plan-json (run-import :source (or (nlk:json-value params :text "source")
-                                     (coerce (nlk:json-value params :array "source") 'list))
-                         :only (nlk:json-value params :text "only")
-                         :without (nlk:json-value params :text "without")
-                         :overwrite (param-flag params "overwrite")
-                         :takeover (not (param-flag params "keep_running"))
-                         :apply (equal method "apply") :progress progress)))
+  (run-import :source (or (nlk:json-value params :text "source")
+                          (coerce (nlk:json-value params :array "source") 'list))
+              :only (nlk:json-value params :text "only")
+              :without (nlk:json-value params :text "without")
+              :overwrite (param-flag params "overwrite")
+              :takeover (not (param-flag params "keep_running"))
+              :apply (equal method "apply") :progress progress :answer #'plan-json))
 
 (defun import-route (env &aux (request (nle::gateway-request-json env))
                                (method (nlk:json-value request :string "method")))

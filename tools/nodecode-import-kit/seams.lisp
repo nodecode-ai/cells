@@ -37,6 +37,13 @@ folders it stands on, and every peripheral among them started -- for a
 channel adapter, a library with no start of its own, that is its kit."
   ;; FRESH restarts a peripheral already started, so a section written just
   ;; now is the one it reads. => NAME's record.
+  ;; One already up is answered as it is: asked again for each of an import's
+  ;; twenty MCP servers, every shipped folder's .asd was read twenty times
+  ;; over, 130 ms (2026-10-14).
+  (nlk:when-let (record (and (not fresh) (nlk:find-cell name)))
+    (when (and (null (nlk:cell-failures record))
+               (or (not (eq (nlk:cell-kind record) :peripheral)) (nlk:cell-started-p record)))
+      (return-from ensure-cell record)))
   (let ((names (nlk:offer-closure (list name) (nlk:shipped-cells))))
     (unless (member name names :test #'string=)
       (fail "this build ships no ~a folder" name))

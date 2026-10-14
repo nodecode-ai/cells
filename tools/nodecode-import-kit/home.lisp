@@ -143,22 +143,6 @@ resolved and nothing read yet."
       (member lower +skip-directories+ :test #'string=)
       (and home.world (member name (nlk:agent-world-skip home.world) :test #'string-equal))))
 
-(defun read-octets-capped (file cap)
-  "FILE's octets, or NIL when it is larger than CAP or will not read."
-  ;; One read: through a character stream the text was built in a buffer that
-  ;; grew, a fifth of what reading a home's config consed (2026-10-13).
-  (and (<= (or (nlk:file-bytes file) 0) cap)
-       (ignore-errors
-        (with-open-file (in file :element-type '(unsigned-byte 8))
-          (let* ((octets (make-array (file-length in) :element-type '(unsigned-byte 8)))
-                 (end (read-sequence octets in)))
-            (if (= end (length octets)) octets (subseq octets 0 end)))))))
-
-(defun read-capped (file cap)
-  "FILE's text, or NIL when it is larger than CAP or will not read."
-  (let ((octets (read-octets-capped file cap)))
-    (and octets (ignore-errors (sb-ext:octets-to-string octets :external-format :utf-8)))))
-
 ;;; --- convention: a config file ----------------------------------------------
 
 (defun environment-file-p (name)
@@ -177,7 +161,7 @@ resolved and nothing read yet."
 
 (defun skill-fact (file relative world)
   (let* ((directory (uiop:pathname-directory-pathname file))
-         (text (read-capped file +text-byte-cap+))
+         (text (nlk:read-text file +text-byte-cap+))
          (declared (and text (ignore-errors (nle::parse-skill-frontmatter text))))
          (slug (string-downcase
                 (substitute #\- #\Space
@@ -187,7 +171,7 @@ resolved and nothing read yet."
                    slug
                    (nlk:folder-name directory))))
     (make-fact :kind :skill :id name :world world :source relative
-               :value (list :name name :directory directory
+               :value (list :name name :directory directory :text text
                             :summary (and text (one-line-of text 80))))))
 
 ;;; --- convention: instructions and memory ------------------------------------
@@ -213,11 +197,19 @@ resolved and nothing read yet."
 
 ;;; --- the read ---------------------------------------------------------------
 
+(defun holds-p (part text &aux (first (char part 0)))
+  "Whether TEXT holds the string PART."
+  ;; From each place its first character is: CL:SEARCH walked every character
+  ;; through a generic accessor, 70 ms over a home's 1,100 memories (2026-10-14).
+  (loop for at = (position first text) then (position first text :start (1+ at))
+        while at
+          thereis (string= part text :start2 at :end2 (min (length text) (+ at (length part))))))
+
 (defun note-unmapped (home relative why) (push (format nil "~a — ~a" relative why) home.unmapped))
 
 (defun read-config-facts (home file relative)
   ;; A settings file is kilobytes: past 2 MB it is a log or a cache wearing a .json name.
-  (let* ((octets (read-octets-capped file (* 2 1024 1024)))
+  (let* ((octets (nlt:file-octets file (* 2 1024 1024)))
          (type (string-downcase (or (pathname-type file) "")))
          (text nil)
          (tree (and octets
@@ -399,7 +391,7 @@ by the memory they name and its tool sightings as calls."
                           (and (member base '("MEMORY" "MEMORIES" "USER") :test #'string=)
                                (<= (length trail) +instruction-depth+)))))
          (wanted (or memory named))
-         (text (and wanted (read-capped file +text-byte-cap+))))
+         (text (and wanted (nlk:read-text file +text-byte-cap+))))
     (cond
       ((not wanted) nil)
       ((null text)
@@ -410,7 +402,7 @@ by the memory they name and its tool sightings as calls."
       ;; and the separator split were half of reading a home's 1,100 memories
       ;; (2026-10-14).
       ((not (ppcre:scan "(?m)^[ \\t\\r]*[^# \\t\\r\\n]"
-                        (if (cl:search "<!--" text)
+                        (if (holds-p "<!--" text)
                             (ppcre:regex-replace-all "(?s)<!--.*?(?:-->|\\z)" text "")
                             text)))
        '())

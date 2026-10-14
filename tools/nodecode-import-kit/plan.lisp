@@ -551,34 +551,50 @@ of it would refuse."
     (with-output-to-string (*standard-output*) (eval form))
     form))
 
+(defun form-text (parts &aux (head "(progn")
+                               (text (make-string (+ (length head)
+                                                     (loop for part in parts sum (1+ (length part)))))))
+  "`(progn' and each of PARTS on a line of its own, made at its length: through
+FORMAT, an import's 8 MB of definitions were copied as its buffer grew."
+  (replace text head)
+  (loop with at = (length head)
+        for part in parts
+        do (setf (char text at) #\Newline)
+           (replace text part :start1 (1+ at))
+           (incf at (1+ (length part))))
+  text)
+
 (defun keep-definitions (run)
   "RUN, (ITEM . FORM) each FORM evaluated already, kept by the scribe as one
-form a world under the session `WORLD import'; each item's ledger seeded with
-its keep at :AT unless :SEED is NIL, and with a view now when the home's index
-had it :HOT. An item the scribe did not keep is an error."
-  ;; One form, so one commit a folder: kept one by one, an import of 1,100
-  ;; memories was 1,100 commits and a hundred seconds of `Importing…'.
-  (dolist (world (nlk:distinct (mapcar (lambda (pair) (item-world (car pair))) run)))
-    (let* ((*package* (find-package '#:nodecode.evolved))
-           (own (remove world run :key (lambda (pair) (item-world (car pair))) :test-not #'equal))
-           (session (format nil "~a import" world))
-           (text (format nil "(progn~{~%~a~})" (mapcar (lambda (pair) (first (item-keep (car pair)))) own)))
-           (kept '())
-           (said (with-output-to-string (*standard-output*)
-                   (setf kept (nlk:record-definitions (cons 'progn (mapcar #'cdr own)) text (length text)
-                                                      :session-id session :ledger nil)))))
-      (loop for (item . form) in own
-            do (destructuring-bind (&key at hot (seed t)) (rest item.keep)
-                 (handler-case
-                     (cond ((not (member (nlk:definition-key form) kept :test #'equal))
-                            (fail "~a not kept: ~a" item.destination (nlk:one-line said)))
-                           (t (when seed
-                                (nlk:note-knowledge-use item.destination "keep"
-                                                        :session session :at (or at (nlk:iso-now))))
-                              (when hot
-                                (nlk:note-knowledge-use item.destination "view" :session session))))
-                   (error (condition)
-                     (setf item.status "error" item.reason (princ-to-string condition)))))))))
+form under the session `WORLDS import'; each item's ledger seeded with its keep
+at :AT under its own world's session unless :SEED is NIL, and with a view now
+when the home's index had it :HOT. An item the scribe did not keep is an error."
+  ;; One form, so one commit: kept one by one, an import of 1,100 memories was
+  ;; 1,100 commits and a hundred seconds of `Importing…'; kept a world at a
+  ;; time, a box's five homes were five commits, 300 ms (2026-10-14).
+  (let* ((*package* (find-package '#:nodecode.evolved))
+         (text (form-text (mapcar (lambda (pair) (first (item-keep (car pair)))) run)))
+         (kept (make-hash-table :test #'equal))
+         (said (with-output-to-string (*standard-output*)
+                 (dolist (key (nlk:record-definitions
+                               (cons 'progn (mapcar #'cdr run)) text (length text)
+                               :session-id (format nil "~{~a~^, ~} import"
+                                                   (nlk:distinct (mapcar (lambda (pair) (item-world (car pair))) run)))
+                               :ledger nil))
+                   (setf (gethash key kept) t)))))
+    (loop for (item . form) in run
+          for session = (format nil "~a import" item.world)
+          do (destructuring-bind (&key at hot (seed t)) (rest item.keep)
+               (handler-case
+                   (cond ((not (gethash (nlk:definition-key form) kept))
+                          (fail "~a not kept: ~a" item.destination (nlk:one-line said)))
+                         (t (when seed
+                              (nlk:note-knowledge-use item.destination "keep"
+                                                      :session session :at (or at (nlk:iso-now))))
+                            (when hot
+                              (nlk:note-knowledge-use item.destination "view" :session session))))
+                 (error (condition)
+                   (setf item.status "error" item.reason (princ-to-string condition))))))))
 
 (defun plan-keep (plan kind fact name text &rest keys &key reason &allow-other-keys)
   "One item keeping TEXT, the definition of NAME a FACT became: a conflict
@@ -651,12 +667,12 @@ size, hidden files and __pycache__ left out."
              (multiple-value-bind (files subdirectories) (directory-entries folder)
                (dolist (name files)
                  (let* ((relative (concatenate 'string trail name))
-                        (file (uiop:parse-native-namestring (concatenate 'string folder name)))
-                        (bytes (or (nlk:file-bytes file) 0)))
+                        (native (concatenate 'string folder name))
+                        (bytes (or (ignore-errors (sb-posix:stat-size (sb-posix:stat native))) 0)))
                    (unless (or (hidden-name-p name) (string-equal "SKILL.md" relative))
                      (if (and (member (name-type name) '("md" "txt") :test #'equal) (<= bytes 8192))
                          (setf inlined (append inlined (list (format nil "--- ~a ---" relative))
-                                               (nlk:lines (uiop:read-file-string file))))
+                                               (nlk:lines (nlk:read-text (uiop:parse-native-namestring native)))))
                          (push (format nil "~a (~d bytes)" relative bytes) named)))))
                (dolist (name subdirectories)
                  (unless (or (hidden-name-p name) (string= "__pycache__" name))
@@ -689,7 +705,7 @@ text file beside it carried along and anything else named."
       (if (gethash name seen)
           (add-item plan "skills" "conflict" :fact fact
                     :reason (format nil "a skill named ~a came from ~a first" name (gethash name seen)))
-          (multiple-value-bind (fields body) (frontmatter (or (read-capped path +text-byte-cap+) ""))
+          (multiple-value-bind (fields body) (frontmatter (or (getf fact.value :text) ""))
             (setf (gethash name seen) fact.world)
             (multiple-value-bind (support named) (skill-support directory)
               (let ((description (or (cdr (assoc "description" fields :test #'string-equal))
