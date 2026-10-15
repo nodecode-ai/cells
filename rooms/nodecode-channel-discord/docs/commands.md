@@ -18,7 +18,7 @@ commands, so they show when you type `/` in a server or a DM with the bot.
 - A name Discord would refuse is left out of the menu. Descriptions are cut
   to 100 characters.
 - A command that takes arguments has one optional text option, `args`, which
-  holds everything after the command name. For `/models`, `/model-aux`,
+  holds everything after the command name. For `/models`,
   `/usage`, `/think`, `/agent` and `/voice` the option offers completions
   while you type, up to 25, and only to people allowed to run the command.
   `/agent` offers the agents of the room it is typed in, each with its
@@ -106,7 +106,8 @@ no other, and the organism's default stays where it was.
 | `/models PROVIDER MODEL` | Picks PROVIDER's MODEL for this room. |
 | `/models default` (or `reset`) | Clears this room's pick. |
 | `/models list [PROVIDER]` | The catalog as text: every provider with its model count, or one provider's models. |
-| `/models aux` | Points you to `/model-aux`. |
+| `/models aux [PROVIDER] [MODEL]` | Shows or changes the organism's auxiliary model, which naming threads, recaps and summaries run on. A pick changes it for the whole organism, not the room. |
+| `/models aux default` | Gives that work back to each session's own model. |
 
 A pick takes effect from the room's next ask. A thread with no pick of its
 own follows its channel's. A model no provider lists is refused, and so is
@@ -119,7 +120,6 @@ the terminal has.
 
 | Command | What it does |
 | --- | --- |
-| `/model-aux [provider] [model] \| list \| refresh` | Shows or changes the auxiliary model, which side work such as naming threads runs on. A pick changes it for the whole organism. |
 | `/think [rung]`, `/effort` | Shows the reasoning effort and the rungs the model offers; with a rung, sets it on the room's own session and makes it the default every session opened after it starts at, so the lanes asks open from then on run at it too. |
 | `/usage [today \| 7d \| 30d \| all]` | Spend across every session, as text. |
 | `/doctor` | What this organism is missing, and what to do about it. |

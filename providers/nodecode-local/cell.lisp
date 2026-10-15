@@ -16,7 +16,7 @@
 ;;;;
 ;;;; The models cannot call tools, so /models (which lists turn models) does
 ;;;; not offer them; they serve side work, the job omp gives them (titles,
-;;;; memory, small completions): /model-aux local lfm2.5-230m makes one the
+;;;; memory, small completions): /models aux local lfm2.5-230m makes one the
 ;;;; auxiliary model that names sessions and writes recaps.
 ;;;;
 ;;;; Config, a sibling top-level key:
@@ -164,7 +164,7 @@ generates as the round's message. => (values MESSAGE USAGE FINISH-REASON REQUEST
 
 (nle:define-cell local
   (:section ("local")
-    (:guide "omp's tiny models run in omp's own workers: with omp installed, the ONNX worker starts from omp_command; on Apple silicon, backend mlx runs omp's mlx-server.py under python (omp's mlx-lm venv by default); make one the auxiliary model with /model-aux local lfm2.5-230m")
+    (:guide "omp's tiny models run in omp's own workers: with omp installed, the ONNX worker starts from omp_command; on Apple silicon, backend mlx runs omp's mlx-server.py under python (omp's mlx-lm venv by default); make one the auxiliary model with /models aux local lfm2.5-230m")
     ("backend" :choice :options '("auto" "onnx" "mlx") :default "auto"
      :doc "which worker serves a model: auto is MLX when PI_TINY_DEVICE says mlx, else ONNX, as omp chooses")
     ("omp_command" :string :default "omp"

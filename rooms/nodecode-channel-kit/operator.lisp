@@ -433,7 +433,7 @@ picker card, (values TEXT CONTROLS)."
          (paged-p (tail) (or (null tail)
                              (and (string-equal (first tail) "page") (rest tail) (null (cddr tail))))))
     (cond
-      ((and words (member (first words) '("list" "aux" "auxiliary") :test #'string-equal))
+      ((and words (member (first words) '("list" "aux") :test #'string-equal))
        (nle:slash (format nil "/models ~a" args) :session-id room))
       ((and cards (paged-p words))
        (providers-card host room target agent (page (second words))))

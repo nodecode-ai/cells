@@ -2,7 +2,7 @@
 
 A Nodecode cell for oh-my-pi's `local` provider: small text models that run
 on the machine, in the worker processes omp runs them in. With it,
-`/model-aux local lfm2.5-230m` makes one of them the auxiliary model, the
+`/models aux local lfm2.5-230m` makes one of them the auxiliary model, the
 one Nodecode runs side work on (naming sessions, recaps), and a round on it
 asks the model's worker over its Unix socket.
 
@@ -54,7 +54,7 @@ The eight text models are listed (`lfm2.5-230m`, `lfm2.5-350m`,
 `falcon-h1-90m`, `qwen3-1.7b`, `llama3.2:3b`, `gemma-3-1b`, `qwen2.5-1.5b`,
 `lfm2-1.2b`), with no window, no price and no tool calls, as omp seeds them.
 Because they call no tools, `/models` (which lists turn models) does not offer
-them; type `/model-aux local <model>`. `qwen3-1.7b` runs on MLX only, as
+them; type `/models aux local <model>`. `qwen3-1.7b` runs on MLX only, as
 omp's ONNX backend refuses it.
 
 ## What cannot run from a cell
@@ -77,7 +77,7 @@ omp's ONNX backend refuses it.
 ## Install
 
 Copy this folder into `~/.nodecode/cells/nodecode-local/` and restart
-Nodecode, or run `(restart-cells)`. Then `/model-aux local lfm2.5-230m`.
+Nodecode, or run `(restart-cells)`. Then `/models aux local lfm2.5-230m`.
 
 ## Configure
 

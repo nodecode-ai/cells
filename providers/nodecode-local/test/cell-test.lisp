@@ -131,7 +131,7 @@ the lane's answer, or the provider error it ended in."
       (is (not (nle::catalog-model-tool-call-p (gethash "lfm2.5-230m" models))) "no tool calls, as omp seeds them")
       (is (equal "local" (nle::configured-provider-lane "local")))
       (is (equal "local://inference" (nle::provider-endpoint "local"))
-          "so /model-aux local lfm2.5-230m resolves"))
+          "so /models aux local lfm2.5-230m resolves"))
     (with-temp-auth (auth "{}")
       (with-stubbed-fdefinition (nle::credential-env (name) (and (equal name "OPENAI_API_KEY") "sk-openai"))
         (is (eq :public (nle:credential-source (nle::resolve-provider-credential "local" :auth-path auth :probe t)))

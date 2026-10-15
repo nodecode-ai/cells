@@ -15,7 +15,7 @@
 (nlk:define-peripheral local :not-running t)
 
 (defparameter +provider+ "local"
-  "The provider id and the name of the lane it rides: what /model-aux names,
+  "The provider id and the name of the lane it rides: what /models aux names,
 what a turn's frozen config names.")
 
 (defparameter +npm+ "nodecode-local"

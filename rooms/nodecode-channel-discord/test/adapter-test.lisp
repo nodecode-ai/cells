@@ -92,7 +92,7 @@ adapter and the fake gateway have stopped."
         (completion-json
           "{\"op\":0,\"t\":\"INTERACTION_CREATE\",\"s\":5,\"d\":{\"id\":\"i20\",\"token\":\"tok\",\"type\":4,\"guild_id\":\"g1\",\"channel_id\":\"123\",\"data\":{\"name\":\"models\",\"options\":[{\"name\":\"args\",\"type\":3,\"value\":\"grok\",\"focused\":true}]},\"member\":{\"user\":{\"id\":\"42\",\"username\":\"kim\"}}}}")
         (completion-aux-json
-          "{\"op\":0,\"t\":\"INTERACTION_CREATE\",\"s\":6,\"d\":{\"id\":\"i21\",\"token\":\"tok\",\"type\":4,\"guild_id\":\"g1\",\"channel_id\":\"123\",\"data\":{\"name\":\"model-aux\",\"options\":[{\"name\":\"args\",\"type\":3,\"value\":\"\",\"focused\":true}]},\"member\":{\"user\":{\"id\":\"42\",\"username\":\"kim\"}}}}"))
+          "{\"op\":0,\"t\":\"INTERACTION_CREATE\",\"s\":6,\"d\":{\"id\":\"i21\",\"token\":\"tok\",\"type\":4,\"guild_id\":\"g1\",\"channel_id\":\"123\",\"data\":{\"name\":\"models\",\"options\":[{\"name\":\"args\",\"type\":3,\"value\":\"\",\"focused\":true}]},\"member\":{\"user\":{\"id\":\"42\",\"username\":\"kim\"}}}}"))
     (with-fake-discord-lane (:reply "channel reply"
                              :scripts (list message-json message-json
                                             interaction-json control-json completion-json
@@ -148,11 +148,13 @@ adapter and the fake gateway have stopped."
         "under READY's application id"
         (is-plan menu :path "/applications/app1/commands")
         (is (wire-row "help" (nck:request-plan-body menu) "name"))
-        (let ((aux (wire-row "model-aux" (nck:request-plan-body menu) "name")))
-          (is-present aux "the auxiliary target has a command of its own"
-            (is (equal "/model-aux [provider] [model] | list | refresh"
+        (is (null (wire-row "model-aux" (nck:request-plan-body menu) "name"))
+            "the auxiliary model is /models' own")
+        (let ((models (wire-row "models" (nck:request-plan-body menu) "name")))
+          (is-present models "/models carries the auxiliary model's form"
+            (is (equal "/models [provider] [model] | aux [provider] [model | default] | list | refresh"
                        (gethash "description"
-                                (aref (gethash "options" aux) 0)))))))
+                                (aref (gethash "options" models) 0)))))))
       (is-present (defer (await-plan executor :label "interaction_defer" :timeout 15))
         "held open first, so a slow command still lands"
         (is-plan defer :path "/interactions/i1/tok/callback" "type" 5))
@@ -181,18 +183,18 @@ adapter and the fake gateway have stopped."
                          (nck:request-plan-body completed)
                          :array "data" "choices"))
                 25)))
-      ;; The auxiliary target has a command of its own — it rides the
-      ;; published menu — and its argument completes on its own callback:
-      ;; no choice spells a way-in token, because the token is gone.
+      ;; The auxiliary model is /models' own: an empty /models argument
+      ;; offers `aux' as a choice, on its own callback.
       (is-present (aux-menu (await-plan executor :path "/interactions/i21/tok/callback"
                                         :timeout 15))
-        "the auxiliary command's argument answers on its own callback"
+        "an empty /models argument answers on its own callback"
         (let* ((body (nck:request-plan-body aux-menu))
                (choices (nlk:json-value body :array "data" "choices")))
           (is (= 8 (nlk:json-value body :integer "type")))
-          (is (notany (lambda (choice)
-                        (equal "aux " (nlk:json-value choice :string "value")))
-                      (coerce choices 'list))))))))
+          (is (some (lambda (choice)
+                      (equal "aux" (nlk:json-value choice :string "value")))
+                    (coerce choices 'list))
+              "aux is offered while the tail could still be it"))))))
 
 (deftest channel-discord-edit-answers-end-to-end ()
   ;; The reported failure (2026-09-12): a message edited to involve the bot

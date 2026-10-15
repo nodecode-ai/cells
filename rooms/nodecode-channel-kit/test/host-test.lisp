@@ -866,27 +866,25 @@ message of ours."
       (is (uiop:string-prefix-p "/think: " (answered "/think bogus" "mike" "m6" 6)))
       (is (= 6 (length (plans))) "one message per command, nothing else"))))
 
-(deftest channel-host-model-aux-in-a-room-answers-the-auxiliary-target (with-temp-store ())
-  ;; /model-aux is a room command like any other: it runs the headless arm
-  ;; and answers the image's auxiliary target with how to change it — never
-  ;; the session summary the bare /models line prints. The token's old
-  ;; home, /models aux, answers where it went instead of landing a pick.
+(deftest channel-host-models-aux-in-a-room-answers-the-auxiliary-model (with-temp-store ())
+  ;; /models aux in a room is the organism's, as on a shell: it answers the
+  ;; auxiliary model with how to change it — never the room's own pick nor
+  ;; the session summary the bare /models line prints — and `default' takes
+  ;; the organism's auxiliary model out, not the room's pick.
   (with-saved-globals (nle::*auxiliary-model*)
     (setf nle::*auxiliary-model* '(:provider "zeta" :model "z-model" :effort "low"))
     (with-digest-host (host nil :name "aux-command" :host-keys (:owners '("mike")))
       (setf (nck:host-policy host) (channel-policy :allowed-channels '("123")))
-      (say "/model-aux" "mike" "m1")
+      (say "/models aux" "mike" "m1")
       (is (posted 1) "the command answers once")
       (is-carrying (content (plan-content (first (plans))))
         (is (uiop:string-prefix-p "auxiliary model: zeta/z-model (low)" content))
-        "/model-aux <provider> <model> changes it" (:absent "provider: "))
-      ;; The old token answers the notice, and moves nothing.
-      (say "/models aux" "mike" "m2")
-      (is (posted 2) "the redirect answers too")
-      (is (equal nle::+auxiliary-command-notice+
-                 (plan-content (second (plans)))))
-      (is (equal '(:provider "zeta" :model "z-model" :effort "low")
-                 nle::*auxiliary-model*)))))
+        "/models aux <provider> <model> changes it" (:absent "provider: "))
+      (say "/models aux default" "mike" "m2")
+      (is (posted 2) "the clear answers too")
+      (is (uiop:string-prefix-p "auxiliary model: same as main"
+                                (plan-content (second (plans)))))
+      (is (null nle::*auxiliary-model*)))))
 
 (deftest channel-host-completion-follows-the-commands-own-rule ()
   ;; Completion is the commands' own rule: with operators declared, only an
