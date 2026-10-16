@@ -7,8 +7,8 @@
 ;;;; max_tokens, thinking. The CLI is handed that body in three pieces — the
 ;;;; system text as its --system-prompt-file, the messages as stream-json
 ;;;; frames it replays, and everything else as CLAUDE_CODE_EXTRA_BODY, which it
-;;;; lays over the request it writes — and the request it writes comes back
-;;;; through the relay with its own cache marker moved (PIN-BREAKPOINT).
+;;;; lays over the request it writes — and the request it writes is sent with
+;;;; the round's own messages in place of the CLI's (REQUEST-MESSAGES).
 ;;;;
 ;;;; What the CLI does to a replayed history, found against 2.1.283 with a
 ;;;; loopback capture (2026-09-27), is why these look the way they do:
@@ -20,9 +20,19 @@
 ;;;;     output_config, context_management
 ;;;;   - the CLI adds its per-request context to the newest turn (the date,
 ;;;;     the account's email): inside the last tool_result's text on some
-;;;;     models, as a trailing role:system message on others — and puts its
-;;;;     one message cache marker there, on text the next round never
-;;;;     replays
+;;;;     models, as a trailing role:system message on others, and the next
+;;;;     round replays that turn without it
+;;;;
+;;;; That last edit is why the messages are the round's own. A thinking block
+;;;; is signed against every message before it, so a turn sent with the date
+;;;; and replayed without it fails the API's check for every block after it:
+;;;; on 2.1.302 a real round's 20 replayed blocks all failed
+;;;; (anthropic-thinking-prefix-mismatch: kind=blocks_removed, item=text,
+;;;; rejected_blocks=20), and the API dropped them unbilled, so the model
+;;;; saw none of its earlier reasoning (2026-10-16). The round's own messages
+;;;; only grow (ANTHROPIC-MESSAGES keeps its thinking behind the prefix it was
+;;;; signed with), so the CLI writes the request's headers, system blocks and
+;;;; tools, and Nodecode's history is the messages.
 
 (in-package #:nodecode-claude-code)
 
@@ -135,72 +145,20 @@ Nodecode sized the round to is past +LONG-CONTEXT-FLOOR+."
 
 ;;; --- the request the CLI wrote ------------------------------------------------
 
-(defun json-equal (a b)
-  "Whether the decoded JSON values A and B are the same value."
-  (typecase a
-    (hash-table (and (hash-table-p b)
-                     (= (hash-table-count a) (hash-table-count b))
-                     (loop for key being the hash-keys of a using (hash-value value)
-                           always (multiple-value-bind (other present) (gethash key b)
-                                    (and present (json-equal value other))))))
-    (string (and (stringp b) (string= a b)))
-    (vector (and (vectorp b) (not (stringp b)) (= (length a) (length b))
-                 (every #'json-equal a b)))
-    (number (and (numberp b) (= a b)))
-    (t (eq a b))))
-
-(defun same-block-p (sent queried)
-  "Whether the block SENT is the block QUERIED, markers aside."
-  (and (hash-table-p sent) (hash-table-p queried)
-       (json-equal (plain-block sent) (plain-block queried))))
-
-(defun pin-breakpoint (body queried)
-  "BODY, the CLI's request decoded, with its one message cache marker moved
-back onto the last block the next round replays unchanged; QUERIED is the
-content of the frame the CLI answered. BODY is returned either way."
-  ;; The DirectSDK admission rule (pin_message_breakpoint). What the next
-  ;; round replays unchanged is everything through the last assistant
-  ;; message, then the leading blocks of the newest turn that are the queried
-  ;; frame's own; the first block the CLI changed or added ends it. When that
-  ;; block is a tool_result the span ends at the assistant message instead: a
-  ;; marker on the unchanged results before it measured no cache hit there.
-  ;; Thinking blocks are never a marker's home. The marker only moves back;
-  ;; a request with other than one message marker is left as it came.
-  (let* ((messages (or (nlk:json-value body :array "messages") #()))
-         (blocks (loop for message across messages
-                       for index from 0
-                       nconc (loop for block across (or (nlk:json-value message :array "content") #())
-                                   for position from 0
-                                   collect (list index position block))))
-         (marked (remove-if-not (lambda (entry) (nlk:json-value (third entry) :object "cache_control"))
-                                blocks)))
-    (when (= 1 (length marked))
-      (let* ((last (or (position "assistant" messages :from-end t :test #'equal
-                                                      :key (lambda (message) (nlk:json-value message :string "role")))
-                       -1))
-             (stable (remove-if (lambda (entry) (> (first entry) last)) blocks))
-             (newest (and (< (1+ last) (length messages)) (aref messages (1+ last))))
-             (content (nlk:json-value newest :array "content")))
-        (when (and content (equal "user" (nlk:json-value newest :string "role")))
-          (let ((prefix (loop for sent across content
-                              for host across (or queried #())
-                              for position from 0
-                              while (same-block-p sent host)
-                              collect (list (1+ last) position sent))))
-            (unless (and (< (length prefix) (length content))
-                         (equal "tool_result" (block-type (aref content (length prefix)))))
-              (setf stable (append stable prefix)))))
-        (let ((target (find-if-not (lambda (entry)
-                                     (member (block-type (third entry)) '("thinking" "redacted_thinking")
-                                             :test #'equal))
-                                   stable :from-end t))
-              (mark (first marked)))
-          (when (and target (or (< (first target) (first mark))
-                                (and (= (first target) (first mark))
-                                     (< (second target) (second mark)))))
-            (setf (gethash "cache_control" (third target)) (gethash "cache_control" (third mark)))
-            (remhash "cache_control" (third mark))))))
-    body))
+(defun request-messages (body)
+  "BODY's messages as the request sends them: every tool call under the name
+the request advertises it by, every other block, Nodecode's cache markers
+among them, as Nodecode built it."
+  (map 'vector (lambda (message)
+                 (nlk:copy-json-object
+                  message
+                  "content" (map 'vector (lambda (block)
+                                           (if (equal (block-type block) "tool_use")
+                                               (nlk:copy-json-object block "name" (concatenate 'string +tool-prefix+
+                                                                                               (nlk:json-value block :string "name")))
+                                               block))
+                                 (content-blocks (gethash "content" message)))))
+       (or (nlk:json-value body :array "messages") #())))
 
 (defun unprefixed-fold (fold)
   "FOLD, handed every frame with the tool call a content_block_start opens

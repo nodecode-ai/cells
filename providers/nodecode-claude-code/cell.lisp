@@ -1,4 +1,4 @@
-;;;; addon.lisp --- the add-on: one lane, the request path under it.
+;;;; cell.lisp --- the cell: one lane, the request path under it.
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
@@ -109,12 +109,12 @@ row of the same id."
   (register-lane)
   (nle:on-stop #'unregister-lane)
   (unless (cli-program (setting :command))
-    (nle:notice (format nil "claude-code: no ~a on PATH, so claude-code/ models cannot run; install Claude Code, run `claude' once and /login, then (restart-addons \"nodecode-claude-code\")"
+    (nle:notice (format nil "claude-code: no ~a on PATH, so claude-code/ models cannot run; install Claude Code, run `claude' once and /login, then (restart-cells \"nodecode-claude-code\")"
                         (setting :command))
                 :level :warning :key "nodecode-claude-code")
     (nle:on-stop (lambda () (nle:notice nil :key "nodecode-claude-code")))))
 
-(nle:define-addon claude-code
+(nle:define-cell claude-code
   (:section ("claude-code")
     (:guide "command is the claude CLI, logged in with `claude' then /login; models are what /models lists as claude-code/<model>")
     ("command" :string :default "claude"

@@ -2,10 +2,10 @@
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
-;;;; Optional quicklisp/ASDF add-on, NOT part of the organism core: nothing in
-;;;; src/src names this system. The folder loader (kernel addons.lisp) loads it
-;;;; at boot when its directory sits under ~/.nodecode/addons/; the gateway
-;;;; calls START-ADDON after recovery, which reads the `claude-code' config
+;;;; Optional quicklisp/ASDF cell, NOT part of the organism core: nothing in
+;;;; src/src names this system. The folder loader (kernel cells.lisp) loads it
+;;;; at boot when its directory sits under ~/.nodecode/cells/; the gateway
+;;;; calls START-CELL after recovery, which reads the `claude-code' config
 ;;;; section, registers the claude-code lane and hooks the request path.
 ;;;;
 ;;;; A round on the claude-code provider is authored by the operator's own
@@ -20,9 +20,9 @@
 ;;;;
 ;;;; Every dependency is already in the serving image (usocket rides with
 ;;;; dexador, uiop with nodecode). The .asd sits at the top of this folder,
-;;;; one of nodecode-ai/addons: copy the folder into ~/.nodecode/addons/.
+;;;; one of nodecode-ai/addons: copy the folder into ~/.nodecode/cells/.
 ;;;; Presence is enabled; the package is named after the system, which is how
-;;;; the loader finds START-ADDON in it.
+;;;; the loader finds START-CELL in it.
 
 (defsystem "nodecode-claude-code"
   :description "Claude Code's own login as a provider lane: the claude CLI writes each request, Nodecode sends it"
@@ -34,15 +34,15 @@
                (:file "wire")
                (:file "relay")
                (:file "cli")
-               (:file "addon"))
+               (:file "cell"))
   :in-order-to ((test-op (test-op "nodecode-claude-code/test"))))
 
 (defsystem "nodecode-claude-code/test"
-  :description "Claude-code tests. Registered into the shared nodecode.test registry; RUN-CLAUDE-CODE-TESTS filters by the CLAUDE-CODE-ADDON- name prefix."
+  :description "Claude-code tests. Registered into the shared nodecode.test registry; RUN-CLAUDE-CODE-TESTS filters by the CLAUDE-CODE-CELL- name prefix."
   :license "MIT"
   :depends-on ("nodecode-claude-code" "nodecode/test")
   :pathname "test/"
   :serial t
-  :components ((:file "addon-test"))
+  :components ((:file "cell-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-claude-code-tests)))
