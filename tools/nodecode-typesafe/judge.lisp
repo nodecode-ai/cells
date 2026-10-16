@@ -94,11 +94,19 @@ provider's saved key outranks its variable; NIL when neither holds one."
 refusal's text is cleaned of."
   (remove-duplicates (remove nil (list (stored-key path) (nle::credential-env +env+))) :test #'string=))
 
+(defun own-base-p ()
+  "Whether requests go to a base_url other than TypeSafe's public API: a
+System One server of the operator's own, such as DJev, which takes no key
+unless it was started with one."
+  (string/= (base-url) +base+))
+
 (defun require-key ()
-  "The key a request sends, or the refusal naming where to put one."
+  "The key a request sends; NIL to a base of the operator's own with none
+set (OWN-BASE-P), else the refusal naming where to put one."
   (or (api-key)
-      (fail "no TypeSafe key: make one at ~a, then set ~a or save it in auth.json under api_keys.typesafe"
-            +key-page+ +env+)))
+      (unless (own-base-p)
+        (fail "no TypeSafe key: make one at ~a, then set ~a or save it in auth.json under api_keys.typesafe"
+              +key-page+ +env+))))
 
 ;;; --- one exchange ---------------------------------------------------------------------
 
@@ -107,8 +115,8 @@ refusal's text is cleaned of."
   (apply #'nlk:http method url arguments))
 
 (defun headers (key)
-  "What every TypeSafe request carries."
-  `(("authorization" . ,(format nil "Bearer ~a" key))
+  "What every TypeSafe request carries: the bearer KEY when there is one."
+  `(,@(when key `(("authorization" . ,(format nil "Bearer ~a" key))))
     ("accept" . "application/json")
     ("content-type" . "application/json")))
 

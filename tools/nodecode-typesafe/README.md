@@ -90,6 +90,13 @@ Optional. The section is on unless it says `"enabled": false`:
 }
 ```
 
+A `base_url` of your own speaks the same `POST /v1/systemone`: a local
+[DJev](https://github.com/mmastrac/djev-spark) server, say, at
+`http://127.0.0.1:8011` with `"model": "dgemma"`. Such a base takes no key:
+with none saved or set, the request goes without `Authorization`, and
+`/typesafe status` says `no key, none sent`. A key that is set still goes,
+for a server started with one (DJev's `API_KEY`).
+
 ## Test
 
 From this repository's root:

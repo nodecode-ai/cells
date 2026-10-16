@@ -50,29 +50,45 @@ ERROR: TYPESAFE-ERROR names the problem: a refused question, no key, or the API'
   "Where the key comes from, the base and the model, in a line; no network."
   (multiple-value-bind (key source) (api-key)
     (format nil "typesafe: ~a; ~a, model ~a"
-            (cond ((null key)
+            (cond ((and (null key) (own-base-p)) "no key, none sent")
+                  ((null key)
                    (format nil "no key (make one at ~a, then set ~a or save api_keys.typesafe in auth.json)"
                            +key-page+ +env+))
                   ((eq source :auth) "key from auth.json")
                   (t (format nil "key from ~a" +env+)))
             (base-url) (model))))
 
+(defun check-answer ()
+  "How the base answered, in a line: TypeSafe's model listing asked with the
+key (omp's models-endpoint validation), or, at a base of the operator's own,
+which need not list models, one judgment asked of it."
+  (handler-case
+      (if (own-base-p)
+          (let ((start (get-internal-real-time)))
+            (multiple-value-bind (answers backend)
+                (judge "A health check of the decision server."
+                       '(:up (:type "bool" :instructions "Is this a health check?")))
+              (format nil "typesafe: ~a answered a judgment as ~a in ~d ms (P(yes) ~,2f)"
+                      (base-url) backend
+                      (round (* 1000 (- (get-internal-real-time) start)) internal-time-units-per-second)
+                      (getf (getf answers :up) :bool))))
+          (format nil "typesafe: the key answered; ~a" (substitute #\, #\Newline (models))))
+    (typesafe-error (condition) (format nil "typesafe: ~a" condition))))
+
 (defun check ()
-  "Ask TypeSafe's model listing with the key, on a thread of its own, and
-say once how it answered: omp's models-endpoint validation."
+  "CHECK-ANSWER on a thread of its own, said once as a notice."
   (let ((key (api-key)))
-    (if (null key)
+    (if (and (null key) (not (own-base-p)))
         (status)
         (let ((settings *typesafe*))
           (bt2:make-thread
            (lambda ()
              (let ((*typesafe* settings))
-               (nle:notice (handler-case (format nil "typesafe: the key answered; ~a"
-                                                 (substitute #\, #\Newline (models)))
-                             (typesafe-error (condition) (format nil "typesafe: ~a" condition)))
-                           :level :info)))
+               (nle:notice (check-answer) :level :info)))
            :name "nodecode-typesafe check")
-          "typesafe: checking the key against /v1/models"))))
+          (if (own-base-p)
+              (format nil "typesafe: asking ~a one judgment" (base-url))
+              "typesafe: checking the key against /v1/models")))))
 
 (defun run-slash (args session-id)
   "/typesafe status | check"
@@ -91,7 +107,7 @@ say once how it answered: omp's models-endpoint validation."
 
 (nle:define-cell typesafe
   (:section ("typesafe")
-    (:guide "make a key at https://console.typesafe.ai/; set TYPESAFE_API_KEY or save it in auth.json under api_keys.typesafe; base_url and model are optional (empty reads TYPESAFE_BASE_URL and TYPESAFE_DEFAULT_MODEL, else the public API and jev-latest)")
+    (:guide "make a key at https://console.typesafe.ai/; set TYPESAFE_API_KEY or save it in auth.json under api_keys.typesafe; base_url and model are optional (empty reads TYPESAFE_BASE_URL and TYPESAFE_DEFAULT_MODEL, else the public API and jev-latest); a base_url of your own, such as a local DJev at http://127.0.0.1:8011, takes no key")
     ("base_url" :string :default ""
      :doc "the TypeSafe API root; empty is TYPESAFE_BASE_URL, else https://api.typesafe.ai")
     ("model" :string :default ""
