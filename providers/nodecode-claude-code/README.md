@@ -1,6 +1,6 @@
 # nodecode-claude-code
 
-A Nodecode add-on that runs Claude models through your own logged-in Claude
+A Nodecode cell that runs Claude models through your own logged-in Claude
 Code CLI. Pick `claude-code/<model>` in `/models`, and each model round goes
 out with the login `claude` already has.
 
@@ -10,7 +10,7 @@ request:
 
 1. Nodecode builds the round's Messages request, the same way it does for
    Anthropic.
-2. The add-on starts `claude -p` in stream-json mode with its own tools off.
+2. The cell starts `claude -p` in stream-json mode with its own tools off.
    It hands the CLI the round's system prompt, history and tools, and points
    `ANTHROPIC_BASE_URL` at a loopback relay only that run knows.
 3. The CLI writes the request it would make, with its own headers. The relay
@@ -27,7 +27,7 @@ It follows NousResearch's
 
 - **Anthropic's terms.** The Claude Agent SDK documentation says third-party
   products may not offer claude.ai login or plan rate limits without
-  Anthropic's approval. This add-on is for running your own CLI on your own
+  Anthropic's approval. This cell is for running your own CLI on your own
   machine. Read the current terms yourself before relying on it.
 - **Billing.** Whether a round draws from your plan or from extra usage is
   decided by Anthropic's service. Turn off extra usage in your account if you
@@ -42,8 +42,8 @@ Linux and macOS.
 
 Install [Claude Code](https://claude.com/claude-code), run `claude` once and
 `/login`. Then copy this folder into
-`~/.nodecode/addons/nodecode-claude-code/` and restart Nodecode (or run
-`(restart-addons)`). When no `claude` is on PATH, a notice says so.
+`~/.nodecode/cells/nodecode-claude-code/` and restart Nodecode (or run
+`(restart-cells)`). When no `claude` is on PATH, a notice says so.
 
 ## Configure
 
@@ -65,11 +65,11 @@ See [`config.example.jsonc`](config.example.jsonc).
 
 Every round starts a fresh `claude` process, about 0.4 s. The CLI then
 replays the session's history, about 20 ms for each earlier user turn. The
-CLI adds its own per-request context to the newest turn: the date, the
-account's email, and a short environment note naming the session's folder.
-The add-on moves the CLI's cache marker onto the part of the history the
-next round sends again unchanged, so earlier rounds are still read from
-cache.
+CLI writes the request's headers, system blocks and tools; the messages are
+the round's own. The per-request context the CLI adds to the newest turn
+(the date, the account's email, an environment note) is not sent: the next
+round would replay that turn without it, and every thinking block signed
+behind it would then fail the API's prefix check and be dropped.
 
 ## Test
 
@@ -78,7 +78,7 @@ From a Nodecode checkout's `src/`:
 ```sh
 sbcl --non-interactive --eval '(require :asdf)' \
   --eval '(push (truename ".") asdf:*central-registry*)' \
-  --eval '(push #p"/path/to/addons/nodecode-claude-code/" asdf:*central-registry*)' \
+  --eval '(push #p"/path/to/cells/nodecode-claude-code/" asdf:*central-registry*)' \
   --eval '(asdf:test-system :nodecode-claude-code)'
 ```
 

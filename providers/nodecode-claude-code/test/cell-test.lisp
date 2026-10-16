@@ -1,4 +1,4 @@
-;;;; addon-test.lisp --- the claude-code add-on against a stand-in CLI.
+;;;; cell-test.lisp --- the claude-code cell against a stand-in CLI.
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
@@ -11,9 +11,9 @@
 
 (in-package #:nodecode.test)
 
-(define-test-slice "claude-code" "CLAUDE-CODE-ADDON-" :start nodecode-claude-code:start-addon)
+(define-test-slice "claude-code" "CLAUDE-CODE-CELL-" :start nodecode-claude-code:start-cell)
 
-(define-addon-lifecycle-tests "claude-code"
+(define-cell-lifecycle-tests "claude-code"
   (:hooks :credential 'nle::walk-provider-stream 'nle::configured-provider-inventory
           'nle::resolve-model-capability 'nle::model-price)
   (:running (is (nle::find-lane-by-name "claude-code" nil) "the lane is registered"))
@@ -23,7 +23,7 @@
 ;;; --- fixtures -----------------------------------------------------------------
 
 (defun cc-json (text)
-  "TEXT decoded the way the add-on decodes a body."
+  "TEXT decoded the way the cell decodes a body."
   (nlk:decode-json text))
 
 (defun cc-fake ()
@@ -59,6 +59,10 @@
                     for position from 0
                     when (gethash "cache_control" block) collect (list index position))))
 
+(defun cc-header (headers name)
+  "The value of header NAME in the alist HEADERS, any case."
+  (cdr (assoc name headers :test #'string-equal)))
+
 (defun cc-sse (&rest frames)
   "A canned Anthropic stream: FRAMES as data lines."
   (apply #'make-truncated-sse-stream frames))
@@ -73,7 +77,7 @@
   "One streamed call of the read tool, under its request name.")
 
 (defmacro with-cc-round ((&key (mode "") record) &body body)
-  "BODY with the add-on started on the stand-in CLI, MODE its behavior and
+  "BODY with the cell started on the stand-in CLI, MODE its behavior and
 RECORD the file it writes what it saw to; the environment it inherits
 carries an API key and a Claude Code entrypoint the round must not pass on."
   `(let ((saved (mapcar (lambda (name) (cons name (uiop:getenv name)))
@@ -86,7 +90,7 @@ carries an API key and a Claude Code entrypoint the round must not pass on."
             (sb-posix:setenv "CLAUDE_CODE_ENTRYPOINT" "claude-vscode" 1)
             ;; the stand-in is a python3 script: without one there is no round to run
             (when (cc-python-p)
-              (with-addon-stop ((claude-code-start "command" (cc-fake) "timeout_seconds" 20))
+              (with-cell-stop ((claude-code-start "command" (cc-fake) "timeout_seconds" 20))
                 ,@body)))
        (loop for (name . value) in saved
              do (if value (sb-posix:setenv name value 1) (sb-posix:unsetenv name))))))
@@ -106,7 +110,7 @@ call: (values MESSAGE URL HEADERS CONTENT)."
 
 ;;; --- the wire -----------------------------------------------------------------
 
-(deftest claude-code-addon-replays-a-round-as-frames ()
+(deftest claude-code-cell-replays-a-round-as-frames ()
   (let* ((frames (nodecode-claude-code::replay-frames (cc-json +cc-round+) "claude-haiku-4-5"))
          (assistant (second frames)))
     (is (= 3 (length frames)) "one frame a message")
@@ -126,12 +130,12 @@ call: (values MESSAGE URL HEADERS CONTENT)."
                         (nlk:json-value frame :array "message" "content")))
                 frames) "no marker is replayed")))
 
-(deftest claude-code-addon-refuses-an-assistant-prefill ()
+(deftest claude-code-cell-refuses-an-assistant-prefill ()
   (let ((body (cc-json "{\"messages\":[{\"role\":\"user\",\"content\":\"hi\"},{\"role\":\"assistant\",\"content\":\"par\"}]}")))
     (is (signals-error nle::provider-config-error
           (nodecode-claude-code::replay-frames body "claude-haiku-4-5")))))
 
-(deftest claude-code-addon-lays-its-own-members-over-the-cli ()
+(deftest claude-code-cell-lays-its-own-members-over-the-cli ()
   (let ((extra (nodecode-claude-code::extra-body (cc-json +cc-round+))))
     (is (equal "mcp__nodecode__read" (nlk:json-value (aref (gethash "tools" extra) 0) :string "name")))
     (is (null (gethash "cache_control" (aref (gethash "tools" extra) 0))) "tools carry no marker")
@@ -144,31 +148,30 @@ call: (values MESSAGE URL HEADERS CONTENT)."
     (is (null (gethash "context_management" extra)))
     (is (equal "high" (nodecode-claude-code::effort body)))))
 
-(deftest claude-code-addon-routes-a-long-window-to-its-1m-name ()
+(deftest claude-code-cell-routes-a-long-window-to-its-1m-name ()
   (is (equal "claude-sonnet-5[1m]" (nodecode-claude-code::model-argument "claude-sonnet-5" 1000000)))
   (is (equal "claude-haiku-4-5" (nodecode-claude-code::model-argument "claude-haiku-4-5" 200000)))
   (is (equal "claude-opus-5-5" (nodecode-claude-code::model-argument "claude-opus-5-5" nil)) "unknown stays plain"))
 
-(deftest claude-code-addon-pins-the-marker-behind-a-changed-tool-result ()
-  ;; The CLI appended its date to the last tool result and marked it: the
-  ;; next round replays that result without the date, so the marker goes
-  ;; back to the assistant message.
-  (let* ((body (cc-json "{\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"env\"},{\"type\":\"text\",\"text\":\"q\"}]},{\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"t\"},{\"type\":\"tool_use\",\"id\":\"a\",\"name\":\"x\",\"input\":{}}]},{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"a\",\"content\":\"r + date\",\"cache_control\":{\"type\":\"ephemeral\"}}]}]}"))
-         (queried (cc-json "[{\"type\":\"tool_result\",\"tool_use_id\":\"a\",\"content\":\"r\"}]")))
-    (is (equal '((1 1)) (cc-marked (nodecode-claude-code::pin-breakpoint body queried))))))
+(deftest claude-code-cell-sends-the-rounds-own-messages ()
+  ;; The CLI's per-request context rides its newest turn and the next round
+  ;; replays that turn without it: a thinking block signed behind it would
+  ;; fail the API's prefix check, so the request carries the round's own
+  ;; messages, thinking, markers and all, under the request's tool names.
+  (let* ((body (cc-json +cc-round+))
+         (sent (nodecode-claude-code::request-messages body))
+         (assistant (nlk:json-value (aref sent 1) :array "content")))
+    (is (= 3 (length sent)) "no message of the CLI's")
+    (is (equal '("thinking" "text" "tool_use") (map 'list #'nodecode-claude-code::block-type assistant)))
+    (is (equal "s" (nlk:json-value (aref assistant 0) :string "signature")) "the thinking as it was signed")
+    (is (equal "mcp__nodecode__read" (nlk:json-value (aref assistant 2) :string "name")))
+    (is (equal '((1 2) (2 0)) (cc-marked (nlk:json-object "messages" sent))) "Nodecode's markers")
+    (is (equal "read" (nlk:json-value (aref (nlk:json-value (aref (nlk:json-value body :array "messages") 1)
+                                                            :array "content")
+                                            2)
+                                      :string "name")) "and the round's own body is untouched")))
 
-(deftest claude-code-addon-pins-the-marker-before-a-trailing-system-turn ()
-  ;; The CLI's context rode a trailing role:system message, marked; the
-  ;; newest user turn is the queried frame unchanged, so it takes the marker.
-  (let* ((body (cc-json "{\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"q\"}]},{\"role\":\"system\",\"content\":\"env\"},{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"a\",\"name\":\"x\",\"input\":{}}]},{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"a\",\"content\":\"r\"}]},{\"role\":\"system\",\"content\":[{\"type\":\"text\",\"text\":\"date\",\"cache_control\":{\"type\":\"ephemeral\"}}]}]}"))
-         (queried (cc-json "[{\"type\":\"tool_result\",\"tool_use_id\":\"a\",\"content\":\"r\"}]")))
-    (is (equal '((3 0)) (cc-marked (nodecode-claude-code::pin-breakpoint body queried))))))
-
-(deftest claude-code-addon-leaves-a-request-with-two-markers ()
-  (let ((body (cc-json "{\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"q\",\"cache_control\":{}}]},{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"a\"}]},{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"b\",\"cache_control\":{}}]}]}")))
-    (is (equal '((0 0) (2 0)) (cc-marked (nodecode-claude-code::pin-breakpoint body #()))))))
-
-(deftest claude-code-addon-folds-a-call-back-to-its-tool ()
+(deftest claude-code-cell-folds-a-call-back-to-its-tool ()
   (let ((seen nil)
         (frame (cc-json (second +cc-tool-stream+))))
     (funcall (nodecode-claude-code::unprefixed-fold (lambda (frame finish record)
@@ -179,7 +182,7 @@ call: (values MESSAGE URL HEADERS CONTENT)."
 
 ;;; --- the relay ------------------------------------------------------------------
 
-(deftest claude-code-addon-relay-keeps-the-messages-post ()
+(deftest claude-code-cell-relay-keeps-the-messages-post ()
   (let ((relay (nodecode-claude-code::open-relay)))
     (unwind-protect
          (let* ((body "{\"model\":\"m\"}")
@@ -209,21 +212,23 @@ call: (values MESSAGE URL HEADERS CONTENT)."
 
 ;;; --- a whole round against the stand-in CLI -------------------------------------
 
-(deftest claude-code-addon-sends-the-request-the-cli-wrote ()
+(deftest claude-code-cell-sends-the-request-the-cli-wrote ()
   (with-temp-file (record :contents "")
     (with-cc-round (:record (uiop:native-namestring record))
       (nlk:bind (((message url headers content) (cc-round)))
         (is (equal "https://api.anthropic.com/v1/messages?beta=true" url) "the path the CLI asked for")
-        (is (equal "Bearer fake-oauth-token" (nlk:header-value headers "authorization")) "the CLI's login")
-        (is (equal "cli" (nlk:header-value headers "x-app")))
-        (is (equal "claude-cli/0.0.0-fake (external, sdk-cli)" (nlk:header-value headers "user-agent")) "the CLI's own client name, not Nodecode's")
-        (is (null (nlk:header-value headers "x-api-key")) "no key of Nodecode's rides along")
-        (is (null (nlk:header-value headers "accept-encoding")))
+        (is (equal "Bearer fake-oauth-token" (cc-header headers "authorization")) "the CLI's login")
+        (is (equal "cli" (cc-header headers "x-app")))
+        (is (equal "claude-cli/0.0.0-fake (external, sdk-cli)" (cc-header headers "user-agent")) "the CLI's own client name, not Nodecode's")
+        (is (null (cc-header headers "x-api-key")) "no key of Nodecode's rides along")
+        (is (null (cc-header headers "accept-encoding")))
         (is (= 1 (count "content-type" headers :key #'car :test #'string-equal)))
         (let ((sent (nlk:decode-json content)))
           (is (every (lambda (tool) (uiop:string-prefix-p "mcp__nodecode__" (nlk:json-value tool :string "name")))
                      (nlk:json-value sent :array "tools")) "the request names every tool as the CLI does")
-          (is (search "cc_entrypoint" (nlk:json-value (aref (nlk:json-value sent :array "system") 0) :string "text")) "the CLI's system blocks"))
+          (is (search "cc_entrypoint" (nlk:json-value (aref (nlk:json-value sent :array "system") 0) :string "text")) "the CLI's system blocks")
+          (is (notany (lambda (message) (equal "system" (nlk:json-value message :string "role")))
+                      (nlk:json-value sent :array "messages")) "and none of its per-request messages"))
         (is (equal "read" (nlk:json-value (aref (nlk:json-value message :array "tool_calls") 0)
                                           :string "function" "name")) "the call comes back under Nodecode's name")
         (let ((seen (nlk:decode-json (uiop:read-file-string record))))
@@ -235,15 +240,15 @@ call: (values MESSAGE URL HEADERS CONTENT)."
           (is (equal "claude-haiku-4-5" (let ((argv (coerce (nlk:json-value seen :array "argv") 'list)))
                                           (second (member "--model" argv :test #'equal))))))))))
 
-(deftest claude-code-addon-says-when-the-cli-is-logged-out ()
+(deftest claude-code-cell-says-when-the-cli-is-logged-out ()
   (with-cc-round (:mode "logged-out")
     (let ((refusal (signals-error nle::provider-config-error (cc-round))))
       (when (typep refusal 'nle::provider-error)
         (is (eql 403 (nle::provider-error-status refusal)) "decisive: never retried")
         (is (search "/login" (nle::provider-error-detail refusal)))))))
 
-(deftest claude-code-addon-says-when-there-is-no-cli ()
-  (with-addon-stop ((claude-code-start "command" "/nonexistent/claude"))
+(deftest claude-code-cell-says-when-there-is-no-cli ()
+  (with-cell-stop ((claude-code-start "command" "/nonexistent/claude"))
     (let ((refusal (signals-error nle::provider-config-error (cc-round))))
       (when (typep refusal 'nle::provider-error)
         (is (eql 404 (nle::provider-error-status refusal)))
@@ -251,9 +256,9 @@ call: (values MESSAGE URL HEADERS CONTENT)."
 
 ;;; --- what the rest of the organism reads ----------------------------------------
 
-(deftest claude-code-addon-is-a-provider-with-models ()
+(deftest claude-code-cell-is-a-provider-with-models ()
   (with-temp-auth (auth "{}")
-    (with-addon-stop ((claude-code-start "command" "/nonexistent/claude" "models" (vector "claude-haiku-4-5")))
+    (with-cell-stop ((claude-code-start "command" "/nonexistent/claude" "models" (vector "claude-haiku-4-5")))
       (nlk:bind (((ids models) (nle::configured-provider-inventory :auth-path auth)))
         (is (member "claude-code" ids :test #'equal) "listed")
         (is (find "claude-haiku-4-5" (remove "claude-code" models :key (lambda (row) (getf row :provider-id))

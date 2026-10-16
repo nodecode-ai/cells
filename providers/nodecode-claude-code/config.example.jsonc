@@ -1,4 +1,4 @@
-// The section ~/.nodecode/config.jsonc may carry for this add-on --
+// The section ~/.nodecode/config.jsonc may carry for this cell --
 // documentation, not config: the folder gets pushed and holds no secret (the
 // login is the claude CLI's own, where `claude' then /login wrote it). A
 // present section is enabled; "enabled": false vetoes it. Every member is

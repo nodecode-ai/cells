@@ -212,7 +212,6 @@ MODEL on WINDOW's route."
                                         (setting :command))
                                 :status 404 :config t)))
          (frames (replay-frames body model))
-         (queried (nlk:json-value (car (last frames)) :array "message" "content"))
          (scratch (uiop:ensure-directory-pathname
                    (merge-pathnames (format nil "nodecode-claude-code-~a" (hex-token 8))
                                     (uiop:temporary-directory))))
@@ -255,11 +254,12 @@ MODEL on WINDOW's route."
                  (pump run relay deadline (lambda () (>= (run-acks run) asked))))))
            (ignore-errors (close (run-input run)))
            (pump run relay deadline (lambda () (relay-capture relay)))
-           (let ((capture (relay-capture relay)))
+           (let* ((capture (relay-capture relay))
+                  (request (nlk:decode-json (getf capture :body))))
+             (setf (gethash "messages" request) (request-messages body))
              (values (captured-headers capture)
                      (captured-endpoint capture)
-                     (nlk:encode-json-octets
-                      (pin-breakpoint (nlk:decode-json (getf capture :body)) queried)))))
+                     (nlk:encode-json-octets request))))
       (when run (stop-run run))
       (when relay (close-relay relay))
       (uiop:delete-directory-tree scratch :validate t :if-does-not-exist :ignore))))

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""A stand-in for the claude CLI, for the add-on's tests: nothing leaves the machine.
+"""A stand-in for the claude CLI, for the cell's tests: nothing leaves the machine.
 
-It reads the stream-json frames the add-on writes, acknowledges each shouldQuery:false
+It reads the stream-json frames the cell writes, acknowledges each shouldQuery:false
 user frame with a zero-turn result, and on the frame that asks POSTs the Messages request
 a CLI would make to ANTHROPIC_BASE_URL -- the replayed messages, the system prompt file,
 the CLAUDE_CODE_EXTRA_BODY from --settings laid over, a cache marker on the last block --
@@ -48,7 +48,8 @@ def request(frames):
     for m in messages:
         m.pop("model", None)
     marker = {"type": "ephemeral", "ttl": "1h"}
-    messages[-1]["content"][-1]["cache_control"] = marker
+    # the per-request context the CLI adds to the newest turn, marked, as 2.1.302 does
+    messages.append({"role": "system", "content": [{"type": "text", "text": "Today's date is 2026-10-16.", "cache_control": marker}]})
     body = {"model": flag("--model").replace("[1m]", ""),
             "messages": messages,
             "system": [{"type": "text", "text": "x-anthropic-billing-header: cc_version=0.0.0; cc_entrypoint=sdk-cli;"},
