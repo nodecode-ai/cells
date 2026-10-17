@@ -2340,10 +2340,11 @@ function toChat() {
   state.pane = "chat";
 }
 
-// TAB: the Control tab to open, when PANE is Control; the one it was on when none.
+// TAB: the Control tab to open, when PANE is Control; the one it was on when
+// none, or on a phone the list of them (control.moves says whether it moves).
 function setPane(pane, tab) {
   if (pane === state.pane) {
-    if (pane === "control" && tab && tab !== control.tab) {
+    if (pane === "control" && control.moves(tab)) {
       control.show(tab);
       renderObserve();
       writeLink();

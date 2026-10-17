@@ -20,8 +20,21 @@ import { makeMcp } from "./mcp.js";
 import { makeProfiles } from "./profiles.js";
 import { makeAccess } from "./access.js";
 import { t } from "./i18n.js";
+import { icon } from "./icons.js";
 
 const TABS = [["gateway", t("Gateway")], ["logs", t("Logs")], ["settings", t("Settings")], ["cells", t("Cells")], ["index", t("Index")], ["mcp", "MCP"], ["profiles", t("Profiles")], ["channels", t("Channels")], ["link", t("Link")], ["jobs", t("Scheduled jobs")]];
+const LABELS = Object.fromEntries(TABS);
+// A phone -- the page's own phone width, app.css's 720 px -- opens Control on
+// its sections as one list, each saying how it stands, and a section as a page
+// of its own under the way back, where a wide window has the strip of tabs (ten
+// of them wrap into three rows on a phone; the operator picked this, variant A
+// of the phone redesign, 2026-10-17).
+const PHONE = matchMedia("(max-width: 720px)");
+const GROUPS = [[t("This machine"), ["gateway", "logs"]], [t("What it runs"), ["settings", "cells", "mcp", "index"]],
+  [t("Who reaches it"), ["channels", "link", "profiles", "jobs"]]];
+const MARKS = { gateway: "server", logs: "lines", settings: "sliders", cells: "grid", index: "book", mcp: "plug",
+  profiles: "person", channels: "chat", link: "globe", jobs: "clock" };
+const FAILED = ["error", "refused"];
 const RUNS = {
   unit: t("Runs as a systemd user unit, which starts it at login and after a crash."),
   serve: t("Runs headless in the foreground (nodecode serve): nothing starts it again if it stops."),
@@ -178,7 +191,14 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     channels: null, probed: {}, setup: null, jobs: null, hub: null, hubReading: false, about: new Set(),
     // By FORMKEY: what the hand typed into a form no tab keeps itself, and why its last save was refused.
     drafts: {}, refused: {},
+    // A phone's list: whether it is on screen rather than a section, where it was
+    // scrolled when a section was opened from it, the move a redraw slides in by,
+    // and what only the list reads (the MCP servers, the profiles).
+    home: true, homeAt: 0, motion: null, servers: null, profiles: null,
   };
+  // The list stands in for the strip on a phone only; a wide window keeps the tab.
+  const atHome = () => c.home && PHONE.matches;
+  const scroller = () => document.getElementById("observe");
   const cfgs = makeSettings({ c, api, act, toast, redraw, refuse });
   const index = makeIndex({ c, api, act, toast, redraw });
   const mcp = makeMcp({ c, api, act, toast, redraw, reload: () => { if (shown && c.tab === "mcp") load(); } });
@@ -204,6 +224,14 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   }
 
   async function load() {
+    if (atHome()) {
+      await Promise.all([read("service", "/api/gateway/service"), read("identity", "/api/gateway/identity"),
+        read("backups", "/api/gateway/backups"), read("model", "/api/gateway/model"), read("cells", "/api/gateway/cells"),
+        read("channels", "/api/channels"), read("jobs", "/api/cron/jobs"), read("servers", "/api/mcp"),
+        read("profiles", "/api/gateway/profiles"), access.load()]);
+      if (shown && atHome()) quietRedraw();
+      return;
+    }
     const tab = c.tab;
     if (tab === "gateway") {
       await Promise.all([read("service", "/api/gateway/service"), read("identity", "/api/gateway/identity"),
@@ -253,8 +281,8 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     clearInterval(followTimer);
     clearInterval(pollTimer);
     if (!shown) return;
-    if (c.tab === "logs" && c.log.follow) followTimer = setInterval(() => { if (isOpen()) readLog(false); }, 2000);
-    if (["gateway", "cells", "mcp", "channels", "link", "jobs"].includes(c.tab)) pollTimer = setInterval(() => { if (isOpen()) load(); }, 10000);
+    if (!atHome() && c.tab === "logs" && c.log.follow) followTimer = setInterval(() => { if (isOpen()) readLog(false); }, 2000);
+    if (atHome() || ["gateway", "cells", "mcp", "channels", "link", "jobs"].includes(c.tab)) pollTimer = setInterval(() => { if (isOpen()) load(); }, 10000);
   }
 
   // A backup or a restore runs on the gateway: the page reads how it goes
@@ -886,18 +914,156 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
 
   // --- what the pane is -----------------------------------------------------------
 
+  // A phone's head: the list's title and how the organism stands; a section's,
+  // the way back to the list and the section's name.
+  function phoneHead() {
+    const head = el("div", "ctl-head");
+    if (atHome()) {
+      const line = el("p", "ctl-standing");
+      const up = isOpen() && uptime(c.identity?.started_at);
+      line.append(el("i", `led${isOpen() ? "" : " off"}`), isOpen()
+        ? [t("Running"), up, c.identity?.version?.split("+")[0]].filter(Boolean).join(" · ") : t("Reconnecting…"));
+      head.append(el("h2", "ctl-title", t("Control")), line);
+      return head;
+    }
+    const back = button("ctl-back", "", { act: "home" });
+    back.append(icon("back", 18), el("span", "", t("Control")));
+    head.append(back, el("h2", "ctl-title", LABELS[c.tab]));
+    return head;
+  }
+
+  // How section ID stands, in a few words, from what the list read: [words, tone],
+  // the tone "warn" or "danger" when it wants the reader.
+  function glance(id) {
+    const got = (v) => v && !v.error;
+    switch (id) {
+      case "gateway": return isOpen() ? [uptime(c.identity?.started_at) || "", ""] : [t("away"), "warn"];
+      case "logs": return [t("what it writes"), ""];
+      case "settings": return got(c.model) ? [c.model.model || t("no default model"), c.model.refusal || !c.model.model ? "warn" : ""] : ["", ""];
+      case "cells": {
+        if (!got(c.cells)) return ["", ""];
+        const refused = c.cells.cells.filter((r) => r.refused).length;
+        return refused ? [t("{n} refused", { n: refused }), "danger"] : [t("{n} on", { n: c.cells.cells.filter((r) => r.on).length }), ""];
+      }
+      case "index": return [t("what it keeps"), ""];
+      case "mcp": {
+        if (!got(c.servers)) return ["", ""];
+        if (!c.servers.enabled) return [t("off"), ""];
+        const failed = c.servers.servers.filter((s) => FAILED.includes(s.state)).length;
+        return failed ? [t("{n} failing", { n: failed }), "danger"]
+          : [t("{n} ready", { n: c.servers.servers.filter((s) => s.state === "ready").length }), ""];
+      }
+      case "profiles": return got(c.profiles) ? [plural(c.profiles.profiles.length, t("{n} profile"), t("{n} profiles")), ""] : ["", ""];
+      case "channels": {
+        if (!got(c.channels)) return ["", ""];
+        const asking = c.channels.pairing.reduce((n, p) => n + (p.asks?.length || 0), 0);
+        if (asking) return [t("{n} asking", { n: asking }), "warn"];
+        const down = c.channels.channels.filter((ch) => !["running", "off", "unconfigured"].includes(ch.state)).length;
+        return down ? [t("{n} not running", { n: down }), "danger"]
+          : [t("{n} running", { n: c.channels.channels.filter((ch) => ch.state === "running").length }), ""];
+      }
+      case "link": {
+        const l = c.link;
+        if (!got(l)) return ["", ""];
+        return l.state === "on" ? [[t("on"), plural(l.browsers?.length || 0, t("{n} browser"), t("{n} browsers"))].join(" · "), ""]
+          : [STATES[l.state] || l.state, ""];
+      }
+      case "jobs": return got(c.jobs) ? [t("{n} active", { n: c.jobs.jobs.filter((j) => j.state === "active").length }), ""] : ["", ""];
+    }
+    return ["", ""];
+  }
+
+  // What wants the reader, each with the one control that answers it: a backup
+  // never made, a default model refused, a cell, server or channel that will
+  // not run, someone asking to be let in.
+  function needsYou() {
+    const rows = [];
+    const need = (text, detail, word, data) => {
+      const li = el("li", "ctl-need");
+      const what = el("span", "ctl-need-what");
+      what.append(el("span", "ctl-need-text", text));
+      if (detail) what.append(el("span", "ctl-need-detail", detail));
+      const go = button("quiet", word, data);
+      go.disabled = !!c.busy;
+      li.append(what, go);
+      rows.push(li);
+    };
+    const b = c.backups;
+    if (b && !b.error && !b.backups.length) {
+      const job = b.job?.verb === "backup" ? b.job : null;
+      need(t("No backup yet."), job?.state === "running" ? t("Backing up: {step}… {seconds} s", { step: job.step, seconds: job.seconds })
+        : job?.state === "failed" ? jobFailed(job) : t("One file holds this home whole, its keys too."),
+        job?.state === "running" ? t("Backing up…") : t("Back up now"), { act: "backup" });
+      if (job?.state === "running") rows.at(-1).querySelector("button").disabled = true;
+    }
+    if (c.model && !c.model.error && c.model.refusal) need(t("The default model is refused"), c.model.refusal, t("Open Settings"), { act: "tab", tab: "settings" });
+    for (const r of (c.cells && !c.cells.error ? c.cells.cells : []).filter((each) => each.refused)) {
+      need(t("{name} refused to start: {why}", { name: r.label || r.name, why: r.refused }), "", t("Open"), { act: "tab", tab: "cells" });
+    }
+    for (const s of (c.servers && !c.servers.error && c.servers.enabled ? c.servers.servers : []).filter((each) => FAILED.includes(each.state))) {
+      need(t("MCP server {name}: {state}", { name: s.name, state: STATES[s.state] || s.state }), "", t("Open"), { act: "tab", tab: "mcp" });
+    }
+    if (c.channels && !c.channels.error) {
+      for (const ch of c.channels.channels.filter((each) => !["running", "off", "unconfigured"].includes(each.state))) {
+        need(t("Channel {name}: {state}", { name: ch.id, state: STATES[ch.state] || ch.state }), "", t("Open"), { act: "tab", tab: "channels" });
+      }
+      for (const p of c.channels.pairing.filter((each) => each.asks?.length)) {
+        need(t("{n} asking to be let in on {name}", { n: p.asks.length, name: p.id }), "", t("Open"), { act: "tab", tab: "channels" });
+      }
+    }
+    return rows;
+  }
+
+  // The phone's list: what wants the reader first, then every section under its
+  // group, a finger tall, saying how it stands.
+  function drawHome() {
+    const root = el("div", "ctl-tab ctl-home");
+    const group = (label, rows, cls) => {
+      const node = el("section", `ctl-group${cls ? ` ${cls}` : ""}`);
+      const list = el("ul", "ctl-group-list");
+      list.append(...rows);
+      node.append(el("h3", "ctl-group-head", label), list);
+      root.append(node);
+    };
+    const needs = needsYou();
+    if (needs.length) group(t("Needs you"), needs, "ctl-needs");
+    for (const [label, ids] of GROUPS) {
+      group(label, ids.map((id) => {
+        const li = el("li");
+        const go = button("ctl-go", "", { act: "tab", tab: id });
+        const [words, tone] = glance(id);
+        const marked = el("span", "ctl-go-mark");
+        marked.append(icon(MARKS[id], 17));
+        const state = el("span", "ctl-go-state", words);
+        if (tone) state.dataset.tone = tone;
+        go.append(marked, el("span", "ctl-go-name", LABELS[id]), state, icon("chevron", 14));
+        li.append(go);
+        return li;
+      }));
+    }
+    return root;
+  }
+
   function draw() {
     const root = el("div", "observe-usage control-pane");
+    const phone = PHONE.matches;
+    root.classList.toggle("ctl-phone", phone);
+    // A move between the list and a section slides once; a poll's redraw stands still.
+    if (phone && c.motion) root.dataset.motion = c.motion;
+    c.motion = null;
     const bar = el("div", "dash-bar");
-    const tabs = el("div", "scope ctl-tabs");
-    tabs.setAttribute("role", "tablist");
-    for (const [id, label] of TABS) {
-      const sw = button("sw", label, { act: "tab", tab: id });
-      sw.setAttribute("role", "tab");
-      sw.setAttribute("aria-checked", String(id === c.tab));
-      tabs.append(sw);
+    if (phone) bar.append(phoneHead());
+    else {
+      const tabs = el("div", "scope ctl-tabs");
+      tabs.setAttribute("role", "tablist");
+      for (const [id, label] of TABS) {
+        const sw = button("sw", label, { act: "tab", tab: id });
+        sw.setAttribute("role", "tab");
+        sw.setAttribute("aria-checked", String(id === c.tab));
+        tabs.append(sw);
+      }
+      bar.append(tabs);
     }
-    bar.append(tabs);
     root.append(bar);
     // On the bar, so it stays in sight wherever the pane is scrolled: why the
     // link is down when this pane took it down; the link bar says the rest.
@@ -906,6 +1072,10 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       away.append(el("i", "led off"), " ", c.leaving === "restart" ? t("Restarting. This page reconnects when the gateway is back.")
         : t("Stopped. This page reconnects once it runs again."));
       bar.append(away);
+    }
+    if (atHome()) {
+      root.append(drawHome());
+      return root;
     }
     const draws = { gateway: drawGateway, logs: drawLogs, settings: drawSettings, cells: drawCells, index: index.draw, mcp: mcp.draw, profiles: profs.draw, channels: drawChannels, link: access.draw, jobs: drawJobs };
     root.append(draws[c.tab]());
@@ -946,13 +1116,27 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     if (cfgs.click(d) || index.click(d) || mcp.click(d) || profs.click(d) || access.click(d)) return;
     switch (d.act) {
       // A health finding about a config section opens Settings on that section's form.
-      case "tab":
+      case "tab": {
+        const from = atHome();
+        if (from) c.homeAt = scroller()?.scrollTop || 0;
         turnTo(d.tab);
         if (d.section) cfgs.reveal(d.section);
+        if (from) c.motion = "in";
         redraw();
+        if (from && scroller()) scroller().scrollTop = 0;
         load().then(() => { if (d.section) document.getElementById(cfgs.anchor(d.section))?.scrollIntoView({ block: "start" }); });
         schedule();
         onTab(c.tab);
+        return;
+      }
+      case "home":
+        toHome();
+        c.motion = "back";
+        redraw();
+        if (scroller()) scroller().scrollTop = c.homeAt;
+        load();
+        schedule();
+        onTab(null);
         return;
       case "setup": c.setup = c.setup === d.id ? null : d.id; redraw(); return;
       // Opened and closed in place: a redraw would take the hand's focus off the mark.
@@ -1080,22 +1264,55 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   // The pane on TAB; a question or an edit left open on the last one is let go.
   function turnTo(tab) {
     c.tab = tab;
+    c.home = false;
     c.confirm = null;
     c.editing = null;
   }
 
+  // A phone's way back: the list, where it was scrolled when a section was opened.
+  function toHome() {
+    c.home = true;
+    c.confirm = null;
+    c.editing = null;
+  }
+
+  // A wide window and a phone draw the pane apart: a turn of the phone, or a
+  // window drawn narrow, draws it again as the width now asks.
+  PHONE.addEventListener("change", () => {
+    if (!shown) return;
+    redraw();
+    load();
+    schedule();
+    onTab(c.tab);
+  });
+
   return {
     draw, click, input, submit,
-    get tab() { return c.tab; },
+    // NULL for a phone's list, so its address names no tab.
+    get tab() { return atHome() ? null : c.tab; },
+    // Whether show(TAB) moves the pane: to another tab, or, on a phone, to the
+    // list from a section, when the address names no tab.
+    moves(tab) { return tab ? tab !== (atHome() ? null : c.tab) : PHONE.matches && !c.home; },
     // The link as last read, read again, its panel by the gateway line, and a
     // browser asking, for the page's notices to hold.
     link: { get now() { return c.link; }, read: access.load, panel: access.panel, askNotice: access.askNotice },
     // Opened on TAB when it names one of the pane's tabs; a name it does not
     // have (an address from another build) leaves it on the tab it was on, and says so.
     show(tab) {
-      if (tab && tab !== c.tab) {
+      const was = atHome() ? null : c.tab;
+      if (tab && (tab !== c.tab || atHome())) {
         if (TABS.some(([id]) => id === tab)) turnTo(tab);
-        else toast(t("Control has no {tab} tab, so it opens on {label}.", { tab, label: TABS.find(([id]) => id === c.tab)[1] }));
+        else {
+          c.home = false;
+          toast(t("Control has no {tab} tab, so it opens on {label}.", { tab, label: LABELS[c.tab] }));
+        }
+      } else if (!tab && PHONE.matches && !c.home) toHome();
+      // Back and Forward between the list and a section, on a phone: a section
+      // opens at its top, the list where it was left.
+      const now = atHome() ? null : c.tab;
+      if (shown && now !== was) {
+        if (was === null) c.homeAt = scroller()?.scrollTop || 0;
+        queueMicrotask(() => { if (scroller()) scroller().scrollTop = now ? 0 : c.homeAt; });
       }
       shown = true;
       load();

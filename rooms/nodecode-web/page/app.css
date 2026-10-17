@@ -1368,6 +1368,60 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
   .ctl-line { align-items: flex-start; flex-direction: column; gap: 8px; }
 }
 
+/* --- Control on a phone (control.js PHONE): the sections as one list ---------------
+   Drawn by the pane itself (.ctl-phone), at app.css's phone width: no strip of
+   tabs, the list's rows a finger tall saying how each section stands, what wants
+   the reader first; a section a page of its own under the way back; a question
+   asked there rising from the bottom over the page. */
+.ctl-phone .dash-bar { padding: 2px 0 4px; }
+.ctl-head { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.ctl-title { margin: 0; font: 600 30px/1.15 var(--sans); letter-spacing: -0.015em; color: var(--primary); }
+.ctl-standing { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 14px; color: var(--secondary); }
+.ctl-back { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin: -8px 0 -6px -10px; padding: 0 12px 0 6px; border-radius: 12px; font-size: 16px; color: var(--accent); }
+.ctl-home > * + * { margin-top: 26px; }
+.ctl-group-head { margin: 0 0 8px; padding-left: 14px; font: 500 10.5px/1.2 var(--micro); letter-spacing: 0.09em; text-transform: uppercase; color: var(--tertiary); }
+.ctl-needs .ctl-group-head { color: var(--accent); }
+.ctl-group-list { list-style: none; margin: 0; padding: 0; border-radius: 14px; background: var(--subtle); overflow: hidden; }
+.ctl-needs .ctl-group-list { background: color-mix(in srgb, var(--accent) 7%, var(--subtle)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent); }
+.ctl-group-list > li + li { border-top: 1px solid var(--seam); }
+.ctl-go { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 54px; padding: 10px 14px; text-align: left; font-size: 16px; color: var(--foreground); }
+.ctl-go:active { background: var(--field-lit); }
+.ctl-go-mark { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--selected); color: var(--secondary); }
+.ctl-go-name { flex: 1 0 auto; }
+.ctl-go-state { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: var(--tertiary); }
+.ctl-go-state[data-tone="warn"] { color: var(--accent); }
+.ctl-go-state[data-tone="danger"] { color: var(--danger-lit); }
+.ctl-go > svg { flex: none; color: var(--tertiary); }
+.ctl-need { display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 10px 12px 10px 14px; }
+.ctl-need-what { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ctl-need-text { font-size: 15.5px; font-weight: 500; color: var(--foreground); overflow-wrap: anywhere; }
+.ctl-need-detail { font-size: 13.5px; line-height: 1.4; color: var(--secondary); overflow-wrap: anywhere; }
+.ctl-need .quiet { flex: none; min-height: 40px; justify-content: center; }
+.ctl-need .quiet:disabled { opacity: 0.42; cursor: default; }
+/* A section's own page: its rows the full width, its buttons a finger tall. */
+.ctl-phone .ctl-tab > * + * { margin-top: 28px; }
+.ctl-phone .ctl-tab :is(.quiet, .solid) { min-height: 44px; justify-content: center; }
+.ctl-phone .ctl-form :is(.quiet, .solid) { flex: 1 1 auto; }
+.ctl-phone .ctl-acts { flex-wrap: wrap; gap: 12px 18px; }
+.ctl-phone .ctl-facts .fact { grid-template-columns: 104px minmax(0, 1fr); }
+/* A question rises from the bottom, over the page it was asked on. */
+.ctl-phone .confirm {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; width: auto; margin: 0;
+  padding: 22px max(18px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  border: 0; border-top: 1px solid var(--seam-lit); border-radius: 20px 20px 0 0; background: var(--raised);
+  box-shadow: 0 0 0 100vmax var(--veil); animation: ctl-rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.ctl-phone .confirm .title { font-size: 16px; line-height: 1.5; }
+.ctl-phone .confirm .actions { flex-direction: column; align-items: stretch; gap: 6px; margin-top: 16px; }
+.ctl-phone .confirm .actions .solid { min-height: 50px; justify-content: center; border-radius: 14px; font-size: 14px; }
+.ctl-phone .confirm .actions .word { min-height: 48px; margin: 0; justify-content: center; font-size: 15px; }
+.ctl-phone[data-motion="in"] { animation: ctl-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.ctl-phone[data-motion="back"] { animation: ctl-back 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes ctl-in { from { transform: translateX(24%); opacity: 0; } }
+@keyframes ctl-back { from { transform: translateX(-16%); opacity: 0; } }
+@keyframes ctl-rise { from { transform: translateY(100%); } }
+@media (prefers-reduced-motion: reduce) { .ctl-phone[data-motion], .ctl-phone .confirm { animation: none; } }
+
 /* --- theme --- */
 /* The look (theme.js) and the language (i18n.js) wait behind two marks at the
    gateway line's end; a click on one opens its choices above it. */

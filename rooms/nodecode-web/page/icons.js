@@ -6,7 +6,18 @@
 const NS = "http://www.w3.org/2000/svg";
 
 const SHAPES = {
+  back: '<path d="M9.5 3.5l-4 4 4 4"/>',
+  book: '<path d="M3 3.5a1 1 0 0 1 1-1h8v8.5H4a1 1 0 0 0-1 1z"/><path d="M3 12a1 1 0 0 0 1 1h8"/>',
+  chat: '<path d="M2.5 4A1.5 1.5 0 0 1 4 2.5h7A1.5 1.5 0 0 1 12.5 4v4.5A1.5 1.5 0 0 1 11 10H7l-3 2.5V10A1.5 1.5 0 0 1 2.5 8.5z"/>',
   check: '<path d="M3 7.8l3 3 6-6.3"/>',
+  clock: '<circle cx="7.5" cy="7.5" r="5.5"/><path d="M7.5 4.5v3l2 1.3"/>',
+  globe: '<circle cx="7.5" cy="7.5" r="5.5"/><path d="M2 7.5h11M7.5 2c1.8 1.8 1.8 9.2 0 11M7.5 2c-1.8 1.8-1.8 9.2 0 11"/>',
+  grid: '<rect x="2.5" y="2.5" width="4" height="4" rx="1"/><rect x="8.5" y="2.5" width="4" height="4" rx="1"/><rect x="2.5" y="8.5" width="4" height="4" rx="1"/><rect x="8.5" y="8.5" width="4" height="4" rx="1"/>',
+  lines: '<path d="M2.5 4h10M2.5 7.5h10M2.5 11h6"/>',
+  person: '<circle cx="7.5" cy="5" r="2.5"/><path d="M2.5 13c.8-2.4 2.7-3.5 5-3.5s4.2 1.1 5 3.5"/>',
+  plug: '<path d="M5.5 1.5v3M9.5 1.5v3M4 4.5h7v2a3.5 3.5 0 0 1-7 0zM7.5 10v3.5"/>',
+  server: '<rect x="2.5" y="2.5" width="10" height="4" rx="1"/><rect x="2.5" y="8.5" width="10" height="4" rx="1"/><path d="M4.8 4.5h.01M4.8 10.5h.01"/>',
+  sliders: '<path d="M2.5 4.5h5.5M11.5 4.5h1M2.5 10.5h1.5M7.5 10.5h5"/><circle cx="9.8" cy="4.5" r="1.6"/><circle cx="5.8" cy="10.5" r="1.6"/>',
   chevron: '<path d="M5.5 3.5l4 4-4 4"/>',
   close: '<path d="M3.5 3.5l8 8M11.5 3.5l-8 8"/>',
   collapse: '<path d="M5 2.5L7.5 5 10 2.5M5 12.5L7.5 10 10 12.5"/>',

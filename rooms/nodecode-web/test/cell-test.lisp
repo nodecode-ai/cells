@@ -759,3 +759,23 @@ brace that closes it at the start of a line, or NIL."
     (is (search "pick.dataset.run = run" panel) "a row's line to run")
     (is (search "if (pick.dataset.run) { runSlash(pick.dataset.run); return; }" app) "runs on a click")
     (is (search "id=\"slash-panel\"" (web-page-text "index.html")))))
+
+;; A phone opens Control on its sections as one list, each saying how it
+;; stands, and a section as a page of its own under the way back (the operator,
+;; 2026-10-17: variant A of the phone redesign; its ten tabs wrapped into three
+;; rows took 29% of a phone's screen before anything it came for).
+(deftest web-cell-control-on-a-phone-is-a-list-of-its-sections ()
+  (let* ((js (web-page-text "control.js"))
+         (app (web-page-text "app.js"))
+         (css (web-css-declarations (web-page-text "app.css")))
+         (groups (subseq js (search "const GROUPS" js) (search "const MARKS" js)))
+         (draw (web-js-function js "draw")))
+    (is (search "matchMedia(\"(max-width: 720px)\")" js) "at the page's own phone width")
+    (dolist (tab '("gateway" "logs" "settings" "cells" "index" "mcp" "profiles" "channels" "link" "jobs"))
+      (is (search (format nil "\"~a\"" tab) groups) (format nil "the list reaches ~a" tab)))
+    (is (search "if (phone) bar.append(phoneHead())" draw) "a phone draws no strip of tabs")
+    (is (search "if (atHome()) {" draw) "but the list, until a section is opened")
+    (is (search "get tab() { return atHome() ? null : c.tab; }" js) "the list's address names no tab")
+    (is (search "control.moves(tab)" (web-js-function app "setPane")) "so Back, or the column's Control, takes a phone to the list")
+    (is (equal "54px" (web-css-value css ".ctl-go" "min-height")) "a section's row is a finger tall")
+    (is (equal "fixed" (web-css-value css ".ctl-phone .confirm" "position")) "a question rises from the bottom")))
