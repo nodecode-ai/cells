@@ -344,6 +344,40 @@ p2 serving m2 and shared."
                (press-lines (nck::picker-pager "/models p1" 2 2))))
     (is (null (nck::picker-pager "/models" 1 1)))))
 
+(deftest channel-operator-a-models-pick-asks-its-effort ()
+  ;; A /models pick asks its reasoning effort straight through, as the
+  ;; shells' own /models does (OPEN-MODELS-REASONING-PICKER): no need to
+  ;; type /think, which stays the quick way to change it again later. A
+  ;; model the catalog says does not reason gets no such card, and nor does
+  ;; a platform whose messages carry no choices, which has no way to show
+  ;; one.
+  (with-temp-store ()
+    (with-catalog
+      (with-stubbed-fdefinition (nle::effort-ladder (provider model)
+                                  (cond ((equal model "shared") nil)
+                                        (t '("off" "low" "high"))))
+        (let ((host (test-host :name "models-effort" :platform (test-platform :choices t)))
+              (plain (test-host :name "models-effort-words"))
+              (channel (test-candidate :channel "100")))
+          (flet ((models (args &optional (host host))
+                   (multiple-value-list (nck::room-models-command host channel args "chat-100"))))
+            (destructuring-bind (text controls) (models "p2 m2")
+              (is (search "this channel runs p2/m2 from its next ask" text))
+              (is (search (format nil "~%~%## Reasoning Effort~%Target: p2/m2") text))
+              (is (equal '((:menu "Select effort"
+                            (("off" "/think off" "Answer without reasoning." nil)
+                             ("low" "/think low" "" nil)
+                             ("high" "/think high" "" nil)))
+                           ("Provider default" "/think default" :secondary t))
+                         (press-lines controls))
+                  "the same card /think opens"))
+            ;; A model the catalog says does not reason: the words alone.
+            (is (equal (list (format nil "this channel runs p2/shared from its next ask; the organism's default is unchanged"))
+                       (models "p2 shared")))
+            ;; A platform whose messages carry none: the words alone either way.
+            (is (equal (list (format nil "this channel runs p2/m2 from its next ask; the organism's default is unchanged"))
+                       (models "p2 m2" plain)))))))))
+
 (deftest channel-operator-effort-is-a-room-picker ()
   ;; Discord's /think mirrors /models: the bare command opens a private menu,
   ;; a pick belongs to this room, and a thread inherits its channel's pick.

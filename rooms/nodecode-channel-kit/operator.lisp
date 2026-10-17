@@ -458,10 +458,20 @@ picker card, (values TEXT CONTROLS)."
       ((rest (rest words)) "usage: /models [provider] [model] | default | list [provider]")
       (t
        (let* ((model (first (last words)))
-              (provider (if (rest words) (checked-pick (first words) model) (model-provider model))))
+              (provider (if (rest words) (checked-pick (first words) model) (model-provider model)))
+              ;; A pick asks its reasoning effort, as the shells' own /models
+              ;; does (OPEN-MODELS-REASONING-PICKER): /think stays the quick
+              ;; toggle for later, and this is the one ask that follows a
+              ;; pick straight through, no /think typed (the operator,
+              ;; 2026-10-17).
+              (ladder (and cards (nle::effort-ladder provider model))))
          (set-room-model host room provider model)
-         (format nil "this ~a runs ~a/~a from its next ask; the organism's default is unchanged"
-                 here provider model))))))
+         (let ((said (format nil "this ~a runs ~a/~a from its next ask; the organism's default is unchanged"
+                             here provider model)))
+           (if ladder
+               (multiple-value-bind (effort-text controls) (effort-card host room provider model ladder nil)
+                 (values (format nil "~a~%~%~a" said effort-text) controls))
+               said)))))))
 
 ;;; --- the effort picker (a /think card) ---------------------------------------------------
 

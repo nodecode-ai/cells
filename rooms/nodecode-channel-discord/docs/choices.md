@@ -114,9 +114,14 @@ Select a openrouter model.
 - If the provider's model list could not be fetched, the card says so on a
   `listing:` line.
 
-Picking a model picks it for this room. The card is replaced with the answer:
-"this channel runs PROVIDER/MODEL from its next ask; the organism's default
-is unchanged" (or "this thread runs ...").
+Picking a model picks it for this room. Where the model has a reasoning
+effort to pick, the card is replaced by that ladder, over the words "this
+channel runs PROVIDER/MODEL from its next ask; the organism's default is
+unchanged" (or "this thread runs ...") -- the same effort card `/think`
+opens, so a rung picked here is the same press either way; `/think` stays
+the quick way to change it later without going back through `/models`. A
+model the catalog says does not reason gets no such card; the words alone
+answer.
 
 ### Long lists
 
