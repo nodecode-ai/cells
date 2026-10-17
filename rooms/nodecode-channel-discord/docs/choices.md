@@ -3,8 +3,13 @@
 Some of the bot's messages carry buttons or menus. Pressing one is the same
 as typing a line: the bot treats the press as that person saying the line in
 the room, as a reply to the message pressed, and admits and answers it the
-way it would a typed message. Two features use this: clarifying questions
-and the `/models` picker.
+way it would a typed message. Three features use this: clarifying questions,
+the `/models` picker, and the card any command with a dialog answers with.
+
+A button or menu option carries a short id, not the line itself; the bot
+keeps what each id says, so a line of any length fits, and a card posted
+before the bot restarted still works. A press on a card older than that
+answers you alone "This button is out of date: run the command again."
 
 The Stop and Details buttons on a turn's card are different: they act at
 once and say nothing in the room. See [turns.md](turns.md#the-card).
@@ -142,3 +147,34 @@ a normal reply that the room can see, and any operator can work it.
 
 See [commands.md](commands.md#models-in-a-room) for the text forms of
 `/models`.
+
+## A command's card
+
+A command that opens a dialog in the terminal (`/cron`, `/link`, any cell's
+command that lists things) answers with the same dialog as a card when you
+run it bare in a room:
+
+```
+## Cron (28)
+2 active · 4 paused · 22 done
+
+[ Pick one of 28           v ]
+[ Prev ] [ Page 1/2 ] [ Next ]
+[ Refresh ]
+```
+
+- The menu lists the rows that do something. Picking one runs what Enter runs
+  on that row in the terminal: `/cron show NAME` here.
+- A row the terminal only puts in the message box for you to read first
+  (`/link remove ID`) asks before it runs: **Run** or **Back**.
+- Rows that do nothing are listed in the card's words.
+- A dialog with tabs gets a row of tab buttons, the open one blue.
+- Long lists page 25 at a time, as `/models` does.
+- Whatever you pick answers in the card's place, with **Back** to the card
+  you came from. An answer that is only words is shown above the card you
+  pressed, read again, the way the terminal shows a notice over its dialog.
+- **Refresh** reads the card again.
+
+Telegram draws the same cards as inline buttons: a menu's options are one
+button each, a disabled button is left out, and a press edits the card in
+place.

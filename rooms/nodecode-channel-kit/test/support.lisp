@@ -18,6 +18,14 @@
 
 (define-test-slice "channel" "CHANNEL" :recipe "channels")
 
+(defun press-lines (controls)
+  "CONTROLS -- or any tree holding presses' data -- with each press read back
+as the line it says (NCK:SAID-LINE), every other datum as it is: a card's
+shape asserted in the lines its presses say, not their ids."
+  (cond ((and (stringp controls) (nck:said-line controls)))
+        ((consp controls) (cons (press-lines (car controls)) (press-lines (cdr controls))))
+        (t controls)))
+
 (defun is-inbound (policy candidate expected &optional reason note)
   "One row of the admission decision table: DECIDE-INBOUND once, the action
 against EXPECTED under NOTE, the wire reason against REASON (NIL for a row

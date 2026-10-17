@@ -594,6 +594,118 @@ to the default, which only a room that picked its own can take."
                                       (choice "Reset to default" "/models default"
                                               :disabled (null (nth-value 1 (room-model host room)))))))))))))
 
+;;; --- a command's dialog as a card --------------------------------------------------------
+;;; A command answers a shell with a dialog (NLE:LIST-DIALOG, NLE:SLASH's
+;;; second value) beside its words, and a room took the words alone; where
+;;; the platform's messages carry choices, the room gets the dialog too, as
+;;; a card (the operator, 2026-10-17: "minimize the need for args on the
+;;; slash command; max dialog interactivity on Discord and any other
+;;; channels"): its title and what it says, a row of its tabs, a menu of its
+;;; rows a page at a time, Refresh, and Back to the card it was opened from.
+;;; A row's press says the line the shell's Enter runs (DIALOG-ROW-PRESS),
+;;; so a card needs no handler of its own; a row that runs nothing is said
+;;; in the card's words. Whatever the line answers takes the card's place:
+;;; a dialog its card, and words alone are said over the card pressed, read
+;;; again, as a shell says them in a toast over its panel (ANSWER-GESTURE).
+
+(defparameter +card-said-rows+ 12
+  "The most rows that run nothing a dialog's card says in its words.")
+
+(defun dialog-row-press (row &aux (run (nlk:json-value row :text "run" "enter"))
+                                  (value (nlk:trimmed (or (nlk:json-value row :text "value") ""))))
+  "(values LINE DRAFT): the line a press on ROW, one of a dialog's rows,
+says -- its RUN's enter line, what the shell's Enter runs, else its VALUE
+when that is a slash line, DRAFT then, since the shell's Enter hands it to
+the composer to be read before it runs -- or NIL for a row that runs
+nothing."
+  (cond ((plusp (length run)) (values run nil))
+        ((and (< 1 (length value)) (char= #\/ (char value 0))) (values value t))))
+
+(defun dialog-tab-rows (dialog tab &aux (tabs (coerce (nlk:json-array dialog "tabs") 'list))
+                                        (rows (coerce (nlk:json-array dialog "rows") 'list)))
+  "(values ROWS TABS TAB): the rows of DIALOG its TABth tab shows -- a tab's
+VALUE the KEY its rows carry, one with none every row -- its tabs, and TAB
+clamped to them, NIL when it has none."
+  (let* ((tab (and tabs (min (max 0 (or tab 0)) (1- (length tabs)))))
+         (key (and tab (nlk:json-value (nth tab tabs) :string "value"))))
+    (values (if key
+                (remove-if-not (lambda (row) (equal key (nlk:json-value row :string "key"))) rows)
+                rows)
+            tabs tab)))
+
+(defun dialog-card (dialog line &key tab (page 1) back back-tab back-page)
+  "(values TEXT CONTROLS): DIALOG -- the JSON a command's answer carries
+(NLE:LIST-DIALOG) -- as the card answering LINE: on its TABth tab, the
+PAGEth run of that tab's rows; BACK, the line of the card it was opened
+from, the way back to it, on BACK-TAB and BACK-PAGE."
+  (multiple-value-bind (rows tabs tab) (dialog-tab-rows dialog tab)
+    (let ((pressable (remove-if-not #'dialog-row-press rows))
+          (said (remove-if (lambda (row) (or (dialog-row-press row)
+                                             (and (equal "" (nlk:trimmed (or (nlk:json-value row :text "label") "")))
+                                                  (equal "" (nlk:trimmed (or (nlk:json-value row :text "detail") ""))))))
+                           rows)))
+      (multiple-value-bind (shown page pages) (picker-page pressable page)
+        (labels ((field (object key) (nlk:trimmed (or (nlk:json-value object :text key) "")))
+                 (words (text) (and (plusp (length text)) text))
+                 (here (&rest view)
+                   ;; this card's own view, VIEW over it: its tab, its page, its way back
+                   (append view (list :tab tab :page page :back back :back-tab back-tab :back-page back-page))))
+          (values
+           (format nil "## ~a~@[~%~a~]~@[~%~a~]~{~%~a~}~@[~%~a~]"
+                   (or (words (field dialog "title")) line)
+                   (words (field dialog "context"))
+                   (words (field dialog "summary"))
+                   (append (loop for row in said
+                                 repeat +card-said-rows+
+                                 collect (format nil "- ~a~@[ · ~a~]"
+                                                 (or (words (field row "label")) "")
+                                                 (words (field row "detail"))))
+                           (and (> (length said) +card-said-rows+)
+                                (list (format nil "- +~d more" (- (length said) +card-said-rows+)))))
+                   (and (null rows) (or (words (field dialog "empty_label")) "Nothing here.")))
+           (append
+            (and tabs
+                 (if (<= (length tabs) 5)
+                     (list (loop for each in tabs
+                                 for index from 0
+                                 collect (apply #'choice (format nil "~a~@[ (~a)~]" (field each "label")
+                                                                 (nlk:json-value each :integer "count"))
+                                                line :style (if (eql index tab) :primary :secondary)
+                                                (here :tab index :page 1))))
+                     (list (list :menu "Tab"
+                                 (loop for each in tabs
+                                       for index from 0
+                                       collect (apply #'menu-choice (field each "label") line
+                                                      :current (eql index tab) (here :tab index :page 1)))))))
+            (and shown
+                 (list (list :menu (format nil "Pick one of ~d" (length pressable))
+                             (loop for row in shown
+                                   for mark = (field row "mark")
+                                   collect (multiple-value-bind (press draft) (dialog-row-press row)
+                                             (menu-choice (or (words (field row "label")) press) press
+                                                          :description (words (format nil "~@[~a ~]~a" (words mark)
+                                                                                      (field row "detail")))
+                                                          :confirm draft
+                                                          :back line :back-tab tab :back-page page))))))
+            (and (> pages 1)
+                 (list (list (apply #'choice "Prev" line :disabled (= page 1) (here :page (1- page)))
+                             (list (format nil "Page ~d/~d" page pages) "nck:page" :secondary t)
+                             (apply #'choice "Next" line :disabled (= page pages) (here :page (1+ page))))))
+            (list (append (and back (list (choice "Back" back :tab back-tab :page back-page)))
+                          (list (apply #'choice "Refresh" line (here))))))))))))
+
+(defun confirm-card (line press)
+  "(values TEXT CONTROLS): the card that asks before LINE runs -- a dialog
+row's draft, which a shell hands to the composer to be read before it is
+sent -- with Run, and Back to the card it was picked on, PRESS saying
+which."
+  (let ((back (nlk:json-value press :text "back"))
+        (tab (nlk:json-value press :integer "back_tab"))
+        (page (nlk:json-value press :integer "back_page")))
+    (values (format nil "## Run this?~%~a" line)
+            (list (list* (choice "Run" line :style :primary :back back :back-tab tab :back-page page)
+                         (and back (list (choice "Back" back :tab tab :page page))))))))
+
 ;;; --- pairing ---------------------------------------------------------------------------------
 
 (defparameter +pairing-alphabet+ "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"

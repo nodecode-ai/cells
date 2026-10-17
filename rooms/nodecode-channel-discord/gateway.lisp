@@ -509,6 +509,8 @@ plus the `args' option, so it runs through the host exactly as a typed
         "interaction_token" (nlk:json-value data :string "token")
         "application_id" (nlk:json-value data :string "application_id")
         :when pressed "pressed" t
+        ;; what the card the press's answer draws opens on (NCK:CANDIDATE-PRESS)
+        :when pressed "press_data" (press-data data)
         :when pressed "reply_to_message_id" (nlk:json-value data :string "message" "id")
         :when pressed "card_text" (nlk:json-value data :string "message" "content")
         "addressed" t

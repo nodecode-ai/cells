@@ -1300,10 +1300,10 @@ LANE, as the one running channel."
       (is (every (lambda (plan) (null (plan-field plan "controls"))) (butlast plans)))
       (is (search "What matters most?" (plan-content last-plan)))
       ;; The last carries one row of buttons, each saying its label.
-      (is (equal '((("Zero setup" "nck:say:Zero setup" :primary nil)
-                    ("Relational queries" "nck:say:Relational queries" :primary nil)
-                    ("Realtime sync" "nck:say:Realtime sync" :primary nil)))
-                 (plan-field last-plan "controls"))))
+      (is (equal '((("Zero setup" "Zero setup" :primary nil)
+                    ("Relational queries" "Relational queries" :primary nil)
+                    ("Realtime sync" "Realtime sync" :primary nil)))
+                 (press-lines (plan-field last-plan "controls")))))
     (is (null (nck::take-answer-choices lane "t9")) "taken once")))
 
 (deftest channel-answer-choices-refuses-what-it-cannot-show (with-file-host (host "no-choices"))
@@ -1364,18 +1364,133 @@ LANE, as the one running channel."
       (is-plan (first (labelled "interaction_response"))
                "content" "this question is no longer open"))))
 
-(deftest channel-a-command-answers-its-words-not-its-panel ()
-  ;; A cell's command answers a shell its panel beside its words
-  ;; (NLE:SLASH's second value: /index's picker, /link's code). A room
-  ;; carries no panel, so the words are the whole answer, and nothing a
-  ;; platform would draw as controls rides them.
+(deftest channel-a-press-is-a-short-id-the-store-keeps ()
+  ;; A choice's data is a press: one short id for one line and the view its
+  ;; card opens on, the same on every card, inside every platform's cap
+  ;; (Telegram's callback_data is 64 bytes, a Discord custom_id 100), read
+  ;; back as its line -- from the store once the image has forgotten it, so a
+  ;; card posted before a restart still says its line.
   (with-temp-store ()
-    (with-stubbed-fdefinition (nle:slash (line &key session-id)
-                                (values (format nil "ran ~a" line) '(:kind "picker" :rows ())))
-      (let ((host (test-host :name "command-panel" :platform (test-platform :choices t))))
-        (is (equal '("ran /skills" nil nil)
-                   (multiple-value-list
-                    (nck::run-command host (test-candidate :channel "100") "/skills"))))))))
+    (let* ((line (format nil "/models cline ~a" (make-string 120 :initial-element #\m)))
+           (data (nck:press-token line :tab 1 :page 2 :back "/cron")))
+      (is (equal data (nck:press-token line :tab 1 :page 2 :back "/cron")) "the same press is the same id")
+      (is (not (equal data (nck:press-token line :tab 2 :page 2 :back "/cron"))) "another view is another press")
+      (is (<= (length data) 64))
+      (is (equal line (nck:said-line data)))
+      (let ((action (nck:press-action data)))
+        (is (eql 1 (nlk:json-value action :integer "tab")))
+        (is (eql 2 (nlk:json-value action :integer "page")))
+        (is (equal "/cron" (nlk:json-value action :text "back"))))
+      (let ((nck::*presses* (make-hash-table :test #'equal :synchronized t)))
+        (is (equal line (nck:said-line data)) "read back from the store")))
+    (is (null (nck:said-line "nck:p:000000000000")) "a press this home never made says nothing")
+    (is (null (nck:said-line "Zero setup")) "and data that is no press says nothing")))
+
+(deftest channel-a-command-answers-a-room-its-dialog-as-a-card ()
+  ;; A command answers a shell with a dialog beside its words (NLE:SLASH's
+  ;; second value, NLE:LIST-DIALOG: /cron's jobs, /link's browsers). Where a
+  ;; platform's messages carry choices the room gets it as a card: its title
+  ;; and context, a menu of the rows that run something -- each saying the
+  ;; line the shell's Enter runs, a row's RUN, or a VALUE draft a shell hands
+  ;; the composer, which the card asks about before it runs -- the rows that
+  ;; run nothing in its words, and Refresh. A press's answer that is words
+  ;; alone is said over the card pressed, read again. Where messages carry
+  ;; no choices, the words alone.
+  (with-temp-store ()
+    (let ((ran '()))
+      (with-saved-globals (nle::*registered-commands*)
+        (nle:register-command
+         "card-test" "jobs"
+         (lambda (args session-id)
+           (declare (ignore session-id))
+           (push args ran)
+           (if (plusp (length args))
+               (format nil "did ~a" args)
+               (values "jobs: 2"
+                       (nle:list-dialog
+                        :title "Jobs (2)" :context "1 active"
+                        :rows (list (list :label "nightly" :detail "every day" :mark "●"
+                                          :run (list :enter "/jobs show nightly" :space "/jobs pause nightly"))
+                                    (list :label "draft" :detail "done" :value "/jobs remove draft")
+                                    (list :label "Paused for the week" :detail "a note")
+                                    (list :label "$name" :value "$name "))))))
+         :session nil)
+        (let* ((host (test-host :name "command-dialog" :platform (test-platform :choices t)))
+               (plain (test-host :name "command-words"))
+               (channel (test-candidate :channel "100")))
+          (flet ((press (data)
+                   (let ((press (test-press (nck:said-line data) "c1")))
+                     (setf (gethash "press_data" (gethash "source" press)) data)
+                     (multiple-value-list (nck::run-command host press (nck:said-line data))))))
+            (destructuring-bind (text controls &rest _) (multiple-value-list (nck::run-command host channel "/jobs"))
+              (declare (ignore _))
+              (is (search (format nil "## Jobs (2)~%1 active") text))
+              (is (search "- Paused for the week · a note" text) "a row that runs nothing is said")
+              (is (search "- $name" text) "a value that is no line is no press")
+              (is (equal '((:menu "Pick one of 2"
+                            (("nightly" "/jobs show nightly" "● every day" nil)
+                             ("draft" "/jobs remove draft" "done" nil)))
+                           (("Refresh" "/jobs" :secondary nil)))
+                         (press-lines controls)))
+              (destructuring-bind (nightly draft) (mapcar #'second (third (first controls)))
+                (is (equal "/jobs" (nlk:json-value (nck:press-action nightly) :text "back")))
+                (is (null (nlk:json-value (nck:press-action nightly) :boolean "confirm")))
+                ;; A run row runs; its words are said over the card it was on.
+                (destructuring-bind (text controls &rest _) (press nightly)
+                  (declare (ignore _))
+                  (is (search (format nil "did show nightly~%~%## Jobs (2)") text))
+                  (is (equal "/jobs show nightly" (nck:said-line (second (first (third (first controls))))))))
+                ;; A draft asks first, and runs nothing until Run.
+                (setf ran '())
+                (destructuring-bind (text controls &rest _) (press draft)
+                  (declare (ignore _))
+                  (is (null ran) "the draft did not run")
+                  (is (search (format nil "## Run this?~%/jobs remove draft") text))
+                  (is (equal '((("Run" "/jobs remove draft" :primary nil) ("Back" "/jobs" :secondary nil)))
+                             (press-lines controls)))
+                  (destructuring-bind (text &rest _) (press (second (first (first controls))))
+                    (declare (ignore _))
+                    (is (equal '("remove draft" "") (reverse ran)) "Run runs it, and the card is read again")
+                    (is (search (format nil "did remove draft~%~%## Jobs (2)") text))))))
+            (is (equal '("jobs: 2" nil nil)
+                       (multiple-value-list (nck::run-command plain channel "/jobs")))
+                "no choices, no card")))))))
+
+(deftest channel-a-dialog-card-pages-its-rows-and-tabs ()
+  ;; A tabbed dialog's card shows a row of its tabs, the one open primary,
+  ;; each saying the card's own line on that tab; a menu holds 25, so a
+  ;; longer list pages, Prev and Next each the card on the page they go to;
+  ;; a card opened from another carries Back to it, on the view it had.
+  (with-temp-store ()
+    (let ((dialog (nlk:json-object
+                   "title" "Usage"
+                   "tabs" (vector (nlk:json-object "label" "All") (nlk:json-object "label" "Odd" "value" "odd" "count" 15))
+                   "rows" (coerce (loop for i below 30
+                                        collect (nlk:json-object "label" (format nil "row ~d" i)
+                                                                 "key" (if (oddp i) "odd" "")
+                                                                 "value" (format nil "/usage ~d" i)))
+                                  'vector))))
+      (multiple-value-bind (text controls) (nck::dialog-card dialog "/usage" :page 2 :back "/status" :back-page 3)
+        (is (search "## Usage" text))
+        (is (equal '(("All" "/usage" :primary nil) ("Odd (15)" "/usage" :secondary nil))
+                   (press-lines (first controls))))
+        (is (equal '("row 25" "row 26" "row 27" "row 28" "row 29")
+                   (mapcar #'first (third (second controls)))) "the second page of All")
+        (is (equal '(("Prev" "/usage" :secondary nil) ("Page 2/2" "nck:page" :secondary t) ("Next" "/usage" :secondary t))
+                   (press-lines (third controls))))
+        (is (eql 1 (nlk:json-value (nck:press-action (second (first (third controls)))) :integer "page")))
+        (is (equal '(("Back" "/status" :secondary nil) ("Refresh" "/usage" :secondary nil))
+                   (press-lines (fourth controls))))
+        (is (eql 3 (nlk:json-value (nck:press-action (second (first (fourth controls)))) :integer "page"))
+            "Back opens the card it came from on its page")
+        (is (equal "/usage" (nlk:json-value (nck:press-action (second (first (third (second controls))))) :text "back"))
+            "a row's way back is this card, not the one it came from"))
+      (multiple-value-bind (text controls) (nck::dialog-card dialog "/usage" :tab 1)
+        (declare (ignore text))
+        (is (equal '(("All" "/usage" :secondary nil) ("Odd (15)" "/usage" :primary nil))
+                   (press-lines (first controls))))
+        (is (equal 15 (length (third (second controls)))) "the Odd tab's rows alone, one page")
+        (is (equal '((("Refresh" "/usage" :secondary nil))) (press-lines (last controls))))))))
 
 (deftest channel-a-command-in-a-room-may-answer-with-a-card ()
   ;; A command run in a room may offer a card (NCK:OFFER-CARD): controls,

@@ -20,10 +20,10 @@
    ;; (nlk:define-section) beside it is read through the kernel
    #:probe-channel #:probe-chat-choices #:probe-user-choices
    ;; poll.lisp --- pure, exported for table-driven tests
-   #:map-telegram-message #:next-update-offset #:+default-allowed-updates+
+   #:map-telegram-message #:map-telegram-press #:next-update-offset #:+default-allowed-updates+
    #:get-updates-plan #:telegram-inbound-policy
    ;; rest.lisp
-   #:send-message-plan #:telegram-file-plan #:edit-message-plan
+   #:send-message-plan #:press-response-plan #:telegram-file-plan #:edit-message-plan
    #:delete-message-plan #:typing-plan #:reaction-plans #:answer-callback-plans
    #:read-back-path #:telegram-acknowledgement-p #:set-my-commands-plan
    #:telegram-command-name-p #:get-file-plan #:telegram-file-url

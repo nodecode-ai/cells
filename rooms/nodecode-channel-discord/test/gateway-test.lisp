@@ -395,32 +395,35 @@ ROUTE-DISCORD-AUTOCOMPLETE."
   ;; does. The source says it was pressed and carries the card's words, so
   ;; the answer can stand in its place.
   (let ((press (dgw-interaction
-                "{\"id\": \"i9\", \"token\": \"tok\", \"type\": 3, \"application_id\": \"app1\",
+                (format nil "{\"id\": \"i9\", \"token\": \"tok\", \"type\": 3, \"application_id\": \"app1\",
                   \"guild_id\": \"g1\", \"channel_id\": \"c1\",
-                  \"data\": {\"custom_id\": \"nck:say:Zero setup\", \"component_type\": 2},
+                  \"data\": {\"custom_id\": \"~a\", \"component_type\": 2},
                   \"member\": {\"user\": {\"id\": \"u1\", \"username\": \"kim\"}, \"roles\": [\"r1\"]},
-                  \"message\": {\"id\": \"m9\", \"content\": \"What matters most?\"}}")))
+                  \"message\": {\"id\": \"m9\", \"content\": \"What matters most?\"}}"
+                        (nck:press-token "Zero setup")))))
     (is-present press "a choice's button press routes"
       (is-source press :text "Zero setup" "chat_kind" "channel" "channel_id" "c1" "user_id" "u1"
                  "reply_to_message_id" "m9" "card_text" "What matters most?"
                  "interaction_id" "i9" "interaction_token" "tok" "application_id" "app1"
-                 "message_id" nil)
+                 "press_data" (nck:press-token "Zero setup") "message_id" nil)
       (is (nck:candidate-pressed-p press))
       (is (nck:candidate-addressed-p press))))
   (let ((pick (dgw-interaction
-               "{\"id\": \"i10\", \"token\": \"tok\", \"type\": 3,
+               (format nil "{\"id\": \"i10\", \"token\": \"tok\", \"type\": 3,
                  \"channel_id\": \"dm1\",
                  \"data\": {\"custom_id\": \"nck:menu:0\", \"component_type\": 3,
-                            \"values\": [\"nck:say:/models p1\"]},
+                            \"values\": [\"~a\"]},
                  \"user\": {\"id\": \"u1\"},
-                 \"message\": {\"id\": \"m1\", \"content\": \"## Model Picker\"}}")))
+                 \"message\": {\"id\": \"m1\", \"content\": \"## Model Picker\"}}"
+                       (nck:press-token "/models p1")))))
     (is-present pick "a menu pick routes as the line its value says"
       (is-source pick :text "/models p1" "chat_kind" "direct_message" "reply_to_message_id" "m1")))
   ;; Any other press is a control, its data the select's value where it has one.
-  ;; A choice saying nothing is no line.
+  ;; A press this home never made is no line: the control path says it is
+  ;; out of date.
   (is (null (dgw-interaction
              "{\"id\": \"i11\", \"token\": \"tok\", \"type\": 3, \"channel_id\": \"c1\",
-               \"data\": {\"custom_id\": \"nck:say:\"}}")))
+               \"data\": {\"custom_id\": \"nck:p:000000000000\"}}")))
   (is (equal "x2" (getf (dgw-interaction
                          "{\"id\": \"i12\", \"token\": \"tok\", \"type\": 3, \"channel_id\": \"c1\",
                            \"data\": {\"custom_id\": \"m\", \"component_type\": 3, \"values\": [\"x2\"]},

@@ -225,6 +225,48 @@ threads: the request, platform and seam tests drive it directly."
         (is (equalp #("message" "message_reaction" "edited_message")
                     (plan-field plan "allowed_updates")))))))
 
+(deftest channel-telegram-a-press-says-its-line ()
+  ;; A press on a choice is the presser saying its line where the card is, a
+  ;; reply to it, admitted as typed words are; its answer stops the button's
+  ;; spinner, then becomes the card's next view in place. A private answer --
+  ;; Telegram shows nobody a message alone -- and a command typed have no
+  ;; return path but the chat. Any other press is a control.
+  (with-temp-store ()
+    (let* ((data (nck:press-token "/cron show nightly" :back "/cron"))
+           (seen '())
+           (adapter (test-telegram-adapter :lanes "press-test"))
+           (update (lambda (data)
+                     (nlk:json-object
+                      "update_id" 7
+                      "callback_query"
+                      (nlk:json-object "id" "cb1" "data" data
+                                       "from" (nlk:json-object "id" 42 "username" "kim")
+                                       "message" (nlk:json-object "message_id" 90 "text" "## Cron (2)"
+                                                                  "chat" (nlk:json-object "id" 555 "type" "private")))))))
+      (with-stubbed-fdefinition (nck:handle-candidate (host candidate) (push candidate seen))
+        (with-stubbed-fdefinition (nck:control-pressed (host payload) (push payload seen))
+          (nct:telegram-handle-update adapter (funcall update data))
+          (nct:telegram-handle-update adapter (funcall update "nck:details:s1"))))
+      (destructuring-bind (control press) seen
+        (is-source press :text "/cron show nightly" "chat_kind" "direct_message" "channel_id" "555"
+                   "user_id" "42" "reply_to_message_id" "90" "callback_query_id" "cb1"
+                   "press_data" data "card_text" "## Cron (2)" "message_id" nil)
+        (is (nck:candidate-pressed-p press))
+        (is (nck:candidate-addressed-p press))
+        (is (equal "/cron" (nlk:json-value (nck:candidate-press press) :text "back")))
+        (is (equal "nck:details:s1" (getf control :data)) "any other press is a control")
+        (is-plan (nct:press-response-plan press nil) :path "/answerCallbackQuery" "callback_query_id" "cb1")
+        (let ((edit (nct:press-response-plan press "## Cron (2)" :controls (list (nck:choice "Refresh" "/cron")))))
+          (is-plan edit :path "/editMessageText" :retry t "chat_id" "555")
+          (is (eql 90 (plan-field edit "message_id")) "the card pressed is the message edited")
+          (is (equal "/cron" (nck:said-line
+                               (gethash "callback_data"
+                                        (aref (aref (gethash "inline_keyboard" (plan-field edit "reply_markup")) 0) 0))))))
+        (is (null (nct:press-response-plan press "refused" :private t)))
+        (is (null (nct:press-response-plan (tg-message "{\"message_id\": 12, \"chat\": {\"id\": 555}, \"text\": \"/cron\"}")
+                                           nil))
+            "a command typed is answered in the chat")))))
+
 (deftest channel-telegram-platform-carries-files ()
   ;; The kit's file seam over Telegram's own plan: the platform answers a
   ;; plan, the file's bytes decide which call, and a file that is not there
@@ -256,7 +298,8 @@ threads: the request, platform and seam tests drive it directly."
       (is (= 1 (length plans)))
       (is-plan (first plans) :path "/setMyCommands" :timeout 5)
       (is (equal "help" (gethash "command" (aref (plan-field (first plans) "commands") 0)))))
-    (is (null (nck:platform-plan-respond platform)))))
+    (is (eq (fdefinition 'nct:press-response-plan) (nck:platform-plan-respond platform))
+        "a press is answered in place; a command typed, in the chat (PRESS-RESPONSE-PLAN)")))
 
 (deftest channel-telegram-file-fetchers ()
   ;; A photo or a recording admitted from Telegram gains the thunk that

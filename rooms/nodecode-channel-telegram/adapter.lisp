@@ -102,8 +102,13 @@ set in one call, and the command menu as setMyCommands."
    :where-text (lambda (candidate)
                  (telegram-where-text candidate bot-username bot-user-id))
    :api-primer +telegram-api-primer+
-   :seams-primer "  nct:telegram-handle-update (adapter update) — every raw getUpdates entry within channels.telegram.allowed_updates (default: messages only; widen it for edited_message, message_reaction, callback_query, my_chat_member, ...), on the poll thread: return fast. update is the hash table Telegram sent."
-   ;; A control press is answered with answerCallbackQuery.
+   :seams-primer "  nct:telegram-handle-update (adapter update) — every raw getUpdates entry within channels.telegram.allowed_updates (default: message and callback_query; widen it for edited_message, message_reaction, my_chat_member, ...), on the poll thread: return fast. update is the hash table Telegram sent."
+   ;; A choice is an inline button whose press routes as the line it says
+   ;; (TELEGRAM-HANDLE-CALLBACK), answered by becoming the card's next view
+   ;; (PRESS-RESPONSE-PLAN); any other control press is answered with
+   ;; answerCallbackQuery.
+   :choices t
+   :plan-respond #'press-response-plan
    :plan-control-ack #'answer-callback-plans
    :plan-file (lambda (target pathname &key content reply-to voice timeout-seconds)
                 "A photo renders inline and anything else is a document, and the file's
@@ -207,11 +212,17 @@ through."
 
 (defun telegram-handle-callback (adapter callback)
   "One callback_query UPDATE: a press on an inline control a lane posted."
-  ;; Parses the press into the kit's normal payload and relays it — the kit
-  ;; answers the query and acts; this thread only reads the hash table.
-  ;; Returns the payload, or NIL for a press missing its sender, message or
-  ;; data.
-  (let ((data (gethash "data" callback)))
+  ;; A press on a choice is the presser saying its line (MAP-TELEGRAM-PRESS),
+  ;; admitted and answered as typed words are. Any other press is parsed into
+  ;; the kit's normal payload and relayed -- the kit answers the query and
+  ;; acts; this thread only reads the hash table. Returns the candidate or the
+  ;; payload, or NIL for a press missing its sender, message or data.
+  (let* ((data (gethash "data" callback))
+         (line (said-line data))
+         (candidate (and line (map-telegram-press callback line))))
+    (when candidate
+      (handle-candidate adapter.host candidate)
+      (return-from telegram-handle-callback candidate))
     (when (and (nlk:json-value callback :object "from")
                (nlk:json-value callback :object "message" "chat") (stringp data))
       (let ((payload (list :id (number-string (gethash "id" callback))

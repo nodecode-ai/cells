@@ -443,6 +443,23 @@ a card's Details, shows the presser alone an alert of it."
                                    :when text "show_alert" t)
                   timeout-seconds nil "answer_callback_query")))
 
+(defun press-response-plan (candidate text &key private controls panel (timeout-seconds 30))
+  "The answer a press on a card's choice takes, in two steps as a Discord
+interaction's: with TEXT NIL, answerCallbackQuery -- the spinner on the
+button stops; with TEXT, editMessageText of the card pressed, which becomes
+the answer, CONTROLS its keyboard. NIL -- the answer posted in the chat --
+for a PRIVATE answer, which Telegram cannot show one person alone, and for
+a CANDIDATE that is no press: a command typed is answered in the chat."
+  (declare (ignore panel))
+  (let ((query (source-field candidate "callback_query_id"))
+        (card (source-field candidate "reply_to_message_id")))
+    (cond ((not (and query card (candidate-pressed-p candidate))) nil)
+          ((null text)
+           (first (answer-callback-plans (list :id query) :timeout-seconds timeout-seconds)))
+          (private nil)
+          (t (edit-message-plan (channel-target candidate) card text
+                                :retry t :controls controls :timeout-seconds timeout-seconds)))))
+
 (defun plain-details (text)
   "A card's details TEXT (NCK:DETAILS-TEXT) without its markdown: no bold,
 no fences, no quote marks."

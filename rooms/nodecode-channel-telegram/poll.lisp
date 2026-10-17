@@ -81,6 +81,41 @@ platform gave it."
     (when entries
       (coerce (nreverse entries) 'vector))))
 
+(defun map-telegram-press (callback line &aux (message (nlk:json-value callback :object "message"))
+                                             (from (nlk:json-value callback :object "from")))
+  "The candidate a press on a choice is -- CALLBACK the callback_query
+Telegram sent, LINE what the choice says (SAID-LINE): the presser saying
+LINE where the card pressed is, a reply to it -- or NIL without a chat or
+someone who pressed."
+  ;; Addressed by construction, as a Discord press is: the person pressed
+  ;; something one of this bot's messages carries. It has no message id of
+  ;; its own; press_data and the query's id are its return path
+  ;; (PRESS-RESPONSE-PLAN), the card its answer becomes.
+  (nlk:when-let (chat-id (and from (number-string (nlk:json-value message :any "chat" "id"))))
+    (let* ((chat-type (or (nlk:json-value message :string "chat" "type") "private"))
+           (thread-id (number-string (gethash "message_thread_id" message))))
+      (nlk:json-object
+       "text" line
+       "source"
+       (nlk:json-object
+        "platform" "telegram"
+        "chat_kind" (cond (thread-id "thread")
+                          ((equal chat-type "private") "direct_message")
+                          ((member chat-type '("group" "supergroup") :test #'equal) "group")
+                          (t "channel"))
+        "channel_id" chat-id
+        "thread_id" thread-id
+        "user_id" (number-string (nlk:json-value from :any "id"))
+        "user_name" (or (nlk:json-value from :string "username")
+                        (nlk:json-value from :string "first_name"))
+        "pressed" t
+        "press_data" (gethash "data" callback)
+        "callback_query_id" (number-string (gethash "id" callback))
+        "reply_to_message_id" (number-string (gethash "message_id" message))
+        "card_text" (nlk:json-value message :string "text")
+        "addressed" t
+        "is_bot" (and (nlk:json-value from :any "is_bot") t))))))
+
 (defun map-telegram-message (message &key bot-user-id bot-username)
   "One Bot API message object as the shared candidate, or NIL when it has
 no chat id."
@@ -149,9 +184,10 @@ never below LAST-OFFSET."
           do (setf next-offset (max (or next-offset 0) (1+ id))))
   next-offset)
 
-(defparameter +default-allowed-updates+ '("message")
+(defparameter +default-allowed-updates+ '("message" "callback_query")
   "What the poll asks Telegram for when channels.telegram.allowed_updates
-is unset: messages only, the one kind the adapter itself acts on.")
+is unset: the two kinds the adapter itself acts on, messages and presses on
+the controls its messages carry.")
 
 (defun get-updates-plan (offset &key (poll-timeout-seconds 2)
                                      (allowed-updates +default-allowed-updates+))

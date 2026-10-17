@@ -682,25 +682,76 @@ already there."
 ;;; room, a reply to the message pressed — admitted and answered as typed
 ;;; words are, so a clarifying question's answers and a picker's steps need
 ;;; no handler of their own.
+;;;
+;;; The data is a press: a short id for the line and the view of the card it
+;;; opens (PRESS-TOKEN), kept in the store, so every platform's cap holds it
+;;; -- Telegram's callback_data is 64 bytes, a Discord custom_id or option
+;;; value 100, and a line like /models PROVIDER MODEL ran past both, its
+;;; option left out -- and a card posted before a restart still answers.
 
-(defparameter +say-prefix+ "nck:say:"
-  "What a choice's data begins with; the rest is the line its press says.")
+(defparameter +press-prefix+ "nck:p:"
+  "What a choice's data begins with; the rest is the id its press is kept
+under (PRESS-ACTION).")
 
-(defun choice (label line &key (style :secondary) disabled)
-  "A button that says LINE when pressed, showing LABEL."
-  (list label (concatenate 'string +say-prefix+ line) style disabled))
+(defparameter +press-state+ "channel-presses"
+  "The state namespace presses are kept in, one key a press.")
 
-(defun menu-choice (label line &key description current)
+(defvar *presses* (make-hash-table :test #'equal :synchronized t)
+  "Press id -> its action, the JSON object PRESS-TOKEN made: read through
+from the store, which outlives this image.")
+
+(defun press-token (line &key tab page back back-tab back-page confirm)
+  "The data a choice carries: the id of its press, saying LINE -- the view
+the card its answer draws opens on beside it: TAB and PAGE of a dialog
+(DIALOG-CARD), BACK the line of the dialog it was pressed on, at BACK-TAB
+and BACK-PAGE, CONFIRM a line asked about before it runs."
+  ;; The id is the action's digest: the same press is the same id on every
+  ;; card and every boot, so the store holds one key per distinct press.
+  (let* ((action (nlk:json-object "line" line
+                                  :when tab "tab" tab :when page "page" page
+                                  :when back "back" back :when back-tab "back_tab" back-tab
+                                  :when back-page "back_page" back-page
+                                  :when confirm "confirm" t))
+         (json (nlk:encode-json-object action))
+         (id (nlk:short-digest json 12)))
+    (unless (gethash id *presses*)
+      (setf (gethash id *presses*) action)
+      (when (nlk:store-open-p)
+        (nlk:session-state-put +press-state+ id json)))
+    (concatenate 'string +press-prefix+ id)))
+
+(defun press-action (data &aux (id (and (stringp data) (eql 0 (search +press-prefix+ data))
+                                        (subseq data (length +press-prefix+)))))
+  "The action the press DATA carries (PRESS-TOKEN's JSON object), or NIL for
+data that is no press, or a press this home never made."
+  (when (plusp (length id))
+    (or (gethash id *presses*)
+        (nlk:when-let (json (and (nlk:store-open-p) (nlk:session-state-get +press-state+ id)))
+          (let ((action (ignore-errors (nlk:decode-json json))))
+            (when (hash-table-p action)
+              (setf (gethash id *presses*) action)))))))
+
+(defun choice (label line &rest view &key (style :secondary) disabled &allow-other-keys)
+  "A button that says LINE when pressed, showing LABEL; VIEW, PRESS-TOKEN's
+keys, what the card its answer draws opens on."
+  (list label (apply #'press-token line (alexandria:remove-from-plist view :style :disabled))
+        style disabled))
+
+(defun menu-choice (label line &rest view &key description current &allow-other-keys)
   "A menu option that says LINE when picked, showing LABEL — DESCRIPTION
-under it, CURRENT shown as the one picked."
-  (list label (concatenate 'string +say-prefix+ line) description current))
+under it, CURRENT shown as the one picked; VIEW as CHOICE's."
+  (list label (apply #'press-token line (alexandria:remove-from-plist view :description :current))
+        description current))
 
 (defun said-line (data)
   "The line a press carrying DATA says, or NIL when DATA is no choice's."
-  (and (stringp data)
-       (eql 0 (search +say-prefix+ data))
-       (< (length +say-prefix+) (length data))
-       (subseq data (length +say-prefix+))))
+  (nlk:when-let (action (press-action data))
+    (nlk:json-value action :text "line")))
+
+(defun candidate-press (candidate)
+  "The action of the press CANDIDATE is (PRESS-ACTION of its source's
+press_data), or NIL for words typed."
+  (press-action (source-field candidate "press_data")))
 
 (defun line-controls (lane digest)
   "The controls LANE's card carries for DIGEST's turn: while it runs, Stop
@@ -752,7 +803,13 @@ warning naming WHAT. => whether they were delivered."
         (details-pressed host payload session-id)
         (nlk:if-let (press (after +step-press-prefix+))
           (step-pressed host payload press)
-          (deliver-or-warn host (host-plan host #'platform-plan-control-ack payload)
+          ;; A choice whose press this home cannot read back (PRESS-ACTION)
+          ;; arrives here, never as its line: the card is older than the
+          ;; press vocabulary, or than the store it was kept in.
+          (deliver-or-warn host (if (or (after "nck:stop:") (equal data "nck:page"))
+                                    (host-plan host #'platform-plan-control-ack payload)
+                                    (host-plan host #'platform-plan-control-ack payload
+                                               :text "This button is out of date: run the command again."))
                            (format nil "control ack for ~a failed" (getf payload :id))))))))
 
 (defun stop-pressed (host user-id session-id &optional user-name
@@ -2293,25 +2350,51 @@ PANEL when the answer is a card (OFFER-CARD)."
   ;; every failure is an answer, never a signal — a channel never learns of a
   ;; refusal from a log. /models is the room's own: a pick sets this room's
   ;; model, never the organism's (ROOM-MODELS-COMMAND). Any other command's
-  ;; answer is its text and the card it offered (OFFER-CARD): the panel a
-  ;; cell's command opens in a shell (NLE:SLASH's second value, /skills'
-  ;; picker, /link's code) is no control a room can carry.
+  ;; answer is COMMAND-ANSWER's; a press that asks before its line runs
+  ;; (CONFIRM-CARD) runs nothing yet.
   (multiple-value-bind (name args) (nle:parse-slash-input line)
     (nlk:with-handlers ((error (condition)
                           (format nil "/~a: ~a" name condition)))
       (let* ((target (channel-target candidate))
              (room (room-session-id (platform-session-prefix
                                      host.platform)
-                                    candidate)))
+                                    candidate))
+             (press (and (platform-choices host.platform) (candidate-press candidate))))
         (ensure-room host room :parent (room-parent-session-id host target))
-        (if (equal name "models")
-            (room-models-command host candidate args room)
-            (if (member name '("think" "effort") :test #'equal)
-                (room-effort-command host candidate args room)
-                (let ((*command-source* (candidate-source candidate))
-                  (*command-card* nil))
-              (values (nle:slash line :session-id room)
-                      (getf *command-card* :controls) (getf *command-card* :panel)))))))))
+        (cond ((and press (nlk:json-value press :boolean "confirm"))
+               (confirm-card line press))
+              ((equal name "models")
+               (room-models-command host candidate args room))
+              ((member name '("think" "effort") :test #'equal)
+               (room-effort-command host candidate args room))
+              (t (command-answer host candidate line room press)))))))
+
+(defun command-answer (host candidate line room press)
+  "Worker thread: LINE run in ROOM for CANDIDATE, (values TEXT CONTROLS
+PANEL) -- its words and the card it offered (OFFER-CARD); else, where the
+platform's messages carry choices, the dialog it answers a shell with drawn
+as a card (DIALOG-CARD) on the view PRESS -- the action of the press that
+said LINE, or NIL -- opens, and words alone said over the card PRESS was
+on, read again."
+  (let ((*command-source* (candidate-source candidate))
+        (*command-card* nil)
+        (cards (platform-choices host.platform)))
+    (multiple-value-bind (text dialog) (nle:slash line :session-id room)
+      (flet ((view (key) (and press (nlk:json-value press :integer key))))
+        (let ((back (and press (nlk:json-value press :text "back"))))
+          (cond (*command-card*
+                 (values text (getf *command-card* :controls) (getf *command-card* :panel)))
+                ((and cards (hash-table-p dialog))
+                 (dialog-card dialog line :tab (view "tab") :page (or (view "page") 1)
+                                          :back back :back-tab (view "back_tab") :back-page (view "back_page")))
+                (back
+                 (let ((under (nth-value 1 (ignore-errors (nle:slash back :session-id room)))))
+                   (if (hash-table-p under)
+                       (multiple-value-bind (card controls)
+                           (dialog-card under back :tab (view "back_tab") :page (or (view "back_page") 1))
+                         (values (format nil "~a~%~%~a" text card) controls nil))
+                       (values text nil nil))))
+                (t (values text nil nil))))))))
 
 (defparameter +private-commands+ '("stop" "channels" "models" "think" "effort")
   "Commands whose answer only acknowledges what the room sees happen anyway —
