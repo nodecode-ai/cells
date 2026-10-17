@@ -29,7 +29,7 @@ const LABELS = Object.fromEntries(TABS);
 // of its own under the way back, where a wide window has the strip of tabs (ten
 // of them wrap into three rows on a phone; the operator picked this, variant A
 // of the phone redesign, 2026-10-17).
-const PHONE = matchMedia("(max-width: 720px)");
+export const PHONE = matchMedia("(max-width: 720px)");
 const GROUPS = [[t("This machine"), ["gateway", "logs"]], [t("What it runs"), ["settings", "cells", "mcp", "index"]],
   [t("Who reaches it"), ["channels", "link", "profiles", "jobs"]]];
 const MARKS = { gateway: "server", logs: "lines", settings: "sliders", cells: "grid", index: "book", mcp: "plug",
@@ -47,6 +47,8 @@ const STATES = { starting: t("starting"), running: t("running"), degraded: t("de
   refused: t("refused"), unconfigured: t("not set up"), "not started": t("not started"), off: t("off") };
 const JOB_STATES = { paused: t("paused"), done: t("done") };
 const LOG_CAP = 2000;
+// A phone draws the newest lines of the log, two hundred more at a time.
+const LOG_PAGE = 200;
 
 // Where a hub entry comes from, as host/owner/repo[/folder] @ the commit it is pinned to.
 function pinned(row) {
@@ -186,7 +188,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     tab: "gateway",
     service: null, identity: null, said: null, busy: null, confirm: null, leaving: null,
     doctor: null, backups: null, restoring: null,
-    log: { lines: [], cursor: null, source: null, where: null, error: null, follow: true, filter: "", level: "all" },
+    log: { lines: [], cursor: null, source: null, where: null, error: null, follow: true, filter: "", level: "all", shown: LOG_PAGE },
     keys: null, cells: null, model: null, models: null, editing: null,
     channels: null, probed: {}, setup: null, jobs: null, hub: null, hubReading: false, about: new Set(),
     // By FORMKEY: what the hand typed into a form no tab keeps itself, and why its last save was refused.
@@ -195,12 +197,15 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     // scrolled when a section was opened from it, the move a redraw slides in by,
     // and what only the list reads (the MCP servers, the profiles).
     home: true, homeAt: 0, motion: null, servers: null, profiles: null,
+    // A phone's sheet: the row or the standing form it raises, by its key; and a
+    // long list's search, state and how many of its rows it shows, by the list's key.
+    sheet: null, lists: {},
   };
   // The list stands in for the strip on a phone only; a wide window keeps the tab.
   const atHome = () => c.home && PHONE.matches;
   const scroller = () => document.getElementById("observe");
   const cfgs = makeSettings({ c, api, act, toast, redraw, refuse });
-  const index = makeIndex({ c, api, act, toast, redraw });
+  const index = makeIndex({ c, api, act, toast, redraw, settle: (rows) => { if (PHONE.matches) tapRows(rows); } });
   const mcp = makeMcp({ c, api, act, toast, redraw, reload: () => { if (shown && c.tab === "mcp") load(); } });
   const profs = makeProfiles({ c, api, act, toast, redraw, download });
   const access = makeAccess({ c, api, act, toast, redraw, unread, missing, openTab });
@@ -257,7 +262,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   function quietRedraw() {
     const active = document.activeElement;
     if (active?.closest?.("#observe") && active.matches("input, textarea, select")) return;
-    if (!c.confirm) redraw();
+    if (!c.confirm && !document.querySelector(".control-pane .ctl-sheet")) redraw();
   }
 
   async function readLog(fresh) {
@@ -310,7 +315,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     redraw();
     try {
       await work();
-      if (form) { delete c.drafts[form]; delete c.refused[form]; }
+      if (form) { delete c.drafts[form]; delete c.refused[form]; c.sheet = null; }
     } catch (error) {
       if (form) c.refused[form] = { text: error.message, field: error.field };
       else toast(t("Not done: {error}", { error: error.message }), { error, retry: unreached(error) && (() => act(label, work)) });
@@ -534,17 +539,31 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   function drawLog() {
     const box = document.getElementById("control-log");
     if (!box) return;
-    const atEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+    // A phone reads the log in the page's one scroll: following keeps to its end
+    // while the reader is there, and a scroll up to read stops it moving.
+    const phone = PHONE.matches;
+    const pane = phone ? scroller() || box : box;
+    const atEnd = pane.scrollHeight - pane.scrollTop - pane.clientHeight < (phone ? 120 : 40);
+    const fresh = !box.querySelector(".ctl-logline");
+    // Each level's count stands on its segment; Warnings counts the errors with it, as it shows them.
+    const levels = c.log.lines.map(levelOf);
+    const counts = { all: levels.length, warn: levels.filter((l) => l !== "info").length, error: levels.filter((l) => l === "error").length };
+    for (const sw of document.querySelectorAll('.control-pane [data-act="level"] .n')) sw.textContent = phone ? ` ${counts[sw.parentElement.dataset.level]}` : "";
     const kept = c.log.lines.filter(logMatches);
-    box.replaceChildren(...kept.map((line) => {
+    const drawn = phone ? kept.slice(-c.log.shown) : kept;
+    box.replaceChildren(...drawn.map((line) => {
       const row = el("div", "ctl-logline", line);
       row.dataset.level = levelOf(line);
       return row;
     }));
+    if (drawn.length < kept.length) {
+      const earlier = button("quiet ctl-more", t("Show {n} earlier", { n: Math.min(LOG_PAGE, kept.length - drawn.length) }), { act: "log-earlier" });
+      box.prepend(earlier);
+    }
     if (!kept.length) box.append(el("div", "obs-note", c.log.lines.length ? t("No line matches.") : t("Nothing written yet.")));
     const count = document.getElementById("control-log-count");
     if (count) count.textContent = ` · ${t("{kept} of {total} lines", { kept: kept.length, total: c.log.lines.length })}`;
-    if (atEnd || c.log.follow) box.scrollTop = box.scrollHeight;
+    if (phone ? c.log.follow && (atEnd || fresh) : atEnd || c.log.follow) pane.scrollTop = pane.scrollHeight;
   }
 
   function drawLogs() {
@@ -560,6 +579,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     levels.setAttribute("aria-label", t("Level"));
     for (const [id, label] of LEVELS) {
       const sw = button("sw", label, { act: "level", level: id });
+      sw.append(el("span", "n", ""));
       sw.setAttribute("role", "radio");
       sw.setAttribute("aria-checked", String(log.level === id));
       levels.append(sw);
@@ -666,6 +686,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   function cellRow(rows, r, hub) {
     const li = el("li", "ctl-row");
     li.dataset.level = r.level === "error" ? "error" : r.on && r.loaded ? "started" : "off";
+    li.dataset.seg = r.on ? "on" : "off";
     const name = el("span", "ctl-name");
     name.append(el("i", `led${r.on && r.level === "started" ? "" : " off"}`), ` ${r.label}`);
     name.title = r.name;
@@ -808,7 +829,11 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       seen.title = "last_event_at_ms";
       const acts = el("span", "ctl-acts");
       const section = cfgs.find(`channels.${ch1.id}`);
-      if (section) acts.append(button("word", c.setup === ch1.id ? t("Close") : section.needs === "complete" ? t("Edit") : t("Set up"), { act: "setup", id: ch1.id }));
+      if (section) {
+        const setup = button("word", c.setup === ch1.id ? t("Close") : section.needs === "complete" ? t("Edit") : t("Set up"), { act: "setup", id: ch1.id });
+        setup.setAttribute("aria-expanded", String(c.setup === ch1.id));
+        acts.append(setup);
+      }
       acts.append(button("word", c.busy === `probe:${ch1.id}` ? t("Checking…") : t("Check"), { act: "probe", id: ch1.id }));
       li.append(name, state, seen, acts);
       rows.append(li);
@@ -865,6 +890,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     for (const job of j.jobs) {
       const li = el("li", "ctl-row");
       li.dataset.level = job.state === "active" ? "started" : "off";
+      li.dataset.seg = job.state;
       const name = el("span", "ctl-name");
       const open = button("cell-link", job.name, { act: "open", id: job.session });
       open.title = t("{id} · open its session, {session}", { id: job.id, session: job.session });
@@ -873,15 +899,19 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       timing.append(el("span", "mono", job.schedule.display), ` · ${job.state === "active"
         ? (job.next_at ? t("next {when}", { when: when(new Date(job.next_at * 1000).toISOString()) }) : t("no run left")) : JOB_STATES[job.state] || job.state}`);
       const acts = el("span", "ctl-acts");
-      acts.append(mark("next", t("Run now"), { act: "job", op: "run", id: job.id }),
-        job.state === "paused" ? mark("play", t("Resume"), { act: "job", op: "resume", id: job.id })
-          : mark("pause", t("Pause"), { act: "job", op: "pause", id: job.id }),
+      // On a phone, whether it runs is its switch, the row's one thing on its right.
+      const paused = job.state === "paused";
+      const turn = { act: "job", op: paused ? "resume" : "pause", id: job.id };
+      const runs = PHONE.matches && job.state !== "done" ? pill(!paused, paused ? t("Paused") : t("Active"), turn)
+        : mark(paused ? "play" : "pause", paused ? t("Resume") : t("Pause"), turn);
+      if (runs.classList.contains("pill")) runs.title = paused ? t("Resume") : t("Pause");
+      acts.append(mark("next", t("Run now"), { act: "job", op: "run", id: job.id }), runs,
         mark("trash", t("Delete"), { act: "ask-job", id: job.id }));
       for (const b of acts.children) b.disabled = !!c.busy;
       li.append(name, timing, acts);
       rows.append(li);
       const last = job.last;
-      rows.append(el("li", `ctl-sub${last && last.status !== "ok" ? " refused" : ""}`, last
+      rows.append(el("li", `ctl-sub ctl-job-last ctl-sheet-also${last && last.status !== "ok" ? " refused" : ""}`, last
         ? (last.line ? t("Last run {when}: {status}, {line}", { when: when(new Date(last.at * 1000).toISOString()), status: last.status, line: last.line })
           : t("Last run {when}: {status}", { when: when(new Date(last.at * 1000).toISOString()), status: last.status }))
         : t("Never run. It will ask: {prompt}", { prompt: job.prompt })));
@@ -1044,6 +1074,213 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     return root;
   }
 
+  // --- a phone's sheets -----------------------------------------------------------
+  // The phone standard (the operator, 2026-10-17: "Perfect lets land this"): on a
+  // phone a row says one thing and keeps one thing on its right -- its switch,
+  // or its one word -- and a tap on it raises its details and every other action
+  // in a sheet; a form standing in a section is a row that raises it; what the
+  // hand opened -- a form, a question, a section's settings -- rises from the
+  // bottom over the page, the scrim behind it the way out; a long list searches
+  // first, filters by state with its counts, and shows fifty rows at a time.
+  // One pass over what a tab drew, after it drew it, so every tab, a module's
+  // too, follows it alike; a wide window keeps every tab as it is drawn.
+  // CLOSER is what closes the risen panel as its own controls would.
+  let closer = null;
+
+  // An act by everything its control carries: the same act twice is offered once.
+  const actKey = (node) => JSON.stringify({ ...node.dataset });
+
+  // Each row of SCOPE that carries more than its one thing becomes a tap that
+  // raises them (its one act, when that is all it has); a row turned once is left.
+  function tapRows(scope) {
+    for (const row of scope.querySelectorAll(".ctl-row:not(.ctl-tap)")) {
+      const acts = row.querySelector(":scope > .ctl-acts");
+      const link = row.querySelector(":scope > .ctl-name .cell-link[data-act]");
+      const marks = [...acts?.children || []].filter((b) => b.matches("button[data-act], a[href]") && !b.classList.contains("pill"));
+      // One word and nothing else keeps its place on the row: "Add key", "Add".
+      const kept = !link && marks.length === 1 && !marks[0].classList.contains("icon") && !acts.querySelector(".pill") && marks[0];
+      const moving = marks.filter((b) => b !== kept);
+      // A link in the row's words is too small to aim at: it is an act of the sheet.
+      const words = [...row.querySelectorAll(":scope > :not(.ctl-acts, .ctl-name) a[href]")];
+      const all = [...link && !moving.some((b) => actKey(b) === actKey(link)) ? [link] : [], ...moving, ...words];
+      if (!all.length) continue;
+      // A line under the row that is the sheet's (a terminal's command) stands in it;
+      // one the row cuts to a line (a job's last run) stands there too, whole.
+      for (let next = row.nextElementSibling; next && !next.classList.contains("ctl-row");) {
+        const after = next.nextElementSibling;
+        if (next.classList.contains("ctl-sheet-part") || next.classList.contains("ctl-sheet-also")) {
+          const part = el("div", next.className);
+          part.append(...(next.classList.contains("ctl-sheet-part") ? next.childNodes : next.cloneNode(true).childNodes));
+          if (next.classList.contains("ctl-sheet-part")) next.remove();
+          row.append(part);
+        }
+        next = after;
+      }
+      const name = row.querySelector(".ctl-name").textContent.trim();
+      if (link) link.replaceWith(link.textContent);
+      for (const b of [...moving, ...words]) b.remove();
+      row.classList.add("ctl-tap");
+      row.tabIndex = 0;
+      row.setAttribute("role", "button");
+      // A row's one act is its tap when it opens the thing or asks a question; one that
+      // does something at once (a restart, a run) waits in the sheet for the second tap.
+      if (all.length === 1 && all[0].dataset.act && (all[0].classList.contains("cell-link") || /(^|-)(ask|open)(-|$)/.test(all[0].dataset.act))) {
+        Object.assign(row.dataset, all[0].dataset);
+        row.setAttribute("aria-label", `${all[0].classList.contains("cell-link") ? t("Open") : all[0].getAttribute("aria-label") || all[0].textContent.trim()}: ${name}`);
+      } else {
+        Object.assign(row.dataset, { act: "sheet", sheet: `${c.tab}:${name}` });
+        row.sheetActs = all;
+      }
+      if (!acts?.querySelector(".pill, button, a")) (acts || row.appendChild(el("span", "ctl-acts"))).append(icon("chevron", 18));
+    }
+  }
+
+  // A row's sheet: its name, what the row says of it whole, and every act it had, a word each.
+  function rowSheet(row) {
+    const box = el("div", "ctl-rises ctl-sheet-row");
+    box.append(el("h4", "ctl-sheet-title", row.querySelector(".ctl-name").textContent.trim()));
+    for (const part of row.querySelectorAll(":scope > :not(.ctl-name, .ctl-acts)")) box.append(part.cloneNode(true));
+    const list = el("div", "ctl-sheet-acts");
+    for (const b of row.sheetActs) {
+      const go = b.tagName === "A" ? b.cloneNode(true) : button("quiet", "", { ...b.dataset });
+      go.classList.add("quiet", "ctl-sheet-act");
+      if (b.tagName === "A") go.textContent = `${go.textContent[0].toUpperCase()}${go.textContent.slice(1)}`;
+      if (b.classList.contains("drop")) go.classList.add("danger");
+      if (b.tagName !== "A") {
+        const drawn = b.querySelector("svg");
+        if (drawn) go.append(drawn.cloneNode(true));
+        go.append(el("span", "", b.classList.contains("cell-link") ? t("Open") : b.getAttribute("aria-label") || b.textContent.trim()));
+        go.disabled = b.disabled;
+      }
+      list.append(go);
+    }
+    list.append(button("word ctl-sheet-cancel", t("Cancel"), { act: "sheet-close" }));
+    box.append(list);
+    return box;
+  }
+
+  // What rises on a phone: a question, a list's opened row, a panel the hand
+  // opened, a section's settings opened from their row.
+  const RISES = ".confirm, .ctl-inset, .ctl-rises, .ctl-cfg-section > .ctl-cfg-body";
+  const PAGE = 50;
+  const SEGS = { active: t("Active"), paused: t("Paused"), done: t("Done"), on: t("On"), off: t("Off") };
+
+  function rise(root) {
+    closer = null;
+    const tab = root.querySelector(".ctl-tab");
+    if (!tab) return;
+    tapRows(tab);
+    const tapped = c.sheet && tab.querySelector(`.ctl-tap[data-sheet="${CSS.escape(c.sheet)}"]`);
+    let raised = tapped?.sheetActs ? rowSheet(tapped) : null;
+    // A form standing in a section, with more than one thing to fill, is a row that raises it.
+    for (const f of tab.querySelectorAll("form.ctl-form")) {
+      if (f.closest(RISES) || f.querySelectorAll("input:not([type=hidden]), textarea, select").length < 2) continue;
+      const block = f.closest(".ctl-block");
+      const whole = block && !block.querySelector(".ctl-list, .ctl-row");
+      const words = whole ? block.querySelector(".obs-head h3").textContent : f.querySelector("[type=submit]")?.textContent.trim() || t("Open");
+      const key = `${c.tab}:form:${words}`;
+      const go = button("ctl-go ctl-raise", "", { act: "sheet", sheet: key });
+      go.append(el("span", "ctl-go-name", words), icon("chevron", 18));
+      const at = el("ul", "ctl-group-list ctl-raises");
+      at.append(el("li"));
+      at.firstChild.append(go);
+      let part = block;
+      if (!whole) {
+        part = el("div", "ctl-rises-form");
+        const refused = f.nextElementSibling?.classList.contains("ctl-form-refused") && f.nextElementSibling;
+        f.replaceWith(part);
+        part.append(f, ...refused ? [refused] : []);
+      }
+      part.replaceWith(at);
+      if (c.sheet === key && !raised) raised = part;
+    }
+    if (!raised) {
+      const open = [...tab.querySelectorAll(RISES)].filter((n) => !n.parentElement.closest(RISES));
+      raised = open.find((n) => n.matches(".confirm") || n.querySelector(".confirm")) || open[0] || null;
+      for (const n of open) if (n !== raised) n.remove();
+      if (raised) {
+        const head = raised.matches(".ctl-cfg-body") && raised.parentElement.querySelector(":scope > .ctl-cfg-head");
+        if (head) raised.prepend(el("h4", "ctl-sheet-title", head.querySelector(".ctl-cfg-title").textContent));
+        closer = raised.querySelector('[data-act="cancel"], [data-act$="-close"], [data-act$="-cancel"]') || head
+          || tab.querySelector('[data-act][aria-expanded="true"]:not(.info)');
+        raised.remove();
+      }
+    }
+    for (const list of tab.querySelectorAll("ol.ctl-list")) lists(list);
+    if (!raised) return;
+    const sheet = el("div", "ctl-sheet");
+    sheet.setAttribute("role", "dialog");
+    sheet.setAttribute("aria-modal", "true");
+    const scrim = button("ctl-scrim", "", { act: "sheet-close" });
+    scrim.setAttribute("aria-label", t("Close"));
+    sheet.append(el("div", "ctl-grab"), raised);
+    root.append(scrim, sheet);
+  }
+
+  // A list's rows, each with the lines under it, up to the next row.
+  function groups(list) {
+    const out = [];
+    for (const li of list.children) {
+      if (li.classList.contains("ctl-row")) out.push([li]);
+      else if (out.length && !li.classList.contains("ctl-index-cell")) out.at(-1).push(li);
+    }
+    return out;
+  }
+
+  // A long list, or one whose rows say a state, searches first, filters by
+  // state with each state's count, and shows fifty rows at a time.
+  function lists(list) {
+    const rows = groups(list);
+    const segs = new Set(rows.map(([r]) => r.dataset.seg).filter(Boolean));
+    const block = list.closest(".ctl-block");
+    const own = block?.querySelector("input[type=search]");
+    if (own || rows.length < 15 && !segs.size) return;
+    const key = `${c.tab}:${block?.querySelector(".obs-head h3")?.textContent || ""}`;
+    const s = c.lists[key] ||= { find: "", seg: "all", shown: PAGE };
+    list.dataset.list = key;
+    const bar = el("div", "ctl-find");
+    if (rows.length >= 15) {
+      const find = el("input", "control");
+      Object.assign(find, { type: "search", placeholder: t("Search"), value: s.find });
+      Object.assign(find.dataset, { input: "find", list: key });
+      find.setAttribute("aria-label", t("Search"));
+      bar.append(find);
+    }
+    if (segs.size) {
+      const scope = el("div", "scope ctl-segs");
+      scope.setAttribute("role", "radiogroup");
+      for (const id of ["all", ...Object.keys(SEGS).filter((k) => segs.has(k))]) {
+        const n = id === "all" ? rows.length : rows.filter(([r]) => r.dataset.seg === id).length;
+        const sw = button("sw", id === "all" ? t("All") : SEGS[id], { act: "list-seg", list: key, seg: id });
+        sw.append(el("span", "n", ` ${n}`));
+        sw.setAttribute("role", "radio");
+        sw.setAttribute("aria-checked", String(s.seg === id));
+        scope.append(sw);
+      }
+      bar.append(scope);
+    }
+    list.before(bar);
+    list.after(button("quiet ctl-more", "", { act: "list-more", list: key }));
+    sift(list);
+  }
+
+  // The rows a list's search and state leave, the first SHOWN of them.
+  function sift(list) {
+    const s = c.lists[list.dataset.list];
+    const needle = s.find.trim().toLowerCase();
+    let hits = 0;
+    for (const group of groups(list)) {
+      const [row] = group;
+      const hit = (s.seg === "all" || row.dataset.seg === s.seg) && (!needle || row.textContent.toLowerCase().includes(needle));
+      if (hit) hits++;
+      for (const li of group) li.hidden = !hit || hits > s.shown;
+    }
+    const more = list.nextElementSibling;
+    if (!more?.classList.contains("ctl-more")) return;
+    more.hidden = hits <= s.shown;
+    more.textContent = t("Show {n} more", { n: Math.min(PAGE, hits - s.shown) });
+  }
+
   function draw() {
     const root = el("div", "observe-usage control-pane");
     const phone = PHONE.matches;
@@ -1080,6 +1317,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     const draws = { gateway: drawGateway, logs: drawLogs, settings: drawSettings, cells: drawCells, index: index.draw, mcp: mcp.draw, profiles: profs.draw, channels: drawChannels, link: access.draw, jobs: drawJobs };
     root.append(draws[c.tab]());
     kept(root);
+    if (phone) rise(root);
     if (c.tab === "logs") queueMicrotask(drawLog);
     return root;
   }
@@ -1113,6 +1351,23 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     const target = event.target.closest("[data-act]");
     if (!target || target.disabled || target.tagName === "FORM") return;
     const d = target.dataset;
+    switch (d.act) {
+      case "sheet": c.sheet = d.sheet; redraw(); return;
+      // The scrim is the way out: what the sheet holds closes as its own Cancel closes it.
+      case "sheet-close": if (closer?.isConnected) closer.click(); else { c.sheet = null; redraw(); } return;
+      case "list-seg": case "list-more": {
+        const s = c.lists[d.list];
+        if (d.act === "list-seg") {
+          Object.assign(s, { seg: d.seg, shown: PAGE });
+          for (const b of target.parentElement.children) b.setAttribute("aria-checked", String(b === target));
+        } else s.shown += PAGE;
+        const list = document.querySelector(`.control-pane ol[data-list="${CSS.escape(d.list)}"]`);
+        if (list) sift(list);
+        return;
+      }
+    }
+    // Whatever a sheet offered, it leaves the sheet as it acts.
+    c.sheet = null;
     if (cfgs.click(d) || index.click(d) || mcp.click(d) || profs.click(d) || access.click(d)) return;
     switch (d.act) {
       // A health finding about a config section opens Settings on that section's form.
@@ -1184,7 +1439,8 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       case "drop-backup":
         act("drop", async () => { c.backups = await api("DELETE", `/api/gateway/backups?name=${encodeURIComponent(d.name)}`); toast(t("The backup is deleted.")); });
         return;
-      case "level": c.log.level = d.level; redraw(); return;
+      case "level": c.log.level = d.level; c.log.shown = LOG_PAGE; redraw(); return;
+      case "log-earlier": c.log.shown += LOG_PAGE; drawLog(); return;
       case "follow": c.log.follow = !c.log.follow; redraw(); schedule(); if (c.log.follow) readLog(false); return;
       case "edit-key": c.editing = d.id; c.confirm = null; redraw(); document.querySelector(".ctl-form input[name=key]")?.focus(); return;
       case "remove-key": c.confirm = `key:${d.id}`; c.editing = null; redraw(); return;
@@ -1220,6 +1476,13 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   }
 
   function input(event) {
+    if (event.target.dataset.input === "find") {
+      const s = c.lists[event.target.dataset.list];
+      Object.assign(s, { find: event.target.value, shown: PAGE });
+      const list = document.querySelector(`.control-pane ol[data-list="${CSS.escape(event.target.dataset.list)}"]`);
+      if (list) sift(list);
+      return;
+    }
     if (cfgs.input(event) || index.input(event) || mcp.input(event) || profs.input(event)) return;
     // A form no tab keeps itself is kept here, so no redraw takes back what the hand typed.
     const owner = event.target.name && event.target.closest?.("form.ctl-form");

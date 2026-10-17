@@ -180,7 +180,7 @@ export function makeMcp({ c, api, act, toast, redraw, reload }) {
         const inset = el("li", "ctl-inset");
         inset.append(result(tested));
         rows.append(inset);
-      } else if (s.tool_names.length) rows.append(el("li", "ctl-sub", t("Tools: {names}", { names: s.tool_names.join(", ") })));
+      } else if (s.tool_names.length) rows.append(el("li", "ctl-sub ctl-sheet-part", t("Tools: {names}", { names: s.tool_names.join(", ") })));
       if (c.confirm === `mcp:${s.name}`) {
         const inset = el("li", "ctl-inset");
         inset.append(confirmBox(t("Remove {name}? It leaves mcp.servers in config.jsonc, and the MCP cell starts again without it.", { name: s.name }), t("Remove"), "mcp-remove", { name: s.name }));

@@ -107,7 +107,8 @@ export function makeProfiles({ c, api, act, toast, redraw, download }) {
     rows.append(li);
     if (!r.current) {
       const command = `nodecode -p ${r.name} web`;
-      const open = el("li", "ctl-sub ctl-prof-open");
+      // A terminal's line: a phone keeps it in the profile's sheet.
+      const open = el("li", "ctl-sub ctl-prof-open ctl-sheet-part");
       open.append(r.pid ? t("Its own page, from a terminal:")
         : t("Its own page, from a terminal, once it runs ({command}):", { command: `nodecode -p ${r.name} gateway on` }),
       " ", el("code", "", command), mark("copy", t("Copy"), { act: "prof-copy", text: command }));

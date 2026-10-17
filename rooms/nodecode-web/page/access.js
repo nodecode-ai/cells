@@ -17,7 +17,7 @@
 // why in the cell's words, when it tries next, and offers Try now.
 
 import { el, button, mark, waiting, when } from "./observe.js";
-import { block, note, form, formKey, field, item, confirmBox, about, pill } from "./control.js";
+import { block, note, form, formKey, field, item, confirmBox, about, pill, PHONE } from "./control.js";
 import { t } from "./i18n.js";
 
 const STATES = {
@@ -208,7 +208,16 @@ export function makeAccess({ c, api, act, toast, redraw, unread, missing, openTa
     }
     head.append(el("p", "micro", t("This machine's page, from anywhere")), el("h2", "display", word), el("p", "sub", sub));
     if (l.failure) head.append(failing(l));
-    head.append(scope);
+    // On a phone the link's on and off is one switch, on a row of its own.
+    if (PHONE.matches) {
+      const on = l.state !== "off";
+      const line = el("div", "ctl-switch-row");
+      const sw = pill(on, on ? t("On") : t("Off"), { act: on ? "ask-link-off" : "link-on" });
+      sw.setAttribute("aria-label", t("The link"));
+      sw.disabled = !!c.busy;
+      line.append(el("span", "", t("The link")), sw);
+      head.append(line);
+    } else head.append(scope);
     if (c.confirm === "link-off") head.append(offQuestion(l));
     root.append(head);
 
@@ -227,7 +236,22 @@ export function makeAccess({ c, api, act, toast, redraw, unread, missing, openTa
     said.append(l.address ? addressLine(l) : note(l.state === "off"
       ? t("The relay names this machine's address the first time the link is on.")
       : t("The relay names this machine's address once it answers.")));
-    if (l.qr) {
+    // The phone in the hand needs no code to scan: on one, the code is a row that raises it.
+    if (l.qr && PHONE.matches) {
+      const go = button("ctl-go", "", { act: "link-qr" });
+      go.append(el("span", "ctl-go-name", t("Show the code")), el("span", "ctl-go-state", t("for another phone")));
+      const rows = el("ul", "ctl-group-list ctl-raises");
+      rows.append(el("li"));
+      rows.firstChild.append(go);
+      said.append(rows);
+      if (c.showQr) {
+        const sheet = el("div", "ctl-rises ctl-link-qr-sheet");
+        sheet.append(el("h4", "ctl-sheet-title", t("Open on another phone")), qrCode(l.qr),
+          note(t("Point a phone's camera at the code to open the address there. The phone asks to open this machine; allow its code here, or with /link allow in a shell.")),
+          button("word ctl-sheet-cancel", t("Close"), { act: "link-qr-close" }));
+        where.append(sheet);
+      }
+    } else if (l.qr) {
       where.append(qrCode(l.qr));
       said.append(note(t("Point a phone's camera at the code to open the address there. The phone asks to open this machine; allow its code here, or with /link allow in a shell.")));
     }
@@ -410,6 +434,8 @@ export function makeAccess({ c, api, act, toast, redraw, unread, missing, openTa
       case "ask-unpair": c.confirm = `unpair:${d.user}`; redraw(); return true;
       case "unpair": pair("unpair", { op: "unpair", user: d.user }); return true;
       case "link-on": linkOp("on"); return true;
+      case "link-qr": c.showQr = true; redraw(); return true;
+      case "link-qr-close": c.showQr = false; redraw(); return true;
       case "link-retry": linkOp("retry"); return true;
       case "ask-link-off": c.confirm = "link-off"; redraw(); return true;
       case "link-off": linkOp("off", {}, !!c.link?.here); return true;

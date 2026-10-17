@@ -7,17 +7,19 @@
 // refusal is the definition's own reason, said where the write was made.
 
 import { el, button, mark, when, waiting } from "./observe.js";
-import { block, note, form, field, confirmBox, about } from "./control.js";
+import { block, note, form, field, confirmBox, about, PHONE } from "./control.js";
 import { t } from "./i18n.js";
 
 const NAME = { pattern: "[a-z0-9][a-z0-9._\\-]{0,63}", title: t("a-z, 0-9, . _ and -, starting with a letter or digit") };
 const KINDS = { memory: t("memory"), skill: t("skill"), definition: t("definition") };
 
 // A string as the Lisp reader reads it back: a backslash and a double quote escaped, nothing else.
+const PAGE = 50;
 const lispString = (text) => `"${text.replace(/[\\"]/g, "\\$&")}"`;
 
-export function makeIndex({ c, api, act, toast, redraw }) {
-  const s = { list: null, open: null, draft: null, creating: false, fresh: {}, said: null, filter: "" };
+export function makeIndex({ c, api, act, toast, redraw, settle }) {
+  // SHOWN: how many rows a phone draws, fifty more at a time (the phone standard: never two thousand).
+  const s = { list: null, open: null, draft: null, creating: false, fresh: {}, said: null, filter: "", shown: PAGE };
 
   async function load() {
     try { s.list = await api("GET", "/api/gateway/index"); } catch (error) { s.list = { error: error.message }; }
@@ -92,7 +94,7 @@ export function makeIndex({ c, api, act, toast, redraw }) {
     go.type = "submit";
     go.disabled = !!c.busy;
     f.append(go, button("word", t("Cancel"), { act: "index-new" }));
-    const panel = el("div", "ctl-index-new");
+    const panel = el("div", "ctl-index-new ctl-rises");
     panel.append(f);
     const said = refusal("index-create");
     if (said) panel.append(said);
@@ -151,6 +153,7 @@ export function makeIndex({ c, api, act, toast, redraw }) {
     filter.setAttribute("aria-label", t("Filter what is kept"));
     const fresh = button("quiet", s.creating ? t("Close the form") : t("New memory"), { act: "index-new" });
     fresh.disabled = !!c.busy;
+    fresh.setAttribute("aria-expanded", String(s.creating));
     bar.append(filter, fresh);
     list.append(bar);
     if (s.creating) list.append(creator());
@@ -166,11 +169,18 @@ export function makeIndex({ c, api, act, toast, redraw }) {
   function fill(rows) {
     const needle = s.filter.trim().toLowerCase();
     const shown = s.list.definitions.filter((d) => !needle || `${d.name} ${d.description} ${d.cell}`.toLowerCase().includes(needle));
+    const page = PHONE.matches ? shown.slice(0, s.shown) : shown;
     rows.replaceChildren();
-    for (const cell of new Set(shown.map((d) => d.cell))) {
+    for (const cell of new Set(page.map((d) => d.cell))) {
       rows.append(el("li", "ctl-index-cell micro", cell));
-      for (const d of shown.filter((d) => d.cell === cell)) row(rows, d);
+      for (const d of page.filter((d) => d.cell === cell)) row(rows, d);
     }
+    if (page.length < shown.length) {
+      const more = el("li", "ctl-index-more");
+      more.append(button("quiet ctl-more", t("Show {n} more", { n: Math.min(PAGE, shown.length - page.length) }), { act: "index-more" }));
+      rows.append(more);
+    }
+    settle?.(rows);
     if (!s.list.definitions.length) rows.append(el("li", "obs-note", t("Nothing kept yet. The agent keeps a memory or a skill when one is worth keeping; New memory keeps one here.")));
     else if (!shown.length) rows.append(el("li", "obs-note", t("Nothing kept matches.")));
   }
@@ -181,6 +191,12 @@ export function makeIndex({ c, api, act, toast, redraw }) {
     switch (d.act) {
       case "index-open": opened(d.name); return true;
       case "index-close": Object.assign(s, { open: null, draft: null, said: null }); redraw(); return true;
+      case "index-more": {
+        s.shown += PAGE;
+        const rows = document.getElementById("ctl-index-rows");
+        if (rows) fill(rows);
+        return true;
+      }
       case "index-revert": s.draft = null; s.said = null; redraw(); return true;
       case "index-new": s.creating = !s.creating; s.said = null; redraw(); if (s.creating) document.querySelector(".ctl-index-new input[name=name]")?.focus(); return true;
       case "index-save":
@@ -200,6 +216,7 @@ export function makeIndex({ c, api, act, toast, redraw }) {
     if (node.dataset.input === "index-text") { s.draft = node.value; return true; }
     if (node.dataset.input === "index-filter") {
       s.filter = node.value;
+      s.shown = PAGE;
       const rows = document.getElementById("ctl-index-rows");
       if (rows && s.list?.definitions) fill(rows);
       return true;

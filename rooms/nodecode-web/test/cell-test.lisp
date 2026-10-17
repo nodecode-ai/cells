@@ -819,3 +819,47 @@ brace that closes it at the start of a line, or NIL."
     (is (search "control.moves(tab)" (web-js-function app "setPane")) "so Back, or the column's Control, takes a phone to the list")
     (is (equal "54px" (web-css-value css ".ctl-go" "min-height")) "a section's row is a finger tall")
     (is (equal "fixed" (web-css-value css ".ctl-phone .confirm" "position")) "a question rises from the bottom")))
+
+;; Every Control section on a phone follows the phone standard (the operator,
+;; 2026-10-17, "Perfect lets land this"; the standard, ten rules and twelve
+;; parts: https://claude.ai/artifact/PLdNMpmdbZ6bh7cVVfpnpz). Measured on the
+;; live page at 390 px before it: 7,138 of 7,163 controls under 44 px, every
+;; field's text under the 16 px below which iOS zooms the page, 119 actions in
+;; uppercase codes, and Index 496 screens long. One pass over what each tab
+;; drew (control.js rise), so a module's tab follows it too: a control a
+;; finger's size, words in sentence case, a row with one thing on its right and
+;; the rest in its sheet, edits and questions rising from the bottom, on/off a
+;; switch, filters segments, a long list searched first, fifty rows at a time.
+(deftest web-cell-every-control-section-on-a-phone-follows-the-standard ()
+  (let* ((js (web-page-text "control.js"))
+         (index (web-page-text "index.js"))
+         (access (web-page-text "access.js"))
+         (css (web-css-declarations (web-page-text "app.css")))
+         (inner (lambda (name)
+                  (let ((at (search (format nil "  function ~a(" name) js)))
+                    (and at (subseq js at (search (format nil "~%  }~%") js :start2 at))))))
+         (draw (funcall inner "draw"))
+         (taps (funcall inner "tapRows"))
+         (rise (funcall inner "rise")))
+    (is (search "if (phone) rise(root);" draw) "every tab, a module's too, passes through the phone's one pass")
+    (is (search "/(^|-)(ask|open)(-|$)/" taps) "a row's lone act is its tap only when it opens or asks: a restart or a run waits in the sheet")
+    (is (search "const RISES = \".confirm, .ctl-inset, .ctl-rises, .ctl-cfg-section > .ctl-cfg-body\";" js)
+        "a question, an opened row, an opened panel and a section's settings rise")
+    (is (search "part.replaceWith(at);" rise) "a form standing in a section is a row that raises it")
+    (is (search "const PAGE = 50;" js) "a long list shows fifty rows")
+    (is (search "PHONE.matches ? shown.slice(0, s.shown) : shown" index) "and Index draws only those, never its two thousand")
+    (is (search "pill(on, on ? t(\"On\") : t(\"Off\")" access) "the link's on and off is a switch")
+    (is (search "pill(!paused" js) "and whether a job runs")
+    (loop for (selector property value) in
+          '((".ctl-phone :is(.quiet, .solid)" "min-height" "44px")
+            (".ctl-phone .word" "min-height" "44px")
+            (".ctl-phone .icon" "height" "44px")
+            (".ctl-phone .pill, .ctl-phone .pill[aria-checked=\"true\"]" "height" "44px")
+            (".ctl-phone :is(input.control, select.control, textarea.control)" "font-size" "16px")
+            (".ctl-phone :is(.quiet, .solid, .word, .sw)" "text-transform" "none")
+            (".ctl-phone .ctl-row" "min-height" "54px")
+            (".ctl-sheet" "position" "fixed")
+            (".ctl-phone .ctl-list > li[hidden]" "display" "none"))
+          do (is (equal value (web-css-value css selector property)) (format nil "~a { ~a: ~a }" selector property value)))
+    (is (notany (lambda (each) (and (search "ctl-phone" (car each)) (search "text-transform: uppercase" (cdr each)))) css)
+        "no phone rule writes a control in capitals")))
