@@ -557,10 +557,12 @@ hold every room it lands in to BUDGET (BOUND-ROOM)."
           (bound-room room budget))))))
 
 ;;; --- the admission gate -------------------------------------------------------------
-;;; Concurrency is rationed across sessions here, live-only. This is NOT the
-;;; gateway's durable per-session queue: with one turn per lane forever, that
-;;; queue can no longer fire, and moving the wait here means a restart drops
-;;; pending asks instead of resurrecting yesterday's backlog at boot.
+;;; Concurrency is rationed across sessions here. This is NOT the gateway's
+;;; durable per-session queue: with one turn per lane forever, that queue can
+;;; no longer fire. The waiting asks are written down at every change of the
+;;; queue (HOST SAVE-QUEUED-ASKS), so a stop or a crash keeps them waiting as
+;;; Pi Durable keeps queued input queued; the next start runs those still
+;;; fresh and drops the rest, so yesterday's backlog never comes back.
 
 (nlk:define-record (channel-ask (:copier nil) (:conc-name ask-) (:constructor make-ask)
                                 (:export :constructor room target contract prompt where))
@@ -609,7 +611,11 @@ hold every room it lands in to BUDGET (BOUND-ROOM)."
   (agent nil :type (or null string))
   ;; The ask's own words, our mention taken off: what its lane's session is
   ;; named from (NAMING-ADVICE). Appended last, for the reason ATTACHMENTS is.
-  (said "" :type string))
+  (said "" :type string)
+  ;; When the ask first waited at the gate, as a universal time: the wall
+  ;; clock, since the wait may span a restart (HOST TAKE-BACK-QUEUED). Appended
+  ;; last, for the reason ATTACHMENTS is.
+  (queued-at nil :type (or null integer)))
 
 (nlk:access (ask channel-ask))
 

@@ -1525,53 +1525,92 @@ LANE, as the one running channel."
 
 ;;; --- a stop in the middle of a turn ----------------------------------------------
 
+(defun room-123-ask (message &key (owner "u9") queued-at)
+  "The ask MESSAGE from OWNER opens in room 123, as its lane chat-123-MESSAGE."
+  (nck:make-ask :room "chat-123" :lane (format nil "chat-123-~a" message) :owner-id owner
+                :message-id message :target '(:channel-id "123") :prompt "and this"
+                :contract "the room's contract" :said "and this" :queued-at queued-at))
+
 (deftest channel-host-a-stop-hands-its-running-lanes-on (with-temp-store ())
   ;; A host stopping under a running turn says so on the turn's line and
   ;; writes the lane down; the next start takes it back on the same line, and
   ;; the turn — resumed by the boot, or still running — answers there. A
-  ;; queued ask's line says it never ran.
+  ;; queued ask waits on: its line says so, it is written down as it queued,
+  ;; and the next start puts it back at the gate on that line.
   (let* ((first-executor (nck:make-recording-executor :responses (replies "s1" "s2")))
-         (host (test-host :executor first-executor :name "handoff" :max-concurrent 1))
+         (host (test-host :executor first-executor :name "handoff" :max-concurrent 0))
          (lane (nck:intern-lane (nck:host-lanes host) "chat-123-m1"
                                 :target '(:channel-id "123") :trigger-message-id "m1"
-                                :owner-id "u8"))
-         (queued (nck:intern-lane (nck:host-lanes host) "chat-123-m2"
-                                  :target '(:channel-id "123") :trigger-message-id "m2")))
+                                :owner-id "u8")))
     (nck:start-host host)
     (fold-fact host "chat-123-m1" "turn.started" (nlk:json-object))
     (fold-fact host "chat-123-m1" "turn.tool_call_started" (nlk:json-object "tool-name" "eval"))
     (nck:flush-now host lane)
-    (bt2:with-lock-held ((nck:lane-lock queued))
-      (nck:digest-note-queued (nck::lane-open-digest queued (nck::now-ms)) 0))
-    (nck:flush-now host queued)
+    (nck::gate-ask host (room-123-ask "m2"))
+    (is (nlk:session-state-get "channel-test" nck::+queued-key+) "written down as it queued")
+    (nck:flush-now host (nck:find-lane (nck:host-lanes host) "chat-123-m2"))
     (nck:stop-host host)
     (let ((plans (recorded-plans first-executor)))
       (is-present (paused (plan-matching plans :method "PATCH" :content "Paused at"))
         "the running line says the turn is paused, and picks up"
         (is (search nck::+paused-detail+ (plan-field paused "content")))
         (is (search "/s1" (nck:request-plan-path paused))))
-      ;; The queued line says it never ran.
-      (is (plan-matching plans :method "PATCH" :content nck::+dropped-detail+))))
-  ;; The next start: the same line, the same turn, and its answer lands.
+      ;; The queued line says it waits on.
+      (is-present (held (plan-matching plans :method "PATCH" :content nck::+held-detail+))
+        (is (search "/s2" (nck:request-plan-path held)))))
+    (let ((held (nlk:decode-json (nlk:session-state-get "channel-test" nck::+queued-key+))))
+      (is (= 1 (length held)))
+      (is (equal "s2" (nlk:json-value (aref held 0) :string "status")) "with the line it shows")))
+  ;; The next start: the same line, the same turn, and its answer lands; the
+  ;; waiting ask waits again on its own line, behind the lane's slot.
   (let* ((executor (nck:make-recording-executor))
-         (host (test-host :executor executor :name "handoff-2")))
+         (host (test-host :executor executor :name "handoff-2" :max-concurrent 1)))
     (nck:start-host host)
     (unwind-protect
          (is-present (lane (nck:find-lane (nck:host-lanes host) "chat-123-m1"))
            "the running lane is taken back"
-           (is (null (nck:find-lane (nck:host-lanes host) "chat-123-m2")) "the queued one is not")
            (is (equal "t1" (nck:lane-active-turn-id lane)))
            (let ((digest (nck:lane-digest lane)))
              (is (equal "s1" (nck:turn-digest-status-id digest)))
              (is (eq :running (nck:turn-digest-phase digest)))
              (is (= 1 (nck:turn-digest-tool-calls digest))))
            (is (equal '(:channel-id "123") (nck:lane-target lane)))
+           (is-present (waiting (nck:find-lane (nck:host-lanes host) "chat-123-m2"))
+             "the waiting ask is back"
+             (let ((digest (nck:lane-digest waiting)))
+               (is (equal "s2" (nck:turn-digest-status-id digest)) "on the line it had")
+               (is (eq :queued (nck:turn-digest-phase digest)))))
+           (is-present (ask (first (nck::with-room-book (book host) (copy-list (nck::room-book-pending book)))))
+             "at the gate, whole"
+             (is (equal '("chat-123-m2" "m2" "and this" "the room's contract" (:channel-id "123"))
+                        (list (nck::ask-lane ask) (nck::ask-message-id ask) (nck::ask-prompt ask)
+                              (nck::ask-contract ask) (nck::ask-target ask))))
+             (is (integerp (nck::ask-queued-at ask))))
            (fold-fact host "chat-123-m1" "turn.assistant_message_completed"
                       (nlk:json-object "message" (nlk:json-object "content" "done at last")))
            (fold-fact host "chat-123-m1" "turn.completed" (nlk:json-object))
            (is (await-plan executor :content "done at last") "the answer lands")
            ;; What was written down is taken.
            (is (null (nlk:session-state-get "channel-test" nck::+handoff-key+))))
+      (nck::release-slot host "u9")
+      (nck:stop-host host))))
+
+(deftest channel-host-an-ask-that-waited-too-long-is-dropped-on-its-line (with-temp-store ())
+  ;; A downtime past the horizon must not resurrect yesterday's backlog: the
+  ;; ask is not run, and its line says to ask again.
+  (nlk:session-state-put "channel-test" nck::+queued-key+
+                         (nlk:encode-json-object
+                          (vector (nck::ask-handoff (room-123-ask "m3" :queued-at (- (get-universal-time) 7200))
+                                                    "s3"))))
+  (let* ((executor (nck:make-recording-executor :responses (replies "s3")))
+         (host (test-host :executor executor :name "stale")))
+    (nck:start-host host)
+    (unwind-protect
+         (progn
+           (is (null (nck::with-room-book (book host) (nck::room-book-pending book))) "nothing waits")
+           (is-present (dropped (await-plan executor :method "PATCH" :content nck::+stale-detail+))
+             (is (search "/s3" (nck:request-plan-path dropped))))
+           (is (null (nlk:session-state-get "channel-test" nck::+queued-key+))))
       (nck:stop-host host))))
 
 (deftest channel-reply-to-a-picture-reads-it-in ()

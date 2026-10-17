@@ -2850,16 +2850,28 @@ the line."
   ;; A queued ask opens its status line at once: the failure this replaces was
   ;; an invisible wait behind a typing indicator that expired after five
   ;; minutes into silence.
+  ;; The wait is timed by the wall clock from its first moment, which a
+  ;; restart does not reset (TAKE-BACK-QUEUED).
+  (unless ask.queued-at
+    (setf ask.queued-at (get-universal-time)))
   (multiple-value-bind (admitted position)
       (claim-slot host ask host.max-concurrent-turns)
     (if admitted
         (admit-ask host ask)
         (let ((lane (intern-ask-lane host ask)))
           (bt2:with-lock-held ((lane-lock lane))
-            (setf (turn-digest-ask-id (digest-note-queued (lane-open-digest lane (now-ms)) position))
-                  ask.message-id))
+            ;; A queued line already open -- the one a restart brought back --
+            ;; is the one noted, as admission keeps it.
+            (let ((digest lane.digest))
+              (setf (turn-digest-ask-id
+                     (digest-note-queued (if (and digest (eq digest.phase :queued))
+                                             digest
+                                             (lane-open-digest lane (now-ms)))
+                                         position))
+                    ask.message-id)))
           (schedule-reaction host lane ask.message-id +reaction-seen+)
-          (schedule-flush host lane)))))
+          (schedule-flush host lane)
+          (save-queued-asks host)))))
 
 (defun intern-ask-lane (host ask)
   (let ((lane (intern-lane host.lanes
@@ -2883,6 +2895,9 @@ the line."
   "Give back a finished lane's slot and let the next ask through."
   (multiple-value-bind (next pending) (release-slot host owner-id)
     (when next (admit-ask host next))
+    ;; The queue moved: what a stop or a crash would leave waiting.
+    (when (or next pending)
+      (save-queued-asks host))
     ;; Everyone still queued counts down.
     (loop for ask in pending
           for position from 0
@@ -3100,12 +3115,132 @@ an ask, or rejected with its reason on the status surface."
   "the bot stopped; this picks up where it left off when it is back"
   "What a running line says while its host is down.")
 
-(defparameter +dropped-detail+
-  "the bot stopped before this ran: ask again when it is back"
-  "What a queued line says when its host stops: the ask never ran.")
+(defparameter +held-detail+
+  "the bot stopped before this ran; it runs when the bot is back"
+  "What a queued line says while its host is down: the ask waits on.")
+
+(defparameter +stale-detail+
+  "the bot was down too long for this to run: ask again"
+  "What a queued line says when the next start finds it past +QUEUED-HORIZON+.")
+
+(defparameter +queued-key+ "queued-asks"
+  "The state key a host keeps its waiting asks under (SAVE-QUEUED-ASKS).")
+
+(defparameter +queued-horizon+ 1800
+  "Seconds an ask may have waited, a downtime included, and still run when its
+host is back: an older one is dropped, its line saying so, so a restart never
+resurrects yesterday's backlog.")
+
+(defvar *queued-asks-lock* (bt2:make-lock :name "queued-asks")
+  "Held over each write of a host's waiting asks: the snapshot is taken inside
+it, so the store keeps the newest.")
 
 (defun handoff-session (host)
   (format nil "channel-~a" (host-id host)))
+
+(defun ask-handoff (ask status-id)
+  "What the next start needs of the waiting ASK, whose line is the message
+STATUS-ID, as JSON (HANDOFF-ASK reads it back)."
+  (nlk:json-object "room" ask.room
+                   "lane" ask.lane
+                   :opt "owner" ask.owner-id
+                   :opt "message" ask.message-id
+                   "target" (nlk:plist-json ask.target)
+                   "contract" ask.contract
+                   "prompt" ask.prompt
+                   :opt "continue" (and ask.continue-p t)
+                   ;; (POSITION . ATTACHMENTS): each the adapter's table, the
+                   ;; url to fetch at admission, never the bytes.
+                   "attachments" (map 'vector (lambda (anchor)
+                                                (nlk:json-object "at" (car anchor)
+                                                                 "files" (coerce (cdr anchor) 'vector)))
+                                      ask.attachments)
+                   :opt "key" ask.key
+                   :opt "where" ask.where
+                   :opt "voice" (and ask.voice (string-downcase ask.voice))
+                   :opt "agent" ask.agent
+                   "said" ask.said
+                   :opt "queued" ask.queued-at
+                   :opt "status" status-id))
+
+(defun handoff-ask (entry)
+  "The waiting ask ENTRY, an ASK-HANDOFF, describes."
+  (make-ask :room (nlk:json-value entry :string "room")
+            :lane (nlk:json-value entry :string "lane")
+            :owner-id (nlk:json-value entry :string "owner")
+            :message-id (nlk:json-value entry :string "message")
+            :target (nlk:json-plist (nlk:json-value entry :object "target"))
+            :contract (or (nlk:json-value entry :string "contract") "")
+            :prompt (or (nlk:json-value entry :string "prompt") "")
+            :continue-p (eq t (gethash "continue" entry))
+            :attachments (loop for anchor across (or (nlk:json-value entry :array "attachments") #())
+                               collect (cons (nlk:json-value anchor :integer "at")
+                                             (coerce (nlk:json-value anchor :array "files") 'list)))
+            :key (nlk:json-value entry :string "key")
+            :where (nlk:json-value entry :string "where")
+            :voice (nlk:when-let (voice (nlk:json-value entry :string "voice"))
+                     (find voice '(:note :channel) :test #'string-equal))
+            :agent (nlk:json-value entry :string "agent")
+            :said (or (nlk:json-value entry :string "said") "")
+            :queued-at (nlk:json-value entry :integer "queued")))
+
+(defun save-queued-asks (host &aux (session (handoff-session host)))
+  "Write HOST's waiting asks down, oldest first, each with the line it shows:
+what the next start runs (TAKE-BACK-QUEUED). Called at every change of the
+queue and at the stop, so a crash keeps them waiting as a stop does."
+  ;; Lock order: this lock, then the book's, then a lane's, one at a time;
+  ;; nothing holding either of the others takes this one.
+  (when (nlk:store-open-p)
+    (bt2:with-lock-held (*queued-asks-lock*)
+      (let ((entries (loop for ask in (with-room-book (book host) (copy-list book.pending))
+                           for lane = (find-lane host.lanes ask.lane)
+                           collect (ask-handoff ask (and lane
+                                                         (bt2:with-lock-held ((lane-lock lane))
+                                                           (and lane.digest
+                                                                (turn-digest-status-id lane.digest))))))))
+        (if entries
+            (nlk:session-state-put session +queued-key+
+                                   (nlk:encode-json-object (coerce entries 'vector)))
+            (nlk:session-state-delete session +queued-key+))))))
+
+(defun take-back-queued (host &aux (session (handoff-session host))
+                                   (now (get-universal-time)))
+  "Starting: the asks a stop or a crash left waiting (SAVE-QUEUED-ASKS) wait
+again, oldest first, each on the line it had, and run as slots free; one
+that waited past +QUEUED-HORIZON+ is dropped, its line saying so. => how
+many wait again."
+  (let ((json (and (nlk:store-open-p) (nlk:session-state-get session +queued-key+))))
+    (if (null json)
+        0
+        (progn
+          (nlk:session-state-delete session +queued-key+)
+          (loop for entry across (nlk:decode-json json)
+                count (nlk:with-handlers ((error (condition)
+                                            (warn "~a: an ask a stop left waiting was not taken back: ~a"
+                                                  (host-id host) condition)
+                                            nil))
+                        (take-back-ask host entry now)))))))
+
+(defun take-back-ask (host entry now &aux (ask (handoff-ask entry))
+                                          (status-id (nlk:json-value entry :string "status"))
+                                          (lane (intern-ask-lane host ask))
+                                          (fresh (<= (- now (or ask.queued-at now)) +queued-horizon+)))
+  "One waiting ask from TAKE-BACK-QUEUED's ENTRY, at NOW: back at the gate on
+the line it had, or, stale, that line saying so. => whether it waits again."
+  ;; The line is the queued digest the gate notes, so the card the stop left
+  ;; is the one edited, and admission keeps it (ADMIT-ASK).
+  (when status-id
+    (bind-addresses host lane ask.target (list status-id)))
+  (bt2:with-lock-held ((lane-lock lane))
+    (let ((digest (lane-open-digest lane (now-ms))))
+      (setf digest.status-id status-id
+            digest.ask-id ask.message-id)
+      (if fresh
+          (digest-note-queued digest 0)
+          (digest-note-terminal digest :cancelled +stale-detail+ (now-ms)))))
+  (if fresh
+      (progn (gate-ask host ask) t)
+      (progn (flush-now host lane) nil)))
 
 (defun lane-handoff (lane digest)
   "What the next start needs of LANE, whose turn DIGEST watches, as JSON."
@@ -3139,7 +3274,7 @@ an ask, or rejected with its reason on the status surface."
 
 (defun hand-off-lanes (host &aux (now (now-ms)) (entries '()))
   "Stopping: settle every live line of HOST, and write down the lanes whose
-turns the next boot resumes."
+turns the next boot resumes, and the asks still waiting (SAVE-QUEUED-ASKS)."
   ;; Runs after the delivery pool stopped, on the stopping thread: each line
   ;; is one synchronous edit. A turn waiting on its own background work keeps
   ;; its line — the work dies with the image, and its wake with it.
@@ -3153,13 +3288,15 @@ turns the next boot resumes."
                               (push (lane-handoff lane digest) entries)
                               (digest-note-terminal digest :paused +paused-detail+ now)))
                            (:queued
-                            (digest-note-terminal digest :cancelled +dropped-detail+ now))))))
+                            (digest-note-terminal digest :paused +held-detail+ now))))))
                  (when running
                    (nlk:with-handlers ((error (condition) (warn-lane host lane "pause notice" condition)))
                      (flush-now host lane))))))
   (when (and entries (nlk:store-open-p))
     (nlk:session-state-put (handoff-session host) +handoff-key+
-                           (nlk:encode-json-object (coerce entries 'vector)))))
+                           (nlk:encode-json-object (coerce entries 'vector))))
+  ;; The queue as it stands, each ask with the line just settled.
+  (save-queued-asks host))
 
 (defun take-back-lanes (host &aux (session (handoff-session host)))
   "Starting: take back the lanes a stop wrote down (HAND-OFF-LANES), each
@@ -3312,6 +3449,10 @@ turns their budget."
   (nlk:with-handlers ((error (condition)
                         (warn "~a: the lanes a stop handed on were not taken back: ~a" id condition)))
     (take-back-lanes host))
+  ;; Behind the running lanes, which hold their slots, the asks that waited.
+  (nlk:with-handlers ((error (condition)
+                        (warn "~a: the asks a stop left waiting were not taken back: ~a" id condition)))
+    (take-back-queued host))
   ;; The organism says it is back in the model's words, as a note this host
   ;; posts in its home room: a frame when it comes (OBSERVE-FRAME), or here,
   ;; when it came before this host started.
