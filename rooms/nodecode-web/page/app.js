@@ -92,6 +92,8 @@ const state = {
   identity: null, // the gateway's version and start
   runWant: null, // the turn a Dashboard row asked the Run view to open
   range: "7d",
+  dashSheet: null, // the section a phone's Dashboard has open in its sheet (observe.js SHEETS)
+  dashEnter: false, // that sheet rises on the next draw alone, not on each read landing under it
   picking: null, // { ids, confirm } while the list is ticked to export or delete
   prune: null, // { days, empty, answer, error, busy, failed } while the prune form is open
 };
@@ -2382,7 +2384,12 @@ function renderObserve() {
   if (pane === "run") {
     lane.replaceChildren(drawRun(timeline?.data, { zoom: state.runZoom, open: state.runOpen, all: state.runAll, error: timeline?.error }));
   } else if (pane === "dashboard") {
+    // A read landing under an open sheet redraws it where the reader was.
+    const read = lane.querySelector(".dash-sheet-body")?.scrollTop || 0;
     lane.replaceChildren(drawDashboard(state, state.range, home));
+    state.dashEnter = false;
+    const body = lane.querySelector(".dash-sheet-body");
+    if (body) body.scrollTop = read;
   } else if (pane === "control") {
     lane.replaceChildren(control.draw());
   } else if (pane === "files") {
@@ -2437,9 +2444,10 @@ function answerObserve(act) {
       else if (open) zoomBy(open, act.dataset.zoom === "in" ? 1 / 2 : 2);
       break;
     }
-    case "session": select(act.dataset.id); return;
+    case "session": state.dashSheet = null; select(act.dataset.id); return;
     // A Dashboard row: its session on the Run view, the turn it names open.
     case "run":
+      state.dashSheet = null;
       select(act.dataset.id);
       state.runWant = act.dataset.turn || null;
       state.runOpen = null;
@@ -4206,8 +4214,68 @@ $("views").addEventListener("click", (event) => {
   const sw = event.target.closest("[data-view]");
   if (sw) setPane(sw.dataset.view);
 });
+// A phone's Dashboard: a row opens its section in a sheet; the veil, the
+// close mark, Escape or a drag down by the grip closes it, the way it came.
+let dashClosing = 0;
+function openDashSheet(id) {
+  dashClosing++;
+  state.dashSheet = id;
+  state.dashEnter = true;
+  renderObserve();
+}
+function closeDashSheet() {
+  if (!state.dashSheet) return;
+  const ask = ++dashClosing;
+  const gone = () => { if (ask !== dashClosing) return; state.dashSheet = null; renderObserve(); };
+  const sheet = document.querySelector(".dash-sheet");
+  if (!sheet?.getClientRects().length || matchMedia("(prefers-reduced-motion: reduce)").matches) { gone(); return; }
+  sheet.dataset.leaving = "";
+  document.querySelector(".dash-veil")?.setAttribute("data-leaving", "");
+  setTimeout(gone, 220);
+}
+// A phone has no pointer to hover: a tap on a day's bar or an hour reads its
+// tooltip out under the drawing, and a fact cut at four lines opens whole.
+function readDash(target) {
+  const sheet = target.closest(".dash-sheet");
+  const fact = target.closest(".now-item");
+  if (fact) { fact.classList.toggle("whole"); return; }
+  for (const each of sheet.querySelectorAll(".read")) each.classList.remove("read");
+  target.classList.add("read");
+  const out = sheet.querySelector(".dash-readout");
+  if (out) out.textContent = target.title;
+}
+let dashDrag = null;
+$("observe").addEventListener("pointerdown", (event) => {
+  const grip = event.target.closest("[data-dash-drag]");
+  if (!grip || event.target.closest("button")) return;
+  dashDrag = { y: event.clientY, dy: 0, sheet: grip.closest(".dash-sheet") };
+  grip.setPointerCapture?.(event.pointerId);
+});
+$("observe").addEventListener("pointermove", (event) => {
+  if (!dashDrag) return;
+  dashDrag.dy = Math.max(0, event.clientY - dashDrag.y);
+  dashDrag.sheet.style.transform = `translateY(${dashDrag.dy}px)`;
+});
+for (const kind of ["pointerup", "pointercancel"]) {
+  $("observe").addEventListener(kind, () => {
+    if (!dashDrag) return;
+    const { dy, sheet } = dashDrag;
+    dashDrag = null;
+    if (dy > 90) closeDashSheet();
+    else sheet.style.transform = "";
+  });
+}
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !state.dashSheet || state.pane !== "dashboard" || !$("lightbox").hidden) return;
+  closeDashSheet();
+});
 $("observe").addEventListener("click", (event) => {
   if (state.pane === "control") { control.click(event); return; }
+  const door = event.target.closest("[data-dash-sheet]");
+  if (door) { openDashSheet(door.dataset.dashSheet); return; }
+  if (event.target.closest("[data-dash-close]")) { closeDashSheet(); return; }
+  const readable = event.target.closest(".dash-sheet :is(.day[title], .heat i[title], .now-item)");
+  if (readable) { readDash(readable); return; }
   const range = event.target.closest("[data-range]");
   if (range) {
     state.range = range.dataset.range;

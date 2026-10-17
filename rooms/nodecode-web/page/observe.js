@@ -766,6 +766,134 @@ function runButton(className, text, id, turn) {
   return node;
 }
 
+// The Dashboard's units, each drawn by one builder: the desktop page lays
+// them all out side by side, and a phone glances at them (glance) and opens
+// one at a time in a sheet (SHEETS) -- the same builder's section either way.
+const dashMicro = (data) => (data.from
+  ? t("Since {date} · API-equivalent prices", { date: new Date(data.from).toLocaleDateString(LOCALE, { month: "short", day: "numeric" }) })
+  : t("Everything · API-equivalent prices"));
+
+function dashHeadline(data, activity, range) {
+  const all = data.totals;
+  const said = { range: RANGE_WORDS[range] || t("In this range"), cost: usd(all.cost_usd),
+    calls: plural(all.calls, t("{n} model call"), t("{n} model calls")), sessions: plural(all.sessions, t("{n} session"), t("{n} sessions")) };
+  const main = all.cost_usd != null ? t("{range}, {cost} across {sessions}.", said) : t("{range}, {calls} across {sessions}.", said);
+  const steps = activity?.steps;
+  const sub = says([
+    all.turns ? t("{turns}, {failed} failed.", { turns: plural(all.turns, t("{n} turn"), t("{n} turns")), failed: count(all.failed_turns) }) : "",
+    all.saved_usd > 0.005 ? t("Reusing the prompt from cache saved about {cost}.", { cost: usd(all.saved_usd) })
+      : all.saved_usd < -0.005 ? t("Writing the prompt to cache cost about {cost} more than reading it back saved.", { cost: usd(-all.saved_usd) })
+      : all.cached_share != null ? t("{share} of the prompt came from cache.", { share: pct(all.cached_share) }) : "",
+    // Under half a second of steps rounds to `over 0 seconds'.
+    !steps?.count ? "" : steps.ms >= 500 ? t("The agent took {steps} over {time}.", { steps: plural(steps.count, t("{n} step"), t("{n} steps")), time: spoken(steps.ms) })
+      : steps.ms ? t("The agent took {steps} in under a second.", { steps: plural(steps.count, t("{n} step"), t("{n} steps")) })
+      : t("The agent took {steps}.", { steps: plural(steps.count, t("{n} step"), t("{n} steps")) }),
+    !all.unpriced ? "" : all.cost_usd != null
+      ? plural(all.unpriced, t("{n} call has no price, so the spend is a floor."), t("{n} calls have no price, so the spend is a floor."))
+      : plural(all.unpriced, t("{n} call has no price."), t("{n} calls have no price.")),
+  ]);
+  return headline(dashMicro(data), main, sub);
+}
+
+function totalsTiles(data, activity) {
+  const all = data.totals;
+  const steps = activity?.steps;
+  const speed = speedOf(data.models);
+  const tiles = el("section", "tiles eight");
+  tiles.setAttribute("aria-label", t("Totals"));
+  tiles.append(
+    tile(t("Spend"), usd(all.cost_usd), all.unpriced ? t("sum cost_usd · {n} unpriced", { n: count(all.unpriced) }) : t("sum cost_usd")),
+    tile(t("Saved by the cache"), all.saved_usd < 0 ? `−${usd(-all.saved_usd)}` : usd(all.saved_usd || null), t("reads' discount less writes' premium")),
+    tile(t("Model calls"), count(all.calls), t("provider requests")),
+    tile(t("Turns"), count(all.turns), t("{n} failed · turn.failed", { n: count(all.failed_turns) })),
+    tile(t("From cache"), pct(all.cached_share), t("cache hit rate")),
+    tile(t("First word, typical"), ms(data.wait_p50_ms), data.wait_p90_ms != null ? `TTFT p50 · p90 ${ms(data.wait_p90_ms)}` : "TTFT p50"),
+    tile(t("Writing speed"), speed ? `${count(speed)} tok/s` : "—", t("output tokens / stream time")),
+    tile(t("Steps"), steps ? count(steps.count) : "…", steps ? t("{share} failed · tool calls", { share: pct(steps.count ? steps.failed / steps.count : null) }) : t("tool calls")),
+  );
+  return tiles;
+}
+
+const pricedDays = (data) => data.days.some((day) => day.cost_usd != null);
+const spendTitle = (data) => (pricedDays(data) ? t("Spend by day") : t("Model calls by day"));
+
+function spendSection(data) {
+  const spend = section("spend", spendTitle(data));
+  spend.append(dayChart(data.days));
+  return spend;
+}
+
+function modelsSection(data) {
+  const models = section("models", t("Models"));
+  const spent = sum(data.models, (m) => m.cost_usd);
+  const failedHead = { text: t("Went wrong"), tag: t("error rate"),
+    title: t("Failed attempts over attempts. An attempt failed when the provider's error was retried, when the turn moved to another model, or when the error ended the turn; every other attempt is a model call that answered.") };
+  models.append(table([t("Model"), t("Calls"), failedHead, t("Share of spend"), t("From cache"), t("First word"), t("Speed"), t("Written"), t("Spend")], data.models.map((m) => [
+    { text: m.model || "—", title: m.provider, mono: true },
+    count(m.calls),
+    wentWrong(m.error_rate, m.failed, m.statuses.length
+      ? t("{failed} of {attempts} went wrong: {statuses}", { failed: count(m.failed), attempts: plural(m.attempts, t("{n} attempt"), t("{n} attempts")),
+        statuses: m.statuses.map((s) => `${s.status ?? t("no status")} ×${count(s.count)}`).join(", ") })
+      : t("{failed} of {attempts} went wrong", { failed: count(m.failed), attempts: plural(m.attempts, t("{n} attempt"), t("{n} attempts")) })),
+    { node: share(spent && m.cost_usd != null ? m.cost_usd / spent : null) },
+    { text: pct(m.cached_share), hot: m.cached_share != null && m.cached_share < 0.5 },
+    ms(m.wait_p50_ms),
+    m.speed ? `${count(m.speed)} tok/s` : "—",
+    tokens(m.output),
+    usd(m.cost_usd),
+  ]), "wide", ["18%", "8%", "10%", "14%", "9%", "9%", "10%", "8%", "9%"]));
+  models.append(el("p", "obs-note", t("From cache under half is marked. Went wrong is the share of attempts that failed; hover it for the statuses. First word is the typical wait (TTFT p50); speed is output tokens over the time spent writing them.")));
+  return models;
+}
+
+const sessionsTitle = (data) => (data.totals.cost_usd != null ? t("Costliest sessions") : t("Busiest sessions"));
+
+function sessionsSection(data, home) {
+  const sessions = section("sessions", sessionsTitle(data));
+  const list = el("ol", "session-list");
+  for (const s of data.sessions) {
+    const li = el("li");
+    const pick = button("srow", undefined, { act: "session", id: s.id });
+    pick.title = [s.id, home(s.folder)].filter(Boolean).join(" · ");
+    pick.append(el("span", "name", s.title || s.id), el("span", "reading", tail(s.folder)),
+      el("span", "num", ms(s.ms)), el("span", "num strong", s.cost_usd != null ? usd(s.cost_usd) : plural(s.calls, t("{n} call"), t("{n} calls"))));
+    li.append(pick);
+    list.append(li);
+  }
+  if (!data.sessions.length) list.append(el("li", "obs-note", t("Nothing ran in this range.")));
+  sessions.append(list);
+  return sessions;
+}
+
+function foldersSection(data, home) {
+  const folders = section("folders", t("By folder"));
+  folders.append(table([t("Folder"), t("Sessions"), t("Time"), t("Spend"),
+    { text: t("Went wrong"), tag: t("error rate"), title: t("Failed turns over the turns that ended in the folder; a turn someone stopped ended, it did not fail.") }],
+  data.folders.map((f) => [
+    { text: tail(f.folder), title: home(f.folder), mono: true }, count(f.sessions), ms(f.ms), usd(f.cost_usd),
+    f.turns ? wentWrong(f.error_rate, f.failed_turns, t("{failed} of {turns} failed", { failed: count(f.failed_turns), turns: plural(f.turns, t("{n} turn"), t("{n} turns")) })) : "—",
+  ]), "by-folder"));
+  return folders;
+}
+
+function callsSection(activity) {
+  const calls = section("calls", t("Latest model calls"));
+  if (!activity) { calls.append(waiting(t("Adding it up…"))); return calls; }
+  calls.append(table([t("Session"), t("When"), t("Model"), t("Sent"), t("From cache"), t("Written"), t("First word"), t("Writing"), t("Cost")], activity.calls.map((c) => [
+    { node: runButton("cell-link", c.title || c.session_id, c.session_id, c.turn_id), title: c.session_id },
+    when(c.at),
+    { text: c.model || "—", title: c.provider, mono: true },
+    tokens(promptOf(c) || null),
+    pct(promptOf(c) ? (c.cached || 0) / promptOf(c) : null),
+    tokens(c.output),
+    ms(c.wait_ms),
+    ms(c.stream_ms),
+    usd(c.cost_usd),
+  ]), "wide", ["21%", "12%", "14%", "8%", "9%", "8%", "9%", "9%", "8%"]));
+  calls.append(el("p", "obs-note", t("Open one to see its turn on the Run view, where the inspector says why a call was slow or paid full price.")));
+  return calls;
+}
+
 export function drawDashboard(parts, range, home) {
   const root = el("div", "observe-usage dashboard");
   const top = el("div", "dash-bar");
@@ -795,121 +923,272 @@ export function drawDashboard(parts, range, home) {
   const data = parts.usage?.range === range ? parts.usage : null;
   const activity = parts.activity?.range === range ? parts.activity : null;
   if (!data || data.error) { root.append(waiting(data?.error ? t("Could not read usage: {error}", { error: data.error }) : t("Adding it up…"))); return root; }
-  const all = data.totals;
-  const said = { range: RANGE_WORDS[range] || t("In this range"), cost: usd(all.cost_usd),
-    calls: plural(all.calls, t("{n} model call"), t("{n} model calls")), sessions: plural(all.sessions, t("{n} session"), t("{n} sessions")) };
-  const main = all.cost_usd != null ? t("{range}, {cost} across {sessions}.", said) : t("{range}, {calls} across {sessions}.", said);
-  const steps = activity?.steps;
-  const sub = says([
-    all.turns ? t("{turns}, {failed} failed.", { turns: plural(all.turns, t("{n} turn"), t("{n} turns")), failed: count(all.failed_turns) }) : "",
-    all.saved_usd > 0.005 ? t("Reusing the prompt from cache saved about {cost}.", { cost: usd(all.saved_usd) })
-      : all.saved_usd < -0.005 ? t("Writing the prompt to cache cost about {cost} more than reading it back saved.", { cost: usd(-all.saved_usd) })
-      : all.cached_share != null ? t("{share} of the prompt came from cache.", { share: pct(all.cached_share) }) : "",
-    // Under half a second of steps rounds to `over 0 seconds'.
-    !steps?.count ? "" : steps.ms >= 500 ? t("The agent took {steps} over {time}.", { steps: plural(steps.count, t("{n} step"), t("{n} steps")), time: spoken(steps.ms) })
-      : steps.ms ? t("The agent took {steps} in under a second.", { steps: plural(steps.count, t("{n} step"), t("{n} steps")) })
-      : t("The agent took {steps}.", { steps: plural(steps.count, t("{n} step"), t("{n} steps")) }),
-    !all.unpriced ? "" : all.cost_usd != null
-      ? plural(all.unpriced, t("{n} call has no price, so the spend is a floor."), t("{n} calls have no price, so the spend is a floor."))
-      : plural(all.unpriced, t("{n} call has no price."), t("{n} calls have no price.")),
-  ]);
-  root.append(headline(data.from ? t("Since {date} · API-equivalent prices", { date: new Date(data.from).toLocaleDateString(LOCALE, { month: "short", day: "numeric" }) })
-    : t("Everything · API-equivalent prices"), main, sub));
-
-  root.append(nowStrip(parts.health, parts.identity));
-
-  const speed = speedOf(data.models);
-  const tiles = el("section", "tiles eight");
-  tiles.setAttribute("aria-label", t("Totals"));
-  tiles.append(
-    tile(t("Spend"), usd(all.cost_usd), all.unpriced ? t("sum cost_usd · {n} unpriced", { n: count(all.unpriced) }) : t("sum cost_usd")),
-    tile(t("Saved by the cache"), all.saved_usd < 0 ? `−${usd(-all.saved_usd)}` : usd(all.saved_usd || null), t("reads' discount less writes' premium")),
-    tile(t("Model calls"), count(all.calls), t("provider requests")),
-    tile(t("Turns"), count(all.turns), t("{n} failed · turn.failed", { n: count(all.failed_turns) })),
-    tile(t("From cache"), pct(all.cached_share), t("cache hit rate")),
-    tile(t("First word, typical"), ms(data.wait_p50_ms), data.wait_p90_ms != null ? `TTFT p50 · p90 ${ms(data.wait_p90_ms)}` : "TTFT p50"),
-    tile(t("Writing speed"), speed ? `${count(speed)} tok/s` : "—", t("output tokens / stream time")),
-    tile(t("Steps"), steps ? count(steps.count) : "…", steps ? t("{share} failed · tool calls", { share: pct(steps.count ? steps.failed / steps.count : null) }) : t("tool calls")),
-  );
-  root.append(tiles);
+  root.append(dashHeadline(data, activity, range), nowStrip(parts.health, parts.identity), totalsTiles(data, activity));
 
   const spendRow = el("div", "obs-two");
-  const spend = section("spend", data.days.some((day) => day.cost_usd != null) ? t("Spend by day") : t("Model calls by day"));
-  spend.append(dayChart(data.days));
-  spendRow.append(spend, activity ? heatmap(activity.hours) : waitingBox(t("When turns ran")));
-  root.append(spendRow);
-
-  const models = section("models", t("Models"));
-  const spent = sum(data.models, (m) => m.cost_usd);
-  const failedHead = { text: t("Went wrong"), tag: t("error rate"),
-    title: t("Failed attempts over attempts. An attempt failed when the provider's error was retried, when the turn moved to another model, or when the error ended the turn; every other attempt is a model call that answered.") };
-  models.append(table([t("Model"), t("Calls"), failedHead, t("Share of spend"), t("From cache"), t("First word"), t("Speed"), t("Written"), t("Spend")], data.models.map((m) => [
-    { text: m.model || "—", title: m.provider, mono: true },
-    count(m.calls),
-    wentWrong(m.error_rate, m.failed, m.statuses.length
-      ? t("{failed} of {attempts} went wrong: {statuses}", { failed: count(m.failed), attempts: plural(m.attempts, t("{n} attempt"), t("{n} attempts")),
-        statuses: m.statuses.map((s) => `${s.status ?? t("no status")} ×${count(s.count)}`).join(", ") })
-      : t("{failed} of {attempts} went wrong", { failed: count(m.failed), attempts: plural(m.attempts, t("{n} attempt"), t("{n} attempts")) })),
-    { node: share(spent && m.cost_usd != null ? m.cost_usd / spent : null) },
-    { text: pct(m.cached_share), hot: m.cached_share != null && m.cached_share < 0.5 },
-    ms(m.wait_p50_ms),
-    m.speed ? `${count(m.speed)} tok/s` : "—",
-    tokens(m.output),
-    usd(m.cost_usd),
-  ]), "wide", ["18%", "8%", "10%", "14%", "9%", "9%", "10%", "8%", "9%"]));
-  models.append(el("p", "obs-note", t("From cache under half is marked. Went wrong is the share of attempts that failed; hover it for the statuses. First word is the typical wait (TTFT p50); speed is output tokens over the time spent writing them.")));
-  root.append(models);
+  spendRow.append(spendSection(data), activity ? heatmap(activity.hours) : waitingBox(t("When turns ran"), "hours"));
+  root.append(spendRow, modelsSection(data));
 
   // What each step cost stands beside what the agent did, over what went wrong.
   const workRow = el("div", "obs-two even");
   const side = el("div", "dash-col");
   side.append(activity ? costSection(activity) : waitingBox(t("Where the money went"), "cost"),
-    activity ? problemsSection(activity, all) : waitingBox(t("What went wrong"), "problems"));
+    activity ? problemsSection(activity, data.totals) : waitingBox(t("What went wrong"), "problems"));
   workRow.append(activity ? workSection(activity) : waitingBox(t("What the agent did"), "work"), side);
   root.append(workRow);
 
   const lower = el("div", "obs-two");
-  const sessions = section("sessions", all.cost_usd != null ? t("Costliest sessions") : t("Busiest sessions"));
-  const list = el("ol", "session-list");
-  for (const s of data.sessions) {
-    const li = el("li");
-    const pick = button("srow", undefined, { act: "session", id: s.id });
-    pick.title = [s.id, home(s.folder)].filter(Boolean).join(" · ");
-    pick.append(el("span", "name", s.title || s.id), el("span", "reading", tail(s.folder)),
-      el("span", "num", ms(s.ms)), el("span", "num strong", s.cost_usd != null ? usd(s.cost_usd) : plural(s.calls, t("{n} call"), t("{n} calls"))));
-    li.append(pick);
-    list.append(li);
-  }
-  if (!data.sessions.length) list.append(el("li", "obs-note", t("Nothing ran in this range.")));
-  sessions.append(list);
-  const folders = el("section", "dash-section");
-  folders.append(sectionHead(t("By folder")), table([t("Folder"), t("Sessions"), t("Time"), t("Spend"),
-    { text: t("Went wrong"), tag: t("error rate"), title: t("Failed turns over the turns that ended in the folder; a turn someone stopped ended, it did not fail.") }],
-  data.folders.map((f) => [
-    { text: tail(f.folder), title: home(f.folder), mono: true }, count(f.sessions), ms(f.ms), usd(f.cost_usd),
-    f.turns ? wentWrong(f.error_rate, f.failed_turns, t("{failed} of {turns} failed", { failed: count(f.failed_turns), turns: plural(f.turns, t("{n} turn"), t("{n} turns")) })) : "—",
-  ]), "by-folder"));
-  lower.append(sessions, folders);
-  root.append(lower);
+  lower.append(sessionsSection(data, home), foldersSection(data, home));
+  root.append(lower, callsSection(activity));
 
-  const calls = section("calls", t("Latest model calls"));
-  if (!activity) calls.append(waiting(t("Adding it up…")));
-  else {
-    calls.append(table([t("Session"), t("When"), t("Model"), t("Sent"), t("From cache"), t("Written"), t("First word"), t("Writing"), t("Cost")], activity.calls.map((c) => [
-      { node: runButton("cell-link", c.title || c.session_id, c.session_id, c.turn_id), title: c.session_id },
-      when(c.at),
-      { text: c.model || "—", title: c.provider, mono: true },
-      tokens(promptOf(c) || null),
-      pct(promptOf(c) ? (c.cached || 0) / promptOf(c) : null),
-      tokens(c.output),
-      ms(c.wait_ms),
-      ms(c.stream_ms),
-      usd(c.cost_usd),
-    ]), "wide", ["21%", "12%", "14%", "8%", "9%", "8%", "9%", "9%", "8%"]));
-    calls.append(el("p", "obs-note", t("Open one to see its turn on the Run view, where the inspector says why a call was slow or paid full price.")));
-  }
-  root.append(calls);
+  // A phone's page (app.css: max-width 720px) is these two alone; wider, neither shows.
+  root.append(glance(parts, data, activity));
+  if (parts.dashSheet) root.append(...dashSheet(parts, data, activity, range, home));
   return root;
+}
+
+// --- a phone's Dashboard: the glance, and one section at a time in a sheet -------------
+// How it is going on one screen: the spend and the shape of its days, what is
+// wrong right now, four numbers, then one row per section -- its verdict in
+// words and its drawing, small. A row opens its section whole in a sheet
+// rising from the foot (app.js: data-dash-sheet), the desktop page's own
+// section from the same builder; Right now opens the headline, the facts and
+// the totals.
+
+// A row of bars, each its value over the tallest, the tallest lit.
+function bars(values, className) {
+  const node = el("span", className);
+  node.setAttribute("aria-hidden", "true");
+  const top = Math.max(...values, 0);
+  for (const value of values) {
+    const bar = el("i", top && value === top ? "peak" : "");
+    bar.style.height = `${top ? Math.round(100 * value / top) : 0}%`;
+    node.append(bar);
+  }
+  return node;
+}
+
+// Shares side by side on one track, the biggest first and lightest.
+function shareTrack(fractions) {
+  const node = el("span", "glance-stack");
+  node.setAttribute("aria-hidden", "true");
+  fractions.filter((f) => f > 0).sort((a, b) => b - a).slice(0, 4).forEach((fraction, at) => {
+    const part = el("i");
+    part.dataset.n = String(at);
+    part.style.width = `${100 * fraction}%`;
+    node.append(part);
+  });
+  return node;
+}
+
+const adding = () => ({ text: t("Adding it up…") });
+
+// What each sheet holds: its title, what its row in the glance says (TEXT, a
+// TONE, a drawing VIZ), and its body, drawn by the desktop page's builders.
+const SHEETS = {
+  now: {
+    title: () => t("Right now"),
+    body: (parts, data, activity, range) => [dashHeadline(data, activity, range), nowStrip(parts.health, parts.identity), totalsTiles(data, activity)],
+  },
+  spend: {
+    title: spendTitle,
+    says: (data) => {
+      const priced = pricedDays(data);
+      const value = (day) => (priced ? day.cost_usd || 0 : day.calls);
+      const peak = data.days.reduce((best, day) => (!best || value(day) > value(best) ? day : best), null);
+      if (!peak || !value(peak)) return { text: t("Nothing ran in this range.") };
+      return { text: t("Peak {day}, {amount}", { day: new Date(`${peak.day}T12:00:00`).toLocaleDateString(LOCALE, { weekday: "short", day: "numeric" }),
+        amount: priced ? usd(peak.cost_usd) : plural(peak.calls, t("{n} call"), t("{n} calls")) }), viz: bars(data.days.map(value), "glance-bars") };
+    },
+    body: (parts, data) => [spendSection(data), el("p", "dash-readout", t("Tap one to read it."))],
+  },
+  hours: {
+    title: () => t("When turns ran"),
+    says: (data, activity) => {
+      if (!activity) return adding();
+      const hours = activity.hours;
+      const top = Math.max(...hours.flat(), 0);
+      if (!top) return { text: t("No turns in this range.") };
+      const day = hours.findIndex((row) => row.includes(top));
+      const hour = hours[day].indexOf(top);
+      return { text: t("Busiest {day} around {hour}", { day: DAYS[day], hour: `${String(hour).padStart(2, "0")}:00` }),
+        viz: bars(Array.from({ length: 24 }, (_, at) => sum(hours, (row) => row[at])), "glance-bars") };
+    },
+    body: (parts, data, activity) => [activity ? heatmap(activity.hours) : waitingBox(t("When turns ran"), "hours"), el("p", "dash-readout", t("Tap one to read it."))],
+  },
+  models: {
+    title: () => t("Models"),
+    says: (data) => {
+      const spent = sum(data.models, (m) => m.cost_usd);
+      const by = spent ? (m) => m.cost_usd || 0 : (m) => m.calls || 0;
+      const whole = spent || sum(data.models, (m) => m.calls);
+      const lead = data.models.reduce((best, m) => (!best || by(m) > by(best) ? m : best), null);
+      if (!lead || !whole) return { text: t("Nothing ran in this range.") };
+      const said = { model: lead.model || "—", share: pct(by(lead) / whole) };
+      return { text: spent ? t("{model}: {share} of the spend", said) : t("{model}: {share} of the calls", said), viz: shareTrack(data.models.map((m) => by(m) / whole)) };
+    },
+    body: (parts, data) => [modelsSection(data)],
+  },
+  work: {
+    title: () => t("What the agent did"),
+    says: (data, activity) => {
+      if (!activity) return adding();
+      const steps = activity.steps;
+      if (!steps.count) return { text: t("The agent took no steps in this range.") };
+      const viz = el("span", "glance-rows");
+      viz.setAttribute("aria-hidden", "true");
+      const top = Math.max(...activity.families.map((f) => f.calls), 1);
+      for (const f of activity.families.slice(0, 4)) {
+        const bar = el("i");
+        bar.style.width = `${Math.max(4, Math.round(100 * f.calls / top))}%`;
+        viz.append(bar);
+      }
+      return { text: `${plural(steps.count, t("{n} step"), t("{n} steps"))} · ${t("{n} failed", { n: count(steps.failed) })}`, viz };
+    },
+    body: (parts, data, activity) => [activity ? workSection(activity) : waitingBox(t("What the agent did"), "work")],
+  },
+  cost: {
+    title: (data, activity) => (activity?.spend.by === "cost" || !activity ? t("Where the money went") : t("Where the model calls went")),
+    says: (data, activity) => {
+      if (!activity) return adding();
+      const spend = activity.spend;
+      const money = spend.by === "cost";
+      const parts = spend.parts.filter((p) => !p.tool).map((p) => ({ p, fraction: money ? (p.cost_usd || 0) / (spend.cost_usd || 1) : p.rounds / (spend.rounds || 1) }))
+        .sort((a, b) => b.fraction - a.fraction);
+      if (!spend.rounds || !parts.length) return { text: t("No model calls in this range.") };
+      const word = (p) => (p.reply ? t("Writing the reply") : p.voided ? t("Attempts that failed") : p.verb);
+      return { text: parts.slice(0, 2).map(({ p, fraction }) => `${word(p)} ${pct(fraction)}`).join(" · "), viz: shareTrack(parts.map(({ fraction }) => fraction)) };
+    },
+    body: (parts, data, activity) => [activity ? costSection(activity) : waitingBox(t("Where the money went"), "cost")],
+  },
+  problems: {
+    title: () => t("What went wrong"),
+    says: (data, activity) => {
+      if (!activity) return adding();
+      const failed = activity.failed_turns.count;
+      return { text: failed ? plural(failed, t("{n} turn failed."), t("{n} turns failed.")) : t("Nothing went wrong in this range."),
+        tone: failed ? "bad" : "", viz: el("span", `glance-badge${failed ? " bad" : ""}`, count(failed)) };
+    },
+    body: (parts, data, activity) => [activity ? problemsSection(activity, data.totals) : waitingBox(t("What went wrong"), "problems")],
+  },
+  sessions: {
+    title: sessionsTitle,
+    says: (data) => {
+      const s = data.sessions[0];
+      return s ? { text: s.title || s.id, viz: el("span", "num", s.cost_usd != null ? usd(s.cost_usd) : count(s.calls)) } : { text: t("Nothing ran in this range.") };
+    },
+    body: (parts, data, activity, range, home) => [sessionsSection(data, home)],
+  },
+  folders: {
+    title: () => t("By folder"),
+    says: (data) => {
+      const f = data.folders[0];
+      return f ? { text: tail(f.folder), viz: el("span", "num", usd(f.cost_usd)) } : { text: t("Nothing ran in this range.") };
+    },
+    body: (parts, data, activity, range, home) => [foldersSection(data, home)],
+  },
+  calls: {
+    title: () => t("Latest model calls"),
+    says: (data, activity) => {
+      if (!activity) return adding();
+      const c = activity.calls[0];
+      return c ? { text: `${c.model || "—"} · ${when(c.at)}`, viz: el("span", "glance-badge", count(activity.calls.length)) } : { text: t("No model calls in this range.") };
+    },
+    body: (parts, data, activity) => [callsSection(activity)],
+  },
+};
+
+function glance(parts, data, activity) {
+  const all = data.totals;
+  const node = el("div", "dash-glance");
+  const hero = el("section", "glance-hero");
+  const priced = all.cost_usd != null;
+  const row = el("div", "glance-row");
+  const big = el("span", "glance-big", priced ? usd(all.cost_usd) : count(all.calls));
+  if (!priced) big.append(el("span", "glance-unit", t("Model calls")));
+  row.append(big, bars(data.days.map((day) => (priced ? day.cost_usd || 0 : day.calls)), "glance-spark"));
+  const sub = el("p", "glance-sub", [plural(all.sessions, t("{n} session"), t("{n} sessions")),
+    all.turns ? plural(all.turns, t("{n} turn"), t("{n} turns")) : ""].filter(Boolean).join(" · "));
+  if (all.failed_turns) sub.append(" · ", el("span", "hot", t("{n} failed", { n: count(all.failed_turns) })));
+  hero.append(el("p", "micro", dashMicro(data)), row, sub);
+  node.append(hero);
+
+  // What is wrong right now, only when something is: its first fact, opening them all.
+  const facts = Array.isArray(parts.health) ? parts.health : [];
+  const trouble = facts.find((fact) => fact.tone === "danger") || facts.find((fact) => fact.tone === "warn");
+  if (trouble) {
+    const alert = button("glance-alert", undefined, { dashSheet: "now", tone: trouble.tone });
+    alert.append(el("i", "led"), el("span", "said", `${trouble.label}: ${oneLine(trouble.detail)}`), el("span", "chev", "›"));
+    node.append(alert);
+  }
+
+  const steps = activity?.steps;
+  const speed = speedOf(data.models);
+  const kpis = el("section", "glance-kpis");
+  kpis.setAttribute("aria-label", t("Totals"));
+  for (const [value, label] of [[pct(all.cached_share), t("From cache")], [ms(data.wait_p50_ms), t("First word")],
+    [speed ? `${count(speed)} tok/s` : "—", t("Speed")], [steps ? count(steps.count) : "…", t("Steps")]]) {
+    const kpi = el("div", "kpi");
+    kpi.append(el("span", "value", value), el("span", "label", label));
+    kpis.append(kpi);
+  }
+  node.append(kpis);
+
+  const doors = el("ul", "glance-doors");
+  doors.setAttribute("aria-label", t("Sections"));
+  for (const [id, unit] of Object.entries(SHEETS)) {
+    if (!unit.says) continue;
+    const said = unit.says(data, activity);
+    const door = button("dash-door", undefined, { dashSheet: id });
+    const words = el("span", "words");
+    words.append(el("span", "micro", unit.title(data, activity)), el("span", `says${said.tone ? ` ${said.tone}` : ""}`, said.text));
+    const viz = el("span", "viz");
+    if (said.viz) viz.append(said.viz);
+    door.append(words, viz, el("span", "chev", "›"));
+    const li = el("li");
+    li.append(door);
+    doors.append(li);
+  }
+  node.append(doors);
+
+  const identity = parts.identity;
+  const now = button("dash-door glance-now", undefined, { dashSheet: "now" });
+  const words = el("span", "words");
+  words.append(el("span", "micro", t("Right now")),
+    el("span", "says", [identity?.version ? `nodecode v${identity.version}` : "nodecode", uptime(identity?.started_at)].filter(Boolean).join(" · ")));
+  now.append(el("i", "led pulse"), words, el("span", "chev", "›"));
+  node.append(now);
+  return node;
+}
+
+// The open sheet: a veil over the glance, then the section under a head that
+// closes it; its grip and head drag it down (app.js). It rises only on the
+// draw that opened it (DASHENTER), not on each read that lands while it is up.
+function dashSheet(parts, data, activity, range, home) {
+  const unit = SHEETS[parts.dashSheet];
+  if (!unit) return [];
+  const title = unit.title(data, activity);
+  const veil = el("div", "dash-veil");
+  veil.dataset.dashClose = "";
+  const sheet = el("div", "dash-sheet");
+  sheet.setAttribute("role", "dialog");
+  sheet.setAttribute("aria-modal", "true");
+  sheet.setAttribute("aria-label", title);
+  if (parts.dashEnter) { sheet.dataset.enter = ""; veil.dataset.enter = ""; }
+  const grip = el("div", "dash-grip");
+  grip.dataset.dashDrag = "";
+  grip.append(el("i"));
+  const head = el("div", "sheet-head");
+  head.dataset.dashDrag = "";
+  const close = iconButton("close", t("Close"));
+  close.dataset.dashClose = "";
+  head.append(el("span", "micro", title), close);
+  const body = el("div", "dash-sheet-body");
+  body.append(...unit.body(parts, data, activity, range, home));
+  // The desktop page's own sections keep their ids; a sheet's copy takes none.
+  for (const named of body.querySelectorAll("[id]")) named.removeAttribute("id");
+  sheet.append(grip, head, body);
+  return [veil, sheet];
 }
 
 function waitingBox(title, id) {
@@ -971,12 +1250,11 @@ function dayChart(days) {
 
 // Turns started, by local weekday and hour: when the work happens.
 function heatmap(hours) {
-  const node = el("section", "dash-section");
+  const node = section("hours", t("When turns ran"));
   const flat = hours.flat();
   const top = Math.max(...flat, 0);
   let busiest = null;
   hours.forEach((row, day) => row.forEach((n, hour) => { if (n && n === top && !busiest) busiest = { day, hour }; }));
-  node.append(sectionHead(t("When turns ran")));
   node.append(el("p", "dash-line", busiest
     ? t("Busiest: {day} around {hour}, {turns} in that hour.", { day: DAYS[busiest.day], hour: `${String(busiest.hour).padStart(2, "0")}:00`, turns: plural(top, t("{n} turn"), t("{n} turns")) })
     : t("No turns in this range.")));
@@ -1161,14 +1439,18 @@ function table(heads, rows, className, widths) {
     tr.append(th);
   }
   thead.append(tr);
+  // Each cell carries its head's word: a phone's sheet reads a row as a line
+  // and says which number is which beside it (app.css).
+  const words = heads.map((head) => (typeof head === "object" ? head.text : head));
   const tbody = el("tbody");
   for (const cells of rows) {
     const row = el("tr");
-    for (const cell of cells) {
+    for (const [at, cell] of cells.entries()) {
       const spec = typeof cell === "object" ? cell : { text: cell };
       const td = el("td", [spec.mono ? "mono" : "", spec.hot ? "hot" : "", spec.calm ? "calm" : ""].filter(Boolean).join(" "), spec.node ? undefined : spec.text);
       if (spec.node) td.append(spec.node);
       if (spec.title) td.title = spec.title;
+      if (words[at]) td.dataset.head = words[at];
       row.append(td);
     }
     tbody.append(row);

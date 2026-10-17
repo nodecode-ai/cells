@@ -515,6 +515,8 @@ no enclosing try block holds, as the line it is on."
     (44 ".pop .choice" "min-height")
     (44 ".history .pick, .cell" "min-height")
     (44 ".resume button" "min-height")
+    (44 ".dash-door" "min-height")                   ; a phone's Dashboard: a section's row,
+    (44 ".glance-alert" "min-height")               ; what is wrong right now
     (32 ".icon" "width" "height")                    ; every other mark
     (32 ".looks .icon" "width" "height")             ; the foot's link, look and language
     (32 ".views .view" "min-width" "height")
@@ -569,6 +571,44 @@ no enclosing try block holds, as the line it is on."
     (is end "and says where it ends")
     (is (equal preludes '("@media (pointer: coarse), (max-width: 720px)" "@media (max-width: 720px)")) "every rule of it is behind the finger or the phone width: a mouse on a wide window moves not a pixel")
     (is (and hits (null shortfalls)) (format nil "each control the operator named has its size: ~{~a~^; ~}" shortfalls))))
+
+;; A phone's Dashboard is a glance (the operator, 2026-10-17: variant B of
+;; the phone redesign, "Lets land B glance now"): at the phone width the page
+;; is the spend and its days, what is wrong right now, four numbers and a row
+;; per section saying how it went, and a row opens its section whole in a
+;; sheet -- drawn by the very builder the desktop page uses, which a wider
+;; window keeps exactly as it was. Every section the jump menu names has its
+;; row; the sheet closes by its veil, its mark and Escape, and a read landing
+;; under it neither throws the reader to its top nor raises it again.
+(deftest web-cell-a-phones-dashboard-is-a-glance ()
+  (let* ((js (web-page-text "observe.js"))
+         (app (web-page-text "app.js"))
+         (css (web-css-declarations (web-page-text "app.css")))
+         (draw (web-js-function js "drawDashboard"))
+         (sheets (subseq js (search "const SHEETS = {" js) (search "function glance(" js)))
+         (jumps (let ((out '()))
+                  (cl-ppcre:do-register-groups (id) ("\\[\"([a-z]+)\", t\\(" (subseq js (search "const JUMPS" js) (search "const DAYS" js)))
+                    (push id out))
+                  out)))
+    (is (search "root.append(glance(parts, data, activity))" draw) "the page draws the glance")
+    (is (search "if (parts.dashSheet) root.append(...dashSheet(" draw) "and the open section's sheet")
+    (is (= 7 (length jumps)) "the jump menu's sections are read")
+    (dolist (id (append jumps '("hours" "folders" "now")))
+      (is (search (format nil "~%  ~a: {" id) sheets) (format nil "~a has its sheet" id)))
+    (dolist (builder '("spendSection(data)" "modelsSection(data)" "sessionsSection(data, home)" "foldersSection(data, home)" "callsSection(activity)"))
+      (is (and (search builder draw) (search builder sheets)) (format nil "the desktop page and the sheet draw ~a alike" builder)))
+    (is (equal "none" (web-css-value css ".dash-glance, .dash-sheet, .dash-veil" "display")) "wider than a phone, none of it shows")
+    (is (equal "block" (web-css-value css ".dash-glance" "display")) "at the phone width the glance shows")
+    (is (equal "none" (web-css-value css ".dashboard > :not(.dash-bar, .dash-glance, .dash-sheet, .dash-veil, .obs-note)" "display"))
+        "in place of the desktop page")
+    (is (equal "fixed" (web-css-value css ".dash-sheet" "position")) "the sheet rises over it")
+    (is (equal "block" (web-css-value css ".dash-sheet .obs-table, .dash-sheet .obs-table tbody" "display")) "a table in it reads as rows")
+    (is (search "td.dataset.head = words[at]" (web-js-function js "table")) "each number after its head's word")
+    (is (search "openDashSheet(door.dataset.dashSheet)" (web-js-listener app "observe")) "a row opens its sheet")
+    (is (search "closeDashSheet()" (web-js-listener app "observe")) "its veil and its mark close it")
+    (is (search "event.key !== \"Escape\" || !state.dashSheet" app) "and Escape")
+    (is (search "body.scrollTop = read" (web-js-function app "renderObserve")) "a read landing keeps the reader's place")
+    (is (search "state.dashEnter = false" (web-js-function app "renderObserve")) "and does not raise it again")))
 
 ;; A model or reasoning pick in the chat drawer is its session's own (webfix4
 ;; flow-03, first-03, chat-11, flow-05; 2026-09-30): it once moved the default,
