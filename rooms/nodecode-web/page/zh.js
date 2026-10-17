@@ -1122,5 +1122,6 @@ export const ZH = {
   "{n} notes hidden": "已隐藏 {n} 条备注",
   "Show": "显示",
   "Hide": "隐藏",
-  "Reflection recaps and context notes": "反思摘要和上下文备注"
+  "Reflection recaps and context notes": "反思摘要和上下文备注",
+  "Think": "思考"
 };

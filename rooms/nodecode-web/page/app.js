@@ -1067,6 +1067,43 @@ function callTicks(calls) {
   return ticks;
 }
 
+// The thinking the model has finished in thought ROW: all of it once the
+// thought is done; while it arrives, up to the paragraph being written -- a
+// paragraph is done once a blank line closes it -- so words still arriving
+// never show.
+function finishedThought(row) {
+  const text = row.text || "";
+  if (!row.live || /\n[ \t]*\n\s*$/.test(text)) return text.trim();
+  const cut = text.search(/\n[ \t]*\n(?![\s\S]*\n[ \t]*\n)/);
+  return cut < 0 ? "" : text.slice(0, cut).trim();
+}
+
+// The last paragraph of TEXT, under the heading that opens it when one does:
+// a summary's **Finding the label** says nothing alone.
+function thoughtParagraph(text) {
+  const parts = text.split(/\n[ \t]*\n/).map((part) => part.trim()).filter(Boolean);
+  const heading = (part) => /^(\*\*[^\n]+\*\*|#{1,6} [^\n]+)$/.test(part);
+  const last = parts.length - 1;
+  if (last > 0 && heading(parts[last - 1]) && !heading(parts[last])) return `${parts[last - 1]}\n${parts[last]}`;
+  return parts[last] || "";
+}
+
+// What stands under the work's line while it is folded: the newest thinking
+// the model finished, one paragraph, as the terminal's Standard viewport keeps
+// it under its folded run. Open, the work shows the thought itself.
+function thoughtPeek(work) {
+  for (let at = work.length - 1; at >= 0; at--) {
+    const row = work[at];
+    if (row.kind !== "reasoning" || row.voided) continue;
+    const said = thoughtParagraph(finishedThought(row));
+    if (!said) continue;
+    const peek = el("div", "think-peek");
+    peek.append(el("span", "think-head", t("Think")), proseOf("prose thought think-text", said));
+    return peek;
+  }
+  return null;
+}
+
 function drawWork(article, turn, live, v) {
   // The answer is the last thing said with no work after it; every message
   // before it is work. Decided by position, never by reading the text.
@@ -1128,6 +1165,8 @@ function drawWork(article, turn, live, v) {
     }
     details.append(summary, acts);
     article.append(details);
+    const peek = thoughtPeek(work);
+    if (peek) article.append(peek);
   }
   for (const row of notes) article.append(looseRow(row));
   if (answer) {

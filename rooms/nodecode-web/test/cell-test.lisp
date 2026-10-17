@@ -252,7 +252,13 @@ the pointer and a field lit by typing lay over the ones they stand on."
     (is (search "!row.outcome && !row.turn_id" note) "a note is told by its fields")
     (is (equal "none" (web-css-value css ".lane:not(.notes-shown) > .turn.recap, .lane:not(.notes-shown) .rest.note" "display"))
         "recaps and notes wait behind the switch")
-    (is (search "toggleNotes()" js) "which the head's word turns")))
+    (is (search "toggleNotes()" js) "which the head's word turns")
+    ;; Folded, the work keeps its newest finished thinking under its line, as
+    ;; the TUI's Standard viewport does (the operator, 2026-10-17); open, the
+    ;; thought is in the work itself; and words still arriving never show.
+    (is (search "thoughtPeek(work)" work) "the folded work keeps its thinking")
+    (is (equal "none" (web-css-value css ".work[open] + .think-peek" "display")) "hidden while the work is open")
+    (is (search "!row.live" (web-js-function js "finishedThought")) "only what the model finished")))
 
 ;; An answer's type. Each heading level is a step of size above the next and a
 ;; weight above the text; emphasis is weight and slant, never tone alone; running
