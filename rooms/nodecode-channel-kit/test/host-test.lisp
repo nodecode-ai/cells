@@ -1413,6 +1413,7 @@ LANE, as the one running channel."
                                           :run (list :enter "/jobs show nightly" :space "/jobs pause nightly"))
                                     (list :label "draft" :detail "done" :value "/jobs remove draft")
                                     (list :label "Paused for the week" :detail "a note")
+                                    (list :label "" :detail "that carries on")
                                     (list :label "$name" :value "$name "))))))
          :session nil)
         (let* ((host (test-host :name "command-dialog" :platform (test-platform :choices t)))
@@ -1425,7 +1426,8 @@ LANE, as the one running channel."
             (destructuring-bind (text controls &rest _) (multiple-value-list (nck::run-command host channel "/jobs"))
               (declare (ignore _))
               (is (search (format nil "## Jobs (2)~%1 active") text))
-              (is (search "- Paused for the week · a note" text) "a row that runs nothing is said")
+              (is (search (format nil "- Paused for the week · a note~%  that carries on") text)
+                  "a row that runs nothing is said, one with no label carrying on the row above")
               (is (search "- $name" text) "a value that is no line is no press")
               (is (equal '((:menu "Pick one of 2"
                             (("nightly" "/jobs show nightly" "● every day" nil)

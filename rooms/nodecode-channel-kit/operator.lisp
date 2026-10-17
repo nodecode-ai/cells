@@ -656,10 +656,12 @@ from, the way back to it, on BACK-TAB and BACK-PAGE."
                    (words (field dialog "context"))
                    (words (field dialog "summary"))
                    (append (loop for row in said
+                                 for label = (words (field row "label"))
                                  repeat +card-said-rows+
-                                 collect (format nil "- ~a~@[ · ~a~]"
-                                                 (or (words (field row "label")) "")
-                                                 (words (field row "detail"))))
+                                 ;; a row with no label carries on the one above it
+                                 collect (if label
+                                             (format nil "- ~a~@[ · ~a~]" label (words (field row "detail")))
+                                             (format nil "  ~a" (field row "detail"))))
                            (and (> (length said) +card-said-rows+)
                                 (list (format nil "- +~d more" (- (length said) +card-said-rows+)))))
                    (and (null rows) (or (words (field dialog "empty_label")) "Nothing here.")))
