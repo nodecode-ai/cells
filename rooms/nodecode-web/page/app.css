@@ -510,9 +510,6 @@ code, pre, kbd { font-family: var(--mono); }
 .rest.meta { border-top-color: transparent; opacity: 0; transition: opacity 130ms; }
 .turn:hover .rest.meta, .rest.meta:focus-within { opacity: 1; }
 @media (hover: none) { .rest.meta { opacity: 1; } }
-/* The notes -- recaps, eviction counts -- behind the switch at the head. */
-.lane:not(.notes-shown) > .turn.recap, .lane:not(.notes-shown) .rest.note { display: none; }
-.notes-line { display: flex; align-items: baseline; gap: 10px; margin: 0; }
 .parked { margin-top: 20px; display: flex; flex-direction: column; gap: 6px; }
 .parked div { display: flex; gap: 12px; min-width: 0; font: 13px/1.6 var(--mono); }
 .parked .mark { color: var(--tertiary); flex: none; }
@@ -1655,15 +1652,6 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
   mask-image: linear-gradient(to bottom, var(--void) 65%, transparent);
 }
 
-/* --- sessions: a reflection's recap, one quiet line under the turn it recaps --- */
-.turn + .turn.recap { padding-top: 14px; }
-.recap-fold > summary { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
-.recap-fold > summary .micro { flex: none; }
-.recap-fold .recap-line { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; color: var(--tertiary); }
-.recap-fold[open] .recap-line { visibility: hidden; }
-.recap-text { margin-top: 10px; font-size: 14px; color: var(--muted); }
-.recap-rest { margin: 10px 0 0; font: 12px var(--mono); color: var(--tertiary); }
-
 /* --- layout: the strip on a phone, how a turn ended --- */
 /* The session's acts stand in the strip. On a phone they fold under More
    (setActs): the same buttons, as a menu under the strip's end, so the
@@ -1893,7 +1881,6 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
   .work > summary { min-height: 44px; align-content: center; margin-bottom: -14px; }
   .acts { margin-top: 14px; }
   .act > summary { min-height: 44px; }
-  .recap-fold > summary { min-height: 44px; padding-block: 12.25px; }
   .card-diff-more > summary { min-height: 44px; align-items: center; }
   .prose pre .copy { top: 4px; right: 4px; width: 36px; height: 36px; padding: 0; background-clip: border-box; }
   .prose a { padding-block: 3.5px; }

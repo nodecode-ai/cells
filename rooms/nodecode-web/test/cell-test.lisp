@@ -235,9 +235,10 @@ the pointer and a field lit by typing lay over the ones they stand on."
 ;; 2026-10-17: the page looked like another app beside the TUI). The operator's
 ;; line starts where the answer starts; the work's one line marks each call; a
 ;; turn that ended well keeps its footnote under the pointer -- always on a touch
-;; screen -- while a failed or stopped end stays in view; and the notes (each
-;; reflection's recap, each eviction count, told apart by their fields, never
-;; their words) stand behind one switch at the head.
+;; screen -- while a failed or stopped end stays in view, and the context's
+;; eviction count (told by its fields, never its words) is such a footnote too;
+;; and a reflection's recap is not drawn at all, as the TUI's Standard viewport
+;; draws none (the operator, 2026-10-17: "not needed at all").
 (deftest web-cell-the-transcript-reads-down-one-edge ()
   (let* ((css (web-css-declarations (web-page-text "app.css")))
          (js (web-page-text "app.js"))
@@ -249,10 +250,10 @@ the pointer and a field lit by typing lay over the ones they stand on."
     (is (search "row.outcome === \"completed\"" work) "the footnote is read off the outcome")
     (is (equal "0" (web-css-value css ".rest.meta" "opacity")) "under the pointer")
     (is (find '(".rest.meta" . "opacity: 1") css :test #'equal) "and always there on a touch screen")
-    (is (search "!row.outcome && !row.turn_id" note) "a note is told by its fields")
-    (is (equal "none" (web-css-value css ".lane:not(.notes-shown) > .turn.recap, .lane:not(.notes-shown) .rest.note" "display"))
-        "recaps and notes wait behind the switch")
-    (is (search "toggleNotes()" js) "which the head's word turns")
+    (is (search "!row.outcome && !row.turn_id" note) "an eviction count is told by its fields")
+    (is (search "|| noteRow(row)" work) "and is a footnote")
+    (is (search "recorded === \"reflection\") return;" (web-js-function js "renderTranscript")) "no recap in the transcript")
+    (is (null (search "drawRecap" js)) "and nothing left that drew one")
     ;; A running turn's newest finished thinking stands under its bar, no
     ;; label, quieter than the work, faded in -- the TUI's live thought (the
     ;; operator, 2026-10-17); words still arriving never show, and an ended
@@ -507,7 +508,6 @@ no enclosing try block holds, as the line it is on."
     (44 ".row" "min-height")                         ; a session, New session, Dashboard, Control
     (44 ".work > summary" "min-height")              ; the fold rows: Worked,
     (44 ".act > summary" "min-height")               ; a call,
-    (44 ".recap-fold > summary" "min-height")        ; a recap,
     (44 ".card-diff-more > summary" "min-height")    ; a diff's rest,
     (44 ".exec > summary, .exec-line, .bg-open" "min-height") ; an exec, ended or in the band
     (44 ".exec-stop" "width" "height")
