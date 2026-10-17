@@ -690,11 +690,37 @@ its section included."
                            :any "attachments")))
     (is (null (attachments)))
     (is (equalp #() (attachments :media '(("step-1.png" . "900"))))))
-  ;; What the message holds, by name.
-  (is (equal '(("step-1.png" . "900") ("step-2.png" . "901"))
-             (ncd:message-media (nlk:json-object "id" "s1" "attachments"
-                                                 (vector (nlk:json-object "id" "900" "filename" "step-1.png")
-                                                         (nlk:json-object "id" "901" "filename" "step-2.png"))))))
+  ;; What the message holds, by name: a V2 message lists no attachments of its
+  ;; own, each picture is the gallery item showing it (Discord's answer to a
+  ;; card's post or edit), and the next edit keeps them all by id, uploading
+  ;; none again though the files are still here (2026-10-17: read from the
+  ;; empty attachments array, every edit re-uploaded the gallery and a picture
+  ;; open in the viewer failed to load).
+  (let ((shot (temp-path "card-kept" "png")))
+    (alexandria:write-byte-vector-into-file (coerce #(137 80 78 71) '(vector (unsigned-byte 8))) shot
+                                            :if-exists :supersede)
+    (unwind-protect
+         (flet ((item (id name)
+                  (nlk:json-object "media" (nlk:json-object "url" (format nil "https://cdn.discordapp.com/attachments/c1/~a/~a?ex=1&hm=2" id name)
+                                                            "attachment_id" id))))
+           (let* ((answer (nlk:json-object
+                           "id" "s1" "attachments" #()
+                           "components" (vector (nlk:json-object
+                                                 "type" 17
+                                                 "components" (vector (nlk:json-object "type" 10 "content" "x")
+                                                                      (nlk:json-object "type" 12 "items"
+                                                                                       (vector (item "900" "step-1.png")
+                                                                                               (item "901" "step-2.png"))))))))
+                  (media (ncd:message-media answer))
+                  (body (nck:request-plan-body
+                         (ncd:edit-message-plan '(:channel-id "c1") "s1" "w" :media media
+                                                :card (list :state :working :headline "Looking"
+                                                            :images (list (list "step-1.png" (namestring shot) "a.png")
+                                                                          (list "step-2.png" (namestring shot) "b.png")))))))
+             (is (equal '(("step-1.png" . "900") ("step-2.png" . "901")) media))
+             (is (hash-table-p body) "a JSON edit, no files part: nothing uploaded again")
+             (is (equal '("900" "901") (map 'list (lambda (kept) (gethash "id" kept)) (gethash "attachments" body))))))
+      (delete-file shot)))
   (is (null (ncd:message-media (nlk:json-object "id" "s1")))))
 
 (deftest channel-discord-a-card-stays-inside-discords-caps ()

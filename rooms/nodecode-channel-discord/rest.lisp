@@ -226,11 +226,25 @@ carry. => (values BODY UPLOADS)."
 
 (defun message-media (body)
   "The pictures the message BODY describes carries: (FILENAME . ID) per
-attachment, the MEDIA a card's next edit keeps them by."
-  (loop for attachment across (or (nlk:json-value body :array "attachments") #())
-        for name = (nlk:json-value attachment :string "filename")
-        for id = (nlk:json-value attachment :string "id")
-        when (and name id) collect (cons name id)))
+picture its components show, the MEDIA a card's next edit keeps them by."
+  ;; A Components V2 message lists no attachments of its own: a file it
+  ;; carries is the media item showing it, its attachment_id and its name the
+  ;; URL's last segment. Read from the attachments array, always empty, every
+  ;; edit uploaded the gallery again, a new file each time, and a picture open
+  ;; in the viewer failed to load (2026-10-17).
+  (labels ((walk (part)
+             (let* ((media (nlk:json-value part :object "media"))
+                    (id (nlk:json-value media :string "attachment_id"))
+                    (url (nlk:json-value media :string "url"))
+                    (path (and url (subseq url 0 (or (position #\? url) (length url)))))
+                    (name (and path (subseq path (1+ (or (position #\/ path :from-end t) -1))))))
+               (append (and id (plusp (length name)) (list (cons name id)))
+                       (loop for item across (or (nlk:json-value part :array "items") #())
+                             append (walk item))
+                       (loop for child across (or (nlk:json-value part :array "components") #())
+                             append (walk child))))))
+    (loop for part across (or (nlk:json-value body :array "components") #())
+          append (walk part))))
 
 (defun panel-embed (panel)
   "PANEL, a command's card (NCK:OFFER-CARD), as one Discord embed: its tone
