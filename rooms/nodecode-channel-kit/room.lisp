@@ -611,13 +611,15 @@ hold every room it lands in to BUDGET (BOUND-ROOM)."
   (agent nil :type (or null string))
   ;; The ask's own words, our mention taken off: what its lane's session is
   ;; named from (NAMING-ADVICE). Appended last, for the reason ATTACHMENTS is.
-  (said "" :type string)
-  ;; When the ask first waited at the gate, as a universal time: the wall
-  ;; clock, since the wait may span a restart (HOST TAKE-BACK-QUEUED). Appended
-  ;; last, for the reason ATTACHMENTS is.
-  (queued-at nil :type (or null integer)))
+  (said "" :type string))
 
 (nlk:access (ask channel-ask))
+
+;;; A table, not a slot, so the kit redefines no structure a running image
+;;; holds instances of.
+(nlk:define-side-table queued-since (:weakness :key :synchronized t)
+  "ASK -> when it first waited at the gate, as a universal time: the wall
+clock, since the wait may span a restart (HOST TAKE-BACK-QUEUED).")
 
 (defun ask-identity (ask)
   "What makes ASK its own submission: the message it is, else the key its

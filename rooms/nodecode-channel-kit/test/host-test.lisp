@@ -1526,10 +1526,14 @@ LANE, as the one running channel."
 ;;; --- a stop in the middle of a turn ----------------------------------------------
 
 (defun room-123-ask (message &key (owner "u9") queued-at)
-  "The ask MESSAGE from OWNER opens in room 123, as its lane chat-123-MESSAGE."
-  (nck:make-ask :room "chat-123" :lane (format nil "chat-123-~a" message) :owner-id owner
-                :message-id message :target '(:channel-id "123") :prompt "and this"
-                :contract "the room's contract" :said "and this" :queued-at queued-at))
+  "The ask MESSAGE from OWNER opens in room 123, as its lane chat-123-MESSAGE,
+first waiting at QUEUED-AT."
+  (let ((ask (nck:make-ask :room "chat-123" :lane (format nil "chat-123-~a" message) :owner-id owner
+                           :message-id message :target '(:channel-id "123") :prompt "and this"
+                           :contract "the room's contract" :said "and this")))
+    (when queued-at
+      (setf (nck::queued-since ask) queued-at))
+    ask))
 
 (deftest channel-host-a-stop-hands-its-running-lanes-on (with-temp-store ())
   ;; A host stopping under a running turn says so on the turn's line and
@@ -1585,7 +1589,7 @@ LANE, as the one running channel."
              (is (equal '("chat-123-m2" "m2" "and this" "the room's contract" (:channel-id "123"))
                         (list (nck::ask-lane ask) (nck::ask-message-id ask) (nck::ask-prompt ask)
                               (nck::ask-contract ask) (nck::ask-target ask))))
-             (is (integerp (nck::ask-queued-at ask))))
+             (is (integerp (nck::queued-since ask))))
            (fold-fact host "chat-123-m1" "turn.assistant_message_completed"
                       (nlk:json-object "message" (nlk:json-object "content" "done at last")))
            (fold-fact host "chat-123-m1" "turn.completed" (nlk:json-object))

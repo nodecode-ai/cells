@@ -2852,8 +2852,8 @@ the line."
   ;; minutes into silence.
   ;; The wait is timed by the wall clock from its first moment, which a
   ;; restart does not reset (TAKE-BACK-QUEUED).
-  (unless ask.queued-at
-    (setf ask.queued-at (get-universal-time)))
+  (unless (queued-since ask)
+    (setf (queued-since ask) (get-universal-time)))
   (multiple-value-bind (admitted position)
       (claim-slot host ask host.max-concurrent-turns)
     (if admitted
@@ -3160,29 +3160,31 @@ STATUS-ID, as JSON (HANDOFF-ASK reads it back)."
                    :opt "voice" (and ask.voice (string-downcase ask.voice))
                    :opt "agent" ask.agent
                    "said" ask.said
-                   :opt "queued" ask.queued-at
+                   :opt "queued" (queued-since ask)
                    :opt "status" status-id))
 
 (defun handoff-ask (entry)
-  "The waiting ask ENTRY, an ASK-HANDOFF, describes."
-  (make-ask :room (nlk:json-value entry :string "room")
-            :lane (nlk:json-value entry :string "lane")
-            :owner-id (nlk:json-value entry :string "owner")
-            :message-id (nlk:json-value entry :string "message")
-            :target (nlk:json-plist (nlk:json-value entry :object "target"))
-            :contract (or (nlk:json-value entry :string "contract") "")
-            :prompt (or (nlk:json-value entry :string "prompt") "")
-            :continue-p (eq t (gethash "continue" entry))
-            :attachments (loop for anchor across (or (nlk:json-value entry :array "attachments") #())
-                               collect (cons (nlk:json-value anchor :integer "at")
-                                             (coerce (nlk:json-value anchor :array "files") 'list)))
-            :key (nlk:json-value entry :string "key")
-            :where (nlk:json-value entry :string "where")
-            :voice (nlk:when-let (voice (nlk:json-value entry :string "voice"))
-                     (find voice '(:note :channel) :test #'string-equal))
-            :agent (nlk:json-value entry :string "agent")
-            :said (or (nlk:json-value entry :string "said") "")
-            :queued-at (nlk:json-value entry :integer "queued")))
+  "The waiting ask ENTRY, an ASK-HANDOFF, describes, the time it first waited
+back beside it (QUEUED-SINCE)."
+  (let ((ask (make-ask :room (nlk:json-value entry :string "room")
+                       :lane (nlk:json-value entry :string "lane")
+                       :owner-id (nlk:json-value entry :string "owner")
+                       :message-id (nlk:json-value entry :string "message")
+                       :target (nlk:json-plist (nlk:json-value entry :object "target"))
+                       :contract (or (nlk:json-value entry :string "contract") "")
+                       :prompt (or (nlk:json-value entry :string "prompt") "")
+                       :continue-p (eq t (gethash "continue" entry))
+                       :attachments (loop for anchor across (or (nlk:json-value entry :array "attachments") #())
+                                          collect (cons (nlk:json-value anchor :integer "at")
+                                                        (coerce (nlk:json-value anchor :array "files") 'list)))
+                       :key (nlk:json-value entry :string "key")
+                       :where (nlk:json-value entry :string "where")
+                       :voice (nlk:when-let (voice (nlk:json-value entry :string "voice"))
+                                (find voice '(:note :channel) :test #'string-equal))
+                       :agent (nlk:json-value entry :string "agent")
+                       :said (or (nlk:json-value entry :string "said") ""))))
+    (setf (queued-since ask) (nlk:json-value entry :integer "queued"))
+    ask))
 
 (defun save-queued-asks (host &aux (session (handoff-session host)))
   "Write HOST's waiting asks down, oldest first, each with the line it shows:
@@ -3224,7 +3226,7 @@ many wait again."
 (defun take-back-ask (host entry now &aux (ask (handoff-ask entry))
                                           (status-id (nlk:json-value entry :string "status"))
                                           (lane (intern-ask-lane host ask))
-                                          (fresh (<= (- now (or ask.queued-at now)) +queued-horizon+)))
+                                          (fresh (<= (- now (or (queued-since ask) now)) +queued-horizon+)))
   "One waiting ask from TAKE-BACK-QUEUED's ENTRY, at NOW: back at the gate on
 the line it had, or, stale, that line saying so. => whether it waits again."
   ;; The line is the queued digest the gate notes, so the card the stop left
