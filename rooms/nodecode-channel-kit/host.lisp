@@ -2335,7 +2335,8 @@ refused command.")
       (respond host candidate (lambda () (run-command host candidate line))
                :private (and (not (candidate-pressed-p candidate))
                              (member name +private-commands+ :test #'equal)))
-      (refuse host candidate (format nil "/~a is the operator's; /help lists what you can run" name)
+      ;; The refusal says what to do next: who can run it, and what this person can.
+      (refuse host candidate (format nil "🔒 /~a is operator-only. Ask an operator to run it, or send /help to see what you can use." name)
               (format nil "/~a" name))))
 
 (defun refuse (host candidate text what &aux (user (source-field candidate "user_id"))

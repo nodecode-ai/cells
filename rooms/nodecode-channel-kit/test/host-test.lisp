@@ -858,7 +858,7 @@ message of ours."
         (is (search "/models" (plan-content post)) "with the catalog"))
       (is (nlk:session-exists-p "chat-123"))
       (is (zerop (nck:lane-count (nck:host-lanes host))))
-      (is (equal "/models is the operator's; /help lists what you can run"
+      (is (equal "🔒 /models is operator-only. Ask an operator to run it, or send /help to see what you can use."
                  (answered "/models" "alice" "m2" 2)))
       (is (search "/models" (answered "/help" "alice" "m3" 3)))
       (is (equal "nothing to undo" (answered "<@999> /undo" "mike" "m4" 4)))

@@ -451,7 +451,7 @@ adapter and the fake gateway have stopped."
         (slash "7" "/usage"))
       (is-plan (first (plans)) :label "interaction_defer" (:integer "data" "flags") 64)
       (is-plan (second (plans)) :label "interaction_response"
-               "content" "/model is the operator's; /help lists what you can run")
+               "content" "🔒 /model is operator-only. Ask an operator to run it, or send /help to see what you can use.")
       (is (= 1 (length notices)) "one word to the operator for the two tries")
       (is (search "eve (7) was refused /model in c1" (first notices))))))
 
