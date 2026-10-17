@@ -1115,5 +1115,12 @@ export const ZH = {
   "A new line": "换行",
   "While a turn runs, take the last queued prompt back; else the prompt before": "轮次运行时，撤回最后一条排队的提示词；否则是上一条提示词",
   "The prompt after": "下一条提示词",
-  "{n} with news in other folders": "其他文件夹中有 {n} 个会话有新内容"
+  "{n} with news in other folders": "其他文件夹中有 {n} 个会话有新内容",
+  "{n} note": "{n} 条备注",
+  "{n} notes": "{n} 条备注",
+  "{n} note hidden": "已隐藏 {n} 条备注",
+  "{n} notes hidden": "已隐藏 {n} 条备注",
+  "Show": "显示",
+  "Hide": "隐藏",
+  "Reflection recaps and context notes": "反思摘要和上下文备注"
 };

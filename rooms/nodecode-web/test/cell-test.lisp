@@ -231,6 +231,29 @@ the pointer and a field lit by typing lay over the ones they stand on."
     (is (search "ledger.hidden" place) "the way back shows only with the transcript")
     (is (search "following" place) "and only to a reader away from the end")))
 
+;; The transcript reads down one edge, as the terminal draws it (the operator,
+;; 2026-10-17: the page looked like another app beside the TUI). The operator's
+;; line starts where the answer starts; the work's one line marks each call; a
+;; turn that ended well keeps its footnote under the pointer -- always on a touch
+;; screen -- while a failed or stopped end stays in view; and the notes (each
+;; reflection's recap, each eviction count, told apart by their fields, never
+;; their words) stand behind one switch at the head.
+(deftest web-cell-the-transcript-reads-down-one-edge ()
+  (let* ((css (web-css-declarations (web-page-text "app.css")))
+         (js (web-page-text "app.js"))
+         (work (web-js-function js "drawWork"))
+         (note (web-js-function js "noteRow")))
+    (is (equal "flex-start" (web-css-value css ".ask" "align-items")) "the operator's line on the answer's edge")
+    (is (search "callTicks(calls)" work) "the work's line marks each call")
+    (is (search "\"failed\"" (web-js-function js "callTicks")) "a failed call's mark is its own")
+    (is (search "row.outcome === \"completed\"" work) "the footnote is read off the outcome")
+    (is (equal "0" (web-css-value css ".rest.meta" "opacity")) "under the pointer")
+    (is (find '(".rest.meta" . "opacity: 1") css :test #'equal) "and always there on a touch screen")
+    (is (search "!row.outcome && !row.turn_id" note) "a note is told by its fields")
+    (is (equal "none" (web-css-value css ".lane:not(.notes-shown) > .turn.recap, .lane:not(.notes-shown) .rest.note" "display"))
+        "recaps and notes wait behind the switch")
+    (is (search "toggleNotes()" js) "which the head's word turns")))
+
 ;; An answer's type. Each heading level is a step of size above the next and a
 ;; weight above the text; emphasis is weight and slant, never tone alone; running
 ;; text keeps a measure of about 70 characters while a table or a fence takes

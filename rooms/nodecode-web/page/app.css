@@ -362,8 +362,9 @@ code, pre, kbd { font-family: var(--mono); }
    drops to it, so a turn out of the context still reads. */
 .dimmed { color: var(--tertiary); --primary: var(--tertiary); --foreground: var(--tertiary); --secondary: var(--tertiary); --muted: var(--tertiary); }
 
-/* The operator's line: the one filled object, on the right. */
-.ask { display: flex; flex-direction: column; align-items: flex-end; }
+/* The operator's line: the one filled object, on the edge the answer reads
+   from, as the terminal draws it -- the eye goes down one edge, never across. */
+.ask { display: flex; flex-direction: column; align-items: flex-start; }
 .bubble {
   max-width: 78%; padding: 12px 16px; border: 1px solid var(--seam); border-radius: 10px; background: var(--subtle);
   font-size: 15px; line-height: 1.5; color: var(--primary); white-space: pre-wrap;
@@ -373,15 +374,14 @@ code, pre, kbd { font-family: var(--mono); }
 .bubble.long > summary .more-lines { align-self: flex-start; }
 .bubble.long .rest-text { padding: 0 16px 12px; white-space: pre-wrap; }
 /* The pictures sent with it, under it: smaller than one the model looked at. */
-.ask-pics { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; max-width: 78%; margin-top: 8px; }
+.ask-pics { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 8px; max-width: 78%; margin-top: 8px; }
 .ask-pics .look img { max-height: 120px; max-width: min(calc(100% - 2px), 240px); width: min(calc(var(--w) * 1px), calc(120px * var(--w) / var(--h))); }
-.ask-pics .look figcaption { justify-content: flex-end; }
+.ask-pics .look figcaption { justify-content: flex-start; }
 .ask .under { margin: 8px 0 0; display: flex; align-items: center; gap: 2px; font: 11.5px var(--mono); color: var(--tertiary); font-variant-numeric: tabular-nums; }
 .ask .under .turn-n { margin-right: 6px; }
 .ask .under .led + .turn-n { margin-left: 6px; }
 .ask .under .icon { width: 24px; height: 24px; border-radius: 6px; }
 /* A recorded pair's input: nobody asked it here, so it is no one's line. */
-.ask.recorded { align-items: flex-start; }
 .ask.recorded .by { margin: 0 0 6px; font: 11.5px var(--mono); color: var(--tertiary); }
 .ask.recorded .bubble { max-width: 100%; padding: 0; border: 0; background: none; font-size: 14px; color: var(--muted); }
 .ask.recorded .bubble.long > summary, .ask.recorded .bubble.long .rest-text { padding-inline: 0; }
@@ -393,6 +393,11 @@ code, pre, kbd { font-family: var(--mono); }
 .work > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
 .work > summary .count { font: 12px var(--mono); color: var(--tertiary); font-variant-numeric: tabular-nums; }
 .work > summary .failed { font: 12px var(--mono); color: var(--danger-lit); }
+/* One mark per call, in the order they ran; a long turn's marks narrow to fit. */
+.work > summary .ticks { display: inline-flex; gap: 2px; align-self: center; min-width: 0; max-width: 240px; overflow: hidden; }
+.ticks i { flex: 0 1 auto; width: 12px; min-width: 2px; height: 3px; border-radius: 2px; background: var(--diff-add); opacity: 0.55; }
+.ticks i.failed { background: var(--danger-lit); opacity: 1; }
+.ticks i.running { background: var(--accent-fill); opacity: 1; animation: led 1.4s ease-in-out infinite; }
 /* A fold's end: a chevron, turned down while the fold is open. */
 .chev { flex: none; align-self: center; display: inline-flex; color: var(--tertiary); transition: color 130ms; }
 .chev svg { transition: transform 130ms; }
@@ -494,6 +499,14 @@ code, pre, kbd { font-family: var(--mono); }
   display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px;
   font: 12px var(--mono); color: var(--tertiary);
 }
+/* A turn that ended well: its footnote under the pointer, always there on a
+   touch screen. It keeps the running line's room, so nothing moves. */
+.rest.meta { border-top-color: transparent; opacity: 0; transition: opacity 130ms; }
+.turn:hover .rest.meta, .rest.meta:focus-within { opacity: 1; }
+@media (hover: none) { .rest.meta { opacity: 1; } }
+/* The notes -- recaps, eviction counts -- behind the switch at the head. */
+.lane:not(.notes-shown) > .turn.recap, .lane:not(.notes-shown) .rest.note { display: none; }
+.notes-line { display: flex; align-items: baseline; gap: 10px; margin: 0; }
 .parked { margin-top: 20px; display: flex; flex-direction: column; gap: 6px; }
 .parked div { display: flex; gap: 12px; min-width: 0; font: 13px/1.6 var(--mono); }
 .parked .mark { color: var(--tertiary); flex: none; }

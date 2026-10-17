@@ -31,6 +31,7 @@ const NOTICES_KEY = "nodecode-web-notices";
 const SOURCE_KEY = "nodecode-web-source";
 const SCOPE_KEY = "nodecode-web-scope";
 const SEEN_KEY = "nodecode-web-seen";
+const NOTES_KEY = "nodecode-web-notes";
 
 const state = {
   token: null,
@@ -45,6 +46,7 @@ const state = {
   sessionsById: new Map(),
   running: new Set(),
   seen: { since: null, at: {} }, // what this browser has read of each session (SEEN_KEY)
+  notes: notesShown(), // the transcript's notes in view (NOTES_KEY)
   left: null, // the session just left standing idle, seen as far as the next listing goes
   branches: new Set(), // sessions whose forks and seats the list draws under them
   reveal: null, // the session whose line opens once the list knows it
@@ -264,6 +266,11 @@ function arrive() {
   const params = new URLSearchParams(hash);
   if (params.has("t")) { location.reload(); return; }
   if (hash !== addressOf()) land(params);
+}
+
+// Whether this browser keeps the transcript's notes in view (NOTES_KEY).
+function notesShown() {
+  try { return localStorage.getItem(NOTES_KEY) === "shown"; } catch { return false; }
 }
 
 function safeGet(store, key) {
@@ -1042,6 +1049,24 @@ function figureOf(image, key, alt) {
   return figure;
 }
 
+// A line a turn rests on that no turn ended on: the context's eviction
+// count, carrying neither an outcome nor a turn. A note, with the recaps.
+function noteRow(row) {
+  return row.kind === "finish_divider" && !row.outcome && !row.turn_id;
+}
+
+// One mark per call, in the order they ran: how the work went, read with the
+// fold shut -- a call that failed, the one still running.
+function callTicks(calls) {
+  const ticks = el("span", "ticks");
+  ticks.setAttribute("aria-hidden", "true");
+  for (const row of calls) {
+    const status = row.tool?.status || (row.live ? "running" : "");
+    ticks.append(el("i", status === "error" || row.error ? "failed" : status === "running" ? "running" : ""));
+  }
+  return ticks;
+}
+
 function drawWork(article, turn, live, v) {
   // The answer is the last thing said with no work after it; every message
   // before it is work. Decided by position, never by reading the text.
@@ -1079,6 +1104,7 @@ function drawWork(article, turn, live, v) {
     if (calls.length) summary.append(el("span", "count", `· ${plural(calls.length, t("{n} tool call"), t("{n} tool calls"))}`));
     if (failed) summary.append(el("span", "failed", t("{n} failed", { n: failed })));
     if (cut) summary.append(el("span", "att-cut", `· ${plural(cut, t("{n} attempt cut off"), t("{n} attempts cut off"))}`));
+    if (calls.length) summary.append(callTicks(calls));
     summary.append(showClose());
     const acts = el("div", "acts");
     for (const row of work) {
@@ -1113,7 +1139,11 @@ function drawWork(article, turn, live, v) {
     article.append(bar);
   }
   for (const row of rests) {
-    const line = el("div", "rest");
+    // A turn that ended well keeps what it ran on, how long and when as its
+    // footnote, there under the pointer; a failed or stopped end stays in view;
+    // a line no turn ended on (the context's eviction count) is a note.
+    const meta = row.outcome === "completed" || row.outcome === "steered";
+    const line = el("div", meta ? "rest meta" : noteRow(row) ? "rest note" : "rest");
     const text = row.text || "";
     if (text.startsWith("•")) line.append(el("span", "", "•"), el("span", "", text.slice(1).trim()));
     else line.textContent = text;
@@ -1554,6 +1584,27 @@ async function putBackPictures(session, { row, number }) {
   }
 }
 
+// The switch at the transcript's head: how many notes there are, and the
+// word that shows or hides them all.
+function notesLine(n) {
+  const block = el("div", "turn notes");
+  const line = el("p", "loose notes-line");
+  line.append(el("span", "", state.notes ? plural(n, t("{n} note"), t("{n} notes")) : plural(n, t("{n} note hidden"), t("{n} notes hidden"))));
+  const button = el("button", "word", state.notes ? t("Hide") : t("Show"));
+  button.type = "button";
+  button.title = t("Reflection recaps and context notes");
+  button.dataset.act = "notes";
+  line.append(button);
+  block.append(line);
+  return block;
+}
+
+function toggleNotes() {
+  state.notes = !state.notes;
+  try { localStorage.setItem(NOTES_KEY, state.notes ? "shown" : "hidden"); } catch {}
+  renderTranscript();
+}
+
 function renderTranscript() {
   const v = state.current ? state.views.get(state.current) : null;
   renderBand();
@@ -1569,6 +1620,11 @@ function renderTranscript() {
   if (state.arriving) following = true;
   const { loose, turns } = turnsOf(v);
   const groups = [];
+  // The notes -- each reflection's recap, each eviction count -- stand behind
+  // one switch at the transcript's head, so the turns read on their own.
+  const notes = turns.reduce((n, turn) => n + (turn.prompt?.recorded === "reflection" ? 1 : turn.rows.filter(noteRow).length), 0);
+  rowsEl.classList.toggle("notes-shown", state.notes);
+  if (notes) groups.push({ key: "notes", sig: [notes, state.notes], draw: () => notesLine(notes) });
   if (loose.length) groups.push({ key: "loose", sig: loose, draw: () => {
     const block = el("div", "turn");
     loose.forEach((row) => block.append(looseRow(row)));
@@ -4106,6 +4162,7 @@ rowsEl.addEventListener("click", (event) => {
     else if (act.dataset.act === "withdraw") takeBack(act.dataset.prompt);
     else if (act.dataset.act === "rewind") askRewind(act.dataset.key, act.dataset.turn, Number(act.dataset.number));
     else if (act.dataset.act === "retry") retry(act);
+    else if (act.dataset.act === "notes") toggleNotes();
     else answerRewind(act.dataset.act);
     return;
   }
