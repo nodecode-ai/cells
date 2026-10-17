@@ -258,6 +258,7 @@ the pointer and a field lit by typing lay over the ones they stand on."
     ;; operator, 2026-10-17); words still arriving never show, and an ended
     ;; turn keeps its thinking in its work.
     (is (search "liveThought(work, turn.key)" (subseq work (search "if (live)" work))) "under the running bar")
+    (is (search "fold(\"work\", `work-${turn.key}`, false)" work) "the work folded by default, live or done")
     (is (search "!row.live" (web-js-function js "finishedThought")) "only what the model finished")
     (is (equal "var(--tertiary)" (web-css-value css ".prose.live-thought" "color")) "a step quieter than the work")
     (is (search "thought-in" (web-css-value css ".prose.live-thought" "animation")) "faded in")

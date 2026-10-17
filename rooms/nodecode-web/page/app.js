@@ -1147,7 +1147,10 @@ function drawWork(article, turn, live, v) {
     const failed = calls.filter((row) => row.tool?.status === "error" || row.error).length;
     // The row that closes a cut-off attempt carries the shell's sentence for it.
     const cut = work.filter((row) => typeof row.voided === "string").length;
-    const details = fold("work", `work-${turn.key}`, live);
+    // Folded, live or done, until a click opens it -- the TUI's Standard run
+    // (the operator, 2026-10-17): the running bar and the thought under it say
+    // what the turn is doing.
+    const details = fold("work", `work-${turn.key}`, false);
     const summary = el("summary");
     summary.append(el("span", "micro", live ? t("Working") : t("Worked")));
     if (calls.length) summary.append(el("span", "count", `· ${plural(calls.length, t("{n} tool call"), t("{n} tool calls"))}`));
