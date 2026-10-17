@@ -517,6 +517,16 @@ no enclosing try block holds, as the line it is on."
     (44 ".resume button" "min-height")
     (44 ".dash-door" "min-height")                   ; a phone's Dashboard: a section's row,
     (44 ".glance-alert" "min-height")               ; what is wrong right now
+    (44 ".p-row" "min-height")                      ; a phone's row: a section's, a turn's, a call's
+    (44 ".p-all, .p-open" "min-height")             ; Show all, Open the turn
+    (44 ".p-banner" "min-height")                   ; a line of trouble
+    (44 ".p-back" "min-height")                     ; a turn's page, back to its list
+    (44 ".inspector .nav :is(.word, .icon)" "min-width" "height") ; a call's previous, next and close
+    (44 ".inspector .tab" "min-height")             ; Summary, Tokens, What was sent, Raw
+    (44 ".fs-bar .fs-crumbs button" "min-height")   ; a folder on the way down, on a phone
+    (44 ".fs-acts .icon" "width" "height")          ; Read again, Upload
+    (44 ".strip .views .view" "min-width" "height") ; Chat, Run, Files, on a phone
+    (44 "button.sw" "min-height")                   ; a switch, on a phone
     (32 ".icon" "width" "height")                    ; every other mark
     (32 ".looks .icon" "width" "height")             ; the foot's link, look and language
     (32 ".views .view" "min-width" "height")
@@ -576,8 +586,8 @@ no enclosing try block holds, as the line it is on."
 ;; the phone redesign, "Lets land B glance now"): at the phone width the page
 ;; is the spend and its days, what is wrong right now, four numbers and a row
 ;; per section saying how it went, and a row opens its section whole in a
-;; sheet -- drawn by the very builder the desktop page uses, which a wider
-;; window keeps exactly as it was. Every section the jump menu names has its
+;; sheet -- the same read as a phone's rows (the phone standard, below), a
+;; wider window keeping the desktop page exactly as it was. Every section the jump menu names has its
 ;; row; the sheet closes by its veil, its mark and Escape, and a read landing
 ;; under it neither throws the reader to its top nor raises it again.
 (deftest web-cell-a-phones-dashboard-is-a-glance ()
@@ -596,19 +606,54 @@ no enclosing try block holds, as the line it is on."
     (dolist (id (append jumps '("hours" "folders" "now")))
       (is (search (format nil "~%  ~a: {" id) sheets) (format nil "~a has its sheet" id)))
     (dolist (builder '("spendSection(data)" "modelsSection(data)" "sessionsSection(data, home)" "foldersSection(data, home)" "callsSection(activity)"))
-      (is (and (search builder draw) (search builder sheets)) (format nil "the desktop page and the sheet draw ~a alike" builder)))
+      (is (search builder draw) (format nil "the desktop page draws ~a" builder)))
+    (is (not (search "Section(" sheets)) "and a sheet draws the same read as a phone's rows, never the desktop's tables")
     (is (equal "none" (web-css-value css ".dash-glance, .dash-sheet, .dash-veil" "display")) "wider than a phone, none of it shows")
     (is (equal "block" (web-css-value css ".dash-glance" "display")) "at the phone width the glance shows")
     (is (equal "none" (web-css-value css ".dashboard > :not(.dash-bar, .dash-glance, .dash-sheet, .dash-veil, .obs-note)" "display"))
         "in place of the desktop page")
     (is (equal "fixed" (web-css-value css ".dash-sheet" "position")) "the sheet rises over it")
-    (is (equal "block" (web-css-value css ".dash-sheet .obs-table, .dash-sheet .obs-table tbody" "display")) "a table in it reads as rows")
-    (is (search "td.dataset.head = words[at]" (web-js-function js "table")) "each number after its head's word")
     (is (search "openDashSheet(door.dataset.dashSheet)" (web-js-listener app "observe")) "a row opens its sheet")
     (is (search "closeDashSheet()" (web-js-listener app "observe")) "its veil and its mark close it")
     (is (search "event.key !== \"Escape\" || !state.dashSheet" app) "and Escape")
     (is (search "body.scrollTop = read" (web-js-function app "renderObserve")) "a read landing keeps the reader's place")
     (is (search "state.dashEnter = false" (web-js-function app "renderObserve")) "and does not raise it again")))
+
+;; The rest of the page on a phone follows the phone standard (the operator,
+;; 2026-10-17: "This is so much better; let's land this!"; its eight rules:
+;; https://claude.ai/artifact/MBgZJCKYQqfeHymgzuAwGM). Measured on the live
+;; page at 390 px before it: the Dashboard's Calls sheet 3,171 px long with 30
+;; controls under 44 px and 210 lines under 12 px, Models 84 such lines; the
+;; Run view's turn 26 controls under 44 px, its text down to 10.5 px and its
+;; call bars 3 px wide; Files' Size column cut; the message box on Run and
+;; Files; a diff in Chat scrolling sideways. A list is rows (observe.js prow,
+;; pgroup): a name, at most one line under it, one value, and › or +; a turn
+;; is a page under its way back; the inspector rises from the foot; the
+;; message box is Chat's alone; no text of the parts under 11 px.
+(deftest web-cell-a-phone-reads-every-view-as-rows ()
+  (let* ((js (web-page-text "observe.js"))
+         (app (web-page-text "app.js"))
+         (css (web-css-declarations (web-page-text "app.css")))
+         (sizes (loop for (selector . declaration) in css
+                      when (and (search ".p-" selector)
+                                (or (eql 0 (search "font-size:" declaration)) (eql 0 (search "font:" declaration))))
+                        collect (cons selector (let ((px (cl-ppcre:scan-to-strings "(\\d+(?:\\.\\d+)?)px" declaration)))
+                                                 (and px (read-from-string (string-right-trim "px" px))))))))
+    (is (search "export const PHONE = matchMedia(\"(max-width: 720px)\");" js) "the phone's width is one query")
+    (is (search "if (ui.phone)" (web-js-function js "drawRun")) "the Run view draws a phone's own column")
+    (is (search "phone: PHONE.matches, paged: state.runPaged" app) "when the page is a phone's width")
+    (is (search "act: \"run-back\"" (web-js-function js "phoneTurn")) "a turn is a page with its way back")
+    (is (search "case \"run-back\": state.runPaged = false;" app) "which goes back to the list")
+    (is (search "[data-p-more]" (web-js-listener app "observe")) "a row's + and a group's Show all open in place")
+    (is (search "open?.has(`all:${key}`)" (web-js-function js "pgroup")) "a long group shows its first rows, then all of them on a tap")
+    (loop for (selector property value) in
+          '(("#app:not([data-pane=\"chat\"]) .dock" "display" "none")
+            (".sheet.drawer" "height" "88dvh")
+            (".card-diff pre.diff" "white-space" "pre-wrap")
+            (".fs-row.fs-head" "display" "none"))
+          do (is (equal value (web-css-value css selector property)) (format nil "~a { ~a: ~a }" selector property value)))
+    (is (and sizes (every (lambda (each) (and (cdr each) (>= (cdr each) 11))) sizes))
+        (format nil "no part's text under 11 px: ~{~a~^, ~}" (remove-if (lambda (each) (and (cdr each) (>= (cdr each) 11))) sizes)))))
 
 ;; A model or reasoning pick in the chat drawer is its session's own (webfix4
 ;; flow-03, first-03, chat-11, flow-05; 2026-09-30): it once moved the default,

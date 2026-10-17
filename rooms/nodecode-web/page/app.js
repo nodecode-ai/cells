@@ -11,7 +11,7 @@
 
 import { diffHtml, markdown } from "./md.js";
 import { t, translatePage } from "./i18n.js";
-import { drawRun, drawInspector, drawDashboard, drawTimeline, turnSpan, meterOf, ms, usd, plural, bytes, RANGES, INSPECTOR_TABS, ORIGIN_WORDS } from "./observe.js";
+import { drawRun, drawInspector, drawDashboard, drawTimeline, turnSpan, meterOf, ms, usd, plural, bytes, RANGES, INSPECTOR_TABS, ORIGIN_WORDS, PHONE } from "./observe.js";
 import { makeControl } from "./control.js";
 import { qrCode } from "./access.js";
 import { makeFiles, putFile } from "./files.js";
@@ -84,6 +84,7 @@ const state = {
   runOpen: null, // the turn number opened in the Run view
   runZoom: null, // { n, from, to }: the window of turn n's clock shown, its whole span when null
   runAll: false, // every finding shown, not the first four
+  runPaged: false, // on a phone, the open turn is a page of its own (observe.js phoneTurn), not a row opened in the list
   drawer: null, // { turn, call, tab, open } while a model call is inspected; open: the request's unfolded paths
   request: null, // { key, status, bytes, text, value, shared, divergedIn, previous, error }: the inspected call's body
   usage: null, // the Dashboard's reads for state.range, each the read or { range, error }
@@ -94,6 +95,7 @@ const state = {
   range: "7d",
   dashSheet: null, // the section a phone's Dashboard has open in its sheet (observe.js SHEETS)
   dashEnter: false, // that sheet rises on the next draw alone, not on each read landing under it
+  phoneOpen: new Set(), // what a phone's rows hold open in place: a row's +, a group's Show all (observe.js prow, pgroup)
   picking: null, // { ids, confirm } while the list is ticked to export or delete
   prune: null, // { days, empty, answer, error, busy, failed } while the prune form is open
 };
@@ -147,7 +149,7 @@ function addressOf() {
     put("s", state.current);
     if (state.pane !== "chat") put("v", state.pane);
     if (state.pane === "run") {
-      put("turn", state.drawer?.turn ?? state.runOpen);
+      put("turn", state.drawer?.turn ?? (PHONE.matches && !state.runPaged ? null : state.runOpen));
       if (state.drawer) {
         put("call", state.drawer.call + 1);
         put("tab", state.drawer.tab);
@@ -216,6 +218,7 @@ function land(params) {
       setPane(view);
       if (view === "run") {
         state.runOpen = whole(params.get("turn"));
+        state.runPaged = state.runOpen != null && PHONE.matches;
         const call = whole(params.get("call"));
         const tab = params.get("tab");
         state.drawer = state.runOpen != null && call
@@ -2382,7 +2385,8 @@ function renderObserve() {
   const lane = $("observe-lane");
   const timeline = state.timeline?.session === state.current ? state.timeline : null;
   if (pane === "run") {
-    lane.replaceChildren(drawRun(timeline?.data, { zoom: state.runZoom, open: state.runOpen, all: state.runAll, error: timeline?.error }));
+    lane.replaceChildren(drawRun(timeline?.data, { zoom: state.runZoom, open: state.runOpen, all: state.runAll, error: timeline?.error,
+      phone: PHONE.matches, paged: state.runPaged, phoneOpen: state.phoneOpen }));
   } else if (pane === "dashboard") {
     // A read landing under an open sheet redraws it where the reader was.
     const read = lane.querySelector(".dash-sheet-body")?.scrollTop || 0;
@@ -2415,9 +2419,15 @@ function renderObserve() {
 function answerObserve(act) {
   const turn = Number(act.dataset.turn);
   switch (act.dataset.act) {
-    case "turn": state.runOpen = state.runOpen === turn ? null : turn; break;
+    // On a phone a turn opens as a page and goes back by its way back; wider, a row opens and closes in place.
+    case "turn":
+      if (PHONE.matches) { state.runOpen = turn; state.runPaged = true; state.phoneOpen.clear(); $("observe-lane").scrollTop = 0; break; }
+      state.runOpen = state.runOpen === turn ? null : turn;
+      break;
+    case "run-back": state.runPaged = false; break;
     case "call":
       state.runOpen = turn;
+      if (PHONE.matches) state.runPaged = true;
       state.drawer = { turn, call: Number(act.dataset.call), tab: state.drawer?.tab || "summary", open: new Set() };
       break;
     case "fold": {
@@ -2451,6 +2461,7 @@ function answerObserve(act) {
       select(act.dataset.id);
       state.runWant = act.dataset.turn || null;
       state.runOpen = null;
+      state.runPaged = !!act.dataset.turn && PHONE.matches;
       setPane("run");
       return;
   }
@@ -3270,6 +3281,7 @@ function select(id, carry) {
   state.timeline = null;
   state.runOpen = null;
   state.runAll = false;
+  state.runPaged = false;
   state.drawer = null;
   state.filesPath = "";
   loadTimeline();
@@ -4080,6 +4092,8 @@ function helpKeys(line) {
 // --- the column's fold ----------------------------------------------------------------
 
 const narrow = matchMedia("(max-width: 1023px)");
+// Across the phone's width the Run view changes how it draws: a list and pages, or rows that open in place.
+PHONE.addEventListener("change", () => { if (state.pane === "run") renderObserve(); });
 
 function setFolded(folded) {
   app.classList.toggle("folded", folded);
@@ -4220,6 +4234,7 @@ let dashClosing = 0;
 function openDashSheet(id) {
   dashClosing++;
   state.dashSheet = id;
+  state.phoneOpen.clear();
   state.dashEnter = true;
   renderObserve();
 }
@@ -4234,11 +4249,9 @@ function closeDashSheet() {
   setTimeout(gone, 220);
 }
 // A phone has no pointer to hover: a tap on a day's bar or an hour reads its
-// tooltip out under the drawing, and a fact cut at four lines opens whole.
+// tooltip out under the drawing.
 function readDash(target) {
   const sheet = target.closest(".dash-sheet");
-  const fact = target.closest(".now-item");
-  if (fact) { fact.classList.toggle("whole"); return; }
   for (const each of sheet.querySelectorAll(".read")) each.classList.remove("read");
   target.classList.add("read");
   const out = sheet.querySelector(".dash-readout");
@@ -4274,7 +4287,15 @@ $("observe").addEventListener("click", (event) => {
   const door = event.target.closest("[data-dash-sheet]");
   if (door) { openDashSheet(door.dataset.dashSheet); return; }
   if (event.target.closest("[data-dash-close]")) { closeDashSheet(); return; }
-  const readable = event.target.closest(".dash-sheet :is(.day[title], .heat i[title], .now-item)");
+  // A phone's row opens in place, a group shows all its rows, and a second tap closes either.
+  const more = event.target.closest("[data-p-more]");
+  if (more) {
+    const key = more.dataset.pMore;
+    if (!state.phoneOpen.delete(key)) state.phoneOpen.add(key);
+    renderObserve();
+    return;
+  }
+  const readable = event.target.closest(".dash-sheet :is(.day[title], .heat i[title])");
   if (readable) { readDash(readable); return; }
   const range = event.target.closest("[data-range]");
   if (range) {

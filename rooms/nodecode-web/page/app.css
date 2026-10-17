@@ -1311,44 +1311,114 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
   .dash-sheet-body > * + * { margin-top: 24px; }
   .dash-sheet-body > .dash-section > .obs-head > h3.micro { display: none; }
   .dash-sheet-body > .dash-section > .obs-head:not(:has(> :not(h3))) { display: none; }
-  .dash-sheet .now > .micro { display: none; }
-  .dash-sheet .now-list { flex-direction: column; }
-  .dash-sheet .now-item .detail { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-  .dash-sheet .now-item.whole .detail { display: block; }
-  .dash-readout { margin: 10px 0 0; min-height: 18px; font: 12px var(--mono); color: var(--tertiary); }
+  .dash-readout { margin: 10px 0 0; min-height: 18px; font: 13px var(--mono); color: var(--secondary); }
   .dash-sheet .day.read .col { background: var(--accent-fill); }
   .dash-sheet .heat i.read { outline: 1.5px solid var(--accent-fill); }
+  .dash-sheet .heat .hour { font-size: 11px; }
 
-  /* A table in a sheet reads as rows a phone's width: the name and its number
-     on a line, the rest under it, each after its head's word (observe.js table). */
-  .dash-sheet .table-scroll { overflow: visible; }
-  .dash-sheet .table-scroll .obs-table.wide { min-width: 0; }
-  .dash-sheet .obs-table, .dash-sheet .obs-table tbody { display: block; }
-  .dash-sheet .obs-table :is(colgroup, thead) { display: none; }
-  .dash-sheet .obs-table tr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 11px 0; border-bottom: 1px solid var(--seam); }
-  .dash-sheet .obs-table tbody tr:first-child { border-top: 1px solid var(--seam-lit); }
-  .dash-sheet .obs-table tr::after { content: ""; order: 2; flex-basis: 100%; }
-  .dash-sheet .obs-table tr > td { order: 3; display: block; padding: 0; border: 0; text-align: left; font: 11.5px var(--mono); color: var(--secondary); white-space: nowrap; }
-  .dash-sheet .obs-table tr > td::before { content: attr(data-head) " "; color: var(--tertiary); }
-  .dash-sheet .obs-table tr > td:first-child { order: 0; flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 14px var(--sans); color: var(--foreground); }
-  .dash-sheet .obs-table tr > td.mono:first-child { font: 13.5px var(--mono); }
-  .dash-sheet .obs-table tr > td:last-child { order: 1; font: 13px var(--mono); color: var(--primary); }
-  .dash-sheet .obs-table tr > td:is(:first-child, :last-child)::before { content: none; }
-  .dash-sheet .obs-table tr > td.hot { color: var(--accent); }
-  .dash-sheet .obs-table tr > td.obs-note { flex-basis: 100%; white-space: normal; }
-  .dash-sheet .obs-table .share { display: inline; }
-  .dash-sheet .obs-table .share i { display: none; }
-  /* A folder's number is its spend; how often it went wrong goes under it. */
-  .dash-sheet .obs-table.by-folder tr > td:nth-child(4) { order: 1; font: 13px var(--mono); color: var(--primary); }
-  .dash-sheet .obs-table.by-folder tr > td:nth-child(4)::before { content: none; }
-  .dash-sheet .obs-table.by-folder tr > td:last-child { order: 3; font: 11.5px var(--mono); color: var(--secondary); }
-  .dash-sheet .obs-table.by-folder tr > td:last-child::before { content: attr(data-head) " "; }
 }
 @keyframes dash-rise { from { transform: translateY(100%); } }
 @keyframes dash-veil-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   .dash-sheet[data-enter], .dash-veil[data-enter] { animation: none; }
   .dash-sheet[data-leaving], .dash-veil[data-leaving] { transition: none; }
+}
+
+/* --- the phone standard's parts (observe.js prow, pgroup, pstrip, pbanner, pfacts) -----
+   Drawn at a phone's width alone. A row is a name, at most one line under it and
+   one value on its right, with › when a tap goes somewhere and + when it opens in
+   place; the whole row is the target (its height: the finger block). Type is four
+   sizes: 15 a row's name, 14 its number, 13 the line under it, 11 a label in
+   capitals. Numbers and names of code are the mono face, words the sans. */
+.p-group + *, * + .p-group { margin-top: 22px; }
+.p-label { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 6px; font: 600 11px/1.3 var(--sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--tertiary); }
+.p-label > span { font-weight: 400; letter-spacing: 0; text-transform: none; }
+.p-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--seam-lit); }
+.p-item, .p-empty { border-bottom: 1px solid var(--seam); }
+.p-empty { padding: 14px 0; font-size: 13px; color: var(--secondary); }
+.p-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 0; border: 0; border-radius: 0; background: none;
+  font: 15px/1.35 var(--sans); color: var(--foreground); text-align: left;
+}
+button.p-row { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button.p-row:active { background: var(--field-lit); }
+.p-row > .led { flex: none; }
+.p-words { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.p-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.p-name.mono { font: 14px/1.35 var(--mono); }
+.p-name.bad, .p-detail .bad { color: var(--danger-lit); }
+.p-detail { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; line-height: 1.35; color: var(--secondary); }
+.p-detail .hot { color: var(--accent); }
+.p-value { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 14px var(--mono); color: var(--primary); font-variant-numeric: tabular-nums; }
+.p-chev { flex: none; width: 14px; text-align: center; font-size: 18px; line-height: 1; color: var(--tertiary); }
+.p-more { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 0 0 14px; font-size: 13px; color: var(--secondary); }
+.p-whole { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }
+.p-whole.mono { font: 13px/1.45 var(--mono); }
+.p-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7px 16px; margin: 0; }
+.p-facts dt { color: var(--tertiary); }
+.p-facts dd { margin: 0; text-align: right; overflow-wrap: anywhere; font: 13px var(--mono); color: var(--primary); }
+.p-open, .p-all {
+  display: flex; align-items: center; justify-content: center; width: 100%; padding: 0 16px; border: 1px solid var(--seam-lit); border-radius: 12px;
+  background: none; font: 500 15px var(--sans); color: var(--primary); cursor: pointer;
+}
+.p-all { margin-top: 10px; }
+.p-open:active, .p-all:active { background: var(--field-lit); }
+.p-strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border-top: 1px solid var(--seam); border-bottom: 1px solid var(--seam); }
+.p-strip > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 11px 0 11px 12px; border-left: 1px solid var(--seam); }
+.p-strip > div:first-child { padding-left: 0; border-left: 0; }
+.p-strip b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 400 15px var(--mono); color: var(--primary); }
+.p-strip span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px; letter-spacing: 0.02em; text-transform: uppercase; color: var(--tertiary); }
+.p-banner {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px; border-radius: 12px; text-align: left;
+  font: 15px/1.3 var(--sans); color: var(--danger-lit); border: 1px solid color-mix(in srgb, var(--danger-lit) 32%, var(--seam));
+  background: color-mix(in srgb, var(--danger-lit) 7%, var(--inset));
+}
+.p-banner[data-tone="warn"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 32%, var(--seam)); background: color-mix(in srgb, var(--accent) 7%, var(--inset)); }
+.p-banner > .led { flex: none; background: currentColor; }
+.p-banner-words { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.p-banner-words > * { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.p-banner small { font-size: 13px; color: var(--secondary); }
+.p-meter { flex: none; width: 40px; height: 4px; border-radius: 2px; overflow: hidden; background: var(--subtle); }
+.p-meter > i { display: block; height: 100%; background: var(--bar); }
+.p-note { margin: 0; font-size: 13px; line-height: 1.45; color: var(--secondary); }
+.p-row > .led[data-tone="danger"] { background: var(--danger-lit); }
+.p-row > .led[data-tone="warn"] { background: var(--accent); }
+.p-name.two { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; }
+.p-n { flex: none; min-width: 18px; text-align: right; font: 13px var(--mono); color: var(--tertiary); }
+.p-detail .bar.p-spans { flex: none; width: 72px; height: 6px; }
+.p-detail .flag { font-size: 11px; padding: 3px 6px; }
+.p-title { padding: 16px 0 14px; }
+.p-title h2 { margin: 0; font: 400 26px/1.15 var(--sans); letter-spacing: -0.02em; color: var(--primary); }
+.p-title p { margin: 8px 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 15px; line-height: 1.4; color: var(--secondary); }
+.p-back { display: inline-flex; align-items: center; margin: 4px 0 0 -4px; padding: 0 8px 0 4px; border: 0; background: none; font: 500 15px var(--sans); color: var(--accent); cursor: pointer; }
+.observe-run.phone > * + * { margin-top: 0; }
+.observe-run.phone > :is(.p-banner, .p-group, .p-note), .observe-run.phone > .p-banner + .p-group { margin-top: 18px; }
+.observe-run.phone > .p-title { padding-top: 8px; }
+
+/* The inspector at a phone's width rises from the foot, 88% of the screen, its
+   marks and tabs a finger's size, a fact a row: its label over its value. */
+@media (max-width: 720px) {
+  /* The message box belongs to Chat alone: Run, Files and the rest give its room to their rows. */
+  #app:not([data-pane="chat"]) .dock { display: none; }
+  /* A diff in Chat wraps its lines in the one column rather than scrolling sideways. */
+  .card-diff { margin-left: 0; }
+  .card-diff pre.diff { overflow-x: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .sheet.drawer { top: auto; left: 0; right: 0; bottom: 0; width: auto; height: 88dvh; border-width: 1px 0 0; border-radius: 16px 16px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+  .inspector .sheet-head { padding: 8px 8px 8px 16px; }
+  .inspector .sheet-head .micro { font-size: 11px; }
+  .inspector .nav { gap: 0; }
+  .insp-top { padding: 14px 16px 0; }
+  .insp-top h3 { font-size: 22px; }
+  .insp-top p { font-size: 15px; line-height: 1.5; }
+  .tabs { gap: 0; padding: 10px 16px 0; overflow-x: auto; scrollbar-width: none; }
+  .tab { flex: 1 0 auto; padding: 0 12px; font-size: 15px; text-align: center; }
+  .insp-body { padding: 4px 16px 24px; }
+  .fact { grid-template-columns: minmax(0, 1fr); gap: 3px; padding: 11px 0; }
+  .fact dt { font-size: 13px; }
+  .fact .value { font: 15px var(--sans); }
+  .fact .tag { font-size: 11px; }
+  .steps li { min-height: 44px; font-size: 15px; }
+  .flag { font-size: 11px; }
 }
 
 /* --- the Control pane (control.js): the organism run from the page ---------------
@@ -1539,39 +1609,6 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
 @keyframes ctl-rise { from { transform: translateY(100%); } }
 @media (prefers-reduced-motion: reduce) { .ctl-phone[data-motion], .ctl-phone .confirm { animation: none; } }
 
-/* --- theme --- */
-/* The look (theme.js) and the language (i18n.js) wait behind two marks at the
-   gateway line's end; a click on one opens its choices above it. */
-.looks { position: relative; flex: none; display: flex; gap: 2px; margin-right: -6px; }
-.pop {
-  position: absolute; z-index: 5; right: 0; bottom: calc(100% + 10px); min-width: 160px; padding: 6px;
-  display: none; flex-direction: column;
-  border: 1px solid var(--seam-lit); border-radius: 12px; background: var(--raised); box-shadow: var(--shadow);
-}
-.pop[data-open] { display: flex; }
-/* A menu under its mark rather than above it (the Sessions head's). */
-.pop.below { top: calc(100% + 6px); bottom: auto; }
-.pop .choice {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 8px 10px; border-radius: 8px; text-align: left; font-size: 13.5px; color: var(--secondary);
-}
-.pop .choice:hover { color: var(--primary); background: var(--selected); }
-.pop .choice[aria-checked="true"] { color: var(--primary); }
-.pop .choice[aria-checked="true"]::after {
-  content: ""; width: 4px; height: 8px; margin: -3px 3px 0 0; transform: rotate(45deg);
-  border: solid var(--accent); border-width: 0 1.5px 1.5px 0;
-}
-
-/* The link mark: a dot at its shoulder while the link is on, beating while it
-   connects. A browser asking rings it, and dials that keep failing hollow it in
-   the danger tone: each reads still, with motion reduced too. Its panel
-   (access.js) is the Link tab's first acts. */
-.link-mark::after {
-  content: ""; position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%;
-  display: none; background: var(--accent-fill); box-shadow: 0 0 0 2px var(--column-ground);
-}
-.link-mark:is([data-state="on"], [data-state="connecting"], [data-state="failing"], [data-asking])::after { display: block; }
-.link-mark[data-state="connecting"]::after { background: var(--dim); animation: led 1.4s ease-in-out infinite; }
 /* --- the phone standard (control.js rise): every section at a finger's size ------
    Ten rules, one pass: a control is 44 px to touch and a field's text 16 px (iOS
    zooms the page on less); a button says its word in sentence case, the micro
@@ -1672,6 +1709,39 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
 @keyframes ctl-fade { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .ctl-sheet, .ctl-scrim { animation: none; } }
 
+/* --- theme --- */
+/* The look (theme.js) and the language (i18n.js) wait behind two marks at the
+   gateway line's end; a click on one opens its choices above it. */
+.looks { position: relative; flex: none; display: flex; gap: 2px; margin-right: -6px; }
+.pop {
+  position: absolute; z-index: 5; right: 0; bottom: calc(100% + 10px); min-width: 160px; padding: 6px;
+  display: none; flex-direction: column;
+  border: 1px solid var(--seam-lit); border-radius: 12px; background: var(--raised); box-shadow: var(--shadow);
+}
+.pop[data-open] { display: flex; }
+/* A menu under its mark rather than above it (the Sessions head's). */
+.pop.below { top: calc(100% + 6px); bottom: auto; }
+.pop .choice {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 8px 10px; border-radius: 8px; text-align: left; font-size: 13.5px; color: var(--secondary);
+}
+.pop .choice:hover { color: var(--primary); background: var(--selected); }
+.pop .choice[aria-checked="true"] { color: var(--primary); }
+.pop .choice[aria-checked="true"]::after {
+  content: ""; width: 4px; height: 8px; margin: -3px 3px 0 0; transform: rotate(45deg);
+  border: solid var(--accent); border-width: 0 1.5px 1.5px 0;
+}
+
+/* The link mark: a dot at its shoulder while the link is on, beating while it
+   connects. A browser asking rings it, and dials that keep failing hollow it in
+   the danger tone: each reads still, with motion reduced too. Its panel
+   (access.js) is the Link tab's first acts. */
+.link-mark::after {
+  content: ""; position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%;
+  display: none; background: var(--accent-fill); box-shadow: 0 0 0 2px var(--column-ground);
+}
+.link-mark:is([data-state="on"], [data-state="connecting"], [data-state="failing"], [data-asking])::after { display: block; }
+.link-mark[data-state="connecting"]::after { background: var(--dim); animation: led 1.4s ease-in-out infinite; }
 .link-mark[data-state="failing"]::after {
   top: 4px; right: 4px; width: 7px; height: 7px; box-sizing: border-box;
   border: 1.5px solid var(--danger-lit); background: var(--column-ground);
@@ -1845,6 +1915,20 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
   .fs-view { position: static; }
   .fs-row { grid-template-columns: minmax(0, 1fr) 64px; }
   .fs-row .fs-when { display: none; }
+}
+
+/* Files at a phone's width are rows: the name, when it changed under it, its
+   size on the right and › on a folder; the column heads go. */
+@media (max-width: 720px) {
+  .fs-row.fs-head { display: none; }
+  .fs-row { grid-template-columns: minmax(0, 1fr) auto 14px; grid-template-rows: auto auto; align-items: center; gap: 2px 12px; padding-block: 8px; font: 15px/1.35 var(--mono); }
+  .fs-row .fs-name { grid-column: 1; grid-row: 1; }
+  .fs-row .fs-when { display: block; grid-column: 1; grid-row: 2; text-align: left; font: 13px var(--sans); color: var(--secondary); }
+  .fs-row .fs-size { grid-column: 2; grid-row: 1 / span 2; font: 14px var(--mono); color: var(--primary); }
+  .fs-row:is([data-kind="directory"], [data-kind="up"])::after { content: "›"; grid-column: 3; grid-row: 1 / span 2; font: 18px/1 var(--sans); color: var(--tertiary); }
+  .fs-row[data-kind="up"] .fs-when { display: none; }
+  .fs-link { font-size: 11px; }
+  .fs-crumbs { font-size: 14px; }
 }
 
 /* --- sessions --- */
@@ -2133,6 +2217,9 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
   /* A phone's Dashboard: a section's row and the alert over them. */
   .dash-door { min-height: 44px; }
   .glance-alert { min-height: 44px; }
+  .p-row { min-height: 52px; }                       /* a phone's row, the whole width */
+  .p-all, .p-open { min-height: 44px; }              /* Show all, Open the turn */
+  .p-banner { min-height: 44px; }                    /* a line of trouble */
 
   /* Words: a switch (tab, range) 32 px, the first screen's Change… too, a
      recent folder under it 44; a button word 32 px by 32. */
@@ -2203,6 +2290,13 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
 /* The More menu's rows, a phone's own layout. */
 @media (max-width: 720px) {
   .head-acts .act { width: auto; height: auto; min-height: 44px; }
+  .p-back { min-height: 44px; }                                  /* a turn's page, back to the list */
+  .inspector .nav :is(.word, .icon) { min-width: 44px; height: 44px; } /* a call's previous, next, close */
+  .inspector .tab { min-height: 44px; }                          /* Summary, Tokens, What was sent, Raw */
+  .fs-bar .fs-crumbs button { min-height: 44px; }                /* a folder on the way down */
+  .fs-acts .icon { width: 44px; height: 44px; }                  /* Read again, Upload */
+  .strip .views .view { min-width: 44px; height: 44px; }         /* Chat, Run, Files */
+  button.sw { min-height: 44px; }                                /* a switch: a range, a filter, a level */
 }
 
 /* --- end of a finger's hit areas */

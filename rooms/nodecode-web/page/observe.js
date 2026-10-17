@@ -15,6 +15,9 @@ import { iconButton } from "./icons.js";
 // browser's own English, a page in another language its language's.
 const LOCALE = lang === "en" && !/^en\b/i.test(navigator.language || "") ? "en" : lang === "en" ? undefined : lang;
 
+// The phone's width (app.css: max-width 720px), where a view draws one column of rows.
+export const PHONE = matchMedia("(max-width: 720px)");
+
 export const el = (tag, className, text) => {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -220,6 +223,12 @@ export function drawRun(data, ui) {
     found.length ? (found.length === 1 ? t("One thing is worth a look below.") : t("{n} things are worth a look below.", { n: found.length })) : "",
   ]);
   const said = { turns: plural(all.turns, t("{n} turn"), t("{n} turns")), time: spoken(all.ms), cost: usd(all.cost_usd) };
+  if (ui.phone) {
+    root.classList.add("phone");
+    root.append(...(ui.paged && ui.open != null && data.turns.some((turn) => turn.n === ui.open)
+      ? phoneTurn(data, data.turns.find((turn) => turn.n === ui.open), ui) : phoneRun(data, ui, found, said, modelShare)));
+    return root;
+  }
   root.append(headline(t("This session"), all.cost_usd != null ? t("{turns} in {time}, about {cost}.", said) : t("{turns} in {time}.", said), sub));
 
   const tiles = el("section", "tiles");
@@ -286,12 +295,100 @@ export function drawRun(data, ui) {
   return root;
 }
 
-// One turn opened: its clock (drawTimeline) and what it came to.
-function turnDetail(turn, ui) {
-  const detail = el("div", "tdetail");
+// --- the Run view on a phone (ui.phone): one column of rows ---------------------------
+// The session in a title, four numbers, what is worth a look behind one line,
+// then a row per turn; a turn opens as a page of its own under the way back
+// (ui.paged), its model calls rows that open the inspector, rising from the foot.
+
+// A turn's time split three ways, each a share of the turn.
+function spans(wait, write, steps, hot) {
+  const node = el("span", "bar p-spans");
+  node.setAttribute("aria-hidden", "true");
+  const whole = (wait + write + steps) || 1;
+  for (const [kind, value] of [[hot ? "wait hot" : "wait", wait], ["write", write], ["step", steps]]) {
+    const part = el("i", kind);
+    part.style.width = `${(100 * value) / whole}%`;
+    node.append(part);
+  }
+  return node;
+}
+
+function phoneTitle(title, sub) {
+  const node = el("div", "p-title");
+  node.append(el("h2", "", title));
+  if (sub) node.append(el("p", "", sub));
+  return node;
+}
+
+function phoneRun(data, ui, found, said, modelShare) {
+  const all = data.totals;
+  const out = [phoneTitle(all.cost_usd != null ? t("{turns} in {time}, about {cost}.", said) : t("{turns} in {time}.", said),
+    modelShare != null ? t("The model took {model}% of the time and steps took {steps}%.", { model: modelShare, steps: 100 - modelShare }) : "")];
+  out.push(pstrip([[count(all.calls), t("model calls")], [pct((all.cached || 0) / ((all.input || 0) + (all.cached || 0) + (all.cache_write || 0))), t("cached")],
+    [ms(all.usual_wait_ms), t("first word")], [all.window ? pct(all.peak_prompt / all.window) : tokens(all.peak_prompt), t("memory")]]));
+  if (found.length) {
+    const open = !!ui.phoneOpen?.has("flags");
+    const kinds = ORDER.map((flag) => [flag, found.filter((f) => f.flag === flag).length]).filter(([, n]) => n);
+    const line = pbanner(plural(found.length, t("{n} thing worth a look"), t("{n} things worth a look")),
+      { small: kinds.map(([flag, n]) => `${FLAGS[flag].label} ×${n}`).join(" · "), tone: found.some((f) => f.flag === "failed") ? "danger" : "warn", go: { pMore: "flags" } });
+    line.setAttribute("aria-expanded", String(open));
+    line.querySelector(".p-chev").textContent = open ? "−" : "+";
+    out.push(line);
+    if (open) {
+      out.push(pgroup("", found.map((finding) => prow({ name: finding.line, two: true,
+        detail: [chip(finding.flag, finding.times), turnWord(data.turns.find((each) => each.n === finding.turn))],
+        go: { act: finding.call != null ? "call" : "turn", turn: finding.turn, ...(finding.call != null ? { call: finding.call } : {}) } })),
+      { lim: 5, key: "findings", open: ui.phoneOpen }));
+    }
+  }
+  out.push(pgroup(t("Turns"), data.turns.slice().reverse().map((turn) => {
+    const first = ORDER.find((flag) => turn.flags.includes(flag));
+    const words = ORIGIN_WORDS[turn.origin];
+    return prow({ lead: el("span", "p-n", turn.number == null ? "" : String(turn.number)), name: words || turn.prompt || t("(no prompt)"), value: ms(turn.ms),
+      detail: [spans(sum(turn.calls, (call) => call.wait_ms), sum(turn.calls, (call) => call.stream_ms), sum(turn.steps, (step) => step.ms),
+        turn.flags.includes("slow_start") || turn.flags.includes("cache_miss")),
+      turn.status === "running" ? el("span", "hot", t("running")) : first ? chip(first) : plural(turn.calls.length, t("{n} model call"), t("{n} model calls"))],
+      go: { act: "turn", turn: turn.n } });
+  }), { lim: 8, key: "turns", open: ui.phoneOpen }));
+  return out;
+}
+
+// The steps a call asked for: those that began after it and before the next.
+function stepsOf(call, turn) {
+  const next = turn.calls[turn.calls.indexOf(call) + 1]?.at_ms ?? Infinity;
+  return turn.steps.filter((step) => call.at_ms != null && step.at_ms != null && step.at_ms >= call.at_ms && step.at_ms < next);
+}
+
+function phoneTurn(data, turn, ui) {
+  const back = button("p-back", `‹ ${t("All turns")}`, { act: "run-back" });
+  const out = [back, phoneTitle(ORIGIN_WORDS[turn.origin] || t("Turn {n}", { n: turn.number }), turn.prompt ? oneLine(turn.prompt) : "")];
+  const wait = sum(turn.calls, (call) => call.wait_ms);
+  out.push(pstrip([[count(turn.calls.length), t("model calls")], [count(turn.steps.length), t("steps")], [ms(turn.ms), t("wall time")],
+    turn.cost_usd != null ? [usd(turn.cost_usd), t("cost")] : [pct(turn.ms ? wait / turn.ms : null), t("waiting")]]));
+  if (turn.status === "failed") out.push(pbanner(t("The turn stopped."), { small: oneLine(turn.detail) }));
+  out.push(el("p", "p-note", turnSays(turn).text));
+  out.push(pgroup(t("Model calls"), turn.calls.map((call, index) => {
+    const prompt = promptOf(call);
+    const asked = stepsOf(call, turn);
+    const name = asked.length ? (asked.length > 1 ? t("{step} and {n} more", { step: asked[0].title || asked[0].tool, n: asked.length - 1 }) : asked[0].title || asked[0].tool)
+      : FINISH[call.finish] || t("Model call {n}", { n: index + 1 });
+    const flag = ORDER.find((each) => call.flags.includes(each));
+    return prow({ lead: el("span", "p-n", String(index + 1)), name, value: ms((call.wait_ms || 0) + (call.stream_ms || 0) || null),
+      detail: [flag ? chip(flag) : "", t("{sent} sent · {share} cached", { sent: tokens(prompt || null), share: pct(prompt ? (call.cached || 0) / prompt : null) })],
+      go: { act: "call", turn: turn.n, call: index } });
+  }), { lim: 8, key: `calls:${turn.n}`, open: ui.phoneOpen, empty: t("No model calls in this turn.") }));
+  if (turn.steps.length) {
+    out.push(pgroup(t("Steps"), turn.steps.slice().sort((a, b) => (b.ms || 0) - (a.ms || 0)).map((step) => prow({ name: step.title || step.tool, value: ms(step.ms), detail: step.tool })),
+      { lim: 5, key: `steps:${turn.n}`, open: ui.phoneOpen }));
+  }
+  return out;
+}
+
+// What a turn came to, in a sentence or two: its calls and steps, and the
+// call worth opening.
+function turnSays(turn) {
   const worst = turn.calls.map((call, index) => [call, index]).filter(([call]) => call.flags.length)
     .sort((a, b) => (b[0].wait_ms || 0) - (a[0].wait_ms || 0))[0];
-  const caption = el("div", "caption");
   const parts = { calls: plural(turn.calls.length, t("{n} model call"), t("{n} model calls")), steps: plural(turn.steps.length, t("{n} step"), t("{n} steps")) };
   const said = [t("{calls} and {steps}.", parts)];
   if (worst) {
@@ -305,11 +402,16 @@ function turnDetail(turn, ui) {
     said.push(longest.title ? t("The longest step took {time}: {title}.", { time: ms(longest.ms), title: longest.title })
       : t("The longest step took {time}.", { time: ms(longest.ms) }));
   }
-  caption.append(el("p", "", says(said)));
-  if (turn.calls.length) {
-    const pick = worst ? worst[1] : turn.calls.length - 1;
-    caption.append(button("word open-call", t("Open call {n}", { n: pick + 1 }), { act: "call", turn: turn.n, call: pick }));
-  }
+  return { text: says(said), pick: worst ? worst[1] : turn.calls.length - 1 };
+}
+
+// One turn opened: its clock (drawTimeline) and what it came to.
+function turnDetail(turn, ui) {
+  const detail = el("div", "tdetail");
+  const caption = el("div", "caption");
+  const { text, pick } = turnSays(turn);
+  caption.append(el("p", "", text));
+  if (turn.calls.length) caption.append(button("word open-call", t("Open call {n}", { n: pick + 1 }), { act: "call", turn: turn.n, call: pick }));
   detail.append(drawTimeline(turn, ui), caption);
   return detail;
 }
@@ -492,8 +594,7 @@ export function drawInspector(data, turnN, callIndex, tab, request, open = new S
 function summaryPane(call, turn, data) {
   const prompt = promptOf(call);
   const window = data.totals.window;
-  const steps = turn.steps.filter((step) => call.at_ms != null && step.at_ms != null
-    && step.at_ms >= call.at_ms && step.at_ms < (turn.calls[turn.calls.indexOf(call) + 1]?.at_ms ?? Infinity));
+  const steps = stepsOf(call, turn);
   const rate = call.output && call.stream_ms ? Math.round(call.output / (call.stream_ms / 1000)) : null;
   const writing = { time: ms(call.stream_ms), n: count(call.output), rate };
   const rows = [
@@ -768,7 +869,7 @@ function runButton(className, text, id, turn) {
 
 // The Dashboard's units, each drawn by one builder: the desktop page lays
 // them all out side by side, and a phone glances at them (glance) and opens
-// one at a time in a sheet (SHEETS) -- the same builder's section either way.
+// one at a time in a sheet (SHEETS) -- the same read either way, a phone's as rows.
 const dashMicro = (data) => (data.from
   ? t("Since {date} · API-equivalent prices", { date: new Date(data.from).toLocaleDateString(LOCALE, { month: "short", day: "numeric" }) })
   : t("Everything · API-equivalent prices"));
@@ -795,22 +896,27 @@ function dashHeadline(data, activity, range) {
   return headline(dashMicro(data), main, sub);
 }
 
-function totalsTiles(data, activity) {
+// The totals, each [LABEL, VALUE, TAG]: the desktop page's tiles and a phone's rows.
+function totalsOf(data, activity) {
   const all = data.totals;
   const steps = activity?.steps;
   const speed = speedOf(data.models);
+  return [
+    [t("Spend"), usd(all.cost_usd), all.unpriced ? t("sum cost_usd · {n} unpriced", { n: count(all.unpriced) }) : t("sum cost_usd")],
+    [t("Saved by the cache"), all.saved_usd < 0 ? `−${usd(-all.saved_usd)}` : usd(all.saved_usd || null), t("reads' discount less writes' premium")],
+    [t("Model calls"), count(all.calls), t("provider requests")],
+    [t("Turns"), count(all.turns), t("{n} failed · turn.failed", { n: count(all.failed_turns) })],
+    [t("From cache"), pct(all.cached_share), t("cache hit rate")],
+    [t("First word, typical"), ms(data.wait_p50_ms), data.wait_p90_ms != null ? `TTFT p50 · p90 ${ms(data.wait_p90_ms)}` : "TTFT p50"],
+    [t("Writing speed"), speed ? `${count(speed)} tok/s` : "—", t("output tokens / stream time")],
+    [t("Steps"), steps ? count(steps.count) : "…", steps ? t("{share} failed · tool calls", { share: pct(steps.count ? steps.failed / steps.count : null) }) : t("tool calls")],
+  ];
+}
+
+function totalsTiles(data, activity) {
   const tiles = el("section", "tiles eight");
   tiles.setAttribute("aria-label", t("Totals"));
-  tiles.append(
-    tile(t("Spend"), usd(all.cost_usd), all.unpriced ? t("sum cost_usd · {n} unpriced", { n: count(all.unpriced) }) : t("sum cost_usd")),
-    tile(t("Saved by the cache"), all.saved_usd < 0 ? `−${usd(-all.saved_usd)}` : usd(all.saved_usd || null), t("reads' discount less writes' premium")),
-    tile(t("Model calls"), count(all.calls), t("provider requests")),
-    tile(t("Turns"), count(all.turns), t("{n} failed · turn.failed", { n: count(all.failed_turns) })),
-    tile(t("From cache"), pct(all.cached_share), t("cache hit rate")),
-    tile(t("First word, typical"), ms(data.wait_p50_ms), data.wait_p90_ms != null ? `TTFT p50 · p90 ${ms(data.wait_p90_ms)}` : "TTFT p50"),
-    tile(t("Writing speed"), speed ? `${count(speed)} tok/s` : "—", t("output tokens / stream time")),
-    tile(t("Steps"), steps ? count(steps.count) : "…", steps ? t("{share} failed · tool calls", { share: pct(steps.count ? steps.failed / steps.count : null) }) : t("tool calls")),
-  );
+  tiles.append(...totalsOf(data, activity).map(([label, value, tag]) => tile(label, value, tag)));
   return tiles;
 }
 
@@ -947,13 +1053,110 @@ export function drawDashboard(parts, range, home) {
   return root;
 }
 
+// --- the phone standard's parts (app.css .p-*) ---------------------------------------
+// At a phone's width a list is rows, each a NAME, at most one line under it
+// (DETAIL: text, or nodes side by side) and one VALUE on its right; it carries
+// a › when a tap goes somewhere (GO: the data its act reads) and a + when a
+// tap opens it in place (MORE: the nodes it shows opened; KEY names it in
+// OPEN, the pane's set of what stands open). A group shows LIM rows, then
+// Show all; a strip is at most four numbers; trouble is one line in its tone,
+// the why a tap away. Every row is a finger's height across the whole width.
+export function prow({ name, detail, value, tone, mono, two, lead, go, more, key, open }) {
+  const opened = !!more && !!open?.has(key);
+  const item = el("li", "p-item");
+  const row = go ? button("p-row", undefined, go) : more ? button("p-row", undefined, { pMore: key }) : el("div", "p-row");
+  if (more && !go) row.setAttribute("aria-expanded", String(opened));
+  if (lead) row.append(lead);
+  const words = el("span", "p-words");
+  words.append(el("span", ["p-name", mono ? "mono" : "", two ? "two" : "", tone || ""].filter(Boolean).join(" "), name));
+  if (detail != null && detail !== "") {
+    const under = el("span", "p-detail");
+    under.append(...[].concat(detail).filter((part) => part != null && part !== ""));
+    words.append(under);
+  }
+  row.append(words);
+  if (value != null && value !== "") {
+    const right = el("span", "p-value");
+    right.append(value);
+    row.append(right);
+  }
+  if (go || more) row.append(el("span", "p-chev", go ? "›" : opened ? "−" : "+"));
+  item.append(row);
+  if (opened) {
+    const rest = el("div", "p-more");
+    rest.append(...[].concat(more).filter(Boolean));
+    item.append(rest);
+  }
+  return item;
+}
+
+export function pgroup(label, items, { lim = 0, key = label, open, right, empty } = {}) {
+  const node = el("section", "p-group");
+  if (label) {
+    const head = el("h3", "p-label", label);
+    if (right) head.append(el("span", "", right));
+    node.append(head);
+  }
+  const cut = lim && items.length > lim + 1;
+  const all = !cut || !!open?.has(`all:${key}`);
+  const list = el("ul", "p-list");
+  list.append(...(all ? items : items.slice(0, lim)));
+  if (!items.length) list.append(el("li", "p-empty", empty || t("Nothing in this range.")));
+  node.append(list);
+  if (cut) node.append(button("p-all", all ? t("Show fewer") : t("Show all {n}", { n: count(items.length) }), { pMore: `all:${key}` }));
+  return node;
+}
+
+export function pstrip(numbers) {
+  const node = el("div", "p-strip");
+  for (const [value, label] of numbers.slice(0, 4)) {
+    const one = el("div");
+    one.append(el("b", "", value), el("span", "", label));
+    node.append(one);
+  }
+  return node;
+}
+
+// One line of trouble in TONE (danger or warn), what it means SMALL under it;
+// with GO it is a row that opens the why.
+export function pbanner(text, { small, tone = "danger", go } = {}) {
+  const node = go ? button("p-banner", undefined, go) : el("div", "p-banner");
+  node.dataset.tone = tone;
+  const words = el("span", "p-banner-words");
+  words.append(el("span", "", text));
+  if (small) words.append(el("small", "", small));
+  node.append(el("i", "led"), words);
+  if (go) node.append(el("span", "p-chev", "›"));
+  return node;
+}
+
+// Facts opened under a row: each [LABEL, VALUE], the value a number's face.
+export function pfacts(pairs) {
+  const node = el("dl", "p-facts");
+  for (const [label, value] of pairs) {
+    if (value == null || value === "") continue;
+    const dd = el("dd");
+    dd.append(value);
+    node.append(el("dt", "", label), dd);
+  }
+  return node;
+}
+
+export function pmeter(fraction) {
+  const node = el("span", "p-meter");
+  node.setAttribute("aria-hidden", "true");
+  const fill = el("i");
+  fill.style.width = `${Math.max(0, Math.min(100, Math.round(100 * (fraction || 0))))}%`;
+  node.append(fill);
+  return node;
+}
+
 // --- a phone's Dashboard: the glance, and one section at a time in a sheet -------------
 // How it is going on one screen: the spend and the shape of its days, what is
 // wrong right now, four numbers, then one row per section -- its verdict in
 // words and its drawing, small. A row opens its section whole in a sheet
-// rising from the foot (app.js: data-dash-sheet), the desktop page's own
-// section from the same builder; Right now opens the headline, the facts and
-// the totals.
+// rising from the foot (app.js: data-dash-sheet), its facts as rows (SHEETS);
+// Right now opens what is wrong, the machine's facts and the totals.
 
 // A row of bars, each its value over the tallest, the tallest lit.
 function bars(values, className) {
@@ -984,11 +1187,34 @@ function shareTrack(fractions) {
 const adding = () => ({ text: t("Adding it up…") });
 
 // What each sheet holds: its title, what its row in the glance says (TEXT, a
-// TONE, a drawing VIZ), and its body, drawn by the desktop page's builders.
+// TONE, a drawing VIZ), and its body: the desktop section's facts as a phone's
+// rows (prow, pgroup), from the same read, what stands open in parts.phoneOpen.
 const SHEETS = {
   now: {
     title: () => t("Right now"),
-    body: (parts, data, activity, range) => [dashHeadline(data, activity, range), nowStrip(parts.health, parts.identity), totalsTiles(data, activity)],
+    body: (parts, data, activity) => {
+      const open = parts.phoneOpen;
+      const facts = Array.isArray(parts.health) ? parts.health : [];
+      const bad = facts.filter((fact) => fact.tone === "danger");
+      const trouble = bad.length ? bad : facts.filter((fact) => fact.tone === "warn");
+      const out = [];
+      if (trouble.length) {
+        out.push(pbanner(trouble.length === 1 ? trouble[0].label : plural(trouble.length, t("{n} thing needs a look"), t("{n} things need a look")),
+          { small: trouble.length === 1 ? oneLine(trouble[0].detail) : trouble.map((fact) => fact.label).join(", "), tone: bad.length ? "danger" : "warn" }));
+      }
+      const identity = parts.identity;
+      const rows = [];
+      if (identity) rows.push(prow({ lead: el("i", "led pulse"), name: "nodecode", value: identity.version ? `v${identity.version}` : "", detail: uptime(identity.started_at) }));
+      for (const fact of facts) {
+        const lead = el("i", `led${fact.tone === "ok" ? " off" : ""}`);
+        lead.dataset.tone = fact.tone;
+        rows.push(prow({ lead, name: fact.label, tone: fact.tone === "danger" ? "bad" : "", detail: oneLine(fact.detail), key: `now:${fact.label}`, open,
+          more: fact.detail || fact.remedy ? [el("p", "p-whole", fact.detail || ""), fact.remedy ? el("p", "p-whole", fact.remedy) : null] : null }));
+      }
+      out.push(pgroup(t("This machine"), rows, { empty: health404(parts.health) }));
+      out.push(pgroup(t("Totals"), totalsOf(data, activity).map(([label, value, tag]) => prow({ name: label, value, detail: tag })), { lim: 4, key: "totals", open }));
+      return out;
+    },
   },
   spend: {
     title: spendTitle,
@@ -1000,7 +1226,13 @@ const SHEETS = {
       return { text: t("Peak {day}, {amount}", { day: new Date(`${peak.day}T12:00:00`).toLocaleDateString(LOCALE, { weekday: "short", day: "numeric" }),
         amount: priced ? usd(peak.cost_usd) : plural(peak.calls, t("{n} call"), t("{n} calls")) }), viz: bars(data.days.map(value), "glance-bars") };
     },
-    body: (parts, data) => [spendSection(data), el("p", "dash-readout", t("Tap one to read it."))],
+    body: (parts, data) => {
+      const priced = pricedDays(data);
+      const days = data.days.slice().reverse().map((day) => prow({
+        name: new Date(`${day.day}T12:00:00`).toLocaleDateString(LOCALE, { weekday: "short", month: "short", day: "numeric" }),
+        value: priced ? usd(day.cost_usd) : count(day.calls), detail: priced ? plural(day.calls, t("{n} call"), t("{n} calls")) : "" }));
+      return [dayChart(data.days), el("p", "dash-readout", t("Tap a day to read it.")), pgroup(t("By day"), days, { lim: 4, key: "days", open: parts.phoneOpen })];
+    },
   },
   hours: {
     title: () => t("When turns ran"),
@@ -1014,7 +1246,7 @@ const SHEETS = {
       return { text: t("Busiest {day} around {hour}", { day: DAYS[day], hour: `${String(hour).padStart(2, "0")}:00` }),
         viz: bars(Array.from({ length: 24 }, (_, at) => sum(hours, (row) => row[at])), "glance-bars") };
     },
-    body: (parts, data, activity) => [activity ? heatmap(activity.hours) : waitingBox(t("When turns ran"), "hours"), el("p", "dash-readout", t("Tap one to read it."))],
+    body: (parts, data, activity) => [activity ? heatmap(activity.hours) : waitingBox(t("When turns ran"), "hours"), el("p", "dash-readout", t("Tap an hour to read it."))],
   },
   models: {
     title: () => t("Models"),
@@ -1027,7 +1259,26 @@ const SHEETS = {
       const said = { model: lead.model || "—", share: pct(by(lead) / whole) };
       return { text: spent ? t("{model}: {share} of the spend", said) : t("{model}: {share} of the calls", said), viz: shareTrack(data.models.map((m) => by(m) / whole)) };
     },
-    body: (parts, data) => [modelsSection(data)],
+    body: (parts, data) => {
+      const open = parts.phoneOpen;
+      const spent = sum(data.models, (m) => m.cost_usd);
+      return [pgroup(spent ? t("By spend") : t("By calls"), data.models.map((m) => {
+        const fraction = spent && m.cost_usd != null ? m.cost_usd / spent : null;
+        const statuses = m.statuses.map((s) => `${s.status ?? t("no status")} ×${count(s.count)}`).join(", ");
+        return prow({ name: m.model || "—", mono: true, value: spent ? usd(m.cost_usd) : count(m.calls), key: `model:${m.provider}/${m.model}`, open,
+          detail: !m.calls ? el("span", "bad", t("no call got through"))
+            : [fraction != null ? pmeter(fraction) : null,
+              [fraction != null ? t("{share} of the spend", { share: pct(fraction) }) : "", plural(m.calls, t("{n} call"), t("{n} calls"))].filter(Boolean).join(" · ")],
+          more: pfacts([
+            [t("Provider"), m.provider],
+            [t("Went wrong"), wentWrong(m.error_rate, m.failed, "").text + (statuses ? ` · ${statuses}` : "")],
+            [t("From cache"), pct(m.cached_share)],
+            [t("First word"), ms(m.wait_p50_ms)],
+            [t("Speed"), m.speed ? `${count(m.speed)} tok/s` : "—"],
+            [t("Written"), tokens(m.output)],
+          ]) });
+      }), { lim: 5, key: "models", open, empty: t("Nothing ran in this range.") })];
+    },
   },
   work: {
     title: () => t("What the agent did"),
@@ -1045,7 +1296,25 @@ const SHEETS = {
       }
       return { text: `${plural(steps.count, t("{n} step"), t("{n} steps"))} · ${t("{n} failed", { n: count(steps.failed) })}`, viz };
     },
-    body: (parts, data, activity) => [activity ? workSection(activity) : waitingBox(t("What the agent did"), "work")],
+    body: (parts, data, activity) => {
+      if (!activity) return [waitingBox(t("What the agent did"))];
+      const open = parts.phoneOpen;
+      const steps = activity.steps;
+      const top = Math.max(...activity.families.map((f) => f.calls), 1);
+      const out = [pstrip([[count(steps.count), t("steps")], [count(steps.failed), t("failed")], [steps.ms ? ms(steps.ms) : "—", t("of work")]]),
+        pgroup(t("By kind"), activity.families.map((f) => prow({ name: `${f.verb} ${count(f.items)} ${f.items === 1 ? f.one : f.many}`, value: count(f.calls),
+          detail: [pmeter(f.calls / top), f.failed ? el("span", "hot", t("{n} failed", { n: count(f.failed) })) : plural(f.calls, t("{n} step"), t("{n} steps"))] })),
+        { lim: 5, key: "families", open, empty: t("The agent took no steps in this range.") })];
+      if (activity.other_tools.length) {
+        out.push(el("p", "p-note", t("Other tools: {tools}", { tools: activity.other_tools.map((o) => (o.failed
+          ? t("{tool} {n} ({failed} failed)", { tool: o.tool, n: count(o.calls), failed: count(o.failed) }) : `${o.tool} ${count(o.calls)}`)).join(", ") })));
+      }
+      if (activity.slowest.length) {
+        out.push(pgroup(t("Slowest steps"), activity.slowest.map((s) => prow({ name: s.step, value: ms(s.ms), detail: s.title || s.session_id,
+          go: { act: "run", id: s.session_id, turn: s.turn_id || "" } })), { lim: 3, key: "slowest", open }));
+      }
+      return out;
+    },
   },
   cost: {
     title: (data, activity) => (activity?.spend.by === "cost" || !activity ? t("Where the money went") : t("Where the model calls went")),
@@ -1059,7 +1328,27 @@ const SHEETS = {
       const word = (p) => (p.reply ? t("Writing the reply") : p.voided ? t("Attempts that failed") : p.verb);
       return { text: parts.slice(0, 2).map(({ p, fraction }) => `${word(p)} ${pct(fraction)}`).join(" · "), viz: shareTrack(parts.map(({ fraction }) => fraction)) };
     },
-    body: (parts, data, activity) => [activity ? costSection(activity) : waitingBox(t("Where the money went"), "cost")],
+    body: (parts, data, activity) => {
+      if (!activity) return [waitingBox(t("Where the money went"))];
+      const spend = activity.spend;
+      const money = spend.by === "cost";
+      const out = [el("p", "p-note", !spend.rounds ? t("No model calls in this range.") : money
+        ? t("{cost} over {calls}, each call's cost split over the steps it asked for.", { cost: usd(spend.cost_usd), calls: plural(spend.rounds, t("{n} model call"), t("{n} model calls")) })
+        : t("{calls} with no price known, counted instead.", { calls: plural(spend.rounds, t("{n} model call"), t("{n} model calls")) }))];
+      out.push(pgroup(money ? t("By kind of step") : t("Calls by kind of step"), spend.parts.filter((p) => !p.tool).map((p) => {
+        const fraction = !money ? p.rounds / (spend.rounds || 1) : p.cost_usd != null ? p.cost_usd / (spend.cost_usd || 1) : null;
+        const counted = p.reply ? plural(p.calls, t("{n} call"), t("{n} calls")) : p.voided ? plural(p.calls, t("{n} attempt"), t("{n} attempts"))
+          : plural(p.calls, t("{n} step"), t("{n} steps"));
+        return prow({ name: p.reply ? t("Writing the reply") : p.voided ? t("Attempts that failed") : `${p.verb} ${p.many}`,
+          value: money || p.cost_usd != null ? usd(p.cost_usd) : pct(fraction),
+          detail: [fraction != null ? pmeter(fraction) : null, [fraction != null ? pct(fraction) : "", counted].filter(Boolean).join(" · ")] });
+      }), { lim: 5, key: "cost", open: parts.phoneOpen }));
+      const others = spend.parts.filter((part) => part.tool);
+      if (others.length) {
+        out.push(el("p", "p-note", t("Other tools: {tools}", { tools: others.map((o) => `${o.tool} ${count(o.calls)}${o.cost_usd != null ? ` (${usd(o.cost_usd)})` : ""}`).join(", ") })));
+      }
+      return out;
+    },
   },
   problems: {
     title: () => t("What went wrong"),
@@ -1069,7 +1358,32 @@ const SHEETS = {
       return { text: failed ? plural(failed, t("{n} turn failed."), t("{n} turns failed.")) : t("Nothing went wrong in this range."),
         tone: failed ? "bad" : "", viz: el("span", `glance-badge${failed ? " bad" : ""}`, count(failed)) };
     },
-    body: (parts, data, activity) => [activity ? problemsSection(activity, data.totals) : waitingBox(t("What went wrong"), "problems")],
+    body: (parts, data, activity) => {
+      if (!activity) return [waitingBox(t("What went wrong"))];
+      const open = parts.phoneOpen;
+      const failed = activity.failed_turns;
+      const retries = sum(activity.retries, (r) => r.count);
+      const switches = sum(activity.fallbacks, (f) => f.count);
+      const also = [failed.cancelled ? plural(failed.cancelled, t("{n} stopped"), t("{n} stopped")) : "",
+        retries ? plural(retries, t("the provider failed {n} time"), t("the provider failed {n} times")) : "",
+        switches ? plural(switches, t("{n} model move"), t("{n} model moves")) : ""].filter(Boolean).join(" · ");
+      const out = [failed.count ? pbanner(plural(failed.count, t("{n} turn failed"), t("{n} turns failed")), { small: also })
+        : el("p", "p-note", also || t("Nothing went wrong in this range."))];
+      if (activity.retries.length) {
+        out.push(pgroup(t("Provider failures"), activity.retries.map((r) => prow({ name: retryWord(r.status), value: `×${count(r.count)}`,
+          detail: r.status != null ? t("status {status}", { status: r.status }) : t("no status"), key: `retry:${r.status}`, open,
+          more: r.detail ? el("p", "p-whole", r.detail) : null }))));
+      }
+      if (activity.fallbacks.length) {
+        out.push(pgroup(t("Moved to another model"), activity.fallbacks.map((f) => prow({ name: `${f.from} → ${f.to}`, mono: true, value: `×${count(f.count)}`, detail: f.reason }))));
+      }
+      if (failed.latest.length) {
+        out.push(pgroup(t("Latest failed turns"), failed.latest.map((f, at) => prow({ name: oneLine(f.detail) || t("failed"), tone: "bad",
+          detail: `${f.title || f.session_id} · ${when(f.at)}`, key: `failed:${at}`, open,
+          more: [el("p", "p-whole", f.detail || t("failed")), runButton("p-open", t("Open the turn"), f.session_id, f.turn_id)] })), { lim: 3, key: "failed", open }));
+      }
+      return out;
+    },
   },
   sessions: {
     title: sessionsTitle,
@@ -1077,7 +1391,8 @@ const SHEETS = {
       const s = data.sessions[0];
       return s ? { text: s.title || s.id, viz: el("span", "num", s.cost_usd != null ? usd(s.cost_usd) : count(s.calls)) } : { text: t("Nothing ran in this range.") };
     },
-    body: (parts, data, activity, range, home) => [sessionsSection(data, home)],
+    body: (parts, data) => [pgroup("", data.sessions.map((s) => prow({ name: s.title || s.id, value: s.cost_usd != null ? usd(s.cost_usd) : plural(s.calls, t("{n} call"), t("{n} calls")),
+      detail: `${tail(s.folder)} · ${ms(s.ms)}`, go: { act: "session", id: s.id } })), { lim: 5, key: "sessions", open: parts.phoneOpen, empty: t("Nothing ran in this range.") })],
   },
   folders: {
     title: () => t("By folder"),
@@ -1085,7 +1400,9 @@ const SHEETS = {
       const f = data.folders[0];
       return f ? { text: tail(f.folder), viz: el("span", "num", usd(f.cost_usd)) } : { text: t("Nothing ran in this range.") };
     },
-    body: (parts, data, activity, range, home) => [foldersSection(data, home)],
+    body: (parts, data, activity, range, home) => [pgroup("", data.folders.map((f) => prow({ name: tail(f.folder), mono: true, value: usd(f.cost_usd),
+      detail: [plural(f.sessions, t("{n} session"), t("{n} sessions")), ms(f.ms), f.failed_turns ? t("{n} failed", { n: count(f.failed_turns) }) : ""].filter(Boolean).join(" · "),
+      key: `folder:${f.folder}`, open: parts.phoneOpen, more: el("p", "p-whole mono", home(f.folder)) })), { lim: 5, key: "folders", open: parts.phoneOpen })],
   },
   calls: {
     title: () => t("Latest model calls"),
@@ -1094,7 +1411,18 @@ const SHEETS = {
       const c = activity.calls[0];
       return c ? { text: `${c.model || "—"} · ${when(c.at)}`, viz: el("span", "glance-badge", count(activity.calls.length)) } : { text: t("No model calls in this range.") };
     },
-    body: (parts, data, activity) => [callsSection(activity)],
+    body: (parts, data, activity) => {
+      if (!activity) return [waitingBox(t("Latest model calls"))];
+      const open = parts.phoneOpen;
+      return [pgroup("", activity.calls.map((c, at) => {
+        const prompt = promptOf(c);
+        const cached = prompt ? (c.cached || 0) / prompt : null;
+        return prow({ name: c.title || c.session_id, value: c.cost_usd != null ? usd(c.cost_usd) : "", key: `call:${at}`, open,
+          detail: [`${when(c.at)} · ${c.model || "—"} · `, el("span", cached != null && cached < 0.5 ? "hot" : "", t("{share} cache", { share: pct(cached) }))],
+          more: [pfacts([[t("Sent"), tokens(prompt || null)], [t("From cache"), pct(cached)], [t("Written"), tokens(c.output)],
+            [t("First word"), ms(c.wait_ms)], [t("Writing"), ms(c.stream_ms)], [t("Cost"), usd(c.cost_usd)]]), runButton("p-open", t("Open the turn"), c.session_id, c.turn_id)] });
+      }), { lim: 6, key: "calls", open, empty: t("No model calls in this range.") })];
+    },
   },
 };
 
@@ -1190,6 +1518,9 @@ function dashSheet(parts, data, activity, range, home) {
   sheet.append(grip, head, body);
   return [veil, sheet];
 }
+
+// A phone's machine list says why it is empty: health not read yet, or not readable.
+const health404 = (health) => (health?.error ? t("Could not read health: {error}", { error: health.error }) : t("Looking…"));
 
 function waitingBox(title, id) {
   const node = id ? section(id, title) : el("section", "dash-section");
@@ -1439,18 +1770,14 @@ function table(heads, rows, className, widths) {
     tr.append(th);
   }
   thead.append(tr);
-  // Each cell carries its head's word: a phone's sheet reads a row as a line
-  // and says which number is which beside it (app.css).
-  const words = heads.map((head) => (typeof head === "object" ? head.text : head));
   const tbody = el("tbody");
   for (const cells of rows) {
     const row = el("tr");
-    for (const [at, cell] of cells.entries()) {
+    for (const cell of cells) {
       const spec = typeof cell === "object" ? cell : { text: cell };
       const td = el("td", [spec.mono ? "mono" : "", spec.hot ? "hot" : "", spec.calm ? "calm" : ""].filter(Boolean).join(" "), spec.node ? undefined : spec.text);
       if (spec.node) td.append(spec.node);
       if (spec.title) td.title = spec.title;
-      if (words[at]) td.dataset.head = words[at];
       row.append(td);
     }
     tbody.append(row);
