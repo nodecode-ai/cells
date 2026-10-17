@@ -253,12 +253,15 @@ the pointer and a field lit by typing lay over the ones they stand on."
     (is (equal "none" (web-css-value css ".lane:not(.notes-shown) > .turn.recap, .lane:not(.notes-shown) .rest.note" "display"))
         "recaps and notes wait behind the switch")
     (is (search "toggleNotes()" js) "which the head's word turns")
-    ;; Folded, the work keeps its newest finished thinking under its line, as
-    ;; the TUI's Standard viewport does (the operator, 2026-10-17); open, the
-    ;; thought is in the work itself; and words still arriving never show.
-    (is (search "thoughtPeek(work)" work) "the folded work keeps its thinking")
-    (is (equal "none" (web-css-value css ".work[open] + .think-peek" "display")) "hidden while the work is open")
-    (is (search "!row.live" (web-js-function js "finishedThought")) "only what the model finished")))
+    ;; A running turn's newest finished thinking stands under its bar, no
+    ;; label, quieter than the work, faded in -- the TUI's live thought (the
+    ;; operator, 2026-10-17); words still arriving never show, and an ended
+    ;; turn keeps its thinking in its work.
+    (is (search "liveThought(work, turn.key)" (subseq work (search "if (live)" work))) "under the running bar")
+    (is (search "!row.live" (web-js-function js "finishedThought")) "only what the model finished")
+    (is (equal "var(--tertiary)" (web-css-value css ".prose.live-thought" "color")) "a step quieter than the work")
+    (is (search "thought-in" (web-css-value css ".prose.live-thought" "animation")) "faded in")
+    (is (null (search "t(\"Think\")" js)) "with no label")))
 
 ;; An answer's type. Each heading level is a step of size above the next and a
 ;; weight above the text; emphasis is weight and slant, never tone alone; running

@@ -1088,18 +1088,30 @@ function thoughtParagraph(text) {
   return parts[last] || "";
 }
 
-// What stands under the work's line while it is folded: the newest thinking
-// the model finished, one paragraph, as the terminal's Standard viewport keeps
-// it under its folded run. Open, the work shows the thought itself.
-function thoughtPeek(work) {
+// When the paragraph under each running turn's bar last changed (turn key ->
+// { text, at }), so a turn drawn again mid-fade carries its fade on, never
+// starts it over.
+const thoughtShown = new Map();
+const THOUGHT_FADE_MS = 420;
+
+// Under a running turn's bar, the newest thinking the model finished: one
+// paragraph, no label, a step quieter than the work, faded in as it takes the
+// place of the one before -- the TUI's live thought (LIVE-THOUGHT-ROWS; the
+// operator, 2026-10-17). Only while the turn runs: an ended turn's thinking
+// is in its work.
+function liveThought(work, key) {
   for (let at = work.length - 1; at >= 0; at--) {
     const row = work[at];
     if (row.kind !== "reasoning" || row.voided) continue;
     const said = thoughtParagraph(finishedThought(row));
     if (!said) continue;
-    const peek = el("div", "think-peek");
-    peek.append(el("span", "think-head", t("Think")), proseOf("prose thought think-text", said));
-    return peek;
+    const now = performance.now();
+    if (thoughtShown.get(key)?.text !== said) thoughtShown.set(key, { text: said, at: now });
+    const since = now - thoughtShown.get(key).at;
+    const thought = proseOf("prose thought live-thought", said);
+    if (since < THOUGHT_FADE_MS) thought.style.setProperty("--faded", `-${Math.round(since)}ms`);
+    else thought.classList.add("settled");
+    return thought;
   }
   return null;
 }
@@ -1165,8 +1177,6 @@ function drawWork(article, turn, live, v) {
     }
     details.append(summary, acts);
     article.append(details);
-    const peek = thoughtPeek(work);
-    if (peek) article.append(peek);
   }
   for (const row of notes) article.append(looseRow(row));
   if (answer) {
@@ -1176,7 +1186,9 @@ function drawWork(article, turn, live, v) {
     const bar = el("div", "running");
     bar.append(lamp(true), el("span", "", liveVerb(v.turn.verb, work)));
     article.append(bar);
-  }
+    const thought = liveThought(work, turn.key);
+    if (thought) article.append(thought);
+  } else thoughtShown.delete(turn.key);
   for (const row of rests) {
     // A turn that ended well keeps what it ran on, how long and when as its
     // footnote, there under the pointer; a failed or stopped end stays in view;

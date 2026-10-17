@@ -393,14 +393,12 @@ code, pre, kbd { font-family: var(--mono); }
 .work > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
 .work > summary .count { font: 12px var(--mono); color: var(--tertiary); font-variant-numeric: tabular-nums; }
 .work > summary .failed { font: 12px var(--mono); color: var(--danger-lit); }
-/* Under the folded work, the newest finished thinking -- Think, then one
-   paragraph, three lines at most -- as the terminal's Standard viewport keeps
-   it; open, the work shows the thought itself. */
-.think-peek { display: flex; align-items: baseline; gap: 12px; margin-top: 10px; min-width: 0; }
-.work[open] + .think-peek { display: none; }
-.think-head { flex: none; font: 600 12px var(--mono); color: var(--thought-strong); }
-.think-text { display: block; min-width: 0; max-height: calc(3 * 1.6em); overflow: hidden; font-size: 14px; line-height: 1.6; font-style: italic; font-synthesis: style; color: var(--muted); }
-.think-text > * + * { margin-top: 0; }
+/* Under a running turn's bar, the newest finished thinking: one paragraph, no
+   label, a step quieter than the work, faded in -- the TUI's live thought. */
+.prose.live-thought { display: block; margin-top: 8px; max-height: calc(4 * 1.6em); overflow: hidden; font-size: 14px; line-height: 1.6; font-style: italic; font-synthesis: style; color: var(--tertiary); animation: thought-in 420ms ease-out both; animation-delay: var(--faded, 0ms); }
+.prose.live-thought > * + * { margin-top: 0; }
+.prose.live-thought.settled { animation: none; }
+@keyframes thought-in { from { opacity: 0; } to { opacity: 1; } }
 /* One mark per call, in the order they ran; a long turn's marks narrow to fit. */
 .work > summary .ticks { display: inline-flex; gap: 2px; align-self: center; min-width: 0; max-width: 240px; overflow: hidden; }
 .ticks i { flex: 0 1 auto; width: 12px; min-width: 2px; height: 3px; border-radius: 2px; background: var(--diff-add); opacity: 0.55; }
