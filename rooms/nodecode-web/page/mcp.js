@@ -6,7 +6,7 @@
 // client: a configured server on the connection the agent uses, a server not
 // yet added on a connection of its own, closed before the answer comes back.
 
-import { el, button, mark, waiting, plural, ms } from "./observe.js";
+import { el, button, mark, waiting, plural, ms, headline } from "./observe.js";
 import { block, note, form, field, confirmBox, about } from "./control.js";
 import { t } from "./i18n.js";
 
@@ -152,10 +152,22 @@ export function makeMcp({ c, api, act, toast, redraw, reload }) {
 
   // --- the tab -----------------------------------------------------------------------
 
-  function servers(l) {
+  // The page's head: how many servers, the tools the ready ones give, any failing.
+  function head(l) {
     const [infoMark, words] = about(c, "mcp", t("Tools from servers that speak the Model Context Protocol (MCP), each set under mcp.servers in config.jsonc; the agent calls them from its eval tool. Test lists what a server offers on the connection the agent uses, and reconnects one that is down. Adding or removing a server starts the MCP cell again, which reconnects every server."));
-    const box = block("", infoMark);
-    box.append(words);
+    const ready = l.servers.filter((s) => s.state === "ready");
+    const failing = l.servers.filter((s) => ["error", "refused"].includes(s.state)).length;
+    const node = headline(plural(l.servers.length, t("{n} server"), t("{n} servers")),
+      !l.enabled ? t("MCP is off: no server starts.")
+        : t("{tools} across {servers}.", { tools: plural(ready.reduce((n, s) => n + (s.tools || 0), 0), t("{n} tool"), t("{n} tools")),
+          servers: plural(ready.length, t("{n} ready server"), t("{n} ready servers")) }),
+      failing ? plural(failing, t("{n} is failing."), t("{n} are failing.")) : "");
+    (node.querySelector(".micro") || node).append(" ", infoMark);
+    return [node, words];
+  }
+
+  function servers(l) {
+    const box = block("");
     if (!l.enabled) box.append(Object.assign(el("p", "ctl-notice", t("mcp.enabled is false in config.jsonc: no server starts until it is true.")), { title: "mcp.enabled" }));
     const rows = el("ol", "ctl-list");
     for (const s of l.servers) {
@@ -243,7 +255,7 @@ export function makeMcp({ c, api, act, toast, redraw, reload }) {
       root.append(line);
       return root;
     }
-    root.append(servers(l), addForm(), catalog());
+    root.append(...head(l), servers(l), addForm(), catalog());
     return root;
   }
 

@@ -614,7 +614,7 @@ var(--ls-*)) replaced by what :root gives it."
                   (cl-ppcre:do-register-groups (id) ("\\[\"([a-z]+)\", t\\(" (subseq js (search "const JUMPS" js) (search "const DAYS" js)))
                     (push id out))
                   out)))
-    (is (search "root.append(glance(parts, data, activity))" draw) "the page draws the glance")
+    (is (search "root.append(glance(parts, data, activity, " draw) "the page draws the glance")
     (is (search "if (parts.dashSheet) root.append(...dashSheet(" draw) "and the open section's sheet")
     (is (= 7 (length jumps)) "the jump menu's sections are read")
     (dolist (id (append jumps '("hours" "folders" "now")))
@@ -1085,3 +1085,27 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (= 2 (funcall count "--ls-")) "two letter-spacings")
     (is (equal "15px" (web-css-value css ":root" "--fs-body")) "the body is 15 px")
     (is (null off) (format nil "every rule names the scale: ~{~a~^; ~}" (subseq off 0 (min 8 (length off)))))))
+
+;; Every place opens the same way (step 2 of the standard): under the strip that
+;; names it, the one head -- a small label, one sentence of how it stands, a line
+;; of detail -- never an icon, a button or a stats line first. Measured before
+;; it: four places had the head, two their own, four opened on an (i) and a
+;; count, four on nothing, Channels on its Restart button. Each owner draws its
+;; head from what it read; Restart channels stands at the page's foot; the
+;; dashboard's range follows its head (a phone's under its glance's hero).
+(deftest web-cell-every-place-opens-with-its-head ()
+  (let* ((control (web-page-text "control.js"))
+         (observe (web-page-text "observe.js"))
+         (channels (web-js-function control "drawChannels"))
+         (dash (web-js-function observe "drawDashboard")))
+    (dolist (each '("drawGateway" "drawLogs" "drawSettings" "drawCells" "drawChannels" "drawJobs"))
+      (is (search "headline(" (web-js-function control each)) (format nil "~a opens with the head" each)))
+    (loop for (file name) in '(("index.js" "draw") ("mcp.js" "head") ("profiles.js" "draw") ("files.js" "head") ("access.js" "draw"))
+          do (is (search "headline(" (web-js-function (web-page-text file) name)) (format nil "~a's ~a opens with the head" file name)))
+    (is (search "root.append(...head(l), servers(l)" (web-page-text "mcp.js")) "MCP's head stands over its servers")
+    (is (not (search "el(\"span\", \"reading\"" (web-js-function control "drawCells"))) "the count moved into the head")
+    (is (search "root.append(list, access.pairing(ch), foot);" channels) "Restart channels stands at the foot")
+    (is (not (search "block(\"\", infoMark, button(" channels)) "and not over the list")
+    (is (search "document.getElementById(\"control-log-state\")" (web-js-function control "drawLog")) "the log's head follows its lines")
+    (is (search "root.append(dashHeadline(data, activity, range), ...(phone ? [] : [top])" dash) "the range follows the dashboard's head")
+    (is (search "glance(parts, data, activity, phone ? top : null)" dash) "a phone's under its glance's hero")))

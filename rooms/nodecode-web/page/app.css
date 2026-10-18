@@ -2536,3 +2536,7 @@ button.p-row:active { background: var(--field-lit); }
   .pop-part .choice { flex: 1; }
   #ses-acts { min-width: 232px; }
 }
+
+/* --- the page's foot: its drastic acts, under everything else (the standard's
+   sixth slot; Channels' Restart channels first) --- */
+.ctl-foot { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--seam); }

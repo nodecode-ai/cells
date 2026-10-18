@@ -14,7 +14,7 @@
 // editor under its profile, the copyable terminal command, nothing written
 // before Create. Its model, skills and MCP steps have no verb here.
 
-import { el, button, mark, plural } from "./observe.js";
+import { el, button, mark, plural, headline } from "./observe.js";
 import { block, note, form, formKey, field, confirmBox, bytes, about } from "./control.js";
 import { t } from "./i18n.js";
 
@@ -226,8 +226,10 @@ export function makeProfiles({ c, api, act, toast, redraw, download }) {
     const [infoMark, words] = about(c, "profiles",
       t("A profile is a home of its own: its config, keys, store, layer and gateway, so each one runs as an organism of its own. This page belongs to the gateway of {name} and stays there; another profile's page opens from a terminal with the command under its row.", { name: l.this }),
       t("Make default writes the profile a bare nodecode runs from the next launch on; nothing running moves. Export saves a home as an archive without its store, secrets and credentials, which nodecode profile import brings back. Named profiles live in {folder}.", { folder: l.folder }));
-    const list = block("", infoMark, el("span", "reading", plural(l.profiles.length, t("{n} profile"), t("{n} profiles"))));
-    list.append(words);
+    const head = headline(t("Profiles"), plural(l.profiles.length, t("{n} profile."), t("{n} profiles.")), t("This page belongs to {name}.", { name: l.this }));
+    (head.querySelector(".micro") || head).append(" ", infoMark);
+    root.append(head, words);
+    const list = block("");
     const rows = el("ol", "ctl-list");
     for (const r of l.profiles) drawRow(rows, r);
     list.append(rows);

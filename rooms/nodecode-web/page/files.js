@@ -12,7 +12,7 @@
 // -- the crumb path, the Name / Size / Modified rows, the Upload button beside
 // a drop onto the list.
 
-import { el, when, bytes } from "./observe.js";
+import { el, when, bytes, headline, plural } from "./observe.js";
 import { iconButton } from "./icons.js";
 import { t } from "./i18n.js";
 
@@ -229,6 +229,13 @@ export function makeFiles({ state, reach, save, toast, redraw, moved, home, open
     return nav;
   }
 
+  // The page's head: the folder on screen and how many things it holds.
+  function head() {
+    const path = state.filesPath || "";
+    const n = f.listing?.entries?.length;
+    return headline(t("Files"), path ? path.split("/").at(-1) : folderName(), n == null ? "" : plural(n, t("{n} item"), t("{n} items")));
+  }
+
   function bar() {
     const row = el("div", "fs-bar");
     const acts = el("div", "fs-acts");
@@ -345,11 +352,10 @@ export function makeFiles({ state, reach, save, toast, redraw, moved, home, open
     const root = el("div", "fs");
     const l = f.listing;
     if (l?.code === "no_folder" || l?.code === "unknown_session") {
-      root.append(el("h2", "display", t("This session has no folder to show.")),
-        el("p", "obs-note", sentence(l.error)));
+      root.append(headline(t("Files"), t("This session has no folder to show."), sentence(l.error)));
       return root;
     }
-    root.append(bar());
+    root.append(head(), bar());
     if (f.upload) {
       const line = el("p", "fs-said", progressText());
       line.id = "fs-progress";

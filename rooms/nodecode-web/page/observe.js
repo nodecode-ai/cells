@@ -1030,12 +1030,14 @@ export function drawDashboard(parts, range, home) {
   for (const [id, label] of JUMPS) menu.append(button("choice", label, { jump: id }));
   jumps.append(opener, menu);
   top.append(switcher, jumps);
-  root.append(top);
 
   const data = parts.usage?.range === range ? parts.usage : null;
   const activity = parts.activity?.range === range ? parts.activity : null;
-  if (!data || data.error) { root.append(waiting(data?.error ? t("Could not read usage: {error}", { error: data.error }) : t("Adding it up…"))); return root; }
-  root.append(dashHeadline(data, activity, range), nowStrip(parts.health, parts.identity), totalsTiles(data, activity));
+  if (!data || data.error) { root.append(top, waiting(data?.error ? t("Could not read usage: {error}", { error: data.error }) : t("Adding it up…"))); return root; }
+  // The standard's order: the head, then the range that filters it; a phone's head
+  // is its glance, which takes the range under its hero.
+  const phone = PHONE.matches;
+  root.append(dashHeadline(data, activity, range), ...(phone ? [] : [top]), nowStrip(parts.health, parts.identity), totalsTiles(data, activity));
 
   const spendRow = el("div", "obs-two");
   spendRow.append(spendSection(data), activity ? heatmap(activity.hours) : waitingBox(t("When turns ran"), "hours"));
@@ -1054,7 +1056,7 @@ export function drawDashboard(parts, range, home) {
   root.append(lower, callsSection(activity));
 
   // A phone's page (app.css: max-width 720px) is these two alone; wider, neither shows.
-  root.append(glance(parts, data, activity));
+  root.append(glance(parts, data, activity, phone ? top : null));
   if (parts.dashSheet) root.append(...dashSheet(parts, data, activity, range, home));
   return root;
 }
@@ -1432,7 +1434,7 @@ const SHEETS = {
   },
 };
 
-function glance(parts, data, activity) {
+function glance(parts, data, activity, range) {
   const all = data.totals;
   const node = el("div", "dash-glance");
   const hero = el("section", "glance-hero");
@@ -1446,6 +1448,7 @@ function glance(parts, data, activity) {
   if (all.failed_turns) sub.append(" · ", el("span", "hot", t("{n} failed", { n: count(all.failed_turns) })));
   hero.append(el("p", "micro", dashMicro(data)), row, sub);
   node.append(hero);
+  if (range) node.append(range);
 
   // What is wrong right now, only when something is: its first fact, opening them all.
   const facts = Array.isArray(parts.health) ? parts.health : [];

@@ -535,6 +535,14 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     return log.level === "all" || level === log.level || (log.level === "warn" && level === "error");
   }
 
+  // How the log stands, in one sentence: its errors and warnings as Level counts them.
+  function logState() {
+    const lines = c.log.lines || [];
+    if (!lines.length) return c.log.source ? t("Nothing written yet.") : t("Reading…");
+    const levels = lines.map(levelOf);
+    return t("{errors} errors, {warnings} warnings.", { errors: levels.filter((l) => l === "error").length, warnings: levels.filter((l) => l !== "info").length });
+  }
+
   function drawLog() {
     const box = document.getElementById("control-log");
     if (!box) return;
@@ -560,6 +568,8 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       box.prepend(earlier);
     }
     if (!kept.length) box.append(el("div", "obs-note", c.log.lines.length ? t("No line matches.") : t("Nothing written yet.")));
+    const state = document.getElementById("control-log-state");
+    if (state) state.textContent = logState();
     const count = document.getElementById("control-log-count");
     if (count) count.textContent = ` · ${t("{kept} of {total} lines", { kept: kept.length, total: c.log.lines.length })}`;
     if (phone ? c.log.follow && (atEnd || fresh) : atEnd || c.log.follow) pane.scrollTop = pane.scrollHeight;
@@ -568,6 +578,8 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   function drawLogs() {
     const root = el("div", "ctl-tab ctl-logs");
     const log = c.log;
+    root.append(headline(t("Logs"), logState(), log.lines?.length ? t("In the last {n} lines.", { n: log.lines.length }) : ""));
+    root.lastChild.querySelector(".display").id = "control-log-state";
     const bar = el("div", "ctl-toolbar");
     const filter = el("input", "control");
     Object.assign(filter, { type: "search", placeholder: t("Filter lines"), value: log.filter });
@@ -614,10 +626,13 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   function drawSettings() {
     const root = el("div", "ctl-tab");
     const [infoMark, words] = about(c, "settings", t("A key or the default model is used from the next turn on; nothing restarts. A cell reads its section of config.jsonc when it starts: after changing that section, restart the cell under Cells."));
-    const model = block(t("Default model"), infoMark);
-    model.append(words);
     const m = c.model;
     const list = c.models?.models || [];
+    const named = m && !m.error && (list.find((each) => each.provider === m.provider && each.model === m.model)?.name || m.model);
+    const head = headline(t("Settings"), named ? t("New sessions use {model}.", { model: named }) : m && !m.error ? t("No default model.") : t("Reading…"), m?.refusal || "");
+    (head.querySelector(".micro") || head).append(" ", infoMark);
+    root.append(head, words);
+    const model = block(t("Default model"));
     if (!m || m.error) model.append(m?.error ? unread(m.error) : waiting(t("Looking…")));
     else {
       const select = el("select", "control ctl-select");
@@ -746,8 +761,15 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     const [infoMark, words] = about(c, "cells", a.folder
       ? t("A cell is a folder in {folder}. On puts it there, with the cells it needs, and loads it into this organism now; off takes it out and stops it. Code already loaded stays in this organism until a restart.", { folder: a.folder })
       : t("A cell is a folder in the cell folder. On puts it there, with the cells it needs, and loads it into this organism now; off takes it out and stops it. Code already loaded stays in this organism until a restart."));
-    const list = block("", infoMark, el("span", "reading", t("{n} on", { n: a.cells.filter((r) => r.on).length })));
-    list.append(words);
+    const on = a.cells.filter((r) => r.on).length;
+    const failed = a.cells.filter((r) => r.refused || r.level === "error").length;
+    const head = headline(plural(a.cells.length, t("{n} cell"), t("{n} cells")),
+      t("{on} on, {off} off.", { on, off: a.cells.length - on }),
+      failed ? plural(failed, t("{n} failed to load."), t("{n} failed to load."))
+        : t("{n} loaded at this boot.", { n: a.cells.filter((r) => r.loaded).length }));
+    (head.querySelector(".micro") || head).append(" ", infoMark);
+    root.append(head, words);
+    const list = block("");
     const rows = el("ol", "ctl-list");
     for (const r of a.cells) cellRow(rows, r, false);
     if (!a.cells.length) rows.append(el("li", "obs-note", a.folder ? t("{folder} holds no cell.", { folder: a.folder }) : t("The cell folder is off in this process.")));
@@ -808,8 +830,19 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     if (ch?.missing) { root.append(missing("channels", t("a channel (discord, telegram) with the channel kit"), "channels.<name>")); return root; }
     if (!ch || ch.error) { root.append(ch?.error ? unread(t("Could not read the channels: {error}", { error: ch.error })) : waiting(t("Looking…"))); return root; }
     const [infoMark, words] = about(c, "channels", t("Set up walks a channel from its bot's token to who may talk to it. Check asks the platform what this channel's token can see. Restart channels starts every channel again on config.jsonc as it is now: what a changed section needs."));
-    const list = block("", infoMark, button("word", c.busy === "channels" ? t("Restarting…") : t("Restart channels"), { act: "restart-channels" }));
-    list.append(words);
+    const running = ch.channels.filter((ch1) => ch1.state === "running").map((ch1) => `${ch1.id[0].toUpperCase()}${ch1.id.slice(1)}`);
+    const asking = ch.pairing.reduce((n, p) => n + (p.asks?.length || 0), 0);
+    const head = headline(t("Channels"),
+      !running.length ? t("No channel is running.")
+        : running.length === 1 ? t("{name} is running.", { name: running[0] })
+        : t("{names} and {last} are running.", { names: running.slice(0, -1).join(", "), last: running.at(-1) }),
+      asking ? plural(asking, t("{n} is asking to pair."), t("{n} are asking to pair.")) : t("Nobody is asking to pair."));
+    (head.querySelector(".micro") || head).append(" ", infoMark);
+    root.append(head, words);
+    // The page's drastic act stands at its foot (the standard's sixth slot).
+    const foot = el("div", "ctl-foot");
+    foot.append(button("quiet", c.busy === "channels" ? t("Restarting…") : t("Restart channels"), { act: "restart-channels" }));
+    const list = block("");
     const rows = el("ol", "ctl-list");
     // A lane the kit reports, then one whose section is declared and quiet (turned off).
     const quiet = cfgs.sections().filter((s) => s.path.length === 2 && s.path[0] === "channels"
@@ -859,7 +892,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     }
     if (!ch.channels.length && !quiet.length) rows.append(el("li", "obs-note", t("No channel is installed. Add one, then Set up walks it here.")));
     list.append(rows);
-    root.append(list, access.pairing(ch));
+    root.append(list, access.pairing(ch), foot);
     return root;
   }
 

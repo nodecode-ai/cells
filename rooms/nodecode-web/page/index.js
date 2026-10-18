@@ -6,7 +6,7 @@
 // file, the commit and the ledger are what the agent's own would leave, and a
 // refusal is the definition's own reason, said where the write was made.
 
-import { el, button, mark, when, waiting } from "./observe.js";
+import { el, button, mark, when, waiting, headline } from "./observe.js";
 import { block, note, form, field, confirmBox, about, PHONE } from "./control.js";
 import { t } from "./i18n.js";
 
@@ -144,8 +144,10 @@ export function makeIndex({ c, api, act, toast, redraw, settle }) {
     }
     const [infoMark, words] = about(c, "index", t("What the agent keeps and does not run — memories, skills in prose — and the definitions of its own layer, ranked by use: the index at the head of every conversation lists the hot ones, and the agent reads one before it follows it. A memory never cools; a skill or a definition unused for a while does. A new session lists a change at once, one already running after its next eviction, or at once after /index reload in it."));
     const cells = new Set(l.definitions.map((d) => d.cell)).size;
-    const list = block("", infoMark, el("span", "reading", t("{hot} hot · {cold} cold · {cells} cells", { hot: l.hot, cold: l.cold, cells })));
-    list.append(words);
+    const head = headline(t("Index"), t("{hot} hot, {cold} cold.", { hot: l.hot, cold: l.cold }), t("From {n} cells.", { n: cells }));
+    (head.querySelector(".micro") || head).append(" ", infoMark);
+    root.append(head, words);
+    const list = block("");
     const bar = el("div", "ctl-toolbar");
     const filter = el("input", "control");
     Object.assign(filter, { type: "search", placeholder: t("Filter what is kept"), value: s.filter });
