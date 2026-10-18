@@ -202,15 +202,57 @@ its request."
     (ignore-errors (nlk:wait-for-child (run-pid run) (run-process run))))
   (ignore-errors (close (run-output run))))
 
+(defparameter *settle-seconds* 10
+  "How long a claude CLI that is missing or will not start is waited for. A
+package manager reinstalling Claude Code moves the CLI's folder aside and puts
+the binary back within seconds; a round that starts inside that gap would
+otherwise fail on a CLI that is about to be there again.")
+
+(defun runnable-p (program)
+  "Whether PROGRAM names a file this process may execute."
+  #+win32 (and program (probe-file program) t)
+  #-win32 (and program
+               (handler-case (progn (sb-posix:access (uiop:native-namestring program) sb-posix:x-ok)
+                                    t)
+                 (sb-posix:syscall-error () nil))))
+
+(defun settle-deadline ()
+  "The internal real time *SETTLE-SECONDS* from now."
+  (+ (get-internal-real-time) (* *settle-seconds* internal-time-units-per-second)))
+
+(defun settled-program (command &optional (deadline (settle-deadline)))
+  "COMMAND's executable (CLI-PROGRAM) once it may be run, looked for again
+every quarter second until DEADLINE; past it, whatever CLI-PROGRAM last found,
+NIL when nothing."
+  (loop for program = (cli-program command)
+        when (runnable-p program) return program
+        while (< (get-internal-real-time) deadline)
+        do (sleep 1/4)
+        finally (return program)))
+
+(defun start-cli (command start)
+  "Call START with COMMAND's executable and return its values. While the CLI is
+missing, not executable or fails to start, it is looked for again until
+*SETTLE-SECONDS* have passed, so a reinstall that lands between the look and the
+start does not end the round; past that the failure stands, a CLI never found
+failing as not installed."
+  (let ((deadline (settle-deadline)))
+    (loop
+      (let ((program (or (settled-program command deadline)
+                         (run-fail (format nil "the claude CLI is not installed here (no ~a on PATH): install Claude Code, run `claude' once and /login"
+                                           command)
+                                   :status 404 :config t))))
+        (handler-case (return (funcall start program))
+          (error (condition)
+            (if (< (get-internal-real-time) deadline)
+                (sleep 1/4)
+                (error condition))))))))
+
 (defun author-request (body &key model window directory)
   "(values HEADERS ENDPOINT OCTETS): the Messages request the claude CLI
 writes for BODY — Nodecode's own for the round, decoded — run in DIRECTORY,
 MODEL on WINDOW's route."
-  (let* ((program (or (cli-program (setting :command))
-                      (run-fail (format nil "the claude CLI is not installed here (no ~a on PATH): install Claude Code, run `claude' once and /login"
-                                        (setting :command))
-                                :status 404 :config t)))
-         (frames (replay-frames body model))
+  (let* ((frames (replay-frames body model))
          (scratch (uiop:ensure-directory-pathname
                    (merge-pathnames (format nil "nodecode-claude-code-~a" (hex-token 8))
                                     (uiop:temporary-directory))))
@@ -238,11 +280,13 @@ MODEL on WINDOW's route."
            (setf relay (open-relay))
            (let ((stderr (merge-pathnames "stderr.log" scratch)))
              (nlk:bind (((pid output _ process input)
-                         (nlk:spawn-program (cli-argv program (model-argument model window)
-                                                      system-file settings-file (effort body))
-                                            :directory directory
-                                            :environment (cli-environment relay (gethash "max_tokens" body))
-                                            :input :stream :error-output stderr)))
+                         (start-cli (setting :command)
+                                    (lambda (program)
+                                      (nlk:spawn-program (cli-argv program (model-argument model window)
+                                                                   system-file settings-file (effort body))
+                                                         :directory directory
+                                                         :environment (cli-environment relay (gethash "max_tokens" body))
+                                                         :input :stream :error-output stderr)))))
                (setf run (make-run :pid pid :process process :input input :output output
                                    :stderr stderr))))
            (let ((asked 0))

@@ -249,10 +249,44 @@ call: (values MESSAGE URL HEADERS CONTENT)."
 
 (deftest claude-code-cell-says-when-there-is-no-cli ()
   (with-cell-stop ((claude-code-start "command" "/nonexistent/claude"))
-    (let ((refusal (signals-error nle::provider-config-error (cc-round))))
+    (let* ((nodecode-claude-code::*settle-seconds* 1/2)
+           (refusal (signals-error nle::provider-config-error (cc-round))))
       (when (typep refusal 'nle::provider-error)
         (is (eql 404 (nle::provider-error-status refusal)))
         (is (search "not installed" (nle::provider-error-detail refusal)))))))
+
+(deftest claude-code-cell-waits-out-a-reinstall ()
+  ;; A reinstall leaves the CLI's path missing, then present but not yet
+  ;; executable, for seconds: the round waits for it rather than failing.
+  (uiop:with-temporary-file (:pathname script :keep nil)
+    (let ((path (uiop:native-namestring script))
+          (nodecode-claude-code::*settle-seconds* 5))
+      (with-open-file (out path :direction :output :if-exists :supersede)
+        (write-line "#!/bin/sh" out))
+      (sb-posix:chmod path #o644)
+      (let* ((started (get-internal-real-time))
+             (installer (sb-thread:make-thread (lambda () (sleep 1/2) (sb-posix:chmod path #o755))))
+             (found (nodecode-claude-code::settled-program path)))
+        (sb-thread:join-thread installer)
+        (is (equal (truename path) found) "the CLI, once it may run")
+        (is (<= 2/5 (/ (- (get-internal-real-time) started) internal-time-units-per-second) 4) "found after the reinstall, not before and not at the deadline"))
+      (sb-posix:chmod path #o644)
+      (let ((nodecode-claude-code::*settle-seconds* 1/2))
+        (is (equal (truename path) (nodecode-claude-code::settled-program path)) "a CLI that never becomes executable is still named, for the start to say why")))))
+
+(deftest claude-code-cell-retries-a-start-that-fails-in-the-window ()
+  (let ((fake (cc-fake))
+        (tries 0))
+    (flet ((start (program)
+             (declare (ignore program))
+             (if (= 1 (incf tries))
+                 (error "spawning claude: Permission denied")
+                 (values :started tries))))
+      (let ((nodecode-claude-code::*settle-seconds* 5))
+        (is (equal '(:started 2) (multiple-value-list (nodecode-claude-code::start-cli fake #'start))) "a start that fails inside the window is tried again"))
+      (setf tries 0)
+      (let ((nodecode-claude-code::*settle-seconds* 0))
+        (is (signals-error error (nodecode-claude-code::start-cli fake #'start)) "past the window the failure stands")))))
 
 ;;; --- what the rest of the organism reads ----------------------------------------
 
