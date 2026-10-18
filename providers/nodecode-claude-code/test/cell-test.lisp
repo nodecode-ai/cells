@@ -265,6 +265,11 @@ call: (values MESSAGE URL HEADERS CONTENT)."
                                                                   :test-not #'equal)
                   :key (lambda (row) (getf row :model-id)) :test #'equal) "with its models"))
       (is (eq :oauth (nle::provider-auth-state "claude-code" :auth-path auth)) "credentialed by the CLI")
-      (is (null (nle::model-price "claude-haiku-4-5" "claude-code")) "and never priced"))
+      ;; Two resellers outvote Anthropic's own row, so only the hook's
+      ;; mapping to anthropic answers 1/5 rather than their 9/9.
+      (with-catalog-fixture (catalog "{\"anthropic\":{\"models\":{\"claude-haiku-4-5\":{\"cost\":{\"input\":1,\"output\":5,\"cache_read\":0.1,\"cache_write\":1.25}}}},
+                                      \"aaa\":{\"models\":{\"claude-haiku-4-5\":{\"cost\":{\"input\":9,\"output\":9}}}},
+                                      \"bbb\":{\"models\":{\"claude-haiku-4-5\":{\"cost\":{\"input\":9,\"output\":9}}}}}")
+        (is (equal '(1 5 0.1d0 1.25d0) (nle::model-price "claude-haiku-4-5" "claude-code")) "priced at Anthropic's API list price")))
     (nlk:bind (((ids) (nle::configured-provider-inventory :auth-path auth)))
       (is (not (member "claude-code" ids :test #'equal)) "stopped, it is gone"))))

@@ -16,8 +16,10 @@
 ;;;;   CONFIGURED-PROVIDER-INVENTORY   /models lists claude-code/<model>
 ;;;;   RESOLVE-MODEL-CAPABILITY        a model's window, output ceiling and
 ;;;;                                   effort ladder are Anthropic's own row
-;;;;   MODEL-PRICE                     none: a subscription round is not
-;;;;                                   billed per token, so no round is priced
+;;;;   MODEL-PRICE                     Anthropic's API list price: a
+;;;;                                   subscription round is not billed per
+;;;;                                   token, so its cost is what the round
+;;;;                                   would have cost on the API
 ;;;;
 ;;;; Config, a sibling top-level key next to `websearch' and `cron':
 ;;;;   "claude-code": {"command": "claude",
@@ -85,9 +87,10 @@ row of the same id."
   (funcall next model-id (if (equal provider +provider+) "anthropic" provider)))
 
 (defun price (next model-id provider)
-  "MODEL-PRICE advice: no price for a claude-code model."
-  (unless (equal provider +provider+)
-    (funcall next model-id provider)))
+  "MODEL-PRICE advice: a claude-code model is priced as the Anthropic row of
+the same id, its API list price -- what the round would have cost on the
+API, as openai-codex prices its subscription models."
+  (funcall next model-id (if (equal provider +provider+) "anthropic" provider)))
 
 (defun register-lane ()
   "The claude-code lane: the Anthropic fold under this provider's name."

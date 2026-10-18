@@ -31,8 +31,9 @@ It follows NousResearch's
   machine. Read the current terms yourself before relying on it.
 - **Billing.** Whether a round draws from your plan or from extra usage is
   decided by Anthropic's service. Turn off extra usage in your account if you
-  don't want overage charges. Nodecode puts no price on claude-code rounds:
-  none is billed per token, so the Dashboard shows no cost for them.
+  don't want overage charges. Nodecode prices a claude-code round at
+  Anthropic's API list price for its model: the Dashboard's cost for it is
+  what the round would have cost on the API, not what your plan charged.
 - **Models.** Models with windows over 200K run on their 1M route. On some
   plans a 1M route, and Fable, draw from usage credits.
 
