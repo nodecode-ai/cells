@@ -47,6 +47,8 @@ const state = {
   seen: { since: null, at: {} }, // what this browser has read of each session (SEEN_KEY)
   left: null, // the session just left standing idle, seen as far as the next listing goes
   branches: new Set(), // sessions whose forks and seats the list draws under them
+  kids: new Map(), // session id -> the listed sessions right under it, oldest first
+  rooms: new Set(), // the sessions a channel's chat keeps, its threads and asks under them
   reveal: null, // the session whose line opens once the list knows it
   current: null,
   filter: "",
@@ -2718,8 +2720,21 @@ let barClick = 0; // a call bar's click, held until it is not a double click
 
 // --- the strip, the column -----------------------------------------------------------
 
+// A room's line opens on its tag -- `who (operator) [m123 u456]: ...' -- and a
+// thread's lane is titled by that line, cut before its words. The thread is
+// about its first ask, a session of its own under it with a title of its
+// own; with none listed, the tag's speaker and words stand in.
+const ROOM_TAG = /\s*\[(?=[mur]\d)(?:m\d+)?\s*(?:u\d*)?\s*(?:r\d*)?\]?:?\s*/;
+const ownTitle = (entry) => entry?.title || entry?.semantic_summary?.title || "";
+
 function sessionName(entry) {
-  return entry?.title || entry?.semantic_summary?.title || t("untitled");
+  const name = ownTitle(entry);
+  if (!name) return t("untitled");
+  if (!ROOM_TAG.test(name)) return name;
+  const ask = (state.kids.get(entry.id) || []).find((kid) => ownTitle(kid) && !ROOM_TAG.test(ownTitle(kid)));
+  if (ask) return ownTitle(ask);
+  const [who, said] = name.split(ROOM_TAG);
+  return said ? `${who}: ${said}` : who;
 }
 
 const home = (dir) => (dir || "").replace(/^\/(?:home|Users)\/[^/]+/, "~");
@@ -2960,11 +2975,54 @@ function hereFolder() {
   return state.current ? treeFolder(state.current) : state.folder;
 }
 
+// --- rooms, and the list's three bands -------------------------------------------
+// A channel's chat keeps a lane of its own, the root its threads and asks hang
+// under: a room. Its threads are the operator's conversations, so the list
+// unfolds it: each thread stands as a row of its own beside the room's own
+// lane, and the room's id names its platform (the channel kit's `discord-<chat>').
+const PLATFORMS = { discord: "Discord", telegram: "Telegram" };
+
+// Who hangs under whom, oldest first, and which roots are rooms, from the listing.
+function indexTree() {
+  state.kids = new Map();
+  state.rooms = new Set();
+  const byAge = [...state.sessions].sort((a, b) => stamp(a.created_at) - stamp(b.created_at));
+  for (const entry of byAge) {
+    const up = parentOf(entry);
+    if (!up) continue;
+    if (!state.kids.has(up)) state.kids.set(up, []);
+    state.kids.get(up).push(entry);
+  }
+  for (const entry of state.sessions) {
+    const top = sourceOf(entry) === "channel" ? ancestors(entry.id).at(-1) : null;
+    if (top) state.rooms.add(top);
+  }
+}
+
+// The room ID's session hangs in, or null.
+const roomOf = (id) => (state.rooms.has(id) ? id : ancestors(id).find((up) => state.rooms.has(up)) || null);
+
+// What ID hangs under that the list folds: every session over it but a room.
+const folds = (id) => ancestors(id).filter((up) => !state.rooms.has(up));
+
+// Where a session's conversation is held, the line under its name.
+function whereOf(entry) {
+  const room = roomOf(entry.id);
+  if (room) {
+    const kind = room.split("-")[0];
+    return PLATFORMS[kind] || kind;
+  }
+  const kind = sourceOf(entry);
+  if (entry.standby || kind === "gateway") return entry.working_directory ? `${t("Shell")} · ${folderName(entry.working_directory)}` : t("Shell");
+  return sourceWord(kind);
+}
+
 function renderSessions() {
   if (state.reveal && state.sessionsById.has(state.reveal)) {
     for (const up of ancestors(state.reveal)) state.branches.add(up);
     state.reveal = null;
   }
+  indexTree();
   const here = hereFolder();
   const inHere = here ? state.sessions.filter((entry) => treeFolder(entry.id) === here) : [];
   const scope = here ? state.scope : "all";
@@ -2978,19 +3036,20 @@ function renderSessions() {
     const up = parentOf(entry);
     if (up) held.set(up, (held.get(up) || 0) + 1);
   }
-  for (const id of state.running) if (!isNote(state.sessionsById.get(id))) for (const up of ancestors(id)) holding.add(up);
+  for (const id of state.running) if (!isNote(state.sessionsById.get(id))) for (const up of folds(id)) holding.add(up);
   // Scoped, the head says so: how many of all it lists, and whose folder, with
   // Show all beside it; a scope that hides nothing reads as the whole count.
   const all = own(state.sessions).length;
   const narrowed = scope === "folder" && own(inHere).length < all;
   $("count").textContent = String(all);
   $("count").hidden = narrowed;
+  $("filter").placeholder = t("Search {n}", { n: all.toLocaleString() });
   $("scope-line").hidden = !narrowed;
   $("scope-said").textContent = narrowed ? t("{n} of {m} · {folder}", { n: own(inHere).length, m: all, folder: folderName(here) }) : "";
   $("scope-said").title = narrowed ? home(here) : "";
   // A session folded away under another carries its news up to it.
   const newsUnder = new Set();
-  for (const entry of state.sessions) if (unseen(entry)) for (const up of ancestors(entry.id)) newsUnder.add(up);
+  for (const entry of state.sessions) if (unseen(entry)) for (const up of folds(entry.id)) newsUnder.add(up);
   $("scope").disabled = !here;
   $("scope").setAttribute("aria-pressed", String(scope === "folder"));
   $("scope").title = here ? t("This folder only: {n} of {m}", { n: own(inHere).length, m: own(state.sessions).length }) : t("This folder only");
@@ -3005,54 +3064,108 @@ function renderSessions() {
   // A search or a source finds a session wherever it hangs: the fold stands
   // aside for it. A session this tab minted and has not spoken in yet is in
   // no store to have a source, and stays in sight. Every source but the
-  // machine's notes is the operator's to see; the notes are read under theirs.
+  // machine's notes and the scheduled jobs (Control's Scheduled jobs lists
+  // those) is a conversation of the operator's; the notes are read under theirs.
   const scoped = scope === "folder" ? inHere : state.sessions;
   renderSources(scoped);
   const needle = state.filter.toLowerCase();
   const flat = !!needle || state.source !== null;
   const inScope = new Set(scoped.filter((entry) => entry.standby || (state.source === null
-    ? !isNote(entry) || entry.id === state.current : sourceOf(entry) === state.source)));
-  const items = listOrder()
+    ? (!isNote(entry) && sourceOf(entry) !== "cron") || entry.id === state.current : sourceOf(entry) === state.source)));
+  const shown = listOrder()
     .filter((entry) => inScope.has(entry))
     .filter((entry) => needle
       ? [sessionName(entry), entry.id, entry.working_directory].some((field) => field && field.toLowerCase().includes(needle))
-      : flat || ancestors(entry.id).every((up) => state.branches.has(up)))
-    .map((entry) => {
-      const li = el("li");
-      const button = el("button", "row");
-      button.type = "button";
-      button.dataset.id = entry.id;
-      const kids = flat ? 0 : held.get(entry.id) || 0;
-      const open = state.branches.has(entry.id);
-      button.title = [entry.id, home(entry.working_directory), !entry.standby && sourceWord(sourceOf(entry)), kids && plural(kids, t("{n} node"), t("{n} nodes"))].filter(Boolean).join(" · ");
-      if (entry.id === state.current && !board()) button.setAttribute("aria-current", "page");
-      if (state.picking) pickable(button, entry);
-      const depth = Math.min(entry.depth || 0, 3);
-      if (depth) {
-        button.style.paddingLeft = `${16 + depth * 14}px`;
-        button.append(el("span", "fork", "⌎"));
-      }
-      // The caret stands in the gutter ahead of the row, so every name at one
-      // depth starts in one column.
-      if (kids) {
-        const caret = el("span", "caret");
-        caret.style.left = `${depth * 14}px`;
-        button.setAttribute("aria-expanded", String(open));
-        button.append(caret);
-      }
-      const running = state.running.has(entry.id);
-      if (running) button.append(lamp(true));
-      else if (holding.has(entry.id)) button.append(el("i", "led pulse off"));
-      button.append(el("span", "name", sessionName(entry)));
-      if (kids && !open) button.append(el("span", "n", String(kids)));
-      if (unseen(entry) || (!open && !flat && newsUnder.has(entry.id))) {
-        button.classList.add("with-news");
-        button.append(newsDot());
-      }
-      button.append(el("span", "reading", running ? t("now") : since(entry.updated_at)));
-      li.append(button);
-      return li;
-    });
+      : flat || folds(entry.id).every((up) => state.branches.has(up)));
+  const row = (entry) => {
+    const li = el("li");
+    const button = el("button", "row");
+    button.type = "button";
+    button.dataset.id = entry.id;
+    const kids = flat || state.rooms.has(entry.id) ? 0 : held.get(entry.id) || 0;
+    const open = state.branches.has(entry.id);
+    button.title = [entry.id, home(entry.working_directory), !entry.standby && sourceWord(sourceOf(entry)), kids && plural(kids, t("{n} node"), t("{n} nodes"))].filter(Boolean).join(" · ");
+    if (entry.id === state.current && !board()) button.setAttribute("aria-current", "page");
+    if (state.picking) pickable(button, entry);
+    const depth = flat ? 0 : Math.min(folds(entry.id).length, 3);
+    if (depth) {
+      button.style.paddingLeft = `${16 + depth * 14}px`;
+      button.append(el("span", "fork", "⌎"));
+    }
+    // The caret stands in the gutter ahead of the row, so every name at one
+    // depth starts in one column.
+    if (kids) {
+      const caret = el("span", "caret");
+      caret.style.left = `${depth * 14}px`;
+      button.setAttribute("aria-expanded", String(open));
+      button.append(caret);
+    }
+    const running = state.running.has(entry.id);
+    if (running) button.append(lamp(true));
+    else if (holding.has(entry.id)) button.append(el("i", "led pulse off"));
+    // Two lines: its name, and where it is held -- answering now, while a turn runs in it.
+    const words = el("span", "words");
+    const meta = el("span", "meta", whereOf(entry));
+    if (running || holding.has(entry.id)) meta.append(el("span", "ses-now", ` · ${t("answering now")}`));
+    words.append(el("span", "name", sessionName(entry)), meta);
+    button.append(words);
+    if (kids && !open) button.append(el("span", "n", String(kids)));
+    if (unseen(entry) || (!open && !flat && newsUnder.has(entry.id))) {
+      button.classList.add("with-news");
+      button.append(newsDot());
+    }
+    button.append(el("span", "reading", running ? t("now") : since(entry.updated_at)));
+    li.append(button);
+    return li;
+  };
+  // Three bands, as a phone's inbox reads: what runs now, what has news since
+  // this browser last looked, then the rest, each newest first; a session this
+  // tab minted and has not spoken in stands above them. A row carries what
+  // hangs open under it, and the news and the turns under it.
+  const newest = new Map();
+  for (const entry of state.sessions) {
+    for (const id of [entry.id, ...folds(entry.id)]) {
+      if (stamp(entry.updated_at) > (newest.get(id) || 0)) newest.set(id, stamp(entry.updated_at));
+    }
+  }
+  const shownIds = new Set(shown.map((entry) => entry.id));
+  const blocks = [];
+  for (const entry of shown) {
+    if (flat || !blocks.length || !folds(entry.id).some((up) => shownIds.has(up))) blocks.push({ head: entry, rows: [entry] });
+    else blocks.at(-1).rows.push(entry);
+  }
+  const band = ({ head }) => (head.standby ? "minted"
+    : state.running.has(head.id) || holding.has(head.id) ? "running"
+    : unseen(head) || newsUnder.has(head.id) ? "news" : "earlier");
+  const bandHead = (key, label, n) => {
+    const li = el("li", `ses-band ${key}`);
+    li.append(el("span", "", label));
+    if (n) li.append(el("span", "n", String(n)));
+    return li;
+  };
+  const items = [];
+  let news = 0;
+  if (needle) {
+    // A thread named by its first ask is found once, as the thread.
+    const found = shown.filter((entry) => !(parentOf(entry) && shownIds.has(parentOf(entry))
+      && sessionName(state.sessionsById.get(parentOf(entry))) === sessionName(entry)));
+    if (found.length) items.push(bandHead("titles", t("Titles"), found.length));
+    items.push(...found.map(row));
+  } else {
+    items.push(...blocks.filter((block) => band(block) === "minted").flatMap((block) => block.rows.map(row)));
+    const bands = [["running", t("Running")], ["news", t("Waiting on you")], ["earlier", t("Earlier")]]
+      .map(([key, label]) => [key, label, blocks.filter((block) => band(block) === key)
+        .sort((a, b) => (newest.get(b.head.id) || 0) - (newest.get(a.head.id) || 0))])
+      .filter(([, , mine]) => mine.length);
+    for (const [key, label, mine] of bands) {
+      if (key === "news") news = mine.length;
+      // The rest needs no head of its own when it is all there is.
+      if (key !== "earlier" || bands.length > 1) items.push(bandHead(key, label, key === "earlier" ? 0 : mine.length));
+      items.push(...mine.flatMap((block) => block.rows.map(row)));
+    }
+  }
+  $("sessions-badge").textContent = String(news);
+  $("sessions-badge").hidden = !news;
   // What a note said is found only where the notes are read.
   const hits = state.found.filter((hit) => (state.source === "experience" || !isNote(state.sessionsById.get(hit.session_id)))
     && (scope !== "folder" || treeFolder(hit.session_id) === here));
@@ -3088,13 +3201,13 @@ function renderSessions() {
 
 // Every source kind a session's first turn arrives with.
 const SOURCE_WORDS = {
-  gateway: t("Shell or web"),
   channel: t("Channels"),
+  gateway: t("Shell or web"),
   cron: t("Scheduled jobs"),
   team: t("Team seats"),
-  experience: t("Reflections"),
   checkpoint: t("Checkpoint forks"),
   in_process: t("In process"),
+  experience: t("Reflections"),
 };
 
 // A session the log names no source for (one never spoken in) has the empty
@@ -3114,22 +3227,30 @@ function renderSources(scoped) {
     if (!entry.standby) counts.set(sourceOf(entry), (counts.get(sourceOf(entry)) || 0) + 1);
   }
   if (state.source !== null && !counts.has(state.source)) counts.set(state.source, 0);
-  const ranked = [...counts].sort(([a, m], [b, n]) => n - m || sourceWord(a).localeCompare(sourceWord(b)));
-  const choices = [["all", t("All sources")], ...ranked.map(([kind, n]) => [`k:${kind}`, `${sourceWord(kind)} · ${n}`])];
-  const select = $("source");
+  // The conversations' sources first, in SOURCE_WORDS' order; one it does not
+  // name after them, and the sessions none is recorded for last.
+  const order = Object.keys(SOURCE_WORDS);
+  const rank = (kind) => (kind === "" ? order.length + 1 : order.includes(kind) ? order.indexOf(kind) : order.length);
+  const ranked = [...counts].sort(([a], [b]) => rank(a) - rank(b) || sourceWord(a).localeCompare(sourceWord(b)));
+  const chips = [["all", t("All"), null], ...ranked.map(([kind, n]) => [`k:${kind}`, sourceWord(kind), n])];
+  const box = $("sources");
   // Rebuilt only when what it offers changed: the list redraws on every
-  // activity frame, and a list open under the reader must not close.
-  const said = choices.map((choice) => choice.join("=")).join("|");
-  if (select.dataset.said !== said) {
-    select.replaceChildren(...choices.map(([value, text]) => {
-      const option = el("option", "", text);
-      option.value = value;
-      return option;
+  // activity frame, and the row under the reader's thumb must not move.
+  const said = chips.map((chip) => chip.join("=")).join("|");
+  if (box.dataset.said !== said) {
+    box.replaceChildren(...chips.map(([value, text, n]) => {
+      const chip = el("button", "");
+      chip.type = "button";
+      chip.setAttribute("role", "radio");
+      chip.dataset.value = value;
+      chip.append(el("span", "", text));
+      if (n !== null) chip.append(el("span", "n", String(n)));
+      return chip;
     }));
-    select.dataset.said = said;
+    box.dataset.said = said;
   }
-  select.value = state.source === null ? "all" : `k:${state.source}`;
-  select.parentElement.toggleAttribute("data-chosen", state.source !== null);
+  const chosen = state.source === null ? "all" : `k:${state.source}`;
+  for (const chip of box.children) chip.setAttribute("aria-checked", String(chip.dataset.value === chosen));
 }
 
 function chooseSource(value) {
@@ -4400,11 +4521,13 @@ function handOver(link) {
   setTimeout(() => link.setAttribute("href", place));
 }
 
-for (const [id, go] of [["home", openNew], ["usage-open", () => setPane("dashboard")], ["control-open", () => setPane("control")]]) {
+for (const [id, go] of [["home", openNew], ["usage-open", () => setPane("dashboard")], ["control-open", () => setPane("control")], ["link-open", () => setPane("control", "link")]]) {
   const link = $(id);
   link.addEventListener("click", (event) => {
     if (!inPlace(event)) { handOver(link); return; }
     event.preventDefault();
+    // A phone's tab leaves the Sessions page, even for the place it already shows.
+    app.classList.remove("column-open");
     go();
   });
   link.addEventListener("auxclick", (event) => { if (event.button === 1) handOver(link); });
@@ -4825,7 +4948,12 @@ function setScope(scope) {
 $("scope").addEventListener("click", () => setScope(state.scope === "folder" ? "all" : "folder"));
 $("scope-all").addEventListener("click", () => setScope("all"));
 $("filter").addEventListener("input", (event) => { state.filter = event.target.value; renderSessions(); searchSoon(); });
-$("source").addEventListener("change", (event) => chooseSource(event.target.value));
+$("sources").addEventListener("click", (event) => {
+  const chip = event.target.closest("[data-value]");
+  if (chip) chooseSource(chip.dataset.value);
+});
+// A phone's Sessions tab is the page it stands on: a tap goes back to its top.
+$("sessions-tab").addEventListener("click", () => { $("sessions").scrollTop = 0; });
 $("prune").addEventListener("click", () => setPruning(!state.prune));
 $("prune-form").addEventListener("click", (event) => {
   const p = state.prune;
@@ -4946,7 +5074,11 @@ composer.addEventListener("drop", (event) => {
   }
   attach(files);
 });
-$("fold").addEventListener("click", () => setFolded(true));
+// On a phone the column is a page over the chat, and its mark closes it.
+$("fold").addEventListener("click", () => {
+  if (narrow.matches) app.classList.remove("column-open");
+  else setFolded(true);
+});
 $("unfold").addEventListener("click", (event) => {
   event.stopPropagation();
   if (narrow.matches) app.classList.toggle("column-open");

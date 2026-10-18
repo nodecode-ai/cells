@@ -28,6 +28,11 @@
           <svg class="plus" viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><path d="M7.5 2.5V12.5M2.5 7.5H12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           <span data-i18n>New session</span>
         </button>
+        <button class="row" id="sessions-tab" type="button" aria-current="page">
+          <svg class="plus" viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><path d="M2.5 4H12.5M2.5 7.5H12.5M2.5 11H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="name" data-i18n>Sessions</span>
+          <span class="badge" id="sessions-badge" hidden></span>
+        </button>
         <a class="row" id="usage-open" href="#v=dashboard">
           <svg class="plus" viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><path d="M2 13H13M4 10.5V7M7.5 10.5V3M11 10.5V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           <span class="name" data-i18n>Dashboard</span>
@@ -50,6 +55,20 @@
               <button class="choice" id="pick" type="button" aria-pressed="false" title="Tick sessions to export or delete them" data-i18n data-i18n-attrs="title">Select</button>
               <button class="choice" id="import" type="button" title="Bring sessions back from a file Export saved (.jsonl)" data-i18n data-i18n-attrs="title">Import</button>
               <button class="choice" id="prune" type="button" aria-pressed="false" aria-controls="prune-form" title="Delete the sessions no one has touched in a while" data-i18n data-i18n-attrs="title">Prune</button>
+              <button class="choice" id="scope" type="button" aria-pressed="true" data-i18n>This folder only</button>
+              <div class="pop-part phone-only theme-choices" role="radiogroup" aria-label="Theme" data-i18n-attrs="aria-label">
+                <span class="micro" data-i18n>Theme</span>
+                <button class="choice" type="button" role="radio" data-choice="dark" data-i18n>Dark</button>
+                <button class="choice" type="button" role="radio" data-choice="light" data-i18n>Light</button>
+                <button class="choice" type="button" role="radio" data-choice="system" title="Follow the system's light or dark setting" data-i18n data-i18n-attrs="title">System</button>
+              </div>
+              <div class="pop-part phone-only lang-choices" role="radiogroup" aria-label="Language" data-i18n-attrs="aria-label">
+                <span class="micro" data-i18n>Language</span>
+                <button class="choice" type="button" role="radio" data-lang="auto" title="Follow the browser's languages" data-i18n data-i18n-attrs="title">Auto</button>
+                <button class="choice" type="button" role="radio" data-lang="en" lang="en">English</button>
+                <button class="choice" type="button" role="radio" data-lang="zh-Hans" lang="zh-Hans">中文</button>
+              </div>
+              <a class="choice phone-only" id="link-open" href="#v=control&amp;tab=link" data-i18n>Link</a>
             </div>
           </span>
           <input id="import-file" type="file" accept=".jsonl,application/x-ndjson" hidden>
@@ -61,15 +80,9 @@
         <div class="confirm ses-prune" id="prune-form" hidden></div>
         <div class="finder">
           <svg viewBox="0 0 15 15" width="13" height="13" fill="none" aria-hidden="true"><path d="M6.5 2.5a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM9.5 9.5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <input id="filter" type="search" placeholder="Filter" aria-label="Filter sessions" data-i18n-attrs="placeholder aria-label" autocomplete="off">
-          <button class="icon" id="scope" type="button" aria-pressed="true" aria-label="This folder only" title="This folder only" data-i18n-attrs="aria-label title">
-            <svg viewBox="0 0 15 15" width="13" height="13" fill="none" aria-hidden="true"><path d="M2 4a1 1 0 0 1 1-1h3l1.5 1.5H12a1 1 0 0 1 1 1V11.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <label class="icon ses-source" title="The source that began each session: a shell or this page, a channel, a scheduled job" data-i18n-attrs="title">
-            <svg viewBox="0 0 15 15" width="13" height="13" fill="none" aria-hidden="true"><path d="M2.5 3h10l-4 4.8v4.2l-2-1V7.8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <select id="source" aria-label="Which source" data-i18n-attrs="aria-label"><option value="all" data-i18n>All sources</option></select>
-          </label>
+          <input id="filter" type="search" placeholder="Search" aria-label="Search sessions" data-i18n-attrs="placeholder aria-label" autocomplete="off">
         </div>
+        <div class="chips" id="sources" role="radiogroup" aria-label="Which source" title="The source that began each session: a shell or this page, a channel, a scheduled job" data-i18n-attrs="aria-label title"></div>
         <div class="picking" id="picking" hidden>
           <button class="all" id="pick-all" type="button" role="checkbox" aria-checked="false" aria-label="Every session shown" title="Tick every session shown" data-i18n-attrs="aria-label title"><i class="checkmark" aria-hidden="true"></i><span class="reading" id="picked"></span></button>
           <button class="icon" id="pick-export" type="button" aria-label="Export" title="Save the ticked sessions, and every session under them, to one file" data-i18n-attrs="aria-label title">
@@ -107,12 +120,12 @@
             <svg viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 7.5H13M7.5 2C5.8 3.6 5 5.4 5 7.5S5.8 11.4 7.5 13C9.2 11.4 10 9.6 10 7.5S9.2 3.6 7.5 2Z" stroke="currentColor" stroke-width="1.2"/></svg>
           </button>
           <div class="pop link-pop" id="uplink" role="dialog" aria-label="Link" data-i18n-attrs="aria-label"></div>
-          <div class="pop" id="theme" role="radiogroup" aria-label="Theme" data-i18n-attrs="aria-label">
+          <div class="pop theme-choices" id="theme" role="radiogroup" aria-label="Theme" data-i18n-attrs="aria-label">
             <button class="choice" type="button" role="radio" data-choice="dark" data-i18n>Dark</button>
             <button class="choice" type="button" role="radio" data-choice="light" data-i18n>Light</button>
             <button class="choice" type="button" role="radio" data-choice="system" title="Follow the system's light or dark setting" data-i18n data-i18n-attrs="title">System</button>
           </div>
-          <div class="pop" id="lang" role="radiogroup" aria-label="Language" data-i18n-attrs="aria-label">
+          <div class="pop lang-choices" id="lang" role="radiogroup" aria-label="Language" data-i18n-attrs="aria-label">
             <button class="choice" type="button" role="radio" data-lang="auto" title="Follow the browser's languages" data-i18n data-i18n-attrs="title">Auto</button>
             <button class="choice" type="button" role="radio" data-lang="en" lang="en">English</button>
             <button class="choice" type="button" role="radio" data-lang="zh-Hans" lang="zh-Hans">中文</button>

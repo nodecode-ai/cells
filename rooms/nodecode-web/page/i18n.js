@@ -48,9 +48,7 @@ export function translatePage(root = document) {
       }
     }
   }
-  const box = root.getElementById?.("lang");
-  if (!box) return;
-  for (const button of box.querySelectorAll("[data-lang]")) {
+  for (const button of root.querySelectorAll?.(".lang-choices [data-lang]") || []) {
     button.setAttribute("aria-checked", String(button.dataset.lang === choice));
     button.addEventListener("click", () => {
       if (button.dataset.lang === choice) return;

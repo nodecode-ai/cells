@@ -42,6 +42,8 @@
   /* The accent as a mark rather than a word: a lamp, a switch's line, a hatch.
      Dark needs no second tone; light takes a brighter one than its text. */
   --accent-fill: #fa8b3e;
+  /* A turn running now: the list's lamp and its band, the one green. */
+  --live: #5fd08a;
   /* An answer's two hues, the TUI's Duotone: its ANSWER-TONES (theme.lisp)
      solved on this canvas from the accent. Warm is what to act on -- a bold
      run on its chip, a list's marks; cool is the structure -- a heading, the
@@ -130,6 +132,7 @@
   --accent: #9e4400;
   --danger-lit: #ad3419;
   --accent-fill: #dd6408;
+  --live: #17864a;
   --duo-strong: #692e02;
   --duo-chip: #e6cab5;
   --duo-glint: rgba(255, 255, 255, 0.85);
@@ -2072,6 +2075,50 @@ button.p-row:active { background: var(--field-lit); }
 .ses-source[data-chosen] { color: var(--accent); }
 .ses-source select option { text-transform: none; font: 13px var(--mono); background: var(--canvas); color: var(--foreground); }
 .column .ses-prune { gap: 10px; }
+/* The list as a phone's inbox reads it (variant A, the operator 2026-10-18):
+   its sources as chips, three bands -- what runs now, what waits on the
+   reader, the rest -- and a row in two lines, its name and where it is held. */
+.chips {
+  display: flex; gap: 6px; margin: 0 -20px 12px 0; padding-right: 20px;
+  overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
+}
+.chips::-webkit-scrollbar { display: none; }
+.chips:empty { display: none; }
+.chips button {
+  flex: none; display: inline-flex; align-items: baseline; gap: 6px; height: 28px; padding: 0 11px;
+  border: 1px solid var(--seam-lit); border-radius: 14px; font-size: 12.5px; line-height: 26px;
+  color: var(--secondary); white-space: nowrap; transition: color 130ms, background 130ms;
+}
+.chips button:hover { color: var(--primary); }
+.chips button[aria-checked="true"] { border-color: var(--primary); background: var(--primary); color: var(--void); font-weight: 560; }
+.chips .n { font: 11px var(--mono); color: var(--tertiary); font-variant-numeric: tabular-nums; }
+.chips [aria-checked="true"] .n { color: inherit; opacity: 0.6; }
+.sessions .ses-band {
+  display: flex; gap: 0.6em; margin: 18px 0 2px; padding-left: 16px;
+  font: 500 10.5px/1.6 var(--micro); letter-spacing: 0.08em; text-transform: uppercase; color: var(--tertiary);
+}
+.sessions .ses-band:first-child { margin-top: 0; }
+.sessions .ses-band > span { flex: none; }
+.ses-band .n::before { content: "\00b7  "; }
+.ses-band.running { color: var(--live); }
+.ses-band.news { color: var(--accent); }
+.row .words { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.row .meta { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; line-height: 1.4; color: var(--tertiary); }
+.row .meta .ses-now { color: var(--live); }
+.row.with-news .meta { color: var(--accent); }
+.sessions .row > .led { background: var(--live); }
+/* A fold's row keeps its caret in the gutter: its lamp stands after the words. */
+.sessions .row[aria-expanded] > .led { order: 2; }
+.sessions .row > .reading { order: 3; }
+/* Its mark stands in the gutter ahead of the name, unless a fold's caret holds it. */
+.sessions .row:not([aria-expanded]) > .led { position: absolute; left: 4px; top: calc(50% - 2.5px); }
+.sessions .row:not([aria-expanded]) > .news-dot { position: absolute; left: 3.5px; top: calc(50% - 3px); }
+.badge {
+  flex: none; align-self: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--accent-fill); color: var(--void); font: 600 11px/18px var(--mono); text-align: center; font-variant-numeric: tabular-nums;
+}
+/* Sessions as a place of its own, and what More gains, are a phone's (below). */
+#sessions-tab, .phone-only { display: none; }
 .ses-prune .micro { margin: 0; }
 .ses-prune .ses-ages { gap: 14px; margin: 0; }
 .ses-prune .sw:disabled { cursor: default; opacity: 0.5; }
@@ -2419,3 +2466,56 @@ button.p-row:active { background: var(--field-lit); }
 }
 
 /* --- end of a finger's hit areas */
+
+/* --- variant A on a phone: Sessions is a page of its own ---------------------------
+   The column fills the screen: one bar on top (the wordmark, the search, More),
+   the source chips, the list; the places along the foot as tabs a thumb reaches
+   (Sessions, Dashboard, Control), and New over them. The Sessions head, its
+   count and the gateway's footer go: More holds the folder scope, the theme,
+   the language and Link. */
+@media (max-width: 720px) {
+  .column, .app.folded .column {
+    width: 100vw; display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: 64px repeat(6, auto) minmax(0, 1fr); column-gap: 12px; border-right: 0;
+    padding: 0 max(16px, env(safe-area-inset-right)) calc(61px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+  .column-head, .group, .group-head { display: contents; }
+  .wordmark { grid-area: 1 / 1; align-self: center; }
+  .finder { grid-area: 1 / 2; align-self: center; margin: 0; }
+  .group-head .acts { grid-area: 1 / 3; align-self: center; margin: 0 -6px 0 0; }
+  .group-head .micro, #count, .column .gateway { display: none; }
+  .ses-scope-line { grid-area: 2 / 1 / 3 / -1; margin: 0 0 10px; }
+  #prune-form { grid-area: 3 / 1 / 4 / -1; }
+  .chips { grid-area: 4 / 1 / 5 / -1; margin: 0 -16px 8px 0; padding-right: 16px; }
+  .picking { grid-area: 5 / 1 / 6 / -1; }
+  #pick-confirm { grid-area: 6 / 1 / 7 / -1; }
+  #sessions-unread { grid-area: 7 / 1 / 8 / -1; }
+  .sessions { grid-area: 8 / 1 / 9 / -1; margin-right: -16px; padding: 4px 16px 84px 0; }
+  .sessions .row .name { font-size: 15px; }
+  .railed {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; margin: 0; display: flex;
+    padding: 0 8px env(safe-area-inset-bottom); border: 0; border-top: 1px solid var(--seam); background: var(--column-ground);
+  }
+  .railed > .row {
+    flex: 1; height: 60px; min-height: 0; padding: 0; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    font-size: 11.5px; line-height: 1;
+  }
+  #sessions-tab { display: flex; }
+  .railed > .row .name { flex: none; overflow: visible; }
+  .railed > .row .plus { width: 20px; height: 20px; }
+  .railed > .row[aria-current="page"]::before { display: none; }
+  .railed > .row .badge { position: absolute; top: 5px; left: calc(50% + 4px); }
+  .railed > .row .reading { position: absolute; top: 6px; left: calc(50% + 14px); font-size: 10px; }
+  #new-session {
+    position: fixed; z-index: 3; right: max(16px, env(safe-area-inset-right)); bottom: calc(76px + env(safe-area-inset-bottom));
+    width: auto; height: 52px; min-height: 0; flex: none; flex-direction: row; align-items: center; gap: 8px; padding: 0 22px 0 18px;
+    border-radius: 26px; background: var(--accent-fill); color: var(--void); font-size: 15px; font-weight: 600; box-shadow: var(--shadow);
+  }
+  #new-session:hover { color: var(--void); }
+  #new-session .plus { width: 16px; height: 16px; }
+  .phone-only { display: flex; }
+  .pop .pop-part { flex-wrap: wrap; align-items: center; gap: 2px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--seam-lit); }
+  .pop-part .micro { width: 100%; padding: 4px 10px 2px; color: var(--tertiary); }
+  .pop-part .choice { flex: 1; }
+  #ses-acts { min-width: 232px; }
+}

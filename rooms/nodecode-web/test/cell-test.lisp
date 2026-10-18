@@ -996,3 +996,41 @@ brace that closes it at the start of a line, or NIL."
     (is (search "linear-gradient(90deg, var(--band-ground) calc(100% - var(--tail) + 0.6em), transparent)" css) "a band fades into the page, never a box")
     (is (search ".answer.prose { overflow-x: clip; }" css) "and never passes the answer's edge")
     (is (search ".answer.prose :where(.inline-color strong) { background: none; padding: 0; }" css) "a model's own color keeps no chip")))
+
+;; Sessions on a phone are a page of their own (variant A of the column, the
+;; operator, 2026-10-18: "this sidebar is super not optimized and intuitive and
+;; doesn't feel mobile friendly at all", then "Lets land A"; the variants:
+;; https://claude.ai/artifact/FpWUHVBYzQ96QTuHdkCQ3Y). Measured on the live page
+;; at 390 px before it: the first session 335 px down under three place rows, 7
+;; of 8 rows wearing the news dot, 8 of 9 rows scheduled jobs, and #general's 661
+;; threads behind one row. Now the list reads as an inbox: its sources as chips,
+;; three bands (running, waiting on you, earlier), a room's threads each a row,
+;; the jobs under their own chip, a row its name and where it is held; on a
+;; phone the column fills the screen with the search in its top bar and the
+;; places as tabs along the foot, New over them.
+(deftest web-cell-sessions-on-a-phone-are-a-page-with-tabs ()
+  (let* ((html (web-page-text "index.html"))
+         (app (web-page-text "app.js"))
+         (css (web-page-text "app.css"))
+         (render (web-js-function app "renderSessions"))
+         (phone (search "/* --- variant A on a phone: Sessions is a page of its own" css)))
+    (is (search "id=\"sessions-tab\"" html) "Sessions is a place beside Dashboard and Control")
+    (is (search "id=\"sessions-badge\"" html) "its badge counts what waits")
+    (is (search "class=\"chips\" id=\"sources\" role=\"radiogroup\"" html) "the sources are chips")
+    (is (not (search "<select id=\"source\"" html)) "not a select behind a funnel")
+    (is (search "id=\"link-open\"" html) "More reaches Link on a phone")
+    (is (search "[[\"running\", t(\"Running\")], [\"news\", t(\"Waiting on you\")], [\"earlier\", t(\"Earlier\")]]" render)
+        "three bands: running, waiting on you, earlier")
+    (is (search "sourceOf(entry) !== \"cron\"" render) "the jobs stand under their own chip")
+    (is (search "folds(entry.id).every((up) => state.branches.has(up))" render) "a room's threads are rows of their own")
+    (is (search "whereOf(entry)" render) "a row says where it is held")
+    (is (search "$(\"sessions-badge\").hidden = !news;" render) "the badge shows only with news")
+    (is phone "a phone has the page")
+    (when phone
+      (let ((block (subseq css phone)))
+        (is (search ".column-head, .group, .group-head { display: contents; }" block) "one bar on top: wordmark, search, More")
+        (is (search ".finder { grid-area: 1 / 2;" block) "the search in it")
+        (is (search "position: fixed; left: 0; right: 0; bottom: 0;" block) "the places along the foot")
+        (is (search "#new-session {" block) "New over them")
+        (is (search ".group-head .micro, #count, .column .gateway { display: none; }" block) "no second head, no footer")))
+    (is (search "#sessions-tab, .phone-only { display: none; }" css) "wider, the column stays a column")))

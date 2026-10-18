@@ -28,7 +28,7 @@
     root.dataset.theme = theme;
     const meta = document.querySelector('meta[name="color-scheme"]');
     if (meta) meta.content = theme;
-    for (const button of document.querySelectorAll("#theme [data-choice]")) {
+    for (const button of document.querySelectorAll(".theme-choices [data-choice]")) {
       button.setAttribute("aria-checked", String(button.dataset.choice === choice));
     }
   }
@@ -40,8 +40,8 @@
   });
   document.addEventListener("DOMContentLoaded", () => {
     apply();
-    document.getElementById("theme").addEventListener("click", (event) => {
-      const button = event.target.closest("[data-choice]");
+    document.addEventListener("click", (event) => {
+      const button = event.target.closest(".theme-choices [data-choice]");
       if (!button) return;
       choice = button.dataset.choice;
       try { localStorage.setItem(KEY, choice); } catch {}
