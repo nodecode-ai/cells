@@ -23,8 +23,8 @@
 ;;;; cancel -- is the organism's, reached through its in-process seams.
 ;;;;
 ;;;; Every dependency is already in the serving image (cl-ppcre, shasht,
-;;;; bordeaux-threads ride with nodecode). The .asd sits INSIDE its folder
-;;;; (ADR-0229): install by putting -- or symlinking -- the directory under
+;;;; bordeaux-threads ride with nodecode). The .asd sits INSIDE its folder:
+;;;; install by putting -- or symlinking -- the directory under
 ;;;; ~/.nodecode/cells/. Presence is enabled; the package is named after the
 ;;;; system, which is how the loader finds START-CELL.
 

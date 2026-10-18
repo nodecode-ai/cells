@@ -7,10 +7,9 @@
 ;;;; servers, CLAUDE.md or memory of the operator's, no session file, one
 ;;;; turn. Its ANTHROPIC_BASE_URL is the round's relay. The history is written
 ;;;; to its stdin one frame at a time, each earlier user frame acknowledged by
-;;;; a zero-turn result before the next goes (unacknowledged, the CLI drops
-;;;; frames: 181 of 305 messages arrived, 2026-09-27); the last frame asks, the
-;;;; CLI POSTs, the relay keeps the request, and the CLI is killed. About
-;;;; 0.4 s to start and 20 ms a replayed user frame, measured on 2.1.283.
+;;;; a zero-turn result before the next goes (unacknowledged, the CLI would
+;;;; drop frames); the last frame asks, the CLI POSTs, the relay keeps the
+;;;; request, and the CLI is killed.
 ;;;;
 ;;;; The login is the CLI's, read where the CLI reads it: this file never
 ;;;; touches a credential. Whatever in the environment would point the CLI

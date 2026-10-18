@@ -4,7 +4,7 @@
 ;;;;
 ;;;; The machine dials; nothing dials it. A socket is the one shape that
 ;;;; crosses the relay's edge frame by frame -- a streamed request body is
-;;;; buffered there whole (measured 2026-09-18) -- and one socket carries every
+;;;; buffered there whole -- and one socket carries every
 ;;;; browser's requests at once, so a page's own socket and its fetches cost
 ;;;; no connection each. The first hello mints this machine's name and a
 ;;;; secret the relay keeps only the digest of; every later one presents them.

@@ -90,9 +90,9 @@ connection rather than allocating it.")
   "Spawn ARGV in DIRECTORY with both pipes ours, as byte streams, and stderr
 appended to ERROR-LOG. => (values PID OUTPUT INPUT PROCESS)."
   ;; Through the kernel's posix_spawn, not a fork: a fork caught by a
-  ;; collection while it held the allocator's locks froze the whole image
-  ;; (the MCP cell, 2026-09-22). The child leads its own process group, so
-  ;; KILL-TREE reaches what it starts.
+  ;; collection while it holds the allocator's locks would freeze the
+  ;; whole image. The child leads its own process group, so KILL-TREE
+  ;; reaches what it starts.
   (nlk:bind (((pid output _ process input)
               (nlk:spawn-program argv :directory directory :input :stream :error-output error-log)))
     (values pid

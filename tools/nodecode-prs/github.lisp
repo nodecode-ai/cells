@@ -49,8 +49,8 @@ or an empty answer."
                    ,@(and etag `(("if-none-match" . ,etag)))
                    ,@(and body '(("content-type" . "application/json"))))))
     (multiple-value-bind (text status answer-headers)
-        ;; A read GitHub answered 5xx is asked once more: a large PR's files
-        ;; came back 502 once and 200 the next time (2026-09-30).
+        ;; A read GitHub answered 5xx is asked once more: a read can fail
+        ;; once and succeed on retry.
         (loop for attempt from 1
               do (multiple-value-bind (text status answer-headers)
                      (handler-case

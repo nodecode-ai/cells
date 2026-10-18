@@ -56,8 +56,8 @@
       (is (equal "echo: y" (mcp:call "remote" "echo" :message "y"))))))
 
 (deftest mcp-cell-mcp-test-a-post-that-awaits-no-answer-reads-no-stream ()
-  ;; DeepWiki's 202 to the initialized notification dropped its TLS without a
-  ;; close_notify, and a streamed body read failed the handshake (2026-09-28).
+  ;; DeepWiki's 202 to the initialized notification drops its TLS without a
+  ;; close_notify, and a streamed body read fails the handshake.
   (is (mcp::answer-awaited-p "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}") "a request awaits its answer")
   (is (not (mcp::answer-awaited-p "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}")) "a notification does not")
   (is (not (mcp::answer-awaited-p "{\"jsonrpc\":\"2.0\",\"id\":7,\"result\":{}}")) "nor a reply to the server")

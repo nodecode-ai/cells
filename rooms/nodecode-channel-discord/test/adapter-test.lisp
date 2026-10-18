@@ -195,10 +195,10 @@ adapter and the fake gateway have stopped."
                     (coerce choices 'list)) "aux is offered while the tail could still be it"))))))
 
 (deftest channel-discord-edit-answers-end-to-end ()
-  ;; The reported failure (2026-09-12): a message edited to involve the bot
-  ;; was dropped on the floor. The edit is an ask end to end — the lane
-  ;; opens on the edited message and the answer lands in the channel — and
-  ;; an update the lane itself makes never becomes one.
+  ;; Without this, a message edited to involve the bot would be dropped on
+  ;; the floor. The edit is an ask end to end — the lane opens on the
+  ;; edited message and the answer lands in the channel. An update the
+  ;; lane itself makes never becomes an ask.
   (let ((status-json (format nil "{\"op\":0,\"t\":\"MESSAGE_UPDATE\",\"s\":2,\"d\":~a}"
                              (dgw-d "87" "working round 2 <@999>" :channel "123" :author "999"
                                     :user-name "scrap" :bot "true")))
@@ -325,7 +325,7 @@ adapter and the fake gateway have stopped."
   ;; The model's one door to Discord REST: any method, any path, through
   ;; the live executor, answered in the eval snippet's shape — and a write
   ;; Discord accepted without a body answered with the object it changed,
-  ;; read back under :STATE, the door choosing which object (T-002).
+  ;; read back under :STATE, the door choosing which object.
   (let* ((reacted (cell-json
                    "{\"id\": \"42\", \"content\": \"India first\",
                      \"reactions\": [{\"emoji\": {\"name\": \"IN\"},

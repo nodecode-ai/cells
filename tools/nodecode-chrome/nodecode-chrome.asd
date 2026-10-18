@@ -32,7 +32,7 @@
 ;;;; immutable and then loads this one at boot, so a dependency the image lacks
 ;;;; would have to compile from a vendor/ bundle or fail the folder.
 ;;;;
-;;;; The .asd sits INSIDE its folder (ADR-0229): a cell is a directory
+;;;; The .asd sits INSIDE its folder: a cell is a directory
 ;;;; carrying its .asd, and it is installed by putting — or symlinking — that
 ;;;; directory under ~/.nodecode/cells/. Presence is enabled; nothing in
 ;;;; config names it. The `just *` recipes register each cell

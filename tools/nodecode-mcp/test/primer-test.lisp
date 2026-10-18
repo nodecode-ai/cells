@@ -16,7 +16,7 @@
 
 (deftest mcp-cell-primer-says-what-a-server-offers-never-how-it-is-doing ()
   ;; A state in the text moved the prompt prefix for every session each time
-  ;; a server came up or dropped while it rode every request (2026-09-21).
+  ;; a server came up or dropped while it rode every request.
   (with-mcp-cell ("probe" (mcp-fixture-entry)
                    "dead" (mcp-entry "command" "/nonexistent/mcp-server-binary" "timeout_ms" 3000))
     (mcp-wait-ready "probe")

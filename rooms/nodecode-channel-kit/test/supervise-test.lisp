@@ -2,10 +2,10 @@
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
-;;;; The stop thunk must never destroy a lap thread: async termination
-;;;; inside foreign TLS frames corrupted libssl and wedged process exit
-;;;; (2026-08-18). A lap that outlives the grace is abandoned — warned
-;;;; about, left to exit on its own when its bounded wait completes.
+;;;; The stop thunk must never destroy a lap thread: without this,
+;;;; async termination inside foreign TLS frames would corrupt libssl
+;;;; and wedge process exit. A lap that outlives the grace is abandoned —
+;;;; warned about, left to exit on its own when its bounded wait completes.
 
 (in-package #:nodecode.test)
 

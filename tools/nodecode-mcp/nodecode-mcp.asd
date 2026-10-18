@@ -28,7 +28,7 @@
 ;;;; transitive dependency of nodecode): LOAD-CELLS freezes the loaded
 ;;;; systems immutable and then loads this one at boot.
 ;;;;
-;;;; The .asd sits INSIDE its folder (ADR-0229); presence is enabled. The
+;;;; The .asd sits INSIDE its folder; presence is enabled. The
 ;;;; `just mcp-*` recipes register this directory with ASDF the same way.
 
 (defsystem "nodecode-mcp"

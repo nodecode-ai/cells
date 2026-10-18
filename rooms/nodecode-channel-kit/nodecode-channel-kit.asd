@@ -8,7 +8,7 @@
 ;;;; gateway calls this system's START-CELL after recovery — the channel host
 ;;;; that reads channels.<id> sections and starts each enabled adapter system.
 ;;;;
-;;;; The .asd sits INSIDE its folder (ADR-0229): a cell is a directory
+;;;; The .asd sits INSIDE its folder: a cell is a directory
 ;;;; carrying its .asd, and it is installed by putting — or symlinking — that
 ;;;; directory under ~/.nodecode/cells/. Presence is enabled; nothing in
 ;;;; config names it. The `just *` recipes register each cell
@@ -73,10 +73,9 @@
                (:file "thread-test")
                (:file "cell-test")
                (:file "operator-test")
-               ;; LAST on purpose: placed ahead of thread-test, this file's
-               ;; eight tests tipped CHANNEL-THREAD-ASK-INSIDE-A-THREAD-CARRIES-
-               ;; ITS-OWN-LINE's ten-second AWAIT-PLAN in the full suite (solo
-               ;; runs and this order: green); T-100 tracks the follow-up.
+               ;; LAST on purpose: placed ahead of thread-test. Without this,
+               ;; CHANNEL-THREAD-ASK-INSIDE-A-THREAD-CARRIES-ITS-OWN-LINE's
+               ;; ten-second AWAIT-PLAN would tip in the full suite.
                (:file "tables-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-channel-tests)))

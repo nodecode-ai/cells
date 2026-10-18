@@ -40,9 +40,9 @@
                                 while at count t))))
   ;; Every message is its own document: a fence one chunk leaves open is
   ;; opened again by the next chunk's first ```, and every later chunk reads
-  ;; code as prose and prose as code (2026-09-28: a long answer split inside
-  ;; merge_sort). A chunk cut inside a fence closes it, the next opens it again
-  ;; under the same language, and no line of the text is lost or doubled.
+  ;; code as prose and prose as code. A chunk cut inside a fence closes it,
+  ;; the next opens it again under the same language, and no line of the text
+  ;; is lost or doubled.
   (let* ((code (format nil "~{line ~d of the loop~^~%~}" (loop for n from 1 to 60 collect n)))
          (text (format nil "Here it is:~%~%```lisp~%~a~%```~%~%That is all." code))
          (texts (texts text 400)))
@@ -190,7 +190,7 @@
     (is (equal '(:status 0 :body nil :error "connection refused") result))))
 
 (deftest channel-outbound-call-reads-the-object-back ()
-  ;; T-002: a 204 on a reaction is the platform accepting a request for
+  ;; A 204 on a reaction is the platform accepting a request for
   ;; whatever id the path carried, not the reaction existing. :READ names
   ;; the object the write changes, and the read's whole answer rides back
   ;; under :STATE — so what is reported is what the platform holds.

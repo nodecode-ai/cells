@@ -306,8 +306,7 @@ in order, then 200 {\"ok\": true} forever."
 (a message list, a guild's channels) — and its text otherwise: a bare
 scalar, a page that is not JSON, a 204's blank."
   ;; Octets decode as UTF-8 first. One shape for both containers, so a caller
-  ;; never meets an array as a string it must parse itself (2026-09-12: four
-  ;; provider rounds spent finding a parser for a channel's message list).
+  ;; never meets an array as a string it must parse itself.
   (nlk:if-let (text (typecase body
                       (string body)
                       ((vector (unsigned-byte 8))

@@ -25,10 +25,9 @@
 ;;;; the store's own lock (cron's RECORD-REPORT idiom), and only if no
 ;;;; OPERATOR turn arrived since the one it recaps: a cron delivery or an
 ;;;; earlier recap landing meanwhile moves the head but is nobody moving on,
-;;;; so the recap still lands, its user half naming the turn it belongs to
-;;;; (s-SCBRPJ8Q: a 15 s cron replied mid-reflection and the only recap
-;;;; with something to say was lost); an operator turn in between means
-;;;; that turn gets its own reflection, and this recap is dropped, quietly.
+;;;; so the recap still lands, its user half naming the turn it belongs to;
+;;;; an operator turn in between means that turn gets its own reflection,
+;;;; and this recap is dropped, quietly.
 ;;;;
 ;;;; THREAD RULE: the :FRAME hook runs on the turn worker that publishes and
 ;;;; only folds and pokes; every store read, fork, submit and record runs on
@@ -131,9 +130,7 @@ recap this cell wrote), :OFF, :SOURCE (not an operator's turn), :LIMITED
         ((equal (getf settings :reflect) "off") :off)
         ((not (member source (getf settings :sources) :test #'equal)) :source)
         ;; The reflection would be refused as surely, and would spend the
-        ;; next request the operator's key allows: a free Google key's daily
-        ;; limit refused the reflection of a fresh box's first task
-        ;; (2026-09-28).
+        ;; next request the operator's key allows.
         (limited :limited)
         ((and (equal (getf settings :reflect) "tools")
               (equal kind "turn.completed")
@@ -242,11 +239,7 @@ CHILD), CHILD the reflection session when one was forked."
           (values decision nil)))))
 
 ;;; --- the fence and the budget --------------------------------------------------------
-;;; A reflection is the same assistant with the same tools, and that cost the
-;;; vise Discord lane on 2026-09-16: the operator stopped a 25-minute turn,
-;;; and its reflection read the stopped work as unfinished, wrote a sweep into
-;;; the layer, ran it against another server's messages under the operator's
-;;; own token, and edited the layer's system definition. A session this cell
+;;; A reflection is the same assistant with the same tools. A session this cell
 ;;; made -- a reflection -- calls the verbs its request names, keeps
 ;;; definitions, the memories and skills it keeps included, edits or forgets
 ;;; them, and runs nothing else. It runs under no budget unless a layer sets
@@ -491,10 +484,9 @@ recap was dropped."
 (defun settle-reflection (reflection &aux (settings *experience*))
   "The child's turn ended: record the recap, or nothing. => T when a recap
 was recorded."
-  ;; A reflection that failed or answered nothing says so only in its own
-  ;; session's log. The line it wrote on *ERROR-OUTPUT* is a notice in the
-  ;; transcript whenever a shell hosts the organism, and was the first thing
-  ;; a fresh box read after its first task (a free key's 429, 2026-09-28).
+  ;; A reflection that fails or answers nothing says so only in its own
+  ;; session's log. The line it writes on *ERROR-OUTPUT* is a notice in the
+  ;; transcript whenever a shell hosts the organism.
   (and settings
        (equal "turn.completed" reflection.status)
        (getf settings :recap)

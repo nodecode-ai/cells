@@ -66,7 +66,7 @@ JSON on one line as the server sends it."
 
 (defun ddg-page (&rest rows)
   "The HTML endpoint's page: one result block per ROW of (TITLE HREF SNIPPET
-&optional AD-P), the markup the live page has (probed 2026-09-17)."
+&optional AD-P), the markup the live page has."
   (with-output-to-string (out)
     (format out "<html><body><div id=\"links\" class=\"results\">")
     (dolist (row rows)
@@ -81,8 +81,8 @@ JSON on one line as the server sends it."
 
 (defun arxiv-feed (&rest rows)
   "arXiv's Atom answer for ROWS of (ID TITLE SUMMARY PUBLISHED), the shape
-the API sends (probed 2026-09-17): a feed title the parser must not take
-for a paper's, then one <entry> per paper."
+the API sends: a feed title the parser must not take for a paper's, then
+one <entry> per paper."
   (with-output-to-string (out)
     (format out "<?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns=\"http://www.w3.org/2005/Atom\">

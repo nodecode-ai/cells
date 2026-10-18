@@ -1163,8 +1163,8 @@ const THOUGHT_FADE_MS = 420;
 
 // Under a running turn's bar, the newest thinking the model finished: one
 // paragraph, no label, a step quieter than the work, faded in as it takes the
-// place of the one before -- the TUI's live thought (LIVE-THOUGHT-ROWS; the
-// operator, 2026-10-17). Only while the turn runs: an ended turn's thinking
+// place of the one before -- the TUI's live thought (LIVE-THOUGHT-ROWS).
+// Only while the turn runs: an ended turn's thinking
 // is in its work.
 function liveThought(work, key) {
   for (let at = work.length - 1; at >= 0; at--) {
@@ -1214,8 +1214,8 @@ function drawWork(article, turn, live, v) {
     const failed = calls.filter((row) => row.tool?.status === "error" || row.error).length;
     // The row that closes a cut-off attempt carries the shell's sentence for it.
     const cut = work.filter((row) => typeof row.voided === "string").length;
-    // Folded, live or done, until a click opens it -- the TUI's Standard run
-    // (the operator, 2026-10-17): the running bar and the thought under it say
+    // Folded, live or done, until a click opens it -- the TUI's Standard run:
+    // the running bar and the thought under it say
     // what the turn is doing.
     const details = fold("work", `work-${turn.key}`, false);
     const summary = el("summary");
@@ -1540,7 +1540,7 @@ function drawClosedExec(exec) {
   head.append(showClose());
   row.append(head);
   if (lines.length) row.append(execTail(exec, lines));
-  // What it failed on, last and whole: the card said only "failed" (2026-09-29).
+  // What it failed on, last and whole, never a bare "failed".
   if (exec.error) row.append(el("pre", "exec-error", t("error: {report}", { report: exec.error })));
   return row;
 }
@@ -1807,8 +1807,8 @@ function renderTranscript() {
   let number = 0;
   turns.forEach((turn, index) => {
     // A reflection's recap is the machine's note to itself, not the reader's:
-    // the transcript draws none, as the TUI's Standard viewport draws none (the
-    // operator, 2026-10-17). History leaves it out too; the Run view keeps it.
+    // the transcript draws none, as the TUI's Standard viewport draws none.
+    // History leaves it out too; the Run view keeps it.
     if (turn.prompt?.recorded === "reflection") return;
     const live = !!v.turn?.active && index === turns.length - 1;
     const nth = turn.prompt && turn.prompt.recorded !== "reflection" ? ++number : 0;
@@ -2496,8 +2496,7 @@ const board = () => state.pane === "dashboard" || state.pane === "control";
 
 // The strip names where a board is, once: Dashboard, Control, or Control / the
 // tab open in it, Control there the way back on a phone; the page under it
-// says how it stands (the operator, 2026-10-18: "this is duplicating UI, we
-// need to standardize pages", then "Land C").
+// says how it stands.
 function paintPlace() {
   const title = $("title");
   if (!board() || title.isContentEditable) return;

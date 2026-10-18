@@ -18,7 +18,7 @@
 ;;;; is recorded back into the session as its own note.
 ;;;;
 ;;;; Every dependency is already in the serving image. The .asd sits INSIDE
-;;;; its folder (ADR-0229): install by putting -- or symlinking -- the
+;;;; its folder: install by putting -- or symlinking -- the
 ;;;; directory under ~/.nodecode/cells/.
 
 (defsystem "nodecode-experience"

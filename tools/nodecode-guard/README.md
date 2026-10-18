@@ -50,8 +50,8 @@ command from its literal arguments: a string, a `($ "name")` the strings
 object resolves, or a `(list ...)` of strings. Only that text meets the rules.
 
 A file edit that mentions `sudo`, a comment that names a rule, and a test
-string are therefore never refused. (Before 2026-10-18 the whole call was
-scanned, and 15 of the guard's 142 refusals were exactly those.)
+string are therefore never refused. (An earlier guard scanned the whole call,
+and 15 of its 142 refusals were exactly those.)
 
 A shell command is then cut into the commands it runs, and each command
 starts a line, so a rule reads a command's own words and never its

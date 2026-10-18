@@ -18,12 +18,11 @@
 ;;;; timeline whether or not its asks open threads, so the next ask typed
 ;;;; there forks above every answer its threads gave. A channel whose asks
 ;;;; all open threads would otherwise freeze at its last flat exchange, every
-;;;; new thread forking from a head days stale — the operator's Discord
-;;;; general, 2026-09-13 to 09-15: 44 asks answered, none in its record. What
-;;;; the thread says after that — follow-ups typed inside it — settles in the
-;;;; thread's record and in the room the thread hangs in (WRITE-BACK), so a
-;;;; new thread opens on every earlier thread's conversation too; its lane is
-;;;; told where its own thread begins in that history (LANE-THREAD-NOTE).
+;;;; new thread forking from a head days stale. What the thread says after
+;;;; that — follow-ups typed inside it — settles in the thread's record and
+;;;; in the room the thread hangs in (WRITE-BACK), so a new thread opens on
+;;;; every earlier thread's conversation too; its lane is told where its own
+;;;; thread begins in that history (LANE-THREAD-NOTE).
 ;;;;
 ;;;; A head move on a room — /new, /undo, a rewind from a shell — retires the
 ;;;; lanes forked from it (RETIRE-ROOM-LANES, host.lisp): each is a fork of the
@@ -63,9 +62,8 @@
 ;;;; name, and each lane is opened with a harness section stating who the
 ;;;; operator is and what that means. The section lives on the LANE session,
 ;;;; outside the room record, so it cannot compound the way a refusal written
-;;;; back into the record does: the 2026-08-22 Discord incident was exactly
-;;;; that, the bot's own self-refusals forking into every later lane until it
-;;;; refused the operator too.
+;;;; back into the record would: the bot's own self-refusals forking into
+;;;; every later lane until it refuses the operator too.
 ;;;;
 ;;;; What is platform-bound lives in the adapter's PLATFORM (host.lisp): the
 ;;;; session-id prefix, how a mention is spelled, how a message plan is
@@ -85,8 +83,7 @@
   "Characters kept per ambient line. Chatter is context, not transcript.")
 
 ;;; In the estimate eviction plans in (a token per four characters): a
-;;; Discord room's history counts about a quarter more at the provider
-;;; (2026-09-27, twelve lanes: 234-240k estimated, 292-299k billed).
+;;; Discord room's history counts about a quarter more at the provider.
 (defparameter +room-tokens+ 40000
   "The estimated history tokens a room keeps before it drops its older half.")
 
@@ -340,9 +337,9 @@ only a mentioned one — and what NO_REPLY is for in it."
   ;; Said once here, from
   ;; the fact the mention gate turns on (ROOM-SPEAKS-FREELY-P), never as a mark
   ;; on a line: a line that reached the lane is one the room meant for it.
-  ;; (2026-09-16: a room that took no mention marked every unmentioned line
-  ;; "(not addressed to you)" and told the lane a marked line defaults to
-  ;; silence; a voice note, which can never carry a mention, went NO_REPLY.)
+  ;; Without this, a room that took no mention would mark every unmentioned
+  ;; line "(not addressed to you)" and tell the lane a marked line defaults to
+  ;; silence; a voice note, which can never carry a mention, would get NO_REPLY.
   (if speaks-freely
       (format nil "This ~a reaches you without a mention: every line you ~
 receive is yours to answer, whatever it is about — a question, an ~
@@ -383,9 +380,9 @@ to reach the platform."
   ;; because this text is a standing section and everything ahead of the history
   ;; is the prompt prefix all those lanes share. WHERE a lane is — which thread
   ;; it runs in — is not such a fact and rides behind the history instead
-  ;; (LANE-WHERE-SECTION): it lived here until 2026-09-18, and each new thread's
-  ;; id diverged the whole prompt 640 tokens in, so twelve room lanes paid 146-157k
-  ;; tokens uncached apiece (nc-private#35).
+  ;; (LANE-WHERE-SECTION): were it here, each new thread's id would diverge the
+  ;; whole prompt at that point, so every lane would pay the standing section
+  ;; uncached.
   (format nil "This session is one lane of a shared ~a ~a. Every user ~
 line reads \"<speaker> [m<message id> u<user id>]: <text>\"; a line that ~
 answers a message carries the answered id too, as r<message id> — the ~
@@ -473,14 +470,14 @@ the thread opened from, where the thread begins in its history — or NIL for a
 lane whose history holds no such record."
   ;; Its history opens on that room's whole record, other people's asks and
   ;; every other thread's included, and nothing in it marks where the thread
-  ;; begins: a model reads a greeting at its end as a nudge on the last open
-  ;; work up there and goes to work on it (2026-10-02: a "hi" in a new Discord
-  ;; thread took minutes). The lane's own fork anchors at its room's head; when
-  ;; that is the room's own anchor in the room it opened from, the thread held
-  ;; nothing yet, and it begins at the ask that opened this lane — the message
-  ;; its id is keyed on, the line the history shows as m<id>. A thread whose
-  ;; room was cleared since composes none of that record, and gets no note.
-  ;; Read live, and stable for the lane's life: the fork froze all of it.
+  ;; begins: without this note, a model would read a greeting at its end as a
+  ;; nudge on the last open work up there and go to work on it. The lane's own
+  ;; fork anchors at its room's head; when that is the room's own anchor in the
+  ;; room it opened from, the thread held nothing yet, and it begins at the ask
+  ;; that opened this lane — the message its id is keyed on, the line the
+  ;; history shows as m<id>. A thread whose room was cleared since composes none
+  ;; of that record, and gets no note. Read live, and stable for the lane's
+  ;; life: the fork froze all of it.
   (when (and (stringp room) (nlk:store-open-p))
     (nlk:with-handlers ((error () nil))
       (let* ((lineage (nlk:session-lineage lane.session-id))
@@ -510,12 +507,11 @@ people's, kept as background. This thread's own exchanges follow it. ~a"
   "Cut ROOM-SESSION-ID's retained history to half of BUDGET estimated tokens
 once it holds more than BUDGET; NIL or 0 bounds nothing."
   ;; A room never sends a request, so the window trigger that evicts a
-  ;; session never sees it, and every lane forks it whole: until 2026-09-27
-  ;; each Discord lane opened on the room's whole record, ~290k tokens and
-  ;; growing ~820 an exchange, and the floor a lane's own eviction recorded
-  ;; died with the lane. The cut lands on the room, where every lane forked
-  ;; after it stands; to half, so the prefix they share holds for the half
-  ;; budget's worth of exchanges before it moves again.
+  ;; session never sees it, and every lane forks it whole: the floor a
+  ;; lane's own eviction recorded died with the lane. The cut lands on the
+  ;; room, where every lane forked after it stands; to half, so the prefix
+  ;; they share holds for the half budget's worth of exchanges before it
+  ;; moves again.
   (when (and budget (plusp budget))
     (nle:evict-session-context room-session-id :over budget
                                                :keep (floor budget 2)

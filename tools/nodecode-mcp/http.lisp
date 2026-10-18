@@ -2,14 +2,13 @@
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
-;;;; MCP's streamable HTTP, as the retired Zig client spoke it: every
-;;;; JSON-RPC message is POSTed to the one endpoint URL; the server answers
-;;;; a request's POST with either one JSON message or an SSE body that
-;;;; eventually carries the reply (notifications and server requests may
-;;;; precede it); a notification's POST gets 202 and no body. The
-;;;; Mcp-Session-Id header the initialize response issues is echoed on
-;;;; every later request and DELETEd on close. The legacy two-endpoint SSE
-;;;; transport is not implemented, as it was not in Zig.
+;;;; MCP's streamable HTTP: every JSON-RPC message is POSTed to the one
+;;;; endpoint URL; the server answers a request's POST with either one JSON
+;;;; message or an SSE body that eventually carries the reply (notifications
+;;;; and server requests may precede it); a notification's POST gets 202 and
+;;;; no body. The Mcp-Session-Id header the initialize response issues is
+;;;; echoed on every later request and DELETEd on close. The legacy
+;;;; two-endpoint SSE transport is not implemented.
 ;;;;
 ;;;; Shape over the transport protocol: a send does the whole exchange and
 ;;;; queues whatever messages the response carried; a receive pops the
@@ -19,10 +18,11 @@
 ;;;; timeout (what remains of the deadline) and abandoned as soon as the
 ;;;; reply is in hand, so a server that keeps the stream open costs nothing.
 ;;;; A notification's or a reply's POST, which awaits no answer, reads its
-;;;; response whole by its length instead: DeepWiki's 202 (Content-Length 0,
-;;;; Connection: close, the TLS dropped without a close_notify) failed every
-;;;; handshake as "unexpected eof while reading", because dexador's stream
-;;;; fills a buffer from the socket before a byte is asked for (2026-09-28).
+;;;; response whole by its length instead. Without this, an empty 202 with
+;;;; Content-Length 0, Connection: close, and a TLS drop without
+;;;; close_notify would fail as "unexpected eof while reading", because
+;;;; dexador's stream fills a buffer from the socket before a byte is asked
+;;;; for.
 ;;;;
 ;;;; Header values are secrets and never appear in a condition: a failed
 ;;;; status reports the code only.

@@ -327,10 +327,10 @@ then files[0] — carrying CONTENT and its one attachment; answers the payload."
   ;; The note that needs the operator @s them: the id is spelled ahead of the
   ;; first chunk and whitelisted in allowed_mentions.users — parse stays [],
   ;; so the platform's own spelling is the only thing that can reach anyone —
-  ;; and a later chunk is the text alone. The spelling is cut with the text:
-  ;; 2026-10-03, a thread lane's first answer was cut at 2000 and then
-  ;; spelled, 2015 characters Discord refused, and the answer never posted.
-  ;; Lines of 99 put a cut at exactly 2000 when nothing is spelled.
+  ;; and a later chunk is the text alone. The spelling is cut with the text.
+  ;; Without this, a chunk cut to exactly 2000 would exceed the limit once the
+  ;; mention is added, and the platform would reject the post. Lines of 99
+  ;; put a cut at exactly 2000 when nothing is spelled.
   (let* ((id "931708065319907338")
          (executor (nck:make-recording-executor))
          (host (test-host :executor executor :platform (ncd:discord-platform :bot-user-id "999")))
@@ -697,9 +697,8 @@ its section included."
   ;; What the message holds, by name: a V2 message lists no attachments of its
   ;; own, each picture is the gallery item showing it (Discord's answer to a
   ;; card's post or edit), and the next edit keeps them all by id, uploading
-  ;; none again though the files are still here (2026-10-17: read from the
-  ;; empty attachments array, every edit re-uploaded the gallery and a picture
-  ;; open in the viewer failed to load).
+  ;; none again though the files are still here. Without this, an edit would
+  ;; re-upload the gallery and a picture open in the viewer would fail to load.
   (let ((shot (temp-path "card-kept" "png")))
     (alexandria:write-byte-vector-into-file (coerce #(137 80 78 71) '(vector (unsigned-byte 8))) shot
                                             :if-exists :supersede)

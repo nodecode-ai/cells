@@ -17,10 +17,7 @@
 ;;;;          Groq, OpenAI, Mistral, a self-hosted server — when the
 ;;;;          transcription section names a base_url, with the operator's key.
 ;;;;
-;;;; Measured 2026-09-16 on a Ryzen 5 2600, CPU only: a 5.5 s note in ~3 s
-;;;; wall, most of it the model loading; a 5-minute one in ~80 s at a 3 GB
-;;;; peak — the bound the default cap draws. Whisper large-v3-turbo through
-;;;; whisper.cpp took 57 s for the 5.5 s note on the same machine.
+;;;; The default cap is five minutes.
 ;;;;
 ;;;; Every refusal is an error whose message is the honest reason: the ingress
 ;;;; renders it as the one bracketed note that stands for the recording.

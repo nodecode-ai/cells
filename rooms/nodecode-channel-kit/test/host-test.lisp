@@ -480,12 +480,11 @@ message of ours."
                                                       "emoji" outcome)))))
 
 (deftest channel-host-an-answer-the-room-refused-says-so ()
-  ;; 2026-10-03: Discord refused a thread lane's answer, and the turn's
-  ;; working line stayed up with its stop under a check on the ask: four
-  ;; presses found no turn to stop, and the asker never learnt the answer
-  ;; was lost. The card settles failed into the refusal and loses its stop —
-  ;; no delete, it is the one word the room has, and its steps stay with
-  ;; Details on it — and the ask takes the cross.
+  ;; Without this, a refused answer leaves the turn's working line up with
+  ;; its stop under a check on the ask, and the asker never learns the
+  ;; answer was lost. The card settles failed into the refusal and loses
+  ;; its stop — no delete, it is the one word the room has, and its steps
+  ;; stay with Details on it — and the ask takes the cross.
   (with-digest-host (host lane :name "answer-refused"
                      :responses (list (reply 200 "id" "s1") (reply 400 "message" "Invalid Form Body"))
                      :host-keys (:platform (test-platform :choices t)))
@@ -555,8 +554,7 @@ message of ours."
   ;; A failed or cancelled turn is its status line — and the ask it was given
   ;; stays in the room's record with the notice as the assistant half: an ask
   ;; that was stopped is still something the room said, so the next lane
-  ;; forked above sees it. (2026-09-16: the operator's "Yo", stopped, was
-  ;; invisible to the lane that asked what it saw above.)
+  ;; forked above sees it.
   (with-digest-host (host lane :responses (replies "s1") :name "cancel-record")
     (setf (nck:lane-parent-session-id lane) "chat-123")
     (nlk:create-session :id "chat-123")
@@ -656,7 +654,6 @@ message of ours."
   ;; on inside CONTROL-PRESSED, on the thread it arrived on, so a handler
   ;; around the press sees what the stop said — a worker's warning would be
   ;; raised on another thread and never reach here.
-  ;; (2026-09-16: a stop pressed at 75s reached the turn at 135s.)
   (let ((said (warnings-of (press "i1" "stop" "mike"))))
     (is (search "no active turn" (format nil "~{~a~}" said))))
   ;; Details is a worker's: its answer is platform work and belongs off the
@@ -665,10 +662,10 @@ message of ours."
     (is (null said) "nothing a Details press says is raised on the pressing thread")))
 
 (deftest channel-host-a-status-post-landing-after-settle-retires-itself ()
-  ;; The settle can race the status post: the finish job retires the chrome
-  ;; while the line is still in flight — it reads no id — and the line lands
-  ;; after, a working line no turn watches. The landing retires it.
-  ;; (2026-09-16: a NO_REPLY settle left "working · 8s" in the room.)
+  ;; Without the landing retiring it, a settle can race the status post:
+  ;; the finish job retires the chrome while the line is still in flight —
+  ;; it reads no id — and the line lands after, a working line no turn
+  ;; watches.
   (with-digest-host (host lane :responses (replies "s1"))
     (fact "turn.started" (nlk:json-object))
     (said "NO_REPLY")
@@ -712,7 +709,7 @@ message of ours."
    (list (nlk:json-object "role" "assistant" "content" "partial answer")
          (nlk:json-object "role" "assistant" "content" "durable answer"))
    "durable answer" "durable answer" "edit_message")
-  ;; 2026-09-21: a DeepSeek round leaked its tool call into text — null
+  ;; a DeepSeek round leaked its tool call into text — null
   ;; content, 10,462 chars of reasoning — and the turn completed in silence:
   ;; the engine accepted a reasoning-only final as an answer, and the room
   ;; batched "no text at all" with the SILENT sentinel, so a failure read as
@@ -727,8 +724,8 @@ message of ours."
   ;; A round that speaks only in reasoning: once it has thought for the
   ;; earning window the card opens, saying the turn is thinking and naming
   ;; the thought by its newest whole sentence — never the tail it is still
-  ;; writing (2026-09-28: a raw tail read as the answer) — and a content-null
-  ;; round's committed reasoning settles into it.
+  ;; writing — without this, the raw tail would read as the answer — and a
+  ;; content-null round's committed reasoning settles into it.
   (fact "turn.started" (nlk:json-object))
   (fold-delta host "chat-123-m1" "Looking up the registry. the registry lookup")
   (fold-delta host "chat-123-m1" " NOT THIS TURN" :turn-id "other-turn")
@@ -753,10 +750,9 @@ message of ours."
   (is (= 2 (length (plans)))))
 
 (deftest channel-host-a-quick-turn-says-its-answer-once ()
-  ;; A round that says the answer and calls a tool anyway is followed within a
-  ;; second by the final round saying it again (2026-09-28: "144." then "12
-  ;; squared is **144**." in one DM). The room reads it once, in the answer:
-  ;; words on the way never post, whatever the answer says.
+  ;; A round that says the answer and calls a tool anyway is followed by the
+  ;; final round saying it again. The room reads it once, in the answer: words
+  ;; on the way never post, whatever the answer says.
   (flet ((run (said answer)
            (with-digest-host (host lane :responses (replies "c1" "a1" "a2") :name "quick-answer")
                       (fold-fact host "chat-123-m1" "turn.started" (nlk:json-object))
@@ -944,9 +940,8 @@ message of ours."
 
 (deftest channel-host-the-menu-names-every-alias ()
   ;; A platform menu has no aliases, so each name a command answers to is a
-  ;; command of its own there, after every command — 2026-10-03: /new, /clear's
-  ;; alias, was in no Discord menu. A name already in the menu stays the one
-  ;; command it names.
+  ;; command of its own there, after every command. A name already in the
+  ;; menu stays the one command it names.
   (is (equal '(("a" "first") ("b" "second") ("c" "first"))
              (mapcar (lambda (entry)
                        (list (getf entry :name) (getf entry :description)))
@@ -1196,9 +1191,8 @@ picture's weight."
 (defun write-pea-fixture ()
   "Write /tmp/pea.png — the picture the file tests hand around — so a
  delivery that checks the file exists has one to join."
-  ;; The fixture is the test's own: an ambient /tmp/pea.png was the silent
-  ;; dependency (2026-09-17, /tmp was cleaned and
-  ;; CHANNEL-ANSWER-CARRIES-ITS-FILES went red).
+  ;; The fixture is the test's own: an ambient /tmp/pea.png would be a silent
+  ;; dependency, and a test that reads it would go red whenever /tmp is cleaned.
   (alexandria:write-byte-vector-into-file (test-png-octets) #p"/tmp/pea.png" :if-exists :supersede)
   #p"/tmp/pea.png")
 
@@ -1320,7 +1314,7 @@ LANE, as the one running channel."
     ("Test messages carry no choices" '("Postgres" "SQLite"))))
 
 (deftest channel-answer-waits-marks-the-posted-answer (with-temp-store ())
-  ;; 2026-10-18, the operator: the thread board's Needs you was a guess from
+  ;; Without a written mark, the thread board's Needs you would be a guess from
   ;; a question mark. A turn marks its answer waiting with ANSWER-WAITS --
   ;; choices mark it too -- and the mark is written down beside the messages
   ;; the answer posted as, so a reader of the room's newest message knows
@@ -1353,12 +1347,12 @@ LANE, as the one running channel."
 
 (deftest channel-answer-verbs-act-so-no-watch-repeats-them
     (with-file-host (host "answer-acts" :platform (test-platform :choices t)))
-  ;; 2026-10-18: (nck:answer-choices ...) closing a snippet read to the eval
-  ;; tool as a read -- it reaches nothing outside the image -- so it was
-  ;; watched, ran again after every later snippet, and put an earlier
-  ;; question's buttons on later answers. Each answer verb stamps its call an
-  ;; act before it acts: the snippet is never watched, and a run again is
-  ;; refused with nothing handed.
+  ;; (nck:answer-choices ...) closing a snippet read to the eval tool as a read
+  ;; -- it reaches nothing outside the image -- so it would be watched, run
+  ;; again after every later snippet, and put an earlier question's buttons on
+  ;; later answers. Each answer verb stamps its call an act before it acts:
+  ;; the snippet is never watched, and a run again is refused with nothing
+  ;; handed.
   (setf (nck:lane-active-turn-id lane) "t9")
   (let ((nle::*snippet-touched* nil))
     (nck:answer-choices '("Postgres" "SQLite") :platform "test" :channel "123")

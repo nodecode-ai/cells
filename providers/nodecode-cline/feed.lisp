@@ -3,13 +3,13 @@
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
 ;;;; api.cline.bot answers a free model (cline-free/...) only to a request
-;;;; whose X-CLIENT-TYPE names a client: without the header it is a 403, "only
-;;;; available via Cline product surfaces"; with any value it streams
-;;;; (2026-09-22, rev, X-CLIENT-TYPE nodecode: 200). So the header names
-;;;; nodecode — the section's client_type — and nothing here claims to be
-;;;; Cline. The Pass models (cline-pass/...) and the free ones are absent from
-;;;; its /models listing, which is an OpenRouter catalog; Cline's own clients
-;;;; read them off the public recommended-models feed, and so does this.
+;;;; whose X-CLIENT-TYPE names a client: without the header the request would
+;;;; be refused with 403, "only available via Cline product surfaces"; with
+;;;; any value it streams. So the header names nodecode — the section's
+;;;; client_type — and nothing here claims to be Cline. The Pass models
+;;;; (cline-pass/...) and the free ones are absent from its /models listing,
+;;;; which is an OpenRouter catalog; Cline's own clients read them off the
+;;;; public recommended-models feed, and so does this.
 ;;;;
 ;;;; Two advices, and the kernel knows neither: RESOLVE-PROVIDER-CREDENTIAL's
 ;;;; answer for the served provider carries the header (the request path

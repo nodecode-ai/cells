@@ -272,8 +272,7 @@ for papers.")
   "QUERY as the API's search_query."
   ;; One that already names a field is passed verbatim; a plain one becomes
   ;; every term as all:TERM joined with AND, because the API reads a bare term
-  ;; list as OR (`speculative decoding' is 48,541 papers that way, 803 ANDed;
-  ;; probed 2026-09-17).
+  ;; list as OR.
   (if (cl-ppcre:scan +arxiv-field-scanner+ text)
       text
       (format nil "~{all:~a~^ AND ~}"

@@ -53,9 +53,9 @@
     (is (null (nlk:json-value leave :string "channel_id")))))
 
 (deftest channel-discord-voice-endpoint-keeps-its-port ()
-  ;; Measured 2026-09-18: dialing the host on 443 when the endpoint named
-  ;; another port is answered with close 4006, which reads like a stale
-  ;; session and is not one.
+  ;; Without this, dialing the host on 443 when the endpoint names
+  ;; another port would be answered with close 4006, which reads like a
+  ;; stale session and is not one.
   (is-values (host port) (ncd:voice-endpoint-parts "c-sea01-9b.discord.media:8443")
     (host "c-sea01-9b.discord.media") (port eql 8443 "the endpoint's own port is dialed"))
   (is-values (host port) (ncd:voice-endpoint-parts "plain.discord.media")
@@ -294,11 +294,11 @@
                (nck:lane-id (nck:room-session-id "discord" candidate) "msg-77")))))
 
 (deftest channel-discord-voice-an-answer-is-matched-by-its-room-not-a-guessed-lane ()
-  ;; Measured 2026-09-18: the kit re-keys a lane when it opens a thread for
-  ;; an ask, so the live session was discord-<channel>-t<thread>-m<message>
-  ;; while the lane name this predicted was discord-<channel>-m<message>.
-  ;; Nothing ever matched and no answer was ever spoken. The room prefix is
-  ;; what holds.
+  ;; The kit re-keys a lane when it opens a thread for an ask, so a lane
+  ;; under a room can be discord-<channel>-t<thread>-m<message> instead of
+  ;; discord-<channel>-m<message>. Without room-prefix matching, that lane
+  ;; would never match its predicted name and no answer would be spoken.
+  ;; The room prefix is what holds.
   (let ((lane (voice-lane-for-test :room "text-1")))
     (is (ncd::voice-room-session-p lane "discord-text-1") "the room itself")
     (is (ncd::voice-room-session-p lane "discord-text-1-mmsg-77") "a lane under it")

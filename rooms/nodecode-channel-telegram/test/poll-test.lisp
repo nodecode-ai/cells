@@ -126,7 +126,7 @@ private chat 555 — as JSON; FIELDS the object's other members."
 
 (deftest channel-telegram-reply-carries-the-answered-message ()
   ;; Telegram ships the replied message on every reply; the ask carries it
-  ;; (T-046) exactly as Discord's does.
+  ;; exactly as Discord's does.
   (let ((reply (gethash "reply" (tg-said 8 "\"reply_to_message\": {\"message_id\": 4,
                                              \"from\": {\"id\": 777,
                                                         \"username\": \"OrgBot\",

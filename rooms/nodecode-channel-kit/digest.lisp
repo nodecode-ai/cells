@@ -4,13 +4,11 @@
 ;;;;
 ;;;; One turn = one channel answer. Chat channels are message surfaces, not
 ;;;; terminal transcripts: per-round passthrough drips narration fragments
-;;;; into the channel while tool-only rounds read as dead air (the
-;;;; 2026-08-19 discord audit's 95-round turn posted 16 fragments across 12
-;;;; minutes of silence). The digest folds a turn's stream facts into ONE
-;;;; live status line — posted when the turn first calls a tool, then edited
-;;;; in place on the delivery worker's tick — and holds the newest non-empty
-;;;; assistant text as the turn's final answer, delivered once on
-;;;; turn.completed.
+;;;; into the channel while tool-only rounds read as dead air. The digest
+;;;; folds a turn's stream facts into ONE live status line — posted when the
+;;;; turn first calls a tool, then edited in place on the delivery worker's
+;;;; tick — and holds the newest non-empty assistant text as the turn's
+;;;; final answer, delivered once on turn.completed.
 ;;;;
 ;;;; The status line is a CARD (DIGEST-CARD): what the turn is doing now, in
 ;;;; the words the TUI's cards read — `Running just lint' — the thought that
@@ -20,10 +18,7 @@
 ;;;; row whose Output button shows what it answered, Telegram HTML whose dot
 ;;;; is the phase, its steps in a quote (CARD-HTML). Every step of the turn
 ;;;; stays on the digest, and the card's Details control answers whoever
-;;;; pressed it, privately, with all of them (DIGEST-DETAILS). The
-;;;; operator's pick, 2026-10-03, of four drawn variants (artifact
-;;;; W5ZctEPucc6WjHKajmjr4m), over a line of five equal facts and a room-wide
-;;;; tool trail; drawn as components since, its steps pressable.
+;;;; pressed it, privately, with all of them (DIGEST-DETAILS).
 ;;;;
 ;;;; The card is the turn's RECORD once it has one: a completed turn posts its
 ;;;; answer below it and the card settles to `Done in 27s' over its last
@@ -42,7 +37,7 @@
 ;;;; in channel form: the line the operator is already watching says what
 ;;;; is waiting and when it runs, and stays the newest message in the chat,
 ;;;; so the wait is visible from the chat list and from wherever they scroll
-;;;; back to. A pin was considered for this and rejected (nc-private#3): a
+;;;; back to. A pin was considered for this and rejected: a
 ;;;; pin leaves a permanent service row per ask, is invisible from the chat
 ;;;; list, and exists on two platforms. The rows come whole from every
 ;;;; kernel queue snapshot, so a promotion or a retraction clears its row.
@@ -54,10 +49,10 @@
 ;;;;
 ;;;; Reasoning folds in the same way, from the live reasoning deltas and
 ;;;; from each round's committed reasoning_content: a round that puts
-;;;; everything in its thinking and answers with JSON null (the audit's
-;;;; qwen-class rounds) is not a silent round, and the card says so with the
-;;;; thought's headline (THOUGHT-HEADLINE) — its newest bold title, else its
-;;;; newest whole sentence, never a tail cut mid-word. Thinking is display
+;;;; everything in its thinking and answers with JSON null is not a silent
+;;;; round, and the card says so with the thought's headline
+;;;; (THOUGHT-HEADLINE) — its newest bold title, else its newest whole
+;;;; sentence, never a tail cut mid-word. Thinking is display
 ;;;; only — a live trace with no retention past the card and its details —
 ;;;; and never becomes the channel's answer.
 ;;;;
@@ -277,11 +272,9 @@ still names them.")
 ;;; A round that spoke and then called a tool said its piece while the turn
 ;;; went on. Those words are the turn's own, not its answer, and they stay
 ;;; with its work: the card shows the newest of them under the thought, and
-;;; its Details all of them — where they once posted as messages of their own
-;;; between the card and the answer (the operator, 2026-10-03: a turn's
-;;; messages do not leak out of its card). The round that ENDS the turn
-;;; carried no calls; its text is the answer and leaves through
-;;; DELIVER-ANSWER, the one message a turn posts.
+;;; its Details all of them; a turn's messages do not leak out of its
+;;; card. The round that ENDS the turn carried no calls; its text is the
+;;; answer and leaves through DELIVER-ANSWER, the one message a turn posts.
 ;;;
 ;;; channels.<id>.stream: the words the round in flight writes show on the
 ;;; card as the model writes them, the cursor at their end; the round decides
@@ -578,8 +571,8 @@ accumulator's keys: the counts :INPUT :OUTPUT :CACHED :CACHE-WRITE
 ;;; The card names what the turn is thinking in one line the room can read: a
 ;;; reasoning summary opens each step on a bold title of its own line, and
 ;;; that title is the headline; raw reasoning has none, and its newest whole
-;;; sentence is. Never the stream's tail: cut mid-word it read as scratch, and
-;;; the room took it for the answer (2026-09-28: "did I actually run sh?").
+;;; sentence is. Never the stream's tail: cut mid-word it reads as scratch, and
+;;; the room may take it for the answer.
 
 (defparameter +thought-headline-cap+ 100
   "Characters a thought's headline takes before it cuts at a word.")

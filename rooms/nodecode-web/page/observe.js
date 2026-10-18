@@ -182,8 +182,7 @@ function tile(label, value, tag) {
 
 // A page's one head, under the strip that names it: a small label, one sentence
 // of how it stands, a line of detail. Every page that says how it stands opens
-// with it (the operator, 2026-10-18: "this is duplicating UI, we need to
-// standardize pages", then "Land C").
+// with it.
 export function headline(micro, main, sub) {
   const node = el("section", "headline");
   if (micro) node.append(el("p", "micro", micro));

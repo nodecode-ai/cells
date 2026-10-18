@@ -68,14 +68,12 @@ Catalog:"
   (with-output-to-string (out)
     (dolist (snapshot snapshots)
       (destructuring-bind (&key name state tools &allow-other-keys) snapshot
-        ;; What a server offers, never how it is doing: a state printed here —
-        ;; connecting, ready, error — moved the prompt prefix for every session
-        ;; each time a server came up or dropped, six times behind every boot,
-        ;; while this text rode it (2026-09-21). A server that
-        ;; dropped keeps the lines of the tools it listed, a call to one
-        ;; answers MCP-OFFLINE (rule 4), and (mcp:status) is where a state is
-        ;; read. Disabled and refused are the config's word, the same at every
-        ;; boot.
+        ;; What a server offers, never how it is doing: printing a state here —
+        ;; connecting, ready, or error — would move the prompt prefix for every
+        ;; session whenever a server came up or dropped. A server that dropped
+        ;; keeps the lines of the tools it listed, a call to one answers
+        ;; MCP-OFFLINE (rule 4), and (mcp:status) is where a state is read.
+        ;; Disabled and refused are the config's word, the same at every boot.
         (cond
           ((member state '(:disabled :refused))
            (format out "~%  ~a: ~(~a~)" name state))

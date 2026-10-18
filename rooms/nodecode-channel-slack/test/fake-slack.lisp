@@ -1,14 +1,14 @@
-;;;; fake-slack.lisp --- a Slack that answers on 127.0.0.1, for the lane's tests.
+;;;; fake-slack.lisp --- a Slack that answers on 127.0.0.1, for tests.
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
 ;;;; The adapter's live executors and its Socket Mode lap run unchanged
-;;;; against this: the Web API under /api/ (the methods the lane calls,
+;;;; against this: the Web API under /api/ (the methods called,
 ;;;; answered in Slack's own envelope and recorded), apps.connections.open
 ;;;; answering a ws:// URL on the same port, and /link, the socket, which
 ;;;; says hello, records every acknowledgement and carries what a test pushes.
 ;;;; A slash command's response_url lands under /response/. Shapes follow
-;;;; docs.slack.dev (2026-09-25).
+;;;; docs.slack.dev.
 
 (in-package #:nodecode.test)
 

@@ -353,12 +353,12 @@ rides the first chunk, drawn where the platform draws one."
   ;; the message that is the answer; CONTROLS ride the last, under the words
   ;; they answer. MENTIONS — the user ids the
   ;; post addresses — open the text in the platform's spelling (PLATFORM-MENTION)
-  ;; before it is cut, so the spelling counts against the first chunk's limit
-  ;; (2026-10-03: `<@id> ' added to a first chunk already cut at 2000 made it
-  ;; 2015, and Discord refused the answer whole), and every chunk hands the ids
-  ;; on for the platform to let through: the note that needs the operator
-  ;; reaches them. WHAT names the post in the one warning a refused post is,
-  ;; when the caller has nothing else to do about it.
+  ;; before it is cut, so the spelling counts against the first chunk's limit.
+  ;; Without this, a first chunk cut to the limit would exceed it once the
+  ;; platform adds its mention spelling, and the platform would refuse the post
+  ;; whole. Every chunk hands the ids on for the platform to let through: the
+  ;; note that needs the operator reaches them. WHAT names the post in the one
+  ;; warning a refused post is, when the caller has nothing else to do about it.
   (nlk:bind ((spelled (loop for id in mentions
                             for spelling = (funcall (platform-mention host.platform) id)
                             when spelling collect spelling))
@@ -488,7 +488,7 @@ with its answers on it."
   ;; A label is at most 80 characters, what a button shows. Answers (:session-id S
   ;; :turn-id T :choices LABELS); errors on labels it would not show, or a
   ;; platform whose messages carry no choices. Stamped an act first, as
-  ;; ANSWER-FILE is (2026-10-18: watched as a read, it ran again after every
+  ;; ANSWER-FILE is (watched as a read, it ran again after every
   ;; later snippet and put an earlier question's buttons on later answers).
   (nle:receipt "calls" (list :verb "answer-choices"))
   (unless (and (listp labels)
@@ -566,14 +566,12 @@ showing something."
 ;;; --- reactions (per ask, opt-in) -----------------------------------------------------
 ;;; The one surface that sits on the operator's own message: the eye while
 ;;; the turn that answers it is active — admitted, queued, running — with no
-;;; transition while it runs (the operator's word, 2026-09-12), and the
-;;; turn's outcome once it ends: a check when its answer landed, a cross when
-;;; it failed, nothing when it was stopped or chose silence (2026-09-28, the
-;;; Hermes comparison: the eye just vanishing read as nothing having
-;;; happened). A turn a steer cut short hands its marks to the turn the steer
-;;; opens, which answers for both. Discord takes any unicode emoji; Telegram's
-;;; set is fixed, and its plans say these in its own. Data, so an operator's
-;;; layer can reword them.
+;;; transition while it runs, and the turn's outcome once it ends: a check
+;;; when its answer landed, a cross when it failed, nothing when it was
+;;; stopped or chose silence. A turn a steer cut short hands its marks to the
+;;; turn the steer opens, which answers for both. Discord takes any unicode
+;;; emoji; Telegram's set is fixed, and its plans say these in its own. Data,
+;;; so an operator's layer can reword them.
 
 (defparameter +reaction-seen+ "👀"
   "The reaction on an ask while its turn is active.")
@@ -815,11 +813,8 @@ warning naming WHAT. => whether they were delivered."
   ;; turn's signal and wakes the threads parked on it — and the room's one
   ;; escape from a running turn must not queue behind the delivery pool's
   ;; posts and edits, nor wait out the acknowledgement's own round trip to a
-  ;; platform that may be slow or failing. (2026-09-16: a stop pressed at 75s
-  ;; reached the turn at 135s, one whole provider round later; the flag was
-  ;; set 29 ms before the turn ended of its own accord.) The engine cuts a
-  ;; running round at its next stream line, so the press is felt as soon as
-  ;; the flag is set.
+  ;; platform that may be slow or failing. The engine cuts a running round at
+  ;; its next stream line, so the press is felt as soon as the flag is set.
   ;;
   ;; Everything else is a worker's: the acknowledgement that stops the
   ;; platform's own spinner, which a Details press answers with the card's
@@ -1271,8 +1266,7 @@ card's message holds of its pictures."
          (post-card host target card :reply-to reply-to :controls controls)
        (cond ((not delivered)
               ;; A refused post would be refused again on every tick's
-              ;; window for as long as the turn runs (2026-10-04: a
-              ;; Telegram keyboard it could not read, 274 warnings).
+              ;; window for as long as the turn runs.
               (when refused
                 (with-lane-digest (digest lane)
                   (digest-status-refused digest card)))
@@ -1285,8 +1279,7 @@ card's message holds of its pictures."
                     ;; the card while it is still in flight — it reads no id
                     ;; — and the card lands after, a working card no turn
                     ;; watches. A post planned while the turn still ran whose
-                    ;; turn has since ended retires itself (2026-09-16: the
-                    ;; NO_REPLY blink left "working · 8s").
+                    ;; turn has since ended retires itself.
                     (setf settled-p
                           (and (not terminal-p) (not (member digest.phase '(:queued :running))))))
                   (when (and settled-p message-id)
@@ -1554,12 +1547,9 @@ chunk as an address for the lane, then settle the card above it."
        nil)
       ((null text)
        ;; A completion that spoke and left no words the room can show is a
-       ;; failure, never a choice, and never batched with the SILENT sentinel
-       ;; (2026-09-21: a round leaked its tool call into text, ended `stop`
-       ;; with null content and 10,462 chars of reasoning, and the turn
-       ;; retired in silence the asker read as intent). One line says so —
-       ;; and only for a turn that actually spoke; a completion that never
-       ;; spoke at all keeps the pinned absence.
+       ;; failure, never a choice, and never batched with the SILENT sentinel.
+       ;; One line says so — and only for a turn that actually spoke; a
+       ;; completion that never spoke at all keeps the pinned absence.
        (if wordless-completion-p
            (progn
              (post-message host target
@@ -1630,10 +1620,9 @@ voice message there too, a reply to REPLY-TO."
   "Worker thread: the room refused a turn's answer — the card that stood in
 for it settles failed and says so, its Stop gone, or, for a turn that earned
 no card, one line says so."
-  ;; Left as it was, the line read `working' with a stop on a turn already
-  ;; over, and every press found nothing to stop (2026-10-03: four presses on
-  ;; a thread lane whose answer Discord refused). The card stays the turn's
-  ;; record: its steps, and Details on it.
+  ;; Without this, the line would read `working' with a stop on a turn
+  ;; already over, and every press would find nothing to stop. The card stays
+  ;; the turn's record: its steps, and Details on it.
   (cond
     (status-id
      (remhash status-id *replied-lines*)
@@ -1734,10 +1723,9 @@ write-back, and concurrency slot."
       ((eq (turn-digest-phase digest) :steered)
        ;; A steer ended the turn at a round boundary, and the lane's next
        ;; turn takes its ask with the steer (NOTE-TURN-FACT): nothing posts —
-       ;; not the notice a wordless completion earns (2026-09-28: a
-       ;; reply-steer read "the turn ended without an answer" above the real
-       ;; one). Its card goes, what it said on its way with it; the next turn
-       ;; raises its own.
+       ;; not the notice a wordless completion earns, "the turn ended without
+       ;; an answer". Its card goes, what it said on its way with it; the next
+       ;; turn raises its own.
        (retire-chrome host lane digest.status-id digest))
       (t
        ;; A failed or stopped turn IS its card: the notice settles into
@@ -1745,9 +1733,7 @@ write-back, and concurrency slot."
        ;; The ask stays in the record: the rooms its answer would have
        ;; surfaced in keep the exchange, the notice as the assistant
        ;; half, so the next lane forked in the flow sees it — an ask
-       ;; that was stopped is still something the room said (2026-09-16:
-       ;; the operator's "Yo", stopped, was invisible to the lane that
-       ;; asked what it saw above).
+       ;; that was stopped is still something the room said.
        (flush-now host lane)
        (keep-card-details host lane digest)
        (when (eq (turn-digest-phase digest) :failed)
@@ -2080,14 +2066,14 @@ digest into, and the detail its PAYLOAD carries — NIL for any other kind."
   "Retire every lane forked from a room ROOM-P takes: a settled one is
 dropped now, one still running answers its turn and goes with the next reap."
   ;; Any head move counts, from any surface: a /new or an /undo typed in the
-  ;; room, a rewind from a shell attached to the room's session. Before this a
-  ;; cleared room changed nothing for up to +LANE-IDLE-REAP-MS+ wherever every
-  ;; line talks to the surface's live lane (CONVERSATION-LANE) — a thread, a
-  ;; DM: /new answered "cleared" and the next line ran on the old fork with
-  ;; everything it had just cleared (2026-10-02, a Discord thread). An ask
-  ;; still waiting at the gate has not forked yet, and forks the room as it
-  ;; stands: it stays. A room handed to another agent retires its lanes the
-  ;; same way (AGENT-COMMAND). Lane table only — no I/O.
+  ;; room, a rewind from a shell attached to the room's session. Without this a
+  ;; cleared room would change nothing for up to +LANE-IDLE-REAP-MS+ wherever
+  ;; every line talks to the surface's live lane (CONVERSATION-LANE) — a thread,
+  ;; a DM: /new would answer "cleared" and the next line would run on the
+  ;; old fork with everything it had just cleared. An ask still waiting at the
+  ;; gate has not forked yet, and forks the room as it stands: it stays. A room
+  ;; handed to another agent retires its lanes the same way (AGENT-COMMAND).
+  ;; Lane table only — no I/O.
   (map-lanes host.lanes
              (lambda (lane)
                (when (and (funcall room-p lane.parent-session-id)
@@ -2251,7 +2237,7 @@ chatter line stays as the record that it was said."
 ;;; image, a recording as the words it says, a text file as its text, and any
 ;;; other file — a video, a PDF, an archive, a log too long to read whole —
 ;;; as a file on this machine, its path in the prompt for the lane's own tools
-;;; to open (2026-09-28: a video was dropped at the door; Hermes keeps it). The
+;;; to open. The
 ;;; candidate carries each file
 ;;; by reference — the url to fetch, or, where a platform reaches its files
 ;;; with the adapter's own credential, a thunk that returns the bytes — and
@@ -2376,8 +2362,7 @@ why none."
                          (cons media-type (cl-base64:usb8-array-to-base64-string octets))
                          nil))
                 ;; A video's container holds sound too; a video file is
-                ;; opened, not heard (2026-09-28: a clip read as a recording
-                ;; nobody could transcribe).
+                ;; opened, not heard.
                 ((and container (<= bytes +audio-max-bytes+) (not (video-file-p attachment)))
                  (values :audio (cons octets container) nil))
                 (text (values :text text nil))
@@ -2709,9 +2694,8 @@ message that asked, pinging its author."
 aliases as a command of its own — a name already in the menu stays the one
 command it names."
   ;; A platform menu has no aliases, and a name missing from it reads as a
-  ;; command the bot does not have (2026-10-03: /new, /clear's alias, was in no
-  ;; Discord menu). The interaction an alias sends back spells the alias, which
-  ;; NLE:SLASH resolves.
+  ;; command the bot does not have. The interaction an alias sends back spells
+  ;; the alias, which NLE:SLASH resolves.
   (append catalog
           (loop for entry in catalog
                 append (loop for alias in (getf entry :aliases)
@@ -2965,7 +2949,7 @@ the one active there last."
                                               (mark (format nil "Answered: ~a" line)))
   "Worker thread: the card CANDIDATE pressed, answered with LINE — its
 choices go, and a line under its words says which answer it took."
-  ;; OpenClaw's mark on a question it asked (2026-10-03): the question stays
+  ;; OpenClaw's mark on a question it asked: the question stays
   ;; readable, and the room sees the answer it took. The card's words are
   ;; cut, if they must be, to leave the mark room in one message.
   (respond host candidate
@@ -3778,8 +3762,8 @@ turns their budget."
                         (warn "~a: the running lanes were not handed on: ~a" (host-id host) condition)))
     (hand-off-lanes host))
   ;; An ask still queued on the stopped worker never runs the release its
-  ;; claim waits on, and the claim would drop the same message redelivered to
-  ;; the next host (a test's message 6 held one across 149 tests, 2026-09-27).
+  ;; claim waits on; without this, the claim would drop the same message
+  ;; redelivered to the next host.
   (sb-ext:with-locked-hash-table (*ask-claims*)
     (loop for key being the hash-keys of *ask-claims*
           when (equal (car key) (host-id host))

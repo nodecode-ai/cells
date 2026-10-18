@@ -8,15 +8,11 @@
 ;;;; stopped talking. No I/O, no threads, no libdave — voicelap.lisp owns the
 ;;;; socket, the session and the workers, and dave.lisp owns the library.
 ;;;;
-;;;; What was measured against live Discord on 2026-09-18, because each of
-;;;; these cost a run to find:
-;;;;
 ;;;;   - The voice endpoint's PORT is load-bearing. VOICE_SERVER_UPDATE
-;;;;     answers c-sea01-9b97985a.discord.media:8443 and the port varies by
-;;;;     server (443, 2087, 8443 seen). Dialing the host on 443 regardless —
-;;;;     which is what every older client did — is answered with close 4006,
-;;;;     "Session is no longer valid", which reads like a stale session and
-;;;;     is not one.
+;;;;     answers a voice endpoint and the port varies by server (443,
+;;;;     2087, 8443). Dialing the host on 443 regardless — which is what
+;;;;     every older client did — is answered with close 4006, "Session is
+;;;;     no longer valid", which reads like a stale session and is not one.
 ;;;;   - max_dave_protocol_version 0 is closed with 4017. There is no
 ;;;;     presence-only mode left to fall back to.
 ;;;;   - Binary frames are [seq uint16 BE][opcode uint8][payload] coming in

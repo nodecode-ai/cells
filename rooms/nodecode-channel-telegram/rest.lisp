@@ -57,9 +57,7 @@ reply_parameters."
 ;;; the turn works, green done, red failed, Telegram's grey otherwise; the
 ;;; ask's task as a heading; what the turn does now and its thought; its
 ;;; steps a checklist, ticked as each lands; a rule, and its numbers in the
-;;; footer's small type. The operator's pick, 2026-10-04, of five drawn
-;;; variants (canvas HSDBn9PS7kN96wuoU3R1ku, B, with A's rule over the
-;;; footer), over the HTML text card. Every edit restates the whole card.
+;;; footer's small type. Every edit restates the whole card.
 
 (defparameter +card-pill-styles+ '((:working . "primary") (:done . "success") (:failed . "danger"))
   "The style a card's pill wears for each state: blue working, green done,
@@ -153,18 +151,18 @@ command; else TEXT as rich Markdown (RICH-MARKDOWN)."
 ;;; parses itself, so what the model writes -- in the markdown Discord draws --
 ;;; reads as it does there: bold, lists, code, quotes, and tables besides.
 ;;; Telegram's parser is GitHub's Markdown with HTML, and some of its habits
-;;; would change what a chat line says (probed against the Bot API,
-;;; 2026-10-04): a lone line break joins the lines it parts; a tag it does not
-;;; know vanishes without a word (`Vec<String>' read `Vec') and one it knows
-;;; opens (an unclosed <details> folded the rest of the message away); a
-;;; picture by a link that holds none refuses the whole message
-;;; (RICH_MESSAGE_PHOTO_NO_MEDIA_FOUND); a word after a line's leading # is a
-;;; heading; a table needs a blank line over it. Outside code, then,
-;;; RICH-MARKDOWN spells < as an entity, escapes the ! of ![ and a leading #
-;;; that opens no heading, keeps every line break (two spaces before it) and
-;;; opens a table with a blank line. Code passes as written: Telegram draws
-;;; it literally, entities and all. An & stays as it is: a link's address
-;;; decodes no entity, so &amp; would break it.
+;;; would change what a chat line says: a lone line break would join the lines
+;;; it parts; a tag it does not know would vanish without a word
+;;; (`Vec<String>' read `Vec') and one it knows would open (an unclosed
+;;; <details> would fold the rest of the message away); a picture by a link
+;;; that holds none would refuse the whole message
+;;; (RICH_MESSAGE_PHOTO_NO_MEDIA_FOUND); a word after a line's leading #
+;;; would be a heading; a table would need a blank line over it. Outside
+;;; code, then, RICH-MARKDOWN spells < as an entity, escapes the ! of ![
+;;; and a leading # that opens no heading, keeps every line break (two
+;;; spaces before it) and opens a table with a blank line. Code passes as
+;;; written: Telegram draws it literally, entities and all. An & stays as
+;;; it is: a link's address decodes no entity, so &amp; would break it.
 
 (defun blank-line-p (line)
   "Whether LINE holds nothing but spaces and tabs."

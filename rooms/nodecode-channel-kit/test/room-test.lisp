@@ -331,8 +331,8 @@ by PATCH /rooms/<thread>, as the kit's side table beside a platform holds."
     (is (null (search (string #\Newline) long)))))
 
 (deftest channel-room-reply-carries-the-answered-message ()
-  ;; Operator report 2026-09-13: an ask that answered a message reached its
-  ;; lane with the message's id but never the message; the ask carries it now.
+  ;; An ask that answers a message carries the message itself, not just its id.
+  ;; Without it, a lane would show the id but never the answered message.
   (is (equal "↩ bob [m6]: the answered words"
              (nck::reply-context-line
               (nlk:json-object "id" "6" "user_name" "bob"
@@ -625,14 +625,14 @@ alice [m9 uu1]: fix it"
     lane))
 
 (deftest channel-room-a-head-move-retires-the-rooms-lanes (with-temp-store ())
-  ;; A lane is a fork of its room frozen when it opened, so a head move on the
-  ;; room — a /new, an /undo, a rewind from a shell — leaves it composing a
-  ;; record the room no longer holds. A settled lane goes at once; a running
-  ;; one answers its turn, no line talks to it unasked meanwhile, and the
-  ;; next reap takes it; an ask still at the gate has not forked and stays; a
-  ;; lane of another room is untouched; the chatter held for the next ask goes.
-  ;; 2026-10-02: /new in a Discord thread answered "cleared" and the next line
-  ;; ran on the old lane, with all it had cleared, for thirty minutes.
+  ;; A lane is a fork of its room frozen when it opened. Without this rule, a
+  ;; head move on the room — a /new, an /undo, a rewind from a shell — would
+  ;; leave it composing a record the room no longer holds. A settled lane goes
+  ;; at once; a running one answers its turn, no line talks to it unasked
+  ;; meanwhile, and the next reap takes it; an ask still at the gate has not
+  ;; forked and stays; a lane of another room is untouched; the chatter held
+  ;; for the next ask goes. Without this, a /new would answer "cleared" and
+  ;; the next line would run on the old lane, with all it had cleared.
   (let* ((host (test-host))
          (lanes (nck:host-lanes host)))
     (nlk:create-session :id "chat-100")
@@ -670,11 +670,11 @@ alice [m9 uu1]: fix it"
 (deftest channel-room-a-thread-lane-is-told-where-its-thread-begins (with-temp-store ())
   ;; A thread's room forks the room it opened from, so a lane in the thread
   ;; opens on that room's whole record with nothing marking where the thread
-  ;; begins: a greeting at its end read as a nudge on the last open work up
-  ;; there (2026-10-02, a "hi" in a new Discord thread took minutes). The
-  ;; where section says where: at the lane's own ask while the thread held
-  ;; nothing, after the room's record once it has exchanges of its own, and
-  ;; nothing for a lane whose history holds no other room's record.
+  ;; begins: without a where section, a greeting at its end would read as a
+  ;; nudge on the last open work up there. The where section says where: at
+  ;; the lane's own ask while the thread holds nothing, after the room's
+  ;; record once it has exchanges of its own, and nothing for a lane whose
+  ;; history holds no other room's record.
   (with-saved-globals (nck::*hosts*)
     (let* ((host (test-host :name "thread-note"))
            (lanes (nck:host-lanes host)))

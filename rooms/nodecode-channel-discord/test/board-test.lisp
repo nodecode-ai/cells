@@ -10,8 +10,7 @@
 (deftest channel-discord-board-sorts-a-thread-by-who-moves-next ()
   ;; A turn running or waiting there decides first; else the newest words:
   ;; the bot's answer marked waiting (NCK:ANSWER-WAITING) needs you, the
-  ;; bot's otherwise are done -- a question mark marks nothing (2026-10-18:
-  ;; the guess filed offers as Needs you and missed `say go' asks) -- anyone
+  ;; bot's otherwise are done -- a question mark marks nothing -- anyone
   ;; else's, or none, wait for an answer.
   (is (eq :running (ncd:board-state :phase :running :bot-p t :waits "Which one?")))
   (is (eq :queued (ncd:board-state :phase :queued)))

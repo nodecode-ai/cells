@@ -20,8 +20,7 @@ back is what a person sees as the bot being down.")
 second doubling, capped at +LAP-BACKOFF-CAP-SECONDS+."
   ;; The cap was 30, and the count never reset once a lap had connected: a
   ;; process that had seen eight failed dials waited 30 s after every drop
-  ;; for the rest of its life (2026-09-28, 28-60 s back against a stand-in
-  ;; that restarted in 3; Hermes took 5-25). A dial is not an identify, so a
+  ;; for the rest of its life. A dial is not an identify, so a
   ;; dial every 5 s through an outage costs Discord's daily identify budget
   ;; nothing.
   (min (* 0.25 (expt 2 (1- failures))) +lap-backoff-cap-seconds+))
@@ -44,8 +43,8 @@ second doubling, capped at +LAP-BACKOFF-CAP-SECONDS+."
   ;; Returns a stop thunk: signals stop, then waits up to STOP-GRACE-SECONDS
   ;; for the lap thread to finish its current lap and exit. A thread that is
   ;; still parked past the grace is ABANDONED with one warning — never
-  ;; destroyed: async termination inside foreign TLS frames is what corrupted
-  ;; libssl and wedged process exit on 2026-08-18. The contract this buys from
+  ;; destroyed: async termination inside foreign TLS frames would corrupt
+  ;; libssl and wedge process exit. The contract this buys from
   ;; laps: every blocking wait must be bounded (queue timeouts, HTTP read
   ;; timeouts, transport severs) so STOP-P is consulted on a real cadence; an
   ;; abandoned lap exits on its own when its current wait completes, holding

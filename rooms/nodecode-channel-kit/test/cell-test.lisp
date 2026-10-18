@@ -277,8 +277,8 @@ the help section."
       (is (equal '("decl") nck:*unconfigured*) "and is a setup subject"))))
 
 (deftest channel-unconfigured-stands-unsaid-and-a-refusal-is-said ()
-  ;; 2026-09-29: an adapter installed with no section drew a card on every
-  ;; launch. It stands :quiet -- (cells), /cells and the model still read
+  ;; Without this, an adapter installed with no section would draw a card on
+  ;; every launch. It stands :quiet -- (cells), /cells and the model still read
   ;; it -- and is said to no shell; a lane refusing to start is said.
   (nck:clear-all-channel-status)
   (flet ((said-p (text) (find text (nlk:notice-log) :key #'first :test #'equal)))

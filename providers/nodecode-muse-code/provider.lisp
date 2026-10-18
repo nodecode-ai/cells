@@ -12,9 +12,9 @@
 ;;;; (signin.lisp); the account token mints a Model API key, and that key is
 ;;;; what every model request spends, on Meta's Responses API at
 ;;;; https://api.meta.ai/v1, with x-api-version 1.0.0 beside it. Two rules of
-;;;; Meta's endpoint reach the request: tool_choice is refused in every form
-;;;; but auto (HTTP 400, verified by omp 2026-09-10), so it is never sent;
-;;;; and results are not stored (store false), which is omp's default too,
+;;;; Meta's endpoint reach the request: tool_choice is never sent because
+;;;; sending it in any form but auto would be refused with HTTP 400; and
+;;;; results are not stored (store false), which is omp's default too,
 ;;;; storage there being an opt-in that keeps prompts on Meta's side.
 
 (in-package #:nodecode-muse-code)

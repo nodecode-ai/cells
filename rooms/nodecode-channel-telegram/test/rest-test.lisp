@@ -59,10 +59,10 @@ that answers STATUS with BODY."
     (is (equal "/context history" (nck:said-line (nlk:json-value (aref (aref rows 0) 0) :string "callback_data"))))))
 
 (deftest channel-telegram-controls-are-an-inline-keyboard ()
-  ;; A running card's Stop and Details share one keyboard row (2026-10-04:
-  ;; read as one button, the row put a list in `text' and Telegram refused
-  ;; every post of a running card, 400). A lone button is a row of its own; a
-  ;; menu is one row per option, the current one checked; a disabled button,
+  ;; A running card's Stop and Details share one keyboard row. Without this,
+  ;; the row would put a list in `text', Telegram would read it as one button,
+  ;; and refuse every post of a running card. A lone button is a row of its own;
+  ;; a menu is one row per option, the current one checked; a disabled button,
   ;; which Telegram cannot draw, and one whose data passes 64 bytes, which
   ;; would refuse the whole message, are left out.
   (flet ((keyboard (controls)
@@ -164,9 +164,8 @@ that answers STATUS with BODY."
 
 (deftest channel-telegram-words-are-rich-markdown ()
   ;; A message's words are Markdown Telegram parses itself, kept saying what
-  ;; Discord draws them saying (each habit probed against the Bot API,
-  ;; 2026-10-04). A rich message unfurls no link, so a link stays a link
-  ;; with no preview options to ask it.
+  ;; Discord draws them saying. A rich message unfurls no link, so a link stays
+  ;; a link with no preview options to ask it.
   (is-each (nct::rich-markdown)
     ("Vec<String> and /agent <name>" "Vec&lt;String> and /agent &lt;name>"
      "a tag Telegram does not know vanishes, so a < outside code is an entity")
@@ -252,7 +251,7 @@ that answers STATUS with BODY."
   ;; with {"ok":true,"result":true} — a boolean that says the request was
   ;; accepted and nothing about what is there. The wrapper answers it as no
   ;; body at all, which is what makes NCK:CALL's read-back see a Telegram
-  ;; write for what it is (T-002).
+  ;; write for what it is.
   (is (nct:telegram-acknowledgement-p
        (cell-json "{\"ok\":true,\"result\":true}")))
   (is-table (json) (not (nct:telegram-acknowledgement-p (cell-json json)))

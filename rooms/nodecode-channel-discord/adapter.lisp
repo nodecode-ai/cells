@@ -210,12 +210,12 @@ falls through."
 
 ;;; --- the close code a peer sent -------------------------------------------------------
 ;;; websocket-driver answers a peer's close frame with its own and then reports
-;;; the close with no code: the code rode only the frame it echoed. Every
+;;; the close with no code: the code rides only the frame it echoes. Every
 ;;; gateway decision on a close turns on that code — 4004 a bad token, 4014 an
-;;; intent the portal has not granted, a voice session that ended — and
-;;; without it each read as a clean 1000: a bad token reconnected every
-;;; second, identifying again each time (2026-09-28, against a stand-in that
-;;; refused the intent). The socket keeps the code of the close it echoes.
+;;; intent the portal has not granted, a voice session that ended. Without it
+;;; each close would read as a clean 1000: a bad token would reconnect every
+;;; second, identifying again each time. The socket keeps the code of the close
+;;; it echoes.
 
 (defclass discord-socket (websocket-driver.ws.client:client)
   ((close-code :initform nil :accessor socket-close-code))

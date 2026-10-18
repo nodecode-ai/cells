@@ -86,8 +86,7 @@
           (t "now"))))
 
 (defun at-text (universal &optional (now (get-universal-time)))
-  "UNIVERSAL as local wall time and how far off it is:
-\"2026-09-13 20:37 (in 23h 55m)\"."
+  "UNIVERSAL as local wall time and how far off it is: \"2026-09-13 20:37 (in 23h 55m)\"."
   (format nil "~a (~a)" (local-text universal) (left-text universal now)))
 
 ;;; --- clock times and day words ----------------------------------------------------

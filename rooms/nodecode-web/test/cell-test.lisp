@@ -231,14 +231,13 @@ the pointer and a field lit by typing lay over the ones they stand on."
     (is (search "ledger.hidden" place) "the way back shows only with the transcript")
     (is (search "following" place) "and only to a reader away from the end")))
 
-;; The transcript reads down one edge, as the terminal draws it (the operator,
-;; 2026-10-17: the page looked like another app beside the TUI). The operator's
+;; The transcript reads down one edge, as the terminal draws it. The operator's
 ;; line starts where the answer starts; the work's one line marks each call; a
-;; turn that ended well keeps its footnote under the pointer -- always on a touch
-;; screen -- while a failed or stopped end stays in view, and the context's
-;; eviction count (told by its fields, never its words) is such a footnote too;
-;; and a reflection's recap is not drawn at all, as the TUI's Standard viewport
-;; draws none (the operator, 2026-10-17: "not needed at all").
+;; turn that ended well keeps its footnote under the pointer -- always on a
+;; touch screen -- while a failed or stopped end stays in view, and the
+;; context's eviction count (told by its fields, never its words) is such a
+;; footnote too; and a reflection's recap is not drawn at all, as the TUI's
+;; Standard viewport draws none.
 (deftest web-cell-the-transcript-reads-down-one-edge ()
   (let* ((css (web-css-declarations (web-page-text "app.css")))
          (js (web-page-text "app.js"))
@@ -255,9 +254,9 @@ the pointer and a field lit by typing lay over the ones they stand on."
     (is (search "recorded === \"reflection\") return;" (web-js-function js "renderTranscript")) "no recap in the transcript")
     (is (null (search "drawRecap" js)) "and nothing left that drew one")
     ;; A running turn's newest finished thinking stands under its bar, no
-    ;; label, quieter than the work, faded in -- the TUI's live thought (the
-    ;; operator, 2026-10-17); words still arriving never show, and an ended
-    ;; turn keeps its thinking in its work.
+    ;; label, quieter than the work, faded in -- the TUI's live thought;
+    ;; words still arriving never show, and an ended turn keeps its thinking
+    ;; in its work.
     (is (search "liveThought(work, turn.key)" (subseq work (search "if (live)" work))) "under the running bar")
     (is (search "fold(\"work\", `work-${turn.key}`, false)" work) "the work folded by default, live or done")
     (is (search "!row.live" (web-js-function js "finishedThought")) "only what the model finished")
@@ -402,10 +401,10 @@ attribute its data-i18n-attrs names."
     (is (search "data-i18n>Folder:</span>" (web-page-text "index.html")) "the opener labels its folder in words")
     (is (search "/api/gateway/folder" (web-page-text "app.js")) "and asks the gateway of one typed")))
 
-;; A call's card speaks to the operator (the 2026-09-30 review): its result is
-;; the gateway's reading of it (tool.shown), never the text the model read --
-;; the offer to set a watch, the background handoff's instructions, a stop's
-;; compiler report -- and a stop reads as whose it was, never `failed'.
+;; A call's card speaks to the operator: its result is the gateway's reading
+;; of it (tool.shown), never the text the model read -- the offer to set a
+;; watch, the background handoff's instructions, a stop's compiler report --
+;; and a stop reads as whose it was, never `failed'.
 
 (deftest web-cell-a-call-card-says-the-operators-words ()
   (let* ((app (web-page-text "app.js"))
@@ -596,8 +595,7 @@ var(--ls-*)) replaced by what :root gives it."
     (is (equal preludes '("@media (pointer: coarse), (max-width: 720px)" "@media (max-width: 720px)")) "every rule of it is behind the finger or the phone width: a mouse on a wide window moves not a pixel")
     (is (and hits (null shortfalls)) (format nil "each control the operator named has its size: ~{~a~^; ~}" shortfalls))))
 
-;; A phone's Dashboard is a glance (the operator, 2026-10-17: variant B of
-;; the phone redesign, "Lets land B glance now"): at the phone width the page
+;; A phone's Dashboard is a glance: at the phone width the page
 ;; is the spend and its days, what is wrong right now, four numbers and a row
 ;; per section saying how it went, and a row opens its section whole in a
 ;; sheet -- the same read as a phone's rows (the phone standard, below), a
@@ -632,14 +630,10 @@ var(--ls-*)) replaced by what :root gives it."
     (is (search "body.scrollTop = read" (web-js-function app "renderObserve")) "a read landing keeps the reader's place")
     (is (search "state.dashEnter = false" (web-js-function app "renderObserve")) "and does not raise it again")))
 
-;; The rest of the page on a phone follows the phone standard (the operator,
-;; 2026-10-17: "This is so much better; let's land this!"; its eight rules:
-;; https://claude.ai/artifact/MBgZJCKYQqfeHymgzuAwGM). Measured on the live
-;; page at 390 px before it: the Dashboard's Calls sheet 3,171 px long with 30
-;; controls under 44 px and 210 lines under 12 px, Models 84 such lines; the
-;; Run view's turn 26 controls under 44 px, its text down to 10.5 px and its
-;; call bars 3 px wide; Files' Size column cut; the message box on Run and
-;; Files; a diff in Chat scrolling sideways. A list is rows (observe.js prow,
+;; The rest of the page on a phone follows the phone standard's eight rules.
+;; Without it, controls would fall under 44 px, lines under 12 px, Files'
+;; Size column would be cut, the message box would appear on Run and Files,
+;; and a diff in Chat would scroll sideways. A list is rows (observe.js prow,
 ;; pgroup): a name, at most one line under it, one value, and › or +; a turn
 ;; is a page under its way back; the inspector rises from the foot; the
 ;; message box is Chat's alone; no text of the parts under 11 px.
@@ -668,9 +662,9 @@ var(--ls-*)) replaced by what :root gives it."
     (is (and sizes (every (lambda (each) (and (cdr each) (>= (cdr each) 11))) sizes))
         (format nil "no part's text under 11 px: ~{~a~^, ~}" (remove-if (lambda (each) (and (cdr each) (>= (cdr each) 11))) sizes)))))
 
-;; A model or reasoning pick in the chat drawer is its session's own (webfix4
-;; flow-03, first-03, chat-11, flow-05; 2026-09-30): it once moved the default,
-;; every session that followed it and every scheduled job, and said nothing.
+;; A model or reasoning pick in the chat drawer is its session's own.
+;; Without this, a drawer pick would move the default for every session that
+;; follows and every scheduled job, and say nothing.
 ;; Control is the one place the page moves the default; the drawer says where
 ;; its pick lands and names the default; reasoning has a way back to Default;
 ;; the chip reads again when a pick lands anywhere and when the chat returns.
@@ -859,9 +853,7 @@ brace that closes it at the start of a line, or NIL."
     (is (search "id=\"slash-panel\"" (web-page-text "index.html")))))
 
 ;; A phone opens Control on its sections as one list, each saying how it
-;; stands, and a section as a page of its own under the way back (the operator,
-;; 2026-10-17: variant A of the phone redesign; its ten tabs wrapped into three
-;; rows took 29% of a phone's screen before anything it came for).
+;; stands, and a section as a page of its own under the way back.
 (deftest web-cell-control-on-a-phone-is-a-list-of-its-sections ()
   (let* ((js (web-page-text "control.js"))
          (app (web-page-text "app.js"))
@@ -878,15 +870,10 @@ brace that closes it at the start of a line, or NIL."
     (is (equal "54px" (web-css-value css ".ctl-go" "min-height")) "a section's row is a finger tall")
     (is (equal "fixed" (web-css-value css ".ctl-phone .confirm" "position")) "a question rises from the bottom")))
 
-;; A page names its place once and opens with the one head (the operator,
-;; 2026-10-18: "this is duplicating UI, we need to standardize pages", then
-;; "Land C"; the variants: https://claude.ai/artifact/Dy7WSk5fHi4vgaAo7qnNkM).
-;; Measured on the live page at 390 px before it: Gateway said Control in the
-;; strip, again as the way back, then Gateway at 30 px, then its headline;
-;; Scheduled jobs its title and then SCHEDULED JOBS; three files drew a head
-;; each. The strip carries Control / the tab (Control the way back on a
-;; phone); the page opens with observe.js's headline, and no section repeats
-;; the tab's own name.
+;; A page names its place once and opens with the one head.
+;; The strip carries Control / the tab (Control the way back on a
+;; phone); the page opens with observe.js's headline, and no section
+;; repeats the tab's own name.
 (deftest web-cell-a-page-names-its-place-once ()
   (let* ((observe (web-page-text "observe.js"))
          (control (web-page-text "control.js"))
@@ -914,16 +901,12 @@ brace that closes it at the start of a line, or NIL."
       (is (notany (lambda (js) (search (format nil "block(t(\"~a\")" label) js)) pages)
           (format nil "no section repeats ~a" label)))))
 
-;; Every Control section on a phone follows the phone standard (the operator,
-;; 2026-10-17, "Perfect lets land this"; the standard, ten rules and twelve
-;; parts: https://claude.ai/artifact/PLdNMpmdbZ6bh7cVVfpnpz). Measured on the
-;; live page at 390 px before it: 7,138 of 7,163 controls under 44 px, every
-;; field's text under the 16 px below which iOS zooms the page, 119 actions in
-;; uppercase codes, and Index 496 screens long. One pass over what each tab
-;; drew (control.js rise), so a module's tab follows it too: a control a
-;; finger's size, words in sentence case, a row with one thing on its right and
-;; the rest in its sheet, edits and questions rising from the bottom, on/off a
-;; switch, filters segments, a long list searched first, fifty rows at a time.
+;; Every Control section on a phone follows the phone standard. One pass over
+;; what each tab draws (control.js rise), so a module's tab follows it too: a
+;; control a finger's size, words in sentence case, a row with one thing on its
+;; right and the rest in its sheet, edits and questions rising from the bottom,
+;; on/off a switch, filters segments, a long list searched first, fifty rows at
+;; a time.
 (deftest web-cell-every-control-section-on-a-phone-follows-the-standard ()
   (let* ((js (web-page-text "control.js"))
          (index (web-page-text "index.js"))
@@ -983,11 +966,10 @@ brace that closes it at the start of a line, or NIL."
       (is (search (format nil "id=\"~a\"" id) html) id))
     (is (search "<code>nodecode gateway on</code>" html))))
 
-;; An answer in the TUI's two hues (the operator, 2026-10-18: "Land A" of
-;; https://claude.ai/artifact/CwfqvPjFVWvvxkgfhxjhKy): # and ## and a bold lead
-;; on a band that fades out, bold on a warm chip that glints as it lands, code
-;; in two blues by the TUI's CODE-SPANS rule. md.js's HTML is the shared
-;; goldens', so the grounds are laid on the answer after it.
+;; An answer in the TUI's two hues: # and ## and a bold lead on a band that
+;; fades out, bold on a warm chip that glints as it lands, code in two blues
+;; by the TUI's CODE-SPANS rule. md.js's HTML is the shared goldens', so the
+;; grounds are laid on the answer after it.
 
 (deftest web-cell-an-answer-draws-in-two-hues ()
   (let* ((js (web-page-text "app.js"))
@@ -1006,17 +988,15 @@ brace that closes it at the start of a line, or NIL."
     (is (search ".answer.prose { overflow-x: clip; }" css) "and never passes the answer's edge")
     (is (search ".answer.prose :where(.inline-color strong) { background: none; padding: 0; }" css) "a model's own color keeps no chip")))
 
-;; Sessions on a phone are a page of their own (variant A of the column, the
-;; operator, 2026-10-18: "this sidebar is super not optimized and intuitive and
-;; doesn't feel mobile friendly at all", then "Lets land A"; the variants:
-;; https://claude.ai/artifact/FpWUHVBYzQ96QTuHdkCQ3Y). Measured on the live page
-;; at 390 px before it: the first session 335 px down under three place rows, 7
-;; of 8 rows wearing the news dot, 8 of 9 rows scheduled jobs, and #general's 661
-;; threads behind one row. Now the list reads as an inbox: its sources as chips,
-;; three bands (running, waiting on you, earlier), a room's threads each a row,
-;; the jobs under their own chip, a row its name and where it is held; on a
-;; phone the column fills the screen with the search in its top bar and the
-;; places as tabs along the foot, New over them.
+;; Sessions on a phone are a page of their own (variant A of the column).
+;; Without this, the sessions list would sit below the place rows, most
+;; rows wearing the news dot, most rows carrying scheduled jobs, and a
+;; room's threads behind a row. The list reads as an inbox: its sources
+;; as chips, three bands (running, waiting on you, earlier), a room's
+;; threads each a row, the jobs under their own chip, a row its name and
+;; where it is held; on a phone the column fills the screen with the
+;; search in its top bar and the places as tabs along the foot, New over
+;; them.
 (deftest web-cell-sessions-on-a-phone-are-a-page-with-tabs ()
   (let* ((html (web-page-text "index.html"))
          (app (web-page-text "app.js"))
@@ -1043,14 +1023,11 @@ brace that closes it at the start of a line, or NIL."
         (is (search ".group-head .micro, #count, .column .gateway { display: none; }" block) "no second head, no footer")))
     (is (search "#sessions-tab, .phone-only { display: none; }" css) "wider, the column stays a column")))
 
-;; The page draws from one scale (the operator, 2026-10-18: "the web addon UI
-;; is a mess ... nothing should be shown like a sore thumb", then "Let's land
-;; this"; the standard: https://claude.ai/artifact/HkwXbbhzprL4TQsVBXgYjB).
-;; Measured before it: 22 font sizes, 23 radii and 10 letter-spacings written
-;; across 129 + 108 + 28 declarations. Now :root holds the kit's scale -- six
-;; sizes, four corners, two letter-spacings -- and every other rule names one
-;; of them. The answer's reading scale (.prose: its headings a step apart, its
-;; tables and fences) is the transcript's own and keeps its sizes.
+;; The page draws from one scale.
+;; Now :root holds the kit's scale -- six sizes, four corners, two
+;; letter-spacings -- and every other rule names one of them. The answer's
+;; reading scale (.prose: its headings a step apart, its tables and
+;; fences) is the transcript's own and keeps its sizes.
 (defun web-off-scale (declarations)
   "Each declaration of DECLARATIONS outside :root that writes a raw size,
 corner or letter-spacing instead of naming the kit's scale."

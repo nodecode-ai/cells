@@ -171,10 +171,10 @@
   ;; whether the room reaches the bot without a mention. A gated room
   ;; observes an unmentioned line, so a lane never reads a line the room
   ;; did not mean for it; a room that takes no mention means every line
-  ;; for it, and its contract says so — no line is ever marked. (2026-09-16:
-  ;; a mark computed from the mention alone called every unmentioned line
-  ;; of a require_mention:false room "(not addressed to you)", and a voice
-  ;; note, which can never carry a mention, went NO_REPLY.)
+  ;; for it, and its contract says so — no line is ever marked. Without
+  ;; this, every unmentioned line in such a room would be called "(not
+  ;; addressed to you)", and a voice note, which can never carry a
+  ;; mention, would go NO_REPLY.
   (let ((gated (channel-policy :require-mention t :mention-target "999"
                                :mention-test #'nck:discord-mention-p)))
     (is (not (nck::room-speaks-freely-p gated (test-candidate :text "no mention"))))

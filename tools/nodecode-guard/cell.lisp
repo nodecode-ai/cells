@@ -13,18 +13,17 @@
 ;;;; NOT a security boundary: containment is an environment gate (src/PLAN.md)
 ;;;; and eval has full host authority -- this is a speed bump.
 ;;;;
-;;;; WHAT THE RULES READ (2026-10-18). This is a MONO-TOOL organism: EVAL's
+;;;; WHAT THE RULES READ. This is a MONO-TOOL organism: EVAL's
 ;;;; form carries file-edit payloads, comments and test strings beside the
-;;;; commands it runs, and the guard scanned all of it until this change -- a
-;;;; comment that named two rules, a file called footer-proof and a test
-;;;; string were 15 of its 142 refusals. A call is now READ, not grepped: the
-;;;; spawn calls ((sh ...), run-program, launch-program, run-shell-command)
+;;;; commands it runs. A call is READ, not grepped: the spawn calls
+;;;; ((sh ...), run-program, launch-program, run-shell-command)
 ;;;; are found in the form, each one's command is taken from its literal
 ;;;; arguments (a string, a ($ "name") the strings object resolves, or a
 ;;;; (list ...) of strings), and only that text meets the shell rules. A
 ;;;; command the form cannot show -- built from a variable, or the spawner
-;;;; passed as a function -- falls back to the whole call, read loosely, the
-;;;; way every call was read before.
+;;;; passed as a function -- falls back to the whole call, read loosely.
+;;;; Without this, a comment naming a rule, a file name, or a test string
+;;;; would be refused as if it were the command.
 ;;;;
 ;;;; A shell command is cut into the commands it runs (an unquoted ; & | or
 ;;;; newline separates them) and each command starts a line, so a rule reads a
@@ -295,8 +294,7 @@ NEXT never runs."
                       (nlk:text-rules-refusal (setting :anywhere)
                                               (whole-call-text text strings)))))
     (if refusal
-        ;; A fresh box's agent, refused sudo, told the operator only that it
-        ;; could not install python3 (2026-09-27): the command is theirs to run.
+        ;; The command is theirs to run.
         (nle:failure (format nil "ERROR: refused by nodecode-guard: ~a; the call did not run -- give the operator the command to run themselves" refusal))
         (funcall next op))))
 

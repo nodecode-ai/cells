@@ -6,7 +6,7 @@
 ;;;; material proved in test/waist/textrules-test.lisp; what is proved here is
 ;;;; the guard's OWN data and wiring: which text of a call the shell rules read
 ;;;; (the commands it runs, never its comments or payloads), the rule family
-;;;; against the false positives of 2026-09-16..10-18, the config surface, and
+;;;; against false positives, the config surface, and
 ;;;; that a refusal travels the same path a normal tool result does.
 
 (in-package #:nodecode.test)
@@ -83,8 +83,7 @@ text ...): :ALLOWED, or the refusal string."
                   "(uiop:run-program (list \"git\" \"status\") :output :string)"
                   "(uiop:run-program (list \"rm\" \"/tmp/one-file\"))"
                   "(uiop:run-program (list \"chmod\" \"644\" \"x\"))"
-                  ;; Cleanup that is not a critical path: 90 of the guard's
-                  ;; refusals from 2026-09-16 to 2026-10-18 were these.
+                  ;; Cleanup that is not a critical path.
                   "(sh \"rm -rf /tmp/x\")"
                   "(sh \"rm -rf build/ dist\")"
                   "(sh \"rm -f /tmp/nc-ver\")"
@@ -190,7 +189,7 @@ text ...): :ALLOWED, or the refusal string."
 
 (deftest guard-cell-refusal-is-recorded-failed (with-session-store ("guard-failed"))
   ;; The refusal is the call's failure (NLE:FAILURE), so its fact says so and
-  ;; every transcript draws the call failed, live and on replay (2026-09-29);
+  ;; every transcript draws the call failed, live and on replay;
   ;; a call the guard lets through is not.
   (with-saved-globals (nle::*tools*)
     (nle:register-tool "eval" (second (nle::find-tool "eval"))

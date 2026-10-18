@@ -21,10 +21,9 @@
   "Browser-shaped, as pi-web-access sends: a bare library UA is refused by
 enough sites to matter.")
 
-;;; A page-shaped request carries them with the user-agent: DuckDuckGo's HTML
-;;; endpoint answers a bare user-agent with its 202 challenge page and the
-;;; same request with these with results (probed 2026-09-17), and the 403/406
-;;; a paper host gives a library client is the same gate.
+;;; A page-shaped request carries them with the user-agent. Without these,
+;;; endpoints that gate on fetch metadata would answer with a 202 challenge
+;;; page or 403/406 instead of results.
 (defparameter +browser-headers+
   '(("accept-language" . "en-US,en;q=0.9")
     ("sec-fetch-dest" . "document")

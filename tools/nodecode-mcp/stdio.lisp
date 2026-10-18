@@ -40,9 +40,8 @@ and again after SIGTERM, before SIGKILL.")
   ;; The one process spawn in the cell, so a test stubs this name. Through
   ;; the kernel's spawn, not a fork: the cell starts every server at once,
   ;; and a fork caught by a collection while it held the allocator's locks
-  ;; froze the whole image — its MCP-connecting neighbour waiting on those
-  ;; locks, the collection waiting on the neighbour (2026-09-22: one launch in
-  ;; twenty, the operator's sixteen servers).
+  ;; would freeze the whole image — its MCP-connecting neighbour waiting on
+  ;; those locks, the collection waiting on the neighbour.
   (nlk:bind (((pid output _ process input)
               (nlk:spawn-program argv :input :stream :error-output error-log
                                       :environment environment)))

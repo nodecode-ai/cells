@@ -236,7 +236,7 @@ picture its components show, the MEDIA a card's next edit keeps them by."
   ;; carries is the media item showing it, its attachment_id and its name the
   ;; URL's last segment. Read from the attachments array, always empty, every
   ;; edit uploaded the gallery again, a new file each time, and a picture open
-  ;; in the viewer failed to load (2026-10-17).
+  ;; in the viewer failed to load.
   (labels ((walk (part)
              (let* ((media (nlk:json-value part :object "media"))
                     (id (nlk:json-value media :string "attachment_id"))

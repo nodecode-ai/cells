@@ -501,14 +501,13 @@ the RTP header that is its own AAD. => T when it went."
                                          (counter 1)
                                          (last-ms nil))
   "The paced sender: one 20 ms frame every 20 ms."
-  ;; Two things here are not obvious and both were measured on 2026-09-18,
-  ;; when the frames went out, libdave encrypted every one of them, and nobody
-  ;; heard a thing. First, the RTP timestamp is a CLOCK, not a counter:
-  ;; advancing it only per frame sent leaves it behind real time by however
-  ;; long the bot was quiet, and a receiver drops packets that old. It is
-  ;; realigned from the wall clock at the head of every burst. Second,
-  ;; speaking is announced again before each burst and taken back after it,
-  ;; with the tail of silence Discord asks for.
+  ;; Two things here are not obvious. First, the RTP timestamp is a CLOCK,
+  ;; not a counter: it is realigned from the wall clock at the head of every
+  ;; burst. Without that, advancing it only per frame sent would leave it
+  ;; behind real time by however long the bot was quiet, and a receiver
+  ;; would drop packets that old. Second, speaking is announced again before
+  ;; each burst and taken back after it, with the tail of silence Discord
+  ;; asks for.
   ;;
   ;; Between frames the generation is re-read, which is how a new utterance
   ;; cuts the answer off mid-sentence.
@@ -656,9 +655,9 @@ the RTP header that is its own AAD. => T when it went."
 
 (defun gateway-ready-p (&aux (adapter *discord-adapter*))
   "Whether the main gateway has finished identifying."
-  ;; A voice state sent before READY is thrown away — measured 2026-09-18: the
-  ;; bot reports itself in the channel and Discord's own voice-states/@me says
-  ;; it is in none.
+  ;; A voice state sent before READY is thrown away. Without this, the bot
+  ;; would report itself in the channel while Discord's own voice-states/@me
+  ;; says it is in none.
   (and adapter adapter.application-id t))
 
 (defun join-voice (section &key channel room speakers)

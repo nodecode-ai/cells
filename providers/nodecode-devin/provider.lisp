@@ -127,7 +127,7 @@ config set to (devinDiscoveryMetadata), with the display slots."
 
 (defparameter +image-blind-uids+ '("swe-1-6" "swe-1-6-fast")
   "Uids whose configs say they take images while their backend drops them
-(DEVIN_IMAGE_BLIND_UIDS, verified by omp 2026-08-14).")
+(DEVIN_IMAGE_BLIND_UIDS).")
 
 (defun supports-thinking-p (config)
   "The server's model features decide; a config with none is read from its label."

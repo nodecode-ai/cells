@@ -5,9 +5,8 @@
    column a step below the slab, sheets above it, the same hairlines and the
    one accent, deepened so it still reads as text on white.
 
-   At the operator's word (2026-09-25): no reading rides a box's frame line, a
-   focused field keeps its border, and nothing under the message box explains
-   what Enter does. */
+   No reading rides a box's frame line, a focused field keeps its border, and
+   nothing under the message box explains what Enter does. */
 
 @font-face { font-family: "Geist"; src: url("geist.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: "Geist Mono"; src: url("geist-mono.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
@@ -107,8 +106,7 @@
   scrollbar-color: var(--dim) var(--void);
   scrollbar-width: thin;
 
-  /* The kit's scale (the operator, 2026-10-18: "nothing should be shown like a
-     sore thumb"; the standard: https://claude.ai/artifact/HkwXbbhzprL4TQsVBXgYjB).
+  /* The kit's scale: nothing should be shown like a sore thumb.
      Every size, corner and letter-spacing of the page is one of these; a raw
      value anywhere else fails web-cell-the-page-draws-from-one-scale. */
   --fs-hero: 32px;    /* a hero number */
@@ -575,8 +573,8 @@ code, pre, kbd { font-family: var(--mono); }
 .prose th, .prose td { overflow-wrap: normal; }
 .live-answer > :last-child::after { content: "\258D"; color: var(--accent); animation: caret 1s steps(2, start) infinite; margin-left: 2px; }
 
-/* The answer in two hues, the TUI's Duotone (variant A of the web's; the
-   operator, 2026-10-18: "Land A"). # and ## and a paragraph that opens on a
+/* The answer in two hues, the TUI's Duotone.
+   # and ## and a paragraph that opens on a
    bold run stand on a band (DUOTONE lays .duo-band): the gutter's bar, then the
    band solid under the words and two more, fading over --fade cells under
    whatever follows -- never a box. A banded block hangs 12px with the bar in
@@ -2097,7 +2095,7 @@ button.p-row:active { background: var(--field-lit); }
 .ses-source[data-chosen] { color: var(--accent); }
 .ses-source select option { text-transform: none; font: var(--fs-detail) var(--mono); background: var(--canvas); color: var(--foreground); }
 .column .ses-prune { gap: 10px; }
-/* The list as a phone's inbox reads it (variant A, the operator 2026-10-18):
+/* The list as a phone's inbox reads it:
    its sources as chips, three bands -- what runs now, what waits on the
    reader, the rest -- and a row in two lines, its name and where it is held. */
 .chips {

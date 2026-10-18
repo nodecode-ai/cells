@@ -15,7 +15,7 @@
 ;;;; this one is the catalogue example of NLE:HOOK, the whole cell being one
 ;;;; file of rule data around one hook call.
 ;;;;
-;;;; The .asd sits INSIDE its folder (ADR-0229): a cell is a directory
+;;;; The .asd sits INSIDE its folder: a cell is a directory
 ;;;; carrying its .asd, and it is installed by putting — or symlinking — that
 ;;;; directory under ~/.nodecode/cells/. Presence is enabled; nothing in
 ;;;; config names it. The `just *` recipes register each cell

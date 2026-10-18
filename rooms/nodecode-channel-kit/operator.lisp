@@ -3,15 +3,15 @@
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
-;;;; Four controls, each Hermes had and a room lacked (2026-09-28):
+;;;; Four controls, each Hermes had and a room lacked:
 ;;;;
 ;;;;   agents, routes    channels.<id>.agents names the agents a room's asks
 ;;;;                     may run as — each its folder, persona, standing
 ;;;;                     prompt, model and skills — and channels.<id>.routes
 ;;;;                     sends asks to one by server, channel, thread, person
 ;;;;                     or role; /agent typed in a room hands the room to one
-;;;;                     (2026-10-03, after Hermes' profile routes and
-;;;;                     OpenClaw's bindings).
+;;;;                     (after Hermes' profile routes and OpenClaw's
+;;;;                     bindings).
 ;;;;   the room's model  /models typed in a room sets that room's model and
 ;;;;                     no other: every lane forked there runs on it, a
 ;;;;                     thread's on its channel's unless it has its own. The
@@ -440,6 +440,8 @@ picker card, (values TEXT CONTROLS)."
     (cond
       ((and words (member (first words) '("list" "aux") :test #'string-equal))
        (nle:slash (format nil "/models ~a" args) :session-id room))
+      ((and words (string-equal (first words) "backups"))
+       (backups-command (rest words) (values (picker-current host room target agent))))
       ((and cards (paged-p words))
        (providers-card host room target agent (page (second words))))
       ((null words)
@@ -467,8 +469,7 @@ picker card, (values TEXT CONTROLS)."
               ;; A pick asks its reasoning effort, as the shells' own /models
               ;; does (OPEN-MODELS-REASONING-PICKER): /think stays the quick
               ;; toggle for later, and this is the one ask that follows a
-              ;; pick straight through, no /think typed (the operator,
-              ;; 2026-10-17).
+              ;; pick straight through, no /think typed.
               (ladder (and cards (nle::effort-ladder provider model))))
          (set-room-model host room provider model)
          (let ((said (format nil "this ~a runs ~a/~a from its next ask; the organism's default is unchanged"
@@ -532,13 +533,13 @@ or a picker card where the platform carries choices."
 
 ;;; --- the model picker (a /models card) ---------------------------------------------------
 ;;; Where a platform's messages carry choices, bare /models answers with a
-;;; card after OpenClaw's Discord picker (the operator, 2026-10-03: "they have
-;;; a better UI"): a menu of the providers, then of one provider's models,
-;;; with a way back and a way to the default. Every step is a CHOICE saying a
-;;; /models line — /models PROVIDER, /models PROVIDER MODEL, /models default —
-;;; so a press is that command typed, admitted as typed, and its answer takes
-;;; the card's place. OpenClaw's Submit step is not copied: picking a model
-;;; picks it. A menu shows 25; a longer list pages.
+;;; card after OpenClaw's Discord picker: a menu of the providers, then of
+;;; one provider's models, with a way back and a way to the default. Every
+;;; step is a CHOICE saying a /models line — /models PROVIDER, /models
+;;; PROVIDER MODEL, /models default — so a press is that command typed,
+;;; admitted as typed, and its answer takes the card's place. OpenClaw's
+;;; Submit step is not copied: picking a model picks it. A menu shows 25; a
+;;; longer list pages.
 
 (defparameter +picker-page-size+ 25
   "The most options one picker menu shows, a Discord select's own cap.")
@@ -583,7 +584,9 @@ and a menu of the providers, each saying /models PROVIDER."
                                                       :description (format nil "~d model~:p~@[ · ~a~]" count
                                                                            (and (equal provider current-provider)
                                                                                 "current")))))
-                     (picker-pager "/models" page pages))))))
+                     (append (picker-pager "/models" page pages)
+                             (list (list (choice (format nil "Backups (~d)" (length (backups-chain)))
+                                                 "/models backups")))))))))
 
 (defun models-card (host room target agent provider page)
   "(values TEXT CONTROLS): the picker's second view — PROVIDER's models, each
@@ -610,13 +613,165 @@ to the default, which only a room that picked its own can take."
                                       (choice "Reset to default" "/models default"
                                               :disabled (null (nth-value 1 (room-model host room)))))))))))))
 
+;;; --- the backups (a /models card) --------------------------------------------------------
+;;; The failover chain is the organism's: every room and shell shares one. The
+;;; Model Picker's Backups button opens it as a card -- a menu per backup, each
+;;; option saying what history knows of that model, the triggers that send a
+;;; failing round to the chain as toggles, and a test that asks each backup
+;;; once. Every control says a /models backups line, so a press is that line
+;;; typed and the card it answers takes the pressed one's place. The card is a
+;;; view of failover.chain and failover.on, read afresh and written through
+;;; NLE's own setters, never a copy of them.
+
+(defparameter +backup-slots+ 3
+  "The backups the card offers, a menu each: with the triggers' row and the
+card's own buttons, Discord's five rows.")
+
+(defparameter +backup-candidates+ 20
+  "The most models a backup's menu offers besides its own and None.")
+
+(defun backups-chain ()
+  "The failover chain, (PROVIDER MODEL) lists in order."
+  (mapcar (lambda (entry) (list (getf entry :provider) (getf entry :model)))
+          (nle::failover-chain)))
+
+(defun backup-when (iso &aux (universal (and iso (nle::iso-universal iso))))
+  "ISO, a stored time, as a card says it: HH:MM today, yesterday HH:MM, or D Mon."
+  (when universal
+    (multiple-value-bind (s minute hour day month year) (decode-universal-time universal)
+      (declare (ignore s))
+      (multiple-value-bind (s2 m2 h2 today this-month this-year) (decode-universal-time (get-universal-time))
+        (declare (ignore s2 m2 h2))
+        (multiple-value-bind (s3 m3 h3 yesterday y-month y-year)
+            (decode-universal-time (- (get-universal-time) 86400))
+          (declare (ignore s3 m3 h3))
+          (cond ((and (= day today) (= month this-month) (= year this-year))
+                 (format nil "~2,'0d:~2,'0d today" hour minute))
+                ((and (= day yesterday) (= month y-month) (= year y-year))
+                 (format nil "yesterday ~2,'0d:~2,'0d" hour minute))
+                (t (format nil "~d ~a" day (nth (1- month) '("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul"
+                                                              "Aug" "Sep" "Oct" "Nov" "Dec"))))))))))
+
+(defun backup-record-text (provider model)
+  "What history says of PROVIDER MODEL as a backup, in a card's words."
+  (destructuring-bind (&key answered-at tried rescued) (nle::failover-record provider model)
+    (format nil "~:[never answered~;last answered ~:*~a~]~:[~; · rescued ~d of ~d~]"
+            (backup-when answered-at) (plusp tried) rescued tried)))
+
+(defun backup-option-text (provider model main-provider)
+  "A backup menu option's description: the record, and a warning when PROVIDER
+is MAIN-PROVIDER's, which an outage or a rate limit would take down with it."
+  (if (equal provider main-provider)
+      (format nil "same provider as this room's model · ~a" (backup-record-text provider model))
+      (backup-record-text provider model)))
+
+(defun backup-options (slot current chain main-provider)
+  "Backup SLOT's menu: CURRENT first (shown picked), the models used most that
+CHAIN does not hold, and None."
+  (flet ((line (provider model) (format nil "/models backups ~d ~a ~a" slot provider model)))
+    (let ((others (loop for entry across (nle::frequent-models-json)
+                        for pair = (list (gethash "provider" entry) (gethash "model" entry))
+                        unless (member pair chain :test #'equal)
+                          collect pair into pairs
+                        finally (return (subseq pairs 0 (min (length pairs) +backup-candidates+))))))
+      (append
+       (when current
+         (destructuring-bind (provider model) current
+           (list (menu-choice (format nil "Backup ~d: ~a/~a" slot provider model) (line provider model)
+                              :description (backup-option-text provider model main-provider)
+                              :current t))))
+       (loop for (provider model) in others
+             collect (menu-choice (format nil "~a/~a" provider model) (line provider model)
+                                  :description (backup-option-text provider model main-provider)))
+       (list (menu-choice "None" (format nil "/models backups ~d none" slot)
+                          :description (if current "take this backup out" "leave this backup empty")))))))
+
+(defun backups-card (main-provider &key tested)
+  "(values TEXT CONTROLS): the backups card -- the chain with what history
+says of each backup, or what TESTED, ((PROVIDER MODEL) OK REASON SECONDS)
+entries, found; a menu per backup; the triggers; Test and the way back."
+  (let ((chain (backups-chain))
+        (on (nle::failover-triggers)))
+    (values
+     (with-output-to-string (out)
+       (format out "## Backup Models~%When a turn's model fails, the turn tries these in order, in every room and shell.")
+       (if chain
+           (loop for (provider model) in chain
+                 for index from 1
+                 for test = (assoc (list provider model) tested :test #'equal)
+                 do (format out "~%~d. ~a/~a: ~a" index provider model
+                            (if test
+                                (destructuring-bind (ok reason seconds) (rest test)
+                                  (if ok
+                                      (format nil "✅ answered in ~,1f s" seconds)
+                                      (format nil "❌ ~a (~,1f s)" reason seconds)))
+                                (backup-record-text provider model))))
+           (format out "~%No backups: a failing turn ends on its own model."))
+       (format out "~%Switches on: ~:[nothing, so the backups are never used~;~:*~{~a~^, ~}~]."
+               (loop for (id . label) in nle::+failover-triggers+
+                     when (member id on :test #'string=) collect label)))
+     (append
+      (loop for slot from 1 to +backup-slots+
+            collect (list :menu (format nil "Backup ~d: none" slot)
+                          (backup-options slot (nth (1- slot) chain) chain main-provider)))
+      (list (loop for (id . label) in nle::+failover-triggers+
+                  for set = (member id on :test #'string=)
+                  collect (choice (if set (format nil "✓ ~a" label) label)
+                                  (format nil "/models backups ~:[on~;off~] ~a" set id)
+                                  :style (if set :primary :secondary)))
+            (list (choice "Test backups" "/models backups test" :style :primary :disabled (null chain))
+                  (choice "Model Picker" "/models")))))))
+
+(defun backups-wrote (outcome detail)
+  "Stand when a failover write said OUTCOME :WRITTEN, else signal DETAIL."
+  (unless (eq outcome :written)
+    (error "the config was not written: ~a" (or detail outcome))))
+
+(defun backups-command (words main-provider &aux (chain (backups-chain))
+                                              (slot (and words (parse-integer (first words) :junk-allowed t))))
+  "(values TEXT CONTROLS): /models backups WORDS -- the card bare; N PROVIDER
+MODEL, N MODEL or N none sets backup N; on or off TRIGGER switches a
+trigger; test asks each backup once. MAIN-PROVIDER is this room's."
+  (cond
+    ((null words) (backups-card main-provider))
+    ((and (string-equal (first words) "test") (null (rest words)))
+     (backups-card main-provider
+                   :tested (loop for pair in chain
+                                 collect (cons pair (multiple-value-list (apply #'nle::probe-model pair))))))
+    ((and (member (first words) '("on" "off") :test #'string-equal) (rest words) (null (cddr words)))
+     (let ((id (string-downcase (second words)))
+           (on (nle::failover-triggers)))
+       (unless (assoc id nle::+failover-triggers+ :test #'string=)
+         (error "no trigger ~a; the triggers: ~{~a~^ ~}" id (mapcar #'car nle::+failover-triggers+)))
+       (multiple-value-call #'backups-wrote
+         (nle::set-failover-triggers (if (string-equal (first words) "on")
+                                         (adjoin id on :test #'string=)
+                                         (remove id on :test #'string=))))
+       (backups-card main-provider)))
+    ((and slot (<= 1 slot +backup-slots+) (rest words) (null (cdddr words)))
+     (let* ((args (rest words))
+            (pair (cond ((and (null (rest args))
+                              (member (first args) '("none" "remove") :test #'string-equal))
+                         nil)
+                        ((rest args) (list (checked-pick (first args) (second args)) (second args)))
+                        (t (list (model-provider (first args)) (first args)))))
+            ;; SLOT is replaced, or appended past the chain's end; a model
+            ;; picked where it already stood elsewhere moves, never doubles.
+            (chain (remove-duplicates (append (subseq chain 0 (min (1- slot) (length chain)))
+                                              (and pair (list pair))
+                                              (nthcdr slot chain))
+                                      :test #'equal :from-end t)))
+       (multiple-value-call #'backups-wrote (nle::set-failover-chain chain))
+       (backups-card main-provider)))
+    (t "usage: /models backups [test | N provider model | N none | on TRIGGER | off TRIGGER]")))
+
 ;;; --- a command's dialog as a card --------------------------------------------------------
 ;;; A command answers a shell with a dialog (NLE:LIST-DIALOG, NLE:SLASH's
-;;; second value) beside its words, and a room took the words alone; where
+;;; second value) beside its words, and a room takes the words alone; where
 ;;; the platform's messages carry choices, the room gets the dialog too, as
-;;; a card (the operator, 2026-10-17: "minimize the need for args on the
-;;; slash command; max dialog interactivity on Discord and any other
-;;; channels"): its title and what it says, a row of its tabs, a menu of its
+;;; a card (minimize the need for args on the slash command; max dialog
+;;; interactivity on Discord and any other channels): its title and what it
+;;; says, a row of its tabs, a menu of its
 ;;; rows a page at a time, Refresh, and Back to the card it was opened from.
 ;;; A row's press says the line the shell's Enter runs (DIALOG-ROW-PRESS),
 ;;; so a card needs no handler of its own; a row that runs nothing is said

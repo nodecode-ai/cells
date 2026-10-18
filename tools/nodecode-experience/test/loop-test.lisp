@@ -77,9 +77,8 @@
 
 (deftest experience-cell-a-turn-refused-for-a-limit-is-not-reflected-on
     (with-experience-store ())
-  ;; A free Google key's daily limit refused the reflection of a fresh box's
-  ;; first task (2026-09-28): a turn whose own requests met a 429 would see
-  ;; its reflection refused as surely.
+  ;; Without this, a turn whose own requests met a 429 would see its
+  ;; reflection refused as surely.
   (flet ((turn (finish &aux (command (nlk::make-durable-id "command")))
            ;; One turn at a time: admitted, FINISH run on it, its id.
            (let ((turn (nlk:admit-turn "s-o" command "work"
@@ -368,11 +367,9 @@
 
 
 (deftest experience-cell-a-reflection-runs-its-verbs-and-keeps-definitions-unbudgeted ()
-  ;; vise, 2026-09-16: the operator stopped a 25-minute turn, and its
-  ;; reflection wrote a sweep into the layer, ran it over another server's
-  ;; messages and edited the layer's system definition. A session this cell
-  ;; made calls its verbs and keeps definitions, and runs nothing else; no
-  ;; budget stops it by default, and it sees how long it has run.
+  ;; A session this cell made calls its verbs and keeps definitions, and
+  ;; runs nothing else; no budget stops it by default, and it sees how long
+  ;; it has run.
   (with-experience-runtime ()
     (flet ((snippet (form)
              (nodecode-experience::fence-refusal "eval" (nlk:json-object "form" form))))

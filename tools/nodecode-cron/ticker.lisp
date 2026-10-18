@@ -10,7 +10,7 @@
 ;;;; naming the due instant, `cron:<id>:<unix>': the kernel's durable
 ;;;; admission makes a second submit of the same id a :DUPLICATE that
 ;;;; spawns nothing, so at-most-once needs no claim record of its own. The
-;;;; schedule is advanced BEFORE the submit (hermes' rule): a crash between
+;;;; schedule is advanced BEFORE the submit: a crash between
 ;;;; the two loses a fire, never doubles one. A job whose previous fire is
 ;;;; still running is skipped for this due instant and told so, not queued
 ;;;; behind itself. A due instant seen later than half its period (clamped
@@ -35,11 +35,11 @@
 ;;;; the session is idle and queues behind the turn it is running otherwise
 ;;;; (the eval-wake shape: *SESSION-WAKE*). So the operator sees the cron's
 ;;;; result arrive as a request and the model there answers it in a turn of
-;;;; its own. Two earlier shapes were tried and read wrong (s-XKML3AQM,
-;;;; 2026-09-06): a settled exchange recorded while idle landed as a detached
-;;;; pair beneath the model's own summary, and a steer folded the text into a
-;;;; running turn without a turn of its own. Until the ingress takes the
-;;;; message the report waits on the job's row (durably, across a restart).
+;;;; its own. Without this return, a settled exchange recorded while idle
+;;;; would land as a detached pair beneath the model's own summary, and a
+;;;; steer would fold the text into a running turn without a turn of its
+;;;; own. Until the ingress takes the message the report waits on the job's
+;;;; row (durably, across a restart).
 ;;;;
 ;;;; THREAD RULE: SUBMIT-PROMPT is the one seam that reaches the organism's
 ;;;; ingress -- a fire into the job's session and a report into its origin
@@ -244,8 +244,7 @@ local time, the schedule, the session that holds the whole run.")
 (defparameter *report-message*
   "~a: ~a"
   "The whole request: the fire line, a colon, the answer -- the cron and its
-output in one user message, the way the operator drew it:
-  [cron \"pong\" fired 2026-09-06 21:37, schedule once, in 15s; its session is cron-pong]: pong
+output in one user message.
 Data, so a layer can reword it.")
 
 ;;; --- settling -----------------------------------------------------------------------------

@@ -88,7 +88,7 @@ origin noted — ORIGIN the keys past the three that place it."
 ;;; How the room reaches the bot — every line, or only a mentioned one — is
 ;;; the contract's to say, once per room (LANE-CONTRACT), never a mark on the
 ;;; line: an ask that reached the lane is one the room meant for it, in a room
-;;; that takes no mention and in one gated on it alike. (2026-09-16: a room
+;;; that takes no mention and in one gated on it alike. (a room
 ;;; that took no mention marked every unmentioned line "(not addressed to
 ;;; you)", and a voice note — which can never carry a mention — went NO_REPLY.)
 (deftests channel-thread (require-mention text asked note)
@@ -112,8 +112,7 @@ origin noted — ORIGIN the keys past the three that place it."
   ;; The whole acceptance: a question typed in the channel opens a thread named
   ;; after it, the lane runs inside the thread, and the answer lands there
   ;; alone — the ask's own message already shows the thread, so a copy in the
-  ;; channel would be the same answer twice (2026-09-28: three asks left three
-  ;; full answers and three pings in #general). The thread's answer carries no
+  ;; channel would be the same answer twice. The thread's answer carries no
   ;; reference — its ask is in the channel — and names the asker once.
   (with-ask-host (host thread-ask-host :answers ("the auth bug is in session.lisp")
                   :responses (replies "42" "p1") :threads t)
@@ -152,10 +151,10 @@ origin noted — ORIGIN the keys past the three that place it."
     ;; too (DELIVER-ANSWER) — the channel's record is the channel's
     ;; timeline whether or not its asks open threads, and the next ask typed
     ;; there forks above every answer the channel has read. Without this a
-    ;; channel whose asks all open threads freezes at its last flat exchange:
-    ;; the operator's Discord general held 44 asks answered in the channel over
-    ;; 2026-09-13..15 and recorded none, every new thread forking from a head
-    ;; two days stale. The thread's own record, as before:
+    ;; channel whose asks all open threads would freeze at its last flat
+    ;; exchange: the channel would record none of its answered asks, and
+    ;; every new thread would fork from a stale head. The thread's own
+    ;; record, as before:
     (is (await (:timeout 15) (plusp (count-session-events "chat-100-t42" "turn.completed"))))
     ;; And the channel's: the same exchange, once.
     (is (await (:timeout 15) (plusp (count-session-events "chat-100" "turn.completed"))))
@@ -540,8 +539,7 @@ origin noted — ORIGIN the keys past the three that place it."
   ;; End to end: /new typed in a thread clears the thread's room, and the next
   ;; line opens a lane of its own over the cleared record — not the next turn of
   ;; the lane that answered before it, which still held everything /new said
-  ;; was gone (2026-10-02, a Discord thread: "that defeats the purpose of
-  ;; /new").
+  ;; was gone.
   (with-ask-host (host thread-ask-host :answers ("canberra" "hello")
                   :responses (replies "42") :threads t :name "thread-new")
     (setf (nck:host-policy host)

@@ -10,8 +10,7 @@
 ;;;; lays over the request it writes — and the request it writes is sent with
 ;;;; the round's own messages in place of the CLI's (REQUEST-MESSAGES).
 ;;;;
-;;;; What the CLI does to a replayed history, found against 2.1.283 with a
-;;;; loopback capture (2026-09-27), is why these look the way they do:
+;;;; What the CLI does to a replayed history is why these look the way they do:
 ;;;;
 ;;;;   - an assistant frame whose message names no model, or another model,
 ;;;;     loses its thinking blocks; one naming the model the CLI runs keeps
@@ -25,12 +24,11 @@
 ;;;;
 ;;;; That last edit is why the messages are the round's own. A thinking block
 ;;;; is signed against every message before it, so a turn sent with the date
-;;;; and replayed without it fails the API's check for every block after it:
-;;;; on 2.1.302 a real round's 20 replayed blocks all failed
-;;;; (anthropic-thinking-prefix-mismatch: kind=blocks_removed, item=text,
-;;;; rejected_blocks=20), and the API dropped them unbilled, so the model
-;;;; saw none of its earlier reasoning (2026-10-16). The round's own messages
-;;;; only grow (ANTHROPIC-MESSAGES keeps its thinking behind the prefix it was
+;;;; and replayed without it would fail the API's check for every block after
+;;;; it: the API would reject them with anthropic-thinking-prefix-mismatch
+;;;; (kind=blocks_removed, item=text) and drop them unbilled, so the model
+;;;; would see none of its earlier reasoning. The round's own messages only
+;;;; grow (ANTHROPIC-MESSAGES keeps its thinking behind the prefix it was
 ;;;; signed with), so the CLI writes the request's headers, system blocks and
 ;;;; tools, and Nodecode's history is the messages.
 

@@ -3,8 +3,8 @@
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
 ;;;; Loaded by nodecode-channel-kit's START-CELL when channels.discord is
-;;;; enabled in the shared config. The .asd sits inside its own folder
-;;;; (ADR-0229): the kit finds it through the folder registry.
+;;;; enabled in the shared config. The .asd sits inside its own folder:
+;;;; the kit finds it through the folder registry.
 
 (defsystem "nodecode-channel-discord"
   :description "Talk to nodecode through a Discord bot"

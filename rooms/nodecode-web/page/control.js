@@ -27,8 +27,7 @@ const LABELS = Object.fromEntries(TABS);
 // A phone -- the page's own phone width, app.css's 720 px -- opens Control on
 // its sections as one list, each saying how it stands, and a section as a page
 // of its own under the way back, where a wide window has the strip of tabs (ten
-// of them wrap into three rows on a phone; the operator picked this, variant A
-// of the phone redesign, 2026-10-17).
+// of them wrap into three rows on a phone).
 export const PHONE = matchMedia("(max-width: 720px)");
 const GROUPS = [[t("This machine"), ["gateway", "logs"]], [t("What it runs"), ["settings", "cells", "mcp", "index"]],
   [t("Who reaches it"), ["channels", "link", "profiles", "jobs"]]];
@@ -1100,7 +1099,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   }
 
   // --- a phone's sheets -----------------------------------------------------------
-  // The phone standard (the operator, 2026-10-17: "Perfect lets land this"): on a
+  // The phone standard: on a
   // phone a row says one thing and keeps one thing on its right -- its switch,
   // or its one word -- and a tap on it raises its details and every other action
   // in a sheet; a form standing in a section is a row that raises it; what the

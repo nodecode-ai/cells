@@ -25,8 +25,8 @@
     (with-mcp-cell ("a" (mcp-fixture-entry "--linger") "b" (mcp-fixture-entry "--linger")
                     "c" (mcp-fixture-entry "--linger")))
   ;; Each lingers past stdin and SIGTERM until the kill. Closed one after
-  ;; another they held an organism's stop -- and its store -- for the sum
-  ;; (seven servers, 14 s, 2026-10-06); at once, for about one.
+  ;; another they would hold an organism's stop -- and its store -- for the
+  ;; sum of the per-server times; at once, for about one close.
   (dolist (name '("a" "b" "c")) (is (eq :ready (mcp-wait-ready name))))
   (let ((pids (mapcar (lambda (server)
                         (mcp::stdio-transport-pid (mcp::client-transport (mcp::server-client server))))

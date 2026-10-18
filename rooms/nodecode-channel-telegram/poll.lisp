@@ -197,9 +197,9 @@ the controls its messages carry.")
   ;; TELEGRAM-HANDLE-UPDATE and whatever advises it. The window is short
   ;; (seconds, not Telegram's customary 25-50) because the poll thread's
   ;; blocking read is also the lane's stop latency: nothing may interrupt a
-  ;; thread parked inside a TLS read (async termination there corrupted libssl
-  ;; and wedged process exit, 2026-08-18), so the supervisor simply waits a
-  ;; lap out — and a lap is at most one window long. An update ends the window
+  ;; thread parked inside a TLS read; doing so would corrupt libssl and
+  ;; wedge process exit, so the supervisor simply waits a lap out —
+  ;; and a lap is at most one window long. An update ends the window
   ;; immediately, so message latency is unaffected; only the idle re-poll
   ;; cadence rises. The HTTP timeout carries a +10s margin over the window so
   ;; the server's own timeout always wins the race, and retry_server_errors

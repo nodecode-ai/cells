@@ -2,11 +2,10 @@
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
-;;;; Since 2026-03-02 Discord refuses a voice client that does not speak
-;;;; DAVE: identify with max_dave_protocol_version 0 and the voice gateway
-;;;; closes with 4017, "E2EE/DAVE protocol required". There is no downgrade
-;;;; and no presence-only corner — the 2026-09 measurement is in the file
-;;;; header of voice.lisp. DAVE's key agreement is MLS (RFC 9420) under an
+;;;; Discord refuses a voice client that does not speak DAVE: identify with
+;;;; max_dave_protocol_version 0 and the voice gateway closes with 4017,
+;;;; "E2EE/DAVE protocol required". There is no downgrade and no
+;;;; presence-only corner. DAVE's key agreement is MLS (RFC 9420) under an
 ;;;; external sender, which is not a thing to reimplement: Discord publishes
 ;;;; libdave under MIT with a plain extern-C ABI and prebuilt, self-contained
 ;;;; shared objects for the five desktop targets, so this file is a binding

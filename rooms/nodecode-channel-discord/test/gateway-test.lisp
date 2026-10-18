@@ -265,8 +265,8 @@ MESSAGE_UPDATE dispatch whose d object is D-JSON."
 
 (deftest channel-discord-message-update-routing ()
   ;; The edit that turns an unaddressed message into an ask is an ask: the
-  ;; lane reads the words that now involve it (2026-09-12 — a person added
-  ;; the mention in an edit and nothing happened).
+  ;; lane reads the words that now involve it. Without this, an edit that
+  ;; adds a mention would not route.
   (let ((candidate (dgw-update (dgw-d "m7" "is this possible <@999>" :author "u2"
                                       :user-name "kim"))))
     (is-present candidate "an edit whose words involve the bot routes"
@@ -552,7 +552,7 @@ whose d object is D-JSON. KEYS reach the router as they are."
 
 (deftest channel-discord-reply-carries-the-answered-message ()
   ;; The reply gesture decides the lane; what was answered must ride with the
-  ;; ask — the lane reads it without a fetch (T-046).
+  ;; ask — the lane reads it without a fetch.
   (let ((reply (gethash "reply" (dgw-said "m7" "and? " :author "u2" :bot-user-id "999"
                                           :fields "\"message_reference\": {\"message_id\": \"a2\"},
                       \"referenced_message\": {\"id\": \"a2\",

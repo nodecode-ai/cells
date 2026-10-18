@@ -664,7 +664,7 @@ sizes -- the listing a reader would otherwise spend a context on."
 (defun digest-text (dir &aux (findings (log-findings dir)))
   "The bounded read of an unscored team: its last findings, then what its
 directory holds, with sizes -- what a reader would otherwise spend a whole
-context reading raw (LOG 11-16 KB, best/ ~90 KB, work-K/ whole sandboxes)."
+context reading raw."
   (format nil "last ~d finding~:p of LOG~:[~; -- none yet~]:~%~{~a~^~%~}~%the directory:~%~{~a~^~%~}"
           (length findings) (null findings)
           (mapcar (lambda (line) (format nil "  ~a" (nlk:clip line *digest-line-chars*))) findings)

@@ -10,9 +10,9 @@ every tool result ends with, with no export, read or print round. Keep what
 matters; window headroom is not the test: kept blocks ride every request, so
 settled ones the model will not reread go, and a drop is lossless (`(recall-entry
 seq)` reads one back). Under the older "none when unnecessary" wording, Claude on a
-1M window edited in 8 of 33 long turns (2026-10-16/17), its reasoning citing the
+1M window edited in 8 of 33 long turns, its reasoning citing the
 free window, "unnecessary" and fear of losing an answer. Still not after every tool
-call, and not while a subproblem is still open (an ARC-AGI-3 run, 2026-10-14: a wipe in
+call, and not while a subproblem is still open (a wipe in
 the middle of a level was followed by 15 calls and one game action).
 
 The full rule is always in the protected `context` harness block. It is not a

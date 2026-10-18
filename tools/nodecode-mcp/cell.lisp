@@ -254,9 +254,7 @@ functions, the manual. Idempotent."
     (setf *registry* nil)
     ;; Every server at once, each on a thread of its own and with a quarter
     ;; second of grace for stdin and then for SIGTERM before the kill; never
-    ;; destroys a thread. Seven npx and uvx servers closed one after another,
-    ;; a second of grace each, held an organism's stop for 14 s, and the
-    ;; store with it (2026-10-06).
+    ;; destroys a thread.
     (setf registry.stopping-p t)
     (dolist (closer (loop for server in registry.servers
                           collect (let ((server server))

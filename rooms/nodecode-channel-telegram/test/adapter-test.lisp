@@ -112,7 +112,7 @@ threads: the request, platform and seam tests drive it directly."
   ;; The model's one door to the Bot API, through the live executor. A write
   ;; that only acknowledges answers empty, and where Telegram has a read for
   ;; the object the door takes it; a reaction is the case that has none, and
-  ;; says so by carrying no :STATE at all (T-002).
+  ;; says so by carrying no :STATE at all.
   (let* ((pinned (cell-json
                   "{\"ok\": true, \"result\":
                      {\"id\": 555, \"type\": \"supergroup\",
