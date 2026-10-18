@@ -556,12 +556,25 @@ no enclosing try block holds, as the line it is on."
                 (when (zerop depth) (setf start (1+ at))))))
     (nreverse preludes)))
 
+(defun web-css-kit (declarations text)
+  "TEXT with each of the kit's scale tokens (var(--fs-*), var(--r-*),
+var(--ls-*)) replaced by what :root gives it."
+  (cl-ppcre:regex-replace-all
+   "var\\((--(?:fs|r|ls)-[a-z]+)\\)" text
+   (lambda (match name)
+     (declare (ignore match))
+     (or (web-css-value declarations ":root" name) name))
+   :simple-calls t))
+
 (defun web-css-px (declarations selector property)
-  "The whole pixels SELECTOR's rule gives PROPERTY, or NIL."
+  "The whole pixels SELECTOR's rule gives PROPERTY, a scale token read off
+:root, or NIL."
   (loop for (rule . declaration) in declarations
         when (and (string= rule selector)
-                  (cl-ppcre:scan (format nil "^~a\\s*:\\s*-?[0-9]" property) declaration))
-          return (parse-integer declaration :start (1+ (position #\: declaration)) :junk-allowed t)))
+                  (cl-ppcre:scan (format nil "^~a\\s*:" property) declaration))
+          return (let ((value (web-css-kit declarations (subseq declaration (1+ (position #\: declaration))))))
+                   (and (cl-ppcre:scan "^\\s*-?[0-9]" value)
+                        (parse-integer value :junk-allowed t)))))
 
 (defun web-hit-shortfalls (declarations)
   "What *WEB-HIT-AREAS* asks and the block does not give, one sentence each."
@@ -638,7 +651,7 @@ no enclosing try block holds, as the line it is on."
          (sizes (loop for (selector . declaration) in css
                       when (and (search ".p-" selector)
                                 (or (eql 0 (search "font-size:" declaration)) (eql 0 (search "font:" declaration))))
-                        collect (cons selector (let ((px (cl-ppcre:scan-to-strings "(\\d+(?:\\.\\d+)?)px" declaration)))
+                        collect (cons selector (let ((px (cl-ppcre:scan-to-strings "(\\d+(?:\\.\\d+)?)px" (web-css-kit css declaration))))
                                                  (and px (read-from-string (string-right-trim "px" px))))))))
     (is (search "export const PHONE = matchMedia(\"(max-width: 720px)\");" js) "the phone's width is one query")
     (is (search "if (ui.phone)" (web-js-function js "drawRun")) "the Run view draws a phone's own column")
@@ -937,12 +950,13 @@ brace that closes it at the start of a line, or NIL."
             (".ctl-phone .word" "min-height" "44px")
             (".ctl-phone .icon" "height" "44px")
             (".ctl-phone .pill, .ctl-phone .pill[aria-checked=\"true\"]" "height" "44px")
-            (".ctl-phone :is(input.control, select.control, textarea.control)" "font-size" "16px")
             (".ctl-phone :is(.quiet, .solid, .word, .sw)" "text-transform" "none")
             (".ctl-phone .ctl-row" "min-height" "54px")
             (".ctl-sheet" "position" "fixed")
             (".ctl-phone .ctl-list > li[hidden]" "display" "none"))
           do (is (equal value (web-css-value css selector property)) (format nil "~a { ~a: ~a }" selector property value)))
+    (is (<= 16 (or (web-css-px css ".ctl-phone :is(input.control, select.control, textarea.control)" "font-size") 0))
+        "a phone's field is never under 16 px, so a tap never zooms the page")
     (is (notany (lambda (each) (and (search "ctl-phone" (car each)) (search "text-transform: uppercase" (cdr each)))) css)
         "no phone rule writes a control in capitals")))
 
@@ -1034,3 +1048,40 @@ brace that closes it at the start of a line, or NIL."
         (is (search "#new-session {" block) "New over them")
         (is (search ".group-head .micro, #count, .column .gateway { display: none; }" block) "no second head, no footer")))
     (is (search "#sessions-tab, .phone-only { display: none; }" css) "wider, the column stays a column")))
+
+;; The page draws from one scale (the operator, 2026-10-18: "the web addon UI
+;; is a mess ... nothing should be shown like a sore thumb", then "Let's land
+;; this"; the standard: https://claude.ai/artifact/HkwXbbhzprL4TQsVBXgYjB).
+;; Measured before it: 22 font sizes, 23 radii and 10 letter-spacings written
+;; across 129 + 108 + 28 declarations. Now :root holds the kit's scale -- six
+;; sizes, four corners, two letter-spacings -- and every other rule names one
+;; of them. The answer's reading scale (.prose: its headings a step apart, its
+;; tables and fences) is the transcript's own and keeps its sizes.
+(defun web-off-scale (declarations)
+  "Each declaration of DECLARATIONS outside :root that writes a raw size,
+corner or letter-spacing instead of naming the kit's scale."
+  (loop for (rule . declaration) in declarations
+        for colon = (position #\: declaration)
+        for property = (and colon (string-trim " " (subseq declaration 0 colon)))
+        for value = (and colon (string-trim " " (subseq declaration (1+ colon))))
+        when (and property (not (eql 0 (search ":root" rule)))
+                  (cond ((member property '("font" "font-size") :test #'string=)
+                         (and (not (search ".prose" rule))
+                              (cl-ppcre:scan "[0-9]px" (cl-ppcre:regex-replace-all "/\\S+" value ""))))
+                        ((string= property "border-radius") (cl-ppcre:scan "[0-9]px" value))
+                        ((string= property "letter-spacing")
+                         (not (or (member value '("0" "normal" "inherit") :test #'string=)
+                                  (eql 0 (search "var(--ls-" value)))))))
+          collect (format nil "~a { ~a }" rule declaration)))
+
+(deftest web-cell-the-page-draws-from-one-scale ()
+  (let* ((css (web-css-declarations (web-page-text "app.css")))
+         (root (loop for (rule . declaration) in css
+                     when (string= rule ":root") collect declaration))
+         (count (lambda (prefix) (count-if (lambda (d) (eql 0 (search prefix d))) root)))
+         (off (web-off-scale css)))
+    (is (= 6 (funcall count "--fs-")) "six sizes")
+    (is (= 4 (funcall count "--r-")) "four corners")
+    (is (= 2 (funcall count "--ls-")) "two letter-spacings")
+    (is (equal "15px" (web-css-value css ":root" "--fs-body")) "the body is 15 px")
+    (is (null off) (format nil "every rule names the scale: ~{~a~^; ~}" (subseq off 0 (min 8 (length off)))))))
