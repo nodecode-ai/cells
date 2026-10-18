@@ -1319,6 +1319,29 @@ LANE, as the one running channel."
     ("2 to 5 distinct labels" (list "short" (make-string 81 :initial-element #\x)))
     ("Test messages carry no choices" '("Postgres" "SQLite"))))
 
+(deftest channel-answer-verbs-act-so-no-watch-repeats-them
+    (with-file-host (host "answer-acts" :platform (test-platform :choices t)))
+  ;; 2026-10-18: (nck:answer-choices ...) closing a snippet read to the eval
+  ;; tool as a read -- it reaches nothing outside the image -- so it was
+  ;; watched, ran again after every later snippet, and put an earlier
+  ;; question's buttons on later answers. Each answer verb stamps its call an
+  ;; act before it acts: the snippet is never watched, and a run again is
+  ;; refused with nothing handed.
+  (setf (nck:lane-active-turn-id lane) "t9")
+  (let ((nle::*snippet-touched* nil))
+    (nck:answer-choices '("Postgres" "SQLite") :platform "test" :channel "123")
+    (is (eq t nle::*snippet-touched*) "handing choices is an act"))
+  (let ((nle::*snippet-touched* nil))
+    (nck:answer-file #p"/tmp/pea.png" :platform "test" :channel "123")
+    (is (eq t nle::*snippet-touched*) "handing a file is an act"))
+  (is (equal '("Postgres" "SQLite") (nck::take-answer-choices lane "t9")))
+  (nck::take-answer-files lane "t9")
+  (let ((nle::*watch-running* t))
+    (is (eq :refused (handler-case (nck:answer-choices '("Old" "Stale") :platform "test" :channel "123") (error () :refused))))
+    (is (eq :refused (handler-case (nck:answer-file #p"/tmp/old.png" :platform "test" :channel "123") (error () :refused)))))
+  (is (null (nck::take-answer-choices lane "t9")) "a refused run again hands no choices")
+  (is (null (nck::take-answer-files lane "t9")) "nor a file"))
+
 (defun test-press (text card &key (card-text "What matters most?") (user "u1"))
   "USER pressing the choice that says TEXT on the card message CARD in room
 123, as interaction i1 — no message of its own."

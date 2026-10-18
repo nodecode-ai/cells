@@ -465,7 +465,10 @@ shows and never beside it."
   ;; RUNNING-ANSWER reads it. Answers the turn the file was handed to,
   ;; (:session-id S :turn-id T :files (PATH ...)), in the order handed;
   ;; errors when no platform runs, no lane answers in that room, or no turn
-  ;; is running there.
+  ;; is running there. The call stamps itself an act first: it changes the
+  ;; answer, so the snippet calling it is never watched, and a watched one's
+  ;; run again is refused before it hands anything (NLE:RECEIPT).
+  (nle:receipt "calls" (list :verb "answer-file" :source (namestring pathname)))
   (multiple-value-bind (host lane turn-id)
       (running-answer "answer-file" platform channel thread session)
     (declare (ignore host))
@@ -484,7 +487,10 @@ with its answers on it."
   ;; way. A second call replaces the first: the answer carries the last set.
   ;; A label is at most 80 characters, what a button shows. Answers (:session-id S
   ;; :turn-id T :choices LABELS); errors on labels it would not show, or a
-  ;; platform whose messages carry no choices.
+  ;; platform whose messages carry no choices. Stamped an act first, as
+  ;; ANSWER-FILE is (2026-10-18: watched as a read, it ran again after every
+  ;; later snippet and put an earlier question's buttons on later answers).
+  (nle:receipt "calls" (list :verb "answer-choices"))
   (unless (and (listp labels)
                (<= 2 (length labels) +answer-choice-cap+)
                (every (lambda (label) (and (stringp label) (<= 1 (length (nlk:trimmed label)) 80)))
