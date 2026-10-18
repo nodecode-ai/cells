@@ -1429,19 +1429,22 @@ LANE, as the one running channel."
               (is (search (format nil "- Paused for the week · a note~%  that carries on") text)
                   "a row that runs nothing is said, one with no label carrying on the row above")
               (is (search "- $name" text) "a value that is no line is no press")
-              (is (equal '((:menu "Pick one of 2"
-                            (("nightly" "/jobs show nightly" "● every day" nil)
-                             ("draft" "/jobs remove draft" "done" nil)))
+              ;; Few rows: each is a line in its order, a button on those that run one.
+              (is (equal '((:row "●" "nightly" "every day" ("Open" "/jobs show nightly" :secondary nil))
+                           (:row nil "draft" "done" ("Open…" "/jobs remove draft" :secondary nil))
+                           (:row nil "Paused for the week" "a note" nil)
+                           (:row nil "" "that carries on" nil)
+                           (:row nil "$name" nil nil)
                            (("Refresh" "/jobs" :secondary nil)))
                          (press-lines controls)))
-              (destructuring-bind (nightly draft) (mapcar #'second (third (first controls)))
+              (destructuring-bind (nightly draft) (list (second (fifth (first controls))) (second (fifth (second controls))))
                 (is (equal "/jobs" (nlk:json-value (nck:press-action nightly) :text "back")))
                 (is (null (nlk:json-value (nck:press-action nightly) :boolean "confirm")))
                 ;; A run row runs; its words are said over the card it was on.
                 (destructuring-bind (text controls &rest _) (press nightly)
                   (declare (ignore _))
                   (is (search (format nil "did show nightly~%~%## Jobs (2)") text))
-                  (is (equal "/jobs show nightly" (nck:said-line (second (first (third (first controls))))))))
+                  (is (equal "/jobs show nightly" (nck:said-line (second (fifth (first controls)))))))
                 ;; A draft asks first, and runs nothing until Run.
                 (setf ran '())
                 (destructuring-bind (text controls &rest _) (press draft)
@@ -1457,6 +1460,41 @@ LANE, as the one running channel."
             (is (equal '("jobs: 2" nil nil)
                        (multiple-value-list (nck::run-command plain channel "/jobs")))
                 "no choices, no card")))))))
+
+(deftest channel-a-dialog-card-is-a-panel-of-lines ()
+  ;; A dialog of few rows is a panel (variant C of /context's room card):
+  ;; its tone the panel's, its picture one row of squares, each pressable
+  ;; row a line in its tone's square with the button its hint names, a
+  ;; person's handle bracket gone from a label; past six pressable rows
+  ;; they go in a menu that says what Enter does.
+  (let* ((square (nck::tone-square "context-prompt"))
+         (blank (cdr (assoc :black nck::+tone-squares+)))
+         (dialog (nle::dialog-json
+                  (nle:list-dialog
+                   :title "Context" :context "2k of 4k · 50%" :summary "evicts past 85%" :tone :success
+                   :hint "enter open  esc close"
+                   :picture (list :rows '("0011") :palette '("" "context-prompt") :strip "0011")
+                   :rows (list (list :label "standing prompt" :detail "400    10%" :mark "██" :mark-tone :context-prompt
+                                     :run (list :enter "/context prompt"))
+                               (list :label "peas (operator) [m15 u93]: hello" :run (list :enter "/context history"))
+                               (list :label "free" :detail "2k"))))))
+    (is square "the palette paints the part's tone")
+    (multiple-value-bind (text controls panel) (nck::dialog-card dialog "/context")
+      (is (search "## Context" text) "the words stand for a platform with no panel")
+      (is (equal (format nil "~a~a~a~a" blank blank square square) (getf panel :gauge)) "the strip, a square a cell")
+      (is (equal '("Context" "2k of 4k · 50%" :done "evicts past 85%")
+                 (list (getf panel :title) (getf panel :context) (getf panel :tone) (getf panel :text))) "its rows are lines, not the panel's words")
+      (is (equal `((:row ,square "standing prompt" "400 · 10%" ("Open" "/context prompt" :secondary nil))
+                   (:row nil "peas (operator): hello" nil ("Open" "/context history" :secondary nil))
+                   (:row nil "free" "2k" nil)
+                   (("Refresh" "/context" :secondary nil)))
+                 (press-lines controls))))
+    (let ((many (nle::dialog-json
+                 (nle:list-dialog :hint "enter evict through  esc back"
+                                  :rows (loop for i below 7
+                                              collect (list :label (format nil "t~d" i)
+                                                            :run (list :enter (format nil "/evict through t~d" i))))))))
+      (is (equal "Evict through…" (second (first (nth-value 1 (nck::dialog-card many "/context history"))))) "seven rows keep a menu that says what a pick does"))))
 
 (deftest channel-a-dialog-card-pages-its-rows-and-tabs ()
   ;; A tabbed dialog's card shows a row of its tabs, the one open primary,

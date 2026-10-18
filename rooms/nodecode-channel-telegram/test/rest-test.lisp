@@ -45,6 +45,19 @@ that answers STATUS with BODY."
            :path "/sendChatAction" :retry nil
            :label "typing_indicator" "action" "typing" "chat_id" "555" "message_thread_id" 33))
 
+(deftest channel-telegram-a-cards-line-is-a-button-that-says-it ()
+  ;; A card's line (NCK::LINE-CHOICE) is a row of one button saying it --
+  ;; its mark, label and detail -- and a line that runs nothing is left to the
+  ;; message's words.
+  (let ((rows (nlk:json-value (nct::controls-markup
+                               (list (nck::line-choice "history · 54 turns" (nck:choice "Open" "/context history")
+                                                       :mark "🟦" :detail "77k · 87%")
+                                     (nck::line-choice "free" nil :detail "911k")))
+                              :array "inline_keyboard")))
+    (is (= 1 (length rows)) "the line with no button is no row")
+    (is-shape (aref (aref rows 0) 0) ((:string "text") "🟦 history · 54 turns · 77k · 87%"))
+    (is (equal "/context history" (nck:said-line (nlk:json-value (aref (aref rows 0) 0) :string "callback_data"))))))
+
 (deftest channel-telegram-controls-are-an-inline-keyboard ()
   ;; A running card's Stop and Details share one keyboard row (2026-10-04:
   ;; read as one button, the row put a list in `text' and Telegram refused

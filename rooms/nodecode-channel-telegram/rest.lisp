@@ -404,8 +404,9 @@ that takes a message's buttons away; no rows for none."
   ;; blue, as on Discord, the rest Telegram's own face. Telegram draws no
   ;; disabled button and no select, so a disabled one is left out, and a
   ;; menu's options become buttons, the current one checked, a description
-  ;; after its label; a button whose data does not fit (CALLBACK-DATA-P) is
-  ;; left out.
+  ;; after its label; a line (NCK:LINE-CHOICE) is a button saying it, and
+  ;; one with no button is said in the message's words alone; a button
+  ;; whose data does not fit (CALLBACK-DATA-P) is left out.
   (flet ((button (label data &optional style)
            (and (callback-data-p data)
                 (nlk:json-object "text" label "callback_data" data
@@ -419,6 +420,12 @@ that takes a message's buttons away; no rows for none."
                                 for button = (button (format nil "~:[~;✓ ~]~a~@[ · ~a~]" current label description)
                                                      data)
                                 when button collect (vector button)))
+                         ((eq (first control) :row)
+                          (destructuring-bind (mark label detail choice) (rest control)
+                            (let ((button (and choice (not (fourth choice))
+                                               (button (format nil "~@[~a ~]~a~@[ · ~a~]" mark label detail)
+                                                       (second choice) (third choice)))))
+                              (and button (list (vector button))))))
                          (t (let ((row (loop for (label data style disabled) in (if (consp (first control))
                                                                                       control
                                                                                       (list control))

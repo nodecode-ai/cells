@@ -751,30 +751,47 @@ its section included."
         (is (<= (loop for part in all when (eql 10 (gethash "type" part)) sum (length (gethash "content" part)))
                 4000))))))
 
-(deftest channel-discord-a-command-panel-is-an-embed ()
-  ;; A command's card (NCK:OFFER-CARD) posts as one embed and no words: its
-  ;; tone the colour bar, its title, its words the description, its fields
-  ;; side by side, and no SUPPRESS_EMBEDS. Answered through a held
-  ;; interaction it is the edit's embed; an answer without one clears any
-  ;; embed the message pressed carried.
-  (let* ((panel '(:title "Voice" :text "Sitting in voice." :tone :done
-                  :fields (("Sitting in" . "<#vc-1>") ("Voice messages here" . "Words only"))))
+(deftest channel-discord-a-command-panel-is-a-components-container ()
+  ;; A command's card (NCK:OFFER-CARD) posts as one Components V2 container
+  ;; and no words: its tone the accent, its title over the muted words beside
+  ;; it, its gauge, its words, its fields a line each, then its lines
+  ;; (NCK::LINE-CHOICE) each a section with its button -- one with none its
+  ;; words alone -- and its other controls rows at its foot. Answered through
+  ;; a held interaction it is the edit's container; words answering a press
+  ;; on a message of components are a container of those words, with no
+  ;; heading; any other answer clears the embeds the message carried.
+  (let* ((panel '(:title "Voice" :context "1 seat" :gauge "🟩⬜" :text "Sitting in voice." :tone :done
+                  :fields (("Sitting in" . "<#vc-1>"))))
+         (controls (list (nck::line-choice "nightly" (nck:choice "Open" "/jobs show nightly") :mark "●" :detail "every day")
+                         (nck::line-choice "" nil :detail "that carries on")
+                         (list (nck:choice "Refresh" "/jobs"))))
          (post (nck:request-plan-body (ncd:discord-message-plan '(:channel-id "c1") (first-chunk "words")
-                                                                :panel panel)))
-         (embed (aref (nlk:json-value post :array "embeds") 0))
+                                                                :panel panel :controls controls)))
+         (container (aref (nlk:json-value post :array "components") 0))
+         (parts (coerce (gethash "components" container) 'list))
          (candidate (nlk:json-object "source" (nlk:json-object "interaction_id" "i1"
                                                                "interaction_token" "tok"
                                                                "application_id" "app1"))))
-    (is-shape post ((:any "content") "") ((:any "flags") nil))
-    (is-shape embed ((:integer "color") = #x23A55A) ((:string "title") "Voice")
-      ((:string "description") "Sitting in voice."))
-    (is (equal '(("Sitting in" "<#vc-1>" t) ("Voice messages here" "Words only" t))
-               (map 'list (lambda (field) (list (gethash "name" field) (gethash "value" field)
-                                                (gethash "inline" field)))
-                    (nlk:json-value embed :array "fields"))))
+    (is-shape post ((:any "content") nil) ((:integer "flags") = ncd::+discord-components-v2+))
+    (is-shape container ((:integer "type") = 17) ((:integer "accent_color") = #x23A55A))
+    (is (equal '(10 10 10 10 9 10 1) (mapcar (lambda (part) (gethash "type" part)) parts)) "heading, gauge, words, fields, a line with its button, a line alone, the foot row")
+    (is (equal (list (format nil "### Voice~%-# 1 seat") "🟩⬜" "Sitting in voice." "**Sitting in** · <#vc-1>")
+               (mapcar (lambda (part) (gethash "content" part)) (subseq parts 0 4))))
+    (let ((section (fifth parts)))
+      (is (equal "● **nightly** · every day" (gethash "content" (aref (gethash "components" section) 0))))
+      (is (equal "Open" (nlk:json-value section :text "accessory" "label")) "the line's button beside it"))
+    (is (equal "that carries on" (gethash "content" (sixth parts))) "a line with no label says its detail alone")
     (let ((answer (nck:request-plan-body (ncd:interaction-response-plan candidate "words" :panel panel))))
-      (is (equal "" (nlk:json-value answer :any "content")))
-      (is (= 1 (length (nlk:json-value answer :array "embeds")))))
+      (is (eq :null (gethash "content" answer)) "the words a container takes none of are null")
+      (is-shape answer ((:integer "flags") = ncd::+discord-components-v2+))
+      (is (= 17 (nlk:json-value (aref (nlk:json-value answer :array "components") 0) :integer "type"))))
+    (let* ((source (gethash "source" candidate))
+           (answer (progn (setf (gethash "pressed" source) t
+                                (gethash "card_flags" source) ncd::+discord-components-v2+)
+                          (nck:request-plan-body (ncd:interaction-response-plan candidate "did it"))))
+           (words (coerce (gethash "components" (aref (nlk:json-value answer :array "components") 0)) 'list)))
+      (is (equal '("did it") (mapcar (lambda (part) (gethash "content" part)) words)) "a press on a container is answered by one"))
+    (setf (gethash "card_flags" (gethash "source" candidate)) 0)
     (is (equalp #() (nlk:json-value (nck:request-plan-body (ncd:interaction-response-plan candidate "words"))
                                     :array "embeds")))))
 

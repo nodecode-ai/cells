@@ -251,22 +251,38 @@ picture its components show, the MEDIA a card's next edit keeps them by."
     (loop for part across (or (nlk:json-value body :array "components") #())
           append (walk part))))
 
-(defun panel-embed (panel)
-  "PANEL, a command's card (NCK:OFFER-CARD), as one Discord embed: its tone
-the colour bar, its title, its words the description, its fields side by
-side."
-  ;; Clipped to Discord's caps as a turn's card is.
-  (destructuring-bind (&key title text fields tone) panel
-    (nlk:json-object
-     "color" (or (cdr (assoc tone +card-colours+)) (cdr (assoc :working +card-colours+)))
-     :when title "title" (nlk:clip title 255 :ellipsis "…")
-     :when (and text (plusp (length text))) "description" (nlk:clip text 4095 :ellipsis "…")
-     :when fields
-     "fields" (coerce (loop for (name . value) in (subseq fields 0 (min 25 (length fields)))
-                            collect (nlk:json-object "name" (nlk:clip name 255 :ellipsis "…")
-                                                     "value" (nlk:clip value 1023 :ellipsis "…")
-                                                     "inline" t))
-                      'vector))))
+(defun panel-components (panel controls)
+  "PANEL, a command's card (NCK:OFFER-CARD), and its CONTROLS as one
+Components V2 container -- the card a turn is drawn as (CARD-COMPONENTS):
+its tone the accent; the words said over it; its title, the muted words
+beside it in small type under it; its picture in one row (:GAUGE); its
+words; its fields a line each; then CONTROLS, its lines (NCK:LINE-CHOICE)
+each a section with its button, the rest rows at its foot."
+  ;; Discord's caps on one V2 message: 40 components however nested, 4000
+  ;; characters across its text; each part is cut so the whole stays inside.
+  (destructuring-bind (&key title context gauge text fields tone notice) panel
+    (let ((parts (append
+                  (and notice (plusp (length notice)) (list (text-display notice 900)))
+                  ;; a panel of words alone (an answer to a press) has no heading
+                  (and (or title context)
+                       (list (text-display (format nil "~@[### ~a~]~:[~;~%~]~@[-# ~a~]"
+                                                   (and title (nlk:clip (discord-escape title) 200 :ellipsis "…"))
+                                                   (and title context)
+                                                   (and context (discord-escape context)))
+                                           400)))
+                  (and gauge (plusp (length gauge)) (list (text-display gauge 200)))
+                  (and text (plusp (length text)) (list (text-display text 1500)))
+                  (and fields
+                       (list (text-display (format nil "~{~a~^~%~}"
+                                                   (loop for (name . value) in (subseq fields 0 (min 25 (length fields)))
+                                                         collect (format nil "**~a** · ~a" name value)))
+                                           900)))
+                  (and controls (not (eq controls :clear))
+                       (coerce (controls-components controls :v2 t) 'list)))))
+      (vector (nlk:json-object "type" 17
+                               "accent_color" (or (cdr (assoc tone +card-colours+))
+                                                  (cdr (assoc :working +card-colours+)))
+                               "components" (coerce parts 'vector))))))
 
 ;;; --- controls (the buttons and menus the kit hangs on a message) ----------
 ;;; The kit owns the vocabulary — a button, a row of buttons, a menu (NCK's
@@ -314,27 +330,54 @@ NIL for a menu with no option Discord would take."
        "placeholder" (nlk:clip (second menu) 149 :ellipsis "…")
        "options" (coerce (subseq options 0 (min 25 (length options))) 'vector)))))
 
-(defun controls-components (controls)
-  "CONTROLS — the kit's buttons, rows of buttons and menus — as Discord's
-components array: an action row each, in order — a lone button alone, a
-row's buttons side by side, a menu its select; :CLEAR the empty array that
-takes a message's components away; no rows for none."
+(defun control-line (line v2)
+  "One kit line (NCK:LINE-CHOICE), (:ROW MARK LABEL DETAIL BUTTON): in a
+Components V2 message (V2) a section, its words beside its button, or its
+words alone where it has none; elsewhere a row of one button saying them, or
+nothing."
+  (destructuring-bind (mark label detail button) (rest line)
+    (flet ((said (bold)
+             ;; mark, label and detail, a line with no label its detail alone
+             (let ((label (and (plusp (length label)) label)))
+               (format nil "~@[~a ~]~@[~a~]~:[~; · ~]~@[~a~]" mark
+                       (and label (if bold (format nil "**~a**" (discord-escape label)) label))
+                       (and label detail)
+                       (and detail (if bold (discord-escape detail) detail))))))
+      (if v2
+          (let ((words (text-display (said t) 300)))
+            (if button
+                (nlk:json-object "type" 9 "components" (vector words) "accessory" (control-button button))
+                words))
+          (and button
+               (nlk:json-object "type" 1 "components"
+                                (vector (control-button (list* (said nil) (rest button))))))))))
+
+(defun controls-components (controls &key v2)
+  "CONTROLS — the kit's buttons, rows of buttons, menus and lines — as
+Discord's components array: an action row each, in order — a lone button
+alone, a row's buttons side by side, a menu its select — and a line its
+section inside a Components V2 message (V2, CONTROL-LINE); :CLEAR the empty
+array that takes a message's components away; no rows for none."
   ;; Discord takes five rows and five buttons a row; the kit's cards stay
   ;; inside both, and anything past them is dropped here, not refused there.
+  ;; A V2 message counts its components instead (PANEL-COMPONENTS).
   (cond
     ((eq controls :clear) #())
     (controls
      (coerce
       (loop for control in controls
             for index from 0
-            for inner = (cond ((eq (first control) :menu)
-                               (nlk:when-let (menu (control-menu control index)) (list menu)))
-                              ((consp (first control))
-                               (mapcar #'control-button (subseq control 0 (min 5 (length control)))))
-                              (t (list (control-button control))))
-            when inner
-              collect (nlk:json-object "type" 1 "components" (coerce inner 'vector)) into rows
-            finally (return (subseq rows 0 (min 5 (length rows)))))
+            for part = (if (eq (first control) :row)
+                           (control-line control v2)
+                           (let ((inner (cond ((eq (first control) :menu)
+                                               (nlk:when-let (menu (control-menu control index)) (list menu)))
+                                              ((consp (first control))
+                                               (mapcar #'control-button (subseq control 0 (min 5 (length control)))))
+                                              (t (list (control-button control))))))
+                             (and inner (nlk:json-object "type" 1 "components" (coerce inner 'vector)))))
+            when part
+              collect part into parts
+            finally (return (if v2 parts (subseq parts 0 (min 5 (length parts))))))
       'vector))))
 
 (defun discord-message-plan (target chunk &key reply-to (timeout-seconds 30) ping controls files
@@ -368,9 +411,10 @@ CARD drawn as its components (CARD-BODY), MEDIA the pictures it holds."
   ;; buttons and menus — ride the chunk they are handed to (the kit hands them
   ;; to the last) as the message's components; an absent list posts it bare.
   ;; Every message carries SUPPRESS_EMBEDS, so a link an answer names stays a
-  ;; link and never unfurls a preview card — but a PANEL, which IS its embed
-  ;; (PANEL-EMBED), and posts no words. A CARD is a message of components:
-  ;; its CONTROLS sit inside it, and the pictures it gains ride as uploads.
+  ;; link and never unfurls a preview card — but a PANEL, which is a message
+  ;; of components (PANEL-COMPONENTS) and posts no words. A CARD is a
+  ;; message of components: its CONTROLS sit inside it, and the pictures it
+  ;; gains ride as uploads.
   (let ((first-p (= 1 (text-chunk-index chunk))))
     (multiple-value-bind (body files)
         (if card
@@ -392,11 +436,11 @@ CARD drawn as its components (CARD-BODY), MEDIA the pictures it holds."
   "One message's JSON body: CONTENT, flagged SUPPRESS_EMBEDS, pinging only the
 MENTIONS and — with PING — the author of REPLY-TO, quote-replying REPLY-TO in
 the channel the POST lands in, CONTROLS as its components, FILES attached; a
-PANEL is its embed, the flag left off."
+PANEL is a message of components (PANEL-COMPONENTS), CONTROLS inside it, and
+no words."
   (nlk:json-object
-   "content" content
-   :when (not panel) "flags" +discord-suppress-embeds+
-   :when panel "embeds" (vector (panel-embed panel))
+   :when (not panel) "content" content
+   "flags" (if panel +discord-components-v2+ +discord-suppress-embeds+)
    "allowed_mentions" (nlk:json-object "parse" #()
                                        :when mentions
                                        "users" (coerce mentions 'vector)
@@ -406,8 +450,10 @@ PANEL is its embed, the flag left off."
    "message_reference" (nlk:json-object "message_id" reply-to
                                         "channel_id" (target-rest-channel target)
                                         "fail_if_not_exists" nil)
-   :when controls
-   "components" (controls-components controls)
+   :when (or controls panel)
+   "components" (if panel
+                    (panel-components panel controls)
+                    (controls-components controls))
    :when files
    "attachments" (coerce (loop for path in files
                                for index from 0
@@ -634,19 +680,28 @@ thinking, and the interaction stays open fifteen minutes instead of three
 seconds; PRIVATE flags it ephemeral, so the answer is theirs alone; with
 TEXT, PATCH /webhooks/<application>/<token>/messages/@original, the held
 response edited into the answer, CONTROLS its components, a PANEL (a
-command's card) its embed in place of TEXT, and none without one. A press on a
-message's choice (source.pressed) is held with type 6 instead, unless
-PRIVATE: the answer then edits the message pressed, in place. NIL for a
-CANDIDATE that is no interaction."
+command's card) a message of components in place of TEXT (PANEL-
+COMPONENTS), and none without one. A press on a message's choice
+(source.pressed) is held with type 6 instead, unless PRIVATE: the answer
+then edits the message pressed, in place. NIL for a CANDIDATE that is no
+interaction."
   ;; The hold is not retried: a late one is refused as an unknown interaction,
   ;; and a second try would be too. The edit is, like any message edit.
   ;; allowed_mentions parse [] as on every message. After a type 6 hold the
   ;; original IS the message the component sits on — Discord's deferred
   ;; update — so a card answers a press by becoming its next view; a private
-  ;; answer to a press (a refusal) is a message of its own, type 5's.
+  ;; answer to a press (a refusal) is a message of its own, type 5's. A
+  ;; message of components stays one from its post on, so words answering a
+  ;; press on one are drawn as a panel of those words.
   (let ((id (source-field candidate "interaction_id"))
         (token (source-field candidate "interaction_token"))
-        (application (source-field candidate "application_id")))
+        (application (source-field candidate "application_id"))
+        (panel (or panel
+                   (and text (candidate-pressed-p candidate) (not private)
+                        ;; an integer, which SOURCE-FIELD (strings) would not read
+                        (let ((flags (gethash "card_flags" (candidate-source candidate))))
+                          (and (integerp flags) (logtest +discord-components-v2+ flags)))
+                        (list :text text)))))
     (cond ((not (and id token)) nil)
           ((null text)
            ;; Ephemeral is decided here or never: the edit takes the hold's.
@@ -660,11 +715,17 @@ CANDIDATE that is no interaction."
           (application
            (rest-plan "PATCH" (format nil "/webhooks/~a/~a/messages/@original" application token)
                       "interaction_response" t timeout-seconds
-                      (nlk:json-object "content" (if panel "" text)
-                                       "embeds" (if panel (vector (panel-embed panel)) #())
-                                       "allowed_mentions" (nlk:json-object "parse" #())
-                                       :when controls
-                                       "components" (controls-components controls)))))))
+                      (if panel
+                          (nlk:json-object "flags" +discord-components-v2+
+                                           "content" :null
+                                           "embeds" #()
+                                           "allowed_mentions" (nlk:json-object "parse" #())
+                                           "components" (panel-components panel (and (consp controls) controls)))
+                          (nlk:json-object "content" text
+                                           "embeds" #()
+                                           "allowed_mentions" (nlk:json-object "parse" #())
+                                           :when controls
+                                           "components" (controls-components controls))))))))
 
 (defun interaction-callback-plan (interaction-id token body label timeout-seconds)
   "POST /interactions/<id>/<token>/callback carrying BODY, named LABEL: the one

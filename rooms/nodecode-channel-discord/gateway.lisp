@@ -473,9 +473,10 @@ plus the `args' option, so it runs through the host exactly as a typed
   ;; interaction_id, interaction_token and application_id, the return path the
   ;; platform's PLAN-RESPOND answers through; there is no message id, an
   ;; interaction is not a message. A press also carries `pressed', which holds
-  ;; its answer as an edit of the message pressed, and `card_text', that
-  ;; message's words. A command typed inside a thread is placed exactly as a
-  ;; message typed there is — the thread, its parent beside it — so it acts on
+  ;; its answer as an edit of the message pressed, `card_text', that
+  ;; message's words, and `card_flags', its flags: an answer to a press on a
+  ;; message of components is one too (INTERACTION-RESPONSE-PLAN). A command
+  ;; typed inside a thread is placed exactly as a message typed there is — the thread, its parent beside it — so it acts on
   ;; the thread's room: /stop there finds the thread's turn, and a parent the
   ;; allowlist names admits it. The payload's own channel object says it is a
   ;; thread (types 10 to 12) and names the parent; a thread the adapter has
@@ -513,6 +514,7 @@ plus the `args' option, so it runs through the host exactly as a typed
         :when pressed "press_data" (press-data data)
         :when pressed "reply_to_message_id" (nlk:json-value data :string "message" "id")
         :when pressed "card_text" (nlk:json-value data :string "message" "content")
+        :when pressed "card_flags" (nlk:json-value data :integer "message" "flags")
         "addressed" t
         "is_bot" (and (nlk:json-value user :any "bot") t)
         "role_ids" (nlk:json-value data :array "member" "roles"))))))

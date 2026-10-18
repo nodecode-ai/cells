@@ -2361,6 +2361,11 @@ PANEL when the answer is a card (OFFER-CARD)."
                                     candidate))
              (press (and (platform-choices host.platform) (candidate-press candidate))))
         (ensure-room host room :parent (room-parent-session-id host target))
+        ;; The room's own session names the model its lanes run on, so what
+        ;; a command reads of it -- /context's window, /status's model -- is
+        ;; that model's before the room has run an ask.
+        (pin-room-model host room room target
+                        (agent-of host (agent-for host room target (candidate-source candidate))))
         (cond ((and press (nlk:json-value press :boolean "confirm"))
                (confirm-card line press))
               ((equal name "models")
@@ -2375,7 +2380,7 @@ PANEL) -- its words and the card it offered (OFFER-CARD); else, where the
 platform's messages carry choices, the dialog it answers a shell with drawn
 as a card (DIALOG-CARD) on the view PRESS -- the action of the press that
 said LINE, or NIL -- opens, and words alone said over the card PRESS was
-on, read again."
+on, read again: the panel's :NOTICE."
   (let ((*command-source* (candidate-source candidate))
         (*command-card* nil)
         (cards (platform-choices host.platform)))
@@ -2390,9 +2395,9 @@ on, read again."
                 (back
                  (let ((under (nth-value 1 (ignore-errors (nle:slash back :session-id room)))))
                    (if (hash-table-p under)
-                       (multiple-value-bind (card controls)
+                       (multiple-value-bind (card controls panel)
                            (dialog-card under back :tab (view "back_tab") :page (or (view "back_page") 1))
-                         (values (format nil "~a~%~%~a" text card) controls nil))
+                         (values (format nil "~a~%~%~a" text card) controls (list* :notice text panel)))
                        (values text nil nil))))
                 (t (values text nil nil))))))))
 
