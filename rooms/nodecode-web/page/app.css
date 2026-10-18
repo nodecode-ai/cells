@@ -97,6 +97,8 @@
   --diff-add: #8fd19e;
   --diff-add-fill: rgba(143, 209, 158, 0.08);
   --diff-del: #f2877e;
+  /* Failed: the one red of the kit (a dot, a banner, a danger button). */
+  --fail: #f2877e;
   --diff-del-fill: rgba(242, 135, 126, 0.08);
 
   --column: 264px;
@@ -190,6 +192,7 @@
   --diff-add: #187332;
   --diff-add-fill: rgba(26, 127, 55, 0.08);
   --diff-del: #c0262d;
+  --fail: #c0262d;
   --diff-del-fill: rgba(192, 38, 45, 0.07);
 
   color-scheme: light;
@@ -240,32 +243,38 @@ code, pre, kbd { font-family: var(--mono); }
 
 .glyph { flex: none; shape-rendering: crispEdges; }
 
-/* A switch: the chosen word stands on an accent line, the others bare -- a stub
-   before each word read as a typed `|' (a beta tester's "| CHAT | RUN"). */
+/* The kit's filter (the standard's rule 6): one segmented control with counts --
+   the chosen segment lifted on the well, the others bare -- for a filter, a
+   range, a level and the Control strip alike, at every width. */
 .sw {
-  position: relative; display: inline-flex; align-items: center; gap: 7px; padding: 3px 0;
-  font: 500 var(--fs-micro)/1 var(--micro); letter-spacing: var(--ls-micro); text-transform: uppercase; color: var(--tertiary);
-  transition: color 130ms;
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 32px; padding: 0 12px; border-radius: var(--r-control);
+  font: 500 var(--fs-body)/1 var(--sans); letter-spacing: 0; text-transform: none; color: var(--tertiary); white-space: nowrap;
+  transition: color 130ms, background 130ms;
 }
-.sw::after { content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; }
 .sw:hover { color: var(--secondary); }
-.sw[aria-checked="true"] { color: var(--primary); }
-.sw[aria-checked="true"]::after { background: var(--accent-fill); }
-.sw .n { font: var(--fs-micro) var(--mono); letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
+.sw[aria-checked="true"] { background: var(--selected); color: var(--primary); }
+.sw .n { font: var(--fs-detail) var(--mono); letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
 .sw[aria-checked="true"] .n { color: var(--secondary); }
 
 .control {
-  width: 100%; padding: 7px 16px; border-radius: var(--r-control);
-  font: var(--fs-detail) var(--mono); color: var(--primary);
+  width: 100%; min-height: 36px; padding: 7px 14px; border-radius: var(--r-control);
+  font: var(--fs-body) var(--sans); color: var(--primary);
   background: var(--field); border: 1px solid var(--seam-lit); outline: none;
   transition: background 130ms;
 }
 .control:focus { background: var(--field-lit); }
 .control::placeholder, textarea::placeholder { color: var(--tertiary); }
 
+/* The kit's button (the standard's rule 4): three tones -- solid, quiet, danger --
+   in one shape at every width, sentence case and sans; 36 px with a pointer,
+   44 under a finger (the hit-area block). */
+.quiet, .solid {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 36px; padding: 0 16px; border-radius: var(--r-control);
+  font: 500 var(--fs-body)/1 var(--sans); letter-spacing: 0; text-transform: none; white-space: nowrap;
+}
 .quiet {
-  display: inline-flex; align-items: center; padding: 9px 12px;
-  font: 500 var(--fs-detail)/1 var(--micro); letter-spacing: var(--ls-micro); text-transform: uppercase;
   border: 1px solid var(--seam-lit); background: var(--raised); color: var(--secondary);
   transition: color 130ms, border-color 130ms;
 }
@@ -338,7 +347,7 @@ code, pre, kbd { font-family: var(--mono); }
 .ses-scope-line { margin: -2px 0 10px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .ses-scope-line .reading { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .ses-scope-line .word { flex: none; }
-.scope { display: flex; gap: 18px; margin-bottom: 10px; }
+.scope { display: flex; flex-wrap: wrap; gap: 2px; width: fit-content; max-width: 100%; margin-bottom: 12px; padding: 2px; border-radius: var(--r-control); background: var(--subtle); }
 .group .control { margin-bottom: 12px; }
 .sessions {
   list-style: none; margin: 0 -12px 0 0; padding: 0 12px 16px 0; flex: 1; min-height: 0;
@@ -368,8 +377,8 @@ code, pre, kbd { font-family: var(--mono); }
 /* A list that could not be read is not an empty one. */
 #sessions-unread:not([hidden]) + .sessions .none { display: none; }
 .column .confirm .title { font-size: var(--fs-body); }
-.solid.danger { background: var(--danger-lit); }
-.solid.danger:hover { background: var(--accent); }
+.solid.danger { background: var(--fail); }
+.solid.danger:hover { background: color-mix(in srgb, var(--fail) 82%, var(--primary)); }
 
 .gateway { height: 52px; flex: none; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--seam); }
 .gateway .where { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 10px; }
@@ -646,9 +655,8 @@ code, pre, kbd { font-family: var(--mono); }
 .confirm .actions { margin-top: 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .confirm .actions .word { margin-left: auto; }
 .solid {
-  display: inline-flex; align-items: center; padding: 9px 12px;
-  font: 600 var(--fs-detail)/1 var(--micro); letter-spacing: var(--ls-micro); text-transform: uppercase;
-  background: var(--primary); color: var(--void); transition: background-color 130ms;
+  border: 1px solid transparent; background: var(--primary); color: var(--void); font-weight: 600;
+  transition: background-color 130ms;
 }
 .solid:hover { background: var(--solid-hover); }
 .confirm button:disabled { opacity: 0.42; cursor: default; }
@@ -1395,14 +1403,6 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
   .glance-spark i.peak, .glance-bars i.peak { background: var(--bar); }
   .glance-sub { margin: 12px 0 0; font: var(--fs-detail) var(--mono); color: var(--secondary); }
   .glance-sub .hot { color: var(--accent); }
-  .glance-alert {
-    width: 100%; display: flex; align-items: center; gap: 10px; margin-top: 4px; padding: 11px 12px; border-radius: var(--r-control); text-align: left;
-    font-size: var(--fs-body); color: var(--danger-lit); border: 1px solid color-mix(in srgb, var(--danger-lit) 32%, var(--seam));
-    background: color-mix(in srgb, var(--danger-lit) 7%, var(--inset));
-  }
-  .glance-alert[data-tone="warn"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 32%, var(--seam)); background: color-mix(in srgb, var(--accent) 7%, var(--inset)); }
-  .glance-alert .led { background: currentColor; }
-  .glance-alert .said { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   .glance-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 14px; border-top: 1px solid var(--seam); border-bottom: 1px solid var(--seam); }
   .glance-kpis .kpi { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 11px 0 11px 10px; border-left: 1px solid var(--seam); }
   .glance-kpis .kpi:first-child { padding-left: 0; border-left: 0; }
@@ -1419,7 +1419,7 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
   .dash-door .says.bad { color: var(--danger-lit); }
   .dash-door .viz { display: flex; justify-content: flex-end; align-items: center; width: 78px; }
   .dash-door .viz .num { font: var(--fs-detail) var(--mono); color: var(--primary); }
-  .dash-door .chev, .glance-alert .chev { font-size: var(--fs-title); line-height: 1; color: var(--tertiary); }
+  .dash-door .chev { font-size: var(--fs-title); line-height: 1; color: var(--tertiary); }
   .glance-now { grid-template-columns: 5px minmax(0, 1fr) 10px; margin-top: 8px; border-bottom: 0; }
   .glance-bars { display: flex; align-items: flex-end; gap: 1.5px; width: 78px; height: 22px; }
   .glance-rows { display: grid; gap: 3px; width: 78px; }
@@ -1566,7 +1566,7 @@ button.p-row:active { background: var(--field-lit); }
    The Dashboard's bar, facts and rows; a row's lamp says whether it runs, the
    danger tone with its words says what refused. */
 
-.ctl-tabs { margin: 0; flex-wrap: wrap; gap: 8px 18px; }
+.ctl-tabs { margin: 0; }
 .ctl-tabs .sw { white-space: nowrap; }
 .ctl-away { display: flex; align-items: center; gap: 10px; margin: 0; font: var(--fs-detail) var(--mono); color: var(--accent); }
 .ctl-tab > * + * { margin-top: 32px; }
@@ -2096,20 +2096,20 @@ button.p-row:active { background: var(--field-lit); }
    its sources as chips, three bands -- what runs now, what waits on the
    reader, the rest -- and a row in two lines, its name and where it is held. */
 .chips {
-  display: flex; gap: 6px; margin: 0 -20px 12px 0; padding-right: 20px;
+  display: flex; gap: 2px; margin: 0 0 12px; padding: 2px; border-radius: var(--r-control); background: var(--subtle);
   overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
 }
 .chips::-webkit-scrollbar { display: none; }
 .chips:empty { display: none; }
 .chips button {
-  flex: none; display: inline-flex; align-items: baseline; gap: 6px; height: 28px; padding: 0 11px;
-  border: 1px solid var(--seam-lit); border-radius: var(--r-card); font-size: var(--fs-detail); line-height: 26px;
-  color: var(--secondary); white-space: nowrap; transition: color 130ms, background 130ms;
+  flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px;
+  border-radius: var(--r-control); font: 500 var(--fs-body)/1 var(--sans);
+  color: var(--tertiary); white-space: nowrap; transition: color 130ms, background 130ms;
 }
-.chips button:hover { color: var(--primary); }
-.chips button[aria-checked="true"] { border-color: var(--primary); background: var(--primary); color: var(--void); font-weight: 560; }
-.chips .n { font: var(--fs-micro) var(--mono); color: var(--tertiary); font-variant-numeric: tabular-nums; }
-.chips [aria-checked="true"] .n { color: inherit; opacity: 0.6; }
+.chips button:hover { color: var(--secondary); }
+.chips button[aria-checked="true"] { background: var(--selected); color: var(--primary); }
+.chips .n { font: var(--fs-detail) var(--mono); color: var(--tertiary); font-variant-numeric: tabular-nums; }
+.chips [aria-checked="true"] .n { color: var(--secondary); }
 .sessions .ses-band {
   display: flex; gap: 0.6em; margin: 18px 0 2px; padding-left: 16px;
   font: 500 var(--fs-micro)/1.6 var(--micro); letter-spacing: var(--ls-micro); text-transform: uppercase; color: var(--tertiary);
@@ -2540,3 +2540,20 @@ button.p-row:active { background: var(--field-lit); }
 /* --- the page's foot: its drastic acts, under everything else (the standard's
    sixth slot; Channels' Restart channels first) --- */
 .ctl-foot { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--seam); }
+
+/* --- the kit's banner (the standard's rule 6): one object in two tones -- needs
+   you (the accent) and failed (--fail) -- a line of what, a line of why and the
+   one act that answers it. Control's Needs you, the dashboard's alert and a
+   place's failure all draw it. --- */
+.banner {
+  display: flex; align-items: center; gap: 12px; margin: 0 0 16px; padding: 12px 12px 12px 16px;
+  border-radius: var(--r-card); --tone: var(--accent);
+  background: color-mix(in srgb, var(--tone) 8%, var(--subtle));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 28%, transparent);
+  font-size: var(--fs-body); color: var(--foreground); text-align: left;
+}
+.banner[data-tone="fail"], .banner[data-tone="danger"] { --tone: var(--fail); }
+.banner .banner-what { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.banner .banner-tone { font: 500 var(--fs-micro)/1.2 var(--micro); letter-spacing: var(--ls-micro); text-transform: uppercase; color: var(--tone); }
+.banner .banner-why { font-size: var(--fs-detail); color: var(--muted); }
+.banner > :is(.quiet, .solid) { flex: none; }

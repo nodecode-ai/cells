@@ -1240,7 +1240,6 @@ export const ZH = {
   "{n} are failing.": "{n} 个出错。",
   "{n} cell": "{n} 个单元",
   "{n} cells": "{n} 个单元",
-  "{n} failed to load.": "{n} 个加载失败。",
   "{n} is asking to pair.": "{n} 人请求配对。",
   "{n} is failing.": "{n} 个出错。",
   "{n} loaded at this boot.": "本次启动加载了 {n} 个。",
@@ -1251,5 +1250,9 @@ export const ZH = {
   "{n} server": "{n} 个服务器",
   "{n} servers": "{n} 个服务器",
   "{on} on, {off} off.": "{on} 个开启，{off} 个关闭。",
-  "{tools} across {servers}.": "{servers}共提供 {tools}。"
+  "{tools} across {servers}.": "{servers}共提供 {tools}。",
+  "Read the log": "查看日志",
+  "Show": "显示",
+  "{n} cell failed to load.": "{n} 个单元加载失败。",
+  "{n} cells failed to load.": "{n} 个单元加载失败。"
 };

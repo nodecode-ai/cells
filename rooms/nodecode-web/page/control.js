@@ -13,7 +13,7 @@
 // data-act the pane's own click handler reads; a change that waits for a
 // restart says so where it is made.
 
-import { el, button, mark, sectionHead, headline, when, uptime, waiting, plural } from "./observe.js";
+import { el, button, mark, sectionHead, headline, banner, when, uptime, waiting, plural } from "./observe.js";
 import { makeSettings, title, steps } from "./settings.js";
 import { makeIndex } from "./index.js";
 import { makeMcp } from "./mcp.js";
@@ -765,10 +765,15 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     const failed = a.cells.filter((r) => r.refused || r.level === "error").length;
     const head = headline(plural(a.cells.length, t("{n} cell"), t("{n} cells")),
       t("{on} on, {off} off.", { on, off: a.cells.length - on }),
-      failed ? plural(failed, t("{n} failed to load."), t("{n} failed to load."))
-        : t("{n} loaded at this boot.", { n: a.cells.filter((r) => r.loaded).length }));
+      t("{n} loaded at this boot.", { n: a.cells.filter((r) => r.loaded).length }));
     (head.querySelector(".micro") || head).append(" ", infoMark);
-    root.append(head, words);
+    root.append(head);
+    if (failed) {
+      root.append(banner("fail", plural(failed, t("{n} cell failed to load."), t("{n} cells failed to load.")),
+        a.cells.filter((r) => r.refused || r.level === "error").map((r) => r.label || r.name).join(", "),
+        button("quiet", t("Read the log"), { act: "tab", tab: "logs" })));
+    }
+    root.append(words);
     const list = block("");
     const rows = el("ol", "ctl-list");
     for (const r of a.cells) cellRow(rows, r, false);
@@ -1028,15 +1033,11 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   // not run, someone asking to be let in.
   function needsYou() {
     const rows = [];
-    const need = (text, detail, word, data) => {
-      const li = el("li", "ctl-need");
-      const what = el("span", "ctl-need-what");
-      what.append(el("span", "ctl-need-text", text));
-      if (detail) what.append(el("span", "ctl-need-detail", detail));
+    // Each is the kit's banner: needs you, or failed when something will not run.
+    const need = (text, detail, word, data, tone = "need") => {
       const go = button("quiet", word, data);
       go.disabled = !!c.busy;
-      li.append(what, go);
-      rows.push(li);
+      rows.push(banner(tone, text, detail, go));
     };
     const b = c.backups;
     if (b && !b.error && !b.backups.length) {
@@ -1046,16 +1047,16 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
         job?.state === "running" ? t("Backing up…") : t("Back up now"), { act: "backup" });
       if (job?.state === "running") rows.at(-1).querySelector("button").disabled = true;
     }
-    if (c.model && !c.model.error && c.model.refusal) need(t("The default model is refused"), c.model.refusal, t("Open Settings"), { act: "tab", tab: "settings" });
+    if (c.model && !c.model.error && c.model.refusal) need(t("The default model is refused"), c.model.refusal, t("Open Settings"), { act: "tab", tab: "settings" }, "fail");
     for (const r of (c.cells && !c.cells.error ? c.cells.cells : []).filter((each) => each.refused)) {
-      need(t("{name} refused to start: {why}", { name: r.label || r.name, why: r.refused }), "", t("Open"), { act: "tab", tab: "cells" });
+      need(t("{name} refused to start: {why}", { name: r.label || r.name, why: r.refused }), "", t("Open"), { act: "tab", tab: "cells" }, "fail");
     }
     for (const s of (c.servers && !c.servers.error && c.servers.enabled ? c.servers.servers : []).filter((each) => FAILED.includes(each.state))) {
-      need(t("MCP server {name}: {state}", { name: s.name, state: STATES[s.state] || s.state }), "", t("Open"), { act: "tab", tab: "mcp" });
+      need(t("MCP server {name}: {state}", { name: s.name, state: STATES[s.state] || s.state }), "", t("Open"), { act: "tab", tab: "mcp" }, "fail");
     }
     if (c.channels && !c.channels.error) {
       for (const ch of c.channels.channels.filter((each) => !["running", "off", "unconfigured"].includes(each.state))) {
-        need(t("Channel {name}: {state}", { name: ch.id, state: STATES[ch.state] || ch.state }), "", t("Open"), { act: "tab", tab: "channels" });
+        need(t("Channel {name}: {state}", { name: ch.id, state: STATES[ch.state] || ch.state }), "", t("Open"), { act: "tab", tab: "channels" }, "fail");
       }
       for (const p of c.channels.pairing.filter((each) => each.asks?.length)) {
         need(t("{n} asking to be let in on {name}", { n: p.asks.length, name: p.id }), "", t("Open"), { act: "tab", tab: "channels" });
@@ -1079,7 +1080,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       root.append(node);
     };
     const needs = needsYou();
-    if (needs.length) group(t("Needs you"), needs, "ctl-needs");
+    root.append(...needs);
     for (const [label, ids] of GROUPS) {
       group(label, ids.map((id) => {
         const li = el("li");

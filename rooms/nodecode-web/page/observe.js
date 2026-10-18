@@ -192,6 +192,19 @@ export function headline(micro, main, sub) {
   return node;
 }
 
+// The kit's banner: one object in two tones -- needs you or failed -- a line of
+// what, a line of why, and the one act that answers it (the standard's rule 6).
+export function banner(tone, what, why, act) {
+  const node = el("div", "banner");
+  node.dataset.tone = tone;
+  const text = el("span", "banner-what");
+  text.append(el("span", "banner-tone", tone === "fail" ? t("Failed") : t("Needs you")), el("span", "banner-text", what));
+  if (why) text.append(el("span", "banner-why", why));
+  node.append(text);
+  if (act) node.append(act);
+  return node;
+}
+
 export function sectionHead(title, ...rest) {
   const head = el("div", "obs-head");
   if (title) head.append(el("h3", "micro", title));
@@ -1454,8 +1467,8 @@ function glance(parts, data, activity, range) {
   const facts = Array.isArray(parts.health) ? parts.health : [];
   const trouble = facts.find((fact) => fact.tone === "danger") || facts.find((fact) => fact.tone === "warn");
   if (trouble) {
-    const alert = button("glance-alert", undefined, { dashSheet: "now", tone: trouble.tone });
-    alert.append(el("i", "led"), el("span", "said", `${trouble.label}: ${oneLine(trouble.detail)}`), el("span", "chev", "›"));
+    const alert = banner(trouble.tone === "danger" ? "fail" : "need", trouble.label, oneLine(trouble.detail), button("quiet", t("Show"), { dashSheet: "now" }));
+    alert.classList.add("glance-alert");
     node.append(alert);
   }
 

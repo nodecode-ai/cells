@@ -1109,3 +1109,36 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (search "document.getElementById(\"control-log-state\")" (web-js-function control "drawLog")) "the log's head follows its lines")
     (is (search "root.append(dashHeadline(data, activity, range), ...(phone ? [] : [top])" dash) "the range follows the dashboard's head")
     (is (search "glance(parts, data, activity, phone ? top : null)" dash) "a phone's under its glance's hero")))
+
+;; One button, one filter, one field, one banner (step 3 of the standard).
+;; Measured before it: 23 button looks on a phone, the desktop's capitalised
+;; mono buttons, four kinds of filter (chips, segmented, underlined capitals, a
+;; tab strip), a mono field, and Needs you, the dashboard's alert and a failure
+;; each drawn its own way. Now a button is solid, quiet or danger in one shape,
+;; sentence case and sans at every width; every filter -- a range, a level, the
+;; sources, the Control strip -- is the segmented control on its well; a field
+;; is sans; and what wants the reader is the one banner in two tones with its act.
+(deftest web-cell-a-button-a-filter-a-field-and-a-banner-are-one-each ()
+  (let* ((css (web-css-declarations (web-page-text "app.css")))
+         (control (web-page-text "control.js"))
+         (observe (web-page-text "observe.js"))
+         (value (lambda (selector property) (web-css-value css selector property))))
+    (is (equal "500 var(--fs-body)/1 var(--sans)" (funcall value ".quiet, .solid" "font")) "a button is sans at the body's size")
+    (is (equal "none" (funcall value ".quiet, .solid" "text-transform")) "never in capitals")
+    (is (equal "var(--r-control)" (funcall value ".quiet, .solid" "border-radius")) "one corner")
+    (is (notany (lambda (each) (and (cl-ppcre:scan "(^|[ ,])\\.(solid|quiet)\\b" (car each))
+                                    (search "uppercase" (cdr each))))
+                css)
+        "no rule puts a button back in capitals")
+    (is (equal "var(--fail)" (funcall value ".solid.danger" "background")) "danger is the one red")
+    (is (search "background: var(--subtle)" (format nil "~{~a~^; ~}" (loop for (rule . d) in css when (string= rule ".scope") collect d)))
+        "every filter stands on the well at every width")
+    (is (equal "var(--selected)" (funcall value ".sw[aria-checked=\"true\"]" "background")) "its chosen segment lifted")
+    (is (not (funcall value ".sw::after" "content")) "no underline under a chosen word")
+    (is (equal "var(--selected)" (funcall value ".chips button[aria-checked=\"true\"]" "background")) "the sources are the same control")
+    (is (search "var(--sans)" (funcall value ".control" "font")) "a field is sans")
+    (is (search "export function banner(tone, what, why, act)" observe) "one banner")
+    (is (search "rows.push(banner(tone, text, detail, go));" (web-js-function control "needsYou")) "Needs you is the banner")
+    (is (search "banner(trouble.tone === \"danger\" ? \"fail\" : \"need\"" observe) "so is the dashboard's alert")
+    (is (search "banner(\"fail\", plural(failed" (web-js-function control "drawCells")) "and a place's failure")
+    (is (equal "var(--fail)" (funcall value ".banner[data-tone=\"fail\"], .banner[data-tone=\"danger\"]" "--tone")) "its failed tone")))
