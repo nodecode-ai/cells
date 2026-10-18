@@ -39,6 +39,8 @@
     (is (search "During substantial tool work" nodecode-context::*skill*) "review also happens during the turn")
     (is (search "at useful checkpoints" nodecode-context::*skill*) "cleanup follows useful checkpoints, not a fixed schedule")
     (is (search "after settling a subproblem" nodecode-context::*skill*) "a settled subproblem is a concrete checkpoint")
+    (is (search "edit your context at useful checkpoints" nodecode-context::*skill*) "a checkpoint is an edit, not a look")
+    (is (search "a level cleared" nodecode-context::*skill*) "a settle point is named concretely, as ARC-AGI-3's level clear was")
     (is (search "before your final answer" nodecode-context::*skill*) "pre-final review remains")
     (is (search "not after every tool call" nodecode-context::*skill*) "avoid a per-tool editing ritual")
     (is (search "Window headroom is not the test" nodecode-context::*skill*) "a large window never excuses keeping settled blocks")

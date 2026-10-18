@@ -1,9 +1,10 @@
 # Context skill
 
 A built-in, prompt-only cell, compiled into `nodecode/bin` even with an empty
-home or `--pristine`. Its one short rule asks the model to review its
-editable context at useful checkpoints during substantial tool work (for example,
-after settling a subproblem) and before a final answer, and says how: one call,
+home or `--pristine`. Its one short rule asks the model to edit its
+editable context at useful checkpoints during substantial tool work (after
+settling a subproblem: a level cleared, a fix proved) and
+before a final answer, and says how: one call,
 `(context :drop SPANS :keep IDS :note TEXT)`, naming blocks by the `[seq N]` line
 every tool result ends with, with no export, read or print round. Keep what
 matters; window headroom is not the test: kept blocks ride every request, so
