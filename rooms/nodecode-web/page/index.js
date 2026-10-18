@@ -144,7 +144,7 @@ export function makeIndex({ c, api, act, toast, redraw, settle }) {
     }
     const [infoMark, words] = about(c, "index", t("What the agent keeps and does not run — memories, skills in prose — and the definitions of its own layer, ranked by use: the index at the head of every conversation lists the hot ones, and the agent reads one before it follows it. A memory never cools; a skill or a definition unused for a while does. A new session lists a change at once, one already running after its next eviction, or at once after /index reload in it."));
     const cells = new Set(l.definitions.map((d) => d.cell)).size;
-    const list = block(t("Index"), infoMark, el("span", "reading", t("{hot} hot · {cold} cold · {cells} cells", { hot: l.hot, cold: l.cold, cells })));
+    const list = block("", infoMark, el("span", "reading", t("{hot} hot · {cold} cold · {cells} cells", { hot: l.hot, cold: l.cold, cells })));
     list.append(words);
     const bar = el("div", "ctl-toolbar");
     const filter = el("input", "control");

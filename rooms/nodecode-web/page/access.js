@@ -16,7 +16,7 @@
 // answered or its two minutes are out. A link whose dials keep failing says
 // why in the cell's words, when it tries next, and offers Try now.
 
-import { el, button, mark, waiting, when } from "./observe.js";
+import { el, button, mark, waiting, when, headline } from "./observe.js";
 import { block, note, form, formKey, field, item, confirmBox, about, pill, PHONE } from "./control.js";
 import { t } from "./i18n.js";
 
@@ -193,7 +193,7 @@ export function makeAccess({ c, api, act, toast, redraw, unread, missing, openTa
     if (l?.missing) { root.append(missing("link", "nodecode-link")); return root; }
     if (!l || l.error) { root.append(l?.error ? unread(t("Could not read the link: {error}", { error: l.error })) : waiting(t("Looking…"))); return root; }
     const [word, sub] = STATES[l.state] || STATES.off;
-    const head = el("section", "headline");
+    const head = headline(t("This machine's page, from anywhere"), word, sub);
     const scope = el("div", "scope ctl-link-switch");
     scope.setAttribute("role", "radiogroup");
     scope.setAttribute("aria-label", t("The link"));
@@ -206,7 +206,6 @@ export function makeAccess({ c, api, act, toast, redraw, unread, missing, openTa
       sw.disabled = !chosen && !!c.busy;
       scope.append(sw);
     }
-    head.append(el("p", "micro", t("This machine's page, from anywhere")), el("h2", "display", word), el("p", "sub", sub));
     if (l.failure) head.append(failing(l));
     // On a phone the link's on and off is one switch, on a row of its own.
     if (PHONE.matches) {

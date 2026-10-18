@@ -2415,9 +2415,36 @@ function loadDashboard() {
 // session's own and take the box away.
 const board = () => state.pane === "dashboard" || state.pane === "control";
 
+// The strip names where a board is, once: Dashboard, Control, or Control / the
+// tab open in it, Control there the way back on a phone; the page under it
+// says how it stands (the operator, 2026-10-18: "this is duplicating UI, we
+// need to standardize pages", then "Land C").
+function paintPlace() {
+  const title = $("title");
+  if (!board() || title.isContentEditable) return;
+  title.title = state.pane === "control" ? t("this organism") : t("every session");
+  const tab = state.pane === "control" ? control.label : null;
+  if (!tab) {
+    title.textContent = state.pane === "control" ? t("Control") : t("Dashboard");
+    return;
+  }
+  const back = document.createElement("button");
+  back.type = "button";
+  back.className = "crumb";
+  back.append(icon("back", 16), t("Control"));
+  back.addEventListener("click", () => control.back());
+  const sep = document.createElement("span");
+  sep.className = "sep";
+  sep.textContent = " / ";
+  const here = document.createElement("span");
+  here.className = "here";
+  here.textContent = tab;
+  title.replaceChildren(back, sep, here);
+}
+
 const control = makeControl({
   api, download, toast, openSession: select, isOpen: () => state.open, folder: hereFolder,
-  redraw: () => { renderObserve(); paintLink(); }, onTab: () => writeLink(),
+  redraw: () => { renderObserve(); paintLink(); paintPlace(); }, onTab: () => { writeLink(); paintPlace(); },
   openTab: (tab) => { setPop(null); setPane("control", tab); },
 });
 // HOME is defined below, with the strip: read when drawn, not now.
@@ -2649,8 +2676,7 @@ function renderHead() {
   $("title").toggleAttribute("data-renameable", listed());
   $("markdown").hidden = state.pane !== "chat" || !listed();
   if (usage) {
-    $("title").textContent = state.pane === "control" ? t("Control") : t("Dashboard");
-    $("title").title = state.pane === "control" ? t("this organism") : t("every session");
+    paintPlace();
     $("context").hidden = true;
   }
   $("views").hidden = !state.current || usage;

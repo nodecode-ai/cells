@@ -226,7 +226,7 @@ export function makeProfiles({ c, api, act, toast, redraw, download }) {
     const [infoMark, words] = about(c, "profiles",
       t("A profile is a home of its own: its config, keys, store, layer and gateway, so each one runs as an organism of its own. This page belongs to the gateway of {name} and stays there; another profile's page opens from a terminal with the command under its row.", { name: l.this }),
       t("Make default writes the profile a bare nodecode runs from the next launch on; nothing running moves. Export saves a home as an archive without its store, secrets and credentials, which nodecode profile import brings back. Named profiles live in {folder}.", { folder: l.folder }));
-    const list = block(t("Profiles"), infoMark, el("span", "reading", plural(l.profiles.length, t("{n} profile"), t("{n} profiles"))));
+    const list = block("", infoMark, el("span", "reading", plural(l.profiles.length, t("{n} profile"), t("{n} profiles"))));
     list.append(words);
     const rows = el("ol", "ctl-list");
     for (const r of l.profiles) drawRow(rows, r);

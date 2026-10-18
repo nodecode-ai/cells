@@ -154,7 +154,7 @@ export function makeMcp({ c, api, act, toast, redraw, reload }) {
 
   function servers(l) {
     const [infoMark, words] = about(c, "mcp", t("Tools from servers that speak the Model Context Protocol (MCP), each set under mcp.servers in config.jsonc; the agent calls them from its eval tool. Test lists what a server offers on the connection the agent uses, and reconnects one that is down. Adding or removing a server starts the MCP cell again, which reconnects every server."));
-    const box = block(t("MCP servers"), infoMark);
+    const box = block("", infoMark);
     box.append(words);
     if (!l.enabled) box.append(Object.assign(el("p", "ctl-notice", t("mcp.enabled is false in config.jsonc: no server starts until it is true.")), { title: "mcp.enabled" }));
     const rows = el("ol", "ctl-list");

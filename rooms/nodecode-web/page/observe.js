@@ -180,16 +180,22 @@ function tile(label, value, tag) {
   return node;
 }
 
-function headline(micro, main, sub) {
+// A page's one head, under the strip that names it: a small label, one sentence
+// of how it stands, a line of detail. Every page that says how it stands opens
+// with it (the operator, 2026-10-18: "this is duplicating UI, we need to
+// standardize pages", then "Land C").
+export function headline(micro, main, sub) {
   const node = el("section", "headline");
-  node.append(el("p", "micro", micro), el("h2", "display", main));
+  if (micro) node.append(el("p", "micro", micro));
+  node.append(el("h2", "display", main));
   if (sub) node.append(el("p", "sub", sub));
   return node;
 }
 
 export function sectionHead(title, ...rest) {
   const head = el("div", "obs-head");
-  head.append(el("h3", "micro", title), ...rest);
+  if (title) head.append(el("h3", "micro", title));
+  head.append(...rest);
   return head;
 }
 

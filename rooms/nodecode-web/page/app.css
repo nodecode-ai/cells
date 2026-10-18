@@ -335,6 +335,12 @@ code, pre, kbd { font-family: var(--mono); }
 .title-block { min-width: 0; flex: 1; display: flex; align-items: baseline; gap: 12px; }
 .strip h1 { margin: 0; font: 400 15px/1 var(--sans); color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: none; max-width: 100%; }
 .strip h1[data-renameable] { cursor: text; }
+/* Control / its tab: the trail names the place once; Control is the way back on a phone. */
+.strip h1 .crumb { display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; font: inherit; color: var(--tertiary); pointer-events: none; }
+.strip h1 .crumb svg { display: none; }
+.strip h1 .sep { color: var(--tertiary); white-space: pre; }
+.strip h1:has(> .crumb) { display: flex; align-items: center; min-width: 0; }
+.strip h1 .here { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .strip h1[contenteditable="plaintext-only"] { outline: none; text-overflow: clip; box-shadow: inset 0 -1px 0 var(--faint); }
 .live { display: flex; align-items: center; gap: 8px; font: 500 11px/1 var(--micro); letter-spacing: 0.015em; text-transform: uppercase; color: var(--accent); flex: none; }
 
@@ -1594,10 +1600,6 @@ button.p-row:active { background: var(--field-lit); }
    the reader first; a section a page of its own under the way back; a question
    asked there rising from the bottom over the page. */
 .ctl-phone .dash-bar { padding: 2px 0 4px; }
-.ctl-head { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
-.ctl-title { margin: 0; font: 600 30px/1.15 var(--sans); letter-spacing: -0.015em; color: var(--primary); }
-.ctl-standing { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 14px; color: var(--secondary); }
-.ctl-back { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin: -8px 0 -6px -10px; padding: 0 12px 0 6px; border-radius: 12px; font-size: 16px; color: var(--accent); }
 .ctl-home > * + * { margin-top: 26px; }
 .ctl-group-head { margin: 0 0 8px; padding-left: 14px; font: 500 10.5px/1.2 var(--micro); letter-spacing: 0.09em; text-transform: uppercase; color: var(--tertiary); }
 .ctl-needs .ctl-group-head { color: var(--accent); }
@@ -2327,6 +2329,8 @@ button.p-row:active { background: var(--field-lit); }
   .inspector .nav :is(.word, .icon) { min-width: 44px; height: 44px; } /* a call's previous, next, close */
   .inspector .tab { min-height: 44px; }                          /* Summary, Tokens, What was sent, Raw */
   .fs-bar .fs-crumbs button { min-height: 44px; }                /* a folder on the way down */
+  .strip h1 .crumb { min-height: 44px; margin-left: -6px; padding-right: 4px; color: var(--accent); pointer-events: auto; cursor: pointer; } /* Control / a tab: back to the list */
+  .strip h1 .crumb svg { display: block; }
   .fs-acts .icon { width: 44px; height: 44px; }                  /* Read again, Upload */
   .strip .views .view { min-width: 44px; height: 44px; }         /* Chat, Run, Files */
   button.sw { min-height: 44px; }                                /* a switch: a range, a filter, a level */

@@ -13,7 +13,7 @@
 // data-act the pane's own click handler reads; a change that waits for a
 // restart says so where it is made.
 
-import { el, button, mark, sectionHead, when, uptime, waiting, plural } from "./observe.js";
+import { el, button, mark, sectionHead, headline, when, uptime, waiting, plural } from "./observe.js";
 import { makeSettings, title, steps } from "./settings.js";
 import { makeIndex } from "./index.js";
 import { makeMcp } from "./mcp.js";
@@ -99,9 +99,10 @@ function fact(label, value, tag) {
   return row;
 }
 
+// A section of a tab; TITLE empty where the strip already names it.
 export function block(title, ...rest) {
   const node = el("section", "dash-section ctl-block");
-  node.append(sectionHead(title, ...rest));
+  if (title || rest.length) node.append(sectionHead(title, ...rest));
   return node;
 }
 
@@ -382,12 +383,10 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     const id = c.identity;
     if (!s || s.error) { root.append(s?.error ? unread(t("Could not read the gateway: {error}", { error: s.error })) : waiting(t("Looking…"))); return root; }
     const version = id?.version || "";
-    const head = el("section", "headline");
-    head.append(el("p", "micro", `pid ${s.pid} · ${s.runs}`),
-      el("h2", "display", id?.started_at ? t("nodecode {version}, {uptime}.", { version: version.split("+")[0], uptime: uptime(id.started_at) })
-        : t("nodecode {version}.", { version: version.split("+")[0] })),
-      el("p", "sub", RUNS[s.runs] || ""));
-    root.append(head);
+    root.append(headline(`pid ${s.pid} · ${s.runs}`,
+      id?.started_at ? t("nodecode {version}, {uptime}.", { version: version.split("+")[0], uptime: uptime(id.started_at) })
+        : t("nodecode {version}.", { version: version.split("+")[0] }),
+      RUNS[s.runs] || ""));
     const facts = el("dl", "facts ctl-facts");
     facts.append(
       fact(t("Version"), version || "—", version.includes("+") ? `commit ${version.split("+")[1]}` : "version"),
@@ -747,7 +746,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     const [infoMark, words] = about(c, "cells", a.folder
       ? t("A cell is a folder in {folder}. On puts it there, with the cells it needs, and loads it into this organism now; off takes it out and stops it. Code already loaded stays in this organism until a restart.", { folder: a.folder })
       : t("A cell is a folder in the cell folder. On puts it there, with the cells it needs, and loads it into this organism now; off takes it out and stops it. Code already loaded stays in this organism until a restart."));
-    const list = block(t("Cells"), infoMark, el("span", "reading", t("{n} on", { n: a.cells.filter((r) => r.on).length })));
+    const list = block("", infoMark, el("span", "reading", t("{n} on", { n: a.cells.filter((r) => r.on).length })));
     list.append(words);
     const rows = el("ol", "ctl-list");
     for (const r of a.cells) cellRow(rows, r, false);
@@ -809,7 +808,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     if (ch?.missing) { root.append(missing("channels", t("a channel (discord, telegram) with the channel kit"), "channels.<name>")); return root; }
     if (!ch || ch.error) { root.append(ch?.error ? unread(t("Could not read the channels: {error}", { error: ch.error })) : waiting(t("Looking…"))); return root; }
     const [infoMark, words] = about(c, "channels", t("Set up walks a channel from its bot's token to who may talk to it. Check asks the platform what this channel's token can see. Restart channels starts every channel again on config.jsonc as it is now: what a changed section needs."));
-    const list = block(t("Channels"), infoMark, button("word", c.busy === "channels" ? t("Restarting…") : t("Restart channels"), { act: "restart-channels" }));
+    const list = block("", infoMark, button("word", c.busy === "channels" ? t("Restarting…") : t("Restart channels"), { act: "restart-channels" }));
     list.append(words);
     const rows = el("ol", "ctl-list");
     // A lane the kit reports, then one whose section is declared and quiet (turned off).
@@ -884,8 +883,14 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     if (j?.missing) { root.append(missing("cron", "nodecode-cron")); return root; }
     if (!j || j.error) { root.append(j?.error ? unread(t("Could not read the jobs: {error}", { error: j.error })) : waiting(t("Looking…"))); return root; }
     const [infoMark, words] = about(c, "jobs", t("A job runs in a session of its own, cron-<id>: open its name to read what it did."));
-    const list = block(t("Scheduled jobs"), infoMark);
-    list.append(words);
+    const count = (state) => j.jobs.filter((job) => job.state === state).length;
+    const next = j.jobs.filter((job) => job.state === "active" && job.next_at).sort((a, b) => a.next_at - b.next_at)[0];
+    const head = headline(plural(j.jobs.length, t("{n} job"), t("{n} jobs")),
+      t("{active} active, {paused} paused.", { active: count("active"), paused: count("paused") }),
+      next ? t("Next: {name}, {when}.", { name: next.name, when: when(new Date(next.next_at * 1000).toISOString()) }) : "");
+    (head.querySelector(".micro") || head).append(" ", infoMark);
+    root.append(head, words);
+    const list = block("");
     const rows = el("ol", "ctl-list");
     for (const job of j.jobs) {
       const li = el("li", "ctl-row");
@@ -943,24 +948,6 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   }
 
   // --- what the pane is -----------------------------------------------------------
-
-  // A phone's head: the list's title and how the organism stands; a section's,
-  // the way back to the list and the section's name.
-  function phoneHead() {
-    const head = el("div", "ctl-head");
-    if (atHome()) {
-      const line = el("p", "ctl-standing");
-      const up = isOpen() && uptime(c.identity?.started_at);
-      line.append(el("i", `led${isOpen() ? "" : " off"}`), isOpen()
-        ? [t("Running"), up, c.identity?.version?.split("+")[0]].filter(Boolean).join(" · ") : t("Reconnecting…"));
-      head.append(el("h2", "ctl-title", t("Control")), line);
-      return head;
-    }
-    const back = button("ctl-back", "", { act: "home" });
-    back.append(icon("back", 18), el("span", "", t("Control")));
-    head.append(back, el("h2", "ctl-title", LABELS[c.tab]));
-    return head;
-  }
 
   // How section ID stands, in a few words, from what the list read: [words, tone],
   // the tone "warn" or "danger" when it wants the reader.
@@ -1048,6 +1035,9 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   // group, a finger tall, saying how it stands.
   function drawHome() {
     const root = el("div", "ctl-tab ctl-home");
+    const up = isOpen() && uptime(c.identity?.started_at);
+    root.append(headline([t("This machine"), c.identity?.version?.split("+")[0]].filter(Boolean).join(" · "),
+      !isOpen() ? t("Reconnecting…") : up ? t("Running, {uptime}.", { uptime: up }) : t("Running.")));
     const group = (label, rows, cls) => {
       const node = el("section", `ctl-group${cls ? ` ${cls}` : ""}`);
       const list = el("ul", "ctl-group-list");
@@ -1289,8 +1279,9 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     if (phone && c.motion) root.dataset.motion = c.motion;
     c.motion = null;
     const bar = el("div", "dash-bar");
-    if (phone) bar.append(phoneHead());
-    else {
+    // The strip names the place (Control, or Control / its tab, the way back on a
+    // phone); a wide window adds the tabs here, a phone the list of its sections.
+    if (!phone) {
       const tabs = el("div", "scope ctl-tabs");
       tabs.setAttribute("role", "tablist");
       for (const [id, label] of TABS) {
@@ -1301,7 +1292,6 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       }
       bar.append(tabs);
     }
-    root.append(bar);
     // On the bar, so it stays in sight wherever the pane is scrolled: why the
     // link is down when this pane took it down; the link bar says the rest.
     if (!isOpen() && c.leaving) {
@@ -1310,6 +1300,8 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
         : t("Stopped. This page reconnects once it runs again."));
       bar.append(away);
     }
+    // A phone's bar holds only that line: with nothing to say it takes no room.
+    if (bar.childElementCount) root.append(bar);
     if (atHome()) {
       root.append(drawHome());
       return root;
@@ -1384,15 +1376,6 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
         onTab(c.tab);
         return;
       }
-      case "home":
-        toHome();
-        c.motion = "back";
-        redraw();
-        if (scroller()) scroller().scrollTop = c.homeAt;
-        load();
-        schedule();
-        onTab(null);
-        return;
       case "setup": c.setup = c.setup === d.id ? null : d.id; redraw(); return;
       // Opened and closed in place: a redraw would take the hand's focus off the mark.
       case "about": {
@@ -1553,6 +1536,19 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     draw, click, input, submit,
     // NULL for a phone's list, so its address names no tab.
     get tab() { return atHome() ? null : c.tab; },
+    // The open tab's name for the strip's way back, NULL on a phone's list.
+    get label() { return atHome() ? null : LABELS[c.tab]; },
+    // The strip's way back, on a phone: the list, where it was scrolled.
+    back() {
+      if (atHome() || !PHONE.matches) return;
+      toHome();
+      c.motion = "back";
+      redraw();
+      if (scroller()) scroller().scrollTop = c.homeAt;
+      load();
+      schedule();
+      onTab(null);
+    },
     // Whether show(TAB) moves the pane: to another tab, or, on a phone, to the
     // list from a section, when the address names no tab.
     moves(tab) { return tab ? tab !== (atHome() ? null : c.tab) : PHONE.matches && !c.home; },

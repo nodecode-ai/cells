@@ -524,6 +524,7 @@ no enclosing try block holds, as the line it is on."
     (44 ".inspector .nav :is(.word, .icon)" "min-width" "height") ; a call's previous, next and close
     (44 ".inspector .tab" "min-height")             ; Summary, Tokens, What was sent, Raw
     (44 ".fs-bar .fs-crumbs button" "min-height")   ; a folder on the way down, on a phone
+    (44 ".strip h1 .crumb" "min-height")            ; Control / a tab: back to the list, on a phone
     (44 ".fs-acts .icon" "width" "height")          ; Read again, Upload
     (44 ".strip .views .view" "min-width" "height") ; Chat, Run, Files, on a phone
     (44 "button.sw" "min-height")                   ; a switch, on a phone
@@ -858,12 +859,48 @@ brace that closes it at the start of a line, or NIL."
     (is (search "matchMedia(\"(max-width: 720px)\")" js) "at the page's own phone width")
     (dolist (tab '("gateway" "logs" "settings" "cells" "index" "mcp" "profiles" "channels" "link" "jobs"))
       (is (search (format nil "\"~a\"" tab) groups) (format nil "the list reaches ~a" tab)))
-    (is (search "if (phone) bar.append(phoneHead())" draw) "a phone draws no strip of tabs")
+    (is (search "if (!phone) {" draw) "a phone draws no strip of tabs")
     (is (search "if (atHome()) {" draw) "but the list, until a section is opened")
     (is (search "get tab() { return atHome() ? null : c.tab; }" js) "the list's address names no tab")
     (is (search "control.moves(tab)" (web-js-function app "setPane")) "so Back, or the column's Control, takes a phone to the list")
     (is (equal "54px" (web-css-value css ".ctl-go" "min-height")) "a section's row is a finger tall")
     (is (equal "fixed" (web-css-value css ".ctl-phone .confirm" "position")) "a question rises from the bottom")))
+
+;; A page names its place once and opens with the one head (the operator,
+;; 2026-10-18: "this is duplicating UI, we need to standardize pages", then
+;; "Land C"; the variants: https://claude.ai/artifact/Dy7WSk5fHi4vgaAo7qnNkM).
+;; Measured on the live page at 390 px before it: Gateway said Control in the
+;; strip, again as the way back, then Gateway at 30 px, then its headline;
+;; Scheduled jobs its title and then SCHEDULED JOBS; three files drew a head
+;; each. The strip carries Control / the tab (Control the way back on a
+;; phone); the page opens with observe.js's headline, and no section repeats
+;; the tab's own name.
+(deftest web-cell-a-page-names-its-place-once ()
+  (let* ((observe (web-page-text "observe.js"))
+         (control (web-page-text "control.js"))
+         (access (web-page-text "access.js"))
+         (app (web-page-text "app.js"))
+         (css (web-page-text "app.css"))
+         (place (web-js-function app "paintPlace"))
+         (pages (mapcar #'web-page-text '("control.js" "access.js" "index.js" "profiles.js" "mcp.js" "settings.js"))))
+    (is (search "export function headline(micro, main, sub)" observe) "one head, shared")
+    (is (search "if (micro) node.append" observe) "its label only when it has one")
+    (dolist (draw '("drawHome" "drawGateway" "drawJobs"))
+      (let ((at (search (format nil "  function ~a(" draw) control)))
+        (is (and at (search "headline(" control :start2 at :end2 (search (format nil "~%  }~%") control :start2 at)))
+            (format nil "~a opens with it" draw))))
+    (is (search "const head = headline(" access) "and Link")
+    (is (not (search "el(\"section\", \"headline\")" (concatenate 'string control access))) "no page builds its own")
+    (is (not (search "phoneHead" control)) "no second title in the page")
+    (is (not (search ".ctl-title" css)) "nor its style")
+    (is (search "get label() { return atHome() ? null : LABELS[c.tab]; }" control) "the pane names its open tab")
+    (is (search "control.label" place) "the strip says it")
+    (is (search "control.back()" place) "its Control goes back to the list")
+    (is (search "paintPlace();" (web-js-function app "renderHead")) "on every paint of the strip")
+    (is (search "onTab: () => { writeLink(); paintPlace(); }" app) "and on every move between tabs")
+    (dolist (label '("Cells" "Index" "Profiles" "Channels" "Scheduled jobs" "MCP servers"))
+      (is (notany (lambda (js) (search (format nil "block(t(\"~a\")" label) js)) pages)
+          (format nil "no section repeats ~a" label)))))
 
 ;; Every Control section on a phone follows the phone standard (the operator,
 ;; 2026-10-17, "Perfect lets land this"; the standard, ten rules and twelve
