@@ -2582,7 +2582,7 @@ on, read again: the panel's :NOTICE."
                        (values text nil nil))))
                 (t (values text nil nil))))))))
 
-(defparameter +private-commands+ '("stop" "channels" "models" "think" "effort" "board")
+(defparameter +private-commands+ '("stop" "channels" "models" "think" "effort" "threads")
   "Commands whose answer only acknowledges what the room sees happen anyway —
 the stopped turn's own line says it stopped — or is a picker the person who
 ran it works alone, and so is said to that person alone, where the platform

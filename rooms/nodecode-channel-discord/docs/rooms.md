@@ -208,7 +208,7 @@ message there.
 
 Each section shows its newest five threads, each a link with how long it has
 been quiet; Needs you shows the question each one ends on. **Show all**
-lists every open thread to whoever pressed it, and so does `/board`.
+lists every open thread to whoever pressed it, and so does `/threads`.
 
 The board closes what is finished: a Done thread after 48 hours with nothing
 said in it, any other after 7 days. **Close all done**, for the room's

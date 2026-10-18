@@ -180,7 +180,7 @@ threads left to close; Show all, and Close all done while any is done."
 
 (defun board-list-text (rows &key (limit 1900))
   "Every one of ROWS by section, a line a thread, cut to LIMIT characters
-with what was left out counted: what Show all and /board answer."
+with what was left out counted: what Show all and /threads answer."
   (let ((lines '()) (left 0) (size 0))
     (loop for (key name) in +board-sections+
           for members = (board-section-rows rows key)
@@ -344,7 +344,7 @@ other press."
     t))
 
 (defun board-command (args session-id)
-  "/board: every open thread, by who moves next."
+  "/threads: every open thread, by who moves next."
   (declare (ignore args session-id))
   (if *board*
       (board-list-text (board-rows *board*))
@@ -362,7 +362,7 @@ of its own. => its stop thunk, or NIL when no board channel is named."
         (setf (board-stop-p old) t)
         (queue-push (board-queue old) :stop))
       (setf *board* board)
-      (nle:register-command "nodecode-channel-discord" "board" 'board-command
+      (nle:register-command "nodecode-channel-discord" "threads" 'board-command
                             :description "Every open thread, by who moves next")
       (nlk:spawn "channel-discord-board"
         (loop until (board-stop-p board)

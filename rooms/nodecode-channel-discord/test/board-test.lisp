@@ -81,7 +81,7 @@
         "no Close all done while nothing is done")))
 
 (deftest channel-discord-board-list-answers-every-thread ()
-  ;; Show all and /board list every open thread by section, cut to one
+  ;; Show all and /threads list every open thread by section, cut to one
   ;; message with what was left out counted.
   (let ((rows (list (list :id "1" :state :needs :quiet-ms 3600000 :question "Push it?")
                     (list :id "2" :state :done :quiet-ms 60000))))
