@@ -275,6 +275,21 @@
       <p class="gate-detail" id="gate-detail" hidden><i class="led off" aria-hidden="true"></i><span></span></p>
     </div>
   </div>
+  <div class="ctl-scrim" id="offline-scrim" hidden></div>
+  <div class="ctl-sheet offline" id="offline" role="dialog" aria-labelledby="offline-title" hidden>
+    <div class="ctl-grab" aria-hidden="true"></div>
+    <p class="offline-tries"><i class="led" aria-hidden="true"></i><span id="offline-tries"></span></p>
+    <h3 class="ctl-sheet-title" id="offline-title"></h3>
+    <ol class="offline-hops" id="offline-hops"></ol>
+    <p class="offline-why" id="offline-why"></p>
+    <div class="offline-cmd" id="offline-cmd" hidden><code>nodecode gateway on</code><button class="word" id="offline-copy" type="button" data-i18n>Copy</button></div>
+    <div class="ctl-sheet-acts">
+      <button class="solid" id="offline-retry" type="button" data-i18n>Try again</button>
+      <button class="word ctl-sheet-cancel" id="offline-reload" type="button" data-i18n hidden>Reload page</button>
+      <button class="word ctl-sheet-cancel" id="offline-close" type="button" data-i18n>Close</button>
+    </div>
+    <p class="offline-fine" id="offline-fine"></p>
+  </div>
   <div class="toasts" id="toasts" aria-live="polite"></div>
   <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image" data-i18n-attrs="aria-label" hidden>
     <div class="mask" id="lightbox-mask" aria-hidden="true"></div>

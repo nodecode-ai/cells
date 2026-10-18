@@ -361,6 +361,12 @@ function loadSessionsSoon() {
 const newId = (prefix) => `${prefix}-${crypto.randomUUID()}`;
 const instanceId = newId("web");
 
+// The retry ladder: five quick tries (0.4 s doubling to 5 s, about 11 s in
+// all) pass under the link bar alone; after them one every 15 s, and one at
+// once when the device is back online, the tab back in view, or Try again.
+const QUICK_TRIES = 5;
+const retryDelay = (n) => (n < QUICK_TRIES ? Math.min(5000, 400 * 2 ** n) : 15000);
+
 // A tab without a token still dials: behind a proxy that signs every request
 // in (the link cell) the gateway takes the socket at its upgrade, and on the
 // gateway's own port a refusal brings up the gate.
@@ -377,22 +383,93 @@ function connect() {
     $("link").textContent = t("reconnecting");
     renderComposer();
     if (state.pane === "control") renderObserve();
-    const delay = Math.min(5000, 400 * 2 ** state.retry++);
+    const delay = retryDelay(state.retry++);
     state.retryAt = Date.now() + delay;
     state.retryTimer = setTimeout(connect, delay);
     renderLink();
-    stillLetIn();
+    traceLine();
   };
 }
 
-// A tab without a token is signed in by whatever stands in front of the
-// gateway. Once that refuses it (a browser taken off the link's list), a
-// reload lets it say where the tab goes instead of the socket retrying forever.
-async function stillLetIn() {
-  if (state.token) return;
-  try {
-    if ((await fetch("/healthz")).status === 401) location.reload();
-  } catch {}
+// Whether this page came down the link (the relay's address, an allowed
+// browser): the link's reading names the browser HERE only then.
+const viaLink = () => !!control.link.now?.here;
+
+// Where the line breaks, each hop read where it answers: the device's own
+// online flag, then /healthz, which the gateway answers anyone. No answer is
+// the host the page came from -- the relay when the page came down the link,
+// the machine itself on its own port; the relay's offline page
+// (x-uplink-machine: offline) is the machine off its line, and its 502 or 504
+// the machine on it but silent; any other answer is the machine up and its
+// socket refusing this tab. A tab without a token that the link no longer lets
+// in (a 401) reloads to say where it goes instead of retrying forever.
+async function traceLine() {
+  let broken = "device";
+  if (navigator.onLine) {
+    try {
+      const response = await fetch("/healthz", { cache: "no-store", signal: AbortSignal.timeout(8000) });
+      if (response.status === 401 && !state.token) { location.reload(); return; }
+      broken = response.headers.get("x-uplink-machine") === "offline" ? "off"
+        : [502, 504].includes(response.status) ? "silent" : "socket";
+    } catch (error) {
+      broken = !viaLink() ? "silent" : error?.name === "TimeoutError" ? "silent" : "relay";
+    }
+  }
+  if (state.open) return;
+  state.broken = broken;
+  renderOffline();
+}
+
+// The offline sheet: once the quick tries are spent, the hops between this
+// tab and Nodecode -- this device, the relay when the page came down the
+// link, the machine -- each with what it answered and the broken one lit;
+// Try again at its foot, the command that starts Nodecode when the machine is
+// the break, a reload when its socket refuses. Put away (Close, the scrim), it
+// stays away until the break moves or the link is back.
+function renderOffline() {
+  const b = state.broken;
+  const show = !state.open && state.retry > QUICK_TRIES && !!b && state.offlineAway !== b;
+  $("offline").hidden = $("offline-scrim").hidden = !show;
+  if (!show) return;
+  const link = viaLink();
+  const machine = link ? location.hostname.split(".")[0] : location.host;
+  let relay = "";
+  try { relay = new URL(control.link.now.relay).hostname; } catch {}
+  const unseen = b === "device" || b === "relay";
+  const hops = [[t("This device"), b === "device" ? "bad" : "ok", b === "device" ? t("offline") : t("online")]];
+  if (link) hops.push([relay || t("The relay"), b === "relay" ? "bad" : b === "device" ? "" : "ok",
+    b === "relay" ? t("not reachable") : b === "device" ? t("not checked") : t("reachable")]);
+  hops.push([machine, unseen ? "" : b === "socket" ? "ok" : "bad",
+    unseen ? t("not checked") : b === "off" ? t("not connected") : b === "silent" ? t("not answering") : t("answering")]);
+  $("offline-hops").replaceChildren(...hops.map(([name, hop, said]) => {
+    const li = el("li");
+    if (hop) li.dataset.hop = hop;
+    li.append(el("i", hop ? "led" : "led off"), el("span", "name", name), el("span", "said", said));
+    return li;
+  }));
+  $("offline-tries").textContent = t("Not connected · tried {n} times", { n: state.retry });
+  $("offline-title").textContent = b === "device" ? t("This device is offline")
+    : b === "relay" ? t("Can't reach the relay")
+    : b === "socket" ? t("{machine} answers, but Nodecode won't connect", { machine })
+    : t("{machine} isn't answering", { machine });
+  $("offline-why").textContent = b === "device" ? t("It tries again the moment this device is back online.")
+    : b === "relay" ? t("This device is online, but the relay doesn't answer.")
+    : b === "socket" ? t("Its gateway may be restarting. If Nodecode was updated, reload the page.")
+    : t("Start Nodecode on {machine}, or wake the machine; this tab connects on its own:", { machine });
+  $("offline-cmd").hidden = b !== "off" && b !== "silent";
+  $("offline-reload").hidden = b !== "socket";
+}
+
+// The command that starts Nodecode, copied; where the browser keeps the
+// clipboard from the page (a page over plain http), it is selected to copy.
+function copyStart() {
+  const code = $("offline-cmd").querySelector("code");
+  const said = () => {
+    $("offline-copy").textContent = t("Copied");
+    setTimeout(() => { $("offline-copy").textContent = t("Copy"); }, 2000);
+  };
+  (navigator.clipboard ? navigator.clipboard.writeText(code.textContent) : Promise.reject())
+    .then(said, () => getSelection().selectAllChildren(code));
 }
 
 // The link bar: shown from the first drop until the link is back, counting down
@@ -403,6 +480,7 @@ function renderLink() {
   const bar = $("linkbar");
   clearInterval(linkTick);
   clearTimeout(linkGone);
+  renderOffline();
   if (state.open) {
     if (bar.hidden) return;
     bar.classList.add("back");
@@ -419,16 +497,21 @@ function renderLink() {
   const tick = () => {
     const left = Math.ceil((state.retryAt - Date.now()) / 1000);
     const trying = left <= 0 || state.ws?.readyState === WebSocket.CONNECTING;
-    $("linkbar-when").textContent = `${location.host} · ${trying ? t("trying now") : t("next try in {n} s", { n: left })}`;
+    const when = trying ? t("trying now") : t("next try in {n} s", { n: left });
+    $("linkbar-when").textContent = `${location.host} · ${when}`;
+    $("offline-fine").textContent = when;
+    $("offline-retry").disabled = trying;
   };
   tick();
   linkTick = setInterval(tick, 250);
 }
 
+// A try now, between tries only: not while one dials, and never after the
+// gateway refused this tab (the gate holds the page then, and the socket is
+// gone). It keeps the ladder's place, so a sheet up stays up.
 function reconnectNow() {
-  if (state.open || state.ws?.readyState === WebSocket.CONNECTING) return;
+  if (state.open || state.ws?.readyState !== WebSocket.CLOSED) return;
   clearTimeout(state.retryTimer);
-  state.retry = 0;
   connect();
   renderLink();
 }
@@ -465,6 +548,7 @@ function receive(message) {
     case "gateway_connect_ack":
       state.open = true;
       state.retry = 0;
+      state.broken = state.offlineAway = null;
       app.dataset.state = "open";
       $("link").textContent = "";
       $("link").parentElement.title = message.version
@@ -4592,6 +4676,15 @@ $("pick-confirm").addEventListener("click", (event) => {
 });
 $("sessions-retry").addEventListener("click", loadSessions);
 $("reconnect").addEventListener("click", reconnectNow);
+$("offline-retry").addEventListener("click", reconnectNow);
+$("offline-reload").addEventListener("click", () => location.reload());
+$("offline-copy").addEventListener("click", copyStart);
+for (const id of ["offline-scrim", "offline-close"]) {
+  $(id).addEventListener("click", () => { state.offlineAway = state.broken; renderOffline(); });
+}
+// The device back online tries at once; gone offline, the sheet says so now.
+window.addEventListener("online", reconnectNow);
+window.addEventListener("offline", () => { if (!state.open) traceLine(); });
 $("import").addEventListener("click", () => $("import-file").click());
 $("import-file").addEventListener("change", (event) => {
   const [file] = event.target.files;
@@ -4767,11 +4860,13 @@ document.querySelector(".slab").addEventListener("click", (event) => {
   $("evict").hidden = true;
 });
 window.addEventListener("popstate", arrive);
-// A tab brought back to view is reading its session again; another tab of
-// this browser that read one clears its mark here too.
+// A tab brought back to view is reading its session again, and a line that is
+// down tries again at once; another tab of this browser that read one clears
+// its mark here too.
 document.addEventListener("visibilitychange", () => {
   arrived();
   renderSessions();
+  if (!document.hidden) reconnectNow();
 });
 window.addEventListener("storage", (event) => {
   if (event.key !== SEEN_KEY) return;

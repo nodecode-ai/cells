@@ -861,6 +861,39 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
 .linkbar .word { margin-left: auto; color: var(--secondary); }
 .linkbar .word:hover { color: var(--primary); }
 
+/* The offline sheet: the hops between the tab and Nodecode, the broken one lit,
+   Try again at the foot. A phone's rises from the foot; a wider window's is a
+   card at the middle of the foot. */
+.ctl-sheet.offline > .offline-tries {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  font: 500 11px var(--micro); letter-spacing: 0.02em; text-transform: uppercase; color: var(--tertiary);
+}
+.offline-tries .led { background: var(--danger-lit); animation: led 1.4s ease-in-out infinite; }
+.ctl-sheet.offline > .offline-hops { margin-top: 14px; border: 1px solid var(--seam-lit); border-radius: 12px; background: var(--inset); overflow: hidden; }
+.offline-hops li { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px; border-top: 1px solid var(--seam); font-size: 15px; color: var(--secondary); }
+.offline-hops li:first-child { border-top: 0; }
+.offline-hops .name { min-width: 0; overflow-wrap: anywhere; }
+.offline-hops .said { margin-left: auto; flex: none; font: 500 11px var(--micro); letter-spacing: 0.02em; text-transform: uppercase; color: var(--tertiary); }
+.offline-hops [data-hop="ok"] .said { color: var(--secondary); }
+.offline-hops [data-hop="bad"] { color: var(--primary); background: color-mix(in srgb, var(--danger-lit) 8%, transparent); }
+.offline-hops [data-hop="bad"] .led { background: var(--danger-lit); animation: led 1.4s ease-in-out infinite; }
+.offline-hops [data-hop="bad"] .said { color: var(--danger-lit); }
+.ctl-sheet.offline > .offline-why { margin-top: 14px; font-size: 14px; line-height: 1.45; color: var(--secondary); }
+.ctl-sheet.offline > .offline-cmd {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px; min-height: 48px; padding: 0 4px 0 14px;
+  border: 1px solid var(--seam-lit); border-radius: 10px; background: var(--inset);
+}
+.offline-cmd code { flex: 1; min-width: 0; font: 14px var(--mono); color: var(--primary); user-select: all; overflow-wrap: anywhere; }
+.offline-cmd .word { min-height: 44px; padding: 0 12px; color: var(--secondary); }
+.ctl-sheet.offline > .ctl-sheet-acts { margin-top: 16px; }
+.ctl-sheet.offline .ctl-sheet-acts > .solid { justify-content: center; min-height: 52px; font-size: 14px; }
+.ctl-sheet.offline .ctl-sheet-acts > .solid:disabled { opacity: 0.42; cursor: default; }
+.ctl-sheet.offline > .offline-fine { margin-top: 12px; text-align: center; font: 12px var(--mono); color: var(--tertiary); font-variant-numeric: tabular-nums; }
+@media (min-width: 721px) {
+  .ctl-sheet.offline { left: calc(50% - 220px); right: auto; bottom: 24px; width: 440px; border: 1px solid var(--seam-lit); border-radius: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { .offline-tries .led, .offline-hops .led { animation: none; } }
+
 /* --- a phone: the column is a sheet over the slab --------------------------------- */
 
 @media (max-width: 1023px) {

@@ -908,3 +908,31 @@ brace that closes it at the start of a line, or NIL."
           do (is (equal value (web-css-value css selector property)) (format nil "~a { ~a: ~a }" selector property value)))
     (is (notany (lambda (each) (and (search "ctl-phone" (car each)) (search "text-transform: uppercase" (cdr each)))) css)
         "no phone rule writes a control in capitals")))
+
+;; A line that drops says where it broke. Five quick tries pass under the link
+;; bar; after them a try every 15 s, and the sheet rises with the hops between
+;; the tab and Nodecode -- this device, the relay when the page came down the
+;; link, the machine -- each read where it answers (the device's online flag,
+;; /healthz, the relay's x-uplink-machine header), Try again at its foot and
+;; the command that starts Nodecode when the machine is the break. Try again
+;; keeps the ladder's place, so the sheet stays up, and never dials past the gate.
+
+(deftest web-cell-a-dropped-line-says-where-it-broke ()
+  (let* ((app (web-page-text "app.js"))
+         (html (web-page-text "index.html"))
+         (trace (web-js-function app "traceLine"))
+         (offline (web-js-function app "renderOffline"))
+         (now (web-js-function app "reconnectNow")))
+    (is (search "n < QUICK_TRIES ? Math.min(5000, 400 * 2 ** n) : 15000" app) "five quick tries, then one every 15 s")
+    (is (search "state.retry > QUICK_TRIES" offline) "the sheet rises once the quick tries are spent")
+    (is (search "navigator.onLine" trace))
+    (is (search "fetch(\"/healthz\"" trace))
+    (is (search "response.headers.get(\"x-uplink-machine\") === \"offline\"" trace)
+        "the relay's offline page names the machine off its line")
+    (is (search "location.reload()" trace) "a tab the link no longer lets in still reloads")
+    (is (search "state.ws?.readyState !== WebSocket.CLOSED" now) "a try now only between tries, never past the gate")
+    (is (not (search "state.retry = 0" now)) "and it keeps the ladder's place")
+    (is (search "window.addEventListener(\"online\", reconnectNow)" app) "back online tries at once")
+    (dolist (id '("offline" "offline-scrim" "offline-hops" "offline-retry" "offline-cmd" "offline-close"))
+      (is (search (format nil "id=\"~a\"" id) html) id))
+    (is (search "<code>nodecode gateway on</code>" html))))
