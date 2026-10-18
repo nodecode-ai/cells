@@ -506,6 +506,28 @@ with its answers on it."
       (setf (gethash lane.session-id *answer-choices*) (list :turn-id turn-id :labels labels))
       (list :session-id lane.session-id :turn-id turn-id :choices labels))))
 
+(defun answer-waits (&key question platform channel thread session)
+  "Mark the answer the running turn is about to deliver as waiting on the
+person it answers -- a question, a go or no-go, a call only they can make --
+QUESTION the line that says on what (the answer's own last line when
+omitted). Choices handed with ANSWER-CHOICES mark it already; an answer
+nobody marked waits on nobody, whatever its words end on."
+  ;; Nothing posts now, as with ANSWER-FILE, and the room is named the same
+  ;; way; the mark is written down beside the answer's messages once they post
+  ;; (DELIVER-ANSWER, ANSWER-WAITING). A second call replaces the first.
+  ;; Answers (:session-id S :turn-id T :waits QUESTION-OR-T). Stamped an act
+  ;; first, as the other answer verbs are.
+  (nle:receipt "calls" (list :verb "answer-waits"))
+  (unless (or (null question)
+              (and (stringp question) (<= 1 (length (nlk:trimmed question)) 200)))
+    (error "answer-waits takes a question of 1 to 200 characters, or none, got ~s" question))
+  (multiple-value-bind (host lane turn-id)
+      (running-answer "answer-waits" platform channel thread session)
+    (declare (ignore host))
+    (let ((question (and question (nlk:trimmed question))))
+      (setf (gethash lane.session-id *answer-waits*) (list :turn-id turn-id :question question))
+      (list :session-id lane.session-id :turn-id turn-id :waits (or question t)))))
+
 (defun bind-addresses (host lane target message-ids)
   (dolist (id message-ids)
     (bind-lane-address host.lanes (address-of host target id)
@@ -1486,6 +1508,9 @@ chunk as an address for the lane, then settle the card above it."
   ;; The files the turn handed to its answer with ANSWER-FILE ride the
   ;; answer's own message, so a picture shows where the answer shows; the
   ;; choices it handed with ANSWER-CHOICES ride it as one row of buttons.
+  ;; An answer its turn marked waiting (ANSWER-WAITS), or that carries
+  ;; choices, is written down as waiting beside the messages it posted as
+  ;; (NOTE-ANSWER-WAITING), before its card settles.
   ;;
   ;; => the answer text; for a thread lane's first answer, the session id of
   ;; the room its ask was typed in: the second record the exchange settles
@@ -1510,7 +1535,8 @@ chunk as an address for the lane, then settle the card above it."
          (reply-to (lane-reference lane (or digest.ask-id lane.trigger-message-id)))
          (target lane.target)
          (files (collect-answer-files lane turn-id))
-         (choices (take-answer-choices lane turn-id)))
+         (choices (take-answer-choices lane turn-id))
+         (waits (multiple-value-list (take-answer-waits lane turn-id))))
     (when (and text (null digest.answer))
       ;; A missed live frame is recoverable from the durable event log. Keep
       ;; the recovered text on the captured digest so write-back and tests read
@@ -1557,6 +1583,9 @@ chunk as an address for the lane, then settle the card above it."
                            :controls (answer-controls host lane choices))
            (bind-addresses host lane target message-ids)
            (note-delivery (host-id host) delivered error lane.session-id)
+           (when (and delivered (or (first waits) choices))
+             (note-answer-waiting host (or (getf target :thread-id) (getf target :channel-id))
+                                  message-ids (second waits)))
            (if delivered
                (progn
                  (settle-card host lane digest)

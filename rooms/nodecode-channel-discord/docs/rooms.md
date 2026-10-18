@@ -201,10 +201,10 @@ message there.
 
 | Section | A thread is here when |
 | --- | --- |
-| Needs you | its newest words are the bot's and end on a question |
+| Needs you | its newest words are a bot answer marked as waiting on someone: the turn called `nck:answer-waits`, or put choices on it. The board never guesses from a question mark |
 | No answer | someone else spoke last, or nobody did, and nothing runs there |
 | Running | a turn runs there, or waits for a free slot |
-| Done | the bot answered and asked nothing |
+| Done | the bot answered and its answer waits on nobody |
 
 Each section shows its newest five threads, each a link with how long it has
 been quiet; Needs you shows the question each one ends on. **Show all**

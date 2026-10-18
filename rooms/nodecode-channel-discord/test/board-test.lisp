@@ -9,15 +9,16 @@
 
 (deftest channel-discord-board-sorts-a-thread-by-who-moves-next ()
   ;; A turn running or waiting there decides first; else the newest words:
-  ;; the bot's ending on a question need you, the bot's otherwise are done,
-  ;; anyone else's, or none, wait for an answer.
-  (is (eq :running (ncd:board-state :phase :running :bot-p t :text "Which one?")))
+  ;; the bot's answer marked waiting (NCK:ANSWER-WAITING) needs you, the
+  ;; bot's otherwise are done -- a question mark marks nothing (2026-10-18:
+  ;; the guess filed offers as Needs you and missed `say go' asks) -- anyone
+  ;; else's, or none, wait for an answer.
+  (is (eq :running (ncd:board-state :phase :running :bot-p t :waits "Which one?")))
   (is (eq :queued (ncd:board-state :phase :queued)))
-  (is (eq :needs (ncd:board-state :bot-p t :text (format nil "Landed.~%~%Should I push it?"))))
-  (is (eq :needs (ncd:board-state :bot-p t :text (format nil "- **A or B?**~%~%-# 3m")))
-      "small print and markdown's closing marks aside")
-  (is (eq :done (ncd:board-state :bot-p t :text "Is it in? Yes: landed and pushed.")))
-  (is (eq :noans (ncd:board-state :bot-p nil :text "any news?")) "someone else spoke last")
+  (is (eq :needs (ncd:board-state :bot-p t :waits "Push the pin?")))
+  (is (eq :needs (ncd:board-state :bot-p t :waits "")) "marked, on the answer's own last line")
+  (is (eq :done (ncd:board-state :bot-p t)) "an unmarked answer waits on nobody, whatever it ends on")
+  (is (eq :noans (ncd:board-state :bot-p nil :waits "Push?")) "someone else spoke last")
   (is (eq :noans (ncd:board-state)) "nobody said anything"))
 
 (deftest channel-discord-board-closes-what-went-quiet ()

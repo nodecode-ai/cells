@@ -411,6 +411,48 @@ are (TAKE-ANSWER-FILES)."
   (remhash lane.session-id *answer-choices*)
   (and entry (equal turn-id (getf entry :turn-id)) (getf entry :labels)))
 
+;;; An answer that waits on the person it answers -- a question, a go or no-go --
+;;; is marked so by its turn (ANSWER-WAITS; choices on it mark it too), never
+;;; guessed from its words. The mark is written down beside the messages the
+;;; answer posted as, so whoever reads the room's newest message reads whether
+;;; it waits: a reply after it moves the room on, and the mark with it.
+
+(defvar *answer-waits* (make-hash-table :test #'equal :synchronized t)
+  "Session id -> (:turn-id ID :question TEXT-OR-NIL): a running turn's mark,
+with ANSWER-WAITS, that its answer waits on the person it answers.")
+
+(defun take-answer-waits (lane turn-id &aux (entry (gethash lane.session-id *answer-waits*)))
+  "(values WAITS-P QUESTION) of the mark LANE's TURN-ID gave its answer --
+taken, as choices are (TAKE-ANSWER-CHOICES)."
+  (remhash lane.session-id *answer-waits*)
+  (if (and entry (equal turn-id (getf entry :turn-id)))
+      (values t (getf entry :question))
+      (values nil nil)))
+
+(defun waiting-key (room message-id)
+  "The state key the mark on MESSAGE-ID, posted in ROOM, is written under."
+  (format nil "waiting:~a:~a" room message-id))
+
+(defun note-answer-waiting (host room message-ids question)
+  "Write down that the answer HOST posted in ROOM as MESSAGE-IDS waits on the
+person it answers, on QUESTION -- or, with none, on its own last line."
+  ;; The answer has posted: a store that refuses the mark costs the board one
+  ;; line, never the answer's card.
+  (when (nlk:store-open-p)
+    (nlk:with-handlers ((error (condition)
+                          (warn "~a could not mark ~a waiting: ~a" (host-id host) room condition)))
+      (let ((json (nlk:encode-json-object (nlk:json-object "question" (or question "")))))
+        (dolist (id message-ids)
+          (nlk:session-state-put (format nil "channel-~a" (host-id host)) (waiting-key room id) json))))))
+
+(defun answer-waiting (host room message-id)
+  "What the answer HOST posted in ROOM as MESSAGE-ID waits on: the question
+its turn named, \"\" for its own last line, or NIL when it waits on nobody."
+  (let ((json (and (nlk:store-open-p)
+                   (nlk:session-state-get (format nil "channel-~a" (host-id host))
+                                          (waiting-key room message-id)))))
+    (and json (or (nlk:json-value (nlk:decode-json json) :string "question") ""))))
+
 ;;; Discord takes ten attachments on one message and refuses a plan that names
 ;;; more, so no delivery builds one.
 (defparameter +answer-file-count-cap+ 10
@@ -466,7 +508,8 @@ the model's explicit choice, in the order handed."
         (forget-lane-origin lane)
         (forget-lane-retired lane)
         (remhash lane.session-id *answer-files*)
-        (remhash lane.session-id *answer-choices*))
+        (remhash lane.session-id *answer-choices*)
+        (remhash lane.session-id *answer-waits*))
       (remhash session-id lanes.table)
       ;; Removing the entry the walk stands on is the one change a walk allows.
       (loop for address being the hash-keys of addresses

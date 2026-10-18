@@ -4,7 +4,9 @@
 ;;;;
 ;;;; channels.discord.board_channel names a channel the bot keeps ONE message
 ;;;; in, edited in place: every open thread the bot started, by who moves next.
-;;;; Needs you: the thread's newest words are the bot's and end on a question.
+;;;; Needs you: the thread's newest words are an answer of the bot's its turn
+;;;; marked waiting on someone (nck:answer-waits, or choices on it) -- marked,
+;;;; never guessed from a question mark.
 ;;;; No answer: someone else spoke last, or nobody did, and nothing runs there.
 ;;;; Running: a turn runs there, or waits to. Done: the bot answered and asked
 ;;;; nothing. Most urgent first, a stacked list that reads the same on a phone
@@ -55,8 +57,8 @@ accent. Running holds the threads whose turn waits, too.")
   (adapter nil)
   (channel "" :type string)
   (guild nil)
-  ;; Thread id -> (LAST-MESSAGE-ID BOT-P TEXT): its newest words, and the
-  ;; newest message they were read at.
+  ;; Thread id -> (LAST-MESSAGE-ID BOT-P TEXT SAID-ID): its newest words, the
+  ;; message they are, and the newest message they were read at.
   (heard (make-hash-table :test #'equal :synchronized t))
   (message-id nil)
   ;; The JSON of the message as last sent, so a pass that changes nothing
@@ -80,19 +82,14 @@ accent. Running holds the threads whose turn waits, too.")
   (remove-if (lambda (line) (or (zerop (length line)) (eql 0 (search "-#" line))))
              (mapcar #'nlk:trimmed (uiop:split-string (or text "") :separator '(#\Newline)))))
 
-(defun board-question-p (text)
-  "Whether TEXT ends on a question: its last line with words, small print
-aside, ends with a question mark, markdown's closing marks aside."
-  (let ((last (car (last (board-said-lines text)))))
-    (and last (ppcre:scan "\\?[*_`)\\]\\s]*$" last) t)))
-
-(defun board-state (&key phase bot-p text)
+(defun board-state (&key phase bot-p waits)
   "One thread's state: PHASE, its lane's :RUNNING or :QUEUED, first; else
-from its newest words, TEXT, the bot's when BOT-P: ending on a question
-:NEEDS, the bot's otherwise :DONE, anyone else's or none :NOANS."
+from its newest words, the bot's when BOT-P: an answer marked waiting
+(WAITS, NCK:ANSWER-WAITING's answer) :NEEDS, the bot's otherwise :DONE,
+anyone else's or none :NOANS."
   (cond ((member phase '(:running :queued)) phase)
         ((not bot-p) :noans)
-        ((board-question-p text) :needs)
+        (waits :needs)
         (t :done)))
 
 (defun board-close-p (state quiet-ms)
@@ -222,12 +219,12 @@ where one only waits to."
 
 (defun board-words (board thread-id last-id &aux (bot (discord-adapter-bot-user-id (board-adapter board)))
                                                  (known (gethash thread-id (board-heard board))))
-  "(values BOT-P TEXT READ-P) of THREAD-ID's newest words: its newest message
-with words or files in it, a card's wordless message passed over -- read
-again only when the thread's newest message, LAST-ID, moved. READ-P NIL: the
-thread could not be read."
+  "(values BOT-P TEXT READ-P SAID-ID) of THREAD-ID's newest words: its newest
+message with words or files in it, SAID-ID, a card's wordless message passed
+over -- read again only when the thread's newest message, LAST-ID, moved.
+READ-P NIL: the thread could not be read."
   (if (and known (equal (first known) last-id))
-      (values (second known) (third known) t)
+      (values (second known) (third known) t (fourth known))
       (multiple-value-bind (ok body) (board-call board "GET" (format nil "/channels/~a/messages?limit=10" thread-id))
         (if (not (and ok (vectorp body)))
             (values nil nil nil)
@@ -237,9 +234,10 @@ thread could not be read."
                                              (plusp (length (or (nlk:json-value message :array "attachments") #()))))))
                                   body))
                    (bot-p (and said (equal bot (nlk:json-value said :string "author" "id"))))
-                   (text (and said (nlk:json-value said :string "content"))))
-              (setf (gethash thread-id (board-heard board)) (list last-id bot-p text))
-              (values bot-p text t))))))
+                   (text (and said (nlk:json-value said :string "content")))
+                   (said-id (and said (nlk:json-value said :string "id"))))
+              (setf (gethash thread-id (board-heard board)) (list last-id bot-p text said-id))
+              (values bot-p text t said-id))))))
 
 (defun board-close (board thread-id)
   "Close THREAD-ID (THREAD-CLOSE-PLAN). => whether it closed."
@@ -273,13 +271,19 @@ the board's message. => the open threads' rows."
                 do (if (and (null phase) (>= quiet +board-quiet-close-ms+))
                        ;; Quiet past any thread's time: it closes whatever was said last.
                        (push id closing)
-                       (multiple-value-bind (bot-p text read-p) (board-words board id last)
+                       (multiple-value-bind (bot-p text read-p said-id) (board-words board id last)
                          (when (or read-p phase)
-                           (let ((state (board-state :phase phase :bot-p bot-p :text text)))
+                           ;; The mark is read each pass, never kept: an answer
+                           ;; read the moment it posted is marked a moment later.
+                           (let* ((waits (and bot-p said-id (answer-waiting adapter.host id said-id)))
+                                  (state (board-state :phase phase :bot-p bot-p :waits waits)))
                              (if (board-close-p state quiet)
                                  (push id closing)
                                  (push (list :id id :state state :quiet-ms quiet
-                                             :question (and (eq state :needs) (board-question text)))
+                                             :question (and (eq state :needs)
+                                                            (if (plusp (length waits))
+                                                                (nlk:clip waits 90 :ellipsis "…")
+                                                                (board-question text))))
                                        rows)))))))
         (let ((closed (loop for id in closing
                             repeat +board-closes-per-pass+

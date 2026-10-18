@@ -105,7 +105,7 @@ it over any platform, and the /channels status surface.")
    #:control-pressed #:completion-requested #:reaction-noticed
    #:make-host-from-section #:section-thread-behavior
    #:thread-title #:thread-ask-p #:message-target #:host-id
-   #:post-message #:post-file #:answer-file #:answer-choices #:choice #:menu-choice
+   #:post-message #:post-file #:answer-file #:answer-choices #:answer-waits #:answer-waiting #:choice #:menu-choice
    #:said-line #:press-token #:press-action #:candidate-press #:fetch-image #:schedule-flush #:*command-source* #:set-voice-replies
    #:home-target #:offer-card #:room-voice-replies
    #:flush-now #:deliver-answer #:on-delta #:on-fact-with-turn #:operator-p
