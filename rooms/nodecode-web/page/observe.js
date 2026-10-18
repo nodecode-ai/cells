@@ -339,16 +339,9 @@ function spans(wait, write, steps, hot) {
   return node;
 }
 
-function phoneTitle(title, sub) {
-  const node = el("div", "p-title");
-  node.append(el("h2", "", title));
-  if (sub) node.append(el("p", "", sub));
-  return node;
-}
-
 function phoneRun(data, ui, found, said, modelShare) {
   const all = data.totals;
-  const out = [phoneTitle(all.cost_usd != null ? t("{turns} in {time}, about {cost}.", said) : t("{turns} in {time}.", said),
+  const out = [headline(t("This session"), all.cost_usd != null ? t("{turns} in {time}, about {cost}.", said) : t("{turns} in {time}.", said),
     modelShare != null ? t("The model took {model}% of the time and steps took {steps}%.", { model: modelShare, steps: 100 - modelShare }) : "")];
   out.push(pstrip([[count(all.calls), t("model calls")], [pct((all.cached || 0) / ((all.input || 0) + (all.cached || 0) + (all.cache_write || 0))), t("cached")],
     [ms(all.usual_wait_ms), t("first word")], [all.window ? pct(all.peak_prompt / all.window) : tokens(all.peak_prompt), t("memory")]]));
@@ -387,7 +380,7 @@ function stepsOf(call, turn) {
 
 function phoneTurn(data, turn, ui) {
   const back = button("p-back", `‹ ${t("All turns")}`, { act: "run-back" });
-  const out = [back, phoneTitle(ORIGIN_WORDS[turn.origin] || t("Turn {n}", { n: turn.number }), turn.prompt ? oneLine(turn.prompt) : "")];
+  const out = [back, headline(t("This session"), ORIGIN_WORDS[turn.origin] || t("Turn {n}", { n: turn.number }), turn.prompt ? oneLine(turn.prompt) : "")];
   const wait = sum(turn.calls, (call) => call.wait_ms);
   out.push(pstrip([[count(turn.calls.length), t("model calls")], [count(turn.steps.length), t("steps")], [ms(turn.ms), t("wall time")],
     turn.cost_usd != null ? [usd(turn.cost_usd), t("cost")] : [pct(turn.ms ? wait / turn.ms : null), t("waiting")]]));

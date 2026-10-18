@@ -1192,3 +1192,25 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (equal "transparent" (funcall value ".led.off" "background")) "off is a hollow ring")
     (is (search "\"fail\" : r.on && r.level === \"started\" ? \"\" : \"off\"" (web-js-function (web-page-text "control.js") "cellRow")) "a loaded cell has no dot, a failed one the red")
     (is (equal "var(--primary)" (funcall value ".pill[aria-checked=\"true\"]" "background")) "an on switch is white")))
+
+;; Every place sits on the kit (step 6 of the standard, its proof sweep at 390
+;; and 1440 px in both themes): what the sweep found off it is closed. A phone's
+;; Run and its turns open on the one head, not a 32 px title of their own; the
+;; column's search is a field at the body's size (a finger's: the title size, so
+;; a phone does not zoom it); a running thing's lamp is the green that means
+;; running wherever it stands (an answer, the live verb, a command, a session),
+;; one that has ended the hollow ring; a hop that answers and a link that is back
+;; are green, not the accent.
+(deftest web-cell-every-place-sits-on-the-kit ()
+  (let* ((css (web-css-declarations (web-page-text "app.css")))
+         (observe (web-page-text "observe.js"))
+         (app (web-page-text "app.js")))
+    (is (not (search "phoneTitle" observe)) "no title of a phone's own")
+    (is (not (search ".p-title" (web-page-text "app.css"))) "nor its rules")
+    (is (search "[headline(t(\"This session\")" (web-js-function observe "phoneRun")) "a phone's Run opens on the head")
+    (is (search "headline(t(\"This session\")" (web-js-function observe "phoneTurn")) "and so does its turn")
+    (is (equal "var(--fs-body) var(--sans)" (subseq (web-css-value css ".finder input" "font") 0 26)) "the search is a field at the body's size")
+    (is (<= 16 (or (web-css-px css ".finder input" "font-size") 0)) "and under a finger large enough not to zoom")
+    (is (search "pulse ? \"led live pulse\" : \"led off\"" (web-js-function app "lamp")) "running is green, ended the ring")
+    (is (search "hop === \"ok\" ? \"led live\"" app) "a hop that answers is green")
+    (is (equal "var(--live)" (web-css-value css ".linkbar.back .led" "background")) "a link that is back is green")))

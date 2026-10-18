@@ -446,7 +446,7 @@ function renderOffline() {
   $("offline-hops").replaceChildren(...hops.map(([name, hop, said]) => {
     const li = el("li");
     if (hop) li.dataset.hop = hop;
-    li.append(el("i", hop ? "led" : "led off"), el("span", "name", name), el("span", "said", said));
+    li.append(el("i", hop === "ok" ? "led live" : hop ? "led" : "led off"), el("span", "name", name), el("span", "said", said));
     return li;
   }));
   $("offline-tries").textContent = t("Not connected · tried {n} times", { n: state.retry });
@@ -724,8 +724,10 @@ function gutter(name) {
   return gut;
 }
 
+// A running thing's mark is the green that means running (the standard's rule
+// 5); one that has ended keeps its place as the hollow ring.
 function lamp(pulse) {
-  return el("i", pulse ? "led pulse" : "led");
+  return el("i", pulse ? "led live pulse" : "led off");
 }
 
 // A fold the reader can open: native <details>, open where they left it, else
