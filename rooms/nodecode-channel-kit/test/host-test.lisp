@@ -1400,6 +1400,28 @@ LANE, as the one running channel."
           (is (search "Answered: Zero setup" (plan-content answer)))
           (is (eq :clear (plan-field answer "controls")) "its buttons go"))))))
 
+(deftest channel-each-press-is-its-own-submission ()
+  ;; A press is no message, so what makes it its own submission is the card
+  ;; it answered and the line it said: a press on a second card in the same
+  ;; lane is a new ask, never the first press arriving twice (the engine
+  ;; dedupes on the key, and a shared one left every press after a lane's
+  ;; first with no turn); the same press delivered twice is one ask.
+  (with-digest-host (host lane :name "presses" :host-keys (:platform (test-platform :choices t)))
+    (setf (nck:host-policy host) (channel-policy))
+    (nck:bind-lane-address (nck:host-lanes host) "c1" (nck:lane-session-id lane))
+    (nck:bind-lane-address (nck:host-lanes host) "c2" (nck:lane-session-id lane))
+    (let ((asks '()))
+      (with-stubbed-fdefinition (nck:continue-lane (host lane ask)
+                                  (push ask asks))
+        (nck:handle-candidate host (test-press "Run it" "c1"))
+        (nck:handle-candidate host (test-press "Run it" "c2"))
+        (nck:handle-candidate host (test-press "Run it" "c2")))
+      (is (= 3 (length asks)))
+      (destructuring-bind (again second first) (mapcar #'nck::ask-identity asks)
+        (is (stringp first) "a press has a key of its own")
+        (is (not (equal first second)) "another card's press is another ask")
+        (is (equal second again) "the same press twice is one ask")))))
+
 (deftest channel-a-press-on-a-card-no-lane-answers ()
   ;; A card whose lane is gone has no question open: the presser is told so,
   ;; privately, and nothing runs.

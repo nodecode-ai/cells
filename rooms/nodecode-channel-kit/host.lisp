@@ -2179,6 +2179,22 @@ chatter line stays as the record that it was said."
                             (cons (car entry) kept) (car entry))
                           entry)))))
 
+(defun press-key (host candidate)
+  "The submission key of a press on a choice (ASK-IDENTITY): the card it
+answered and the line it said. NIL for a message, whose id is its own key."
+  ;; A press is no message. Without a key of its own every press in a lane
+  ;; would share one command id, which the engine dedupes on: each press
+  ;; after the lane's first would read as that first one arriving twice --
+  ;; admitted as a duplicate, no turn started, its card waiting on the
+  ;; provider until a typed line came. A card is answered once (ANSWER-CARD
+  ;; takes its choices away), so the card and the line name one press, and
+  ;; the same press delivered twice is still one ask.
+  (when (and (candidate-pressed-p candidate)
+             (null (source-field candidate "message_id")))
+    (format nil "press-~a-~a"
+            (or (source-field candidate "reply_to_message_id") "")
+            (nlk:short-digest (candidate-said host candidate) 8))))
+
 (defun build-ask (host candidate lane-session-id continue-p
                   &key ambient-room)
   "The ask CANDIDATE opens, under LANE-SESSION-ID."
@@ -2213,6 +2229,7 @@ chatter line stays as the record that it was said."
          :lane lane-session-id
          :owner-id (source-field candidate "user_id")
          :message-id (source-field candidate "message_id")
+         :key (press-key host candidate)
          :target (channel-target candidate)
          :attachments anchors
          :contract (lane-contract
