@@ -22,6 +22,9 @@
 ;; adapter — and this file calls one function of it on the dispatch path.
 (declaim (ftype (function (t t) t) route-voice-dispatch))
 (declaim (ftype (function (t) t) start-voice))
+;; board.lisp is loaded after this file too: the board is built on the adapter.
+(declaim (ftype (function (t t) t) start-board))
+(declaim (ftype (function (t) t) board-pressed))
 
 (defstruct (discord-adapter (:copier nil) (:constructor %make-discord-adapter))
   (host nil)
@@ -95,7 +98,15 @@ instruction to follow: ~s.~]"
             bot-user-id
             (and topic (nlk:clip (nlk:one-line topic) 240)))))
 
-(defun discord-platform (&key bot-user-id (application-id (constantly nil)))
+(defun discord-platform (&key bot-user-id (application-id (constantly nil))
+                         &aux (platform (discord-platform-record bot-user-id application-id)))
+  "The Discord PLATFORM (DISCORD-PLATFORM-RECORD), and what it carries beside
+the record: a thread closes as an archived one -- out of the channel's list,
+kept, and open again once anyone writes in it."
+  (setf (platform-plan-close-thread platform) #'thread-close-plan)
+  platform)
+
+(defun discord-platform-record (bot-user-id application-id)
   "The Discord PLATFORM: REST v10 plans, 2000-character chunks, the
 entity-reference mention, snowflake ids that are global addresses, the
 `-#' subtext footer, a typing beat that lives ~10 s, the command menu as
@@ -189,7 +200,10 @@ falls through."
                                     (mention-involves-p (host-policy host) text)))
                      (route-discord-interaction payload))
                  #'handle-candidate)
-          (route (route-discord-control payload) #'control-pressed)
+          ;; The thread board's own buttons are the board's (board.lisp).
+          (route (route-discord-control payload)
+                 (lambda (host press)
+                   (or (board-pressed press) (control-pressed host press))))
           (route (route-discord-autocomplete payload) #'completion-requested)
           (route (route-discord-reaction payload :bot-user-id bot) #'reaction-noticed)))))
 
@@ -651,15 +665,19 @@ legibly, see NCK:CALL."
                     :gateway-url (config-string section "gateway_url"
                                                 +discord-gateway-url+)
                     :intents (config-integer section "intents" +discord-default-intents+
-                                             :min 0))) (stop-voice nil))
+                                             :min 0))) (stop-voice nil) (stop-board nil))
         (run-host host "ws" (lambda (stop-p) (discord-ws-lap adapter stop-p))
                   :on-start (lambda ()
                               (setf *discord-adapter* adapter)
-                              (setf stop-voice (start-voice section)))
+                              (setf stop-voice (start-voice section))
+                              (setf stop-board (start-board adapter section)))
                   :on-stop (lambda ()
                              (when stop-voice
                                (ignore-errors (funcall stop-voice))
                                (setf stop-voice nil))
+                             (when stop-board
+                               (ignore-errors (funcall stop-board))
+                               (setf stop-board nil))
                              ;; A stale stop thunk racing a respawned lane must
                              ;; not clear the fresh adapter's binding.
                              (when (eq *discord-adapter* adapter)

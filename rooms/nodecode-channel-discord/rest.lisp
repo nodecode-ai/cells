@@ -584,6 +584,16 @@ asked of a thread's own creator."
   (rest-plan "DELETE" (format nil "/channels/~a" thread-id)
              "delete_thread" t timeout-seconds))
 
+(defun thread-close-plan (thread-id &key (timeout-seconds 30))
+  "PATCH /channels/<thread> {archived: true}: the thread put away, out of
+the channel's open threads, kept and searchable, and open again once anyone
+writes in it."
+  ;; The bot that opened a thread may archive it, as it may rename it.
+  ;; Retried: a close that fails leaves the thread open, and a second close of
+  ;; a closed thread changes nothing.
+  (rest-plan "PATCH" (format nil "/channels/~a" thread-id) "close_thread" t timeout-seconds
+             (nlk:json-object "archived" t)))
+
 ;;; --- the bot's own emojis (a card's marks) ------------------------------------
 ;;; An application owns emojis of its own, which its bot may use in any
 ;;; server without anyone's Nitro: the card's green check, its spinner and its

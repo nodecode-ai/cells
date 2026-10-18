@@ -183,6 +183,38 @@ When the bot opened a thread for an ask and the model answers with silence
 (see [turns.md](turns.md#silence)), the empty thread is removed, unless
 someone wrote in it or the turn posted something there.
 
+### Closing a thread
+
+Every answer in a thread carries a **Close thread** button under its words.
+The person who asked, or one of the room's operators, presses it to close
+the thread: Discord archives it, so it leaves the channel's list of open
+threads, stays searchable, and opens again as soon as anyone writes in it.
+While a turn still runs in the thread, Close waits for it to answer. The
+answer to every press is private.
+
+### The thread board
+
+`board_channel` names a channel the bot keeps one message in, edited in
+place: every open thread it started, sorted by who moves next. Make the
+channel read-only for everyone but the bot, so the board stays the only
+message there.
+
+| Section | A thread is here when |
+| --- | --- |
+| Needs you | its newest words are the bot's and end on a question |
+| No answer | someone else spoke last, or nobody did, and nothing runs there |
+| Running | a turn runs there, or waits for a free slot |
+| Done | the bot answered and asked nothing |
+
+Each section shows its newest five threads, each a link with how long it has
+been quiet; Needs you shows the question each one ends on. **Show all**
+lists every open thread to whoever pressed it, and so does `/board`.
+
+The board closes what is finished: a Done thread after 48 hours with nothing
+said in it, any other after 7 days. **Close all done**, for the room's
+operators, closes every Done thread at once. The board reads the threads
+again every minute and edits its message only when what it says changed.
+
 ## The room record
 
 Each channel, thread and DM is a room: a durable session holding what was

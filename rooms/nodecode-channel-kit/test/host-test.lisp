@@ -1994,3 +1994,56 @@ first waiting at QUEUED-AT."
       (nck:digest-note-terminal digest :completed nil (nck:now-ms))
       (is (equal '(:failed :done :stopped :stopped)
                  (mapcar #'first (getf (nck:digest-card digest (nck:now-ms)) :steps)))))))
+
+(deftest channel-answer-in-a-thread-carries-close ()
+  ;; An answer in a thread the platform can close carries Close under its
+  ;; words, naming who asked; a flat answer, or one on a platform that cannot
+  ;; close a thread, carries none.
+  (flet ((controls (platform target)
+           (with-digest-host (host nil :name "close-row" :responses (replies "a1")
+                                       :host-keys (:platform platform))
+             (let ((lane (nck:intern-lane (nck:host-lanes host) "chat-123-t42-m5"
+                                          :target target :trigger-message-id "5")))
+               (setf (nck:lane-owner-id lane) "alice")
+               (nck::deliver-answer host lane (nck:make-turn-digest :turn-id "t9" :phase :completed
+                                                                    :answer "Landed."))
+               (plan-field (plan-matching (nck:recording-executor-plans executor) :content "Landed.")
+                           "controls")))))
+    (is (equal '((("Close thread" "nck:close:alice" :secondary)))
+               (controls (test-platform :choices t :close t) '(:channel-id "123" :thread-id "42"))))
+    (is (null (controls (test-platform :choices t :close t) '(:channel-id "123")))
+        "a flat answer has no thread to close")
+    (is (null (controls (test-platform :choices t) '(:channel-id "123" :thread-id "42")))
+        "nor has a platform that cannot close one")))
+
+(deftest channel-close-press-is-the-askers-or-an-operators ()
+  ;; Close closes the thread the press came from when the person who asked
+  ;; or a room operator presses it; anyone else's press, and one while a turn
+  ;; still runs there, closes nothing. Every press is answered to the presser
+  ;; alone.
+  (handler-bind ((warning #'muffle-warning))
+    (with-digest-host (host nil :name "close-press"
+                                :responses (replies "ok" "ok" "ok" "ok" "ok" "ok" "ok" "ok")
+                                :host-keys (:owners '("mike") :platform (test-platform :choices t :close t)))
+      (let ((lane (nck:intern-lane (nck:host-lanes host) "chat-123-t42-m5"
+                                   :target '(:channel-id "123" :thread-id "42")
+                                   :trigger-message-id "5")))
+        (setf (nck:lane-owner-id lane) "alice")
+        (flet ((tap (id user)
+                 (nck:control-pressed host (list :id id :user-id user :user-name user :message-id "a1"
+                                                 :channel-id "42" :data "nck:close:alice"))
+                 (plan-field (await-plan executor :path (format nil "/presses/~a" id)) "text"))
+               (closes ()
+                 (length (plans-matching (nck:recording-executor-plans executor) :label "close_thread"))))
+          (is (equal "Only the person who asked or the room's operators can close this thread."
+                     (tap "i1" "bob")))
+          (setf (nck:lane-active-turn-id lane) "t2")
+          (is (equal "A turn still runs here: close the thread once it has answered, or stop it first."
+                     (tap "i2" "alice")))
+          (setf (nck:lane-active-turn-id lane) nil)
+          (is (equal "Closed. Write in it to open it again." (tap "i3" "alice")))
+          (is (await-plan executor :label "close_thread" :path "/rooms/42" :method "PATCH")
+              "the asker's press closes the thread it came from")
+          (is (= 1 (closes)) "and only that press did")
+          (is (equal "Closed. Write in it to open it again." (tap "i4" "mike")))
+          (is (await (:timeout 10) (= 2 (closes))) "so does an operator's"))))))

@@ -72,6 +72,7 @@ See [rooms.md](rooms.md#where-it-answers-threads).
 | `thread_behavior` | `"create_per_message"`, `"reply_in_place"`, `"disabled"` | `"create_per_message"` | An ask in a plain channel opens a thread off its message; or the answer is a reply in the channel; or as `reply_in_place`, with messages inside threads refused. |
 | `flat_channels` | list of channel ids | `[]` | Channels that keep the reply-in-place surface when threads are on. |
 | `catch_up_minutes` | integer, at least 0 | `60` | After downtime, how many minutes back the bot reads missed messages. `0` never. |
+| `board_channel` | channel id | unset | A channel the bot keeps one message in: every open thread it started, by who moves next. Done threads close after 48 hours quiet, any other after 7 days. See [rooms.md](rooms.md#the-thread-board). |
 | `room_tokens` | integer, at least 0 | `40000` | The most history a room keeps for its asks, in estimated tokens (four characters each; providers count about a quarter more). Past it, the older half is dropped from what asks see. `0` keeps everything. |
 | `soul_file` | file path | `SOUL.md` in your Nodecode home | The persona file every room's asks read. See [rooms.md](rooms.md#persona). |
 | `agents` | object | `{}` | Named agents a room's asks may run as: `folder`, `soul_file`, `prompt`, `model`, `provider`, `skills`. See below. |

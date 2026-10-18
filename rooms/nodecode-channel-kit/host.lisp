@@ -810,9 +810,11 @@ warning naming WHAT. => whether they were delivered."
       (let ((session-id (after "nck:details:"))
             (press (after +step-press-prefix+))
             (asked (after "nck:access:"))
+            (closer (after "nck:close:"))
             (granted (after "nck:grant:")))
         (cond ((equal data "nck:lift") (lift-pressed host payload))
               (asked (access-pressed host payload asked))
+              (closer (close-pressed host payload closer))
               (granted (grant-pressed host payload granted))
               (session-id (details-pressed host payload session-id))
               (press (step-pressed host payload press))
@@ -882,6 +884,70 @@ alone -- a room operator's raises the limit (RAISE-LIMIT)."
                                         (format nil "Only the room's operators can raise the limit (~d turn~:p at once): ask one of them."
                                                 host.max-concurrent-turns)))
                    (format nil "control ack for ~a failed" (getf payload :id))))
+
+;;; --- Close (an answer's way to put its thread away) ---------------------------------
+;;; An answer in a thread carries Close under its words. The asker's press, or a
+;;; room operator's, closes the thread the press came from -- out of the room's
+;;; open threads, kept, and open again once anyone writes in it -- unless a turn
+;;; still runs there. Anyone else's press moves nothing. Every press is answered
+;;; to the presser alone.
+
+(nlk:define-side-table platform-plan-close-thread (:test #'eq :weakness :key :synchronized t)
+  "A PLATFORM's (thread-id &key timeout-seconds) => the plan that CLOSES a
+thread: puts it away, out of the room's open threads, kept and searchable,
+and open again once anyone writes in it (Discord's archive). NIL when the
+platform cannot close one: an answer in a thread then carries no Close.")
+;; A table hung beside the platform rather than a slot of it: a running image
+;; holds its platforms, and a slot added to the record would leave them
+;; obsolete under it.
+
+(defun answer-controls (host lane choices &aux (thread (getf lane.target :thread-id)))
+  "The rows of buttons LANE's answer carries: its CHOICES, one row of buttons
+each saying its label; then, in a thread the platform can close, Close
+(CLOSE-PRESSED), naming who asked."
+  (append (and choices
+               (list (loop for label in choices
+                           collect (choice label label :style :primary))))
+          (and thread (platform-choices host.platform)
+               (host-plan host #'platform-plan-close-thread thread)
+               (list (list (list "Close thread" (format nil "nck:close:~a" (or lane.owner-id ""))
+                                 :secondary))))))
+
+(defun thread-running-p (host thread-id &aux (running nil))
+  "Whether a turn runs, or waits to, in the thread THREAD-ID."
+  (map-lanes host.lanes
+             (lambda (lane)
+               (when (and (equal thread-id (getf lane.target :thread-id))
+                          (or lane.active-turn-id
+                              (and lane.digest (eq :queued (turn-digest-phase lane.digest)))))
+                 (setf running t))))
+  running)
+
+(defun close-pressed (host payload owner-id &aux (user-id (getf payload :user-id))
+                                                 (thread (getf payload :channel-id)))
+  "Worker thread: an answer's Close press -- the asker's (OWNER-ID) or a room
+operator's closes the thread the press came from (PLATFORM-PLAN-CLOSE-THREAD)."
+  (let* ((allowed (or (operator-p host user-id)
+                      (and (plusp (length owner-id)) (equal user-id owner-id))))
+         (plan (and (stringp thread) (host-plan host #'platform-plan-close-thread thread)))
+         (busy (and plan (thread-running-p host thread)))
+         (text (cond ((not allowed) "Only the person who asked or the room's operators can close this thread.")
+                     ((null plan) "This room can't be closed.")
+                     (busy "A turn still runs here: close the thread once it has answered, or stop it first.")
+                     (t "Closed. Write in it to open it again."))))
+    ;; The answer goes first: a press is answered within the platform's few
+    ;; seconds, and a closed thread takes no more words.
+    (deliver-or-warn host (host-plan host #'platform-plan-control-ack payload :text text)
+                     (format nil "control ack for ~a failed" (getf payload :id)))
+    (when (and allowed plan (not busy))
+      (nlk:bind (((closed _ error) (execute-delivery (list plan) host.executor)))
+        ;; A close the platform refused leaves the thread open, and says so
+        ;; where the press said it closed.
+        (unless closed
+          (post-message host (list :channel-id thread :thread-id thread)
+                        (format nil "This thread did not close: ~a" error)
+                        :what "close refusal"))
+        closed))))
 
 ;;; --- Ask for access (an operator-only command's way past the gate) ------------------
 ;;; A refused command carries Ask for access. The refused person's press posts
@@ -1488,9 +1554,7 @@ chunk as an address for the lane, then settle the card above it."
                            :reply-to reply-to :ping (null origin)
                            :mentions (and origin lane.owner-id (list lane.owner-id))
                            :files files
-                           :controls (and choices
-                                          (list (loop for label in choices
-                                                      collect (choice label label :style :primary)))))
+                           :controls (answer-controls host lane choices))
            (bind-addresses host lane target message-ids)
            (note-delivery (host-id host) delivered error lane.session-id)
            (if delivered
@@ -2518,7 +2582,7 @@ on, read again: the panel's :NOTICE."
                        (values text nil nil))))
                 (t (values text nil nil))))))))
 
-(defparameter +private-commands+ '("stop" "channels" "models" "think" "effort")
+(defparameter +private-commands+ '("stop" "channels" "models" "think" "effort" "board")
   "Commands whose answer only acknowledges what the room sees happen anyway —
 the stopped turn's own line says it stopped — or is a picker the person who
 ran it works alone, and so is said to that person alone, where the platform

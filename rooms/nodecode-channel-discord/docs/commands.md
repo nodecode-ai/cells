@@ -76,8 +76,8 @@ pairing code a stranger's DM is offered.
 
 ## Private answers
 
-The answers of `/stop`, `/channels` and `/models` run from the menu are
-private: only the person who ran them sees them. So is every refusal from the
+The answers of `/stop`, `/channels`, `/models` and `/board` run from the menu
+are private: only the person who ran them sees them. So is every refusal from the
 menu. A private answer is one message; text past 2,000 characters is not
 sent. Every other answer is visible to the room.
 
@@ -142,6 +142,7 @@ the terminal has.
 | `/channels pair CODE` | Lets in the person a pairing code was given to. |
 | `/channels unpair USER-ID` | Takes a pairing back. |
 | `/channels paired` | Who is paired, and how many codes wait. |
+| `/board` | Every open thread the bot started, by who moves next, when `board_channel` is set. See [rooms.md](rooms.md#the-thread-board). Private. |
 | `/voice [join \| leave \| status \| on \| tts \| off \| notes [stop] \| say WORDS]` | The voice channel, voice-message answers in the room it is typed in, and meeting notes. Bare, a card with Join or Leave, notes, and a menu for the room's voice messages. See [voice.md](voice.md#the-voice-card). |
 
 ### Commands of other cells

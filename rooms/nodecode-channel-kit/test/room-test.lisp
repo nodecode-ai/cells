@@ -43,7 +43,7 @@
 (defun test-strip-mention (text bot)
   (nck:remove-all (format nil "<@~a>" bot) text))
 
-(defun test-platform (&key (prefix "chat") (bot "999") threads files choices)
+(defun test-platform-record (&key (prefix "chat") (bot "999") threads files choices)
   "A platform whose plans are plain request plans against /rooms/<id>:
 enough for the host to post, edit, delete and type against a recording
 executor."
@@ -186,6 +186,7 @@ PATCH /rooms/<thread> names a thread TARGET already holds."
                                        (nck:rest-plan "DELETE" (format nil "/rooms/~a" thread-id)
                                                       "delete_thread" t timeout-seconds))
                  :thread-link (lambda (thread-id) (and thread-id (format nil "<#~a>" thread-id)))))
+      ;; CLOSE makes it one that can close a thread: PATCH /rooms/<thread>.
       (and files
            (list :plan-file
                  (lambda (target pathname &key content reply-to voice timeout-seconds)
@@ -198,6 +199,18 @@ the message it answers and the voice message's length on the body."
                                           (and reply-to (list (cons "reply_to" reply-to)))
                                           (and voice (list (cons "seconds"
                                                                  (getf voice :seconds)))))))))))))
+
+(defun test-platform (&rest keys &key close &allow-other-keys)
+  "TEST-PLATFORM-RECORD of KEYS; CLOSE makes it one that can close a thread,
+by PATCH /rooms/<thread>, as the kit's side table beside a platform holds."
+  (let ((platform (apply #'test-platform-record (alexandria:remove-from-plist keys :close))))
+    (when close
+      (setf (nck:platform-plan-close-thread platform)
+            (lambda (thread-id &key timeout-seconds)
+              (nck:rest-plan "PATCH" (format nil "/rooms/~a" thread-id)
+                             "close_thread" t timeout-seconds
+                             (nlk:json-object "archived" t)))))
+    platform))
 
 (defun test-host (&key executor (max-concurrent 2) (owners '("mike"))
                        (name "room-test-lanes") (workers nil) reactions

@@ -180,6 +180,9 @@ allowed_channels, so ids are picked by name."
   ("catch_up_minutes" :integer :default 60
                      :doc "after the bot was away — a restart, a machine that was off — read what the channels said in the last this-many minutes of it and answer the asks it missed, each marked as late; 0 never")
   ("soul_file" :path :doc "a SOUL.md whose text is the room's standing persona")
+  ("board_channel" :string
+                   :choices #'probe-channel-choices
+                   :doc "a channel the bot keeps one message in, edited in place: every open thread it started, by who moves next (needs you, no answer, running, done); a done thread closes after 48 hours quiet, any other after 7 days")
   ;; Voice needs none of these: /voice join sits beside whoever typed it.
   ;; Discord requires its end-to-end encryption (DAVE) for voice now, so the
   ;; first join fetches libdave into the cache — see discord/dave.lisp.
