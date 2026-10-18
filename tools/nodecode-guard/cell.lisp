@@ -10,7 +10,7 @@
 ;;;; NLK:CONFIG-REFUSAL, which the gateway's START-CELLS turns into one loud
 ;;;; warning with the gateway booting regardless.
 ;;;;
-;;;; NOT a security boundary: containment is an environment gate (src/PLAN.md)
+;;;; NOT a security boundary: containment is an environment gate
 ;;;; and eval has full host authority -- this is a speed bump.
 ;;;;
 ;;;; WHAT THE RULES READ. This is a MONO-TOOL organism: EVAL's
