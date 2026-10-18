@@ -481,12 +481,13 @@ picker card, (values TEXT CONTROLS)."
 ;;; --- the effort picker (a /think card) ---------------------------------------------------
 
 (defun room-effort-command (host candidate args room
-                            &aux (words (nlk:split-words (or args "")))
-                                  (target (channel-target candidate))
-                                  (agent (agent-of host (agent-for host room target
-                                                                    (candidate-source candidate))))
-                                  (here (if (getf target :thread-id) "thread" "channel"))
-                                  (cards (platform-choices host.platform)))
+                            &aux
+                            (words (nlk:split-words (or args "")))
+                            (target (channel-target candidate))
+                            (agent (agent-of host (agent-for host room target
+                                                             (candidate-source candidate))))
+                            (here (if (getf target :thread-id) "thread" "channel"))
+                            (cards (platform-choices host.platform)))
   "Worker thread: the room's /think ARGS — a reasoning effort for ROOM alone,
 or a picker card where the platform carries choices."
   (multiple-value-bind (provider model ladder) (effort-target host room target agent)

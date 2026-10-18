@@ -264,8 +264,7 @@ threads: the request, platform and seam tests drive it directly."
                                         (aref (aref (gethash "inline_keyboard" (plan-field edit "reply_markup")) 0) 0))))))
         (is (null (nct:press-response-plan press "refused" :private t)))
         (is (null (nct:press-response-plan (tg-message "{\"message_id\": 12, \"chat\": {\"id\": 555}, \"text\": \"/cron\"}")
-                                           nil))
-            "a command typed is answered in the chat")))))
+                                           nil)) "a command typed is answered in the chat")))))
 
 (deftest channel-telegram-platform-carries-files ()
   ;; The kit's file seam over Telegram's own plan: the platform answers a
@@ -298,8 +297,7 @@ threads: the request, platform and seam tests drive it directly."
       (is (= 1 (length plans)))
       (is-plan (first plans) :path "/setMyCommands" :timeout 5)
       (is (equal "help" (gethash "command" (aref (plan-field (first plans) "commands") 0)))))
-    (is (eq (fdefinition 'nct:press-response-plan) (nck:platform-plan-respond platform))
-        "a press is answered in place; a command typed, in the chat (PRESS-RESPONSE-PLAN)")))
+    (is (eq (fdefinition 'nct:press-response-plan) (nck:platform-plan-respond platform)) "a press is answered in place; a command typed, in the chat (PRESS-RESPONSE-PLAN)")))
 
 (deftest channel-telegram-file-fetchers ()
   ;; A photo or a recording admitted from Telegram gains the thunk that

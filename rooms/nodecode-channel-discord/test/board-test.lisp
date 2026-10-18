@@ -61,8 +61,7 @@
                         collect (nlk:json-value part :string "content")))
          (buttons (remove-if-not (lambda (part) (eql 2 (nlk:json-value part :integer "type"))) parts)))
     (is (equal '(#xFA8B3E #x23A55A #x80848E)
-               (mapcar (lambda (part) (nlk:json-value part :integer "accent_color")) containers))
-        "Needs you, Running, Done: a section with no thread is left out")
+               (mapcar (lambda (part) (nlk:json-value part :integer "accent_color")) containers)) "Needs you, Running, Done: a section with no thread is left out")
     (let ((needs (find "**Needs you**" texts :test (lambda (needle text) (search needle text)))))
       (is (search "**Needs you** · 9" needs))
       (is (= 5 (count-matches "<#10" needs)) "the newest five")
@@ -78,8 +77,7 @@
     (is (equal '("Show all")
                (mapcar (lambda (part) (nlk:json-value part :string "label"))
                        (remove-if-not (lambda (part) (eql 2 (nlk:json-value part :integer "type")))
-                                      (board-test-parts (ncd:board-components (butlast rows))))))
-        "no Close all done while nothing is done")))
+                                      (board-test-parts (ncd:board-components (butlast rows)))))) "no Close all done while nothing is done")))
 
 (deftest channel-discord-board-list-answers-every-thread ()
   ;; Show all and /threads list every open thread by section, cut to one

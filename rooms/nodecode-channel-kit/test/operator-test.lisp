@@ -369,8 +369,7 @@ p2 serving m2 and shared."
                              ("low" "/think low" "" nil)
                              ("high" "/think high" "" nil)))
                            ("Provider default" "/think default" :secondary t))
-                         (press-lines controls))
-                  "the same card /think opens"))
+                         (press-lines controls)) "the same card /think opens"))
             ;; A model the catalog says does not reason: the words alone.
             (is (equal (list (format nil "this channel runs p2/shared from its next ask; the organism's default is unchanged"))
                        (models "p2 shared")))
@@ -411,8 +410,7 @@ p2 serving m2 and shared."
             (is (search "Current: high" (first (think thread "" "chat-100-t42"))))
             (is (search "follows p1/m1's provider default"
                         (first (think thread "default" "chat-100-t42"))))
-            (is (equal "high" (nck::lane-effort host "chat-100-t42" '(:channel-id "100" :thread-id "42")))
-                "clearing a thread reveals the inherited channel pick")))))))
+            (is (equal "high" (nck::lane-effort host "chat-100-t42" '(:channel-id "100" :thread-id "42"))) "clearing a thread reveals the inherited channel pick")))))))
 
 (deftest channel-operator-a-room-effort-reaches-its-lane ()
   ;; The room setting is projected onto each lane's durable model selection

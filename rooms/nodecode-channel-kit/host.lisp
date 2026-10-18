@@ -2640,9 +2640,10 @@ refused command.")
               :controls (list (list (list "Ask for access" (format nil "nck:access:~a" name) :primary))))))
 
 (defun refuse (host candidate text what &key controls
-                                       &aux (user (source-field candidate "user_id"))
-                                            (key (cons (host-id host) user))
-                                            (now (now-ms)))
+                                       &aux
+                                       (user (source-field candidate "user_id"))
+                                       (key (cons (host-id host) user))
+                                       (now (now-ms)))
   "Worker thread: TEXT, a refusal, to the person CANDIDATE is — to them alone
 where the platform can, CONTROLS under it — and a word to the operator's
 shells naming who was refused WHAT, at most once in ten minutes a person."

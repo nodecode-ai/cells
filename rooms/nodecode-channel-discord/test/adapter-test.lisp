@@ -148,8 +148,7 @@ adapter and the fake gateway have stopped."
         "under READY's application id"
         (is-plan menu :path "/applications/app1/commands")
         (is (wire-row "help" (nck:request-plan-body menu) "name"))
-        (is (null (wire-row "model-aux" (nck:request-plan-body menu) "name"))
-            "the auxiliary model is /models' own")
+        (is (null (wire-row "model-aux" (nck:request-plan-body menu) "name")) "the auxiliary model is /models' own")
         (let ((models (wire-row "models" (nck:request-plan-body menu) "name")))
           (is-present models "/models carries the auxiliary model's form"
             (is (equal "/models [provider] [model] | aux [provider] [model | default] | list | refresh"
@@ -193,8 +192,7 @@ adapter and the fake gateway have stopped."
           (is (= 8 (nlk:json-value body :integer "type")))
           (is (some (lambda (choice)
                       (equal "aux" (nlk:json-value choice :string "value")))
-                    (coerce choices 'list))
-              "aux is offered while the tail could still be it"))))))
+                    (coerce choices 'list)) "aux is offered while the tail could still be it"))))))
 
 (deftest channel-discord-edit-answers-end-to-end ()
   ;; The reported failure (2026-09-12): a message edited to involve the bot

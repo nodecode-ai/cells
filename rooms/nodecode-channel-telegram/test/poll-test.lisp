@@ -74,8 +74,7 @@ private chat 555 — as JSON; FIELDS the object's other members."
 (deftest channel-telegram-get-updates-plan ()
   (let ((plan (nct:get-updates-plan 55 :poll-timeout-seconds 10)))
     (is-plan plan :path "/getUpdates" :timeout 20 :retry nil "offset" 55 "timeout" 10)
-    (is (equalp #("message" "callback_query") (gethash "allowed_updates" (nck:request-plan-body plan)))
-        "messages, and presses on the controls they carry"))
+    (is (equalp #("message" "callback_query") (gethash "allowed_updates" (nck:request-plan-body plan))) "messages, and presses on the controls they carry"))
   (let ((plan (nct:get-updates-plan nil :allowed-updates
                                     '("message" "message_reaction"))))
     (is (null (gethash "offset" (nck:request-plan-body plan))))
