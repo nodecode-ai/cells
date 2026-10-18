@@ -1142,3 +1142,31 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (search "banner(trouble.tone === \"danger\" ? \"fail\" : \"need\"" observe) "so is the dashboard's alert")
     (is (search "banner(\"fail\", plural(failed" (web-js-function control "drawCells")) "and a place's failure")
     (is (equal "var(--fail)" (funcall value ".banner[data-tone=\"fail\"], .banner[data-tone=\"danger\"]" "--tone")) "its failed tone")))
+
+;; Words (step 4 of the standard): capitals belong to the 11 px micro label
+;; alone, and every rule that sets them sets it whole (Martian Mono, 500, the
+;; micro size and spacing); a word button speaks in sentence case; help, notes
+;; and what a page says are sans -- mono is for literal machine text; a head's
+;; sentence is the state size at every width; and a fact's field name leaves the
+;; screen for its tooltip. Measured before it: 7 capital styles on a phone, help
+;; and placeholders in mono, raw keys (started_at) under the Gateway's values.
+(deftest web-cell-the-page-speaks-in-words ()
+  (let* ((css (web-css-declarations (web-page-text "app.css")))
+         (rules (let ((table (make-hash-table :test #'equal)))
+                  (loop for (rule . declaration) in css
+                        unless (search ".prose" rule)
+                          do (push declaration (gethash rule table)))
+                  table))
+         (capitals (loop for rule being the hash-keys of rules using (hash-value declarations)
+                         when (member "text-transform: uppercase" declarations :test #'string=)
+                           unless (and (some (lambda (d) (cl-ppcre:scan "^font:\\s*500 var\\(--fs-micro\\)(/[0-9.]+)? var\\(--micro\\)$" d)) declarations)
+                                       (member "letter-spacing: var(--ls-micro)" declarations :test #'string=))
+                             collect rule))
+         (value (lambda (selector property) (web-css-value css selector property))))
+    (is (null capitals) (format nil "capitals only in the micro label's style: ~{~a~^, ~}" capitals))
+    (is (equal "none" (funcall value ".word" "text-transform")) "a word button in sentence case")
+    (is (search "var(--sans)" (funcall value ".word" "font")) "and sans")
+    (dolist (help '(".obs-note" ".ctl-notice" ".ctl-sub" ".ctl-cfg-doc" ".toast" ".finder input" ".zoom-bar .hint"))
+      (is (notany (lambda (d) (search "var(--mono)" d)) (gethash help rules)) (format nil "~a leaves mono" help)))
+    (is (search "var(--fs-state)" (funcall value ".display" "font")) "a head's sentence is the state size")
+    (is (search "if (tag) row.title = tag;" (web-js-function (web-page-text "control.js") "fact")) "a field's name is a tooltip")))

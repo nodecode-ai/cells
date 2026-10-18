@@ -94,7 +94,8 @@ function fact(label, value, tag) {
   const row = el("div", "fact");
   const dd = el("dd");
   dd.append(el("span", "value", value));
-  if (tag) dd.append(el("span", "tag", tag));
+  // The field's own name is for whoever debugs it: a tooltip, never a line (rule 7).
+  if (tag) row.title = tag;
   row.append(el("dt", "", label), dd);
   return row;
 }
