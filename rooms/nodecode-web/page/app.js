@@ -1246,7 +1246,11 @@ function drawWork(article, turn, live, v) {
   }
   for (const row of notes) article.append(looseRow(row));
   if (answer) {
-    article.append(proseOf(`answer prose${answer.live ? " live-answer" : ""}`, answer.text, answer.metadata?.images));
+    const prose = proseOf(`answer prose${answer.live ? " live-answer" : ""}`, answer.text, answer.metadata?.images);
+    duotone(prose);
+    if (answer.live) glint(prose, turn.key);
+    else chipsArrived.delete(turn.key);
+    article.append(prose);
   }
   if (live) {
     const bar = el("div", "running");
@@ -1329,6 +1333,77 @@ function cutLine(prose) {
     at = at.lastElementChild;
   }
   return /^(P|H[1-6]|LI)$/.test(at?.tagName) ? at : null;
+}
+
+// Which characters of a code span stand back, the TUI's CODE-SPANS: an id all
+// quiet; a path's folders quiet under its last segment (PATH true); a name
+// bright but for its package and its punctuation.
+function codeQuiet(body) {
+  const quiet = new Array(body.length).fill(false);
+  if (/^(?:[0-9a-f]{7,40}|\d{3,}|[0-9A-Z]{8,}(?:\/[0-9a-f]+…?)?)$/.test(body)) return { path: false, quiet: quiet.fill(true) };
+  if (!/\s/.test(body) && (/^(?:~|\.\.?\/)|[^/]\//.test(body) || /\.(?:lisp|asd|py|json|jsonc|md|js|ts|sh|txt|toml|ya?ml|rs|go|zig|c|h|html|css)$/.test(body))) {
+    const last = body.endsWith("/") ? body.length - 1 : body.length;
+    quiet.fill(true, 0, body.lastIndexOf("/", last - 1) + 1);
+    if (last < body.length) quiet[last] = true;
+    return { path: true, quiet };
+  }
+  const at = body.lastIndexOf("::");
+  quiet.fill(true, 0, at >= 0 ? at + 2 : /^[a-z][a-z0-9.-]*:[^:\s]/.test(body) ? body.indexOf(":") + 1 : 0);
+  for (let i = 0; i < body.length; i++) if ("*+{},…".includes(body[i])) quiet[i] = true;
+  return { path: false, quiet };
+}
+
+// An answer in the TUI's two hues (app.css, .answer.prose). md.js keeps the
+// HTML the shared color goldens lock; the grounds are laid here: # and ## and
+// a paragraph that opens on a bold run take a .duo-band, its fade half its words
+// in cells, 8 to 36 (GROUND-SEGS); each code span outside an inline color is
+// split into its quiet and bright runs.
+function duotone(prose) {
+  for (const head of prose.querySelectorAll(":scope > :is(h1, h2)")) {
+    const band = el("span", "duo-band");
+    band.append(...head.childNodes);
+    head.append(band);
+  }
+  for (const p of prose.querySelectorAll(":scope > p")) {
+    if (p.firstChild?.nodeName !== "STRONG") continue;
+    const strong = p.firstChild, band = el("span", "duo-band");
+    strong.replaceWith(band);
+    band.append(strong);
+    p.classList.add("lead");
+  }
+  for (const band of prose.querySelectorAll(".duo-band")) {
+    band.style.setProperty("--fade", Math.max(8, Math.min(36, Math.ceil(band.textContent.length / 2))));
+  }
+  for (const code of prose.querySelectorAll(":not(pre) > code")) {
+    if (code.closest(".inline-color")) continue;
+    const body = code.textContent;
+    const { path, quiet } = codeQuiet(body);
+    if (path) code.classList.add("path");
+    if (!quiet.includes(true)) continue;
+    const runs = [];
+    for (let i = 0; i < body.length; i++) {
+      if (i && quiet[i] === quiet[i - 1]) runs[runs.length - 1][1] += body[i];
+      else runs.push([quiet[i], body[i]]);
+    }
+    code.replaceChildren(...runs.map(([still, text]) => (still ? el("span", "quiet", text) : text)));
+  }
+}
+
+// A bold run that has just come into a running answer glints once across its
+// chip, left to right (the TUI's GLINT-OVERLAY, 800 ms): each chip's arrival
+// is kept per turn, so a repaint mid-glint carries on where it was.
+const GLINT_MS = 800;
+const chipsArrived = new Map();
+function glint(prose, key) {
+  const now = performance.now();
+  const arrived = chipsArrived.get(key) ?? [];
+  chipsArrived.set(key, arrived);
+  [...prose.querySelectorAll("strong")].filter((chip) => !chip.closest(".duo-band, .inline-color")).forEach((chip, at) => {
+    const since = now - (arrived[at] ??= now);
+    if (since >= GLINT_MS) return;
+    chip.classList.add("glint");
+    chip.style.setProperty("--glinted", `-${Math.round(since)}ms`);
+  });
 }
 
 // The model's markdown, as marks on this surface; every code block carries a

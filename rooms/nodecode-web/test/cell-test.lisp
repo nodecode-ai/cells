@@ -973,3 +973,26 @@ brace that closes it at the start of a line, or NIL."
     (dolist (id '("offline" "offline-scrim" "offline-hops" "offline-retry" "offline-cmd" "offline-close"))
       (is (search (format nil "id=\"~a\"" id) html) id))
     (is (search "<code>nodecode gateway on</code>" html))))
+
+;; An answer in the TUI's two hues (the operator, 2026-10-18: "Land A" of
+;; https://claude.ai/artifact/CwfqvPjFVWvvxkgfhxjhKy): # and ## and a bold lead
+;; on a band that fades out, bold on a warm chip that glints as it lands, code
+;; in two blues by the TUI's CODE-SPANS rule. md.js's HTML is the shared
+;; goldens', so the grounds are laid on the answer after it.
+
+(deftest web-cell-an-answer-draws-in-two-hues ()
+  (let* ((js (web-page-text "app.js"))
+         (draw (web-js-function js "drawWork"))
+         (duo (web-js-function js "duotone"))
+         (css (web-page-text "app.css"))
+         (script (format nil "~a~%for (const s of [\"2ba5acc9b\", \"src/tui/ui.lisp\", \"nle::cell-off-refusal\", \"nodecode gateway on\", \"rooms/nodecode-web/\", \"{a,b}\"]) { const { path, quiet } = codeQuiet(s); console.log((path ? \"path \" : \"code \") + [...s].map((c, i) => (quiet[i] && !quiet[i - 1] ? \"[\" : \"\") + c + (quiet[i] && !quiet[i + 1] ? \"]\" : \"\")).join(\"\")); }" (web-js-function js "codeQuiet")))
+         (marks (uiop:run-program (list "node" "-e" script) :output :string)))
+    (is (search "duotone(prose);" draw) "an answer is drawn in the two hues")
+    (is (search "if (answer.live) glint(prose, turn.key);" draw) "a running answer's new bold runs glint")
+    (is (search "\":scope > :is(h1, h2)\"" duo) "# and ## stand on a band")
+    (is (search "p.firstChild?.nodeName !== \"STRONG\"" duo) "a paragraph that opens on a bold run leads on one")
+    (is (search "Math.max(8, Math.min(36, Math.ceil(band.textContent.length / 2)))" duo) "a band fades over half its words, 8 to 36 cells")
+    (is (string= marks (format nil "code [2ba5acc9b]~%path [src/tui/]ui.lisp~%code [nle::]cell-off-refusal~%code nodecode gateway on~%path [rooms/]nodecode-web[/]~%code [{]a[,]b[}]~%")) "code is two blues: an id quiet, a path's folders, a name's package and punctuation")
+    (is (search "linear-gradient(90deg, var(--band-ground) calc(100% - var(--tail) + 0.6em), transparent)" css) "a band fades into the page, never a box")
+    (is (search ".answer.prose { overflow-x: clip; }" css) "and never passes the answer's edge")
+    (is (search ".answer.prose :where(.inline-color strong) { background: none; padding: 0; }" css) "a model's own color keeps no chip")))

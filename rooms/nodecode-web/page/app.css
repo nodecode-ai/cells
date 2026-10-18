@@ -42,6 +42,26 @@
   /* The accent as a mark rather than a word: a lamp, a switch's line, a hatch.
      Dark needs no second tone; light takes a brighter one than its text. */
   --accent-fill: #fa8b3e;
+  /* An answer's two hues, the TUI's Duotone: its ANSWER-TONES (theme.lisp)
+     solved on this canvas from the accent. Warm is what to act on -- a bold
+     run on its chip, a list's marks; cool is the structure -- a heading, the
+     band under # and ## and a bold lead, code in two blues, a code block's
+     slab, a quote's bar. */
+  --duo-strong: #fdae76;
+  --duo-chip: #4b2d19;
+  --duo-glint: rgba(255, 222, 196, 0.62);
+  --duo-mark: #cf7231;
+  --duo-heading: #b3d9f4;
+  --duo-band: #1b3546;
+  --duo-title-band: #1f455e;
+  --duo-subheading: #8dc1e5;
+  --duo-code: #72aed8;
+  --duo-path: #8dc1e5;
+  --duo-quiet: #5782a1;
+  --duo-bar: #6096bb;
+  --duo-line: #425b6c;
+  --duo-slab: #181e21;
+  --duo-link: #6eaaff;
 
   /* The two planes re-cut the ramp for what stands on them: the column a step
      below the slab, the slab (and the gate, which stands in for it) a step up. */
@@ -110,6 +130,21 @@
   --accent: #9e4400;
   --danger-lit: #ad3419;
   --accent-fill: #dd6408;
+  --duo-strong: #692e02;
+  --duo-chip: #e6cab5;
+  --duo-glint: rgba(255, 255, 255, 0.85);
+  --duo-mark: #995724;
+  --duo-heading: #0c3352;
+  --duo-band: #bfd6e7;
+  --duo-title-band: #9ac1dd;
+  --duo-subheading: #0b4775;
+  --duo-code: #265478;
+  --duo-path: #0b4775;
+  --duo-quiet: #507895;
+  --duo-bar: #2c6a98;
+  --duo-line: #86a0b5;
+  --duo-slab: #eef0f3;
+  --duo-link: #2563eb;
 
   --column-ground: #f3f3f3;
   --column-seam: #e0e0e0;
@@ -503,6 +538,53 @@ code, pre, kbd { font-family: var(--mono); }
 .prose td { padding: 10px 20px 10px 0; border-bottom: 1px solid var(--seam); font-size: 14.5px; line-height: 1.65; vertical-align: top; }
 .prose th, .prose td { overflow-wrap: normal; }
 .live-answer > :last-child::after { content: "\258D"; color: var(--accent); animation: caret 1s steps(2, start) infinite; margin-left: 2px; }
+
+/* The answer in two hues, the TUI's Duotone (variant A of the web's; the
+   operator, 2026-10-18: "Land A"). # and ## and a paragraph that opens on a
+   bold run stand on a band (DUOTONE lays .duo-band): the gutter's bar, then the
+   band solid under the words and two more, fading over --fade cells under
+   whatever follows -- never a box. A banded block hangs 12px with the bar in
+   it, as the TUI's rows hang two cells, and the answer clips at its edge, so
+   a band never passes it. A bold run
+   elsewhere sits on its warm chip and glints once as it lands (.glint). The
+   :where()s keep a model's own inline color on top. */
+.answer.prose { overflow-x: clip; }
+.answer.prose > :is(h1, h2, .lead) { padding-left: 12px; }
+.answer.prose > :is(h1, h2) { font-weight: 650; line-height: 1.5; color: var(--duo-heading); }
+.answer.prose > h1 { font-size: 20px; --band-ground: var(--duo-title-band); }
+.answer.prose > h2 { font-size: 17px; --band-ground: var(--duo-band); }
+.answer.prose > :is(h3, h4, h5, h6) { color: var(--duo-subheading); }
+.answer.prose > h3 { font-size: 15.5px; font-weight: 650; }
+.answer.prose > :is(h4, h5, h6) { font-weight: 500; }
+.answer.prose > .lead { --band-ground: var(--duo-band); }
+.answer.prose .duo-band {
+  --tail: calc(var(--fade, 12) * 1ch + 0.6em);
+  margin: 0 calc(0px - var(--tail)) 0 -12px; padding: 2px var(--tail) 2px 12px;
+  background: linear-gradient(var(--duo-subheading), var(--duo-subheading)) 0 0 / 3px 100% no-repeat,
+    linear-gradient(90deg, var(--band-ground) calc(100% - var(--tail) + 0.6em), transparent);
+}
+.answer.prose > h1 > .duo-band { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.24em; text-decoration-color: color-mix(in srgb, var(--duo-heading) 55%, transparent); }
+.answer.prose .duo-band strong { font-weight: 650; color: var(--duo-heading); background: none; padding: 0; }
+.answer.prose :where(strong) { color: var(--duo-strong); background-color: var(--duo-chip); padding: 1px 0.3em; border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.answer.prose :where(.inline-color strong) { background: none; padding: 0; }
+.answer.prose :where(strong.glint) {
+  background-image: linear-gradient(100deg, transparent 35%, var(--duo-glint) 50%, transparent 65%);
+  background-size: 300% 100%; background-repeat: no-repeat;
+  animation: glint 800ms ease-out both; animation-delay: var(--glinted, 0ms);
+}
+@keyframes glint { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+@media (prefers-reduced-motion: reduce) { .answer.prose strong.glint { animation: none; background-image: none; } }
+.answer.prose :where(em) { color: var(--foreground); }
+.answer.prose :where(:not(pre) > code) { background: none; padding: 0; color: var(--duo-code); }
+.answer.prose :where(code.path) { color: var(--duo-path); }
+.answer.prose :where(code .quiet) { color: var(--duo-quiet); }
+.answer.prose :where(li)::marker { color: var(--duo-mark); }
+.answer.prose :where(pre) { background: var(--duo-slab); border-radius: 4px; }
+.answer.prose :where(pre[data-lang])::before { color: var(--duo-quiet); }
+.answer.prose pre .copy { background: var(--duo-slab); }
+.answer.prose :where(blockquote) { border-left: 3px solid var(--duo-bar); padding-left: 12px; }
+.answer.prose :where(a) { color: var(--duo-link); text-decoration-color: color-mix(in srgb, var(--duo-link) 45%, transparent); }
+.answer.prose :where(hr) { background: var(--duo-line); }
 @keyframes caret { to { visibility: hidden; } }
 
 /* How the turn rested, or that it is still running. */
