@@ -84,12 +84,12 @@ failover, three tool results one of which failed, and the turn's failure."
   (nlk:record-turn-provider-request turn :provider "anthropic" :model "claude-opus-5" :ttft-ms 800)
   (nlk:record-turn-provider-request turn :provider "anthropic" :model "claude-opus-5" :ttft-ms 1200)
   (nlk:record-provider-retry turn :provider "anthropic" :model "claude-opus-5"
-                                  :status 529 :detail "overloaded at /home/mike/private")
+                                  :status 529 :detail "overloaded at /home/me/private")
   (nlk:record-provider-fallback turn :from-provider "anthropic" :from-model "claude-opus-5"
                                      :to-provider "openai" :to-model "gpt-5" :reason "overloaded")
   (nlk:record-tool-result turn "c1" "eval" "42" :duration-ms 12)
-  (nlk:record-tool-result turn "c2" "eval" "ERROR: EVAL-TIMEOUT: /home/mike/private.txt took too long"
+  (nlk:record-tool-result turn "c2" "eval" "ERROR: EVAL-TIMEOUT: /home/me/private.txt took too long"
                           :duration-ms 10000)
-  (nlk:record-tool-result turn "c3" "look" "attached /home/mike/private.png" :duration-ms 30)
+  (nlk:record-tool-result turn "c3" "look" "attached /home/me/private.png" :duration-ms 30)
   (nlk:fail-turn turn (make-condition 'simple-error
-                                      :format-control "the provider answered 500 for /home/mike/private")))
+                                      :format-control "the provider answered 500 for /home/me/private")))

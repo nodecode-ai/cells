@@ -148,7 +148,7 @@
 
 (defun watch-routes (pulls &key (status 200))
   "A listing of PULLS (the ETag \"e1\") and everything a dossier of any of them reads."
-  (append (list (list :get "/user$" 200 (nlk:json-object "login" "pomterre"))
+  (append (list (list :get "/user$" 200 (nlk:json-object "login" "dana"))
                 (list :get "sort=updated" status (if (eql status 304) "" (coerce pulls 'vector))
                       (gh-headers "etag" "\"e1\""))
                 (list :get "/pulls/4/reviews" 200 (vector (gh-review 4 "p2"))))
@@ -162,7 +162,7 @@
 (deftest prs-cell-watch-ranks-each-new-head-once ()
   (with-prs ("repos" (vector "a/b"))
     (let ((pulls (list (gh-pull 5 :author "carol") (gh-pull 1) (gh-pull 2 :draft t)
-                       (gh-pull 3 :author "pomterre") (gh-pull 4 :author "bob"))))
+                       (gh-pull 3 :author "dana") (gh-pull 4 :author "bob"))))
       (with-submits ()
         (with-github ((:all (watch-routes pulls)))
           (nodecode-prs::poll-repo "a/b"))

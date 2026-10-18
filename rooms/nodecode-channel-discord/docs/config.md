@@ -59,7 +59,7 @@ See [rooms.md](rooms.md#where-it-answers-mentions).
 | `require_mention_channels` | list of channel ids | `[]` | Channels where only a mention, a reply or a menu command is an ask. |
 | `ignored_channels` | list of channel ids | `[]` | Channels the bot does not read at all. Wins over the two lists above. |
 | `mention_patterns` | list of strings | `[]` | Wake words: a message containing one, in any case, counts as a mention. |
-| `other_addressees` | list of names | `[]` | Names other than the bot's. A message that opens by addressing one (`"vise, ..."`) is context, not an ask, unless it also mentions the bot. |
+| `other_addressees` | list of names | `[]` | Names other than the bot's. A message that opens by addressing one (`"ada, ..."`) is context, not an ask, unless it also mentions the bot. |
 
 In each list, a thread matches its own id and its parent channel's.
 

@@ -144,7 +144,7 @@ Per-channel lists override the default. When a channel is on several lists,
 A message that opens by addressing someone else is context, not an ask,
 unless it also mentions the bot. "Addressing" means it starts with a mention
 of another user, or with a name from `other_addressees` followed by `,`,
-`:`, `;` or `-` (for example `"vise, can you look"`). Use this when several
+`:`, `;` or `-` (for example `"ada, can you look"`). Use this when several
 bots share a channel.
 
 ## Where it answers: threads

@@ -132,20 +132,20 @@
   ;; leading name among the platform's other addressees — and carries
   ;; nothing that involves the bot is that participant's: observed, never
   ;; answered, whatever the room's speaking mode. The reported miss:
-  ;; "vise, you need to do something".
-  (nck:set-other-addressees "test" '("vise"))
+  ;; "ada, you need to do something".
+  (nck:set-other-addressees "test" '("ada"))
   (let ((policy (channel-policy)))
-    (is-inbound policy (test-candidate :text "vise, you need to do something")
+    (is-inbound policy (test-candidate :text "ada, you need to do something")
                 :observe "addressed_elsewhere"
                 "a message opening by another name is not an ask")
-    (is-inbound policy (test-candidate :text "Vise, you need to do something")
+    (is-inbound policy (test-candidate :text "Ada, you need to do something")
                 :observe "addressed_elsewhere"
                 "the name matches case-insensitively")
     (is-inbound policy (test-candidate :text "yo scrap") :answer)
     (is-inbound policy (test-candidate :text "hello") :answer)
-    (is-inbound policy (test-candidate :text "vise needs a look, can you restart it?") :answer)
+    (is-inbound policy (test-candidate :text "ada needs a look, can you restart it?") :answer)
     (is-inbound policy (test-candidate :kind "direct_message"
-                                       :text "vise, you need to do something")
+                                       :text "ada, you need to do something")
                 :answer))
   ;; A leading entity mention of another user is the same fact with no name
   ;; list at all.
@@ -158,10 +158,10 @@
   ;; has the first word.
   (let ((policy (channel-policy :mention-target "999"
                                 :mention-test #'nck:discord-mention-p)))
-    (is-inbound policy (test-candidate :text "vise, ask <@999> about it") :answer))
+    (is-inbound policy (test-candidate :text "ada, ask <@999> about it") :answer))
   (is-inbound (channel-policy :require-mention t
                               :mention-target "999" :mention-test #'nck:discord-mention-p)
-              (test-candidate :text "vise, you need to do something")
+              (test-candidate :text "ada, you need to do something")
               :observe "mention_required"
               "in a gated room the mention gate speaks first")
   (nck:set-other-addressees "test" '()))

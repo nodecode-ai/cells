@@ -19,7 +19,7 @@
 (deftest qa-cell-the-page-is-counts-only (with-session-store ("s1"))
   (with-qa (:share :never)
     (nodecode-qa::begin-cursor)
-    (record-a-week (nlk:admit-turn "s1" "c1" "please read /home/mike/private.txt"))
+    (record-a-week (nlk:admit-turn "s1" "c1" "please read /home/me/private.txt"))
     (nlk:complete-turn (nlk:admit-turn "s1" "c2" "again") (nle:message "assistant" "done"))
     (nodecode-qa::keep-note "eval" "timeout" "the snippet (sh \"sleep 100\") never came back")
     (let* ((page (page-now "abc"))

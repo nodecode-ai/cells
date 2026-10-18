@@ -162,7 +162,7 @@ allowed_channels, so ids are picked by name."
   ("mention_patterns" :list
                        :doc "case-insensitive wake words that address the bot in mention-gated channels")
   ("other_addressees" :list
-                       :doc "names other than the bot's that a message may open by addressing (\"vise, ...\"); such a message is observed, never answered")
+                       :doc "names other than the bot's that a message may open by addressing (\"ada, ...\"); such a message is observed, never answered")
   ("dm_policy" :choice :options '("allow" "disabled") :default "allow"
                :doc "direct messages")
   ("group_policy" :choice :options '("allow" "disabled") :default "allow"

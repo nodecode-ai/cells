@@ -117,7 +117,7 @@ true): its answer, unless private, takes the place of the message pressed."
   "The lowercase name TEXT opens with, or NIL: leading whitespace, an
 optional @, then a word up to a , : ; or - separator within forty
 characters."
-  ;; "vise, you need to do something" names "vise"; a sentence that never
+  ;; "ada, you need to do something" names "ada"; a sentence that never
   ;; opens with a name names nobody — matching it against a list is the
   ;; caller's business.
   (ppcre:register-groups-bind (name) ("^[ \\t\\n\\r]*@?([^,:;-]{0,39})[,:;-]" (or text ""))
