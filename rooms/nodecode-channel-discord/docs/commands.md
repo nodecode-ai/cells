@@ -56,10 +56,16 @@ from its channel.
 ## Who may run commands
 
 With operators declared (`owner`, or a single `allowed_users` entry), every
-command but `/help` is the operators'. Anyone else is refused with "/NAME is
-the operator's; /help lists what you can run". The operators' terminals (and
-the home channel, if set) hear who was refused what, at most once every ten
-minutes per person.
+command but `/help` is the operators'. Anyone else is refused, privately,
+with "Only this room's operators can run /NAME" and an **Ask for access**
+button. The operators' terminals (and the home channel, if set) hear who was
+refused what, at most once every ten minutes per person.
+
+**Ask for access** posts one request into the channel, mentioning the
+operators, with a **Make NAME an operator** button (at most once every ten
+minutes per person). An operator's press adds that person to `owner`, live at
+once and saved in the config, and tells them in the channel; anyone else's
+press changes nothing.
 
 With no operator declared, everyone admitted to the room may run every
 command. See [rooms.md](rooms.md#the-operator).

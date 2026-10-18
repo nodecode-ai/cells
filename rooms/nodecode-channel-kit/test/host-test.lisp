@@ -858,7 +858,7 @@ message of ours."
         (is (search "/models" (plan-content post)) "with the catalog"))
       (is (nlk:session-exists-p "chat-123"))
       (is (zerop (nck:lane-count (nck:host-lanes host))))
-      (is (equal "🔒 /models is operator-only. Ask an operator to run it, or send /help to see what you can use."
+      (is (equal "🔒 Only this room's operators can run /models. Press Ask for access to send them a request, or send /help to see what you can use."
                  (answered "/models" "alice" "m2" 2)))
       (is (search "/models" (answered "/help" "alice" "m3" 3)))
       (is (equal "nothing to undo" (answered "<@999> /undo" "mike" "m4" 4)))
@@ -1647,6 +1647,55 @@ LANE, as the one running channel."
           (is (zerop (waiting)) "the line went through")
           (let ((config (uiop:read-file-string nodecode.evolved::*shared-config-path*)))
             (is (ppcre:scan "\"max_concurrent_turns\":\\s*2" config) "the config keeps it")))))))
+
+(deftest channel-host-ask-for-access-reaches-the-operators-and-lets-them-in ()
+  ;; A refused command carries Ask for access. The refused person's press
+  ;; posts one request into the room, addressed to its operators and carrying
+  ;; Make operator, at most once in ten minutes a person; an operator's press
+  ;; of that makes them one, live and in the config so a restart keeps it, and
+  ;; tells them in the room. Anyone else's press moves nothing; every press is
+  ;; answered to the presser alone.
+  (handler-bind ((warning #'muffle-warning))
+    (with-temp-file (nodecode.evolved::*shared-config-path*
+                     :type "jsonc" :contents "{\"channels\": {\"test\": {}}}" :setf t)
+      (with-digest-host (host nil :name "access"
+                         :host-keys (:owners '("mike") :platform (test-platform :choices t)))
+        (setf (nck:host-policy host) (channel-policy :allowed-channels '("123")))
+        (clrhash nck::*access-asked*)
+        (say "/models" "alice" "m1")
+        (is (posted 1))
+        (is (equal (list (list (list "Ask for access" "nck:access:models" :primary)))
+                   (plan-field (first (plans)) "controls"))
+            "the refusal carries Ask for access")
+        (flet ((tap (id user data)
+                 (nck:control-pressed host (list :id id :user-id user :user-name user :message-id "s1"
+                                                 :channel-id "123" :data data))
+                 (plan-field (await-plan executor :path (format nil "/presses/~a" id)) "text"))
+               (requests () (plans-matching (plans) :label "send_message" :content "asks to run /models")))
+          (is (equal "Asked: the room's operators got your request, and can let you in with one press."
+                     (tap "i1" "alice" "nck:access:models")))
+          (is-present (request (first (requests))) "one request reaches the room, to its operators"
+            (is-plan request :path "/rooms/123/messages")
+            (is (equalp (vector "mike") (plan-field request "mentions")))
+            (is (equal (list (list (list "Make alice an operator" "nck:grant:alice" :primary)))
+                       (plan-field request "controls"))))
+          (is (equal "Already asked: the room's operators have your request."
+                     (tap "i2" "alice" "nck:access:models")))
+          (is (= 1 (length (requests))) "a second press within ten minutes posts nothing")
+          (is (equal "Only the room's operators can make someone an operator."
+                     (tap "i3" "alice" "nck:grant:alice")))
+          (is (equal '("mike") (nck::host-owners host)) "anyone else's press moves nothing")
+          (is (equal "Made an operator (2 now). Saved as channels.test.owner."
+                     (tap "i4" "mike" "nck:grant:alice")))
+          (is (equal '("mike" "alice") (nck::host-owners host)) "live at once")
+          (is-present (told (await-plan executor :label "send_message" :content "you're now one of this room's operators"))
+            "the person is told in the room"
+            (is (equalp (vector "alice") (plan-field told "mentions"))))
+          (let ((config (uiop:read-file-string nodecode.evolved::*shared-config-path*)))
+            (is (ppcre:scan "\"owner\":\\s*\\[\\s*\"mike\",\\s*\"alice\"\\s*\\]" config) "the config keeps it"))
+          (is (equal "Already one of this room's operators." (tap "i5" "mike" "nck:grant:alice")))
+          (is (equal "You're already one of this room's operators: run the command again."
+                     (tap "i6" "alice" "nck:access:models"))))))))
 
 (deftest channel-host-a-usage-fact-meters-the-card (with-digest-host (host lane))
   ;; A round's usage fact, in the keys the engine writes it under, reaches the

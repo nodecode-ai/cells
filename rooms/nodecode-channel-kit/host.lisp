@@ -802,8 +802,12 @@ warning naming WHAT. => whether they were delivered."
   (on-worker host
     (flet ((after (prefix) (and (stringp data) (eql 0 (search prefix data)) (subseq data (length prefix)))))
       (let ((session-id (after "nck:details:"))
-            (press (after +step-press-prefix+)))
+            (press (after +step-press-prefix+))
+            (asked (after "nck:access:"))
+            (granted (after "nck:grant:")))
         (cond ((equal data "nck:lift") (lift-pressed host payload))
+              (asked (access-pressed host payload asked))
+              (granted (grant-pressed host payload granted))
               (session-id (details-pressed host payload session-id))
               (press (step-pressed host payload press))
               ;; A choice whose press this home cannot read back (PRESS-ACTION)
@@ -872,6 +876,73 @@ alone -- a room operator's raises the limit (RAISE-LIMIT)."
                                         (format nil "Only the room's operators can raise the limit (~d turn~:p at once): ask one of them."
                                                 host.max-concurrent-turns)))
                    (format nil "control ack for ~a failed" (getf payload :id))))
+
+;;; --- Ask for access (an operator-only command's way past the gate) ------------------
+;;; A refused command carries Ask for access. The refused person's press posts
+;;; one request into the room, addressed to its operators, carrying Make
+;;; operator -- at most once in ten minutes a person. An operator's press of
+;;; that adds the person to the room's operators, live at once and written to
+;;; channels.<id>.owner so a restart keeps it, and tells them in the room;
+;;; anyone else's press moves nothing. Every press is answered to the presser
+;;; alone.
+
+(defvar *access-asked* (make-hash-table :test #'equal :synchronized t)
+  "(host id . user id) -> when that person last asked the room's operators
+for access (ACCESS-PRESSED).")
+
+(defun access-pressed (host payload command &aux (user-id (getf payload :user-id))
+                                                 (name (getf payload :user-name))
+                                                 (key (cons (host-id host) user-id))
+                                                 (now (now-ms)))
+  "Worker thread: a refusal's Ask for access press for COMMAND -- one request
+to the room's operators, carrying Make operator."
+  (let* ((name (if (plusp (length name)) (subseq name 0 (min 40 (length name))) "Someone"))
+         (last (gethash key *access-asked*))
+         (text (cond ((operator-p host user-id)
+                      "You're already one of this room's operators: run the command again.")
+                     ((and last (< (- now last) 600000))
+                      "Already asked: the room's operators have your request.")
+                     (t (setf (gethash key *access-asked*) now)
+                        (if (post-message host (list :channel-id (getf payload :channel-id))
+                                          (format nil "🔑 ~a asks to run /~a, which only this room's operators can run. Make them an operator to let them run every command."
+                                                  name command)
+                                          :mentions host.owners
+                                          :controls (list (list (list (format nil "Make ~a an operator" name)
+                                                                      (format nil "nck:grant:~a" user-id)
+                                                                      :primary)))
+                                          :what "access request")
+                            "Asked: the room's operators got your request, and can let you in with one press."
+                            (progn (remhash key *access-asked*)
+                                   "The request did not post: ask an operator directly."))))))
+    (deliver-or-warn host (host-plan host #'platform-plan-control-ack payload :text text)
+                     (format nil "control ack for ~a failed" (getf payload :id)))))
+
+(defun make-operator (host user-id &aux (key (list "channels" (platform-id host.platform) "owner")))
+  "Add USER-ID to HOST's operators, live and in the config. => what the
+operator who pressed is told."
+  ;; Live first, as RAISE-LIMIT: a refused config write still lets the person
+  ;; in, the answer then saying it lasts until a restart.
+  (setf host.owners (append host.owners (list user-id)))
+  (let ((refusal (handler-case (progn (nle:config-set key (copy-list host.owners)) nil)
+                   (error (condition) (princ-to-string condition)))))
+    (format nil "Made an operator (~d now). ~:[Saved as ~{~a~^.~}.~;~:*Until a restart only: the config was not written (~a).~]"
+            (length host.owners) refusal key)))
+
+(defun grant-pressed (host payload user-id &aux (presser (getf payload :user-id)))
+  "Worker thread: an access request's Make operator press for USER-ID -- a
+room operator's makes them one and tells them in the room."
+  (let* ((grant (and (operator-p host presser) (plusp (length user-id))
+                     (not (operator-p host user-id))))
+         (text (cond ((not (operator-p host presser))
+                      "Only the room's operators can make someone an operator.")
+                     ((not grant) "Already one of this room's operators.")
+                     (t (make-operator host user-id)))))
+    (deliver-or-warn host (host-plan host #'platform-plan-control-ack payload :text text)
+                     (format nil "control ack for ~a failed" (getf payload :id)))
+    (when grant
+      (post-message host (list :channel-id (getf payload :channel-id))
+                    "you're now one of this room's operators: run the command again."
+                    :mentions (list user-id) :what "access granted"))))
 
 ;;; --- Details (everything a card leaves out, to whoever pressed it) -----------------
 ;;; A card shows the newest steps; its Details press answers the person who
@@ -2463,19 +2534,22 @@ refused command.")
       (respond host candidate (lambda () (run-command host candidate line))
                :private (and (not (candidate-pressed-p candidate))
                              (member name +private-commands+ :test #'equal)))
-      ;; The refusal says what to do next: who can run it, and what this person can.
-      (refuse host candidate (format nil "🔒 /~a is operator-only. Ask an operator to run it, or send /help to see what you can use." name)
-              (format nil "/~a" name))))
+      ;; The refusal says what to do next, and carries it: Ask for access sends
+      ;; the room's operators a request they answer with one press.
+      (refuse host candidate (format nil "🔒 Only this room's operators can run /~a. Press Ask for access to send them a request, or send /help to see what you can use." name)
+              (format nil "/~a" name)
+              :controls (list (list (list "Ask for access" (format nil "nck:access:~a" name) :primary))))))
 
-(defun refuse (host candidate text what &aux (user (source-field candidate "user_id"))
-                                             (key (cons (host-id host) user))
-                                             (now (now-ms)))
+(defun refuse (host candidate text what &key controls
+                                       &aux (user (source-field candidate "user_id"))
+                                            (key (cons (host-id host) user))
+                                            (now (now-ms)))
   "Worker thread: TEXT, a refusal, to the person CANDIDATE is — to them alone
-where the platform can — and a word to the operator's shells naming who was
-refused WHAT, at most once in ten minutes a person."
+where the platform can, CONTROLS under it — and a word to the operator's
+shells naming who was refused WHAT, at most once in ten minutes a person."
   ;; Said to the shells and the log, never put on the board, which rides into
   ;; the model's prompt, and to the home channel when the operator set one.
-  (respond host candidate (lambda () text) :private t)
+  (respond host candidate (lambda () (values text controls)) :private t)
   (when (let ((last (gethash key *refusals-alerted*))) (or (null last) (> (- now last) 600000)))
     (setf (gethash key *refusals-alerted*) now)
     (tell-operator host (format nil "~a: ~a (~a) was refused ~a in ~a"
