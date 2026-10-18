@@ -17,6 +17,9 @@
           'nle::google-request-body 'nle::anthropic-request-body 'nle::request-body 'nle::walk-provider-stream)
   (:refused ("project" 5) ("location" 7)))
 
+;; A throwaway 1024-bit RSA key made for these tests (a real service-account
+;; key is 2048-bit): it signs the fixture JWTs against the fake token route
+;; and nothing else.
 (defparameter +gv-key+
   "-----BEGIN PRIVATE KEY-----
 MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBALuAPnCd9P8eF5ai
