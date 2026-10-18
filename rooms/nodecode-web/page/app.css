@@ -232,7 +232,12 @@ code, pre, kbd { font-family: var(--mono); }
 
 /* The lamp: five pixels of accent, dark when off, pulsing while it runs. */
 .led { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--accent-fill); flex: none; }
-.led.off { background: var(--dim); }
+/* Colour marks exceptions only (the standard's rule 5; observe.js dot): running
+   green, act here the accent, failed red, off a hollow ring; a healthy row has none. */
+.led.live { background: var(--live); }
+.led.act { background: var(--accent-fill); }
+.led.fail { background: var(--fail); }
+.led.off { background: transparent; box-shadow: inset 0 0 0 1px var(--tertiary); }
 .pulse { animation: led 2.8s ease-in-out infinite; }
 @keyframes led { 0%, 100% { opacity: 1; } 50% { opacity: 0.32; } }
 
@@ -387,7 +392,8 @@ code, pre, kbd { font-family: var(--mono); }
 .gateway .host span { color: var(--tertiary); }
 .gateway .reading { margin-left: auto; }
 .gateway .reading:empty { display: none; }
-.app:not([data-state="open"]) .gateway .led { background: var(--dim); }
+.gateway .led { display: none; }
+.app:not([data-state="open"]) .gateway .led { display: inline-block; background: transparent; box-shadow: inset 0 0 0 1px var(--tertiary); }
 
 /* The slab: the stage's grey, with the ramp re-cut one step up from it. The
    gate stands where the slab would, on the same cut. */
@@ -1794,7 +1800,7 @@ button.p-row:active { background: var(--field-lit); }
 /* A switch is 51 by 31; a status a dot and its word. */
 .ctl-phone .pill, .ctl-phone .pill[aria-checked="true"] { width: 51px; height: 44px; border-radius: 0; background: none; box-shadow: none; }
 .ctl-phone .pill::before { content: ""; position: absolute; left: 0; right: 0; top: 6.5px; height: 31px; border-radius: var(--r-card); background: var(--seam-lit); transition: background 130ms; }
-.ctl-phone .pill[aria-checked="true"]::before { background: var(--accent-fill); }
+.ctl-phone .pill[aria-checked="true"]::before { background: var(--primary); }
 .ctl-phone .pill[data-state="refused"][aria-checked="true"]::before { background: transparent; box-shadow: inset 0 0 0 1.5px var(--danger-lit); }
 .ctl-phone .pill::after { top: 8.5px; left: 2px; width: 27px; height: 27px; }
 .ctl-phone .pill[aria-checked="true"]::after { transform: translateX(20px); }
@@ -2325,8 +2331,8 @@ button.p-row:active { background: var(--field-lit); }
   background: var(--tertiary); transition: transform 130ms, background 130ms;
 }
 .pill:hover::after { background: var(--secondary); }
-.pill[aria-checked="true"] { background: var(--accent-fill); }
-.pill[aria-checked="true"]::after { transform: translateX(12px); background: var(--paper); }
+.pill[aria-checked="true"] { background: var(--primary); }
+.pill[aria-checked="true"]::after { transform: translateX(12px); background: var(--void); }
 /* On, and its start refused: the track drawn, not lit. */
 .pill[data-state="refused"][aria-checked="true"] { background: transparent; box-shadow: inset 0 0 0 1.5px var(--danger-lit); }
 .pill[data-state="refused"][aria-checked="true"]::after { background: var(--danger-lit); }

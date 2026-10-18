@@ -14,7 +14,7 @@
 // editor under its profile, the copyable terminal command, nothing written
 // before Create. Its model, skills and MCP steps have no verb here.
 
-import { el, button, mark, plural, headline } from "./observe.js";
+import { el, button, mark, plural, headline, dot } from "./observe.js";
 import { block, note, form, formKey, field, confirmBox, bytes, about } from "./control.js";
 import { t } from "./i18n.js";
 
@@ -85,7 +85,7 @@ export function makeProfiles({ c, api, act, toast, redraw, download }) {
     const li = el("li", "ctl-row");
     li.dataset.level = r.pid ? "started" : "off";
     const name = el("span", "ctl-name");
-    name.append(el("i", `led${r.pid ? "" : " off"}`), ` ${r.name}`);
+    name.append(dot(r.pid ? "" : "off"), ` ${r.name}`);
     name.title = r.home;
     const what = el("span", "ctl-cell-what");
     const says = el("span", "ctl-prof-says");

@@ -6,7 +6,7 @@
 // client: a configured server on the connection the agent uses, a server not
 // yet added on a connection of its own, closed before the answer comes back.
 
-import { el, button, mark, waiting, plural, ms, headline } from "./observe.js";
+import { el, button, mark, waiting, plural, ms, headline, dot } from "./observe.js";
 import { block, note, form, field, confirmBox, about } from "./control.js";
 import { t } from "./i18n.js";
 
@@ -174,7 +174,7 @@ export function makeMcp({ c, api, act, toast, redraw, reload }) {
       const li = el("li", "ctl-row");
       li.dataset.level = s.state === "ready" ? "started" : ["error", "refused"].includes(s.state) ? "error" : "off";
       const name = el("span", "ctl-name");
-      name.append(el("i", `led${s.state === "ready" ? "" : " off"}`), ` ${s.name}`);
+      name.append(dot(s.state === "ready" ? "" : ["error", "refused"].includes(s.state) ? "fail" : "off"), ` ${s.name}`);
       const ready = { state: STATES.ready, tools: plural(s.tools, t("{n} tool"), t("{n} tools")), ms: ms(s.connect_ms) };
       const what = el("span", "ctl-cell-what", s.state !== "ready" ? STATES[s.state] || s.state
         : s.connect_ms != null ? t("{state}, {tools}, in {ms}", ready) : t("{state}, {tools}", ready));
@@ -219,7 +219,7 @@ export function makeMcp({ c, api, act, toast, redraw, reload }) {
       const li = el("li", "ctl-row");
       li.dataset.level = entry.added ? "started" : "off";
       const name = el("span", "ctl-name");
-      name.append(el("i", `led${entry.added ? "" : " off"}`), ` ${entry.name}`);
+      name.append(` ${entry.name}`);
       const what = el("span", "ctl-cell-what", entry.what);
       const asks = [...(entry.env || []), ...(entry.headers || [])].filter((key) => !key.optional)
         .map((key) => `${key.ask[0].toLowerCase()}${key.ask.slice(1)}`);

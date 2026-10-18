@@ -16,7 +16,7 @@
 // answered or its two minutes are out. A link whose dials keep failing says
 // why in the cell's words, when it tries next, and offers Try now.
 
-import { el, button, mark, waiting, when, headline } from "./observe.js";
+import { el, button, mark, waiting, when, headline, dot } from "./observe.js";
 import { block, note, form, formKey, field, item, confirmBox, about, pill, PHONE } from "./control.js";
 import { t } from "./i18n.js";
 
@@ -136,7 +136,7 @@ export function makeAccess({ c, api, act, toast, redraw, unread, missing, openTa
     for (const a of asks) {
       const li = el("li", "ctl-row");
       const name = el("span", "ctl-name");
-      name.append(el("i", "led pulse"), ` ${a.name}`, el("span", "tag", ` ${a.user}`));
+      name.append(dot("act pulse"), ` ${a.name}`, el("span", "tag", ` ${a.user}`));
       const go = button("word", c.busy === `pair:${a.id}` ? t("Letting in…") : t("Let in"), { act: "pair-ask", ask: a.id });
       go.disabled = !!c.busy;
       const acts = el("span", "ctl-acts");
@@ -152,7 +152,7 @@ export function makeAccess({ c, api, act, toast, redraw, unread, missing, openTa
     for (const p of paired) {
       const li = el("li", "ctl-row");
       const name = el("span", "ctl-name");
-      name.append(el("i", "led off"), ` ${p.name}`, el("span", "tag", ` ${p.id}`));
+      name.append(` ${p.name}`, el("span", "tag", ` ${p.id}`));
       const acts = el("span", "ctl-acts");
       const drop = mark("trash", t("Unpair"), { act: "ask-unpair", user: p.id });
       drop.disabled = !!c.busy;
@@ -265,7 +265,7 @@ export function makeAccess({ c, api, act, toast, redraw, unread, missing, openTa
     for (const b of l.browsers) {
       const li = el("li", "ctl-row");
       const name = el("span", "ctl-name");
-      name.append(el("i", `led${b.id === l.here ? "" : " off"}`), ` ${b.agent}`);
+      name.append(` ${b.agent}`);
       if (b.id === l.here) name.append(el("span", "tag", ` ${t("this browser")}`));
       const acts = el("span", "ctl-acts");
       const drop = mark("trash", t("Remove"), { act: "ask-link-remove", id: b.id });

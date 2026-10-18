@@ -6,7 +6,7 @@
 // file, the commit and the ledger are what the agent's own would leave, and a
 // refusal is the definition's own reason, said where the write was made.
 
-import { el, button, mark, when, waiting, headline } from "./observe.js";
+import { el, button, mark, when, waiting, headline, dot } from "./observe.js";
 import { block, note, form, field, confirmBox, about, PHONE } from "./control.js";
 import { t } from "./i18n.js";
 
@@ -108,7 +108,7 @@ export function makeIndex({ c, api, act, toast, redraw, settle }) {
     const name = el("span", "ctl-name");
     const link = button("cell-link", d.name, { act: "index-open", name: d.name });
     link.title = t("Open {name}", { name: d.name });
-    name.append(el("i", `led${d.hot ? "" : " off"}`), link);
+    name.append(dot(d.hot ? "" : "off"), link);
     const what = el("span", "ctl-cell-what", d.description);
     const tag = el("span", "tag", facts(d));
     tag.title = d.file;

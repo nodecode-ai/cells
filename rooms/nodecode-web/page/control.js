@@ -13,7 +13,7 @@
 // data-act the pane's own click handler reads; a change that waits for a
 // restart says so where it is made.
 
-import { el, button, mark, sectionHead, headline, banner, when, uptime, waiting, plural } from "./observe.js";
+import { el, button, mark, sectionHead, headline, banner, dot, when, uptime, waiting, plural } from "./observe.js";
 import { makeSettings, title, steps } from "./settings.js";
 import { makeIndex } from "./index.js";
 import { makeMcp } from "./mcp.js";
@@ -448,7 +448,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       const li = el("li", "ctl-row ctl-doctor-row");
       li.dataset.tone = f.tone;
       const name = el("span", "ctl-name");
-      name.append(el("i", `led${f.tone === "ok" ? " off" : ""}`), ` ${f.label}`);
+      name.append(dot(f.tone === "ok" ? "" : f.tone === "danger" ? "fail" : "act"), ` ${f.label}`);
       name.title = f.key;
       const acts = el("span", "ctl-acts");
       const fix = f.tone !== "ok" && (f.section ? sectionFix(f.section) : REMEDIES[f.key]);
@@ -703,7 +703,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     li.dataset.level = r.level === "error" ? "error" : r.on && r.loaded ? "started" : "off";
     li.dataset.seg = r.on ? "on" : "off";
     const name = el("span", "ctl-name");
-    name.append(el("i", `led${r.on && r.level === "started" ? "" : " off"}`), ` ${r.label}`);
+    name.append(dot(r.refused || r.level === "error" ? "fail" : r.on && r.level === "started" ? "" : "off"), ` ${r.label}`);
     name.title = r.name;
     const what = el("span", "ctl-cell-what", r.description || (r.source === "own" ? t("Your own folder.") : ""));
     // A refused start is said under the row; the engineer's line keeps to what the cell is.
@@ -858,7 +858,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       const bad = ["stopped", "refused"].includes(ch1.state);
       li.dataset.level = bad ? "error" : ch1.connected ? "started" : "warn";
       const name = el("span", "ctl-name");
-      name.append(el("i", `led${ch1.connected ? " pulse" : " off"}`), ` ${ch1.id[0].toUpperCase()}${ch1.id.slice(1)}`);
+      name.append(dot(ch1.connected ? "" : bad ? "fail" : "off"), ` ${ch1.id[0].toUpperCase()}${ch1.id.slice(1)}`);
       const state = el("span", "ctl-detail");
       const badge = el("span", "ctl-cfg-badge", STATES[ch1.state] || ch1.state);
       badge.dataset.state = ch1.state;
@@ -889,7 +889,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     for (const id of ch.absent || []) {
       const li = el("li", "ctl-row channel");
       const name = el("span", "ctl-name");
-      name.append(el("i", "led off"), ` ${id[0].toUpperCase()}${id.slice(1)}`);
+      name.append(dot("off"), ` ${id[0].toUpperCase()}${id.slice(1)}`);
       const acts = el("span", "ctl-acts");
       acts.append(button("word", t("Add it"), { act: "tab", tab: "cells" }));
       li.dataset.level = "off";

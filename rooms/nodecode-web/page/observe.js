@@ -192,6 +192,13 @@ export function headline(micro, main, sub) {
   return node;
 }
 
+// A row's mark (the standard's rule 5): colour marks exceptions only -- running
+// green, act here the accent, failed red, off a hollow ring -- and a healthy row
+// carries none (KIND empty).
+export function dot(kind) {
+  return kind ? el("i", `led ${kind}`) : document.createTextNode("");
+}
+
 // The kit's banner: one object in two tones -- needs you or failed -- a line of
 // what, a line of why, and the one act that answers it (the standard's rule 6).
 export function banner(tone, what, why, act) {
@@ -1225,9 +1232,9 @@ const SHEETS = {
       }
       const identity = parts.identity;
       const rows = [];
-      if (identity) rows.push(prow({ lead: el("i", "led pulse"), name: "nodecode", value: identity.version ? `v${identity.version}` : "", detail: uptime(identity.started_at) }));
+      if (identity) rows.push(prow({ lead: dot(""), name: "nodecode", value: identity.version ? `v${identity.version}` : "", detail: uptime(identity.started_at) }));
       for (const fact of facts) {
-        const lead = el("i", `led${fact.tone === "ok" ? " off" : ""}`);
+        const lead = dot(fact.tone === "ok" ? "" : fact.tone === "danger" ? "fail" : "act");
         lead.dataset.tone = fact.tone;
         rows.push(prow({ lead, name: fact.label, tone: fact.tone === "danger" ? "bad" : "", detail: oneLine(fact.detail), key: `now:${fact.label}`, open,
           more: fact.detail || fact.remedy ? [el("p", "p-whole", fact.detail || ""), fact.remedy ? el("p", "p-whole", fact.remedy) : null] : null }));
@@ -1506,7 +1513,7 @@ function glance(parts, data, activity, range) {
   const words = el("span", "words");
   words.append(el("span", "micro", t("Right now")),
     el("span", "says", [identity?.version ? `nodecode v${identity.version}` : "nodecode", uptime(identity?.started_at)].filter(Boolean).join(" · ")));
-  now.append(el("i", "led pulse"), words, el("span", "chev", "›"));
+  now.append(words, el("span", "chev", "›"));
   node.append(now);
   return node;
 }
@@ -1558,14 +1565,14 @@ function nowStrip(health, identity) {
   const list = el("div", "now-list");
   if (identity) {
     const item = el("div", "now-item");
-    item.append(el("i", "led pulse"), el("span", "label", "nodecode"),
+    item.append(el("span", "label", "nodecode"),
       el("span", "detail", [identity.version ? `v${identity.version}` : "", uptime(identity.started_at)].filter(Boolean).join(" · ")));
     list.append(item);
   }
   for (const fact of Array.isArray(health) ? health : []) {
     const item = el("div", "now-item");
     item.dataset.tone = fact.tone;
-    item.append(el("i", `led${fact.tone === "ok" ? " off" : ""}`), el("span", "label", fact.label), el("span", "detail", fact.detail));
+    item.append(dot(fact.tone === "ok" ? "" : fact.tone === "danger" ? "fail" : "act"), el("span", "label", fact.label), el("span", "detail", fact.detail));
     if (fact.remedy) item.title = fact.remedy;
     list.append(item);
   }

@@ -1170,3 +1170,25 @@ corner or letter-spacing instead of naming the kit's scale."
       (is (notany (lambda (d) (search "var(--mono)" d)) (gethash help rules)) (format nil "~a leaves mono" help)))
     (is (search "var(--fs-state)" (funcall value ".display" "font")) "a head's sentence is the state size")
     (is (search "if (tag) row.title = tag;" (web-js-function (web-page-text "control.js") "fact")) "a field's name is a tooltip")))
+
+;; Colour marks exceptions only (step 5 of the standard): one dot(kind) draws a
+;; row's mark -- running green, act here the accent, failed red, off a hollow
+;; ring -- and a healthy row carries none: a connected channel, a ready server,
+;; a loaded cell, a running profile. An on switch is white (the solid tone), so
+;; orange keeps its one meaning. Measured before it: orange on connected, on,
+;; default and needs you alike; every healthy row of Cells, MCP, Channels,
+;; Index and Profiles wore the accent dot.
+(deftest web-cell-colour-marks-exceptions-only ()
+  (let* ((css (web-css-declarations (web-page-text "app.css")))
+         (value (lambda (selector property) (web-css-value css selector property)))
+         (observe (web-page-text "observe.js")))
+    (is (search "export function dot(kind)" observe) "one mark")
+    (is (search "kind ? el(\"i\", `led ${kind}`) : document.createTextNode(\"\")" (web-js-function observe "dot")) "a healthy row carries none")
+    (dolist (file '("control.js" "index.js" "mcp.js" "profiles.js" "access.js"))
+      (is (not (search "el(\"i\", `led${" (web-page-text file))) (format nil "~a marks rows through dot" file)))
+    (is (equal "var(--live)" (funcall value ".led.live" "background")) "running is green")
+    (is (equal "var(--accent-fill)" (funcall value ".led.act" "background")) "act here is the accent")
+    (is (equal "var(--fail)" (funcall value ".led.fail" "background")) "failed is red")
+    (is (equal "transparent" (funcall value ".led.off" "background")) "off is a hollow ring")
+    (is (search "\"fail\" : r.on && r.level === \"started\" ? \"\" : \"off\"" (web-js-function (web-page-text "control.js") "cellRow")) "a loaded cell has no dot, a failed one the red")
+    (is (equal "var(--primary)" (funcall value ".pill[aria-checked=\"true\"]" "background")) "an on switch is white")))
