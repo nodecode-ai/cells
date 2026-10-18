@@ -77,6 +77,7 @@ it over any platform, and the /channels status surface.")
    #:digest-note-call-result #:digest-note-usage
    #:digest-note-said #:digest-note-writing #:digest-note-written
    #:digest-card #:card-text #:step-mark #:digest-details #:details-text #:thought-headline
+   #:digest-note-line #:+digest-note-cap+
    #:digest-status-plan #:digest-status-attempted #:digest-status-refused
    #:digest-status-delivered #:digest-final-text
    #:recorded-answer-text

@@ -575,3 +575,22 @@ it now" (nck:digest-final-text digest)))
   (nck:digest-note-call-result digest "c2" 6000 :failed t
                                :metadata (nlk:json-object "stopped" (nlk:json-object "by" "user")))
   (is (eq :stopped (first (second (getf (nck:digest-card digest 6000) :steps))))))
+
+
+(deftest channel-digest-a-note-is-its-first-line ()
+  ;; A settled failure's detail is whatever the condition prints, and a Lisp
+  ;; condition prints its message then a `See also: The ANSI Standard…' block.
+  ;; The card shows the message alone: a note is a glance, and the turn's
+  ;; record keeps the rendering whole. (A failure card carried the traceback.)
+  (is (equal "The bounding indices 0 and 300 are bad for a sequence of length 61."
+             (nck:digest-note-line
+              (format nil "The bounding indices 0 and 300 are bad for a sequence of length 61.~%See also:~%  The ANSI Standard, Glossary entry for \"bounding index designator\"")
+              200)))
+  ;; What is left is still one line, cut to the cap CLIP promises: the first
+  ;; CAP characters and an ellipsis.
+  (let* ((long (format nil "~{~a~}" (make-list 60 :initial-element "boom")))
+         (line (nck:digest-note-line long 60)))
+    (is (equal (concatenate 'string (subseq long 0 60) "...") line))
+    (is (null (find #\Newline line))))
+  ;; A single-line note is untouched.
+  (is (equal "generated \"ok\"" (nck:digest-note-line "generated \"ok\"" 200))))

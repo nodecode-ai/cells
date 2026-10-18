@@ -170,7 +170,12 @@ ATTACHMENTS)."
                                                 (and thought (format nil "*~a*" (discord-escape thought)))))))
              (description (format nil "~{~a~^~%~}"
                                   (remove nil (list (and (plusp (length opening)) opening)
-                                                    (and note (format nil "> ~a" (discord-escape note)))))))
+                                                    ;; One line, capped, exactly as CARD-TEXT draws it: a
+                                                    ;; failure's rendering can run to a Lisp traceback's
+                                                    ;; several lines, and a card is a glance.
+                                                    (and note (format nil "> ~a"
+                                                                      (discord-escape
+                                                                       (nck:digest-note-line note nck:+digest-note-cap+))))))))
              (parts
                (append
                 (list (text-display (format nil "-# ~(~a~)~@[ · ~a~]~%### ~a" state

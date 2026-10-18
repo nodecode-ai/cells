@@ -676,9 +676,12 @@ step's number follow.")
   (elapsed-label (- (if (plusp digest.ended-at-ms) digest.ended-at-ms now)
                     digest.started-at-ms)))
 
-(defun digest-note-line (note cap &aux (trimmed (nlk:one-line note)))
-  "NOTE flattened to one line and capped for a card."
-  (nlk:clip trimmed cap))
+(defun digest-note-line (note cap &aux (line (nlk:one-line (nlk:first-line (or note "")))))
+  "NOTE flattened to one line and capped for a card: its first line, which
+is the message. What a rendering puts after a newline — a Lisp condition's
+`See also: The ANSI Standard…' block, a traceback — is boilerplate a card
+never shows; the turn's record keeps it whole."
+  (nlk:clip line cap))
 
 (defun pending-lines (digest)
   "The ⌎ rows of the input parked behind DIGEST's turn, in promotion order,

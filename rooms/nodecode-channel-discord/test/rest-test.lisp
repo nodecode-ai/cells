@@ -871,3 +871,15 @@ its section included."
     (is (equal "❌ Eval failed · 1s"
                (second (card-texts (list :state :done :headline "Done"
                                          :steps '((:failed "Eval failed" "1s" nil)))))))))
+
+
+(deftest channel-discord-a-card-note-is-one-line ()
+  ;; A failed turn's detail is the condition's whole rendering. The card draws
+  ;; its first line, as CARD-TEXT does: the multi-line block a Lisp condition
+  ;; prints reached a real card and read as a traceback in the room.
+  (let* ((note (format nil "The bounding indices 0 and 300 are bad for a sequence of length 61.~%See also:~%  The ANSI Standard, Glossary entry for \"bounding index designator\""))
+         (card (list :state :failed :elapsed "2m49s" :task "Update" :note note))
+         (texts (card-texts card)))
+    (is (equal "> The bounding indices 0 and 300 are bad for a sequence of length 61."
+               (second texts)))
+    (is (null (find #\Newline (second texts))))))
