@@ -754,13 +754,15 @@ press_data), or NIL for words typed."
   (press-action (source-field candidate "press_data")))
 
 (defun line-controls (lane digest)
-  "The controls LANE's card carries for DIGEST's turn: while it runs, Stop
-beside Details on one row; once it settled, Details alone, the card staying
-as the turn's record. Each press routes back through the lane's session id."
+  "The controls LANE's card carries for DIGEST's turn: while it waits, Raise
+limit (LIFT-PRESSED); while it runs, Stop beside Details on one row; once it
+settled, Details alone, the card staying as the turn's record. Each turn's
+press routes back through the lane's session id; Raise limit is the host's."
   ;; (LABEL DATA STYLE): the kit names the button's weight, the platform
-  ;; styles it. A queued ask's card carries none.
+  ;; styles it.
   (let ((details (list "Details" (format nil "nck:details:~a" lane.session-id) :secondary)))
     (case digest.phase
+      (:queued (list (list (list "Raise limit" "nck:lift" :primary))))
       (:running (list (list (list "Stop" (format nil "nck:stop:~a" lane.session-id) :danger)
                             details)))
       ((:completed :failed :cancelled :paused) (list details)))))
@@ -799,18 +801,19 @@ warning naming WHAT. => whether they were delivered."
     (stop-pressed host user-id (subseq data (length "nck:stop:")) (getf payload :user-name)))
   (on-worker host
     (flet ((after (prefix) (and (stringp data) (eql 0 (search prefix data)) (subseq data (length prefix)))))
-      (nlk:if-let (session-id (after "nck:details:"))
-        (details-pressed host payload session-id)
-        (nlk:if-let (press (after +step-press-prefix+))
-          (step-pressed host payload press)
-          ;; A choice whose press this home cannot read back (PRESS-ACTION)
-          ;; arrives here, never as its line: the card is older than the
-          ;; press vocabulary, or than the store it was kept in.
-          (deliver-or-warn host (if (or (after "nck:stop:") (equal data "nck:page"))
-                                    (host-plan host #'platform-plan-control-ack payload)
-                                    (host-plan host #'platform-plan-control-ack payload
-                                               :text "This button is out of date: run the command again."))
-                           (format nil "control ack for ~a failed" (getf payload :id))))))))
+      (let ((session-id (after "nck:details:"))
+            (press (after +step-press-prefix+)))
+        (cond ((equal data "nck:lift") (lift-pressed host payload))
+              (session-id (details-pressed host payload session-id))
+              (press (step-pressed host payload press))
+              ;; A choice whose press this home cannot read back (PRESS-ACTION)
+              ;; arrives here, never as its line: the card is older than the
+              ;; press vocabulary, or than the store it was kept in.
+              (t (deliver-or-warn host (if (or (after "nck:stop:") (equal data "nck:page"))
+                                           (host-plan host #'platform-plan-control-ack payload)
+                                           (host-plan host #'platform-plan-control-ack payload
+                                                      :text "This button is out of date: run the command again."))
+                                  (format nil "control ack for ~a failed" (getf payload :id)))))))))
 
 (defun stop-pressed (host user-id session-id &optional user-name
                      &aux (lane (find-lane host.lanes session-id)))
@@ -832,6 +835,43 @@ lane or operates the room; the card says who, by USER-NAME."
                (host-id host) lane.session-id)))
     (t (warn "~a: ~a may not stop ~a"
              (host-id host) user-id lane.session-id))))
+
+;;; --- Raise limit (a queued card's way past the gate) -------------------------------
+;;; A queued ask's card says it waits and carries Raise limit. A room
+;;; operator's press doubles how many turns run at once across the host --
+;;; live at once, and written to channels.<id>.max_concurrent_turns so a
+;;; restart keeps it -- and lets the line through as far as the new limit
+;;; reaches. Anyone else's press is answered, to them alone, with whose the
+;;; limit is; it moves nothing.
+
+(defun raise-limit (host &aux (was host.max-concurrent-turns) (limit (* 2 (max 1 was)))
+                              (key (list "channels" (platform-id host.platform) "max_concurrent_turns")))
+  "Double HOST's turns at once, keep it in the config, and let the line
+through. => what the operator who raised it is told."
+  ;; The live limit moves first: the config write can be refused (no config
+  ;; in this process, a document the writer cannot read) and the line still
+  ;; moves, the answer then saying the raise lasts until a restart.
+  (setf host.max-concurrent-turns limit)
+  (let ((refusal (handler-case (progn (nle:config-set key limit) nil)
+                   (error (condition) (princ-to-string condition)))))
+    (multiple-value-bind (admitted pending) (claim-waiting host limit)
+      (dolist (ask admitted) (admit-ask host ask))
+      (when (or admitted pending)
+        (save-queued-asks host))
+      (recount-queued host pending)
+      (format nil "Raised to ~d turns at once (was ~d)~[~:;; ~:*~d waiting ask~:p started~]. ~:[Saved as ~{~a~^.~}.~;~:*Until a restart only: the config was not written (~a).~]"
+              limit was (length admitted) refusal key))))
+
+(defun lift-pressed (host payload &aux (user-id (getf payload :user-id)))
+  "Worker thread: a queued card's Raise limit press, answered to the presser
+alone -- a room operator's raises the limit (RAISE-LIMIT)."
+  (deliver-or-warn host
+                   (host-plan host #'platform-plan-control-ack payload
+                              :text (if (operator-p host user-id)
+                                        (raise-limit host)
+                                        (format nil "Only the room's operators can raise the limit (~d turn~:p at once): ask one of them."
+                                                host.max-concurrent-turns)))
+                   (format nil "control ack for ~a failed" (getf payload :id))))
 
 ;;; --- Details (everything a card leaves out, to whoever pressed it) -----------------
 ;;; A card shows the newest steps; its Details press answers the person who
@@ -2979,6 +3019,16 @@ the line."
           lane.said ask.said)
     lane))
 
+(defun recount-queued (host pending)
+  "Everyone still in PENDING, the line in its order, counts down on their card."
+  (loop for ask in pending
+        for position from 0
+        do (nlk:when-let (lane (find-lane host.lanes ask.lane))
+             (with-lane-digest (digest lane)
+               (when (eq digest.phase :queued)
+                 (digest-note-queued digest position)))
+             (schedule-flush host lane))))
+
 (defun promote-next (host owner-id)
   "Give back a finished lane's slot and let the next ask through."
   (multiple-value-bind (next pending) (release-slot host owner-id)
@@ -2986,14 +3036,7 @@ the line."
     ;; The queue moved: what a stop or a crash would leave waiting.
     (when (or next pending)
       (save-queued-asks host))
-    ;; Everyone still queued counts down.
-    (loop for ask in pending
-          for position from 0
-          do (nlk:when-let (lane (find-lane host.lanes ask.lane))
-               (with-lane-digest (digest lane)
-                 (when (eq digest.phase :queued)
-                   (digest-note-queued digest position)))
-               (schedule-flush host lane)))))
+    (recount-queued host pending)))
 
 (defun admit-ask (host ask &aux (lane (intern-ask-lane host ask)))
   "Ensure the room, fork the lane off its current head, and open its turn."

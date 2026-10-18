@@ -258,9 +258,13 @@ people's messages are not read.
 ## The queue
 
 At most `max_concurrent_turns` asks (default 4) run at once across the whole
-bot. Others wait, each with a grey card reading `Queued · 2 ahead`. When a
-slot frees, the next ask is picked fairly by author: the person with the
-fewest running turns, then the one served longest ago. The queue lives in
+bot. Others wait, each with a grey card reading `Queued · 2 ahead` and a
+**Raise limit** button. An operator's press doubles the limit at once, writes
+it to `max_concurrent_turns` so a restart keeps it, and lets the queue
+through as far as the new limit reaches; anyone else's press is told,
+privately, to ask an operator. When a slot frees, the next ask is picked
+fairly by author: the person with the fewest running turns, then the one
+served longest ago. The queue lives in
 memory; a restart drops waiting asks (see below).
 
 ## Turn budget

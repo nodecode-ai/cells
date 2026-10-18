@@ -650,6 +650,22 @@ gesture carries."
           (setf book.pending (append pending (list ask)))
           (values nil (length pending))))))
 
+(defun next-pending (book)
+  "Take the ask the next free slot goes to off BOOK's line, charging it the
+slot, or NIL when no one waits. Caller holds the book lock."
+  ;; Fewest lanes running, then served longest ago; a tie keeps the oldest.
+  (let ((next (first book.pending)))
+    (flet ((running (ask) (gethash (owner-key ask) book.running 0))
+           (served (ask) (gethash (owner-key ask) book.served 0)))
+      (dolist (ask (rest book.pending))
+        (when (or (< (running ask) (running next))
+                  (and (= (running ask) (running next))
+                       (< (served ask) (served next))))
+          (setf next ask))))
+    (when next
+      (setf book.pending (remove next book.pending :test #'eq :count 1))
+      (take-slot book next))))
+
 (defun release-slot (host owner-id)
   "Give back a finished lane's slot and take the next ask off the queue."
   ;; Returns (values NEXT-ASK REMAINING-PENDING) — the caller admits NEXT-ASK
@@ -660,20 +676,17 @@ gesture carries."
         (decf book.running-total))
       (let ((count (gethash key book.running 0)))
         (if (<= count 1) (remhash key book.running) (setf (gethash key book.running) (1- count)))))
-    (let ((next (first book.pending)))
-      ;; Fewest lanes running, then served longest ago; a tie keeps the oldest.
-      (flet ((running (ask) (gethash (owner-key ask) book.running 0))
-             (served (ask) (gethash (owner-key ask) book.served 0)))
-        (dolist (ask (rest book.pending))
-          (when (or (< (running ask) (running next))
-                    (and (= (running ask) (running next))
-                         (< (served ask) (served next))))
-            (setf next ask))))
-      (when next
-        (setf book.pending
-              (remove next book.pending :test #'eq :count 1))
-        (take-slot book next))
-      (values next (copy-list book.pending)))))
+    (values (next-pending book) (copy-list book.pending))))
+
+(defun claim-waiting (host max-concurrent)
+  "Let the line through until MAX-CONCURRENT run: (values ADMITTED
+REMAINING-PENDING), ADMITTED in the order the line let them through."
+  ;; What a raised limit does at once, where a finished turn lets one through;
+  ;; the caller admits ADMITTED outside the lock and repositions the rest.
+  (with-room-book (book host)
+    (values (loop while (and book.pending (< book.running-total max-concurrent))
+                  collect (next-pending book))
+            (copy-list book.pending))))
 
 ;;; --- surface-scoped typing ------------------------------------------------------------
 

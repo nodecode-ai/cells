@@ -114,8 +114,9 @@ Other causes:
 - A message with no text and no attachments is ignored.
 - The model may have chosen silence (`NO_REPLY`). Nothing is posted then;
   see [turns.md](turns.md#silence).
-- The ask may be waiting: its card reads `Queued · N ahead`. Raise
-  `max_concurrent_turns` if this happens often.
+- The ask may be waiting: its card reads `Queued · N ahead`. An operator's
+  press on its **Raise limit** doubles `max_concurrent_turns` and lets the
+  queue through.
 
 ### Mentions are not recognized
 

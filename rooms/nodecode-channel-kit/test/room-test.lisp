@@ -518,6 +518,24 @@ alice [m9 uu1]: fix it"
     (is (not admitted) "the cap is across the host, not per person")
     (is (zerop position) "and it says where you are in the line")))
 
+(deftest channel-room-a-raised-limit-lets-the-line-through (let* ((host (test-host :max-concurrent 1))
+                                                                  (a (test-room-ask host "alice" "1"))
+                                                                  (b (test-room-ask host "alice" "2"))
+                                                                  (c (test-room-ask host "bob" "3"))
+                                                                  (d (test-room-ask host "carol" "4"))))
+  ;; A raised limit lets through as many as it freed, at once, in the line's
+  ;; own order (fewest running first), and answers who still waits.
+  (is (nck:claim-slot host a 1))
+  (is (not (nck:claim-slot host b 1)))
+  (is (not (nck:claim-slot host c 1)))
+  (is (not (nck:claim-slot host d 1)))
+  (multiple-value-bind (admitted pending) (nck::claim-waiting host 3)
+    (is (equal (list c d) admitted) "two slots freed: bob and carol before alice's second")
+    (is (equal (list b) pending)))
+  (multiple-value-bind (admitted pending) (nck::claim-waiting host 3)
+    (is (null admitted) "a full gate lets no one through")
+    (is (equal (list b) pending))))
+
 (deftest channel-room-gate-is-fair-by-author (let* ((host (test-host :max-concurrent 1))
                                                     (a1 (test-room-ask host "alice" "1"))
                                                     (a2 (test-room-ask host "alice" "2"))

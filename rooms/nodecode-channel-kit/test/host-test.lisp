@@ -1600,7 +1600,7 @@ LANE, as the one running channel."
 (deftest channel-host-the-card-carries-stop-and-details (with-digest-host (host lane))
   ;; A running card carries Stop beside Details on one row; a settled one
   ;; carries Details alone, the card staying as the turn's record; a queued
-  ;; ask's carries none.
+  ;; ask's carries Raise limit, which lets the line through.
   (fact "turn.started" (nlk:json-object))
   (let ((digest (nck:lane-digest lane)))
     (is (equal (list (list (list "Stop" "nck:stop:chat-123-m1" :danger)
@@ -1610,7 +1610,43 @@ LANE, as the one running channel."
     (is (equal (list (list "Details" "nck:details:chat-123-m1" :secondary))
                (nck::line-controls lane digest)))
     (nck:digest-note-queued digest 1)
-    (is (null (nck::line-controls lane digest)))))
+    (is (equal (list (list (list "Raise limit" "nck:lift" :primary)))
+               (nck::line-controls lane digest)))))
+
+(deftest channel-host-raise-limit-is-the-operators-and-lets-the-line-through ()
+  ;; A queued card carries Raise limit. A room operator's press doubles the
+  ;; turns that run at once, live and in the config so a restart keeps it, and
+  ;; lets the line through at once; anyone else's is answered, to them alone,
+  ;; with whose it is, and moves nothing.
+  (handler-bind ((warning #'muffle-warning))
+    (with-temp-file (nodecode.evolved::*shared-config-path*
+                     :type "jsonc" :contents "{\"channels\": {\"test\": {}}}" :setf t)
+      (with-digest-host (host nil :responses (replies "s1" "ok" "ok" "ok" "ok" "ok")
+                         :name "lift" :session "chat-1-m7"
+                         :host-keys (:max-concurrent 1 :platform (test-platform :choices t)))
+        ;; The one slot is taken; the ask waits behind it.
+        (is (nck:claim-slot host (room-1-ask "m6") 1))
+        (nck::gate-ask host (room-1-ask "m7"))
+        (is-present (queued (await-plan executor :label "send_message"))
+          "the queued line carries Raise limit"
+          (is (equal (list (list (list "Raise limit" "nck:lift" :primary)))
+                     (plan-field queued "controls"))))
+        (flet ((lift (id user)
+                 (nck:control-pressed host (list :id id :user-id user :message-id "s1" :channel-id "1"
+                                                 :data "nck:lift"))
+                 (plan-field (await-plan executor :path (format nil "/presses/~a" id)) "text"))
+               (waiting ()
+                 (nck::with-room-book (book host) (length (nck::room-book-pending book)))))
+          (is (equal "Only the room's operators can raise the limit (1 turn at once): ask one of them."
+                     (lift "i1" "alice")))
+          (is (= 1 (nck::host-max-concurrent-turns host)) "anyone else's press moves nothing")
+          (is (= 1 (waiting)) "and the ask still waits")
+          (is (equal "Raised to 2 turns at once (was 1); 1 waiting ask started. Saved as channels.test.max_concurrent_turns."
+                     (lift "i2" "mike")))
+          (is (= 2 (nck::host-max-concurrent-turns host)))
+          (is (zerop (waiting)) "the line went through")
+          (let ((config (uiop:read-file-string nodecode.evolved::*shared-config-path*)))
+            (is (ppcre:scan "\"max_concurrent_turns\":\\s*2" config) "the config keeps it")))))))
 
 (deftest channel-host-a-usage-fact-meters-the-card (with-digest-host (host lane))
   ;; A round's usage fact, in the keys the engine writes it under, reaches the
