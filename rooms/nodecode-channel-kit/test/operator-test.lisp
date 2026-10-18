@@ -279,6 +279,40 @@ p2 serving m2 and shared."
                            (mapcar #'first (third (first next-controls)))) "choosing the current provider opens its models")
                 (is (null (nth-value 1 (nck::room-model host "chat-100"))) "navigation does not change the room model")))))))))
 
+(deftest channel-operator-backups-card-writes-the-failover-chain ()
+  ;; The Model Picker's Backups card is the failover chain's own view: a menu
+  ;; per backup, the triggers as toggles, Test and the way back -- Discord's
+  ;; five rows -- each press a /models backups line that writes the config.
+  (with-temp-store ()
+    (with-catalog
+      (with-temp-file (path :contents "{}")
+        (let ((nle::*shared-config-path* path))
+          (with-stubbed-fdefinitions
+              ((nle:gateway-target (session-id) (values "p1" "m1"))
+               (nle::frequent-models-json ()
+                 (vector (nlk:json-object "provider" "p1" "model" "m1" "turns" 9)
+                         (nlk:json-object "provider" "p2" "model" "m2" "turns" 3)))
+               (nle::failover-record (provider model) (list :answered-at nil :tried 0 :rescued 0)))
+            (let ((host (test-host :name "backups" :platform (test-platform :choices t)))
+                  (channel (test-candidate :channel "100")))
+              (flet ((backups (args)
+                       (multiple-value-list (nck::room-models-command host channel args "chat-100"))))
+                (destructuring-bind (text controls) (backups "backups")
+                  (is (search "## Backup Models" text))
+                  (is (search "No backups" text))
+                  (is (= 5 (length controls)) "three menus, the triggers, Test and back: Discord's five rows")
+                  (is (equal '("p2/m2" "None") (mapcar #'first (third (first controls)))) "the room's own model is never its backup"))
+                (backups "backups 1 p2 m2")
+                (is (equal '((:provider "p2" :model "m2")) (nle::failover-chain)) "a pick writes the chain")
+                (destructuring-bind (text controls) (backups "backups off refusal")
+                  (is (equal '("rate_limit" "outage" "broken_answer") (nle::failover-triggers)) "a toggle writes the triggers")
+                  (is (search "1. p2/m2: never answered" text))
+                  (is (search "Switches on: rate limit, outage, broken answer." text))
+                  (is (equal '("refusal" "/models backups on refusal" :secondary nil)
+                             (fourth (press-lines (fourth controls)))) "an off trigger offers to switch it on"))
+                (backups "backups 1 none")
+                (is (null (nle::failover-chain)) "None takes the backup out")))))))))
+
 (deftest channel-operator-models-is-a-picker-where-messages-carry-choices ()
   ;; Bare /models where messages carry choices is OpenClaw's picker: a menu
   ;; of the providers, then of one provider's models with the way back and
@@ -300,7 +334,8 @@ p2 serving m2 and shared."
               (is (search "Select a provider (2 available)." text))
               (is (equal '((:menu "Select provider"
                             (("p1" "/models p1" "2 models · current" nil)
-                             ("p2" "/models p2" "2 models" nil))))
+                             ("p2" "/models p2" "2 models" nil)))
+                           (("Backups (0)" "/models backups" :secondary nil)))
                          (press-lines controls))))
             (destructuring-bind (text controls) (models "p2")
               (is (search "Default: p1/m1" text))
