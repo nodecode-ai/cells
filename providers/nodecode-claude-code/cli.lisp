@@ -202,7 +202,7 @@ its request."
     (ignore-errors (nlk:wait-for-child (run-pid run) (run-process run))))
   (ignore-errors (close (run-output run))))
 
-(defparameter *settle-seconds* 10
+(defparameter *settle-seconds* 20
   "How long a claude CLI that is missing or will not start is waited for. A
 package manager reinstalling Claude Code moves the CLI's folder aside and puts
 the binary back within seconds; a round that starts inside that gap would
