@@ -157,8 +157,7 @@ gcloud's user ADC file ADC-PATH."
     (is (= 1024 (integer-length (getf key :n))))
     (is (equal +gv-signature+
                (cl-base64:usb8-array-to-base64-string
-                (nodecode-google-vertex::rsa-sign key (gv-octets "eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ0ZXN0In0"))))
-        "the signature openssl makes of the same bytes")))
+                (nodecode-google-vertex::rsa-sign key (gv-octets "eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ0ZXN0In0")))) "the signature openssl makes of the same bytes")))
 
 (deftest google-vertex-cell-asserts-a-service-account-as-omp-does ()
   (let* ((jwt (nodecode-google-vertex::service-account-assertion (nlk:decode-json (gv-service-account)) 1800000000))
@@ -178,8 +177,7 @@ gcloud's user ADC file ADC-PATH."
             (nodecode-google-vertex::pkcs1-encoding (gv-octets (format nil "~a.~a" (first parts) (second parts)))
                                                     (nodecode-google-vertex::modulus-octets key)))
            (nodecode-google-vertex::mod-expt (nodecode-google-vertex::octets-integer (gv-base64url-decode (third parts)))
-                                             (getf key :e) (getf key :n)))
-        "the signature verifies under the public key")))
+                                             (getf key :e) (getf key :n))) "the signature verifies under the public key")))
 
 ;;; --- the credential ----------------------------------------------------------------------
 
@@ -196,8 +194,7 @@ gcloud's user ADC file ADC-PATH."
             (is (eq :env (nle:credential-source credential)))))
         (with-stubbed-fdefinitions ((nle::credential-env (name) (and (equal name "GOOGLE_API_KEY") "AIza-gemini"))
                                     (nodecode-google-vertex::user-adc-path () #p"/nonexistent/adc.json"))
-          (is (eq :public (nle:credential-source (nle::resolve-provider-credential "google-vertex" :auth-path auth :probe t)))
-              "the Gemini API's variable never reaches Vertex, and no ADC is named"))
+          (is (eq :public (nle:credential-source (nle::resolve-provider-credential "google-vertex" :auth-path auth :probe t))) "the Gemini API's variable never reaches Vertex, and no ADC is named"))
         (with-temp-file (adc :contents "{\"type\":\"authorized_user\"}")
           (with-stubbed-fdefinitions ((nle::credential-env (name) nil)
                                       (nodecode-google-vertex::user-adc-path () (pathname adc)))
@@ -216,8 +213,7 @@ gcloud's user ADC file ADC-PATH."
 
 (deftest google-vertex-cell-sends-gemini-with-an-api-key-to-the-express-address ()
   (with-gv-round (url headers body exchanges :key "AIza-key" :section '()) "gemini-3.8-flash"
-    (is (equal "https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-3.8-flash:streamGenerateContent?alt=sse" url)
-        "no project, and the global host when no location is named")
+    (is (equal "https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-3.8-flash:streamGenerateContent?alt=sse" url) "no project, and the global host when no location is named")
     (is (equal "AIza-key" (gv-header headers "x-goog-api-key")))
     (is (null (gv-header headers "authorization")))
     (is (null exchanges) "a key needs no token")
