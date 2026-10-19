@@ -2504,13 +2504,13 @@ function paintPlace() {
   title.title = state.pane === "control" ? t("this organism") : t("every session");
   const tab = state.pane === "control" ? control.label : null;
   if (!tab) {
-    title.textContent = state.pane === "control" ? t("Control") : t("Dashboard");
+    title.textContent = state.pane === "control" ? t("Settings") : t("Dashboard");
     return;
   }
   const back = document.createElement("button");
   back.type = "button";
   back.className = "crumb";
-  back.append(icon("back", 16), el("span", "crumb-word", t("Control")));
+  back.append(icon("back", 16), el("span", "crumb-word", t("Settings")));
   back.addEventListener("click", () => control.back());
   const sep = document.createElement("span");
   sep.className = "sep";
@@ -2571,7 +2571,7 @@ function renderObserve() {
   ledger.hidden = pane !== "chat";
   placeJump();
   $("observe").hidden = pane === "chat";
-  $("observe").setAttribute("aria-label", pane === "control" ? t("Control") : pane === "files" ? t("The session's folder") : t("Where the time and money went"));
+  $("observe").setAttribute("aria-label", pane === "control" ? t("Settings") : pane === "files" ? t("The session's folder") : t("Where the time and money went"));
   const lane = $("observe-lane");
   const timeline = state.timeline?.session === state.current ? state.timeline : null;
   if (pane === "run") {

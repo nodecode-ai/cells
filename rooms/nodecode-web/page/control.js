@@ -22,7 +22,7 @@ import { makeAccess } from "./access.js";
 import { t } from "./i18n.js";
 import { icon } from "./icons.js";
 
-const TABS = [["gateway", t("Gateway")], ["logs", t("Logs")], ["settings", t("Settings")], ["cells", t("Cells")], ["index", t("Index")], ["mcp", "MCP"], ["profiles", t("Profiles")], ["channels", t("Channels")], ["link", t("Link")], ["jobs", t("Scheduled jobs")]];
+const TABS = [["gateway", t("Gateway")], ["logs", t("Logs")], ["settings", t("Config")], ["cells", t("Cells")], ["index", t("Index")], ["mcp", "MCP"], ["profiles", t("Profiles")], ["channels", t("Channels")], ["link", t("Link")], ["jobs", t("Scheduled jobs")]];
 const LABELS = Object.fromEntries(TABS);
 // A phone -- the page's own phone width, app.css's 720 px -- opens Control on
 // its sections as one list, each saying how it stands, and a section as a page
@@ -61,7 +61,7 @@ function codeUrl(row) {
 }
 // A finding the page can act on, by its key: the control that does it. One
 // about a config section opens that section's form (sectionFix) instead.
-const SETTINGS = [t("Open Settings"), { act: "tab", tab: "settings" }];
+const SETTINGS = [t("Open Config"), { act: "tab", tab: "settings" }];
 const LOGS = [t("Open Logs"), { act: "tab", tab: "logs" }];
 const REMEDIES = {
   build: [t("Restart"), { act: "ask", verb: "restart" }], update: [t("Update now"), { act: "update" }],
@@ -629,7 +629,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     const m = c.model;
     const list = c.models?.models || [];
     const named = m && !m.error && (list.find((each) => each.provider === m.provider && each.model === m.model)?.name || m.model);
-    const head = headline(t("Settings"), named ? t("New sessions use {model}.", { model: named }) : m && !m.error ? t("No default model.") : t("Reading…"), m?.refusal || "");
+    const head = headline(t("Config"), named ? t("New sessions use {model}.", { model: named }) : m && !m.error ? t("No default model.") : t("Reading…"), m?.refusal || "");
     (head.querySelector(".micro") || head).append(" ", infoMark);
     root.append(head, words);
     const model = block(t("Default model"));
@@ -1047,7 +1047,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
         job?.state === "running" ? t("Backing up…") : t("Back up now"), { act: "backup" });
       if (job?.state === "running") rows.at(-1).querySelector("button").disabled = true;
     }
-    if (c.model && !c.model.error && c.model.refusal) need(t("The default model is refused"), c.model.refusal, t("Open Settings"), { act: "tab", tab: "settings" }, "fail");
+    if (c.model && !c.model.error && c.model.refusal) need(t("The default model is refused"), c.model.refusal, t("Open Config"), { act: "tab", tab: "settings" }, "fail");
     for (const r of (c.cells && !c.cells.error ? c.cells.cells : []).filter((each) => each.refused)) {
       need(t("{name} refused to start: {why}", { name: r.label || r.name, why: r.refused }), "", t("Open"), { act: "tab", tab: "cells" }, "fail");
     }
@@ -1597,7 +1597,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
         if (TABS.some(([id]) => id === tab)) turnTo(tab);
         else {
           c.home = false;
-          toast(t("Control has no {tab} tab, so it opens on {label}.", { tab, label: LABELS[c.tab] }));
+          toast(t("Settings has no {tab} tab, so it opens on {label}.", { tab, label: LABELS[c.tab] }));
         }
       } else if (!tab && PHONE.matches && !c.home) toHome();
       // Back and Forward between the list and a section, on a phone: a section

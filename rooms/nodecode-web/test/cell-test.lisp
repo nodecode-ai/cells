@@ -1020,6 +1020,7 @@ brace that closes it at the start of a line, or NIL."
         (is (search ".finder { grid-area: 2 / 1 / 3 / -1;" block) "the search under it")
         (is (search "position: fixed; left: 0; right: 0; bottom: 0;" block) "the places along the foot")
         (is (search "#new-session {" block) "New over them")
+        (is (search "border-radius: 50%; background: var(--accent-fill)" block) "a round +")
         (is (search "#count, .column .gateway { display: none; }" block) "no count beside the name, no footer")))
     (is (search "#sessions-tab, .phone-only { display: none; }" css) "wider, the column stays a column")))
 
@@ -1039,7 +1040,7 @@ brace that closes it at the start of a line, or NIL."
     (is (search "fill-opacity=\"0.4\"" html) "in the text's colour, a step an opacity")
     (is (search "id=\"strip-home\"" html) "a top page's mark")
     (is (search "[\"strip-home\", openNew]" app) "which opens a new session, as the column's does")
-    (is (search "el(\"span\", \"crumb-word\", t(\"Control\"))" place) "a Control tab's crumb keeps its word for a wide strip")
+    (is (search "el(\"span\", \"crumb-word\", t(\"Settings\"))" place) "a Settings tab's crumb keeps its word for a wide strip")
     (is (search "else app.classList.add(\"column-open\");" app) "the Sessions tab opens the Sessions page from a board")
     (is block "a phone has the bar")
     (when block

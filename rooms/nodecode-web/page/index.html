@@ -26,9 +26,8 @@
         </button>
       </div>
       <div class="railed">
-        <button class="row" id="new-session" type="button">
+        <button class="row" id="new-session" type="button" aria-label="New session" title="New session" data-i18n-attrs="aria-label title">
           <svg class="plus" viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><path d="M7.5 2.5V12.5M2.5 7.5H12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          <span data-i18n>New session</span>
         </button>
         <button class="row" id="sessions-tab" type="button" aria-current="page">
           <svg class="plus" viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><path d="M2.5 4H12.5M2.5 7.5H12.5M2.5 11H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -42,7 +41,7 @@
         </a>
         <a class="row" id="control-open" href="#v=control" title="The gateway, its log, keys and cells, channels and scheduled jobs" data-i18n-attrs="title">
           <svg class="plus" viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><path d="M2 4H8.5M11.5 4H13M2 11H3.5M6.5 11H13M10 2.5V5.5M5 9.5V12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          <span class="name" data-i18n>Control</span>
+          <span class="name" data-i18n>Settings</span>
         </a>
       </div>
       <div class="group">
@@ -234,7 +233,7 @@
           <button class="cell" type="button" data-to="model"><span class="micro" data-i18n>Model</span><span class="value" id="model-now"></span><span class="more" aria-hidden="true">›</span></button>
           <button class="cell" type="button" data-to="effort" id="effort-cell" hidden><span class="micro" data-i18n>Reasoning</span><span class="value" id="effort-now"></span><span class="more" aria-hidden="true">›</span></button>
           <p class="pickscope-note" id="pickscope-note"></p>
-          <button class="pickscope-go" id="pickscope-go" type="button" data-i18n>Change the default in Control</button>
+          <button class="pickscope-go" id="pickscope-go" type="button" data-i18n>Change the default in Settings</button>
         </div>
         <div class="pane" id="pane-model" hidden>
           <div class="sheet-head"><button class="word back" type="button" data-to="root" data-i18n>‹ Model</button></div>

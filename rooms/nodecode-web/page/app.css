@@ -346,6 +346,8 @@ code, pre, kbd { font-family: var(--mono); }
 .row.with-news .name, .resume .with-news .name { font-weight: 560; }
 .news-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-fill); flex: none; align-self: center; }
 .railed { margin-top: 4px; border-left: 1px solid var(--seam); }
+/* New session is its mark alone, a + (the operator, 2026-10-19: "just +, its intuitive enough"); the word is its tooltip and its name for a reader. The row keeps the rhythm of the rows under it and the + their column. */
+#new-session { width: auto; min-height: calc(1.4em + 14px); align-items: center; padding-right: 12px; }
 
 .group { margin-top: 28px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .group-head { margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -2549,11 +2551,11 @@ button.p-row:active { background: var(--field-lit); }
   .railed > .row .reading { position: absolute; top: 6px; left: calc(50% + 14px); font-size: var(--fs-micro); }
   #new-session {
     position: fixed; z-index: 3; right: max(16px, env(safe-area-inset-right)); bottom: calc(76px + env(safe-area-inset-bottom));
-    width: auto; height: 52px; min-height: 0; flex: none; flex-direction: row; align-items: center; gap: 8px; padding: 0 22px 0 18px;
-    border-radius: var(--r-card); background: var(--accent-fill); color: var(--void); font-size: var(--fs-body); font-weight: 600; box-shadow: var(--shadow);
+    width: 52px; height: 52px; min-height: 0; flex: none; flex-direction: row; align-items: center; justify-content: center; padding: 0;
+    border-radius: 50%; background: var(--accent-fill); color: var(--void); font-size: var(--fs-body); font-weight: 600; box-shadow: var(--shadow);
   }
   #new-session:hover { color: var(--void); }
-  #new-session .plus { width: 16px; height: 16px; }
+  #new-session .plus { width: 22px; height: 22px; }
   .phone-only { display: flex; }
   .pop .pop-part { flex-wrap: wrap; align-items: center; gap: 2px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--seam-lit); }
   .pop-part .micro { width: 100%; padding: 4px 10px 2px; color: var(--tertiary); }
