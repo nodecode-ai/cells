@@ -4,7 +4,9 @@
 ;;;;
 ;;;; The few commands the channel needs and no more: IMAP opens the mailbox
 ;;;; read-only (EXAMINE) and fetches with BODY.PEEK, so a shared inbox keeps
-;;;; every flag a person set; SMTP authenticates and sends one message. TLS is
+;;;; every flag a person set, waits in IDLE for the server to say new mail
+;;;; came, and files a copy of what the bot sent with APPEND; SMTP
+;;;; authenticates and sends one message. TLS is
 ;;;; required and verified: implicit on 993/465, STARTTLS elsewhere, and a
 ;;;; server that offers no STARTTLS never sees the password. No error text
 ;;;; carries a credential.
@@ -76,22 +78,50 @@ bounded by TIMEOUT seconds."
             (error "~a closed the connection inside a ~d-octet literal" (wire-host wire) size))
           (push octets segments))))))
 
-(defun imap-command (wire what control &rest arguments)
-  "Send one tagged command and read through its tagged answer; WHAT names it
-in an error (never the command line, which may carry the password). =>
-the untagged responses, in order, each a list of lines and literals."
-  (let ((tag (format nil "N~d" (incf (wire-tag wire))))
-        (responses '()))
-    (wire-write wire (format nil "~a ~?~a" tag control arguments +crlf+))
+(defun imap-tag (wire)
+  (format nil "N~d" (incf (wire-tag wire))))
+
+(defun tagged-p (line tag)
+  (uiop:string-prefix-p (concatenate 'string tag " ") line))
+
+(defun imap-collect (wire tag what)
+  "Read through TAG's tagged answer; WHAT names the command in an error
+(never the command line, which may carry the password). => (values the
+untagged responses, in order, each a list of lines and literals; the tagged
+status, OK and its text)."
+  (let ((responses '()))
     (loop
       (let* ((segments (imap-read-response wire))
              (line (first segments)))
-        (if (uiop:string-prefix-p (concatenate 'string tag " ") line)
+        (if (tagged-p line tag)
             (let ((status (subseq line (1+ (length tag)))))
               (unless (uiop:string-prefix-p "OK" (string-upcase status))
                 (error "IMAP ~a refused: ~a" what status))
-              (return (nreverse responses)))
+              (return (values (nreverse responses) status)))
             (push segments responses))))))
+
+(defun imap-continuation (wire tag what)
+  "Read until the server's + go-ahead for TAG's literal or idle; its tagged
+answer instead is a refusal."
+  (loop
+    (let ((line (first (imap-read-response wire))))
+      (cond ((uiop:string-prefix-p "+" line) (return line))
+            ((tagged-p line tag)
+             (error "IMAP ~a refused: ~a" what (subseq line (1+ (length tag)))))))))
+
+(defun imap-command (wire what control &rest arguments)
+  "Send one tagged command and read through its tagged answer, as
+IMAP-COLLECT."
+  (let ((tag (imap-tag wire)))
+    (wire-write wire (format nil "~a ~?~a" tag control arguments +crlf+))
+    (imap-collect wire tag what)))
+
+(defun imap-capabilities (wire)
+  "What the logged-in server can do, as upcased words (IDLE, UIDPLUS, ...)."
+  (loop for segments in (imap-command wire "CAPABILITY" "CAPABILITY")
+        for line = (trim (first segments))
+        when (ppcre:scan "(?i)^\\* CAPABILITY " line)
+          append (mapcar #'string-upcase (rest (rest (ppcre:split "\\s+" line))))))
 
 (defun imap-open (host port user password &key (timeout 30))
   "A logged-in IMAP connection to HOST:PORT."
@@ -172,6 +202,65 @@ ARRIVED its INTERNALDATE as a universal time."
                           (ppcre:register-groups-bind ((#'parse-integer n)) ("(?i)RFC822\\.SIZE (\\d+)" head) n)
                           (ppcre:register-groups-bind (date) ("(?i)INTERNALDATE \"([^\"]+)\"" head)
                             (internal-date date))))))
+
+(defparameter +idle-check-seconds+ 0.25
+  "How often a wait in IDLE looks for the server's word or a stop: local
+only, nothing crosses the wire.")
+
+(defun imap-idle (wire seconds stop-p)
+  "Wait in IDLE (RFC 2177) on the selected mailbox until the server says a
+message arrived, SECONDS pass or STOP-P answers true, then end the wait.
+=> :new, :quiet or :stop."
+  (let ((tag (imap-tag wire))
+        (deadline (+ (get-internal-real-time) (round (* seconds internal-time-units-per-second))))
+        (outcome nil))
+    (wire-write wire (format nil "~a IDLE~a" tag +crlf+))
+    (imap-continuation wire tag "IDLE")
+    (loop until outcome
+          do (cond ((funcall stop-p) (setf outcome :stop))
+                   ((>= (get-internal-real-time) deadline) (setf outcome :quiet))
+                   ((listen (wire-stream wire))
+                    (let ((line (wire-read-line wire)))
+                      (cond ((ppcre:scan "(?i)^\\* \\d+ EXISTS" line) (setf outcome :new))
+                            ((ppcre:scan "(?i)^\\* BYE" line)
+                             (error "~a ended the session: ~a" (wire-host wire) line)))))
+                   (t (sleep +idle-check-seconds+))))
+    (wire-write wire (format nil "DONE~a" +crlf+))
+    (imap-collect wire tag "IDLE")
+    outcome))
+
+(defun list-mailbox-name (segments)
+  "The mailbox one LIST response names: quoted, an atom, or a literal."
+  (let ((literal (find-if (lambda (s) (typep s '(vector (unsigned-byte 8)))) segments)))
+    (if literal
+        (octets-latin1 literal)
+        (ppcre:register-groups-bind (quoted atom)
+            ("^\\* LIST \\([^)]*\\) (?:\"(?:[^\"\\\\]|\\\\.)*\"|NIL) (?:\"((?:[^\"\\\\]|\\\\.)*)\"|(\\S+))\\s*$"
+             (trim (first segments)))
+          (if quoted (ppcre:regex-replace-all "\\\\(.)" quoted "\\1") atom)))))
+
+(defun imap-special-mailbox (wire use)
+  "The mailbox the server marks with the special-use attribute USE (RFC
+6154), such as \\Sent, or NIL."
+  (loop for segments in (imap-command wire "LIST" "LIST \"\" \"*\"")
+        for attributes = (ppcre:register-groups-bind (words) ("(?i)^\\* LIST \\(([^)]*)\\)" (first segments))
+                           (ppcre:split "\\s+" words))
+        when (member use attributes :test #'string-equal)
+          return (list-mailbox-name segments)))
+
+(defun imap-append (wire mailbox data &key (flags '("\\Seen")))
+  "File DATA, a composed message, in MAILBOX with FLAGS. => the copy's UID
+when the server names it (UIDPLUS), else T."
+  (let ((octets (utf8 data))
+        (tag (imap-tag wire)))
+    (wire-write wire (format nil "~a APPEND ~a (~{~a~^ ~}) {~d}~a"
+                             tag (imap-quote mailbox) flags (length octets) +crlf+))
+    (imap-continuation wire tag "APPEND")
+    (write-sequence octets (wire-stream wire))
+    (wire-write wire +crlf+)
+    (let ((status (nth-value 1 (imap-collect wire tag "APPEND"))))
+      (or (ppcre:register-groups-bind ((#'parse-integer uid)) ("(?i)\\[APPENDUID \\d+ (\\d+)\\]" status) uid)
+          t))))
 
 ;;; --- SMTP -----------------------------------------------------------------------
 
