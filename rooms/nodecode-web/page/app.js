@@ -4539,7 +4539,10 @@ for (const [id, go] of [["home", openNew], ["strip-home", openNew], ["usage-open
 }
 for (const host of [$("views"), $("head-acts")]) host.addEventListener("click", (event) => {
   const sw = event.target.closest("[data-view]");
-  if (sw) setPane(sw.dataset.view);
+  if (!sw) return;
+  // Chat and Run are a toggle: a press on the lit one flips it.
+  const flip = host === $("views") && sw.getAttribute("aria-checked") === "true";
+  setPane(flip ? (sw.dataset.view === "chat" ? "run" : "chat") : sw.dataset.view);
 });
 // A phone's Dashboard: a row opens its section in a sheet; the veil, the
 // close mark, Escape or a drag down by the grip closes it, the way it came.

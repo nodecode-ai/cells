@@ -1026,7 +1026,7 @@ brace that closes it at the start of a line, or NIL."
 
 ;; Every page on a phone has the Sessions page's bar: three slots -- the way
 ;; back or the mark, the page's name once, More (Files among its acts) --
-;; the session's Chat and Run a switch under it, and the tabs along the foot on Dashboard and Control too.
+;; the session's Chat and Run a toggle in it beside More, and the tabs along the foot on Dashboard and Control too.
 ;; The mark is the site's axolotl, drawn once, in the text's own colour.
 (deftest web-cell-every-page-on-a-phone-has-one-bar ()
   (let* ((html (web-page-text "index.html"))
@@ -1046,7 +1046,9 @@ brace that closes it at the start of a line, or NIL."
     (when block
       (is (search "grid-template-columns: 44px minmax(0, 1fr) 44px;" block) "three slots")
       (is (search ".strip h1 .crumb-word, .strip h1 .sep { display: none; }" block) "a tab named once")
-      (is (search ".strip > .views { grid-area: 3 / 1 / 4 / -1;" block) "the views a switch under the bar")
+      (is (search ".strip > .views { grid-area: 1 / 3 / 3 / 4;" block) "Chat and Run a toggle in the bar, beside More")
+      (is (search ".views:has(> [data-view=\"run\"][aria-checked=\"true\"])::after { transform: translateX(44px); }" block) "its knob under the view on screen")
+      (is (search "const flip = host === $(\"views\") && sw.getAttribute(\"aria-checked\") === \"true\";" app) "a press on the lit side flips it")
       (let ((switch (subseq html (search "id=\"views\"" html) (search "id=\"more\"" html)))
             (acts (subseq html (search "id=\"head-acts\"" html) (search "id=\"status\"" html))))
         (is (and (search "data-view=\"chat\"" switch) (search "data-view=\"run\"" switch)
