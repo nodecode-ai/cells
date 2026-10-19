@@ -13,11 +13,16 @@
 
 (in-package #:nodecode-experience)
 
-(defparameter +kinds+ '("helped" "harm" "call" "verification")
-  "helped: a definition of the index was read or followed, and it paid.
-harm: following one caused damage. call: a definition of the organism's
-own ran and did its job. verification: an evidence check over a target,
-with a status and, unless it passed, the smallest next step.")
+(defparameter +kinds+ '("helped" "harm" "confounded" "no-effect" "call" "verification")
+  "helped: a definition of the index was read or followed, and a moment of
+the turn shows it paid. harm: following one caused damage. confounded: it
+was in play, but the turn cannot tell its part from the rest (several
+changes at once, or one outcome all that speaks for it). no-effect: read or
+followed, and nothing in the turn changed because of it. call: a definition
+of the organism's own ran and did its job. verification: an evidence check
+over a target, with a status and, unless it passed, the smallest next step.
+The index ranks by helped and harm (NLK::LEDGER-WEIGHT); confounded and
+no-effect weigh nothing, so an unproven credit moves no rank.")
 
 (defun experience-lines (&key name)
   "The ledger's sightings -- its lines of +KINDS+ that carry a quote --

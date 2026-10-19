@@ -29,7 +29,7 @@
 
 (defparameter +primer+
   "The nodecode-experience cell reflects on this session. After a turn that ran a tool or was stopped, a fork of this session reflects on that turn: it records sightings - definitions of the index that helped or did harm, definitions of your own that did their job, verification checks - each with a verbatim quote, in the use ledger the index ranks by; it keeps what the next session would otherwise rediscover as definitions (define-memory, define-skill), one commit each; and it answers a recap. That recap is recorded here as a recorded exchange: a user line beginning `[experience] recap' - of the turn above, or of an earlier turn by number when turns nobody asked for (a cron delivery) landed in between - and under it the recap in your own voice, written by that reflection; read it as your own note to yourself, never as something the operator said. A recorded exchange is silent, never posted to a channel; only a recap the reflection marked (experience:attention), one that demands the operator's attention, is posted to the room as one note that @s the operator. Verbs, in eval, every one a string, every refusal ERROR: EXPERIENCE-ERROR:
-  (experience:sight \"kind\" \"name\" &key status next quote note)   one sighting about the turn being reflected on; kind helped|harm|call|verification; name the definition as the index lists it, or a verification's target, which takes :status and (unless passed) :next; :quote is required and verbatim
+  (experience:sight \"kind\" \"name\" &key status next quote note)   one sighting about the turn being reflected on; kind helped|harm|confounded|no-effect|call|verification; name the definition as the index lists it, or a verification's target, which takes :status and (unless passed) :next; :quote is required and verbatim
   (experience:sightings &key name limit)   the sightings in the ledger, newest first
   (experience:attention)   mark this reflection's recap as demanding the operator's attention; only a marked recap is posted to the room, as one note that @s the operator
   (experience:reflect &key session turn)   reflect on a turn now (this session's newest completed one by default)"
@@ -53,8 +53,10 @@ its running turn, else its newest completed one."
 (define-verb sight (kind name &key status next quote note)
   "Record one sighting about the turn this session reflects on: KIND
 helped (a definition of the index was read or followed, and it paid), harm
-(following it caused damage), call (a definition of your own ran and did
-its job) or verification; NAME the definition as the index lists it, or
+(following it caused damage), confounded (in play, but the turn cannot
+tell its part from the rest), no-effect (read or followed, and nothing
+changed because of it), call (a definition of your own ran and did its job)
+or verification; NAME the definition as the index lists it, or
 for a verification the target checked, with :status passed, failed, blocked
 or skipped and, unless it passed, :next its smallest follow-up; :quote a
 verbatim line from that turn (required). => one line naming the sighting."
@@ -148,15 +150,14 @@ when no reflection is in flight."
               session))))
 
 (defun summary-line (&aux (lines (experience-lines)))
-  (format nil "experience: ~d sighting~:p (helped ~d · harm ~d · call ~d · checks ~d) · reflect ~(~a~) · ~a"
-          (length lines)
-          (count "helped" lines :key (lambda (line) (nlk:json-value line :string "kind")) :test #'equal)
-          (count "harm" lines :key (lambda (line) (nlk:json-value line :string "kind")) :test #'equal)
-          (count "call" lines :key (lambda (line) (nlk:json-value line :string "kind")) :test #'equal)
-          (count "verification" lines :key (lambda (line) (nlk:json-value line :string "kind"))
-                                      :test #'equal)
-          (setting :reflect)
-          (sb-ext:native-namestring (nlk:home "usage.jsonl"))))
+  (flet ((kinds (kind)
+           (count kind lines :key (lambda (line) (nlk:json-value line :string "kind")) :test #'equal)))
+    (format nil "experience: ~d sighting~:p (helped ~d · harm ~d · confounded ~d · no-effect ~d · call ~d · checks ~d) · reflect ~(~a~) · ~a"
+            (length lines)
+            (kinds "helped") (kinds "harm") (kinds "confounded") (kinds "no-effect") (kinds "call")
+            (kinds "verification")
+            (setting :reflect)
+            (sb-ext:native-namestring (nlk:home "usage.jsonl")))))
 
 (defun run-slash (args session-id)
   "The answer to one /experience invocation."

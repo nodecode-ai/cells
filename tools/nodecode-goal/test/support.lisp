@@ -73,9 +73,14 @@ until the test ends it."
     (nlk:admit-turn session command "go"
                     :invocation (nlk:default-invocation "turn.start" command :source "gateway"))))
 
+(defun goal-judge-question (context)
+  "The judge's question CONTEXT, one compiled request, carries, or NIL when
+it is not a judge's."
+  (loop for message across (coerce (nle::compiled-turn-context-messages context) 'vector)
+        for text = (nle::content-text (gethash "content" message))
+          thereis (and (stringp text) (search "[goal check]" text) text)))
+
 (defun goal-judging-request-p (context)
   "Whether CONTEXT, one compiled request, is a judge's: its messages carry
 the judge's question."
-  (loop for message across (coerce (nle::compiled-turn-context-messages context) 'vector)
-        for text = (nle::content-text (gethash "content" message))
-          thereis (and (stringp text) (search "[goal check]" text))))
+  (and (goal-judge-question context) t))
