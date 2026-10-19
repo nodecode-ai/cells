@@ -720,7 +720,20 @@ already there."
 under (PRESS-ACTION).")
 
 (defparameter +press-state+ "channel-presses"
-  "The state namespace presses are kept in, one key a press.")
+  "The state namespace presses are kept in, one key a slot (PRESS-SLOT).")
+
+(defparameter +press-slots+ 500
+  "How many presses the store keeps: a ring of slots under the session
+state's per-namespace key quota (512), so minting a press never fails a card.")
+
+(defun press-slot (id)
+  "The store key press ID is kept under: its digest folded onto the ring of
++PRESS-SLOTS+, or NIL for an id that is no digest."
+  ;; A later press whose digest folds onto the same slot takes it; the one it
+  ;; displaced then reads back from this image's memory only, and after a
+  ;; restart says nothing -- never the other press's line (PRESS-ACTION).
+  (nlk:when-let (n (ignore-errors (parse-integer id :radix 16)))
+    (princ-to-string (mod n +press-slots+))))
 
 (defvar *presses* (make-hash-table :test #'equal :synchronized t)
   "Press id -> its action, the JSON object PRESS-TOKEN made: read through
@@ -743,7 +756,9 @@ and BACK-PAGE, CONFIRM a line asked about before it runs."
     (unless (gethash id *presses*)
       (setf (gethash id *presses*) action)
       (when (nlk:store-open-p)
-        (nlk:session-state-put +press-state+ id json)))
+        ;; the slot carries its press's id, so a press it displaced reads as none
+        (nlk:session-state-put +press-state+ (press-slot id)
+                               (nlk:encode-json-object (nlk:json-object "id" id "action" action)))))
     (concatenate 'string +press-prefix+ id)))
 
 (defun press-action (data &aux (id (and (stringp data) (eql 0 (search +press-prefix+ data))
@@ -752,8 +767,11 @@ and BACK-PAGE, CONFIRM a line asked about before it runs."
 data that is no press, or a press this home never made."
   (when (plusp (length id))
     (or (gethash id *presses*)
-        (nlk:when-let (json (and (nlk:store-open-p) (nlk:session-state-get +press-state+ id)))
-          (let ((action (ignore-errors (nlk:decode-json json))))
+        (nlk:when-let (json (and (nlk:store-open-p) (press-slot id)
+                                 (nlk:session-state-get +press-state+ (press-slot id))))
+          (let* ((kept (ignore-errors (nlk:decode-json json)))
+                 (action (and (hash-table-p kept) (equal id (nlk:json-value kept :text "id"))
+                              (gethash "action" kept))))
             (when (hash-table-p action)
               (setf (gethash id *presses*) action)))))))
 

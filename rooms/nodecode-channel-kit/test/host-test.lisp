@@ -1460,6 +1460,25 @@ LANE, as the one running channel."
     (is (null (nck:said-line "nck:p:000000000000")) "a press this home never made says nothing")
     (is (null (nck:said-line "Zero setup")) "and data that is no press says nothing")))
 
+(deftest channel-presses-stay-under-the-state-quota ()
+  ;; The store keeps presses on a ring of slots under the session state's
+  ;; per-namespace key quota: minting more distinct presses than the quota
+  ;; fails no card (it once answered /voice with "session state quota
+  ;; exceeded"), the newest reads back once the image forgets it, and a
+  ;; press a later one displaced says nothing, never that one's line.
+  (with-temp-store ()
+    (let* ((count (+ 50 nlk::+max-state-keys-per-ws+))
+           (lines (loop for i below count collect (format nil "/voice join ~a" i)))
+           (datas (let ((nck::*presses* (make-hash-table :test #'equal :synchronized t)))
+                    (mapcar #'nck:press-token lines))))
+      (is (eql count (length datas)) "every press was minted")
+      (let ((nck::*presses* (make-hash-table :test #'equal :synchronized t)))
+        (is (equal (car (last lines)) (nck:said-line (car (last datas))))
+            "the newest press reads back from the store")
+        (is (loop for line in lines for data in datas
+                  always (member (nck:said-line data) (list nil line) :test #'equal))
+            "a displaced press says nothing, never another's line")))))
+
 (deftest channel-a-command-answers-a-room-its-dialog-as-a-card ()
   ;; A command answers a shell with a dialog beside its words (NLE:SLASH's
   ;; second value, NLE:LIST-DIALOG: /cron's jobs, /link's browsers). Where a
