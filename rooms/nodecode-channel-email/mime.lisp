@@ -12,10 +12,12 @@
   "One parsed message. HEADERS is an alist of (downcased-name . unfolded raw
 value), in the order the message carries them -- the topmost first, so the
 last hop's stamps come before anything a sender wrote; TEXT the words a person
-wrote, decoded (an HTML-only message's, as text); ATTACHMENTS a list of
-(:filename :media-type :octets)."
+wrote, decoded (an HTML-only message's, as text); HTML its first HTML body
+part as written, or NIL; ATTACHMENTS a list of (:filename :media-type
+:octets)."
   (headers '() :type list)
   (text "" :type string)
+  (html nil :type (or null string))
   (attachments '() :type list))
 
 ;;; --- octets and text ------------------------------------------------------------
@@ -351,6 +353,7 @@ leaf a file."
                                :octets octets)
                          files))))))
         (make-mail :headers headers
+                   :html (and html (remove #\Return html))
                    :text (remove #\Return
                           (cond (plain (trim (format nil "~{~a~^~%~%~}" (mapcar #'trim (reverse plain)))))
                                (html (html-text html))

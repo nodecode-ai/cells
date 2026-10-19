@@ -20,15 +20,16 @@
 (deftest channel-email-ask-answered-as-one-threaded-reply ()
   (with-email-lane (inbox)
     (inbox-push inbox (email-raw :body (format nil "hi bot~%~%On Mon kim wrote:~%> old")))
-    (is-present (answer (await (:timeout 20) (first (email-sends inbox))))
-        "the answer was sent"
+    (is-present (answer (await (:timeout 20) (first (email-sends inbox)))) "the answer was sent"
       (is (equal "kim@example.com" (getf answer :to)))
       (is (equal "Re: Hello" (getf answer :subject)))
       (is (search "email reply" (getf answer :text)))
       (let ((sent (nce:parse-message (getf answer :data))))
         (is (equal "<m1@example.com>" (nce:header sent "in-reply-to")) "threaded under the ask")
         (is (equal "<m1@example.com>" (nce:header sent "references")))
-        (is (equal "Nodecode <bot+nc@example.com>" (nce:header sent "from")))))
+        (is (equal "Nodecode <bot+nc@example.com>" (nce:header sent "from")))
+        (is (equal "email reply" (nce:mail-text sent)) "the plain part is the Markdown as typed")
+        (is (search "email reply</p>" (or (nce:mail-html sent) "")) "the HTML part draws it")))
     (let* ((room (email-room "kim@example.com" "<m1@example.com>"))
            (lane (format nil "~a-m~a" room (nce:mail-id "<m1@example.com>"))))
       (is-lane-carrying "email" room lane "email-channel" "email address" "(nce:send-mail"))
@@ -70,3 +71,23 @@
       (is (equal "<ok@x>" (nce:header (nce:parse-message (getf answer :data)) "in-reply-to"))))
     (sleep 3)
     (is (= 1 (length (email-sends inbox))) "nothing else was answered, and a message read twice once")))
+
+(deftest channel-email-mail-that-comes-while-running-is-read-whatever-the-catch-up ()
+  ;; catch_up_minutes 0 once dropped every live message: the window was
+  ;; measured back from each read, so mail IDLE had just announced was
+  ;; already "too old".
+  (let* ((started 4000000000)
+         (lane (nce::%make-email-adapter :started started :catch-up-minutes 0 :max-bytes 1000)))
+    ;; arrived after the start, read minutes later
+    (is (eq :read (nce::mail-verdict lane 500 (+ started 1))))
+    (is (eq :read (nce::mail-verdict lane 500 (+ started 3600))))
+    ;; came while the lane was down, outside a window of 0
+    (is (eq :too-old (nce::mail-verdict lane 500 (- started 1))))
+    ;; over max_megabytes
+    (is (eq :too-big (nce::mail-verdict lane 1001 (+ started 1))))
+    ;; a window reaches back from the start, not from now
+    (setf (nce::email-adapter-catch-up-minutes lane) 60)
+    (is (eq :read (nce::mail-verdict lane 500 (- started 3599))))
+    (is (eq :too-old (nce::mail-verdict lane 500 (- started 3601))))
+    ;; a server that gives no date or size is read
+    (is (eq :read (nce::mail-verdict lane nil nil)))))

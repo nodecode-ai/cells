@@ -58,24 +58,17 @@
 
 (deftest channel-email-cuts-the-quoted-thread ()
   (is (equal "Sounds good."
-             (nce:strip-quoted-reply (format nil "Sounds good.~%~%On Mon, 19 Oct 2026 at 18:00, Bot <b@x> wrote:~%> old answer~%> more")))
-      "Gmail's attribution")
+             (nce:strip-quoted-reply (format nil "Sounds good.~%~%On Mon, 19 Oct 2026 at 18:00, Bot <b@x> wrote:~%> old answer~%> more"))) "Gmail's attribution")
   (is (equal "Ja."
-             (nce:strip-quoted-reply (format nil "Ja.~%~%Op ma 19 okt. 2026 om 18:00 schreef Bot <b@x>:~%~%> oud")))
-      "a Dutch attribution")
+             (nce:strip-quoted-reply (format nil "Ja.~%~%Op ma 19 okt. 2026 om 18:00 schreef Bot <b@x>:~%~%> oud"))) "a Dutch attribution")
   (is (equal "Yes."
-             (nce:strip-quoted-reply (format nil "Yes.~%~%On Mon, 19 Oct 2026 at 18:00, Bot~%<b@x> wrote:~%> old")))
-      "an attribution wrapped over two lines")
+             (nce:strip-quoted-reply (format nil "Yes.~%~%On Mon, 19 Oct 2026 at 18:00, Bot~%<b@x> wrote:~%> old"))) "an attribution wrapped over two lines")
   (is (equal "Fine."
-             (nce:strip-quoted-reply (format nil "Fine.~%________________________________~%From: Bot~%Sent: Monday~%old")))
-      "Outlook's divider")
-  (is (equal "answer" (nce:strip-quoted-reply (format nil "answer~%~%> quoted~%> more")))
-      "a trailing quoted block")
+             (nce:strip-quoted-reply (format nil "Fine.~%________________________________~%From: Bot~%Sent: Monday~%old"))) "Outlook's divider")
+  (is (equal "answer" (nce:strip-quoted-reply (format nil "answer~%~%> quoted~%> more"))) "a trailing quoted block")
   (let ((interleaved (format nil "On Mon Bot wrote:~%> q1~%a1~%> q2~%a2")))
-    (is (equal interleaved (nce:strip-quoted-reply interleaved))
-        "a reply written between the quoted lines keeps them"))
-  (is (equal "> only a quote" (nce:strip-quoted-reply "> only a quote"))
-      "never cut to nothing"))
+    (is (equal interleaved (nce:strip-quoted-reply interleaved)) "a reply written between the quoted lines keeps them"))
+  (is (equal "> only a quote" (nce:strip-quoted-reply "> only a quote")) "never cut to nothing"))
 
 (deftest channel-email-machines-get-no-answer ()
   (flet ((machine (&rest headers)
@@ -100,16 +93,12 @@
                                          (append (mapcar (lambda (s) (format nil "Authentication-Results: ~a" s)) stamps)
                                                  (list (format nil "From: ~a" from) "" "x"))))))))
     (is (equal '(t "dmarc") (vouched "kim@example.com" "mx.example.org (amavis); dmarc=pass (p=none) header.from=example.com")))
-    (is (equal '(t "dkim") (vouched "kim@mail.example.com" "mx; dkim=pass (2048-bit) header.d=example.com; dmarc=none"))
-        "a parent domain's signature aligns")
+    (is (equal '(t "dkim") (vouched "kim@mail.example.com" "mx; dkim=pass (2048-bit) header.d=example.com; dmarc=none")) "a parent domain's signature aligns")
     (is (equal '(t "spf") (vouched "kim@example.com" "mx; spf=pass smtp.mailfrom=bounce@example.com")))
-    (is (null (first (vouched "kim@example.com" "mx; dkim=pass header.d=evil.com; spf=fail smtp.mailfrom=x@evil.com")))
-        "another domain's signature vouches for nothing")
+    (is (null (first (vouched "kim@example.com" "mx; dkim=pass header.d=evil.com; spf=fail smtp.mailfrom=x@evil.com"))) "another domain's signature vouches for nothing")
     (is (null (first (vouched "kim@example.com" "mx; dmarc=fail header.from=example.com"
-                              "forged; dmarc=pass header.from=example.com")))
-        "a stamp below the receiving server's is the sender's own text")
-    (is (null (first (vouched "kim@example.com")))
-        "no stamp, no trust")
+                              "forged; dmarc=pass header.from=example.com"))) "a stamp below the receiving server's is the sender's own text")
+    (is (null (first (vouched "kim@example.com"))) "no stamp, no trust")
     (is (equal "stamped by mx, not mx.example.org"
                (second (multiple-value-list
                         (nce:authenticated-p (nce:parse-message (crlf-lines "Authentication-Results: mx; dmarc=pass"
@@ -131,8 +120,7 @@
     (is (equal "<m2@x>" (root "Message-ID: <m2@x>"))))
   (let ((kim (nce:thread-channel "kim@example.com" "<r0@x>")))
     (is (equal kim (nce:thread-channel "KIM@example.com" "<R0@x>")))
-    (is (not (equal kim (nce:thread-channel "eve@example.com" "<r0@x>")))
-        "a forged References reaches no one else's room")
+    (is (not (equal kim (nce:thread-channel "eve@example.com" "<r0@x>"))) "a forged References reaches no one else's room")
     (is (= 16 (length kim)))
     (is (every (lambda (c) (digit-char-p c 16)) kim) "no hyphen: the kit's session names carry it whole")))
 
@@ -168,11 +156,9 @@
          (path (merge-pathnames (format nil "nce-file-~36r.txt" (random (expt 2 40))) (uiop:temporary-directory))))
     (setf (gethash channel (nce::mail-book-threads book))
           (list :to "kim@example.com" :name "Kim" :subject "Hello" :references '("<m1@x>") :last "<m1@x>"))
-    (is (equal "NOOP" (nck:request-plan-method (nce::message-plan book identity target chunk :card t :timeout-seconds 30)))
-        "the status card is no email")
+    (is (equal "NOOP" (nck:request-plan-method (nce::message-plan book identity target chunk :card t :timeout-seconds 30))) "the status card is no email")
     (is (equal "NOOP" (nck:request-plan-method (nce::message-plan book identity target chunk :panel t :timeout-seconds 30))))
-    (is (equal "FAIL" (nck:request-plan-method (nce::message-plan book identity (list :channel-id "0000000000000000") chunk :timeout-seconds 30)))
-        "a thread the book never saw fails loudly, never mails a stranger")
+    (is (equal "FAIL" (nck:request-plan-method (nce::message-plan book identity (list :channel-id "0000000000000000") chunk :timeout-seconds 30))) "a thread the book never saw fails loudly, never mails a stranger")
     (unwind-protect
          (progn
            (with-open-file (out path :direction :output :if-exists :supersede) (write-string "chart data" out))
@@ -181,8 +167,50 @@
                   (sent (nce:parse-message (getf body :data))))
              (is (equal "SEND" (nck:request-plan-method plan)))
              (is (equal "the answer" (nce:mail-text sent)))
+             (is (search ">the answer</p>" (or (nce:mail-html sent) "")) "the answer is drawn as HTML too")
              (is (equal "<m1@x>" (nce:header sent "in-reply-to")))
              (is-present (file (first (nce:mail-attachments sent))) "the answer's file rides it"
                (is (equal (file-namestring path) (getf file :filename)))
                (is (equal "chart data" (babel:octets-to-string (getf file :octets)))))))
       (ignore-errors (delete-file path)))))
+
+(deftest channel-email-markdown-is-drawn-as-mail-html ()
+  (let ((html (nce:markdown-html (format nil "## Plan~%~%**Done** -- see https://nodecode.ai/docs and [cells](https://github.com/nodecode-ai/cells).~%~%- one `x < y`~%- two~%  - nested~%- <script>alert(1)</script>~%~%3. third~%~%```lisp~%(< 1 2)~%```~%~%| a | b |~%|---|---|~%| 1 | 2 & 3 |~%~%> quoted~%~%line one~%line two"))))
+    (is (search "<h2 " html))
+    (is (search ">Plan</h2>" html) "a heading closes as it opened")
+    (is (search "<strong>Done</strong>" html))
+    (is (search "<a href=\"https://nodecode.ai/docs\">https://nodecode.ai/docs</a>" html) "a bare address is a link")
+    (is (search "<a href=\"https://github.com/nodecode-ai/cells\">cells</a>" html))
+    (is (search ">x &lt; y</code>" html) "code is escaped")
+    (is (ppcre:scan "<li>two<ul [^>]*><li>nested</li></ul>" html) "an indented item nests")
+    (is (search "&lt;script&gt;" html) "nothing a model writes opens a tag")
+    (is (not (search "<script" html)))
+    (is (search "<ol start=\"3\" " html))
+    (is (search "<code class=\"language-lisp\">(&lt; 1 2)</code></pre>" html))
+    (is (search ">2 &amp; 3</td>" html))
+    (is (search "<blockquote " html))
+    (is (search ">line one<br>" html) "a paragraph keeps its line breaks")
+    (is (ppcre:scan "(?s)^<!DOCTYPE html>.*<body style=\"[^\"]+\">.*</body></html>" html) "a whole document, styled inline")))
+
+(deftest channel-email-an-answer-carries-text-and-html ()
+  (let* ((markdown (format nil "**Yes** -- it works.~%~%- a~%- b"))
+         (plain (nce:compose-message :from "bot+nc@example.com" :to "kim@example.com" :subject "Re: x"
+                                     :text markdown :message-id "<nc.1@example.com>"))
+         (alternative (nce:compose-message :from "bot+nc@example.com" :to "kim@example.com" :subject "Re: x"
+                                           :text markdown :html (nce:markdown-html markdown)
+                                           :message-id "<nc.2@example.com>"))
+         (mixed (nce:compose-message :from "bot+nc@example.com" :to "kim@example.com" :subject "Re: x"
+                                     :text markdown :html (nce:markdown-html markdown)
+                                     :message-id "<nc.3@example.com>"
+                                     :attachments (list (list :filename "a.txt" :media-type "text/plain"
+                                                              :octets (babel:string-to-octets "zz"))))))
+    (is (null (nce:mail-html (nce:parse-message plain))) "without HTML the message is plain text alone")
+    (dolist (message (list alternative mixed))
+      (let ((mail (nce:parse-message message)))
+        (is (every (lambda (c) (< (char-code c) 128)) message) "7-bit clean")
+        (is (equal markdown (nce:mail-text mail)) "the plain part is the Markdown as typed")
+        (is (search "<strong>Yes</strong>" (or (nce:mail-html mail) "")) "the HTML part draws it")
+        (is (search "multipart/alternative" message))))
+    (is (search "multipart/alternative" (nce:header (nce:parse-message alternative) "content-type")))
+    (is (search "multipart/mixed" (nce:header (nce:parse-message mixed) "content-type")))
+    (is (equal '("a.txt") (mapcar (lambda (file) (getf file :filename)) (nce:mail-attachments (nce:parse-message mixed)))) "the HTML part is no attachment")))

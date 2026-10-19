@@ -1,4 +1,4 @@
-;;;; adapter.lisp --- the email platform, its executor, and the polling lap.
+;;;; adapter.lisp --- the email platform, its executor, and the reading lap.
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
@@ -6,7 +6,10 @@
 ;;;; it continues the same conversation, and the answer goes back as a reply
 ;;;; email threaded under the ask (In-Reply-To, References, Re: subject).
 ;;;; Email has no live card, no typing and no edits: the kit's status card
-;;;; and its edits plan to nothing, so a turn sends exactly its answer.
+;;;; and its edits plan to nothing, so a turn sends exactly its answer. The
+;;;; answer carries its Markdown twice, as typed and drawn as HTML, and a copy
+;;;; of it is filed in the mailbox's Sent folder; the inbox itself is waited
+;;;; on in IMAP IDLE, so an ask is read the moment the server has it.
 ;;;;
 ;;;; The book remembers what threading needs across restarts -- each thread's
 ;;;; correspondent, subject and References, each message id the kit holds,
@@ -146,7 +149,7 @@ bot's (:address :name)."
                (data (compose-message :from address :from-name (getf identity :name)
                                       :to (getf thread :to) :to-name (getf thread :name)
                                       :subject (reply-subject (getf thread :subject))
-                                      :text text :message-id message-id
+                                      :text text :html (answer-html text) :message-id message-id
                                       :in-reply-to parent :references references
                                       :attachments attachments))
                (id (note-message book channel message-id)))
@@ -175,9 +178,41 @@ message to keep editing), anything else is a reply email."
              :reply-to reply-to :timeout-seconds timeout-seconds :label "email_file"
              :attachments (list (file-attachment pathname))))
 
-(defun make-email-executor (&key host port username password from)
-  "The executor that sends each SEND plan over SMTP; NOOP plans succeed
-without a sound, FAIL plans fail with their reason."
+(defun answer-html (text)
+  "TEXT's HTML part, or NIL when there are no words to draw."
+  (and text (plusp (length (trim text))) (markdown-html text)))
+
+(defun make-sent-keeper (&key host port username password mailbox)
+  "A function of one composed message that files its copy, read, in the Sent
+folder over a short IMAP session of its own (the reading session may be
+waiting in IDLE): MAILBOX, or the folder the server marks \\Sent. =>
+(values FOLDER UID)."
+  (let ((found mailbox))
+    (lambda (data)
+      (let ((wire (imap-open host port username password)))
+        (unwind-protect
+             (let ((folder (or found
+                               (setf found (or (imap-special-mailbox wire "\\Sent")
+                                               (error "the server marks no folder \\Sent: set channels.email.sent_mailbox"))))))
+               (values folder (imap-append wire folder data)))
+          (imap-close wire))))))
+
+(defun file-copy (keep-sent data)
+  "Hand DATA to KEEP-SENT: => (:filed FOLDER :filed-uid UID), or (:file-error
+WHY) after a warning -- the mail already went, so a copy that fails never
+fails the send."
+  (handler-case
+      (multiple-value-bind (folder uid) (funcall keep-sent data)
+        (list :filed folder :filed-uid uid))
+    (error (condition)
+      (warn "email: sent, but no copy was filed: ~a" condition)
+      (list :file-error (princ-to-string condition)))))
+
+(defun make-email-executor (&key host port username password from keep-sent)
+  "The executor that sends each SEND plan over SMTP, then hands the sent
+message to KEEP-SENT (a function of it, as MAKE-SENT-KEEPER makes) when
+given; NOOP plans succeed without a sound, FAIL plans fail with their
+reason."
   (make-plan-executor
    :run (lambda (plan)
           (let ((method (request-plan-method plan))
@@ -188,7 +223,9 @@ without a sound, FAIL plans fail with their reason."
                        (let ((accepted (smtp-send host port username password from
                                                   (list (getf body :to)) (getf body :data))))
                          (make-execution :ok-p t :status 250 :attempts 1
-                                         :body (list* :accepted accepted body)))
+                                         :body (list* :accepted accepted
+                                                      (append (and keep-sent (file-copy keep-sent (getf body :data)))
+                                                              body))))
                      (error (condition)
                        (make-execution :ok-p nil :status 0 :attempts 1
                                        :error (princ-to-string condition)))))
@@ -241,7 +278,7 @@ sends one NEW email from the bot's address (ATTACHMENTS a list of file paths) --
    :strip-mention #'identity
    :where-text (lambda (candidate) (email-where-text candidate (getf identity :address)))
    :api-primer +email-api-primer+
-   :seams-primer "  nce:email-handle-message (adapter raw) -- every message the poll reads, as raw octets, before any gate: return fast."))
+   :seams-primer "  nce:email-handle-message (adapter raw) -- every message the lap reads, as raw octets, before any gate: return fast."))
 
 ;;; --- inbound --------------------------------------------------------------------
 
@@ -251,9 +288,16 @@ sends one NEW email from the bot's address (ATTACHMENTS a list of file paths) --
   ;; the IMAP side
   imap-host imap-port username password mailbox
   (poll-seconds 30) (catch-up-minutes 60) (max-bytes (* 25 1024 1024))
+  ;; when the lane started: the catch-up window reaches back from here
+  (started (get-universal-time))
   ;; the test seam: a function of no arguments answering the raw messages that
   ;; arrived since its last call, read instead of IMAP
   inbox)
+
+(defmethod print-object ((adapter email-adapter) stream)
+  ;; never the slots: they hold the mailbox password
+  (print-unreadable-object (adapter stream :type t :identity t)
+    (princ (getf (email-adapter-identity adapter) :address) stream)))
 
 (defvar *email-adapter* nil
   "The running email adapter, for SEND-MAIL.")
@@ -302,7 +346,7 @@ and that is SENDER's own thread, else a fresh room for SENDER and its root."
       (thread-channel sender (thread-root mail))))
 
 (defun email-handle-message (adapter raw)
-  "One raw message the poll read: gated, placed, recorded, and handed to the
+  "One raw message the lap read: gated, placed, recorded, and handed to the
 kit. => :handed, or a string naming why it was dropped."
   (let* ((mail (parse-message raw))
          (book (email-adapter-book adapter))
@@ -341,6 +385,17 @@ kit. => :handed, or a string naming why it was dropped."
 
 ;;; --- the lap --------------------------------------------------------------------
 
+(defun mail-verdict (adapter size arrived)
+  "Whether a message of SIZE octets that ARRIVED (a universal time, either
+unknown as NIL) is read: :READ, :TOO-BIG or :TOO-OLD. Mail that arrives
+while the lane runs is always read; catch_up_minutes reaches back only from
+the lane's start, over what came while it was down."
+  (cond ((and size (> size (email-adapter-max-bytes adapter))) :too-big)
+        ((and arrived (< arrived (- (email-adapter-started adapter)
+                                    (* 60 (email-adapter-catch-up-minutes adapter)))))
+         :too-old)
+        (t :read)))
+
 (defun read-new-mail (adapter wire)
   "Hand the kit every message that arrived since the last read; the first
 read of a mailbox only marks where it stands, so nothing old is answered."
@@ -356,15 +411,13 @@ read of a mailbox only marks where it stands, so nothing old is answered."
            (save-book book))
           (t
            (let* ((uids (imap-search-new wire (mail-book-last-uid book) self))
-                  (facts (imap-sizes wire uids))
-                  (oldest (- (get-universal-time) (* 60 (email-adapter-catch-up-minutes adapter)))))
+                  (facts (imap-sizes wire uids)))
              (dolist (uid uids)
                (destructuring-bind (&optional size arrived) (rest (assoc uid facts))
-                 (cond ((and size (> size (email-adapter-max-bytes adapter)))
-                        (warn "email: message ~d is ~d bytes, over the limit; not read" uid size))
-                       ((and arrived (< arrived oldest))
-                        (warn "email: message ~d arrived before the catch-up window; not answered" uid))
-                       (t (nlk:when-let (octets (imap-fetch wire uid))
+                 (ecase (mail-verdict adapter size arrived)
+                   (:too-big (warn "email: message ~d is ~d bytes, over the limit; not read" uid size))
+                   (:too-old (warn "email: message ~d arrived before the catch-up window; not answered" uid))
+                   (:read (nlk:when-let (octets (imap-fetch wire uid))
                             (handler-case (email-handle-message adapter octets)
                               (error (condition)
                                 (warn "email: message ~d signalled: ~a" uid condition)))))))
@@ -378,18 +431,24 @@ read of a mailbox only marks where it stands, so nothing old is answered."
   (loop repeat (ceiling (* 2 seconds)) until (funcall stop-p) do (sleep 0.5))
   (funcall stop-p))
 
-(defun email-poll-lap (adapter stop-p)
-  "One supervised IMAP session: log in, read what is new every poll_seconds
-until the session fails, and come back for another."
+(defparameter +idle-seconds+ 300
+  "How long one IDLE waits before it is ended and begun again: RFC 2177
+asks for under 29 minutes, and a fresh read every few minutes also catches
+whatever a quiet connection missed.")
+
+(defun email-read-lap (adapter stop-p)
+  "One supervised IMAP session: log in, read what is new, then wait for more
+-- in IDLE, so the server says the moment mail arrives, or poll_seconds when
+the server cannot -- until the session fails, and come back for another."
   ;; Returns :stop / :fatal / seconds-to-wait per the kit supervisor contract.
-  (when (funcall stop-p) (return-from email-poll-lap :stop))
+  (when (funcall stop-p) (return-from email-read-lap :stop))
   (nlk:when-let (inbox (email-adapter-inbox adapter))
     (set-channel-status "email" :state :running :connected t :detail nil)
     (loop
       (dolist (raw (funcall inbox))
         (handler-case (email-handle-message adapter raw)
           (error (condition) (warn "email: a message signalled: ~a" condition))))
-      (when (wait-or-stop 0.2 stop-p) (return-from email-poll-lap :stop))))
+      (when (wait-or-stop 0.2 stop-p) (return-from email-read-lap :stop))))
   (let ((wire nil))
     (unwind-protect
          (handler-case
@@ -397,10 +456,16 @@ until the session fails, and come back for another."
                (setf wire (imap-open (email-adapter-imap-host adapter) (email-adapter-imap-port adapter)
                                      (email-adapter-username adapter) (email-adapter-password adapter)))
                (set-channel-status "email" :state :running :connected t :detail nil)
-               (loop
-                 (read-new-mail adapter wire)
-                 (when (wait-or-stop (email-adapter-poll-seconds adapter) stop-p)
-                   (return :stop))))
+               (let ((idle (member "IDLE" (imap-capabilities wire) :test #'string=)))
+                 (unless idle
+                   (warn "email: ~a offers no IMAP IDLE; reading every ~ds"
+                         (email-adapter-imap-host adapter) (email-adapter-poll-seconds adapter)))
+                 (loop
+                   (read-new-mail adapter wire)
+                   (when (if idle
+                             (eq :stop (imap-idle wire +idle-seconds+ stop-p))
+                             (wait-or-stop (email-adapter-poll-seconds adapter) stop-p))
+                     (return :stop)))))
            (error (condition)
              (let ((detail (princ-to-string condition)))
                (cond ((search "LOGIN refused" detail)
@@ -430,7 +495,8 @@ prints."
                                     :data (compose-message :from (getf identity :address)
                                                            :from-name (getf identity :name)
                                                            :to address :subject (or subject "")
-                                                           :text text :message-id message-id
+                                                           :text text :html (answer-html text)
+                                                           :message-id message-id
                                                            :attachments (mapcar #'file-attachment attachments)))))
              (result (execute-plan (email-adapter-executor adapter) plan)))
         (if (execution-ok-p result)
@@ -463,13 +529,20 @@ prints."
                          (resolve-owners "email" (getf settings :owner) configured "allowed_senders")))
          (allowed (union configured owners :test #'string=))
          (identity (list :address address :name (config-string section "from_name" "Nodecode")))
+         (imap-host (config-string section "imap_host" (format nil "imap.~a" domain)))
+         (imap-port (config-integer section "imap_port" 993 :min 1))
          (book (make-mail-book :path (or (nlk:when-let (path (config-string section "state_file" nil))
                                            (pathname (nlk:expand-home path)))
                                          (nlk:home "channels/email-state.sexp"))))
          (sender (or executor
                      (make-email-executor :host (config-string section "smtp_host" (format nil "smtp.~a" domain))
                                           :port (config-integer section "smtp_port" 465 :min 1)
-                                          :username username :password password :from address))))
+                                          :username username :password password :from address
+                                          :keep-sent (and (config-boolean section "save_sent" t)
+                                                          (make-sent-keeper
+                                                           :host imap-host :port imap-port
+                                                           :username username :password password
+                                                           :mailbox (config-string section "sent_mailbox" nil)))))))
     (require-non-empty-allowlist "email" "allowed_senders" allowed)
     (let* ((host (make-host-from-section
                   section (email-platform :book book :identity identity)
@@ -485,15 +558,14 @@ prints."
                      :host host :book book :executor sender :identity identity :allowed allowed
                      :require-auth (config-boolean section "require_auth" t)
                      :auth-server (config-string section "auth_server" nil)
-                     :imap-host (config-string section "imap_host" (format nil "imap.~a" domain))
-                     :imap-port (config-integer section "imap_port" 993 :min 1)
+                     :imap-host imap-host :imap-port imap-port
                      :username username :password password
                      :mailbox (config-string section "mailbox" "INBOX")
                      :poll-seconds (config-integer section "poll_seconds" 30 :min 5)
                      :catch-up-minutes (config-integer section "catch_up_minutes" 60 :min 0)
                      :max-bytes (* 1024 1024 (config-integer section "max_megabytes" 25 :min 1))
                      :inbox inbox)))
-      (run-host host "poll" (lambda (stop-p) (email-poll-lap adapter stop-p))
+      (run-host host "read" (lambda (stop-p) (email-read-lap adapter stop-p))
                 :on-start (lambda () (setf *email-adapter* adapter))
                 :on-stop (lambda ()
                            (when (eq *email-adapter* adapter)

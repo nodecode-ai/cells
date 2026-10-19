@@ -59,6 +59,47 @@ CRLF lines."
                    when (equal "SEND" (nck:request-plan-method plan))
                      collect (nck:request-plan-body plan)))))
 
+(defun email-read-line (stream)
+  "One line off STREAM's octets, without its CRLF; NIL at the end."
+  (let ((octets (loop for byte = (read-byte stream nil nil)
+                      until (or (null byte) (= byte 10))
+                      collect byte)))
+    (when (and (null octets) (not (open-stream-p stream))) (return-from email-read-line nil))
+    (string-right-trim '(#\Return) (map 'string #'code-char octets))))
+
+(defun call-with-email-imap (script fn)
+  "FN called with a wire (plain, no TLS) to a one-connection IMAP server on
+loopback that runs SCRIPT, a function of (read-line write read-octets). =>
+(values FN's value, what SCRIPT signalled or NIL)."
+  (let* ((listener (usocket:socket-listen "127.0.0.1" 0 :reuse-address t :element-type '(unsigned-byte 8)))
+         (port (usocket:get-local-port listener))
+         (failure nil)
+         (server (bt2:make-thread
+                  (lambda ()
+                    (let* ((socket (usocket:socket-accept listener))
+                           (stream (usocket:socket-stream socket)))
+                      (handler-case
+                          (funcall script
+                                   (lambda () (email-read-line stream))
+                                   (lambda (text)
+                                     (write-sequence (babel:string-to-octets text :encoding :latin-1) stream)
+                                     (finish-output stream))
+                                   (lambda (n)
+                                     (let ((octets (make-array n :element-type '(unsigned-byte 8))))
+                                       (read-sequence octets stream)
+                                       octets)))
+                        (error (condition) (setf failure condition)))
+                      (ignore-errors (usocket:socket-close socket))))
+                  :name "fake-imap")))
+    (unwind-protect
+         (let ((wire (nce::wire-connect "127.0.0.1" port :tls nil :timeout 5)))
+           (values (unwind-protect (funcall fn wire) (nce::wire-close wire))
+                   (progn (bt2:join-thread server) failure)))
+      (ignore-errors (usocket:socket-close listener)))))
+
+(defun email-crlf (&rest lines)
+  (format nil (concatenate 'string "~{~a" (coerce '(#\Return #\Newline) 'string) "~}") lines))
+
 (defun email-section (token-path soul-path state-path &rest members)
   (let ((section (nlk:json-object
                   "address" +email-bot+

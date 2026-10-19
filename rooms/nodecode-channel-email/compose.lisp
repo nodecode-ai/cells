@@ -4,6 +4,8 @@
 ;;;;
 ;;;; Pure. The message is 7-bit clean -- headers RFC 2047 encoded, the body and
 ;;;; each file base64 -- so no relay ever rewrites it, and its lines end CRLF.
+;;;; An answer with HTML carries both forms as multipart/alternative: the
+;;;; plain text first, the HTML last, as RFC 2046 orders the richer one.
 
 (in-package #:nodecode-channel-email)
 
@@ -84,19 +86,37 @@ each under 76 characters and never splitting a character."
                                          (format nil "%~2,'0X" b)))
                    (utf8 filename)))))
 
-(defun compose-message (&key from from-name to to-name subject text message-id
+(defun new-boundary ()
+  (format nil "=_nc_~(~36r~)" (random (expt 36 14) *mail-random*)))
+
+(defun compose-message (&key from from-name to to-name subject text html message-id
                              in-reply-to references attachments (date (get-universal-time)))
   "One outgoing message as CRLF text: FROM (and FROM-NAME) to TO (and
-TO-NAME), SUBJECT, the plain TEXT, threaded under IN-REPLY-TO and
-REFERENCES (a list of <...> ids), each of ATTACHMENTS -- (:filename
+TO-NAME), SUBJECT, the plain TEXT and, when given, the HTML document that
+says the same (the two as multipart/alternative), threaded under IN-REPLY-TO
+and REFERENCES (a list of <...> ids), each of ATTACHMENTS -- (:filename
 :media-type :octets) -- a part of its own. Marked Auto-Submitted:
 auto-replied, so another responder never answers it back (RFC 3834)."
-  (let ((boundary (format nil "=_nc_~(~36r~)" (random (expt 36 14) *mail-random*)))
-        (body (base64-lines (utf8 (crlf-text (or text ""))))))
+  (let ((boundary (new-boundary))
+        (alternative (new-boundary)))
     (with-output-to-string (out)
-      (flet ((line (control &rest args)
-               (apply #'format out control args)
-               (write-string +crlf+ out)))
+      (labels ((line (control &rest args)
+                 (apply #'format out control args)
+                 (write-string +crlf+ out))
+               (text-part (type words)
+                 (line "Content-Type: ~a; charset=utf-8" type)
+                 (line "Content-Transfer-Encoding: base64")
+                 (line "")
+                 (write-string (base64-lines (utf8 (crlf-text words))) out))
+               (body-part ()
+                 (cond ((null html) (text-part "text/plain" (or text "")))
+                       (t (line "Content-Type: multipart/alternative; boundary=\"~a\"" alternative)
+                          (line "")
+                          (line "--~a" alternative)
+                          (text-part "text/plain" (or text ""))
+                          (line "--~a" alternative)
+                          (text-part "text/html" html)
+                          (line "--~a--" alternative)))))
         (line "From: ~a" (mailbox from from-name))
         (line "To: ~a" (mailbox to to-name))
         (line "Subject: ~a" (encode-header (or subject "")))
@@ -107,20 +127,13 @@ auto-replied, so another responder never answers it back (RFC 3834)."
           (line "References: ~a" (format nil (concatenate 'string "~{~a~^" +crlf+ " ~}") references)))
         (line "Auto-Submitted: auto-replied")
         (line "MIME-Version: 1.0")
-        (cond ((null attachments)
-               (line "Content-Type: text/plain; charset=utf-8")
-               (line "Content-Transfer-Encoding: base64")
-               (line "")
-               (write-string body out))
+        (cond ((null attachments) (body-part))
               (t
                (line "Content-Type: multipart/mixed; boundary=\"~a\"" boundary)
                (line "")
                (line "This is a multipart message in MIME format.")
                (line "--~a" boundary)
-               (line "Content-Type: text/plain; charset=utf-8")
-               (line "Content-Transfer-Encoding: base64")
-               (line "")
-               (write-string body out)
+               (body-part)
                (dolist (file attachments)
                  (line "--~a" boundary)
                  (line "Content-Type: ~a" (or (getf file :media-type) "application/octet-stream"))

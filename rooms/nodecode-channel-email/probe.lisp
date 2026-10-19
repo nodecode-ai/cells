@@ -7,7 +7,7 @@
 (defun probe-channel (section &key executor (timeout 15))
   "Whether SECTION's credentials log in to IMAP and SMTP, as lines: the
 mailbox and how many messages it holds, and the SMTP server's acceptance.
-Read only: nothing is fetched and nothing is sent."
+Read only: nothing is fetched, filed or sent."
   (declare (ignore executor))
   (let* ((address (string-downcase (or (config-string section "address" nil) "")))
          (domain (domain-of address))
@@ -29,7 +29,19 @@ Read only: nothing is fetched and nothing is sent."
                  (multiple-value-bind (validity next) (imap-examine wire mailbox)
                    (declare (ignore validity))
                    (say "imap: ok -- ~a as ~a, ~a holds ~:[?~;~:*~d~] message~:p so far"
-                        imap-host username mailbox (and next (1- next)))))
+                        imap-host username mailbox (and next (1- next))))
+                 (if (member "IDLE" (imap-capabilities wire) :test #'string=)
+                     (say "new mail: read the moment it arrives (IMAP IDLE)")
+                     (say "new mail: read every ~ds -- the server offers no IMAP IDLE"
+                          (config-integer section "poll_seconds" 30 :min 5)))
+                 (cond ((not (config-boolean section "save_sent" t))
+                        (say "sent copies: off (save_sent is false)"))
+                       ((config-string section "sent_mailbox" nil)
+                        (say "sent copies: filed in ~a" (config-string section "sent_mailbox" nil)))
+                       (t (let ((sent (imap-special-mailbox wire "\\Sent")))
+                            (if sent
+                                (say "sent copies: filed in ~a" sent)
+                                (say "sent copies: none -- the server marks no folder \\Sent; set sent_mailbox"))))))
              (error (condition) (say "imap: ~a" condition)))
            (imap-close wire))
          (let* ((smtp-host (config-string section "smtp_host" (format nil "smtp.~a" domain)))
@@ -59,7 +71,7 @@ Read only: nothing is fetched and nothing is sent."
     (format nil "~{~a~^~%~}" (nreverse lines))))
 
 (nlk:define-section ("channels" "email")
-  (:guide "Give the bot an address: a mailbox of its own, or a plus address of one you have (you+bot@example.com -- only mail sent To or Cc that exact address is read, and the mailbox is opened read-only, so a shared inbox keeps every flag). Create an app password for the mailbox and keep it in a file or an environment variable, never in the config. IMAP and SMTP default to imap.<domain>:993 and smtp.<domain>:465; set them when the provider names others. Only allowed_senders are answered, and only when the receiving server vouched for their domain (DMARC, DKIM or SPF in Authentication-Results).")
+  (:guide "Give the bot an address: a mailbox of its own, or a plus address of one you have (you+bot@example.com -- only mail sent To or Cc that exact address is read, and the inbox is opened read-only, so a shared inbox keeps every flag; the one write is a copy of each answer filed in Sent). Create an app password for the mailbox and keep it in a file or an environment variable, never in the config. IMAP and SMTP default to imap.<domain>:993 and smtp.<domain>:465; set them when the provider names others. Only allowed_senders are answered, and only when the receiving server vouched for their domain (DMARC, DKIM or SPF in Authentication-Results).")
   (:check #'probe-channel)
   (:one-of "password_env" "password_file")
   ("address" :string :doc "the bot's address: answers come from it, and only mail To or Cc it is read (a plus address works)")
@@ -77,7 +89,9 @@ Read only: nothing is fetched and nothing is sent."
   ("require_auth" :boolean :default t
                   :doc "answer only mail whose From domain the receiving server vouched for (DMARC, DKIM or SPF); false trusts the From line, which anyone can type")
   ("auth_server" :string :doc "the receiving server's authserv-id; when set, only its Authentication-Results count")
-  ("poll_seconds" :integer :default 30 :doc "how often the mailbox is read")
+  ("poll_seconds" :integer :default 30 :doc "how often the mailbox is read when the server offers no IMAP IDLE; with IDLE new mail is read the moment it arrives")
+  ("save_sent" :boolean :default t :doc "file a copy of every email the bot sends in the mailbox's Sent folder; false for a provider that files SMTP mail itself (Gmail does)")
+  ("sent_mailbox" :string :doc "the folder sent copies are filed in; the one the server marks \\Sent when unset")
   ("catch_up_minutes" :integer :default 60 :doc "after a restart, mail that arrived within this many minutes is still answered; older is left")
   ("max_megabytes" :integer :default 25 :doc "a larger message is not read")
   ("state_file" :path :doc "where the thread book is kept; channels/email-state.sexp under the home when unset")

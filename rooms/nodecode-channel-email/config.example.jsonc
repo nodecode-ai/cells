@@ -31,7 +31,14 @@
       "require_auth": true,
       // Only this server's Authentication-Results count (its authserv-id).
       // "auth_server": "mx.example.com",
+      // A server with IMAP IDLE says the moment mail arrives; one without
+      // is read this often.
       "poll_seconds": 30,
+      // A copy of each email the bot sends is filed in Sent (the folder the
+      // server marks \Sent, or sent_mailbox). false for a provider that
+      // files SMTP mail itself, as Gmail does.
+      "save_sent": true,
+      // "sent_mailbox": "Sent",
       // After a restart, mail newer than this is still answered.
       "catch_up_minutes": 60,
       "max_megabytes": 25
