@@ -122,8 +122,9 @@ change to one is a new pull request that gets read the same way.
 | `depends_on` | Exactly the systems your `.asd` depends on from outside your folder. |
 | `platforms` | Optional. Leave it out when the cell runs on Linux, macOS and Windows. |
 
-3. The `check` workflow installs every entry into a scratch home with the
-   latest Nodecode release and loads it. Nodecode itself refuses an entry
+3. Before the index is published, `.github/check.sh` installs every entry
+   into a scratch home with a Nodecode release and loads it; an index that
+   fails is not served. Nodecode itself refuses an entry
    whose clone doesn't match its line: a different `HEAD`, a different
    primary system, a description or `depends_on` that isn't the `.asd`'s, or
    a symbolic link anywhere in the cell's folder.
