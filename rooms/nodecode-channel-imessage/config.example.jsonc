@@ -1,0 +1,52 @@
+// channels.imessage — the section ~/.nodecode/config.jsonc needs for this
+// adapter. Copy it in (a present section is enabled; "enabled": false
+// vetoes it), or say "set up imessage" to the agent, which writes it through
+// (config-set ...) and checks the server with (nck:probe "imessage").
+//
+// The bot is an Apple ID of its own, never yours, signed into Messages on a
+// Mac running the BlueBubbles server. The server password is never inline:
+// name it by exactly one of password_env (an environment variable) or
+// password_file (a file holding it, mode 600).
+{
+  "channels": {
+    "imessage": {
+      // The BlueBubbles server's address as this machine reaches it: the
+      // Mac's LAN address, its Tailscale address, or the server's tunnel.
+      "url": "http://192.168.1.20:1234",
+      "password_file": "~/.nodecode/secrets/bluebubbles-password",
+      // At least one of allowed_chats / allowed_users must be non-empty:
+      // messages run with full host authority, so a lane never starts open to
+      // the world. People are handles (a phone number with its country code,
+      // or an email address); chats are guids (iMessage;-;+15551234567 for a
+      // direct message, iMessage;+;chat... for a group). The probe lists the
+      // latest chats and the people in them.
+      "allowed_users": ["+15551234567"],
+      // "allowed_chats": ["iMessage;+;chat123456789"],
+      // Whose word is standing policy in the chat.
+      "owner": ["+15551234567"],
+      // Names that call the bot in a group, typed with or without @:
+      // iMessage has no bot mention.
+      "mention_names": ["nodecode"],
+      // true: in groups, answer when called by name or in a thread the bot
+      // answers in. A direct message always answers.
+      "require_mention": true,
+      // Chats where every allowed message may open a turn, and chats the bot
+      // reads neither as prompts nor as context.
+      "free_response_chats": [],
+      "ignored_chats": [],
+      // Direct messages and group chats: "allow" or "disabled".
+      "dm_policy": "allow",
+      "group_policy": "allow",
+      // true: tapback each ask — ‼️ while it runs, 👍 done, 👎 failed. Needs
+      // the server's Private API.
+      "reactions": false,
+      // Milliseconds between two reads of the server's new messages.
+      "poll_ms": 1500,
+      // Minutes an ask's turn may run before its tool calls are refused; 0
+      // caps nothing.
+      "turn_budget_minutes": 0,
+      // A SOUL.md whose text is the channel's standing persona.
+      // "soul_file": "~/.nodecode/SOUL.md"
+    }
+  }
+}
