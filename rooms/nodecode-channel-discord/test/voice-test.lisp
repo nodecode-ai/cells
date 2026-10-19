@@ -445,65 +445,113 @@ voice channels the bot knows."
   (is (equal "voice: not in a voice channel. Sit in one and type `/voice join`, and I sit beside you."
              (ncd:voice-command "status" (voice-section)))))
 
-(deftest channel-discord-voice-bare-in-a-room-is-a-card ()
-  ;; /voice bare in a room answers with a card, an embed: grey and how to
-  ;; start, or green with where the bot sits, the channel it talks through and
-  ;; whom it hears; Join, or Leave and the notes; Refresh; and a menu of the
-  ;; room's voice messages with its pick shown. A press on the card answers
-  ;; with what it did, quoted above the card again. The words stay the answer
-  ;; where no card is drawn; from a shell, bare /voice is the status in words.
-  (flet ((says (control) (nck:said-line (second control)))
-         (card () (getf nck::*command-card* :controls))
-         (panel () (getf nck::*command-card* :panel)))
-    (let ((ncd:*voice-lane* nil)
-          (nck:*command-source* (nlk:json-object "chat_kind" "channel" "channel_id" "t-1"
-                                                 "user_id" "u1"))
-          (nck::*command-card* nil))
-      (is-carrying (said (ncd:voice-command "" (voice-section) "tui-1"))
-        "## Voice" "Sit in one, then press Join" "Voice messages here: words only.")
-      (destructuring-bind (buttons (menu placeholder options)) (card)
-        (is (equal '("/voice join" "/voice") (mapcar #'says buttons)))
-        (is-shape nil (menu eq :menu) (placeholder "Voice messages here"))
-        (is (equal '("/voice off" "/voice on" "/voice tts") (mapcar #'says options)))
-        (is (equal '(t nil nil) (mapcar #'fourth options))))
-      (is-shape (panel) (:title "Voice") (:tone :stopped)
-        (:fields '(("Voice messages here" . "Words only"))))
-      (is (search "Sit in one, then press Join, and I sit beside you." (getf (panel) :text)))
-      (setf (gethash "pressed" nck:*command-source*) t
-            nck::*command-card* nil)
-      (is-carrying (said (ncd:voice-command "leave" (voice-section) "tui-1"))
-        "voice: not in a voice channel" "## Voice")
-      (is (uiop:string-prefix-p "> not in a voice channel" (getf (panel) :text)))
-      (let ((ncd:*voice-lane* (voice-lane-for-test)))
-        (setf (ncd::voice-lane-notes-by ncd:*voice-lane*) "u1")
-        (is-carrying (said (ncd::voice-card (voice-section) "tui-1" "voice: done."))
-          "voice: done." "In <#vc-1>, talking through <#text-1>, hearing <@u-allowed>."
-          "Taking notes: 0 lines so far.")
-        (is (equal '("/voice leave" "/voice notes stop" "/voice") (mapcar #'says (first (card)))))
-        (is-shape (panel) (:tone :done)
-          (:fields '(("Sitting in" . "<#vc-1>") ("Talking through" . "<#text-1>")
-                     ("Hearing" . "<@u-allowed>") ("Notes" . "0 lines so far")
-                     ("Voice messages here" . "Words only")))))))
-  (let ((nck:*command-source* nil) (ncd:*voice-lane* nil))
-    (is (search "voice: not in a voice channel" (ncd:voice-command "" (voice-section))))))
+(defmacro with-voice-names ((&rest channels) &body body)
+  "BODY with the server's CHANNELS -- (ID NAME TYPE) in g1 -- and the members
+u1 Ana and u2 Bo named, as GUILD_CREATE would have named them."
+  `(let ((ncd::*voice-channel-names* (make-hash-table :test #'equal))
+         (ncd::*voice-member-names* (make-hash-table :test #'equal)))
+     (loop for (id name type) in ',channels
+           do (setf (gethash id ncd::*voice-channel-names*) (list name type "g1")))
+     (setf (gethash "u1" ncd::*voice-member-names*) "Ana"
+           (gethash "u2" ncd::*voice-member-names*) "Bo")
+     ,@body))
+
+(defun voice-rows (dialog)
+  "DIALOG's rows as (LABEL DETAIL VERB ENTER MARK)."
+  (loop for row in (getf dialog :rows)
+        collect (list (getf row :label) (getf row :detail) (getf row :verb)
+                      (getf (getf row :run) :enter) (getf row :mark))))
+
+(deftest channel-discord-voice-bare-is-one-dialog-for-shell-and-room ()
+  ;; Bare /voice answers its status in words and a dialog: where the bot sits
+  ;; and how to start, or the channel it sits in, the one it talks through,
+  ;; whom it hears and its notes -- each row naming its own press and the
+  ;; line it runs. Voice messages and new notes are a room's, so a shell's
+  ;; dialog has neither; the channels and people are named, not mentioned.
+  (with-voice-names (("vc-1" "General" 2) ("text-1" "chat" 0))
+    (let ((ncd:*voice-lane* nil) (nck:*command-source* nil))
+      (nlk:bind (((text dialog) (ncd:voice-command "" (voice-section) "tui-1")))
+        (is (search "voice: not in a voice channel" text))
+        (is-shape dialog (:title "Voice") (:context "not seated") (:tone nil))
+        (is (search "Join sits beside you, or in the channel you pick" (getf dialog :summary)))
+        (is (equal '(("Sitting in" "nowhere" "join" "/voice join" "○")) (voice-rows dialog)))))
+    (let ((ncd:*voice-lane* (voice-lane-for-test :speakers '("u1" "u2")))
+          (nck:*command-source* (nlk:json-object "chat_kind" "channel" "channel_id" "t-1" "user_id" "u1")))
+      (let ((dialog (nth-value 1 (ncd:voice-command "" (voice-section) "tui-1"))))
+        (is-shape dialog (:context "in #General") (:tone :success))
+        (is (equal '(("Sitting in" "#General" "leave" "/voice leave" "●")
+                     ("Talking through" "#chat" "change" "/voice room" nil)
+                     ("Hearing" "Ana, Bo" "change" "/voice hear" nil)
+                     ("Notes" "not taking" "take" "/voice notes" nil)
+                     ("Voice messages here" "Words only" "change" "/voice replies" nil))
+                   (voice-rows dialog))))
+      (setf (ncd::voice-lane-notes-by ncd:*voice-lane*) "u1"
+            (ncd::voice-lane-speakers ncd:*voice-lane*) '("*"))
+      (is (equal '(("Hearing" "everyone" "change" "/voice hear" nil)
+                   ("Notes" "0 lines so far" "stop" "/voice notes stop" nil))
+                 (subseq (voice-rows (nth-value 1 (ncd:voice-command "" (voice-section) "tui-1"))) 2 4))))
+    (let ((ncd:*voice-lane* (voice-lane-for-test)) (nck:*command-source* nil))
+      (is (equal '("Sitting in" "Talking through" "Hearing")
+                 (mapcar #'first (voice-rows (nth-value 1 (ncd:voice-command "" (voice-section) "tui-1")))))
+          "a shell's dialog offers no notes to take and no voice messages"))
+    (is (null (nth-value 1 (ncd:voice-command "status" (voice-section))))
+        "/voice status stays words")))
+
+(deftest channel-discord-voice-sub-lists-pick-and-the-pick-lands ()
+  ;; Join with nobody to sit beside lists the voice channels and who is in
+  ;; each; Talking through lists the server's text channels allowed_channels
+  ;; permits; Hearing offers everyone or the room's speakers; Voice messages
+  ;; the three modes. The current one is marked, and a pick moves the lane.
+  (with-voice-names (("vc-1" "General" 2) ("vc-2" "Quiet" 2)
+                     ("text-1" "chat" 0) ("text-2" "dev" 0) ("text-3" "news" 5))
+    (with-voice-seats (("vc-1" "g1"))
+      (setf (gethash "u2" ncd::*voice-states*) (cons "vc-1" nil))
+      (let ((nck:*command-source* nil))
+        (nlk:bind (((text dialog) (ncd:voice-command "join" (voice-section))))
+          (is (search "or pick one" text))
+          (is (equal '(("#General" "Bo" "join" "/voice join vc-1" "●")
+                       ("#Quiet" "empty" "join" "/voice join vc-2" ""))
+                     (voice-rows dialog))))
+        (is (search "voice messages are a room's" (ncd:voice-command "replies" (voice-section))))))
+    (let* ((lane (voice-lane-for-test :speakers '("u1")))
+           (ncd:*voice-lane* lane)
+           (nck:*command-source* (nlk:json-object "chat_kind" "channel" "channel_id" "text-1" "user_id" "u1"))
+           (section (voice-section "allowed_channels" (vector "text-1" "text-2") "voice_speakers" (vector "u1"))))
+      (is (equal '(("#chat" "" "use" "/voice room text-1" "●") ("#dev" "" "use" "/voice room text-2" ""))
+                 (voice-rows (nth-value 1 (ncd:voice-command "room" section "tui-1")))))
+      (is (search "#news is no text channel I may talk through" (ncd:voice-command "room text-3" section)))
+      (is (equal "voice: talking through #dev now." (ncd:voice-command "room text-2" section)))
+      (is (equal "text-2" (ncd::voice-lane-room-channel-id lane)))
+      (is (equal '(("Everyone" "anybody in the voice channel" "hear" "/voice hear everyone" "")
+                   ("The room's speakers" "Ana" "hear" "/voice hear default" "●"))
+                 (voice-rows (nth-value 1 (ncd:voice-command "hear" section)))))
+      (ncd:voice-command "hear everyone" section)
+      (is (equal '("*") (ncd::voice-lane-speakers lane)))
+      (is (ncd:voice-speaker-allowed-p lane "u-stranger"))
+      (ncd:voice-command "hear default" section)
+      (is (equal '("u1") (ncd::voice-lane-speakers lane)))
+      (is (search "not \"bob\"" (ncd:voice-command "hear bob" section)))
+      (is (equal '(("Words only" "●") ("Voice for voice notes" "") ("Voice for every answer" ""))
+                 (mapcar (lambda (row) (list (first row) (fifth row)))
+                         (voice-rows (nth-value 1 (ncd:voice-command "replies" section "tui-1")))))))))
 
 (deftest channel-discord-voice-completes-the-verbs-that-would-do-something ()
   ;; /voice's argument completes to the verbs that would act now, each with
-  ;; what it does: join while the bot sits nowhere, leave, notes and say
-  ;; while it sits, notes stop while notes are taken, and always status and
-  ;; the voice-message modes; the tail typed narrows them.
+  ;; what it does: join while the bot sits nowhere; leave, room, hear, notes
+  ;; and say while it sits; notes stop while notes are taken; and always
+  ;; status, replies and the voice-message modes; the tail typed narrows them.
   (let ((lane (voice-lane-for-test)))
     (flet ((verbs (text &optional seat)
              (let ((ncd:*voice-lane* seat))
                (mapcar (lambda (choice) (getf choice :value)) (ncd::voice-choices text)))))
       (is-table (expected text seat) (equal expected (verbs text seat))
-        ('("join" "status" "off" "on" "tts") "" nil)
-        ('("leave" "notes" "say" "status" "off" "on" "tts") "" lane)
+        ('("join" "status" "replies" "off" "on" "tts") "" nil)
+        ('("leave" "room" "hear" "notes" "say" "status" "replies" "off" "on" "tts") "" lane)
         ('("tts") "TS" lane))
       (setf (ncd::voice-lane-notes-by lane) "u1")
       (is (equal '("notes stop") (verbs "notes" lane))))
     (let ((ncd:*voice-lane* nil))
-      (is (equal "join — sit in the voice channel you are in"
+      (is (equal "join — sit in the voice channel you are in, or one you pick"
                  (getf (first (ncd::voice-choices "jo")) :name))))))
 
 ;;; --- routing the two dispatches ----------------------------------------------------------
@@ -684,5 +732,5 @@ voice channels the bot knows."
   ;; typed anywhere no running channel holds, the refusal says so.
   (is (search "no room of a running channel"
               (ncd:voice-command "tts" (voice-section) "tui-session")))
-  (is (search "join, leave, status, on, tts, off, notes"
+  (is (search "join, leave, status, room, hear, replies, on, tts, off, notes"
               (ncd:voice-command "dance" (voice-section)))))

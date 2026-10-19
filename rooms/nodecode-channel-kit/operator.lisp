@@ -924,7 +924,7 @@ beside it, the picture in one row (PICTURE-STRIP), the summary, its tone."
                  (here (&rest view)
                    ;; this card's own view, VIEW over it: its tab, its page, its way back
                    (append view (list :tab tab :page page :back back :back-tab back-tab :back-page back-page)))
-                 (press (row &optional (as (or enter "open")))
+                 (press (row &optional (as (or (words (field row "verb")) enter "open")))
                    ;; the choice ROW's press says, and the card it answers comes back to
                    (multiple-value-bind (press draft) (dialog-row-press row)
                      (choice (format nil "~a~:[~;…~]" (first-capital as) draft) press

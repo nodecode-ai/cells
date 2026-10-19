@@ -1566,7 +1566,13 @@ LANE, as the one running channel."
                                   :rows (loop for i below 7
                                               collect (list :label (format nil "t~d" i)
                                                             :run (list :enter (format nil "/evict through t~d" i))))))))
-      (is (equal "Evict through…" (second (first (nth-value 1 (nck::dialog-card many "/context history"))))) "seven rows keep a menu that says what a pick does"))))
+      (is (equal "Evict through…" (second (first (nth-value 1 (nck::dialog-card many "/context history"))))) "seven rows keep a menu that says what a pick does"))
+    (let ((own (nlk:json-object "rows" (vector (nlk:json-object "label" "Sitting in" "detail" "#General" "verb" "leave"
+                                                                "run" (nlk:json-object "enter" "/voice leave"))))))
+      (is (equal '((:row nil "Sitting in" "#General" ("Leave" "/voice leave" :secondary nil))
+                   (("Refresh" "/voice" :secondary nil)))
+                 (press-lines (nth-value 1 (nck::dialog-card own "/voice"))))
+          "a row that names its own press is pressed by that word, over the hint's"))))
 
 (deftest channel-a-dialog-card-pages-its-rows-and-tabs ()
   ;; A tabbed dialog's card shows a row of its tabs, the one open primary,

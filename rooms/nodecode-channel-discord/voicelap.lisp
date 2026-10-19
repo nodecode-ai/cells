@@ -115,6 +115,15 @@ it. A person sits in one voice channel at a time, wherever it is.")
   "Voice channel id -> the server it is in, from GUILD_CREATE's channels and
 every voice state: what a join tells Discord beside the channel.")
 
+(defvar *voice-channel-names* (make-hash-table :test #'equal :synchronized t)
+  "Channel id -> (NAME TYPE GUILD) for the text, voice and stage channels of
+every server the bot is in, from GUILD_CREATE: what /voice calls a channel,
+the voice channels it offers to sit in and the text channels to talk through.")
+
+(defvar *voice-member-names* (make-hash-table :test #'equal :synchronized t)
+  "User id -> the name its server shows for that person, from GUILD_CREATE's
+members: whom /voice says it hears, and who sits in each voice channel.")
+
 (defvar *voice-expecting-leave* nil
   "Whether the bot asked Discord to take it out of voice, so the
 VOICE_STATE_UPDATE that says it is out is its own doing and ends no lane.")
@@ -997,57 +1006,149 @@ seat it on their own."
 
 (defparameter +voice-reply-labels+
   '(("off" . "Words only") ("on" . "Voice for voice notes") ("tts" . "Voice for every answer"))
-  "What /voice's card calls each of +VOICE-REPLIES+.")
+  "What /voice calls each of +VOICE-REPLIES+.")
 
-(defun voice-card (section room &optional line &aux (lane *voice-lane*)
-                                                    (mode (or (nck:room-voice-replies room) "off"))
-                                                    (label (cdr (assoc mode +voice-reply-labels+
-                                                                       :test #'string=))))
-  "/voice's card in ROOM, under LINE — what a press on it just did: where the
-bot sits, the channel it talks through and whom it hears, or how to start;
-the buttons that seat it, get it up and take notes; and a menu of ROOM's
-voice messages, its pick shown. Offered (NCK:OFFER-CARD) as an embed — green
-seated, grey not — and answered in words everywhere it is not drawn. => the
-words."
-  (let ((hearing (and lane (if (member "*" lane.speakers :test #'equal)
-                               "everyone"
-                               (format nil "~{<@~a>~^, ~}" lane.speakers))))
-        (start (voice-how-to-start section (concatenate 'string "Not in a voice channel. "
-                                                         "Sit in one, then press Join, and I sit beside you"))))
-    (nck:offer-card
-     :controls (list (append (if lane
-                                 (list (nck:choice "Leave" "/voice leave" :style :danger)
-                                       (if lane.notes-by
-                                           (nck:choice "Stop notes" "/voice notes stop")
-                                           (nck:choice "Take notes" "/voice notes")))
-                                 (list (nck:choice "Join" "/voice join" :style :primary)))
-                             (list (nck:choice "Refresh" "/voice")))
-                     (list :menu "Voice messages here"
-                           (loop for (key . meaning) in +voice-replies+
-                                 collect (nck:menu-choice (cdr (assoc key +voice-reply-labels+
-                                                                      :test #'string=))
-                                                          (format nil "/voice ~a" key)
-                                                          :description meaning
-                                                          :current (equal key mode)))))
-     :panel (list :title "Voice"
-                  :tone (if lane :done :stopped)
-                  :text (format nil "~@[> ~a~%~%~]~a"
-                                (and line (if (uiop:string-prefix-p "voice: " line) (subseq line 7) line))
-                                (if lane "Sitting in voice." start))
-                  :fields (append (and lane (list (cons "Sitting in" (format nil "<#~a>" lane.channel-id))
-                                                  (cons "Talking through" (format nil "<#~a>" lane.room-channel-id))
-                                                  (cons "Hearing" hearing)))
-                                  (and lane lane.notes-by
-                                       (list (cons "Notes" (format nil "~a line~:p so far" (length lane.notes)))))
-                                  (list (cons "Voice messages here" label)))))
-    (format nil "~@[~a~%~%~]## Voice~%~a~%Voice messages here: ~(~a~)."
-            line
-            (if lane
-                (format nil "In <#~a>, talking through <#~a>, hearing ~a.~@[~%Taking notes: ~a line~:p so far.~]"
-                        lane.channel-id lane.room-channel-id hearing
-                        (and lane.notes-by (length lane.notes)))
-                start)
-            label)))
+(defun voice-replies-label (room)
+  "What ROOM's voice messages are, in /voice's words."
+  (cdr (assoc (or (nck:room-voice-replies room) "off") +voice-reply-labels+ :test #'string=)))
+
+(defun voice-channel-name (id &aux (entry (and id (gethash id *voice-channel-names*))))
+  "Channel ID as /voice names it: #NAME where its server named it, else its
+mention."
+  (if entry (format nil "#~a" (first entry)) (format nil "<#~a>" id)))
+
+(defun voice-person (user)
+  "USER as /voice names them: their server name, else their mention."
+  (or (gethash user *voice-member-names*) (format nil "<@~a>" user)))
+
+(defun voice-channels (guild types)
+  "(ID . NAME) of GUILD's channels of TYPES — every server's for GUILD NIL --
+in name order."
+  (sort (loop for id being the hash-keys of *voice-channel-names* using (hash-value (name type where))
+              when (and (member type types) (or (null guild) (equal guild where)))
+                collect (cons id name))
+        #'string-lessp :key #'cdr))
+
+(defun voice-whom (speakers)
+  "SPEAKERS, a list of user ids where `*' is everyone, in words."
+  (cond ((member "*" speakers :test #'equal) "everyone")
+        (speakers (format nil "~{~a~^, ~}" (mapcar #'voice-person speakers)))
+        (t "nobody")))
+
+(defun voice-hearing (lane)
+  "Whom LANE hears, in words."
+  (voice-whom lane.speakers))
+
+(defun voice-row (label detail verb line &rest more)
+  "A /voice dialog row: LABEL and DETAIL, its button VERB, the slash LINE
+its press runs, MORE its other members (:mark, :mark-tone)."
+  (list* :label label :detail detail :verb verb :run (list :enter line) more))
+
+(defun voice-dialog (section room &aux (lane *voice-lane*) (in-room (and *command-source* t)))
+  "Bare /voice as a dialog (NLE:LIST-DIALOG): where the bot sits, the channel
+it talks through, whom it hears, its notes and ROOM's voice messages, each
+row naming its own press — Leave, Change, Take — and the line that does it.
+A shell paints it as a picker, a room as a card (the kit's DIALOG-CARD):
+one owner for both."
+  ;; Voice messages and new notes are a room's — what a room hears, and an
+  ;; ask somebody there answers for — so a shell offers neither.
+  (nle:list-dialog
+   :title "Voice"
+   :context (if lane (format nil "in ~a" (voice-channel-name lane.channel-id)) "not seated")
+   :tone (and lane :success)
+   :summary (if lane
+                (format nil "Heard ~a utterance~:p, sent ~a frame~:p~:[ — waiting for somebody else ~
+                             to sit down~;~]."
+                        lane.heard lane.spoken lane.mls-joined-p)
+                (voice-how-to-start section "Not in a voice channel. Join sits beside you, or in the channel you pick"))
+   ;; a shell's selected row says what Enter does there, as a room's button does
+   :rows (mapcar (lambda (row) (list* :suffix (format nil "  · enter ~a" (getf row :verb)) row))
+          (remove nil
+                 (list (if lane
+                           (voice-row "Sitting in" (voice-channel-name lane.channel-id) "leave" "/voice leave"
+                                      :mark "●" :mark-tone :success)
+                           (voice-row "Sitting in" "nowhere" "join" "/voice join" :mark "○" :mark-tone :muted))
+                       (and lane (voice-row "Talking through" (voice-channel-name lane.room-channel-id)
+                                            "change" "/voice room"))
+                       (and lane (voice-row "Hearing" (voice-hearing lane) "change" "/voice hear"))
+                       (and lane (cond (lane.notes-by
+                                        (voice-row "Notes" (format nil "~a line~:p so far" (length lane.notes))
+                                                   "stop" "/voice notes stop"))
+                                       (in-room (voice-row "Notes" "not taking" "take" "/voice notes"))))
+                       (and in-room (voice-row "Voice messages here" (voice-replies-label room)
+                                               "change" "/voice replies")))))))
+
+(defun voice-pick-dialog (title context summary rows empty &optional (verb "use"))
+  "A /voice sub-list: TITLE over CONTEXT, SUMMARY, ROWS to pick one of, EMPTY
+its copy with none, VERB what a pick does."
+  (nle:list-dialog :title title :context context :summary summary :rows rows
+                   :empty-label empty :searchable (> (length rows) 8)
+                   :hint (format nil "enter ~a  esc back" verb)))
+
+(defun voice-join-dialog ()
+  "/voice join with nobody to sit beside: the voice channels to sit in, and
+who is in each."
+  (voice-pick-dialog
+   "Join" "voice channels" "Where to sit."
+   (loop for (id . name) in (voice-channels nil '(2 13))
+         for people = (voice-humans-in id)
+         collect (voice-row (format nil "#~a" name)
+                            (if people (format nil "~{~a~^, ~}" (mapcar #'voice-person people)) "empty")
+                            "join" (format nil "/voice join ~a" id)
+                            :mark (if people "●" "") :mark-tone :success))
+   "No voice channels known yet: a server lists its own when the bot connects."
+   "join"))
+
+(defun voice-room-choices (lane section &aux (allowed (config-string-list section "allowed_channels")))
+  "(ID . NAME) of the text channels LANE may talk through: its server's,
+those allowed_channels names where it names any."
+  (remove-if-not (lambda (choice) (or (null allowed) (member (car choice) allowed :test #'equal)))
+                 (voice-channels lane.guild-id '(0 5))))
+
+(defun voice-room-command (lane channel section typed &aux (choices (voice-room-choices lane section)))
+  "/voice room [CHANNEL]: the text channels LANE may talk through, or talk
+through CHANNEL, typed in the channel TYPED."
+  (cond
+    ((null channel)
+     (values (format nil "voice: talking through ~a" (voice-channel-name lane.room-channel-id))
+             (voice-pick-dialog
+              "Talking through" (voice-channel-name lane.channel-id)
+              "The text channel what is said in voice goes to, and answers come from."
+              (loop for (id . name) in choices
+                    collect (voice-row (format nil "#~a" name) "" "use" (format nil "/voice room ~a" id)
+                                       :mark (if (equal id lane.room-channel-id) "●" "") :mark-tone :accent))
+              "No text channels known yet: a server lists its own when the bot connects.")))
+    ((not (assoc channel choices :test #'equal))
+     (format nil "voice: ~a is no text channel I may talk through" (voice-channel-name channel)))
+    (t (setf lane.room-channel-id channel)
+       (voice-announce lane (format nil "voice: talking through ~a now." (voice-channel-name channel)) typed))))
+
+(defun voice-hear-command (lane whom section by typed &aux (default (voice-speakers section by)))
+  "/voice hear [everyone | default]: whom LANE could hear, or hear everyone in
+its channel or the room's speakers (VOICE-SPEAKERS), typed by BY in TYPED."
+  (let ((everyone (and (member "*" lane.speakers :test #'equal) t)))
+    (cond
+      ((null whom)
+       (values (format nil "voice: hearing ~a" (voice-hearing lane))
+               (voice-pick-dialog
+                "Hearing" (voice-channel-name lane.channel-id)
+                "Whose speech opens a turn. Notes hear everyone while they run."
+                (list (voice-row "Everyone" "anybody in the voice channel" "hear" "/voice hear everyone"
+                                 :mark (if everyone "●" "") :mark-tone :accent)
+                      (voice-row "The room's speakers"
+                                 (voice-whom default)
+                                 "hear" "/voice hear default"
+                                 :mark (if (and (not everyone) (equal lane.speakers default)) "●" "")
+                                 :mark-tone :accent))
+                "" "hear")))
+      ((string-equal whom "everyone")
+       (setf lane.speakers (list "*"))
+       (voice-announce lane (format nil "voice: hearing everyone in ~a now." (voice-channel-name lane.channel-id))
+                       typed))
+      ((string-not-equal whom "default") (format nil "voice: hear everyone, or default — not ~s" whom))
+      ((null default) "voice: nobody is allowed to speak (channels.discord.voice_speakers)")
+      (t (setf lane.speakers default)
+         (voice-announce lane (format nil "voice: hearing ~a now." (voice-hearing lane)) typed)))))
 
 (defun voice-status-text (section &aux (lane *voice-lane*))
   "What /voice status says."
@@ -1123,9 +1224,21 @@ its: that server's part of the tables, the rest kept."
                           for user = (nlk:json-value member :object "user")
                           when (nlk:json-value user :boolean "bot")
                             collect (nlk:json-value user :string "id")))))
+    (loop for member across (or (nlk:json-value guild :array "members") #())
+          for user = (nlk:json-value member :object "user")
+          for name = (or (nlk:json-value member :string "nick")
+                         (nlk:json-value user :string "global_name")
+                         (nlk:json-value user :string "username"))
+          when name
+            do (setf (gethash (nlk:json-value user :string "id") *voice-member-names*) name))
     (loop for channel across (or (nlk:json-value guild :array "channels") #())
-          when (member (nlk:json-value channel :integer "type") '(2 13)) ; voice, stage
-            do (setf (gethash (nlk:json-value channel :string "id") *voice-channel-guilds*) id))
+          for channel-id = (nlk:json-value channel :string "id")
+          for type = (nlk:json-value channel :integer "type")
+          when (member type '(0 2 5 13)) ; text, voice, announcement, stage
+            do (setf (gethash channel-id *voice-channel-names*)
+                     (list (or (nlk:json-value channel :string "name") channel-id) type id))
+          when (member type '(2 13))
+            do (setf (gethash channel-id *voice-channel-guilds*) id))
     (loop for user being the hash-keys of *voice-states* using (hash-value (channel))
           when (equal id (gethash channel *voice-channel-guilds*))
             do (remhash user *voice-states*))
@@ -1211,80 +1324,95 @@ connection."
 ;;; --- /voice ---------------------------------------------------------------------------------
 
 (defun voice-command (argument section &optional room)
-  "`/voice join | leave | status | on | tts | off | notes [stop] | say WORDS`,
-typed in ROOM — bare, in a room, the card (VOICE-CARD)."
-  ;; => the line to show. The room hears the same thing, once: a voice
-  ;; channel the bot is sitting in is a visible state, and the text room is
-  ;; where visible state belongs. Who typed it (NCK:*COMMAND-SOURCE*) is where
-  ;; /voice join sits down, the channel it was typed in where it talks, and
-  ;; whose name notes are asked in.
+  "`/voice join [CHANNEL] | leave | status | room [CHANNEL] | hear [everyone |
+default] | replies | on | tts | off | notes [stop] | say WORDS`, typed in
+ROOM — bare, the status in words and the dialog (VOICE-DIALOG)."
+  ;; => the line to show, and the dialog where the answer is one. The room
+  ;; hears a seat change once: a voice channel the bot is sitting in is a
+  ;; visible state, and the text room is where visible state belongs. Who
+  ;; typed it (NCK:*COMMAND-SOURCE*) is where /voice join sits down, the
+  ;; channel it was typed in where it talks, and whose name notes are asked
+  ;; in; a shell, with nobody to sit beside, picks the channel from a list.
   (let* ((words (remove "" (uiop:split-string (or argument "") :separator '(#\Space #\Tab))
                        :test #'string=))
          (verb (string-downcase (or (first words) "")))
+         (object (second words))
          (by (and *command-source* (nlk:json-value *command-source* :text "user_id")))
          (typed (and *command-source* (nlk:json-value *command-source* :text "channel_id")))
-         (lane *voice-lane*)
-         (pressed (and *command-source* (nlk:json-value *command-source* :boolean "pressed")))
-         (line
-           (cond
-            ((and (string= verb "") *command-source*) nil)
-            ((member verb '("" "status") :test #'string=)
-             (voice-status-text section))
-            ((assoc verb +voice-replies+ :test #'string=)
-             (nlk:with-handlers ((error (condition) (format nil "voice: ~a" condition)))
-               (set-voice-replies room verb)))
-            ((string= verb "join")
-             ;; Beside the person who asked, wherever they sit in voice, talking
-             ;; through the channel it was typed in and hearing them where no list
-             ;; names who is heard; answered once Discord has seated the bot.
+         (lane *voice-lane*))
+    (cond
+      ((string= verb "") (values (voice-status-text section) (voice-dialog section room)))
+      ((string= verb "status") (voice-status-text section))
+      ((assoc verb +voice-replies+ :test #'string=)
+       (nlk:with-handlers ((error (condition) (format nil "voice: ~a" condition)))
+         (set-voice-replies room verb)))
+      ((string= verb "replies")
+       (if *command-source*
+           (values (format nil "voice: voice messages here — ~(~a~)" (voice-replies-label room))
+                   (voice-pick-dialog
+                    "Voice messages here" "" "How this room's answers come back."
+                    (loop with mode = (or (nck:room-voice-replies room) "off")
+                          for (key . meaning) in +voice-replies+
+                          collect (voice-row (cdr (assoc key +voice-reply-labels+ :test #'string=))
+                                             meaning "use" (format nil "/voice ~a" key)
+                                             :mark (if (equal key mode) "●" "") :mark-tone :accent))
+                    ""))
+           "voice: voice messages are a room's — pick them there, with `/voice replies`"))
+      ((string= verb "join")
+       ;; Beside the person who asked, wherever they sit in voice, or in the
+       ;; channel named; talking through the channel it was typed in and
+       ;; hearing them where no list names who is heard; answered once
+       ;; Discord has seated the bot.
+       (let ((channel (or object (and by (car (gethash by *voice-states*))))))
+         (if (and (null channel) (null lane))
+             (values "voice: sit in a voice channel first, or pick one" (voice-join-dialog))
              (bt2:with-lock-held (*voice-seat-lock*)
                (multiple-value-bind (lane refusal)
-                   (join-voice section :channel (and by (car (gethash by *voice-states*)))
+                   (join-voice section :channel channel
                                        :room (and *command-source* (voice-typed-room *command-source*))
                                        :speakers (voice-speakers section by))
                  (cond
                    ((or (null lane) refusal) (format nil "voice: ~a" refusal))
                    ((not (voice-await-seat lane)) (format nil "voice: ~a" (voice-unseated-text lane)))
-                   (t (voice-announce lane (voice-joining-line lane) typed))))))
-            ((not (member verb '("say" "leave" "notes") :test #'string=))
-             (format nil "voice: no such verb ~s — join, leave, status, on, tts, off, notes, ~
-                          say <words>" verb))
-            ((null lane) "voice: not in a voice channel")
-            ((string= verb "notes") (voice-notes-command lane (second words) by typed))
-            ((string= verb "say")
-             ;; Say something now, with no turn behind it. The playback path is
-             ;; otherwise only reachable by asking a question and waiting, which
-             ;; makes a fault in it slow and expensive to see.
-             (let ((words (string-trim '(#\Space #\Tab)
-                                       (subseq (or argument "")
-                                               (min (length (or argument "")) 4)))))
-               (cond
-                 ((zerop (length words)) "voice: say what?")
-                 (t (nck:queue-push lane.work-queue (list :speak words))
-                    (format nil "voice: saying ~s out loud" words)))))
-            (t (prog1 (voice-announce lane (format nil "voice: leaving <#~a>." lane.channel-id) typed)
-                 (leave-voice))))))
-    ;; Bare in a room it is the card; pressed on the card, the card again
-    ;; under what the press did.
-    (if (or (null line) pressed)
-        (voice-card section room line)
-        line)))
+                   (t (voice-announce lane (voice-joining-line lane) typed))))))))
+      ((not (member verb '("say" "leave" "notes" "room" "hear") :test #'string=))
+       (format nil "voice: no such verb ~s — join, leave, status, room, hear, replies, on, tts, off, ~
+                    notes, say <words>" verb))
+      ((null lane) "voice: not in a voice channel")
+      ((string= verb "room") (voice-room-command lane object section typed))
+      ((string= verb "hear") (voice-hear-command lane object section by typed))
+      ((string= verb "notes") (voice-notes-command lane object by typed))
+      ((string= verb "say")
+       ;; Say something now, with no turn behind it. The playback path is
+       ;; otherwise only reachable by asking a question and waiting, which
+       ;; makes a fault in it slow and expensive to see.
+       (let ((words (string-trim '(#\Space #\Tab)
+                                 (subseq (or argument "") (min (length (or argument "")) 4)))))
+         (cond
+           ((zerop (length words)) "voice: say what?")
+           (t (nck:queue-push lane.work-queue (list :speak words))
+              (format nil "voice: saying ~s out loud" words)))))
+      (t (prog1 (voice-announce lane (format nil "voice: leaving ~a." (voice-channel-name lane.channel-id)) typed)
+           (leave-voice))))))
 
 (defun voice-choices (text &aux (lane *voice-lane*))
   "The /voice argument completions for the tail TEXT: the verbs that would
 do something now, each with what it does — join only while the bot sits
-nowhere, leave, notes and say only while it sits, notes stop only while
-notes are taken."
+nowhere; leave, room, hear, notes and say only while it sits; notes stop
+only while notes are taken."
   (loop with needle = (nlk:trimmed text)
         for (verb . what)
           in (append (if lane
                          (list '("leave" . "get up from the voice channel")
+                               '("room" . "the text channel I talk through")
+                               '("hear" . "whose speech opens a turn: everyone, or the room's speakers")
                                (if lane.notes-by
                                    '("notes stop" . "stop the notes and write them up")
                                    '("notes" . "write down what everyone says; answer nothing"))
                                '("say" . "speak the words after it, now"))
-                         (list '("join" . "sit in the voice channel you are in")))
-                     (list '("status" . "where the bot sits and what it hears"))
+                         (list '("join" . "sit in the voice channel you are in, or one you pick")))
+                     (list '("status" . "where the bot sits and what it hears")
+                           '("replies" . "how this room's answers come back: words or voice"))
                      +voice-replies+)
         when (search needle verb :test #'char-equal)
           collect (list :name (format nil "~a — ~a" verb what) :value verb)))
@@ -1296,8 +1424,8 @@ notes are taken."
   (nle:register-command "nodecode-channel-discord" "voice"
                         (lambda (args session-id)
                           (voice-command args section session-id))
-                        :description "Voice: join, leave, status; answers as voice messages (on, tts, off); meeting notes"
-                        :argument-hint "join | leave | status | on | tts | off | notes [stop] | say <words>"
+                        :description "Voice: join, leave, where it talks and whom it hears; answers as voice messages (on, tts, off); meeting notes"
+                        :argument-hint "join [channel] | leave | status | room | hear | replies | on | tts | off | notes [stop] | say <words>"
                         :complete (lambda (text session-id)
                                     (declare (ignore session-id))
                                     (voice-choices text))))
@@ -1317,6 +1445,8 @@ undoes all of it."
     (ignore-errors (leave-voice))
     (clrhash *voice-states*)
     (clrhash *voice-channel-guilds*)
+    (clrhash *voice-channel-names*)
+    (clrhash *voice-member-names*)
     (ignore-errors (nle:unhook :frame +voice-hook-key+))
     (ignore-errors (nle:unregister-commands "nodecode-channel-discord"))
     t))
