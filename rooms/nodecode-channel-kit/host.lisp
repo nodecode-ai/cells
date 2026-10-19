@@ -1593,11 +1593,18 @@ chunk as an address for the lane, then settle the card above it."
        ;; stayed on its card, so nothing sits between the two to set it apart.
        (let ((landed nil))
          (multiple-value-bind (delivered message-ids error)
-             (post-message host target text
-                           :reply-to reply-to :ping (null origin)
-                           :mentions (and origin lane.owner-id (list lane.owner-id))
-                           :files files
-                           :controls (answer-controls host lane choices))
+             ;; A post that signals is an answer the room never took, and says
+             ;; so the way a refusal does. 2026-10-19: an answer's new choice
+             ;; could not keep its press past the session state quota, the job
+             ;; died in the worker's log, and the room heard nothing: the card
+             ;; read working, the ask kept its eye.
+             (handler-case
+                 (post-message host target text
+                               :reply-to reply-to :ping (null origin)
+                               :mentions (and origin lane.owner-id (list lane.owner-id))
+                               :files files
+                               :controls (answer-controls host lane choices))
+               (error (condition) (values nil nil (princ-to-string condition))))
            (bind-addresses host lane target message-ids)
            (note-delivery (host-id host) delivered error lane.session-id)
            (when (and delivered (or (first waits) choices))

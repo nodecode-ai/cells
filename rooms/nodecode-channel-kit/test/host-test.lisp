@@ -514,6 +514,26 @@ message of ours."
       (is-plan notice "reply_to" "m1" "ping" nil))
     (is-plan (third (labelled "reaction")) :method "PUT" "emoji" nck:+reaction-failed+)))
 
+(deftest channel-host-an-answer-whose-post-signals-says-so ()
+  ;; 2026-10-19: an answer carrying a new choice died inside its post (the
+  ;; choice's press could not be kept past the session state quota) and only
+  ;; the worker's log said so: the card read working, the ask kept its eye,
+  ;; the room heard nothing. A post that signals says so as a refusal does.
+  (with-digest-host (host lane :name "answer-signals"
+                     :responses (list (reply 200 "id" "s1") (reply 200))
+                     :host-keys (:platform (test-platform :choices t)))
+    (with-stubbed-fdefinition (nck::answer-controls (host lane choices)
+                                (declare (ignore host lane choices))
+                                (error "session state: session state quota exceeded"))
+      (earn-line)
+      (said "the final answer")
+      (fact "turn.completed" (nlk:json-object))
+      (is-present (settle (await-plan executor :label "edit_message"
+                                               :content "The answer could not be posted"))
+        "the card says the answer did not post"
+        (is (eq :failed (getf (plan-field settle "card") :state)) "a failed card")
+        (is (search "quota exceeded" (getf (plan-field settle "card") :note)) "and why")))))
+
 (deftest channel-host-a-steered-turn-hands-its-marks-on ()
   ;; A steer cuts the turn short and the turn it opens answers both lines:
   ;; the first ask's eye holds through the handover, and the answer's check
