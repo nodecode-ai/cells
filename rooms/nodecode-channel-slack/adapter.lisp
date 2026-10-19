@@ -93,6 +93,7 @@ THREADS is the book the plans and the lap share."
    :plan-typing (lambda (target &rest keys) (apply #'typing-plan threads target keys))
    :plan-reaction #'reaction-plans
    :plan-respond #'respond-plan
+   :plan-control-ack #'ack-plan
    :message-id-of #'slack-message-id
    :address-of #'slack-address
    :strip-mention (lambda (text) (slack-strip-mention text bot-user-id))

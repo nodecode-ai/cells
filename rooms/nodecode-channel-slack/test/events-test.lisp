@@ -96,11 +96,13 @@
   (let ((press (ncs:slack-control-press
                 (nlk:json-object "type" "block_actions" "trigger_id" "tr"
                                  "user" (nlk:json-object "id" "U1")
-                                 "container" (nlk:json-object "message_ts" "5.5" "channel_id" "C1")
+                                 "container" (nlk:json-object "message_ts" "5.5" "channel_id" "C1"
+                                                              "thread_ts" "4.4")
                                  "actions" (vector (nlk:json-object "action_id" "nodecode-0"
                                                                     "value" "nck:stop:s1"
                                                                     "action_ts" "6.6"))))))
-    (is (equal '(:id "6.6" :data "nck:stop:s1" :user-id "U1" :message-id "5.5" :channel-id "C1")
+    (is (equal '(:id "6.6" :data "nck:stop:s1" :user-id "U1" :message-id "5.5" :channel-id "C1"
+                 :thread-id "4.4")
                press)))
   (is (null (ncs:slack-control-press (nlk:json-object "type" "view_submission")))))
 

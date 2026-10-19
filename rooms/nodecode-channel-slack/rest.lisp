@@ -85,17 +85,42 @@ LABEL naming it in audits and failure copy."
 
 (defun control-button (control index &aux (style (third control)))
   "One of the kit's (LABEL DATA STYLE) controls as a Block Kit button."
+  ;; Slack refuses a whole message (invalid_blocks) over a button whose words
+  ;; pass 75 characters.
   (nlk:json-object "type" "button"
                    "action_id" (format nil "nodecode-~d" index)
-                   "text" (nlk:json-object "type" "plain_text" "text" (first control))
+                   "text" (nlk:json-object "type" "plain_text"
+                                           "text" (nlk:clip (first control) 74 :ellipsis "…"))
                    "value" (second control)
                    :when (member style '(:danger :primary))
                    "style" (string-downcase (symbol-name style))))
 
+(defun control-buttons (controls)
+  "CONTROLS, the kit's buttons in every shape it sends, as one list of (LABEL
+DATA STYLE) buttons in order: a lone (LABEL DATA STYLE DISABLED) button, a row
+of them, a (:MENU ...) whose options become buttons, the current one checked,
+and a (:ROW MARK LABEL DETAIL CHOICE) line saying its choice; :CLEAR none."
+  ;; Block Kit draws no disabled button and no menu of these, so a disabled
+  ;; one is left out and a menu's options are buttons, as on Telegram.
+  (loop for control in (unless (eq controls :clear) controls)
+        append (cond ((eq (first control) :menu)
+                      (loop for (label data description current) in (third control)
+                            collect (list (format nil "~:[~;✓ ~]~a~@[ · ~a~]"
+                                                  current label description)
+                                          data nil)))
+                     ((eq (first control) :row)
+                      (destructuring-bind (mark label detail choice) (rest control)
+                        (and choice (not (fourth choice))
+                             (list (list (format nil "~@[~a ~]~a~@[ · ~a~]" mark label detail)
+                                         (second choice) (third choice))))))
+                     (t (loop for (label data style disabled)
+                                in (if (consp (first control)) control (list control))
+                              unless disabled collect (list label data style))))))
+
 (defun message-blocks (text controls)
   "TEXT as a markdown block, followed by CONTROLS -- the kit's buttons, or
 :CLEAR for none -- as an actions block."
-  (let ((buttons (loop for control in (unless (eq controls :clear) controls)
+  (let ((buttons (loop for control in (control-buttons controls)
                        for index from 0
                        collect (control-button control index))))
     (coerce (list* (nlk:json-object "type" "markdown" "text" text)
@@ -161,6 +186,21 @@ thread."
 landed. Retried: a status line outliving its answer is a duplicate."
   (api-plan "chat.delete" (nlk:json-object "channel" (getf target :channel-id) "ts" message-id)
             "delete_message" :retry t :timeout-seconds timeout-seconds))
+
+(defun ack-plan (press &key text (timeout-seconds 30))
+  "A control PRESS's answer to the presser alone: TEXT, a card's Details or a
+refusal, as an ephemeral message where the press was made
+(chat.postEphemeral); nothing without TEXT, the socket's acknowledgement
+having answered the press."
+  ;; Not retried: a missed answer is pressed again.
+  (when text
+    (list (api-plan "chat.postEphemeral"
+                    (nlk:json-object "channel" (getf press :channel-id)
+                                     "user" (getf press :user-id)
+                                     :opt "thread_ts" (getf press :thread-id)
+                                     "text" (nlk:clip (nlk:one-line text) 1000)
+                                     "blocks" (message-blocks text nil))
+                    "control_ack" :timeout-seconds timeout-seconds))))
 
 (defun typing-plan (book target &key (timeout-seconds 30))
   "assistant.threads.setStatus: `is working...' under the thread the answer

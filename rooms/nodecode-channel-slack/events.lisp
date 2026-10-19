@@ -177,7 +177,8 @@ models grok' is `/models grok', a bare `/nodecode' is `/help'."
   "A block_actions PAYLOAD -- a press on a button a lane posted -- as the
 kit's normal control press, or NIL for any other interaction."
   ;; The socket's acknowledgement is the press's answer: there is no spinner
-  ;; to stop, so the platform's control ack plans nothing.
+  ;; to stop. What the kit says back to the presser alone (a card's Details)
+  ;; is ACK-PLAN's, in the thread the pressed message lives in.
   (let ((action (and (equal "block_actions" (nlk:json-value payload :string "type"))
                      (find-if #'hash-table-p (nlk:json-array payload "actions")))))
     (when (and action (nlk:json-value action :string "value"))
@@ -188,7 +189,9 @@ kit's normal control press, or NIL for any other interaction."
             :message-id (or (nlk:json-value payload :string "container" "message_ts")
                             (nlk:json-value payload :string "message" "ts"))
             :channel-id (or (nlk:json-value payload :string "container" "channel_id")
-                            (nlk:json-value payload :string "channel" "id"))))))
+                            (nlk:json-value payload :string "channel" "id"))
+            :thread-id (or (nlk:json-value payload :string "container" "thread_ts")
+                           (nlk:json-value payload :string "message" "thread_ts"))))))
 
 ;;; --- the policy ------------------------------------------------------------------
 

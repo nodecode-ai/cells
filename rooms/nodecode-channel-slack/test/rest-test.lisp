@@ -56,6 +56,42 @@
     (is (= 1 (length (plan-field plan "blocks"))))
     (is (equal "two" (nlk:json-value (aref (plan-field plan "blocks") 0) :string "text")))))
 
+(deftest channel-slack-card-controls-are-buttons-of-words ()
+  ;; The kit's running card sends Stop beside Details as one row; Slack
+  ;; refuses the whole post (invalid_blocks) unless every button's text is
+  ;; words and its value the data.
+  (flet ((buttons (controls)
+           (let ((blocks (ncs::message-blocks "card" controls)))
+             (if (> (length blocks) 1)
+                 (coerce (nlk:json-array (aref blocks 1) "elements") 'list)
+                 '())))
+         (words (button) (nlk:json-value (nlk:json-value button :object "text") :string "text"))
+         (value (button) (nlk:json-value button :string "value")))
+    (let ((row (buttons '((("Stop" "nck:stop:s" :danger) ("Details" "nck:details:s" :secondary))))))
+      (is (equal '("Stop" "Details") (mapcar #'words row)))
+      (is (equal '("nck:stop:s" "nck:details:s") (mapcar #'value row)))
+      (is (equal "danger" (nlk:json-value (first row) :string "style"))))
+    (is (equal '("Details") (mapcar #'words (buttons '(("Details" "nck:details:s" :secondary))))))
+    (is (equal '("Go") (mapcar #'words (buttons '((("Go" "g" :primary) ("Off" "o" :secondary t)))))))
+    (is (equal '("✓ One · first" "Two")
+               (mapcar #'words (buttons '((:menu "pick" (("One" "m:1" "first" t) ("Two" "m:2" nil nil))))))))
+    (is (= 75 (length (words (first (buttons (list (list (make-string 90 :initial-element #\a) "x" nil))))))))
+    (is (null (buttons :clear)))))
+
+(deftest channel-slack-press-answer-reaches-the-presser-alone ()
+  ;; A card's Details press answers in words only its presser sees, in the
+  ;; thread the card lives in; a press the kit answers without words plans
+  ;; nothing.
+  (let ((plans (ncs::ack-plan '(:id "6.6" :user-id "U1" :channel-id "C1" :thread-id "4.4")
+                              :text (format nil "Ran 2 commands~%Waited 30s"))))
+    (is (= 1 (length plans)))
+    (is-plan (first plans) :method "POST" :path "/chat.postEphemeral" :label "control_ack"
+                           "channel" "C1" "user" "U1" "thread_ts" "4.4"
+                           "text" "Ran 2 commands Waited 30s")
+    (is (equal (format nil "Ran 2 commands~%Waited 30s")
+               (nlk:json-value (aref (plan-field (first plans) "blocks") 0) :string "text"))))
+  (is (null (ncs::ack-plan '(:id "6.6" :user-id "U1" :channel-id "D1")))))
+
 (deftest channel-slack-edit-delete-status-reaction ()
   (let ((edit (ncs:edit-plan (slack-target "C1") "5.5" "done" :controls :clear)))
     (is-plan edit :path "/chat.update" :retry nil "channel" "C1" "ts" "5.5")
