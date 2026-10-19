@@ -74,7 +74,9 @@ private chat 555 — as JSON; FIELDS the object's other members."
 (deftest channel-telegram-get-updates-plan ()
   (let ((plan (nct:get-updates-plan 55 :poll-timeout-seconds 10)))
     (is-plan plan :path "/getUpdates" :timeout 20 :retry nil "offset" 55 "timeout" 10)
-    (is (equalp #("message" "callback_query") (gethash "allowed_updates" (nck:request-plan-body plan))) "messages, and presses on the controls they carry"))
+    (is (equalp #("message" "edited_message" "callback_query" "message_reaction")
+                (gethash "allowed_updates" (nck:request-plan-body plan)))
+        "messages, an edit, presses on the controls they carry, and a reaction"))
   (let ((plan (nct:get-updates-plan nil :allowed-updates
                                     '("message" "message_reaction"))))
     (is (null (gethash "offset" (nck:request-plan-body plan))))
@@ -211,3 +213,82 @@ private chat 555 — as JSON; FIELDS the object's other members."
          (answered (gethash "attachments" (gethash "reply" candidate))))
     (is (= 1 (length answered)))
     (is (equal "uv1" (gethash "id" (aref answered 0))))))
+
+(deftest channel-telegram-a-topic-the-bot-opened-is-one-conversation ()
+  ;; Telegram files every line of a forum topic as a reply to the service
+  ;; message that opened it. That is no gesture of the person's: it neither
+  ;; replies to anything nor addresses the bot -- but a topic the BOT opened
+  ;; (for an ask) is one conversation, joined, where no mention is needed, as
+  ;; in a Discord thread the bot is in. A real reply to the bot still is one.
+  (flet ((in-topic (creator &optional (reply-fields ""))
+           (tg-message
+            (format nil "{\"message_id\": 20, \"message_thread_id\": 3, \"date\": 1700000000,
+              \"chat\": {\"id\": -100555, \"type\": \"supergroup\", \"is_forum\": true, \"title\": \"Lab\"},
+              \"from\": {\"id\": 42, \"username\": \"kim\"}, \"text\": \"and the tests?\",
+              \"reply_to_message\": {\"message_id\": 3, ~a
+                                   \"from\": {\"id\": ~a, \"username\": ~s}}}"
+                    reply-fields creator (if (eql creator 777) "orgbot" "ada"))
+            :bot-user-id "777" :bot-username "orgbot")))
+    (let ((bot-topic (in-topic 777 "\"forum_topic_created\": {\"name\": \"Fix the build\"},"))
+          (their-topic (in-topic 99 "\"forum_topic_created\": {\"name\": \"General chat\"},"))
+          (reply (in-topic 777 "\"text\": \"Done: 3 files.\",")))
+      (flet ((field (candidate key) (gethash key (nck:candidate-source candidate))))
+        (is-source bot-topic :text "and the tests?" "chat_kind" "thread" "thread_id" "3"
+                   "reply_to_message_id" nil "chat_title" "Lab")
+        (is (eq t (field bot-topic "joined")))
+        (is (null (field bot-topic "addressed")))
+        (is (eq t (field bot-topic "chat_is_forum")))
+        (is (eql 1700000000000 (field bot-topic "sent_ms")))
+        (is (null (gethash "reply" bot-topic)) "the topic's root is not the message answered")
+        (is (null (field their-topic "joined")))
+        (is (null (field their-topic "addressed")))
+        (is (null (field reply "joined")))
+        (is (eq t (field reply "addressed")))
+        (is-source reply "reply_to_message_id" "3")))))
+
+(deftest channel-telegram-a-reaction-is-a-wordless-reply ()
+  ;; Telegram says a person's reaction set before and after; each emoji that
+  ;; came or went is one gesture, pointing at the message it sits on. A bot's,
+  ;; the bot's own and a custom emoji are none.
+  (flet ((reaction (user old new)
+           (nct::map-telegram-reaction
+            (cell-json (format nil "{\"chat\": {\"id\": -100555, \"type\": \"supergroup\"},
+                                    \"message_id\": 90, \"date\": 1700000000, \"user\": ~a,
+                                    \"old_reaction\": ~a, \"new_reaction\": ~a}" user old new))
+            :bot-user-id "777")))
+    (let ((changed (reaction "{\"id\": 42, \"username\": \"kim\"}"
+                             "[{\"type\": \"emoji\", \"emoji\": \"👍\"}]"
+                             "[{\"type\": \"emoji\", \"emoji\": \"🔥\"}, {\"type\": \"custom_emoji\", \"custom_emoji_id\": \"5\"}]")))
+      (is (= 2 (length changed)))
+      (is-source (first changed) :text "🔥" "reaction" "add" "reply_to_message_id" "90"
+                 "channel_id" "-100555" "user_id" "42" "chat_kind" "group" "message_id" nil)
+      (is-source (second changed) :text "👍" "reaction" "remove"))
+    (is (null (reaction "{\"id\": 9, \"is_bot\": true}" "[]" "[{\"type\": \"emoji\", \"emoji\": \"👍\"}]")))
+    (is (null (reaction "{\"id\": 777}" "[]" "[{\"type\": \"emoji\", \"emoji\": \"👀\"}]")) "the bot's own eye")))
+
+(deftest channel-telegram-policy-reads-the-wider-rules (let ((policy (nct:telegram-inbound-policy
+                                                                  :allowed-users '("1")
+                                                                  :allowed-roles '("administrator")
+                                                                  :require-mention t
+                                                                  :free-response-chats '("-100777")
+                                                                  :ignored-chats '("-100888")
+                                                                  :mention-patterns '("nodecode")
+                                                                  :allow-private-chats t
+                                                                  :allow-group-chats t
+                                                                  :allow-forum-topics t
+                                                                  :bot-username "MyBot"))))
+  ;; The Discord section's room rules, read the same way: a chat that answers
+  ;; every line, one never read, a wake word, and a group's admins driving the
+  ;; bot as a listed user does.
+  (flet ((said (text channel &key (user "1") roles)
+           (nlk:json-object "text" text
+                            "source" (nlk:json-object "chat_kind" "group" "channel_id" channel
+                                                      "user_id" user "role_ids" roles))))
+    (is (eq :answer (nck:decide-inbound policy (said "no ping here" "-100777"))))
+    (is-inbound policy (said "@mybot hi" "-100888") :reject "channel_ignored")
+    (is (eq :answer (nck:decide-inbound policy (said "Nodecode, what broke?" "-100555")))
+        "a wake word is a mention")
+    (is-inbound policy (said "no ping" "-100555") :observe "mention_required")
+    (is (eq :answer (nck:decide-inbound policy (said "@mybot hi" "-100555" :user "9"
+                                                                         :roles '("administrator")))))
+    (is-inbound policy (said "@mybot hi" "-100555" :user "9") :reject "user_not_allowed")))

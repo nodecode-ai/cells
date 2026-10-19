@@ -66,6 +66,33 @@ every message, send @BotFather `/setprivacy`, choose the bot, pick
 In a forum group each topic is its own room. `allowed_threads` limits the
 bot to some topics; empty admits all of them.
 
+### A topic per ask
+
+In a forum group where the bot is an admin with **Manage Topics**, an ask
+typed outside a topic opens a topic of its own, named from its first words,
+and the answer lands there. Inside a topic the bot opened, follow-ups need no
+mention and a line typed while a turn runs steers it; topics people opened
+keep the mention rule. An answer in a topic carries **Close thread**: the
+asker or an owner closes the topic (Telegram locks it until an admin
+reopens it from its menu). A turn that answers nothing removes the topic it
+opened. Groups that are no forum, and private chats, answer where the ask
+was typed. `thread_behavior: "reply_in_place"` keeps a forum flat too, and
+`flat_channels` names forums to keep flat.
+
+### Who else may talk, and where it answers freely
+
+- `allowed_roles`: `"administrator"` lets every admin of a group drive the
+  bot as a listed user does (its creator too); `"creator"` only the
+  creator. Read off the group's admin list every five minutes.
+- `free_response_chats`: chats where every allowed message opens a turn,
+  no mention needed (the bot must read every message: `/setprivacy`
+  Disable). `require_mention_chats` asks for a mention in chats even when
+  `require_mention` is off. `ignored_chats` are never read.
+- `mention_patterns`: wake words that address the bot as its @handle does
+  (`"nodecode"`), anywhere in a line, case aside.
+- `other_addressees`: names that, opening a line (`"ada, ..."`), make it
+  someone else's: observed, never answered.
+
 ## What you see
 
 - **The card.** A turn that takes a while posts one message that grows as
@@ -81,7 +108,19 @@ bot to some topics; empty admits all of them.
   quotes and tables read as they do anywhere else. A very long answer comes
   in parts of up to 16,384 characters.
 - **Reactions.** With `reactions` on, your ask carries 👀 while its turn is
-  active, then 👍 when the answer lands or 👎 if the turn fails.
+  active, then 👍 when the answer lands or 👎 if the turn fails. A
+  reaction you leave on one of the bot's messages is never an ask: it
+  becomes a line of context ("reacted 🔥") that the next ask carries. In a
+  group Telegram tells only an admin bot about reactions.
+- **Edits.** Editing a message so that it mentions the bot, or says one of
+  its `mention_patterns`, turns it into an ask. Other edits are ignored, as
+  is an edit to a message the bot already took.
+- **Mentions.** When the bot pings someone, such as an owner it needs, it
+  names them as a link to the person, which Telegram notifies.
+- **Private answers.** A command whose answer is private (`/usage`,
+  `/doctor` and the like), typed in a group, is answered in your own chat
+  with the bot, so the group doesn't read it. If you never opened that chat
+  (Telegram refuses a bot's first word), it answers in the group.
 - **Commands.** The bot's `/` menu is Nodecode's command list: `/new` starts
   the chat fresh, `/stop` ends a running turn, `/models` shows or changes
   the chat's model, and so on. When `owner` is set, every command but
@@ -105,6 +144,15 @@ bot to some topics; empty admits all of them.
 The agent can also call any Bot API method as the bot from its eval tool
 (`nct:request`): pin a message, react, read a chat or a member, change the
 command menu. The token never appears in what it reads back.
+
+## After the bot was away
+
+Telegram keeps what the bot missed for 24 hours and hands it over when the
+bot polls again. A message from the last `catch_up_minutes` (60 by default)
+is answered as if it had just arrived, and the model reads how late it is
+("sent 12 minutes ago, while you were offline"). Older ones, and any that
+already got an answer before the gap, are skipped; `0` answers none of
+them.
 
 ## Who may talk to it
 
@@ -131,7 +179,16 @@ Every key of `channels.telegram`. A present section is enabled;
 | `owner` | | User ids whose word is standing policy. |
 | `pairing` | `true` | Answer unknown private chats with a pairing code. |
 | `require_mention` | `true` | In groups, answer only when @mentioned or replied to. |
+| `allowed_roles` | | `"administrator"`, `"creator"`: a group member with that standing may drive the bot. |
 | `allowed_threads` | all | Forum topic ids the bot answers in. |
+| `free_response_chats` | | Chats where every allowed message opens a turn, no mention needed. |
+| `require_mention_chats` | | Chats that need a mention even when `require_mention` is off. |
+| `ignored_chats` | | Chats the bot never reads. |
+| `mention_patterns` | | Wake words that address the bot as its @handle does. |
+| `other_addressees` | | Names that make a line someone else's when it opens with one. |
+| `thread_behavior` | `"create_per_message"` | In a forum group, open a topic per ask; `"reply_in_place"` or `"disabled"` answer where it was typed. |
+| `flat_channels` | | Forum chat ids where asks are answered in place. |
+| `catch_up_minutes` | `60` | How old a message from while the bot was away may be and still be answered. `0` answers none. |
 | `allow_private_chats` | `true` | `false` ignores private chats. |
 | `allow_group_chats` | `true` | `false` ignores groups. |
 | `allow_forum_topics` | `true` | `false` ignores forum topics. |
@@ -144,7 +201,11 @@ Every key of `channels.telegram`. A present section is enabled;
 | `soul_file` | | A `SOUL.md` whose text is the chat's standing persona. |
 | `agents` | | Named agents a chat's asks may run as: a folder to work in, a prompt, a model, skills. |
 | `routes` | | Which asks run as which agent, by chat, topic or user id. |
-| `allowed_updates` | `["message"]` | Update kinds the poll asks Telegram for. Widen it for a layer that watches edits, reactions or membership changes. |
+| `allowed_updates` | `["message", "edited_message", "callback_query", "message_reaction"]` | Update kinds the poll asks Telegram for. A list that leaves one out turns that feature off; widen it for a layer that watches membership changes. |
+| `max_concurrent_turns` | `4` | Turns that may run at once; more wait their turn. |
+| `status_update_ms` | `2000` | How often a running turn's card is edited, in ms. |
+| `text_chunk_limit` | `16384` | The most characters one message carries. |
+| `delivery_workers` | `4` | Threads that post to Telegram at once. |
 | `api_base` | `https://api.telegram.org` | The Bot API server, for a local one. |
 | `request_timeout_seconds` | `60` | How long one Bot API call may take. |
 | `get_updates_timeout_seconds` | `2` | The long poll's window. Short on purpose: it is also how long a stop waits. |

@@ -128,7 +128,8 @@ no chat id."
   ;; neither known, nothing is addressed.
   (nlk:when-let (chat-id (number-string (nlk:json-value message :any "chat" "id")))
     (let* ((from (gethash "from" message))
-           (ref (nlk:json-value message :object "reply_to_message"))
+           (root (topic-root message))
+           (ref (and (not root) (nlk:json-value message :object "reply_to_message")))
            (chat-type (or (nlk:json-value message :string "chat" "type") "private"))
            (group-p (member chat-type '("group" "supergroup")
                             :test #'equal))
@@ -168,10 +169,72 @@ no chat id."
         ;; is the whole branch structure of a flat chat: a reply to
         ;; anything a lane produced continues that lane.
         "reply_to_message_id"
-        (number-string (nlk:json-value message :any
-                                       "reply_to_message" "message_id"))
-        "addressed" (reply-to-bot-p message bot-user-id bot-username)
+        (and ref (number-string (gethash "message_id" ref)))
+        "addressed" (and ref (reply-to-bot-p message bot-user-id bot-username))
+        ;; A topic the bot opened for an ask is one conversation, as a
+        ;; Discord thread is: a line typed in it needs no mention. Topics
+        ;; people opened stay standing rooms, where the mention rule holds.
+        "joined" (and root (not (nlk:json-value from :any "is_bot"))
+                      (reply-to-bot-p message bot-user-id bot-username))
+        "chat_is_forum" (and (nlk:json-value message :any "chat" "is_forum") t)
+        "chat_title" (nlk:json-value message :string "chat" "title")
+        ;; When it was said (an edit: when it was edited), for the catch-up
+        ;; after the bot was away (TELEGRAM-CATCH-UP).
+        "sent_ms" (nlk:when-let (seconds (or (nlk:json-value message :integer "edit_date")
+                                             (nlk:json-value message :integer "date")))
+                    (* 1000 seconds))
         "is_bot" (and (nlk:json-value from :any "is_bot") t))))))
+
+(defun topic-root (message &aux (ref (nlk:json-value message :object "reply_to_message")))
+  "The service message that opened the forum topic MESSAGE was typed in, when
+MESSAGE answers nothing else: Telegram files a topic's lines as replies to
+it, a reply that is no gesture of the person's. NIL otherwise."
+  (and ref (gethash "message_thread_id" message)
+       (nlk:json-value ref :object "forum_topic_created")
+       ref))
+
+(defun reaction-emojis (reactions)
+  "The emoji of each plain reaction in REACTIONS, a ReactionType array."
+  (loop for reaction across (if (vectorp reactions) reactions #())
+        when (equal "emoji" (nlk:json-value reaction :string "type"))
+          collect (nlk:json-value reaction :string "emoji")))
+
+(defun map-telegram-reaction (update &key bot-user-id
+                                     &aux (user (nlk:json-value update :object "user")))
+  "The candidates one message_reaction UPDATE is -- one per emoji added or
+taken back, the emoji its text and the message it sits on its reply gesture,
+as the kit reads a reaction (NCK:REACTION-NOTICED) -- or NIL: an anonymous
+admin's, a bot's, the bot's own, or a change that is no plain emoji."
+  ;; Telegram says the set before and after; the difference is the gesture.
+  ;; Whose message it sits on it does not say: the kit finds the lane by the
+  ;; message's address, and a reaction on nothing of ours goes nowhere.
+  (let* ((chat-id (number-string (nlk:json-value update :any "chat" "id")))
+         (user-id (number-string (nlk:json-value user :any "id")))
+         (message-id (number-string (nlk:json-value update :any "message_id")))
+         (before (reaction-emojis (nlk:json-value update :any "old_reaction")))
+         (after (reaction-emojis (nlk:json-value update :any "new_reaction")))
+         (chat-type (or (nlk:json-value update :string "chat" "type") "private")))
+    (when (and chat-id user-id message-id
+               (not (nlk:json-value user :any "is_bot"))
+               (not (equal user-id bot-user-id)))
+      (flet ((one (emoji kind)
+               (nlk:json-object
+                "text" emoji
+                "source"
+                (nlk:json-object
+                 "platform" "telegram"
+                 "chat_kind" (if (equal chat-type "private") "direct_message" "group")
+                 "channel_id" chat-id
+                 "user_id" user-id
+                 "user_name" (or (nlk:json-value user :string "username")
+                                 (nlk:json-value user :string "first_name"))
+                 "reply_to_message_id" message-id
+                 "reaction" kind
+                 "addressed" t))))
+        (append (loop for emoji in (set-difference after before :test #'equal)
+                      collect (one emoji "add"))
+                (loop for emoji in (set-difference before after :test #'equal)
+                      collect (one emoji "remove")))))))
 
 (defun next-update-offset (updates last-offset &aux (next-offset last-offset))
   "The getUpdates offset after UPDATES: 1 + the highest update_id seen,
@@ -184,10 +247,12 @@ never below LAST-OFFSET."
           do (setf next-offset (max (or next-offset 0) (1+ id))))
   next-offset)
 
-(defparameter +default-allowed-updates+ '("message" "callback_query")
+(defparameter +default-allowed-updates+ '("message" "edited_message" "callback_query"
+                                          "message_reaction")
   "What the poll asks Telegram for when channels.telegram.allowed_updates
-is unset: the two kinds the adapter itself acts on, messages and presses on
-the controls its messages carry.")
+is unset: the kinds the adapter itself acts on -- messages, an edit that
+turns one into an ask, presses on the controls its messages carry, and a
+reaction on one of its own messages.")
 
 (defun get-updates-plan (offset &key (poll-timeout-seconds 2)
                                      (allowed-updates +default-allowed-updates+))
@@ -211,20 +276,37 @@ the controls its messages carry.")
             (+ poll-timeout-seconds 10) nil "get_updates"))
 
 (defun telegram-inbound-policy (&key allowed-chats allowed-threads
-                                     allowed-users require-mention
+                                     allowed-users allowed-roles require-mention
+                                     free-response-chats require-mention-chats
+                                     ignored-chats mention-patterns
                                      allow-private-chats allow-group-chats
-                                     allow-forum-topics bot-username &allow-other-keys)
+                                     allow-forum-topics bot-username bot-user-id
+                                &allow-other-keys)
   "The kit policy carrying the Zig pack's Telegram reason vocabulary."
+  ;; ALLOWED-ROLES are a group member's standing there -- \"creator\",
+  ;; \"administrator\" -- which the adapter puts on source.role_ids
+  ;; (TELEGRAM-AUTHOR-ROLES). A wake word in MENTION-PATTERNS addresses the bot
+  ;; as its @handle does.
   (make-inbound-policy
    :allowed-channels allowed-chats
    :allowed-thread-ids allowed-threads
    :allowed-users allowed-users
+   :allowed-roles allowed-roles
    :dm-policy (if allow-private-chats :enabled :disabled)
    :group-policy (if allow-group-chats :enabled :disabled)
    :thread-policy (if allow-forum-topics :enabled :disabled)
    :require-mention require-mention
+   :free-response-channels free-response-chats
+   :require-mention-channels require-mention-chats
+   :ignored-channels ignored-chats
    :mention-target bot-username
-   :mention-test #'telegram-mention-p
+   :mention-test (lambda (text target)
+                   (or (telegram-mention-p text target)
+                       (some (lambda (pattern)
+                               (and (stringp pattern) (plusp (length pattern))
+                                    (search pattern (or text "") :test #'char-equal)))
+                             mention-patterns)))
+   :self-id bot-user-id
    :channel-match :exact
    :reasons '(:channel-not-allowed "chat_not_allowed"
               :thread-not-supported "forum_topics_disabled"

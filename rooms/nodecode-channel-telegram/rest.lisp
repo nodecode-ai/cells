@@ -452,18 +452,101 @@ a card's Details, shows the presser alone an alert of it."
   "The answer a press on a card's choice takes, in two steps as a Discord
 interaction's: with TEXT NIL, answerCallbackQuery -- the spinner on the
 button stops; with TEXT, editMessageText of the card pressed, which becomes
-the answer, CONTROLS its keyboard. NIL -- the answer posted in the chat --
-for a PRIVATE answer, which Telegram cannot show one person alone, and for
-a CANDIDATE that is no press: a command typed is answered in the chat."
+the answer, CONTROLS its keyboard. A PRIVATE answer to a command typed in a
+group goes to the asker's own chat with the bot (PRIVATE-ANSWER-PLAN), held
+open by a typing beat there that fails where the asker never opened one. NIL
+-- the answer posted in the chat -- for any other private answer, which
+Telegram cannot show one person alone in a group, and for a typed command
+that is not private."
   (declare (ignore panel))
   (let ((query (source-field candidate "callback_query_id"))
-        (card (source-field candidate "reply_to_message_id")))
-    (cond ((not (and query card (candidate-pressed-p candidate))) nil)
+        (card (source-field candidate "reply_to_message_id"))
+        (pressed (candidate-pressed-p candidate))
+        (user (source-field candidate "user_id")))
+    (cond ((and private (not pressed) user
+                (not (equal "direct_message" (source-field candidate "chat_kind"))))
+           ;; The hold is the reachability probe: Telegram refuses a bot's
+           ;; first word to someone who never opened its chat (403), and a
+           ;; refused hold sends the kit's answer into the group as before.
+           (if (null text)
+               (typing-plan (list :channel-id user) :timeout-seconds timeout-seconds)
+               (private-answer-plan candidate text controls :timeout-seconds timeout-seconds)))
+          ((not (and query card pressed)) nil)
           ((null text)
            (first (answer-callback-plans (list :id query) :timeout-seconds timeout-seconds)))
           (private nil)
           (t (edit-message-plan (channel-target candidate) card text
                                 :retry t :controls controls :timeout-seconds timeout-seconds)))))
+
+(defun private-answer-plan (candidate text controls &key (timeout-seconds 30)
+                                                     &aux (user (source-field candidate "user_id")))
+  "sendRichMessage of TEXT to CANDIDATE's author in their own chat with the
+bot: a command's private answer, asked in a group, that only its asker reads.
+It opens by saying where it was asked, a one-line quote."
+  ;; Not retried: the hold just proved the chat open, and a retry after an
+  ;; answer lost in transit would say it twice.
+  (let ((body (nlk:json-object "chat_id" user))
+        (where (or (source-field candidate "chat_title") "the group")))
+    (setf (gethash "rich_message" body)
+          (rich-message (format nil "> From ~a~%~%~a" (markdown-line where) text) nil controls))
+    (when controls
+      (setf (gethash "reply_markup" body) (controls-markup controls)))
+    (bot-plan "/sendRichMessage" body timeout-seconds nil "send_private_answer")))
+
+;;; --- forum topics, a group's admins, a mention ----------------------------------
+;;; A forum group's topic is Telegram's thread: the bot opens one per ask
+;;; (createForumTopic) where it may manage topics, puts it away (closeForumTopic,
+;;; open again once anyone writes in it... or an admin reopens it) and removes
+;;; the one a silent turn left empty (deleteForumTopic). Every topic call names
+;;; its chat: a topic id is a message id, unique only inside its group.
+
+(defun topic-plan (target name &key (timeout-seconds 30) &aux (thread (getf target :thread-id)))
+  "createForumTopic NAME in TARGET's chat, or, a TARGET naming a :THREAD-ID,
+editForumTopic: that topic renamed NAME."
+  ;; A create is not retried: it ADDS a topic, and a retry after an answer
+  ;; lost in transit would open a second one for the same ask. A rename is.
+  (let ((body (nlk:json-object "chat_id" (getf target :channel-id)
+                               "name" (nlk:clip (nlk:one-line name) 127 :ellipsis "…"))))
+    (if thread
+        (progn (setf (gethash "message_thread_id" body) (or (parse-integer thread :junk-allowed t) thread))
+               (bot-plan "/editForumTopic" body timeout-seconds t "rename_forum_topic"))
+        (bot-plan "/createForumTopic" body timeout-seconds nil "create_forum_topic"))))
+
+(defun topic-id-of (body)
+  "The topic a createForumTopic answer BODY names, as a string, or NIL."
+  (number-string (nlk:json-value body :any "result" "message_thread_id")))
+
+(defun topic-close-plan (chat-id thread-id &key (timeout-seconds 30))
+  "closeForumTopic: THREAD-ID in CHAT-ID put away -- no one but an admin
+writes in it until it is reopened."
+  ;; Retried: a close that fails leaves it open; closing a closed topic
+  ;; changes nothing.
+  (bot-plan "/closeForumTopic"
+            (nlk:json-object "chat_id" chat-id
+                             "message_thread_id" (or (parse-integer thread-id :junk-allowed t) thread-id))
+            timeout-seconds t "close_forum_topic"))
+
+(defun topic-delete-plan (chat-id thread-id &key (timeout-seconds 30))
+  "deleteForumTopic: THREAD-ID in CHAT-ID and every message in it, gone."
+  (bot-plan "/deleteForumTopic"
+            (nlk:json-object "chat_id" chat-id
+                             "message_thread_id" (or (parse-integer thread-id :junk-allowed t) thread-id))
+            timeout-seconds t "delete_forum_topic"))
+
+(defun chat-admins-plan (chat-id &key (timeout-seconds 10))
+  "getChatAdministrators of CHAT-ID: who runs the group, the creator among them."
+  (bot-plan "/getChatAdministrators" (nlk:json-object "chat_id" chat-id)
+            timeout-seconds t "get_chat_administrators"))
+
+(defun mention-markdown (user-id name)
+  "The rich Markdown that mentions USER-ID by NAME -- a link to tg://user,
+which Telegram draws as the person and notifies them by -- or NIL without an
+id. NAME loses what would end the link's label early."
+  (when (and (stringp user-id) (every #'digit-char-p user-id) (plusp (length user-id)))
+    (format nil "[~a](tg://user?id=~a)"
+            (let ((label (remove-if (lambda (ch) (find ch "[]()\\`*_")) (or name ""))))
+              (if (plusp (length (nlk:trimmed label))) (nlk:trimmed label) "you"))
+            user-id)))
 
 (defun plain-details (text)
   "A card's details TEXT (NCK:DETAILS-TEXT) without its markdown: no bold,

@@ -473,3 +473,49 @@ written twice, so a probe that names each once is seen to."
     (is (search "<li><input type=\"checkbox\" checked>Eval passed · 1s</li>" html))
     (is (search "<li><input type=\"checkbox\"><s>Eval stopped</s> · 1s</li>" html))
     (is (search "<li><input type=\"checkbox\">Eval running · 1s</li>" html))))
+
+(deftest channel-telegram-forum-topic-plans ()
+  ;; A topic is opened once (no retry: a second create is a second topic),
+  ;; renamed, closed and removed by naming its chat beside it: a topic id is
+  ;; a message id, unique only in its group.
+  (let ((create (nct::topic-plan '(:channel-id "-100555") "Fix the build"))
+        (rename (nct::topic-plan '(:channel-id "-100555" :thread-id "7") "Fix the build, again"))
+        (close (nct::topic-close-plan "-100555" "7"))
+        (delete (nct::topic-delete-plan "-100555" "7")))
+    (is-plan create :path "/createForumTopic" :retry nil "chat_id" "-100555" "name" "Fix the build")
+    (is-plan rename :path "/editForumTopic" :retry t "message_thread_id" 7)
+    (is-plan close :path "/closeForumTopic" :retry t "chat_id" "-100555" "message_thread_id" 7)
+    (is-plan delete :path "/deleteForumTopic" "chat_id" "-100555" "message_thread_id" 7)
+    (is (equal "7" (nct::topic-id-of (cell-json "{\"ok\": true, \"result\": {\"message_thread_id\": 7, \"name\": \"x\"}}"))))
+    (is (= 128 (length (plan-field (nct::topic-plan '(:channel-id "-1") (make-string 300 :initial-element #\a)) "name")))
+        "a topic's name is Telegram's 128 characters at most")
+    (is-plan (nct::chat-admins-plan "-100555") :path "/getChatAdministrators" "chat_id" "-100555")))
+
+(deftest channel-telegram-a-mention-is-a-link-to-the-person ()
+  ;; Telegram notifies whoever a tg://user link names, drawn as their name.
+  (is (equal "[kim](tg://user?id=42)" (nct::mention-markdown "42" "kim")))
+  (is (equal "[Ada Lovelace](tg://user?id=42)" (nct::mention-markdown "42" "[Ada] (Lovelace)")))
+  (is (equal "[you](tg://user?id=42)" (nct::mention-markdown "42" nil)))
+  (is (null (nct::mention-markdown "not-an-id" "kim"))))
+
+(deftest channel-telegram-a-private-answer-goes-to-the-askers-chat ()
+  ;; A command's private answer, typed in a group, reaches only its asker: in
+  ;; their own chat with the bot, held open by a typing beat there that
+  ;; Telegram refuses (403) to someone who never opened that chat -- the kit
+  ;; then answers in the group, as before. In a private chat, and for an
+  ;; answer that is not private, the chat is the answer's place.
+  (let ((typed (nlk:json-object "text" "/usage"
+                                "source" (nlk:json-object "chat_kind" "group" "channel_id" "-100555"
+                                                          "user_id" "42" "message_id" "12"
+                                                          "chat_title" "Lab")))
+        (dm (nlk:json-object "text" "/usage"
+                             "source" (nlk:json-object "chat_kind" "direct_message" "channel_id" "42"
+                                                       "user_id" "42" "message_id" "12"))))
+    (is-plan (nct:press-response-plan typed nil :private t) :path "/sendChatAction"
+             "chat_id" "42" "action" "typing")
+    (let ((answer (nct:press-response-plan typed "**$12** today" :private t)))
+      (is-plan answer :path "/sendRichMessage" :retry nil "chat_id" "42")
+      (is (search "> From Lab" (nlk:json-value (plan-field answer "rich_message") :string "markdown")))
+      (is (search "**$12** today" (nlk:json-value (plan-field answer "rich_message") :string "markdown"))))
+    (is (null (nct:press-response-plan dm "x" :private t)) "a private chat is already private")
+    (is (null (nct:press-response-plan typed "x")) "an answer for the room stays in the room")))

@@ -147,9 +147,36 @@ what a setup panel offers for allowed_users."
            :choices #'probe-user-choices)
   ("pairing" :boolean :default t
              :doc "a private chat from someone not allowed is answered with a pairing code, and the operator is told; /channels pair CODE lets them in")
+  ("allowed_roles" :list
+                   :doc "a group member's standing that lets them drive the bot as a listed user does: administrator (every admin, the creator too) or creator; read off the group's admin list every five minutes, and nothing in a private chat")
   ("allowed_threads" :list :doc "forum topic ids; empty admits every topic")
   ("require_mention" :boolean :default t
                      :doc "in groups, answer when @mentioned or replied to")
+  ("free_response_chats" :list :choices #'probe-chat-choices
+                         :doc "chat ids where every allowed message may open a turn, mention or not (the bot must read every group message: /setprivacy Disable)")
+  ("require_mention_chats" :list :choices #'probe-chat-choices
+                           :doc "chat ids where a message must mention or reply to the bot even when require_mention is false")
+  ("ignored_chats" :list :choices #'probe-chat-choices
+                   :doc "chat ids the bot reads neither as asks nor as context")
+  ("mention_patterns" :list
+                      :doc "case-insensitive wake words that address the bot as its @handle does, anywhere in a line")
+  ("other_addressees" :list
+                      :doc "names other than the bot's that a line may open by addressing (\"ada, ...\"); such a line is observed, never answered")
+  ("thread_behavior" :choice :options '("create_per_message" "reply_in_place" "disabled")
+                     :default "create_per_message"
+                     :doc "in a forum group where the bot may manage topics, an ask opens a topic of its own named from its first words (create_per_message); reply_in_place and disabled answer where it was typed; groups that are no forum and private chats always answer in place")
+  ("flat_channels" :list :choices #'probe-chat-choices
+                   :doc "forum chat ids where asks are answered in place even with create_per_message")
+  ("catch_up_minutes" :integer :default 60
+                      :doc "after the bot was away — a restart, a machine that was off — answer the asks Telegram kept from the last this-many minutes, each marked as late, and skip older ones and any already answered; 0 answers none of them")
+  ("max_concurrent_turns" :integer :default 4
+                          :doc "turns that may run at once across every chat; more wait their turn")
+  ("status_update_ms" :integer :default 2000
+                      :doc "how often a running turn's card is edited, in ms")
+  ("text_chunk_limit" :integer :default 16384
+                      :doc "the most characters one message carries; a longer answer comes in parts")
+  ("delivery_workers" :integer :default 4
+                      :doc "threads that post to Telegram at once")
   ("bot_username" :string :doc "hydrated from getMe when unset")
   ("reactions" :boolean :default :false
                :doc "mark each ask on the message itself: 👀 from admission through the working turn, cleared when the turn ends")

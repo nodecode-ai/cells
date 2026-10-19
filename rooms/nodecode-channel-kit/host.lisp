@@ -918,6 +918,11 @@ platform cannot close one: an answer in a thread then carries no Close.")
 ;; holds its platforms, and a slot added to the record would leave them
 ;; obsolete under it.
 
+(nlk:define-side-table platform-closed-note (:test #'eq :weakness :key :synchronized t)
+  "What a PLATFORM's Close press tells the presser once the thread is closed,
+in its own terms -- a Telegram topic stays locked until an admin reopens it --
+or NIL for the kit's words: open again once anyone writes in it.")
+
 (defun answer-controls (host lane choices &aux (thread (getf lane.target :thread-id)))
   "The rows of buttons LANE's answer carries: its CHOICES, one row of buttons
 each saying its label; then, in a thread the platform can close, Close
@@ -941,9 +946,12 @@ each saying its label; then, in a thread the platform can close, Close
   running)
 
 (defun close-pressed (host payload owner-id &aux (user-id (getf payload :user-id))
-                                                 (thread (getf payload :channel-id)))
+                                                 (thread (or (getf payload :thread-id)
+                                                             (getf payload :channel-id))))
   "Worker thread: an answer's Close press -- the asker's (OWNER-ID) or a room
-operator's closes the thread the press came from (PLATFORM-PLAN-CLOSE-THREAD)."
+operator's closes the thread the press came from (PLATFORM-PLAN-CLOSE-THREAD):
+the payload's :THREAD-ID where the platform's threads live inside a chat
+(Telegram's topics), else its channel, which is the thread (Discord's)."
   (let* ((allowed (or (operator-p host user-id)
                       (and (plusp (length owner-id)) (equal user-id owner-id))))
          (plan (and (stringp thread) (host-plan host #'platform-plan-close-thread thread)))
@@ -951,7 +959,8 @@ operator's closes the thread the press came from (PLATFORM-PLAN-CLOSE-THREAD)."
          (text (cond ((not allowed) "Only the person who asked or the room's operators can close this thread.")
                      ((null plan) "This room can't be closed.")
                      (busy "A turn still runs here: close the thread once it has answered, or stop it first.")
-                     (t "Closed. Write in it to open it again."))))
+                     (t (or (platform-closed-note host.platform)
+                            "Closed. Write in it to open it again.")))))
     ;; The answer goes first: a press is answered within the platform's few
     ;; seconds, and a closed thread takes no more words.
     (deliver-or-warn host (host-plan host #'platform-plan-control-ack payload :text text)

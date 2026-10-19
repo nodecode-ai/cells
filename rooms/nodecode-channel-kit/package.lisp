@@ -99,7 +99,8 @@ it over any platform, and the /channels status surface.")
    #:transcribe-audio #:local-transcriber #:install-transcriber
    ;; host.lisp --- the lane interpreter over a platform
    #:platform-plan-control-ack #:platform-plan-autocomplete
-   #:platform-plan-thread #:platform-plan-delete-thread #:platform-plan-close-thread #:platform-thread-id-of
+   #:platform-plan-thread #:platform-plan-delete-thread #:platform-plan-close-thread #:platform-closed-note
+   #:platform-thread-id-of
    #:platform-thread-link #:platform-plan-file #:+reaction-seen+
    #:+reaction-done+ #:+reaction-failed+
    #:control-pressed #:completion-requested #:reaction-noticed
