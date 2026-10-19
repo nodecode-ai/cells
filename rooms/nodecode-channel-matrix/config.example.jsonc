@@ -1,0 +1,51 @@
+// channels.matrix — the section ~/.nodecode/config.jsonc needs for this
+// adapter. Copy it in (a present section is enabled; "enabled": false
+// vetoes it), or say "set up matrix" to the agent, which writes it through
+// (config-set ...) and checks the token with (nck:probe "matrix").
+//
+// The bot needs an account of its own on the homeserver, never yours. Its
+// access token is never inline: name it by exactly one of token_env (an
+// environment variable) or token_file (a file holding it, mode 600).
+{
+  "channels": {
+    "matrix": {
+      // The homeserver's address.
+      "homeserver": "https://matrix.example.org",
+      "token_file": "~/.nodecode/secrets/matrix-token",
+      // At least one of allowed_rooms / allowed_users must be non-empty:
+      // room messages run with full host authority, so a lane never starts
+      // open to the world. Room ids look like !abc:server, user ids like
+      // @name:server. An allowed user's invite is joined on its own. The
+      // probe lists the bot's rooms and the people in them.
+      "allowed_users": ["@you:example.org"],
+      // "allowed_rooms": ["!room:example.org"],
+      // Whose word is standing policy in the room.
+      "owner": ["@you:example.org"],
+      // true: in rooms, answer when mentioned or in a thread the bot answers
+      // in. A direct message (a room of two) always answers.
+      "require_mention": true,
+      // Rooms where every allowed message may open a turn, and rooms the bot
+      // reads neither as prompts nor as context.
+      "free_response_rooms": [],
+      "ignored_rooms": [],
+      // Direct messages: "allow" or "disabled".
+      "dm_policy": "allow",
+      // Messages sent as m.notice, the way bots speak: "none", "mentions"
+      // (those that mention this bot) or "all".
+      "allow_bots": "none",
+      // true: put 👀 on each ask while its turn runs.
+      "reactions": false,
+      // Fewest milliseconds between two edits of a turn's status line. A
+      // homeserver allows a burst of edits, then about one every five seconds.
+      "status_update_ms": 6000,
+      // true: edit the answer into place as the model writes it. Off by
+      // default, since every edit is an event in the room's history.
+      "stream": false,
+      // Minutes an ask's turn may run before its tool calls are refused; 0
+      // caps nothing.
+      "turn_budget_minutes": 0,
+      // A SOUL.md whose text is the channel's standing persona.
+      // "soul_file": "~/.nodecode/SOUL.md"
+    }
+  }
+}
