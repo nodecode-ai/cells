@@ -167,6 +167,8 @@ for allowed_users and owner."
            :choices #'probe-user-choices)
   ("require_mention" :boolean :default t
                      :doc "in channels, answer when @mentioned or in a thread the bot answers in; a DM always answers")
+  ("allow_bots" :choice :options '("none" "mentions" "all") :default "none"
+                :doc "other bots' messages: none ignores them, mentions answers one that @mentions this bot, all treats them as people's; the bot's own are always ignored")
   ("free_response_channels" :list :choices #'probe-channel-choices
                             :doc "channel ids where every allowed message may open a turn")
   ("ignored_channels" :list :choices #'probe-channel-choices

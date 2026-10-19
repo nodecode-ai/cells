@@ -81,16 +81,18 @@ public or private."
         (t "channel")))
 
 (defun slack-attachments (event)
-  "EVENT's files the lane can read, as the candidate's attachments array: the
-file's id, its declared type, name and size, and the address its bytes are
-fetched from with the bot token."
-  ;; NIL when it carries none. The fetch thunk is the adapter's to add
-  ;; (ATTACH-SLACK-FILE-FETCHERS): the address alone answers a sign-in page.
+  "EVENT's files as the candidate's attachments array: the file's id, its
+declared type, name and size, and the address its bytes are fetched from
+with the bot token."
+  ;; NIL when it carries none. Every file rides: the kit reads what it can in
+  ;; and saves the rest for the lane's tools (NCK::READ-ATTACHMENT). The fetch
+  ;; thunk is the adapter's to add (ATTACH-SLACK-FILE-FETCHERS): the address
+  ;; alone answers a sign-in page.
   (let ((entries (loop for file across (nlk:json-array event "files")
                        for type = (nlk:json-value file :string "mimetype")
                        for url = (or (nlk:json-value file :string "url_private_download")
                                      (nlk:json-value file :string "url_private"))
-                       when (and url (readable-media-type-p type))
+                       when url
                          collect (nlk:json-object
                                   "id" (nlk:json-value file :string "id")
                                   "download" url
@@ -192,7 +194,7 @@ kit's normal control press, or NIL for any other interaction."
 
 (defun slack-inbound-policy (&key allowed-channels allowed-users require-mention
                                   free-response-channels require-mention-channels
-                                  ignored-channels allow-bot-authors dm-policy group-policy
+                                  ignored-channels allow-bots dm-policy group-policy
                                   bot-user-id &allow-other-keys)
   "The kit policy over Slack's rooms: channels by id, the mention as <@U...>."
   (make-inbound-policy
@@ -206,7 +208,11 @@ kit's normal control press, or NIL for any other interaction."
    :ignored-channels ignored-channels
    :mention-target bot-user-id
    :mention-test #'slack-mention-p
-   :allow-bot-authors allow-bot-authors
+   ;; Other bots' messages: "all", "mentions" (one that mentions this bot),
+   ;; else none. Its own are always ignored.
+   :allow-bots (cond ((equal allow-bots "all") :all)
+                     ((equal allow-bots "mentions") :mentions)
+                     (t :none))
    :self-id bot-user-id
    :channel-match :exact
    :reasons '(:mention-required-without-user "mention_required_without_bot_user")))

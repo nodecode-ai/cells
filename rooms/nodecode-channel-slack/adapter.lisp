@@ -279,8 +279,8 @@ socket or the link dies, and come back for another."
                            (return-from lap :fatal))))))))))
         ;; Runs on the lap thread while wsd's reader may be parked in SSL_read
         ;; on this wss: sever the transport, never WSD:CLOSE-CONNECTION
-        ;; (cross-thread SSL_free; see the kit's sever).
-        (ignore-errors (sever-ws-transport ws))))))
+        ;; (cross-thread SSL_free; see NLK:SEVER-WEBSOCKET).
+        (ignore-errors (nlk:sever-websocket ws))))))
 
 ;;; --- the door ----------------------------------------------------------------------
 
@@ -348,7 +348,6 @@ legibly, see NCK:CALL."
                   ;; are read here.
                   :policy (apply #'slack-inbound-policy
                                  :allowed-users allowed-users
-                                 :allow-bot-authors (config-boolean section "allow_bot_authors" nil)
                                  :bot-user-id bot-user-id
                                  settings)))
            (adapter (%make-slack-adapter

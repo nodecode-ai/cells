@@ -3580,29 +3580,72 @@ the line it had, or, stale, that line saying so. => whether it waits again."
                    "reactions" (map 'vector (lambda (mark) (vector (car mark) (cdr mark)))
                                     lane.reactions)))
 
+(defun running-handoff (lane digest)
+  "LANE's hand-off (LANE-HANDOFF) when its turn is one the next boot resumes,
+else NIL: running, and not waiting on its own background work -- that work
+dies with the image, and its wake with it, so the turn keeps its line."
+  ;; The caller holds the lane lock.
+  (when (and (eq digest.phase :running) lane.active-turn-id (not digest.background-pending))
+    (lane-handoff lane digest)))
+
+(defparameter +handoff-beat+ 5000
+  "How stale, in ms, the elapsed time a running lane is written down with may
+grow (SAVE-RUNNING-LANES): the record is rewritten when its lanes change, and
+once a beat while they run.")
+
+(defun save-running-lanes (host previous &aux (entries '()))
+  "Write HOST's running lanes down as a stop does (HAND-OFF-LANES), so a death
+no stop runs under -- the power cut, a kill -- hands them on all the same: the
+next start takes them back (TAKE-BACK-LANES) and each resumed turn answers on
+the line it had. PREVIOUS is what the last call wrote; the same text is not
+written twice. => the text this call stands on, NIL for no running lane."
+  ;; The tick calls this, once the start took back what the last image left.
+  ;; Each elapsed is floored to the beat, so a lane that only ran on rewrites
+  ;; the record once a beat, not every tick; sorted by turn, since the lanes'
+  ;; table walks in no fixed order and an unchanged record must read the same.
+  ;; A turn that ends is gone from the record at the next tick: a death
+  ;; inside that half second can answer it twice, or not at all.
+  (map-lanes host.lanes
+             (lambda (lane)
+               (with-lane-digest (digest lane)
+                 (nlk:when-let (entry (running-handoff lane digest))
+                   (setf (gethash "elapsed" entry)
+                         (* +handoff-beat+ (floor (gethash "elapsed" entry) +handoff-beat+)))
+                   (push entry entries)))))
+  (let ((text (and entries
+                   (nlk:encode-json-object
+                    (coerce (sort entries #'string< :key (lambda (entry) (or (gethash "turn" entry) "")))
+                            'vector)))))
+    (cond ((or (equal text previous) (not (nlk:store-open-p))) previous)
+          (text (nlk:session-state-put (handoff-session host) +handoff-key+ text) text)
+          (t (nlk:session-state-delete (handoff-session host) +handoff-key+) nil))))
+
 (defun hand-off-lanes (host &aux (now (now-ms)) (entries '()))
   "Stopping: settle every live line of HOST, and write down the lanes whose
 turns the next boot resumes, and the asks still waiting (SAVE-QUEUED-ASKS)."
   ;; Runs after the delivery pool stopped, on the stopping thread: each line
-  ;; is one synchronous edit. A turn waiting on its own background work keeps
-  ;; its line — the work dies with the image, and its wake with it.
+  ;; is one synchronous edit.
   (map-lanes host.lanes
              (lambda (lane)
                (let ((running
                        (with-lane-digest (digest lane)
                          (case digest.phase
                            (:running
-                            (when (and lane.active-turn-id (not digest.background-pending))
-                              (push (lane-handoff lane digest) entries)
+                            (nlk:when-let (entry (running-handoff lane digest))
+                              (push entry entries)
                               (digest-note-terminal digest :paused +paused-detail+ now)))
                            (:queued
                             (digest-note-terminal digest :paused +held-detail+ now))))))
                  (when running
                    (nlk:with-handlers ((error (condition) (warn-lane host lane "pause notice" condition)))
                      (flush-now host lane))))))
-  (when (and entries (nlk:store-open-p))
-    (nlk:session-state-put (handoff-session host) +handoff-key+
-                           (nlk:encode-json-object (coerce entries 'vector))))
+  ;; What runs now, or nothing: the tick's last write (SAVE-RUNNING-LANES)
+  ;; may name a turn that has ended since.
+  (when (nlk:store-open-p)
+    (if entries
+        (nlk:session-state-put (handoff-session host) +handoff-key+
+                               (nlk:encode-json-object (coerce entries 'vector)))
+        (nlk:session-state-delete (handoff-session host) +handoff-key+)))
   ;; The queue as it stands, each ask with the line just settled.
   (save-queued-asks host))
 
@@ -3713,7 +3756,11 @@ other turn is NEXT's."
         (funcall next turn))))
 
 (defun start-host (host &aux (reap-at (+ (now-ms) 30000))
-                             (id (host-id host)))
+                             (id (host-id host))
+                             ;; Set once the lanes the last image left are back:
+                             ;; until then the tick must not write over them.
+                             (taken-back nil)
+                             (handed :unwritten))
   "Start the delivery pool, observe the :FRAME point and give the lanes'
 turns their budget."
   ;; The adapter starts its transport after this and stops it before
@@ -3739,7 +3786,11 @@ turns their budget."
                                    (unless (reconcile-terminal-digest host lane)
                                      (schedule-flush host lane)))))
                     (let ((now (now-ms)))
-                      (when (>= now reap-at) (setf reap-at (+ now 30000)) (reap-lanes host.lanes))))))
+                      (when (>= now reap-at) (setf reap-at (+ now 30000)) (reap-lanes host.lanes)))
+                    (when taken-back
+                      (nlk:with-handlers ((error (condition)
+                                            (warn "~a: the running lanes were not written down: ~a" id condition)))
+                        (setf handed (save-running-lanes host handed)))))))
   ;; Observe, never veto: NEXT always runs, and a fold that signals is
   ;; contained here — a channel bug must not fail the publish for the TUI
   ;; peer watching the same turn.
@@ -3761,6 +3812,7 @@ turns their budget."
   (nlk:with-handlers ((error (condition)
                         (warn "~a: the asks a stop left waiting were not taken back: ~a" id condition)))
     (take-back-queued host))
+  (setf taken-back t)
   ;; The organism says it is back in the model's words, as a note this host
   ;; posts in its home room: a frame when it comes (OBSERVE-FRAME), or here,
   ;; when it came before this host started.

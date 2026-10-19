@@ -119,7 +119,7 @@ the note that needs the operator reaches them."
       (format nil "~{<@~a> ~}~a" mentions text)
       text))
 
-(defun message-plan (book target chunk &key reply-to ping controls files mentions
+(defun message-plan (book target chunk &key reply-to ping controls files mentions card panel
                                             (timeout-seconds 30))
   "One chat.postMessage CHUNK (a kit text-chunk), in the thread REPLY-TO
 lives in or starts (REPLY-THREAD); every chunk of one post goes in the same
@@ -127,9 +127,11 @@ thread."
   ;; CONTROLS ride the first chunk. Slack has no silent message, so PING
   ;; changes nothing: a thread notifies whoever follows it, the way it does
   ;; for any reply. FILES are refused before a message is planned: the
-  ;; platform carries none (see SLACK-PLATFORM). Posting in a thread notes
-  ;; that the bot speaks there. Retried: a post that fails is an answer lost.
-  (declare (ignore ping files))
+  ;; platform carries none (see SLACK-PLATFORM). A turn's CARD goes as its
+  ;; words (the chunk), a command's PANEL as its words. Posting in a thread
+  ;; notes that the bot speaks there. Retried: a post that fails is an answer
+  ;; lost.
+  (declare (ignore ping files card panel))
   (let ((thread (reply-thread book target reply-to))
         (channel (getf target :channel-id)))
     (when thread
@@ -142,11 +144,13 @@ thread."
                   "send_message")
               :retry t :timeout-seconds timeout-seconds)))
 
-(defun edit-plan (target message-id text &key retry controls (timeout-seconds 30))
+(defun edit-plan (target message-id text &key retry controls card media (timeout-seconds 30))
   "chat.update: the status line settled in place, its buttons with it."
   ;; RETRY opts into 5xx/429 retries: a running update leaves it off (the next
   ;; tick supersedes a missed edit), the terminal settle turns it on. CONTROLS
-  ;; NIL keeps the message buttonless: an edit sends the blocks whole.
+  ;; NIL keeps the message buttonless: an edit sends the blocks whole. A
+  ;; CARD goes as its words (TEXT); its pictures (MEDIA) are not posted.
+  (declare (ignore card media))
   (let ((body (message-body target text :controls controls)))
     (setf (gethash "ts" body) message-id)
     (api-plan "chat.update" body "edit_message" :retry (and retry t)
@@ -195,16 +199,26 @@ stacks reactions -- then EMOJI added, or nothing added for NIL."
       (append (and previous (list (plan "reactions.remove" previous "remove_reaction")))
               (and emoji (list (plan "reactions.add" emoji "add_reaction")))))))
 
-(defun respond-plan (candidate text &key (timeout-seconds 30)
+(defparameter +socket-hold+ (make-request-plan :path "/" :audit-label "respond_hold")
+  "The hold on a slash command's answer, which the socket's acknowledgement
+already is: Slack keeps a response_url open half an hour. Executing it is
+done (WRAP-SLACK-EXECUTOR).")
+
+(defun respond-plan (candidate text &key private controls panel (timeout-seconds 30)
                                     &aux (url (source-field candidate "response_url")))
-  "The answer to a slash command, through the response_url it arrived with,
-in the channel for everyone to read -- or NIL for anything else, which is
-answered as a reply."
-  (when url
-    (rest-plan "POST" url "respond" t timeout-seconds
-               (nlk:json-object "response_type" "in_channel"
-                                "text" (nlk:clip (nlk:one-line text) 1000)
-                                "blocks" (message-blocks text nil)))))
+  "The answer to a slash command, through the response_url it arrived with:
+in the channel for everyone to read, or, PRIVATE, to the person who asked
+alone (ephemeral), CONTROLS under it. With TEXT NIL, the hold the kit asks
+for first, which the socket's acknowledgement already is (+SOCKET-HOLD+).
+NIL for anything else, which is answered as a reply."
+  ;; A PANEL goes as its words: TEXT.
+  (declare (ignore panel))
+  (cond ((null url) nil)
+        ((null text) +socket-hold+)
+        (t (rest-plan "POST" url "respond" t timeout-seconds
+                      (nlk:json-object "response_type" (if private "ephemeral" "in_channel")
+                                       "text" (nlk:clip (nlk:one-line text) 1000)
+                                       "blocks" (message-blocks text controls))))))
 
 (defun slack-message-id (body)
   "The ts of the message a chat.postMessage execution created."
@@ -228,10 +242,11 @@ already on or already off, a status line already gone.")
 (defun wrap-slack-executor (inner)
   "An executor speaking Slack's envelope in the kit's terms: a 200 that says
 ok false fails with Slack's error, the errors that mean `already so' succeed,
-and a plan that is NIL -- a typing beat Slack cannot show -- is done."
+and a plan that is NIL -- a typing beat Slack cannot show -- or the socket's
+hold on a command's answer (+SOCKET-HOLD+) is done."
   (make-plan-executor
    :run (lambda (plan)
-          (if (null plan)
+          (if (or (null plan) (eq plan +socket-hold+))
               (make-execution :ok-p t :status 200 :attempts 0)
               (let* ((result (execute-plan inner plan))
                      (body result.body)

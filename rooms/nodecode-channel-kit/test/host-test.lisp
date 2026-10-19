@@ -1905,6 +1905,59 @@ first waiting at QUEUED-AT."
       (nck::release-slot host "u9")
       (nck:stop-host host))))
 
+(defun crash-host (host)
+  "What a power cut leaves of HOST: its threads and hooks gone, and nothing
+it would have done on the way out (STOP-HOST's hand-off)."
+  (setf nck::*hosts* (remove host nck::*hosts*))
+  (dolist (point (list :frame 'nle:turn-budget 'nle:name-session))
+    (nle:unhook point (format nil "channel-~a" (nck:host-id host))))
+  (nck::stop-delivery-worker (nck::host-worker host)))
+
+(deftest channel-host-a-crash-hands-its-running-lanes-on (with-temp-store ())
+  ;; The process dies under a running turn — the cord pulled, a kill -9 —
+  ;; and no stop runs: the lane was written down while it ran, so the next
+  ;; start takes it back on the same line as a stop's hand-off would, and the
+  ;; turn the boot resumes answers there.
+  (let* ((first-executor (nck:make-recording-executor :responses (replies "s1")))
+         (host (test-host :executor first-executor :name "crash"))
+         (lane (nck:intern-lane (nck:host-lanes host) "chat-123-m1"
+                                :target '(:channel-id "123") :trigger-message-id "m1"
+                                :owner-id "u8")))
+    (nck:start-host host)
+    (fold-fact host "chat-123-m1" "turn.started" (nlk:json-object))
+    (fold-fact host "chat-123-m1" "turn.tool_call_started" (nlk:json-object "tool-name" "eval"))
+    (nck:flush-now host lane)
+    (is (loop repeat 40
+              thereis (let ((json (nlk:session-state-get "channel-test" nck::+handoff-key+)))
+                        (and json (search "\"s1\"" json)))
+              do (sleep 0.1))
+        "written down, with its line, while it runs")
+    (crash-host host)
+    (is (null (plan-matching (recorded-plans first-executor) :method "PATCH" :content "Paused at"))
+        "a dead process says nothing on the way out"))
+  (let* ((executor (nck:make-recording-executor))
+         (host (test-host :executor executor :name "crash-2")))
+    (nck:start-host host)
+    (unwind-protect
+         (is-present (lane (nck:find-lane (nck:host-lanes host) "chat-123-m1"))
+           "the running lane is taken back"
+           (is (equal "t1" (nck:lane-active-turn-id lane)))
+           (let ((digest (nck:lane-digest lane)))
+             (is (equal "s1" (nck:turn-digest-status-id digest)) "on the line it had")
+             (is (eq :running (nck:turn-digest-phase digest)))
+             (is (= 1 (nck:turn-digest-tool-calls digest))))
+           (fold-fact host "chat-123-m1" "turn.assistant_message_completed"
+                      (nlk:json-object "message" (nlk:json-object "content" "back where it was")))
+           (fold-fact host "chat-123-m1" "turn.completed" (nlk:json-object))
+           (is (await-plan executor :content "back where it was") "the answer lands")
+           (is (loop repeat 40
+                     thereis (null (nlk:session-state-get "channel-test" nck::+handoff-key+))
+                     do (sleep 0.1))
+               "an answered turn is no longer written down"))
+      (nck:stop-host host))
+    (is (null (nlk:session-state-get "channel-test" nck::+handoff-key+))
+        "a stop with nothing running leaves nothing to take back")))
+
 (deftest channel-host-an-ask-that-waited-too-long-is-dropped-on-its-line (with-temp-store ())
   ;; A downtime past the horizon must not resurrect yesterday's backlog: the
   ;; ask is not run, and its line says to ask again.

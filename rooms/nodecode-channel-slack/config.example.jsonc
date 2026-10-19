@@ -24,6 +24,9 @@
       // true: in channels, answer when @mentioned or in a thread the bot
       // answers in. A DM always answers.
       "require_mention": true,
+      // Other bots' messages: "none", "mentions" (one that @mentions this
+      // bot), or "all". The bot's own are always ignored.
+      "allow_bots": "none",
       // true: each ask carries 👀 on the message itself from admission
       // through the working turn, removed when the turn ends.
       "reactions": false,

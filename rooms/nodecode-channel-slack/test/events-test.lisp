@@ -69,12 +69,13 @@
                                                                         "id" "F2" "name" "a.zip"
                                                                         "mimetype" "application/zip"
                                                                         "url_private_download" "https://files/F2")))))
-      "a file share carries what the lane can read, and only that"
+      "a file share carries every file: the kit reads what it can in, and saves the rest"
     (let ((files (gethash "attachments" shared)))
-      (is (= 1 (length files)))
-      (let ((file (aref files 0)))
-        (is-shape file ("id" "F1") ("download" "https://files/F1")
-                  ("media_type" "image/png") ("filename" "shot.png") ("size" = 12))))))
+      (is (= 2 (length files)))
+      (is-shape (aref files 0) ("id" "F1") ("download" "https://files/F1")
+                ("media_type" "image/png") ("filename" "shot.png") ("size" = 12))
+      (is-shape (aref files 1) ("id" "F2") ("download" "https://files/F2")
+                ("media_type" "application/zip") ("filename" "a.zip") ("size" = 0)))))
 
 (deftest channel-slack-command-is-the-line-it-spells ()
   (flet ((command (text)
