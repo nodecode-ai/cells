@@ -73,12 +73,45 @@ until the test ends it."
     (nlk:admit-turn session command "go"
                     :invocation (nlk:default-invocation "turn.start" command :source "gateway"))))
 
+(defun goal-request-text (context needle)
+  "The first message text CONTEXT, one compiled request, carries that holds
+NEEDLE, or NIL."
+  (loop for message across (coerce (nle::compiled-turn-context-messages context) 'vector)
+        for text = (nle::content-text (gethash "content" message))
+          thereis (and (stringp text) (search needle text) text)))
+
 (defun goal-judge-question (context)
   "The judge's question CONTEXT, one compiled request, carries, or NIL when
 it is not a judge's."
-  (loop for message across (coerce (nle::compiled-turn-context-messages context) 'vector)
-        for text = (nle::content-text (gethash "content" message))
-          thereis (and (stringp text) (search "[goal check]" text) text)))
+  (goal-request-text context "[goal check]"))
+
+(defun goal-repo (session)
+  "SESSION, made to work in a fresh git repository: README committed and then
+edited, draft.txt never added. => its folder."
+  (let ((dir (nlk:home (format nil "repo-~a/" session))))
+    (ensure-directories-exist dir)
+    (flet ((put (name text)
+             (with-open-file (out (merge-pathnames name dir) :direction :output :if-exists :supersede)
+               (write-string text out))))
+      (put "README" (format nil "start~%"))
+      (multiple-value-bind (out err status)
+          (nlk:run-bounded (list "sh" "-c" "git init -q && git add -A && git -c user.name=t -c user.email=t@t.invalid commit -qm start")
+                           :directory (namestring dir))
+        (declare (ignore out))
+        (assert (eql status 0) () "git init: ~a" err))
+      (put "README" (format nil "start~%edited~%"))
+      (put "draft.txt" (format nil "draft~%")))
+    (nlk:create-session :id session :cwd (namestring dir))
+    dir))
+
+(defun goal-file (dir name)
+  "The text of the file NAME in DIR, or NIL."
+  (let ((path (merge-pathnames name dir)))
+    (and (probe-file path) (uiop:read-file-string path))))
+
+(defun goal-git (dir &rest args)
+  "What git ARGS print in DIR, trimmed."
+  (nlk:trimmed (or (nlk:run-bounded (list* "git" args) :directory (namestring dir)) "")))
 
 (defun goal-judging-request-p (context)
   "Whether CONTEXT, one compiled request, is a judge's: its messages carry

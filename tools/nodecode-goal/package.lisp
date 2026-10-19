@@ -16,7 +16,7 @@
    ;; verbs, every one a string
    #:start #:status #:stop
    ;; data, so a layer can reword it
-   #:*kickoff-input* #:*continue-input* #:*judge-input*
+   #:*kickoff-input* #:*continue-input* #:*judge-input* #:*attempt-input* #:*pick-input*
    ;; the one condition
    #:goal-error))
 
