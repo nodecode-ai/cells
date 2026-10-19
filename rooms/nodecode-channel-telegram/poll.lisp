@@ -281,7 +281,7 @@ reaction on one of its own messages.")
                                      ignored-chats mention-patterns
                                      allow-private-chats allow-group-chats
                                      allow-forum-topics bot-username bot-user-id
-                                &allow-other-keys)
+                                     &allow-other-keys)
   "The kit policy carrying the Zig pack's Telegram reason vocabulary."
   ;; ALLOWED-ROLES are a group member's standing there -- \"creator\",
   ;; \"administrator\" -- which the adapter puts on source.role_ids

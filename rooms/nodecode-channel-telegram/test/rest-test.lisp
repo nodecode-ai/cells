@@ -487,8 +487,8 @@ written twice, so a probe that names each once is seen to."
     (is-plan close :path "/closeForumTopic" :retry t "chat_id" "-100555" "message_thread_id" 7)
     (is-plan delete :path "/deleteForumTopic" "chat_id" "-100555" "message_thread_id" 7)
     (is (equal "7" (nct::topic-id-of (cell-json "{\"ok\": true, \"result\": {\"message_thread_id\": 7, \"name\": \"x\"}}"))))
-    (is (= 128 (length (plan-field (nct::topic-plan '(:channel-id "-1") (make-string 300 :initial-element #\a)) "name")))
-        "a topic's name is Telegram's 128 characters at most")
+    ;; a topic's name is Telegram's 128 characters at most
+    (is (= 128 (length (plan-field (nct::topic-plan '(:channel-id "-1") (make-string 300 :initial-element #\a)) "name"))))
     (is-plan (nct::chat-admins-plan "-100555") :path "/getChatAdministrators" "chat_id" "-100555")))
 
 (deftest channel-telegram-a-mention-is-a-link-to-the-person ()

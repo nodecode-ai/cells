@@ -418,8 +418,8 @@ threads: the request, platform and seam tests drive it directly."
     (is (= 2 (length seen)))
     (is-source (second seen) :text "🔥" "reply_to_message_id" "90" "channel_id" "-100555"
                "thread_id" "77")
-    (is (null (gethash "thread_id" (nck:candidate-source (first seen))))
-        "a message no lane holds keeps no topic: the kit reads it as nothing of ours")))
+    ;; a message no lane holds keeps no topic: the kit reads it as nothing of ours
+    (is (null (gethash "thread_id" (nck:candidate-source (first seen)))))))
 
 (deftest channel-telegram-roles-are-read-off-the-admin-list ()
   ;; A group's admins hold \"administrator\", its creator \"creator\" too, read
@@ -494,9 +494,9 @@ threads: the request, platform and seam tests drive it directly."
                         "42")
     (let ((plans (nck:recording-executor-plans executor)))
       (is-present (ack (find "/answerCallbackQuery" plans :key #'nck:request-plan-path :test #'equal))
-          "the presser is answered"
+        "the presser is answered"
         (is (search "admin can reopen" (plan-field ack "text"))))
       (is-present (close (find "/closeForumTopic" plans :key #'nck:request-plan-path :test #'equal))
-          "the topic pressed in is closed"
+        "the topic pressed in is closed"
         (is-plan close "chat_id" "-100555" "message_thread_id" 7)))
     (remhash "7" nct::*topic-chats*)))

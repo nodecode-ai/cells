@@ -74,9 +74,9 @@ private chat 555 — as JSON; FIELDS the object's other members."
 (deftest channel-telegram-get-updates-plan ()
   (let ((plan (nct:get-updates-plan 55 :poll-timeout-seconds 10)))
     (is-plan plan :path "/getUpdates" :timeout 20 :retry nil "offset" 55 "timeout" 10)
+    ;; messages, an edit, presses on the controls they carry, and a reaction
     (is (equalp #("message" "edited_message" "callback_query" "message_reaction")
-                (gethash "allowed_updates" (nck:request-plan-body plan)))
-        "messages, an edit, presses on the controls they carry, and a reaction"))
+                (gethash "allowed_updates" (nck:request-plan-body plan)))))
   (let ((plan (nct:get-updates-plan nil :allowed-updates
                                     '("message" "message_reaction"))))
     (is (null (gethash "offset" (nck:request-plan-body plan))))
@@ -286,8 +286,8 @@ private chat 555 — as JSON; FIELDS the object's other members."
                                                       "user_id" user "role_ids" roles))))
     (is (eq :answer (nck:decide-inbound policy (said "no ping here" "-100777"))))
     (is-inbound policy (said "@mybot hi" "-100888") :reject "channel_ignored")
-    (is (eq :answer (nck:decide-inbound policy (said "Nodecode, what broke?" "-100555")))
-        "a wake word is a mention")
+    ;; a wake word is a mention
+    (is (eq :answer (nck:decide-inbound policy (said "Nodecode, what broke?" "-100555"))))
     (is-inbound policy (said "no ping" "-100555") :observe "mention_required")
     (is (eq :answer (nck:decide-inbound policy (said "@mybot hi" "-100555" :user "9"
                                                                          :roles '("administrator")))))
