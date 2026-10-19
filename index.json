@@ -73,7 +73,7 @@
     {
       "name": "nodecode-channel-email",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "334f3f53cb13b03d98b391e6e5a7b7c3fe0d00a9",
+      "commit": "c1b170265854186172ad92863b73468e8552d5b9",
       "path": "rooms/nodecode-channel-email",
       "description": "Talk to nodecode by email: an IMAP inbox in, SMTP replies out",
       "license": "MIT",
