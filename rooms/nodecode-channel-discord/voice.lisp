@@ -353,6 +353,11 @@ octets of an Ogg Opus file."
 (defparameter +utterance-minimum-ms+ 400
   "Shorter than this is a cough, a door, a keyboard: no ask is opened.")
 
+(defparameter +barge-in-ms+ 400
+  "How long somebody must keep talking before they take the floor back. A
+cough, a keyboard, a breath or a door is a frame or two and must not cut an
+answer in half; a person who wants the floor keeps going past this.")
+
 ;;; Past it the words so far are one ask and the rest begins another: a
 ;;; monologue must not grow without bound in memory and must not wait forever
 ;;; to be answered.

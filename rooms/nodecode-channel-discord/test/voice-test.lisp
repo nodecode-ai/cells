@@ -308,13 +308,19 @@
 
 ;;; --- cancellation -------------------------------------------------------------------
 
-(deftest channel-discord-voice-a-new-utterance-stops-the-answer-being-spoken ()
-  (let ((lane (voice-lane-for-test)))
+(deftest channel-discord-voice-a-sustained-utterance-stops-the-answer-being-spoken ()
+  ;; The floor changes hands on somebody talking, not on a single frame: a
+  ;; breath, a keyboard or a door used to cut every answer to four words.
+  (let* ((lane (voice-lane-for-test))
+         (breath (/ ncd::+barge-in-ms+ 20)))
     (setf (gethash 12 (ncd::voice-lane-speaker-ids lane)) "u-allowed")
     (let ((generation (ncd::voice-play lane (list (voice-speech-frame 40)))))
       (is (eql 1 (length (ncd::voice-lane-play-queue lane))) "something is queued to say")
+      (loop repeat breath do (ncd:voice-note-frame lane 12 (voice-speech-frame 40)))
+      (is (eql 1 (length (ncd::voice-lane-play-queue lane))) "a breath cuts nothing")
+      (is (= generation (ncd::voice-lane-play-generation lane)))
       (ncd:voice-note-frame lane 12 (voice-speech-frame 40))
-      (is (null (ncd::voice-lane-play-queue lane)) "the queue is dropped")
+      (is (null (ncd::voice-lane-play-queue lane)) "past the bar the queue is dropped")
       (is (> (ncd::voice-lane-play-generation lane) generation)))))
 
 (deftest channel-discord-voice-silence-does-not-interrupt (let ((lane (voice-lane-for-test))))

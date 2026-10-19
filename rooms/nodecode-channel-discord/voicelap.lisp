@@ -27,8 +27,9 @@
 ;;;;     text channel keeps the transcript, the status card and the answer;
 ;;;;     the voice channel is a second way in and a second way out, never a
 ;;;;     second conversation.
-;;;;   - A new utterance stops whatever is being said. The room's own
-;;;;     cancellation is unchanged: this only silences the speaker.
+;;;;   - An utterance that keeps going stops whatever is being said. The
+;;;;     room's own cancellation is unchanged: this only silences the
+;;;;     speaker.
 
 (in-package #:nodecode-channel-discord)
 
@@ -324,9 +325,12 @@ it. Until this happens nothing we send can be heard."
     (let ((utterance (alexandria:ensure-gethash ssrc lane.utterances
                                                 (make-utterance :user-id user
                                                                 :last-ms (nck:now-ms)))))
-      ;; Someone started talking: stop talking over them.
+      ;; Someone kept talking: stop talking over them. A breath, a keyboard,
+      ;; a door and the room's own noise are a frame or two and say nothing
+      ;; about wanting the floor, so only a run of speech cuts an answer.
       (unless (opus-silence-p frame)
-        (voice-stop-playback lane))
+        (when (>= (utterance-milliseconds utterance) +barge-in-ms+)
+          (voice-stop-playback lane)))
       (utterance-note-frame utterance frame (nck:now-ms)))))
 
 (defun voice-keep-armed (lane)
