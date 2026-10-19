@@ -2205,7 +2205,7 @@ button.p-row:active { background: var(--field-lit); }
   flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
   border-radius: var(--r-control); color: var(--tertiary); transition: color 130ms, background 130ms;
 }
-.head-acts .act:hover { color: var(--primary); }
+.head-acts .act:hover, .head-acts .act[aria-current="page"] { color: var(--primary); }
 /* The context ring fills as the context does, and takes the accent near full. */
 #context[data-full] { color: var(--accent); }
 .strip .more { display: none; }
@@ -2219,7 +2219,7 @@ button.p-row:active { background: var(--field-lit); }
 @media (max-width: 720px) {
   .strip .more:not([hidden]) { display: inline-flex; }
   .head-acts {
-    position: absolute; z-index: 5; top: 60px; right: 20px; min-width: 180px; padding: 6px;
+    position: absolute; z-index: 8; top: 60px; right: 20px; min-width: 180px; padding: 6px; /* over the notices (7): it was asked for */
     display: none; flex-direction: column; align-items: stretch;
     border: 1px solid var(--seam-lit); border-radius: var(--r-control); background: var(--raised); box-shadow: var(--shadow);
   }
@@ -2487,7 +2487,7 @@ button.p-row:active { background: var(--field-lit); }
   .strip h1 .crumb { min-height: 44px; margin-left: -6px; padding-right: 4px; color: var(--accent); pointer-events: auto; cursor: pointer; } /* Control / a tab: back to the list */
   .strip h1 .crumb svg { display: block; }
   .fs-acts .icon { width: 44px; height: 44px; }                  /* Read again, Upload */
-  .strip .views .view { min-width: 44px; height: 44px; }         /* Chat, Run, Files */
+  .strip .views .view { min-width: 44px; height: 44px; }         /* Chat, Run */
   button.sw { min-height: 44px; }                                /* a switch: a range, a filter, a level */
 }
 

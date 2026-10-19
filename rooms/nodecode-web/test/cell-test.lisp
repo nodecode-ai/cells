@@ -525,7 +525,7 @@ no enclosing try block holds, as the line it is on."
     (44 ".fs-bar .fs-crumbs button" "min-height")   ; a folder on the way down, on a phone
     (44 ".strip h1 .crumb" "min-height")            ; Control / a tab: back to the list, on a phone
     (44 ".fs-acts .icon" "width" "height")          ; Read again, Upload
-    (44 ".strip .views .view" "min-width" "height") ; Chat, Run, Files, on a phone
+    (44 ".strip .views .view" "min-width" "height") ; Chat, Run, on a phone
     (44 "button.sw" "min-height")                   ; a switch, on a phone
     (32 ".icon" "width" "height")                    ; every other mark
     (32 ".looks .icon" "width" "height")             ; the foot's link, look and language
@@ -1025,8 +1025,8 @@ brace that closes it at the start of a line, or NIL."
     (is (search "#sessions-tab, .phone-only { display: none; }" css) "wider, the column stays a column")))
 
 ;; Every page on a phone has the Sessions page's bar: three slots -- the way
-;; back or the mark, the page's name once, More -- the session's views a
-;; switch under it, and the tabs along the foot on Dashboard and Control too.
+;; back or the mark, the page's name once, More (Files among its acts) --
+;; the session's Chat and Run a switch under it, and the tabs along the foot on Dashboard and Control too.
 ;; The mark is the site's axolotl, drawn once, in the text's own colour.
 (deftest web-cell-every-page-on-a-phone-has-one-bar ()
   (let* ((html (web-page-text "index.html"))
@@ -1047,6 +1047,13 @@ brace that closes it at the start of a line, or NIL."
       (is (search "grid-template-columns: 44px minmax(0, 1fr) 44px;" block) "three slots")
       (is (search ".strip h1 .crumb-word, .strip h1 .sep { display: none; }" block) "a tab named once")
       (is (search ".strip > .views { grid-area: 3 / 1 / 4 / -1;" block) "the views a switch under the bar")
+      (let ((switch (subseq html (search "id=\"views\"" html) (search "id=\"more\"" html)))
+            (acts (subseq html (search "id=\"head-acts\"" html) (search "id=\"status\"" html))))
+        (is (and (search "data-view=\"chat\"" switch) (search "data-view=\"run\"" switch)
+                 (not (search "data-view=\"files\"" switch)))
+            "the switch holds Chat and Run")
+        (is (search "id=\"files-open\" type=\"button\" data-view=\"files\"" acts) "Files is an act, under More"))
+      (is (search "document.querySelectorAll(\".strip [data-view]\")" app) "and still a view an address may name")
       (is (search ":not(.column-open) .railed { visibility: visible; }" block) "the tabs on Dashboard and Control")
       (is (search ":not(.column-open) #new-session { visibility: hidden; }" block) "New stays on Sessions"))
     (is (search ".glance-now { grid-template-columns: minmax(0, 1fr) 10px;" css) "Right now's door: its words and its chevron, no lamp column")

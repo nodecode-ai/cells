@@ -152,9 +152,6 @@
           <button class="view" type="button" role="radio" data-view="run" title="Run" data-i18n-attrs="title">
             <svg viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><path d="M1.5 7.5h2.5l1.5-4 3 8 1.5-4h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n>Run</span>
           </button>
-          <button class="view" type="button" role="radio" data-view="files" title="The files in this session's folder" data-i18n-attrs="title">
-            <svg viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><path d="M2 4a1 1 0 0 1 1-1h3l1.5 1.5H12a1 1 0 0 1 1 1V11.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n>Files</span>
-          </button>
         </div>
         <button class="icon more" id="more" type="button" aria-controls="head-acts" aria-expanded="false" aria-label="More" title="More" data-i18n-attrs="aria-label title" hidden>
           <svg viewBox="0 0 15 15" width="15" height="15" aria-hidden="true"><circle cx="3.5" cy="7.5" r="1.1" fill="currentColor"/><circle cx="7.5" cy="7.5" r="1.1" fill="currentColor"/><circle cx="11.5" cy="7.5" r="1.1" fill="currentColor"/></svg>
@@ -168,6 +165,9 @@
           </button>
           <button class="act" id="history-open" type="button" aria-controls="history" title="History" data-i18n-attrs="title" hidden>
             <svg viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><path d="M2.5 7.5a5 5 0 1 0 1.6-3.7M2.5 2.5v2.8h2.8M7.5 5v2.7l1.8 1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="label" data-i18n>History</span>
+          </button>
+          <button class="act" id="files-open" type="button" data-view="files" title="The files in this session's folder" data-i18n-attrs="title" hidden>
+            <svg viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><path d="M2 4a1 1 0 0 1 1-1h3l1.5 1.5H12a1 1 0 0 1 1 1V11.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="label" data-i18n>Files</span>
           </button>
           <button class="act" id="markdown" type="button" title="Save this session as Markdown" data-i18n-attrs="title" hidden>
             <svg viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><path d="M7.5 2v7.5M4.5 6.5l3 3 3-3M2.5 12.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="label" data-i18n>Markdown</span>

@@ -128,9 +128,10 @@ function readLink() {
 // The panes over every session or over the organism, which name no session.
 const BOARDS = ["dashboard", "control"];
 
-// The views the strip's switch offers a session (Chat, Run, and any a module
-// puts there): the one list of what `v' may name beside a session.
-const sessionViews = () => [...$("views").querySelectorAll("[data-view]")].map((sw) => sw.dataset.view);
+// The views the strip offers a session -- its switch's Chat and Run, Files
+// among the acts (under More on a phone), and any a module puts there: the
+// one list of what `v' may name beside a session.
+const sessionViews = () => [...document.querySelectorAll(".strip [data-view]")].map((sw) => sw.dataset.view);
 
 // A number an address spells in digits, or null.
 const whole = (text) => (/^\d+$/.test(text || "") ? Number(text) : null);
@@ -2776,6 +2777,9 @@ function renderHead() {
   const run = $("views").querySelector('[data-view="run"]');
   run.title = meter && !active ? `${t("Run")} · ${meter.text}` : t("Run");
   run.toggleAttribute("data-flagged", !!meter?.flag && !active);
+  $("files-open").hidden = !state.current || usage;
+  if (state.pane === "files") $("files-open").setAttribute("aria-current", "page");
+  else $("files-open").removeAttribute("aria-current");
   $("redo").hidden = state.pane !== "chat" || !state.current || active || !state.redo.has(state.current);
   $("history-open").hidden = state.pane !== "chat" || !state.current || active || !turns;
   const execs = v?.execs?.length || 0;
@@ -4533,7 +4537,7 @@ for (const [id, go] of [["home", openNew], ["strip-home", openNew], ["usage-open
   });
   link.addEventListener("auxclick", (event) => { if (event.button === 1) handOver(link); });
 }
-$("views").addEventListener("click", (event) => {
+for (const host of [$("views"), $("head-acts")]) host.addEventListener("click", (event) => {
   const sw = event.target.closest("[data-view]");
   if (sw) setPane(sw.dataset.view);
 });
