@@ -3582,6 +3582,9 @@ the line it had, or, stale, that line saying so. => whether it waits again."
                                                       and append (list key value))))
                    "status" digest.status-id
                    "ask" digest.ask-id
+                   ;; The title the card wears (WEAR-TITLE): the next start's card
+                   ;; keeps it, not the ask's first words again.
+                   "task" digest.task
                    "calls" digest.tool-calls
                    ;; Elapsed, not the start: NOW-MS counts from the image's own
                    ;; start, and the next one's is another clock.
@@ -3694,6 +3697,7 @@ watching the turn TURN."
         (setf digest.turn-id turn
               digest.status-id status-id
               digest.ask-id (nlk:json-value entry :string "ask")
+              digest.task (nlk:json-value entry :string "task")
               digest.tool-calls (or (nlk:json-value entry :integer "calls") 0)
               lane.active-turn-id turn
               lane.where (nlk:json-value entry :string "where")

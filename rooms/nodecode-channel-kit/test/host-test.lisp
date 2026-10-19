@@ -1926,10 +1926,12 @@ it would have done on the way out (STOP-HOST's hand-off)."
     (nck:start-host host)
     (fold-fact host "chat-123-m1" "turn.started" (nlk:json-object))
     (fold-fact host "chat-123-m1" "turn.tool_call_started" (nlk:json-object "tool-name" "eval"))
+    (bt2:with-lock-held ((nck::lane-lock lane))
+      (setf (nck::turn-digest-task (nck:lane-digest lane)) "Checkout failure"))
     (nck:flush-now host lane)
     (is (loop repeat 40
               thereis (let ((json (nlk:session-state-get "channel-test" nck::+handoff-key+)))
-                        (and json (search "\"s1\"" json)))
+                        (and json (search "\"s1\"" json) (search "Checkout failure" json)))
               do (sleep 0.1))
         "written down, with its line, while it runs")
     (crash-host host)
@@ -1944,6 +1946,7 @@ it would have done on the way out (STOP-HOST's hand-off)."
            (is (equal "t1" (nck:lane-active-turn-id lane)))
            (let ((digest (nck:lane-digest lane)))
              (is (equal "s1" (nck:turn-digest-status-id digest)) "on the line it had")
+             (is (equal "Checkout failure" (nck::turn-digest-task digest)) "wearing the title it had")
              (is (eq :running (nck:turn-digest-phase digest)))
              (is (= 1 (nck:turn-digest-tool-calls digest))))
            (fold-fact host "chat-123-m1" "turn.assistant_message_completed"
