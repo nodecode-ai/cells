@@ -2774,12 +2774,19 @@ function renderHead() {
   $("views").hidden = !state.current || usage;
   for (const sw of $("views").children) sw.setAttribute("aria-checked", String(sw.dataset.view === state.pane));
   const meter = !usage && state.timeline?.session === state.current ? meterOf(state.timeline.data) : null;
-  const run = $("views").querySelector('[data-view="run"]');
-  run.title = meter && !active ? `${t("Run")} · ${meter.text}` : t("Run");
-  run.toggleAttribute("data-flagged", !!meter?.flag && !active);
-  $("files-open").hidden = !state.current || usage;
-  if (state.pane === "files") $("files-open").setAttribute("aria-current", "page");
-  else $("files-open").removeAttribute("aria-current");
+  const flagged = !!meter?.flag && !active;
+  for (const run of [$("views").querySelector('[data-view="run"]'), $("run-open")]) {
+    run.title = meter && !active ? `${t("Run")} · ${meter.text}` : t("Run");
+    run.toggleAttribute("data-flagged", flagged);
+  }
+  // Chat and Run are the switch, Files an act; on a phone all three are under
+  // More, the one on screen lit, and More carries Run's flag while Run is off screen.
+  for (const act of $("head-acts").querySelectorAll("[data-view]")) {
+    act.hidden = !state.current || usage;
+    if (act.dataset.view === state.pane) act.setAttribute("aria-current", "page");
+    else act.removeAttribute("aria-current");
+  }
+  $("more").toggleAttribute("data-flagged", flagged && state.pane !== "run");
   $("redo").hidden = state.pane !== "chat" || !state.current || active || !state.redo.has(state.current);
   $("history-open").hidden = state.pane !== "chat" || !state.current || active || !turns;
   const execs = v?.execs?.length || 0;

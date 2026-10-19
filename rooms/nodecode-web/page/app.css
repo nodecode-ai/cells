@@ -2206,6 +2206,9 @@ button.p-row:active { background: var(--field-lit); }
   border-radius: var(--r-control); color: var(--tertiary); transition: color 130ms, background 130ms;
 }
 .head-acts .act:hover, .head-acts .act[aria-current="page"] { color: var(--primary); }
+/* Chat and Run as acts are a phone's: wider, the switch holds them. */
+.head-acts .view-act { display: none; }
+.strip .more { position: relative; }
 /* The context ring fills as the context does, and takes the accent near full. */
 #context[data-full] { color: var(--accent); }
 .strip .more { display: none; }
@@ -2227,6 +2230,13 @@ button.p-row:active { background: var(--field-lit); }
   .head-acts .act { width: auto; height: auto; justify-content: flex-start; gap: 10px; padding: 10px 12px; font: var(--fs-detail) var(--sans); color: var(--secondary); }
   .head-acts .act:hover { color: var(--primary); background: var(--selected); }
   .head-acts .label { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+  /* The views head the menu -- Chat, Run, Files -- the one on screen lit and
+     ticked; Run's flag is a dot on its row, and on More while Run is shut. */
+  .head-acts .view-act { display: inline-flex; }
+  .head-acts :is(.view-act, #files-open) { order: -1; }
+  .head-acts .act[aria-current="page"]::after { content: ""; width: 8px; height: 4px; margin: -3px 2px 0 auto; border: solid currentColor; border-width: 0 0 1.5px 1.5px; transform: rotate(-45deg); }
+  .head-acts .act[data-flagged]:not([aria-current])::after { content: ""; width: 6px; height: 6px; margin-left: auto; border-radius: 50%; background: var(--accent-fill); }
+  .strip .more[data-flagged]::after { content: ""; position: absolute; top: 12px; right: 11px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent-fill); }
   /* The lamp alone says a turn runs: its verb stands in the transcript's own bar. */
   .strip .live > span { display: none; }
 }
@@ -2487,7 +2497,6 @@ button.p-row:active { background: var(--field-lit); }
   .strip h1 .crumb { min-height: 44px; margin-left: -6px; padding-right: 4px; color: var(--accent); pointer-events: auto; cursor: pointer; } /* Control / a tab: back to the list */
   .strip h1 .crumb svg { display: block; }
   .fs-acts .icon { width: 44px; height: 44px; }                  /* Read again, Upload */
-  .strip .views .view { min-width: 44px; height: 44px; }         /* Chat, Run */
   button.sw { min-height: 44px; }                                /* a switch: a range, a filter, a level */
 }
 
@@ -2586,18 +2595,8 @@ button.p-row:active { background: var(--field-lit); }
   .strip .live > span { display: inline; }
   .strip .live .led { background: var(--live); }
   .strip > #more { grid-area: 1 / 3 / 3 / 4; align-self: center; justify-self: end; }
-  /* The toggle: its side columns grow alike, so a short name stands at the
-     middle and a long one takes what the toggle leaves. */
-  .strip:has(> .views:not([hidden])) { grid-template-columns: minmax(44px, 1fr) minmax(0, max-content) minmax(132px, 1fr); }
-  .strip > .views { grid-area: 1 / 3 / 3 / 4; align-self: center; justify-self: end; position: relative; margin-right: 44px; gap: 0; padding: 0; border: 0; }
-  .strip > .views::before { content: ""; position: absolute; inset: 6px 0; border: 1px solid var(--seam-lit); border-radius: var(--r-pill); pointer-events: none; }
-  .strip > .views::after {
-    content: ""; position: absolute; top: 9px; left: 3px; width: 38px; height: 26px; border-radius: var(--r-pill);
-    background: var(--selected); transition: transform 160ms ease-out, opacity 130ms; pointer-events: none;
-  }
-  .strip > .views:has(> [data-view="run"][aria-checked="true"])::after { transform: translateX(44px); }
-  .strip > .views:not(:has(> [aria-checked="true"]))::after { opacity: 0; }   /* Files: neither */
-  .strip .views .view { z-index: 1; padding: 0; background: none; }
+  /* Chat and Run are under More, with Files: the bar keeps its three slots. */
+  .strip > .views { display: none; }
   /* The tabs on every top page. Shut, the column slides away and is gone once
      it has; on Dashboard and Control it stays where it is, unseen but for its
      tabs, so opening Sessions over them is a tab, not a slide. */

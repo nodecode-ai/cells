@@ -525,7 +525,6 @@ no enclosing try block holds, as the line it is on."
     (44 ".fs-bar .fs-crumbs button" "min-height")   ; a folder on the way down, on a phone
     (44 ".strip h1 .crumb" "min-height")            ; Control / a tab: back to the list, on a phone
     (44 ".fs-acts .icon" "width" "height")          ; Read again, Upload
-    (44 ".strip .views .view" "min-width" "height") ; Chat, Run, on a phone
     (44 "button.sw" "min-height")                   ; a switch, on a phone
     (32 ".icon" "width" "height")                    ; every other mark
     (32 ".looks .icon" "width" "height")             ; the foot's link, look and language
@@ -1025,8 +1024,8 @@ brace that closes it at the start of a line, or NIL."
     (is (search "#sessions-tab, .phone-only { display: none; }" css) "wider, the column stays a column")))
 
 ;; Every page on a phone has the Sessions page's bar: three slots -- the way
-;; back or the mark, the page's name once, More (Files among its acts) --
-;; the session's Chat and Run a toggle in it beside More, and the tabs along the foot on Dashboard and Control too.
+;; back or the mark, the page's name once, More (the session's Chat, Run and
+;; Files heading its acts, the one on screen lit) -- and the tabs along the foot on Dashboard and Control too.
 ;; The mark is the site's axolotl, drawn once, in the text's own colour.
 (deftest web-cell-every-page-on-a-phone-has-one-bar ()
   (let* ((html (web-page-text "index.html"))
@@ -1046,15 +1045,20 @@ brace that closes it at the start of a line, or NIL."
     (when block
       (is (search "grid-template-columns: 44px minmax(0, 1fr) 44px;" block) "three slots")
       (is (search ".strip h1 .crumb-word, .strip h1 .sep { display: none; }" block) "a tab named once")
-      (is (search ".strip > .views { grid-area: 1 / 3 / 3 / 4;" block) "Chat and Run a toggle in the bar, beside More")
-      (is (search ".views:has(> [data-view=\"run\"][aria-checked=\"true\"])::after { transform: translateX(44px); }" block) "its knob under the view on screen")
-      (is (search "const flip = host === $(\"views\") && sw.getAttribute(\"aria-checked\") === \"true\";" app) "a press on the lit side flips it")
+      (is (search ".strip > .views { display: none; }" block) "no switch in the bar: Chat and Run are under More")
+      (is (search ".head-acts .view-act { display: none; }" css) "and a phone's alone: wider, the switch holds them")
+      (is (search "for (const act of $(\"head-acts\").querySelectorAll(\"[data-view]\"))" app) "the menu's views lit by the pane on screen")
+      (is (search "$(\"more\").toggleAttribute(\"data-flagged\", flagged && state.pane !== \"run\");" app) "More carries Run's flag while Run is shut")
+      (is (search "const flip = host === $(\"views\") && sw.getAttribute(\"aria-checked\") === \"true\";" app) "wider, a press on the switch's lit side flips it")
       (let ((switch (subseq html (search "id=\"views\"" html) (search "id=\"more\"" html)))
             (acts (subseq html (search "id=\"head-acts\"" html) (search "id=\"status\"" html))))
         (is (and (search "data-view=\"chat\"" switch) (search "data-view=\"run\"" switch)
                  (not (search "data-view=\"files\"" switch)))
             "the switch holds Chat and Run")
-        (is (search "id=\"files-open\" type=\"button\" data-view=\"files\"" acts) "Files is an act, under More"))
+        (is (and (search "id=\"chat-open\" type=\"button\" data-view=\"chat\"" acts)
+                 (search "id=\"run-open\" type=\"button\" data-view=\"run\"" acts)
+                 (search "id=\"files-open\" type=\"button\" data-view=\"files\"" acts))
+            "Chat, Run and Files are acts, under More"))
       (is (search "document.querySelectorAll(\".strip [data-view]\")" app) "and still a view an address may name")
       (is (search ":not(.column-open) .railed { visibility: visible; }" block) "the tabs on Dashboard and Control")
       (is (search ":not(.column-open) #new-session { visibility: hidden; }" block) "New stays on Sessions"))
