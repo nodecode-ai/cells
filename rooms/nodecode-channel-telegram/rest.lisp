@@ -640,10 +640,11 @@ bot's command menu in the default scope, the one every chat falls back to."
 (defun telegram-not-modified-p (blob)
   "T when BLOB (a string, hash-table body, or formatted error) is Telegram's
 400 'message is not modified' — the edit was a no-op because the live
-message already matches."
-  (flet ((has (s)
-           (and (stringp s)
-                (search "message is not modified" (string-downcase s)))))
+message already matches — or TOPIC_NOT_MODIFIED: a topic closed, reopened or
+renamed that already was."
+  (flet ((has (s &aux (s (and (stringp s) (string-downcase s))))
+           (and s (or (search "message is not modified" s)
+                      (search "topic_not_modified" s)))))
     ;; An object says it wherever it says it: its description, or deeper.
     (cond
       ((has blob) t)

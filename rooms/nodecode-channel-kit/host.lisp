@@ -970,7 +970,7 @@ the payload's :THREAD-ID where the platform's threads live inside a chat
         ;; A close the platform refused leaves the thread open, and says so
         ;; where the press said it closed.
         (unless closed
-          (post-message host (list :channel-id thread :thread-id thread)
+          (post-message host (list :channel-id (or (getf payload :channel-id) thread) :thread-id thread)
                         (format nil "This thread did not close: ~a" error)
                         :what "close refusal"))
         closed))))

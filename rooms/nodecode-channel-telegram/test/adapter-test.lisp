@@ -500,3 +500,30 @@ threads: the request, platform and seam tests drive it directly."
         "the topic pressed in is closed"
         (is-plan close "chat_id" "-100555" "message_thread_id" 7)))
     (remhash "7" nct::*topic-chats*)))
+
+(deftest channel-telegram-a-refused-close-is-said-in-its-topic ()
+  ;; A close Telegram refuses leaves the topic open and says so in it -- in
+  ;; the topic's chat, never in a chat named by the topic's id; a topic
+  ;; someone closed already is closed, no refusal.
+  (flet ((press (close-answer)
+           (let* ((executor (scripted-executor
+                             (nck:make-scripted-response 200 (cell-json "{\"ok\": true, \"result\": true}"))
+                             close-answer))
+                  (host (test-host :platform (nct:telegram-platform :bot-username "orgbot" :bot-user-id "777")
+                                   :executor (nct:wrap-telegram-executor executor) :name "tg-close-refused"))
+                  (nct::*telegram-adapter* nil))
+             (setf (gethash "7" nct::*topic-chats*) "-100555")
+             (unwind-protect
+                  (progn (nck::close-pressed host (list :id "cb1" :data "nck:close:42" :user-id "42"
+                                                        :message-id "90" :channel-id "-100555" :thread-id "7")
+                                             "42")
+                         (find "/sendRichMessage" (nck:recording-executor-plans executor)
+                               :key #'nck:request-plan-path :test #'equal))
+               (remhash "7" nct::*topic-chats*)))))
+    (is-present (said (press (nck:make-scripted-response
+                              400 (cell-json "{\"ok\": false, \"error_code\": 400, \"description\": \"Bad Request: not enough rights to manage topics\"}"))))
+      "the refusal is said"
+      (is-plan said "chat_id" "-100555" "message_thread_id" 7)
+      (is (search "did not close" (gethash "markdown" (plan-field said "rich_message")))))
+    (is (null (press (nck:make-scripted-response
+                      400 (cell-json "{\"ok\": false, \"error_code\": 400, \"description\": \"Bad Request: TOPIC_NOT_MODIFIED\"}")))) "closed already is closed")))
