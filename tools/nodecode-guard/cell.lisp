@@ -56,7 +56,7 @@ form read in any package is recognized."
   (and (symbolp x) (string-downcase (symbol-name x))))
 
 (defun dollar-name (x)
-  "The strings-object name a ($ "name") form reads, or NIL."
+  "The strings-object name a ($ \"name\") form reads, or NIL."
   (and (consp x)
        (equal "$" (operator-name (car x)))
        (stringp (second x))
