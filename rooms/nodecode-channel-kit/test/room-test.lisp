@@ -158,6 +158,7 @@ executor."
                          (nck:rest-plan "PATCH" (format nil "/interactions/~a" id)
                                         "interaction_response" t timeout-seconds
                                         (nlk:json-object "content" text "controls" controls
+                                                         "private" private
                                                          :when panel "panel" panel))
                          (nck:rest-plan "POST" (format nil "/interactions/~a" id)
                                         "interaction_defer" nil timeout-seconds

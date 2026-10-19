@@ -396,6 +396,31 @@ threads: the request, platform and seam tests drive it directly."
     (is-source (first seen) :text "🔥" "reaction" "add" "reply_to_message_id" "90"
                "chat_kind" "direct_message")))
 
+(deftest channel-telegram-a-reaction-in-a-topic-lands-in-that-topic ()
+  ;; Telegram's message_reaction names the chat and the message, never the
+  ;; forum topic. The lane that posted the message knows its topic, so the
+  ;; line is the topic's context, read by the topic's next ask -- not the
+  ;; General room's, where no ask about it would ever look.
+  (let* ((seen '())
+         (adapter (telegram-gap-adapter))
+         (lanes (nck:host-lanes (nct::telegram-adapter-host adapter))))
+    (nck:intern-lane lanes "telegram--100555-t77-m88"
+                     :target '(:channel-id "-100555" :thread-id "77" :message-id "88")
+                     :trigger-message-id "88" :parent-session-id "telegram--100555-t77"
+                     :owner-id "42")
+    (nck:bind-lane-address lanes "-100555:90" "telegram--100555-t77-m88")
+    (flet ((react (message-id)
+             (nct:telegram-handle-update
+              adapter (cell-json (format nil "{\"update_id\": 5, \"message_reaction\": {\"chat\": {\"id\": -100555, \"type\": \"supergroup\", \"is_forum\": true}, \"message_id\": ~a, \"date\": 1700000000, \"user\": {\"id\": 42, \"username\": \"kim\"}, \"old_reaction\": [], \"new_reaction\": [{\"type\": \"emoji\", \"emoji\": \"🔥\"}]}}" message-id)))))
+      (with-stubbed-fdefinition (nck:reaction-noticed (host candidate) (push candidate seen) :observe)
+        (react 90)
+        (react 91)))
+    (is (= 2 (length seen)))
+    (is-source (second seen) :text "🔥" "reply_to_message_id" "90" "channel_id" "-100555"
+               "thread_id" "77")
+    (is (null (gethash "thread_id" (nck:candidate-source (first seen))))
+        "a message no lane holds keeps no topic: the kit reads it as nothing of ours")))
+
 (deftest channel-telegram-roles-are-read-off-the-admin-list ()
   ;; A group's admins hold \"administrator\", its creator \"creator\" too, read
   ;; once per group per five minutes.

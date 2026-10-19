@@ -117,8 +117,8 @@ was typed. `thread_behavior: "reply_in_place"` keeps a forum flat too, and
   is an edit to a message the bot already took.
 - **Mentions.** When the bot pings someone, such as an owner it needs, it
   names them as a link to the person, which Telegram notifies.
-- **Private answers.** A command whose answer is private (`/usage`,
-  `/doctor` and the like), typed in a group, is answered in your own chat
+- **Private answers.** A command whose answer is private (`/models`,
+  `/think`, `/effort`, `/stop`, `/channels`, `/threads`), typed in a group, is answered in your own chat
   with the bot, so the group doesn't read it. If you never opened that chat
   (Telegram refuses a bot's first word), it answers in the group.
 - **Commands.** The bot's `/` menu is Nodecode's command list: `/new` starts

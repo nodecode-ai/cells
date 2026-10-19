@@ -2693,8 +2693,12 @@ message that asked, pinging its author."
              (chunks (split-text-chunks text host.text-limit))
              (tail (if (or private panel) '() (rest chunks)))
              (controls (or controls (and held (not private) pressed :clear)))
+             ;; The answer says PRIVATE as its hold did: a platform whose
+             ;; privacy rides the answer, not the hold (Slack's ephemeral,
+             ;; Telegram's own chat with the bot), reads it here.
              (plan (and held (host-plan host #'platform-plan-respond
                                         candidate (text-chunk-text (first chunks))
+                                        :private private
                                         :controls (if tail (and pressed :clear) controls)
                                         :panel panel)))
              (rest (if plan tail chunks)))

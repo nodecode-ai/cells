@@ -1433,7 +1433,10 @@ LANE, as the one running channel."
       (is (posted 2))
       (is-plan (first (labelled "interaction_defer")) "private" t)
       (is-plan (first (labelled "interaction_response"))
-               "content" "this question is no longer open"))))
+               "content" "this question is no longer open"
+               ;; the answer says so too: where privacy rides the answer
+               ;; (Slack, Telegram), the hold alone would post it for all
+               "private" t))))
 
 (deftest channel-a-press-is-a-short-id-the-store-keeps ()
   ;; A choice's data is a press: one short id for one line and the view its

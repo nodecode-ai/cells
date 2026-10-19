@@ -160,7 +160,7 @@ person."
    :where-text (lambda (candidate)
                  (telegram-where-text candidate bot-username bot-user-id))
    :api-primer +telegram-api-primer+
-   :seams-primer "  nct:telegram-handle-update (adapter update) — every raw getUpdates entry within channels.telegram.allowed_updates (default: message and callback_query; widen it for edited_message, message_reaction, my_chat_member, ...), on the poll thread: return fast. update is the hash table Telegram sent."
+   :seams-primer "  nct:telegram-handle-update (adapter update) — every raw getUpdates entry within channels.telegram.allowed_updates (default: message, edited_message, callback_query and message_reaction; widen it for my_chat_member, ...), on the poll thread: return fast. update is the hash table Telegram sent."
    ;; A choice is an inline button whose press routes as the line it says
    ;; (TELEGRAM-HANDLE-CALLBACK), answered by becoming the card's next view
    ;; (PRESS-RESPONSE-PLAN); any other control press is answered with
@@ -383,6 +383,17 @@ bot's messages becomes a line of context for that conversation's next ask
 (NCK:REACTION-NOTICED). => the candidates handed on."
   (let ((candidates (map-telegram-reaction update :bot-user-id adapter.bot-user-id)))
     (dolist (candidate candidates candidates)
+      ;; Telegram's message_reaction names the chat and the message, never the
+      ;; forum topic: the lane that posted the message knows where it sits, so
+      ;; the line lands in that topic's room and its next ask reads it.
+      (let* ((source (candidate-source candidate))
+             (lane (lane-for-address
+                    (host-lanes adapter.host)
+                    (telegram-address (list :channel-id (gethash "channel_id" source))
+                                      (gethash "reply_to_message_id" source))))
+             (thread (and lane (getf (lane-target lane) :thread-id))))
+        (when thread
+          (setf (gethash "thread_id" source) thread)))
       (when (and adapter.roles-p (not (equal "direct_message" (source-field candidate "chat_kind"))))
         (setf (gethash "role_ids" (candidate-source candidate))
               (telegram-author-roles adapter (source-field candidate "channel_id")
