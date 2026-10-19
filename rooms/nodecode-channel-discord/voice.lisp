@@ -401,6 +401,14 @@ that it must be cut."
        (or (>= (- now-ms utterance.last-ms) +utterance-silence-ms+)
            (>= (utterance-milliseconds utterance) +utterance-maximum-ms+))))
 
+(defun utterance-stale-p (utterance now-ms)
+  "Whether UTTERANCE has sat open without one word in it long enough to be
+no utterance at all — the shape a lane that stopped decrypting leaves behind.
+A speaker's entry is made by their first packet, so a group that went stale
+held one for every mouth in the channel and closed none of them."
+  (and (zerop utterance.count)
+       (>= (- now-ms utterance.last-ms) +utterance-silence-ms+)))
+
 (defun utterance-worth-hearing-p (utterance)
   (>= (utterance-milliseconds utterance) +utterance-minimum-ms+))
 

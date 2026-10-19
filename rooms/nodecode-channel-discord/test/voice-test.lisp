@@ -734,3 +734,38 @@ u1 Ana and u2 Bo named, as GUILD_CREATE would have named them."
               (ncd:voice-command "tts" (voice-section) "tui-session")))
   (is (search "join, leave, status, room, hear, replies, on, tts, off, notes"
               (ncd:voice-command "dance" (voice-section)))))
+
+;;; --- hearing loss ----------------------------------------------------------------
+
+(deftest channel-discord-voice-a-quiet-entry-does-not-stand-forever ()
+  ;; A speaker's entry is made by their first packet, so a DAVE group that
+  ;; went stale leaves one entry per mouth in the channel and closes none.
+  ;; Left standing they are what a deaf lane looks like from the outside:
+  ;; no error, no transcript, two mouths that never finish.
+  (let* ((lane (voice-lane-for-test))
+         (now (nck:now-ms))
+         (stale (ncd:make-utterance :user-id "u-allowed"
+                                    :last-ms (- now (1+ ncd::+utterance-silence-ms+))))
+         (live (ncd:make-utterance :user-id "u-allowed" :last-ms now)))
+    (setf (gethash 11 (ncd::voice-lane-utterances lane)) stale
+          (gethash 12 (ncd::voice-lane-utterances lane)) live
+          (gethash 11 (ncd::voice-lane-speaker-ids lane)) "u-allowed"
+          (gethash 12 (ncd::voice-lane-speaker-ids lane)) "u-allowed")
+    (ncd::voice-close-finished-utterances lane)
+    (is (null (gethash 11 (ncd::voice-lane-utterances lane)))
+        "a quiet entry that never held a word is dropped")
+    (is (not (null (gethash 12 (ncd::voice-lane-utterances lane))) )
+        "one still filling is not")
+    (is (null (nck:queue-pop (ncd::voice-lane-work-queue lane)))
+        "and neither becomes an ask")))
+
+(deftest channel-discord-voice-audio-that-never-opens-is-deafness ()
+  ;; Audio from a mouth this lane holds a key for that decrypts to nothing
+  ;; is the one symptom of a stale group: it is counted, and enough of it
+  ;; in a row gets the lane up and down again.
+  (let ((floor ncd::+voice-deaf-window-packets+))
+    (is (eql 1 (ncd::voice-hearing-windows floor 0 0)) "a full window that opened nothing")
+    (is (eql 2 (ncd::voice-hearing-windows (* 2 floor) 0 1)) "and the next")
+    (is (eql 0 (ncd::voice-hearing-windows floor 1 7)) "one word in it resets")
+    (is (eql 0 (ncd::voice-hearing-windows (1- floor) 0 0)) "a scrap is not a window")
+    (is (zerop ncd::*voice-deaf-windows*) "a fresh image has sat through nothing")))

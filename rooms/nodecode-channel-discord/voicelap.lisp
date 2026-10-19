@@ -353,12 +353,67 @@ it. Until this happens nothing we send can be heard."
              (not lane.mls-joined-p))
     (voice-arm-all lane)))
 
+;;; --- hearing loss ----------------------------------------------------------------------
+
+(defparameter +voice-deaf-window-packets+ 40
+  "Packets from speakers this lane holds a key for that make one window of
+audio: most of a second at fifty frames a second.")
+
+(defparameter +voice-deaf-windows+ 15
+  "Windows of audio in a row that arrive and do not open before the lane
+gets up and sits down again — fifteen seconds of a mouth moving and nothing
+said.")
+
+(defvar *voice-deaf-windows* 0
+  "Windows of audio that arrived and did not open, in a row, on the lane
+seated now.")
+
+(defvar *voice-deaf-retry-ms* 0
+  "When this lane last got up to recover its hearing.")
+
+(defun voice-hearing-windows (packets opened windows)
+  "WINDOWS, after one window holding PACKETS from speakers this lane holds a
+key for, of which OPENED opened.
+
+Audio that arrives and never opens is the one symptom of a DAVE group gone
+stale: Discord keys a fresh one whenever a member rejoins, and a lane that
+missed the commit keeps ratchets for a group that no longer exists. It
+decrypts to nothing, says nothing, and looks exactly like a quiet channel —
+which is why it is counted here rather than left to be noticed."
+  (if (and (>= packets +voice-deaf-window-packets+) (zerop opened))
+      (1+ windows)
+      0))
+
+(defun voice-recover-hearing (lane &aux (section *voice-section*) (now (nck:now-ms)))
+  "On the listener's tick: a lane that has sat through
++VOICE-DEAF-WINDOWS+ of its speakers' audio without opening one frame of it
+has lost the group. Get up and sit down again, once a minute at most, and say
+so: a lane that cannot hear anyone is a state the room can see."
+  (when (and section
+             (not lane.leaving-p)
+             (>= *voice-deaf-windows* +voice-deaf-windows+)
+             (>= (- now *voice-deaf-retry-ms*) 60000))
+    (setf *voice-deaf-retry-ms* now
+          *voice-deaf-windows* 0)
+    (voice-say-in-room lane (format nil "voice: nothing from <#~a> has opened in ~d seconds — the encryption group went stale; sitting down again."
+                                    lane.channel-id +voice-deaf-windows+))
+    (nlk:spawn "channel-discord-voice-hearing"
+      (bt2:with-lock-held (*voice-seat-lock*)
+        (when (eq lane *voice-lane*)
+          (nlk:with-handlers ((error (condition) (voice-note "~a" condition)))
+            (voice-act section :move lane.channel-id "recovering my hearing")))))))
+
 (defun voice-close-finished-utterances (lane &aux (now (nck:now-ms)))
   "Every speaker who has fallen quiet long enough hands their utterance to
 the work queue. Runs on the listener, which is why it only enqueues."
   ;; Removing the entry being visited is the one change MAPHASH allows.
   (maphash (lambda (ssrc utterance)
-             (when (utterance-complete-p utterance now)
+             (when (or (utterance-complete-p utterance now)
+                       ;; Audio that never opened made an entry and put no
+                       ;; word in it: that is not a quiet speaker, it is no
+                       ;; speaker at all, and an entry left standing is what a
+                       ;; deaf lane looks like from the outside.
+                       (utterance-stale-p utterance now))
                (remhash ssrc lane.utterances)
                ;; A cough is not an ask.
                (when (utterance-worth-hearing-p utterance)
@@ -370,8 +425,13 @@ the work queue. Runs on the listener, which is why it only enqueues."
 (defun voice-listen-lap (lane stop-p)
   "The UDP socket, read until the lane stops."
   ;; Everything here is cheap: a transport open, a DAVE open, a push onto a
-  ;; list.
-  (let ((buffer (make-array 2048 :element-type '(unsigned-byte 8))))
+  ;; list. The window counters are the one thing that is not about this
+  ;; packet: a second of a speaker's audio that does not open is the shape of
+  ;; a lane gone deaf, and VOICE-RECOVER-HEARING gets up from it.
+  (let ((buffer (make-array 2048 :element-type '(unsigned-byte 8)))
+        (window-start (nck:now-ms))
+        (window-packets 0)
+        (window-opened 0))
     (loop until (funcall stop-p)
           do (handler-case
                  (multiple-value-bind (packet size)
@@ -385,15 +445,31 @@ the work queue. Runs on the listener, which is why it only enqueues."
                        ;; VOICE-ARM-SPEAKER arms a speaker it has no decryptor for yet.
                        (let* ((ssrc (rtp-ssrc packet))
                               (decryptor (progn (voice-arm-speaker lane ssrc)
-                                                (gethash ssrc lane.decryptors))))
-                         (nlk:when-let (opus (cond ((opus-silence-p frame) frame)
-                                                   (decryptor (dave-decrypt decryptor frame))))
-                           (voice-note-frame lane ssrc opus))))))
+                                                (gethash ssrc lane.decryptors)))
+                              (opus (when decryptor
+                                      (if (opus-silence-p frame)
+                                          frame
+                                          (dave-decrypt decryptor frame)))))
+                         ;; A stranger's audio is meant not to open, so only a
+                         ;; speaker this lane holds a key for fills a window.
+                         (when decryptor
+                           (incf window-packets)
+                           (when opus (incf window-opened)))
+                         (when opus (voice-note-frame lane ssrc opus))))))
                (error (condition)
                  ;; A malformed packet is not an event. A dead socket ends the lap.
                  (unless (funcall stop-p)
                    (setf lane.last-error (princ-to-string condition))
                    (sleep 0.05))))
+             (let ((now (nck:now-ms)))
+               (when (>= (- now window-start) 1000)
+                 (setf *voice-deaf-windows* (voice-hearing-windows window-packets
+                                                                   window-opened
+                                                                   *voice-deaf-windows*)
+                       window-start now
+                       window-packets 0
+                       window-opened 0)))
+             (voice-recover-hearing lane)
              (voice-keep-armed lane)
              (voice-close-finished-utterances lane)
              (voice-leave-if-idle lane))))
@@ -645,7 +721,9 @@ the RTP header that is its own AAD. => T when it went."
   lane)
 
 (defun voice-start-threads (lane)
-  (setf lane.work-queue (nck:make-work-queue "channel-discord-voice-work"
+  (setf *voice-deaf-windows* 0
+        *voice-deaf-retry-ms* 0
+        lane.work-queue (nck:make-work-queue "channel-discord-voice-work"
                                                           :cap 64)
         lane.stop-lap
         (nck:start-supervised "channel-discord-voice"
