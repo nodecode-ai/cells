@@ -2633,3 +2633,94 @@ button.p-row:active { background: var(--field-lit); }
 .banner .banner-tone { font: 500 var(--fs-micro)/1.2 var(--micro); letter-spacing: var(--ls-micro); text-transform: uppercase; color: var(--tone); }
 .banner .banner-why { font-size: var(--fs-detail); color: var(--muted); }
 .banner > :is(.quiet, .solid) { flex: none; }
+
+/* --- a wide window: the rail, its list, one frame ------------------------------
+   The desktop audit's variant B (the operator, 2026-10-19: "Land B"). From
+   1024 px every page stands in one skeleton. A 72 px rail on the far left: the
+   axolotl, +, then Sessions, Dashboard and Settings -- the phone's tab bar on
+   its side -- and the link, the theme and the language at its foot. Beside it
+   one list of what is in the place the rail has lit: a session's views, the
+   sessions; the Dashboard, its sections, the one in sight lit; Settings, its
+   sections under their groups, each saying how it stands (app.js paintList).
+   Then the page, whose head, body and message box share one frame --lane wide,
+   so every page starts at one left edge and none at its own width. */
+@media (min-width: 1024px) {
+  .app { --lane: 1040px; }
+  .column {
+    position: relative; width: 344px; padding: 0;
+    display: grid; grid-template-columns: 72px minmax(0, 1fr); grid-template-rows: 60px minmax(0, 1fr) auto 52px;
+  }
+  .column::before { content: ""; grid-area: 1 / 1 / -1 / 2; background: var(--inset); border-right: 1px solid var(--seam); }
+  .column-head, .gateway { display: contents; }
+  .wordmark { grid-area: 1 / 1; align-self: center; justify-self: center; z-index: 1; }
+  .wordmark .word { display: none; }
+  .wordmark .axo { width: 38px; height: 32px; }
+  #fold { grid-area: 1 / 2; align-self: center; justify-self: end; margin-right: 12px; z-index: 1; }
+  .railed {
+    grid-area: 2 / 1; z-index: 1; min-height: 0; margin: 0; padding: 4px 0 0; border: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .railed > .row {
+    width: 60px; flex-direction: column; align-items: center; gap: 5px; padding: 9px 0 7px;
+    border-radius: var(--r-control); font: 500 var(--fs-micro)/1 var(--sans); color: var(--tertiary);
+  }
+  .railed > .row:hover { color: var(--primary); background: var(--hover); }
+  .railed > .row[aria-current="page"] { color: var(--primary); background: var(--selected); }
+  .railed > .row[aria-current="page"]::before { left: -6px; width: 3px; height: 18px; border-radius: var(--r-chip); }
+  .railed > .row .name { flex: none; overflow: visible; }
+  .railed > .row .plus { width: 19px; height: 19px; }
+  .railed > .row .reading { display: none; }
+  .railed > .row .badge { position: absolute; top: 3px; left: calc(50% + 5px); }
+  #sessions-tab { display: flex; }
+  #new-session {
+    width: 40px; height: 40px; min-height: 0; margin: 0 0 10px; padding: 0; flex-direction: row; justify-content: center;
+    background: var(--primary); color: var(--void);
+  }
+  #new-session:hover { background: var(--solid-hover); color: var(--void); }
+  #new-session .plus { width: 18px; height: 18px; }
+  .looks {
+    grid-area: 3 / 1 / 5 / 2; z-index: 1; align-self: end; justify-self: center;
+    flex-direction: column; align-items: center; gap: 4px; margin: 0 0 12px;
+  }
+  .looks .pop { left: calc(100% + 28px); right: auto; bottom: 0; }
+  .gateway .where { grid-area: 4 / 2; padding: 0 20px; border-top: 1px solid var(--seam); }
+  /* The list: the sessions, or the place's sections; its head the height of the page's. */
+  .group { grid-area: 1 / 2 / 4 / 3; margin: 0; padding: 0 20px; min-height: 0; }
+  .group-head { height: 60px; flex: none; margin: 0 -20px 12px; padding: 0 52px 0 20px; border-bottom: 1px solid var(--seam); }
+  .group-head .micro { font: 600 var(--fs-title)/1.3 var(--sans); letter-spacing: 0; text-transform: none; color: var(--primary); }
+  #app:is([data-pane="dashboard"], [data-pane="control"]) .group { display: none; }
+  .place { grid-area: 1 / 2 / 4 / 3; min-height: 0; display: flex; flex-direction: column; padding: 0 12px 16px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--seam-lit) transparent; }
+  .place[hidden] { display: none; }
+  .place-head {
+    height: 60px; flex: none; display: flex; align-items: center; gap: 12px;
+    margin: 0 -12px 10px; padding: 0 52px 0 20px; border-bottom: 1px solid var(--seam);
+  }
+  .place-head h2 { margin: 0; font: 600 var(--fs-title)/1.3 var(--sans); color: var(--primary); }
+  .place-rows { display: flex; flex-direction: column; gap: 2px; }
+  .place-rows .micro { margin: 16px 10px 6px; color: var(--tertiary); }
+  .place-rows .micro:first-child { margin-top: 6px; }
+  .place-row {
+    display: flex; align-items: center; gap: 10px; width: 100%; height: 36px; padding: 0 10px;
+    border-radius: var(--r-control); font-size: var(--fs-body); color: var(--secondary); text-align: left;
+  }
+  .place-row:hover { color: var(--primary); background: var(--hover); }
+  .place-row[aria-current="page"] { color: var(--primary); background: var(--selected); }
+  .place-row > svg { flex: none; color: var(--tertiary); }
+  .place-row .name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .place-row .reading { max-width: 50%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .place-row .reading:empty { display: none; }
+  .place-row .reading[data-tone="warn"] { color: var(--accent); }
+  .place-row .reading[data-tone="danger"] { color: var(--danger-lit); }
+  /* Folded, the list goes and the rail stays. */
+  .app.folded .column { display: grid; width: 72px; grid-template-columns: 72px 0; }
+  .app.folded :is(.group, .place, .gateway .where, #fold) { display: none; }
+  /* The page's one frame: the head, its rule, every place's body and the box. */
+  .strip { width: 100%; max-width: var(--lane); height: 60px; margin: 0 auto; }
+  .slab > .rule { width: 100%; max-width: var(--lane); margin: 0 auto; }
+  .observe .lane { max-width: var(--lane); }
+  .opener { width: 100%; max-width: var(--lane); margin: 0 auto; align-items: stretch; justify-content: flex-start; padding-top: 48px; }
+  .opener > * { max-width: none; }
+  .opener .display { text-align: left; }
+  /* The list holds the Dashboard's sections, so its bar holds only the range. */
+  .dashboard .dash-jumps { display: none; }
+}

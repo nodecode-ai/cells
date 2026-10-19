@@ -83,6 +83,7 @@ export const ZH = {
   "Busiest {day} around {hour}": "最忙：{day} {hour} 前后",
   "Earlier": "更早",
   "Open on another phone": "在另一部手机上打开",
+  "Overview": "概览",
   "Paused": "已暂停",
   "Peak {day}, {amount}": "峰值：{day}，{amount}",
   "Running": "运行中",

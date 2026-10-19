@@ -29,6 +29,9 @@ const LABELS = Object.fromEntries(TABS);
 // of its own under the way back, where a wide window has the strip of tabs (ten
 // of them wrap into three rows on a phone).
 export const PHONE = matchMedia("(max-width: 720px)");
+// A wide window -- app.css's rail and list, 1024 px and up -- has the same list
+// beside the rail, the open section lit, and no strip of tabs over the page.
+export const WIDE = matchMedia("(min-width: 1024px)");
 const GROUPS = [[t("This machine"), ["gateway", "logs"]], [t("What it runs"), ["settings", "cells", "mcp", "index"]],
   [t("Who reaches it"), ["channels", "link", "profiles", "jobs"]]];
 const MARKS = { gateway: "server", logs: "lines", settings: "sliders", cells: "grid", index: "book", mcp: "plug",
@@ -229,15 +232,27 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     if (shown && c.tab === "cells") quietRedraw();
   }
 
+  // What the list reads to say how every section stands (glance).
+  const listReads = () => Promise.all([read("service", "/api/gateway/service"), read("identity", "/api/gateway/identity"),
+    read("backups", "/api/gateway/backups"), read("model", "/api/gateway/model"), read("cells", "/api/gateway/cells"),
+    read("channels", "/api/channels"), read("jobs", "/api/cron/jobs"), read("servers", "/api/mcp"),
+    read("profiles", "/api/gateway/profiles"), access.load()]);
+  // A wide window's list beside the open section: read again at most every half
+  // minute, never waited on, drawn as it lands.
+  let listAt = 0;
+  function readList() {
+    if (Date.now() - listAt < 30000) return;
+    listAt = Date.now();
+    listReads().then(() => { if (shown && WIDE.matches) quietRedraw(); });
+  }
+
   async function load() {
     if (atHome()) {
-      await Promise.all([read("service", "/api/gateway/service"), read("identity", "/api/gateway/identity"),
-        read("backups", "/api/gateway/backups"), read("model", "/api/gateway/model"), read("cells", "/api/gateway/cells"),
-        read("channels", "/api/channels"), read("jobs", "/api/cron/jobs"), read("servers", "/api/mcp"),
-        read("profiles", "/api/gateway/profiles"), access.load()]);
+      await listReads();
       if (shown && atHome()) quietRedraw();
       return;
     }
+    if (WIDE.matches) readList();
     const tab = c.tab;
     if (tab === "gateway") {
       await Promise.all([read("service", "/api/gateway/service"), read("identity", "/api/gateway/identity"),
@@ -1315,7 +1330,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     const bar = el("div", "dash-bar");
     // The strip names the place (Control, or Control / its tab, the way back on a
     // phone); a wide window adds the tabs here, a phone the list of its sections.
-    if (!phone) {
+    if (!phone && !WIDE.matches) {
       const tabs = el("div", "scope ctl-tabs");
       tabs.setAttribute("role", "tablist");
       for (const [id, label] of TABS) {
@@ -1558,7 +1573,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
 
   // A wide window and a phone draw the pane apart: a turn of the phone, or a
   // window drawn narrow, draws it again as the width now asks.
-  PHONE.addEventListener("change", () => {
+  for (const width of [PHONE, WIDE]) width.addEventListener("change", () => {
     if (!shown) return;
     redraw();
     load();
@@ -1568,6 +1583,14 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
 
   return {
     draw, click, input, submit,
+    // The wide window's list: each group's label and its sections, each with its
+    // mark, its name, how it stands ([words, tone], glance) and whether it is open.
+    places() {
+      return GROUPS.map(([label, ids]) => [label, ids.map((id) => {
+        const [words, tone] = glance(id);
+        return { id, label: LABELS[id], mark: MARKS[id], words, tone, open: id === c.tab };
+      })]);
+    },
     // NULL for a phone's list, so its address names no tab.
     get tab() { return atHome() ? null : c.tab; },
     // The open tab's name for the strip's way back, NULL on a phone's list.

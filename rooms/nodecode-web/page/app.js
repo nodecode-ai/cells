@@ -11,8 +11,8 @@
 
 import { diffHtml, markdown } from "./md.js";
 import { t, translatePage } from "./i18n.js";
-import { drawRun, drawInspector, drawDashboard, drawTimeline, turnSpan, meterOf, ms, usd, plural, bytes, RANGES, INSPECTOR_TABS, ORIGIN_WORDS, PHONE } from "./observe.js";
-import { makeControl } from "./control.js";
+import { drawRun, drawInspector, drawDashboard, drawTimeline, turnSpan, meterOf, ms, usd, plural, bytes, RANGES, JUMPS, INSPECTOR_TABS, ORIGIN_WORDS, PHONE } from "./observe.js";
+import { makeControl, WIDE } from "./control.js";
 import { qrCode } from "./access.js";
 import { makeFiles, putFile } from "./files.js";
 import { icon, iconButton } from "./icons.js";
@@ -2521,6 +2521,59 @@ function paintPlace() {
   title.replaceChildren(back, sep, here);
 }
 
+// The wide window's list (app.css: 1024 px and up), beside the rail: what is
+// in the place the rail has lit. A session's views keep the column's Sessions;
+// the Dashboard lists its sections, the one in sight lit; Settings lists every
+// section under its group, saying how it stands, the open one lit. The rail
+// lights Sessions for every view of a session.
+function paintList() {
+  const list = $("place");
+  const shown = WIDE.matches && board();
+  if (shown) $("sessions-tab").removeAttribute("aria-current");
+  else $("sessions-tab").setAttribute("aria-current", "page");
+  list.hidden = !shown;
+  if (!shown) { list.replaceChildren(); return; }
+  const dash = state.pane === "dashboard";
+  const head = el("div", "place-head");
+  head.append(el("h2", "", dash ? t("Dashboard") : t("Settings")),
+    el("span", "reading", dash ? RANGES.find(([id]) => id === state.range)?.[1] || "" : ""));
+  const rows = el("div", "place-rows");
+  const row = (label, data, { mark, words = "", tone = "", open = false } = {}) => {
+    const go = el("button", "place-row");
+    go.type = "button";
+    Object.assign(go.dataset, data);
+    if (open) go.setAttribute("aria-current", "page");
+    if (mark) go.append(icon(mark, 15));
+    const stands = el("span", "reading", words);
+    if (tone) stands.dataset.tone = tone;
+    go.append(el("span", "name", label), stands);
+    return go;
+  };
+  if (dash) rows.append(row(t("Overview"), { jump: "top" }), ...JUMPS.map(([id, label]) => row(label, { jump: id })));
+  else for (const [label, sections] of control.places()) {
+    rows.append(el("h3", "micro", label), ...sections.map((s) => row(s.label, { tab: s.id }, s)));
+  }
+  list.replaceChildren(head, rows);
+  if (dash) spyList();
+}
+
+// The Dashboard's section in sight: the nearest whose top has passed under the
+// sticky bar, lit in the wide window's list; above the first, the overview.
+function spyList() {
+  if (state.pane !== "dashboard" || $("place").hidden) return;
+  const line = $("observe").getBoundingClientRect().top + 80;
+  let lit = "top";
+  let best = -Infinity;
+  for (const [id] of JUMPS) {
+    const top = $(`dash-${id}`)?.getBoundingClientRect().top;
+    if (top !== undefined && top <= line && top > best) { best = top; lit = id; }
+  }
+  for (const go of $("place").querySelectorAll("[data-jump]")) {
+    if (go.dataset.jump === lit) go.setAttribute("aria-current", "page");
+    else go.removeAttribute("aria-current");
+  }
+}
+
 const control = makeControl({
   api, download, toast, openSession: select, isOpen: () => state.open, folder: hereFolder,
   redraw: () => { renderObserve(); paintLink(); paintPlace(); }, onTab: () => { writeLink(); paintPlace(); },
@@ -2570,6 +2623,7 @@ function renderObserve() {
   const pane = state.pane;
   ledger.hidden = pane !== "chat";
   placeJump();
+  paintList();
   $("observe").hidden = pane === "chat";
   $("observe").setAttribute("aria-label", pane === "control" ? t("Settings") : pane === "files" ? t("The session's folder") : t("Where the time and money went"));
   const lane = $("observe-lane");
@@ -2771,6 +2825,7 @@ function renderHead() {
     paintPlace();
     $("context").hidden = true;
   }
+  paintList();
   $("views").hidden = !state.current || usage;
   for (const sw of $("views").children) sw.setAttribute("aria-checked", String(sw.dataset.view === state.pane));
   const meter = !usage && state.timeline?.session === state.current ? meterOf(state.timeline.data) : null;
@@ -3053,9 +3108,10 @@ function renderSessions() {
   // Show all beside it; a scope that hides nothing reads as the whole count.
   const all = own(state.sessions).length;
   const narrowed = scope === "folder" && own(inHere).length < all;
-  $("count").textContent = String(all);
+  // Until the list is first read there is no count: an empty head, not a 0.
+  $("count").textContent = state.listed ? String(all) : "";
   $("count").hidden = narrowed;
-  $("filter").placeholder = t("Search {n}", { n: all.toLocaleString() });
+  $("filter").placeholder = state.listed ? t("Search {n}", { n: all.toLocaleString() }) : t("Search");
   $("scope-line").hidden = !narrowed;
   $("scope-said").textContent = narrowed ? t("{n} of {m} · {folder}", { n: own(inHere).length, m: all, folder: folderName(here) }) : "";
   $("scope-said").title = narrowed ? home(here) : "";
@@ -4971,9 +5027,32 @@ $("sources").addEventListener("click", (event) => {
 // A phone's Sessions tab: from Dashboard or Control it opens the Sessions page;
 // on it, the list goes back to its top.
 $("sessions-tab").addEventListener("click", () => {
+  // A wide window's rail: Sessions brings the list back beside the session it
+  // left (or a new one); on it, the list goes back to its top.
+  if (WIDE.matches) {
+    if (app.classList.contains("folded")) setFolded(false);
+    if (board()) setPane("chat");
+    else $("sessions").scrollTop = 0;
+    return;
+  }
   if (app.classList.contains("column-open")) $("sessions").scrollTop = 0;
   else app.classList.add("column-open");
 });
+$("place").addEventListener("click", (event) => {
+  const go = event.target.closest(".place-row");
+  if (!go) return;
+  if (go.dataset.tab) setPane("control", go.dataset.tab);
+  else if (go.dataset.jump === "top") $("observe").scrollTo({ top: 0, behavior: "smooth" });
+  else if (go.dataset.jump) $(`dash-${go.dataset.jump}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+let spying = false;
+$("observe").addEventListener("scroll", () => {
+  if (spying || state.pane !== "dashboard") return;
+  spying = true;
+  requestAnimationFrame(() => { spying = false; spyList(); });
+}, { passive: true });
+// Across 1024 px the list beside the rail comes or goes.
+WIDE.addEventListener("change", paintList);
 $("prune").addEventListener("click", () => setPruning(!state.prune));
 $("prune-form").addEventListener("click", (event) => {
   const p = state.prune;

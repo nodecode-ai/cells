@@ -824,7 +824,7 @@ export function meterOf(data) {
 
 export const RANGES = [["today", t("Today")], ["7d", t("7 days")], ["30d", t("30 days")], ["all", t("All")]];
 const RANGE_WORDS = { today: t("Today"), "7d": t("This week"), "30d": t("These 30 days"), all: t("All told") };
-const JUMPS = [["spend", t("Spend")], ["models", t("Models")], ["work", t("Work")], ["cost", t("Cost")], ["problems", t("Problems")], ["sessions", t("Sessions")], ["calls", t("Calls")]];
+export const JUMPS = [["spend", t("Spend")], ["models", t("Models")], ["work", t("Work")], ["cost", t("Cost")], ["problems", t("Problems")], ["sessions", t("Sessions")], ["calls", t("Calls")]];
 const DAYS = [t("Mon"), t("Tue"), t("Wed"), t("Thu"), t("Fri"), t("Sat"), t("Sun")];
 const tail = (dir) => (dir || "").split("/").filter(Boolean).slice(-2).join("/") || "—";
 // ONE and MANY are the counted word's two forms: a bare word ("session"),

@@ -862,12 +862,48 @@ brace that closes it at the start of a line, or NIL."
     (is (search "matchMedia(\"(max-width: 720px)\")" js) "at the page's own phone width")
     (dolist (tab '("gateway" "logs" "settings" "cells" "index" "mcp" "profiles" "channels" "link" "jobs"))
       (is (search (format nil "\"~a\"" tab) groups) (format nil "the list reaches ~a" tab)))
-    (is (search "if (!phone) {" draw) "a phone draws no strip of tabs")
+    (is (search "if (!phone && !WIDE.matches) {" draw) "a phone draws no strip of tabs, nor a wide window, whose list holds them")
     (is (search "if (atHome()) {" draw) "but the list, until a section is opened")
     (is (search "get tab() { return atHome() ? null : c.tab; }" js) "the list's address names no tab")
     (is (search "control.moves(tab)" (web-js-function app "setPane")) "so Back, or the column's Control, takes a phone to the list")
     (is (equal "54px" (web-css-value css ".ctl-go" "min-height")) "a section's row is a finger tall")
     (is (equal "fixed" (web-css-value css ".ctl-phone .confirm" "position")) "a question rises from the bottom")))
+
+;; A wide window is one skeleton on every page (the desktop audit's variant B,
+;; the operator, 2026-10-19: "Land B"). Measured before it at 1440 and 1920 px:
+;; three left edges, three content widths (720, 880, 1120), four head layouts,
+;; Settings' ten tabs in one flat strip, the column's head reading Sessions 0
+;; while the list was still being read. From 1024 px: a rail (the phone's tabs
+;; on their side), beside it one list of what is in the place the rail lit (the
+;; sessions; the Dashboard's sections; Settings' sections under their groups,
+;; saying how each stands), and a page whose head, body and box share one frame.
+(deftest web-cell-a-wide-window-has-a-rail-a-list-and-one-frame ()
+  (let* ((html (web-page-text "index.html"))
+         (app (web-page-text "app.js"))
+         (control (web-page-text "control.js"))
+         (text (web-page-text "app.css"))
+         (at (search "/* --- a wide window: the rail, its list, one frame" text))
+         (block (and at (subseq text at (search (format nil "~%}~%") text :start2 at))))
+         (list (web-js-function app "paintList")))
+    (is block "a wide window has its block")
+    (when block
+      (is (search "@media (min-width: 1024px)" block) "from 1024 px, where the column stops being a sheet")
+      (is (search "grid-template-columns: 72px minmax(0, 1fr);" block) "a 72 px rail beside the list")
+      (is (search "flex-direction: column; align-items: center; gap: 6px;" block) "the places stand down the rail")
+      (is (search "#sessions-tab { display: flex; }" block) "Sessions is one of them, as on a phone")
+      (is (search "#app:is([data-pane=\"dashboard\"], [data-pane=\"control\"]) .group { display: none; }" block) "a board's list stands where the sessions were")
+      (is (search ".app { --lane: 1040px; }" block) "one frame's width")
+      (dolist (rule '(".strip { width: 100%; max-width: var(--lane);" ".slab > .rule { width: 100%; max-width: var(--lane);"
+                      ".observe .lane { max-width: var(--lane); }" ".opener { width: 100%; max-width: var(--lane);"))
+        (is (search rule block) (format nil "the frame holds ~a" (subseq rule 0 (position #\{ rule)))))
+      (is (search ".dashboard .dash-jumps { display: none; }" block) "the Dashboard's sections are the list's, not a menu's"))
+    (is (search "id=\"place\"" (subseq html (search "id=\"column\"" html) (search "class=\"slab\"" html))) "the list is the column's")
+    (is (search "export const WIDE = matchMedia(\"(min-width: 1024px)\");" control) "control.js names the same width")
+    (is (search "const [words, tone] = glance(id);" (subseq control (search "places() {" control))) "each section says how it stands, as the phone's list does")
+    (is (search "control.places()" list) "Settings' list is Control's")
+    (is (search "JUMPS.map(" list) "the Dashboard's is its sections")
+    (is (search "if (board()) setPane(\"chat\");" app) "the rail's Sessions goes back to the session")
+    (is (search "$(\"count\").textContent = state.listed ? String(all) : \"\";" app) "no count before the list is read")))
 
 ;; A page names its place once and opens with the one head.
 ;; The strip carries Control / the tab (Control the way back on a
