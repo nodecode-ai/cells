@@ -756,7 +756,7 @@ u1 Ana and u2 Bo named, as GUILD_CREATE would have named them."
         "a quiet entry that never held a word is dropped")
     (is (not (null (gethash 12 (ncd::voice-lane-utterances lane))) )
         "one still filling is not")
-    (is (null (nck:queue-pop (ncd::voice-lane-work-queue lane)))
+    (is (null (nck:queue-pop (ncd::voice-lane-work-queue lane) 0))
         "and neither becomes an ask")))
 
 (deftest channel-discord-voice-audio-that-never-opens-is-deafness ()
