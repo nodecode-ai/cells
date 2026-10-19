@@ -1,0 +1,40 @@
+// channels.email — the section ~/.nodecode/config.jsonc needs for this
+// adapter. Copy it in (a present section is enabled; "enabled": false
+// vetoes it), or say "set up email" to the agent, which writes it through
+// (config-set ...) and checks the login with (nck:probe "email").
+//
+// The password is never inline: name it by exactly one of password_env (an
+// environment variable) or password_file (a file holding it). Use an app
+// password, not the account's own.
+{
+  "channels": {
+    "email": {
+      // The bot's address. Answers come from it, and only mail sent To or Cc
+      // it is read -- a plus address of a mailbox you already have works.
+      "address": "you+bot@example.com",
+      "from_name": "Nodecode",
+      "password_file": "~/.nodecode/secrets/mail-app-password",
+      // The login, when it is not the address without its +tag.
+      // "username": "you@example.com",
+      // Servers default to imap.<domain>:993 and smtp.<domain>:465.
+      // "imap_host": "imap.example.com", "imap_port": 993,
+      // "smtp_host": "smtp.example.com", "smtp_port": 465,
+      // "mailbox": "INBOX",
+      // Must be non-empty: an answer runs with full host authority, so the
+      // lane never starts open to the world. An address, or @domain for
+      // everyone at exactly that domain.
+      "allowed_senders": ["you@example.com"],
+      // Whose word is standing policy in the channel.
+      "owner": ["you@example.com"],
+      // Answer only mail whose From domain the receiving server vouched for
+      // (DMARC, or DKIM/SPF aligned). false trusts the From line.
+      "require_auth": true,
+      // Only this server's Authentication-Results count (its authserv-id).
+      // "auth_server": "mx.example.com",
+      "poll_seconds": 30,
+      // After a restart, mail newer than this is still answered.
+      "catch_up_minutes": 60,
+      "max_megabytes": 25
+    }
+  }
+}
