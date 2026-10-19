@@ -72,6 +72,7 @@ is what a new cell is copied from.
 | Folder | What it does |
 | --- | --- |
 | [`nodecode-channel-discord`](rooms/nodecode-channel-discord) | **ships** Talk to nodecode through a Discord bot. |
+| [`nodecode-channel-email`](rooms/nodecode-channel-email) | Talk to Nodecode by email: a mailbox in, threaded replies out. |
 | [`nodecode-channel-kit`](rooms/nodecode-channel-kit) | **ships** Shared plumbing for the chat bots; comes with Discord or Telegram. |
 | [`nodecode-channel-matrix`](rooms/nodecode-channel-matrix) | Talk to Nodecode through a Matrix account; unencrypted rooms for now. |
 | [`nodecode-channel-slack`](rooms/nodecode-channel-slack) | Talk to Nodecode through a Slack app. |
