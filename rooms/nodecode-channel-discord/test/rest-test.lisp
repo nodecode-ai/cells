@@ -603,6 +603,23 @@ its section included."
         when (eql type 10) collect (gethash "content" part)
         when (eql type 9) collect (nlk:json-value (aref (gethash "components" part) 0) :string "content")))
 
+(deftest channel-discord-a-failed-card-shows-every-line-of-its-note ()
+  ;; A walked failover chain's failure is a model a line; each is a quoted
+  ;; line of the card, and a long note takes its room from the model's words,
+  ;; never past Discord's 4000 characters.
+  (let* ((note (format nil "every model failed~%1. a/m: refused~%2. b/n · HTTP 400: gone"))
+         (texts (card-texts (list :state :failed :elapsed "30s" :headline "Failed at 30s" :note note))))
+    (is-carrying (text (format nil "~{~a~%~}" texts))
+      "> every model failed" "> 1. a/m: refused" "> 2. b/n · HTTP 400: gone"))
+  (let* ((long (format nil "~{~a~^~%~}" (loop repeat 6 collect (make-string 280 :initial-element #\x))))
+         (said (make-string 1300 :initial-element #\y))
+         (steps (loop repeat 6 collect (list :done (make-string 190 :initial-element #\z) "1s")))
+         (texts (card-texts (list :state :failed :elapsed "30s" :headline "Failed at 30s"
+                                  :note long :said said :steps steps :meta "m"))))
+    (is (<= (reduce #'+ texts :key #'length) 4000) "the whole card stays inside Discord's cap")
+    (is (some (lambda (text) (search (make-string 280 :initial-element #\x) text)) texts)
+        "a long note line shows whole")))
+
 (deftest channel-discord-a-card-is-components ()
   ;; A turn's card posts as one container of components (IS_COMPONENTS_V2),
   ;; no words and no embeds: its accent the phase; the state and the time in
@@ -888,13 +905,15 @@ its section included."
                                          :steps '((:failed "Eval failed" "1s" nil)))))))))
 
 
-(deftest channel-discord-a-card-note-is-one-line ()
-  ;; A failed turn's detail is the condition's whole rendering. The card draws
-  ;; its first line, as CARD-TEXT does: the multi-line block a Lisp condition
-  ;; prints reached a real card and read as a traceback in the room.
-  (let* ((note (format nil "The bounding indices 0 and 300 are bad for a sequence of length 61.~%See also:~%  The ANSI Standard, Glossary entry for \"bounding index designator\""))
-         (card (list :state :failed :elapsed "2m49s" :task "Update" :note note))
-         (texts (card-texts card)))
+(deftest channel-discord-a-card-note-quotes-each-line ()
+  ;; A failed turn's detail is the condition's message without SBCL's `See
+  ;; also:' references (FAIL-TURN drops them where the fact is written). The
+  ;; card quotes each of its lines, as CARD-TEXT does: a one-line note is one
+  ;; quoted line, and no line of the note goes unquoted.
+  (let* ((one (list :state :failed :elapsed "2m49s" :task "Update"
+                    :note "The bounding indices 0 and 300 are bad for a sequence of length 61."))
+         (two (list :state :failed :elapsed "2m49s" :task "Update"
+                    :note (format nil "every model failed~%1. a/m: refused"))))
     (is (equal "> The bounding indices 0 and 300 are bad for a sequence of length 61."
-               (second texts)))
-    (is (null (find #\Newline (second texts))))))
+               (second (card-texts one))))
+    (is (equal (format nil "> every model failed~%> 1. a/m: refused") (second (card-texts two))))))

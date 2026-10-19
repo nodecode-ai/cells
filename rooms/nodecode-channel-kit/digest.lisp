@@ -80,9 +80,13 @@ card.")
 
 ;;; The turn's own words are not folded in — a round that spoke leaves as its
 ;;; own message, and its answer as the answer.
-(defparameter +digest-note-cap+ 200
-  "Characters a card's notice may take: a terminal turn's detail, a
+(defparameter +digest-note-cap+ 300
+  "Characters a line of a card's notice may take: a terminal turn's detail, a
 failover's note.")
+
+(defparameter +digest-note-rows+ 6
+  "Lines of a card's notice: a walked failover chain's failure is a headline
+and a model a line.")
 
 ;;; The card shows the thought's headline and the details its newest whole
 ;;; sentences, so the digest keeps a few of those and drops from the front —
@@ -670,11 +674,26 @@ step's number follow.")
                     digest.started-at-ms)))
 
 (defun digest-note-line (note cap &aux (line (nlk:one-line (nlk:first-line (or note "")))))
-  "NOTE flattened to one line and capped for a card: its first line, which
-is the message. What a rendering puts after a newline — a Lisp condition's
-`See also: The ANSI Standard…' block, a traceback — is boilerplate a card
-never shows; the turn's record keeps it whole."
+  "NOTE flattened to one line and capped: its first line, for a one-line
+notice (a post that failed). A card shows every line (DIGEST-NOTE-LINES)."
   (nlk:clip line cap))
+
+(defun digest-note-lines (note)
+  "NOTE as a card's notice: each of its lines, flattened and capped at
++DIGEST-NOTE-CAP+, at most +DIGEST-NOTE-ROWS+, then how many more the
+turn's record keeps."
+  ;; The card showed the first line alone, and a walked failover chain's
+  ;; failure is a headline over a model a line, each with what its provider
+  ;; said: every model but the headline was hidden, the one that failed first
+  ;; among them.
+  (let* ((lines (loop for line in (uiop:split-string (or note "") :separator '(#\Newline))
+                      for flat = (nlk:one-line line)
+                      when (plusp (length flat)) collect (nlk:clip flat +digest-note-cap+)))
+         (shown (subseq lines 0 (min (length lines) +digest-note-rows+)))
+         (more (- (length lines) (length shown))))
+    (if (plusp more)
+        (append shown (list (format nil "… ~d more line~:p in the turn's record" more)))
+        shown)))
 
 (defun pending-lines (digest)
   "The ⌎ rows of the input parked behind DIGEST's turn, in promotion order,
@@ -810,7 +829,7 @@ record a stopped or failed turn leaves in the room. Its pictures are left out."
       (when (and earlier (plusp earlier)) (format out "~%+~d earlier" earlier))
       (loop for (mark words time) in steps
             do (format out "~%~a ~a · ~a" (step-mark mark) words time))
-      (when note (format out "~%> ~a" (digest-note-line note +digest-note-cap+)))
+      (dolist (line (and note (digest-note-lines note))) (format out "~%> ~a" line))
       (when meta (format out "~%~a" meta))
       (dolist (line pending) (format out "~%~a" line)))))
 

@@ -170,21 +170,26 @@ ATTACHMENTS)."
                                                 (and thought (format nil "*~a*" (discord-escape thought)))))))
              (description (format nil "~{~a~^~%~}"
                                   (remove nil (list (and (plusp (length opening)) opening)
-                                                    ;; One line, capped, exactly as CARD-TEXT draws it: a
-                                                    ;; failure's rendering can run to a Lisp traceback's
-                                                    ;; several lines, and a card is a glance.
-                                                    (and note (format nil "> ~a"
-                                                                      (discord-escape
-                                                                       (nck:digest-note-line note nck:+digest-note-cap+))))))))
+                                                    ;; Every line of the note, as CARD-TEXT draws it
+                                                    ;; (DIGEST-NOTE-LINES): a walked failover chain's
+                                                    ;; failure is a model a line, each with what its
+                                                    ;; provider said.
+                                                    (and note (format nil "~{> ~a~^~%~}"
+                                                                      (mapcar #'discord-escape
+                                                                              (nck:digest-note-lines note))))))))
+             ;; The description takes up to 1100 characters; what it takes past
+             ;; 500 comes off what the model said, so the card's text stays
+             ;; inside Discord's 4000.
+             (description-cap (min 1100 (max 500 (length description))))
              (parts
                (append
                 (list (text-display (format nil "-# ~(~a~)~@[ · ~a~]~%### ~a" state
                                             (and (or working (and task (not (eq state :queued)))) elapsed)
                                             (nlk:clip (discord-escape (or task headline)) 200 :ellipsis "…"))
                                     300))
-                (and (plusp (length description)) (list (text-display description 500)))
+                (and (plusp (length description)) (list (text-display description description-cap)))
                 ;; The model's own words, its markdown drawn as it wrote it.
-                (and said (list (text-display said 1300)))
+                (and said (list (text-display said (- 1300 (- description-cap 500)))))
                 (and earlier (plusp earlier) (list (text-display (format nil "-# +~d earlier" earlier) 40)))
                 (loop for (mark words time press) in steps
                       for row = (text-display (format nil "~a ~a · ~a" (card-mark mark) (discord-escape words) time)

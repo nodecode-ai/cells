@@ -156,6 +156,21 @@ it now" (nck:digest-final-text digest)))
   (nck:digest-note-terminal digest :cancelled "stopped by mike" 61000)
   (is-carrying (text (card-at digest 61000)) "Stopped at 61s" "> stopped by mike"))
 
+(deftest channel-digest-a-failure-shows-every-line-of-its-detail (with-digest (:evals 1))
+  ;; A walked failover chain fails with a headline over a model a line, each
+  ;; with what its provider said: the card showed the headline alone.
+  (nck:digest-note-round digest "partial narration")
+  (nck:digest-note-terminal digest :failed
+                            (format nil "every model failed · /models picks another model~%1. claude-code/opus: the provider refused to answer (finish reason refusal)~%~%2. oc/dsf · HTTP 400: Upstream request failed: Model is unavailable.")
+                            30000)
+  (is-carrying (text (card-at digest 30000))
+    "> every model failed · /models picks another model"
+    "> 1. claude-code/opus: the provider refused to answer (finish reason refusal)"
+    ("> 2. oc/dsf · HTTP 400: Upstream request failed: Model is unavailable." "a blank line is skipped, not the end"))
+  (is (equal (list "a" "b" "c" "d" "e" "f" "… 3 more lines in the turn's record")
+             (nck:digest-note-lines (format nil "a~%b~%c~%d~%e~%f~%g~%h~%i")))
+      "past the row cap, the card says how many more the record keeps"))
+
 (deftest channel-digest-failure-without-a-card (with-digest ())
   ;; The fast failure: a rejected admission dies before earning a card. It
   ;; still has to say so, so the terminal plan CREATES the card.
