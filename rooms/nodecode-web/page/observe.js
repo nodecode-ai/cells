@@ -1227,7 +1227,7 @@ const SHEETS = {
       if (identity) rows.push(prow({ lead: dot(""), name: "nodecode", value: identity.version ? `v${identity.version}` : "", detail: uptime(identity.started_at) }));
       for (const fact of facts) {
         const lead = dot(fact.tone === "ok" ? "" : fact.tone === "danger" ? "fail" : "act");
-        lead.dataset.tone = fact.tone;
+        if (lead.dataset) lead.dataset.tone = fact.tone; // a healthy fact's lead is no mark (dot)
         rows.push(prow({ lead, name: fact.label, tone: fact.tone === "danger" ? "bad" : "", detail: oneLine(fact.detail), key: `now:${fact.label}`, open,
           more: fact.detail || fact.remedy ? [el("p", "p-whole", fact.detail || ""), fact.remedy ? el("p", "p-whole", fact.remedy) : null] : null }));
       }

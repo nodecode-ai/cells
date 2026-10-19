@@ -304,9 +304,14 @@ code, pre, kbd { font-family: var(--mono); }
 }
 .column .word:hover { color: var(--primary); }
 .column-head { height: 56px; flex: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.wordmark { display: flex; color: var(--secondary); transition: color 130ms; }
-.wordmark:hover { color: var(--primary); }
-.wordmark svg { shape-rendering: crispEdges; }
+/* The mark: the site's axolotl, then the name, both in the text's own colour --
+   white on the dark ground -- the animal's steps one opacity each, its eyes cut
+   out (index.html's #axolotl, drawn once). */
+.wordmark { display: flex; align-items: center; gap: 9px; color: var(--primary); }
+.wordmark .word { shape-rendering: crispEdges; }
+.axo { flex: none; display: block; }
+.defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.strip-mark, #unfold .chev { display: none; }
 
 .row {
   position: relative; display: flex; align-items: baseline; gap: 10px; width: 100%;
@@ -1425,7 +1430,7 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
   .dash-door .viz { display: flex; justify-content: flex-end; align-items: center; width: 78px; }
   .dash-door .viz .num { font: var(--fs-detail) var(--mono); color: var(--primary); }
   .dash-door .chev { font-size: var(--fs-title); line-height: 1; color: var(--tertiary); }
-  .glance-now { grid-template-columns: 5px minmax(0, 1fr) 10px; margin-top: 8px; border-bottom: 0; }
+  .glance-now { grid-template-columns: minmax(0, 1fr) 10px; margin-top: 8px; border-bottom: 0; }
   .glance-bars { display: flex; align-items: flex-end; gap: 1.5px; width: 78px; height: 22px; }
   .glance-rows { display: grid; gap: 3px; width: 78px; }
   .glance-rows i { display: block; height: 3px; border-radius: var(--r-chip); background: var(--bar-quiet); }
@@ -2496,22 +2501,28 @@ button.p-row:active { background: var(--field-lit); }
    the language and Link. */
 @media (max-width: 720px) {
   .column, .app.folded .column {
-    width: 100vw; display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-rows: 64px repeat(6, auto) minmax(0, 1fr); column-gap: 12px; border-right: 0;
+    width: 100vw; display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px;
+    grid-template-rows: 52px repeat(7, auto) minmax(0, 1fr); column-gap: 12px; border-right: 0;
     padding: 0 max(16px, env(safe-area-inset-right)) calc(61px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   }
   .column-head, .group, .group-head { display: contents; }
-  .wordmark { grid-area: 1 / 1; align-self: center; }
-  .finder { grid-area: 1 / 2; align-self: center; margin: 0; }
-  .group-head .acts { grid-area: 1 / 3; align-self: center; margin: 0 -6px 0 0; }
-  .group-head .micro, #count, .column .gateway { display: none; }
-  .ses-scope-line { grid-area: 2 / 1 / 3 / -1; margin: 0 0 10px; }
-  #prune-form { grid-area: 3 / 1 / 4 / -1; }
-  .chips { grid-area: 4 / 1 / 5 / -1; margin: 0 -16px 8px 0; padding-right: 16px; }
-  .picking { grid-area: 5 / 1 / 6 / -1; }
-  #pick-confirm { grid-area: 6 / 1 / 7 / -1; }
-  #sessions-unread { grid-area: 7 / 1 / 8 / -1; }
-  .sessions { grid-area: 8 / 1 / 9 / -1; margin-right: -16px; padding: 4px 16px 84px 0; }
+  .wordmark { grid-area: 1 / 1; align-self: center; justify-self: start; }
+  .wordmark .word { display: none; }
+  .wordmark .axo { width: 35px; height: 30px; }
+  .group-head .micro {
+    grid-area: 1 / 2; align-self: center; justify-self: center; min-width: 0;
+    font: 600 var(--fs-title)/1.3 var(--sans); letter-spacing: 0; text-transform: none; color: var(--primary);
+  }
+  .group-head .acts { grid-area: 1 / 3; align-self: center; justify-self: end; margin: 0 -6px 0 0; }
+  .finder { grid-area: 2 / 1 / 3 / -1; margin: 0 0 12px; }
+  #count, .column .gateway { display: none; }
+  .ses-scope-line { grid-area: 3 / 1 / 4 / -1; margin: 0 0 10px; }
+  #prune-form { grid-area: 4 / 1 / 5 / -1; }
+  .chips { grid-area: 5 / 1 / 6 / -1; margin: 0 -16px 8px 0; padding-right: 16px; }
+  .picking { grid-area: 6 / 1 / 7 / -1; }
+  #pick-confirm { grid-area: 7 / 1 / 8 / -1; }
+  #sessions-unread { grid-area: 8 / 1 / 9 / -1; }
+  .sessions { grid-area: 9 / 1 / 10 / -1; margin-right: -16px; padding: 4px 16px 84px 0; }
   .sessions .row .name { font-size: var(--fs-body); }
   .railed {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; margin: 0; display: flex;
@@ -2539,6 +2550,56 @@ button.p-row:active { background: var(--field-lit); }
   .pop-part .micro { width: 100%; padding: 4px 10px 2px; color: var(--tertiary); }
   .pop-part .choice { flex: 1; }
   #ses-acts { min-width: 232px; }
+}
+
+/* --- variant A on a phone: one bar on every page ------------------------------
+   Every page's top is the Sessions page's bar: three slots, 52 px. Left, the
+   way back -- a session's to the Sessions page, a Control tab's to Control's
+   list -- or, on a top page, the mark; the middle, the page's name at the
+   title size, once (a session's lamp and verb under it, in the running green);
+   right, More. A session's views leave the bar for a full-width switch under
+   it, so its name keeps the width. The tabs along the foot stand on Dashboard
+   and Control as on Sessions; a session's foot is its message box. */
+@media (max-width: 720px) {
+  .strip {
+    height: auto; display: grid; gap: 0 8px;
+    grid-template-columns: 44px minmax(0, 1fr) 44px; grid-template-rows: 28px 24px auto;
+  }
+  .strip > :is(#unfold, .strip-mark) { grid-area: 1 / 1 / 3 / 2; align-self: center; justify-self: start; }
+  #unfold .chev { display: block; }
+  #unfold .side { display: none; }
+  .strip-mark { color: var(--primary); }
+  .strip-mark .axo { width: 35px; height: 30px; }
+  #app:is([data-pane="dashboard"], [data-pane="control"]) .strip > #unfold { display: none; }
+  #app:is([data-pane="dashboard"], [data-pane="control"]) .strip > .strip-mark { display: flex; }
+  #app .strip:has(.crumb) > .strip-mark { display: none; }
+  .title-block { grid-area: 1 / 2 / 2 / 3; align-self: end; justify-content: center; min-width: 0; }
+  .strip:has(> #status[hidden]) .title-block { grid-row: 1 / 3; align-self: center; }
+  .strip h1 { font: 600 var(--fs-title)/1.3 var(--sans); text-align: center; }
+  /* A Control tab: its crumb is the way back, its name the middle. */
+  .title-block:has(.crumb), .strip h1:has(> .crumb) { display: contents; }
+  .strip h1 .crumb { grid-area: 1 / 1 / 3 / 2; align-self: center; justify-self: start; min-width: 44px; margin: 0 0 0 -8px; padding: 0 0 0 14px; color: var(--tertiary); }
+  .strip h1 .crumb-word, .strip h1 .sep { display: none; }
+  .strip h1 .here { grid-area: 1 / 2 / 3 / 3; align-self: center; justify-self: center; max-width: 100%; }
+  .strip > .live { grid-area: 2 / 2 / 3 / 3; align-self: start; justify-self: center; max-width: 100%; margin-top: 2px; gap: 6px; color: var(--live); }
+  .strip .live > span { display: inline; }
+  .strip .live .led { background: var(--live); }
+  .strip > #more { grid-area: 1 / 3 / 3 / 4; align-self: center; justify-self: end; }
+  .strip > .views { grid-area: 3 / 1 / 4 / -1; margin: 6px 0 12px; }
+  .strip .views .view { flex: 1; justify-content: center; gap: 6px; padding: 0 10px; }
+  .strip .views .view span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+  /* The tabs on every top page. Shut, the column slides away and is gone once
+     it has; on Dashboard and Control it stays where it is, unseen but for its
+     tabs, so opening Sessions over them is a tab, not a slide. */
+  .column { visibility: hidden; transition: transform 180ms ease-out, visibility 0s 180ms; }
+  .app.column-open .column { visibility: visible; transition: transform 180ms ease-out; }
+  #app:is([data-pane="dashboard"], [data-pane="control"]):not(.column-open) .column { transform: none; transition: none; }
+  #app:is([data-pane="dashboard"], [data-pane="control"]):not(.column-open) .railed { visibility: visible; }
+  #app:is([data-pane="dashboard"], [data-pane="control"]):not(.column-open) #new-session { visibility: hidden; }
+  #app:is([data-pane="dashboard"], [data-pane="control"]):not(.column-open) #sessions-tab { color: var(--secondary); }
+  #app.column-open .railed > a.row[aria-current="page"] { color: var(--secondary); }
+  #app:is([data-pane="dashboard"], [data-pane="control"]) .observe .lane { padding-bottom: calc(109px + env(safe-area-inset-bottom)); }
+  .ctl-phone .ctl-logs [data-act="follow"] { bottom: calc(76px + env(safe-area-inset-bottom)); }
 }
 
 /* --- the page's foot: its drastic acts, under everything else (the standard's

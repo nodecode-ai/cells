@@ -1016,12 +1016,41 @@ brace that closes it at the start of a line, or NIL."
     (is phone "a phone has the page")
     (when phone
       (let ((block (subseq css phone)))
-        (is (search ".column-head, .group, .group-head { display: contents; }" block) "one bar on top: wordmark, search, More")
-        (is (search ".finder { grid-area: 1 / 2;" block) "the search in it")
+        (is (search ".column-head, .group, .group-head { display: contents; }" block) "one bar on top: the mark, the name, More")
+        (is (search ".group-head .micro {" block) "the page's name in it")
+        (is (search ".finder { grid-area: 2 / 1 / 3 / -1;" block) "the search under it")
         (is (search "position: fixed; left: 0; right: 0; bottom: 0;" block) "the places along the foot")
         (is (search "#new-session {" block) "New over them")
-        (is (search ".group-head .micro, #count, .column .gateway { display: none; }" block) "no second head, no footer")))
+        (is (search "#count, .column .gateway { display: none; }" block) "no count beside the name, no footer")))
     (is (search "#sessions-tab, .phone-only { display: none; }" css) "wider, the column stays a column")))
+
+;; Every page on a phone has the Sessions page's bar: three slots -- the way
+;; back or the mark, the page's name once, More -- the session's views a
+;; switch under it, and the tabs along the foot on Dashboard and Control too.
+;; The mark is the site's axolotl, drawn once, in the text's own colour.
+(deftest web-cell-every-page-on-a-phone-has-one-bar ()
+  (let* ((html (web-page-text "index.html"))
+         (app (web-page-text "app.js"))
+         (css (web-page-text "app.css"))
+         (place (web-js-function app "paintPlace"))
+         (at (search "/* --- variant A on a phone: one bar on every page" css))
+         (block (and at (subseq css at (search (format nil "~%}~%") css :start2 at)))))
+    (is (= 1 (length (cl-ppcre:all-matches-as-strings (cl-ppcre:quote-meta-chars "<symbol id=\"axolotl\"") html))) "the animal is drawn once")
+    (is (= 2 (length (cl-ppcre:all-matches-as-strings (cl-ppcre:quote-meta-chars "<use href=\"#axolotl\"/>") html))) "and stands in the column's head and in the strip")
+    (is (search "fill-opacity=\"0.4\"" html) "in the text's colour, a step an opacity")
+    (is (search "id=\"strip-home\"" html) "a top page's mark")
+    (is (search "[\"strip-home\", openNew]" app) "which opens a new session, as the column's does")
+    (is (search "el(\"span\", \"crumb-word\", t(\"Control\"))" place) "a Control tab's crumb keeps its word for a wide strip")
+    (is (search "else app.classList.add(\"column-open\");" app) "the Sessions tab opens the Sessions page from a board")
+    (is block "a phone has the bar")
+    (when block
+      (is (search "grid-template-columns: 44px minmax(0, 1fr) 44px;" block) "three slots")
+      (is (search ".strip h1 .crumb-word, .strip h1 .sep { display: none; }" block) "a tab named once")
+      (is (search ".strip > .views { grid-area: 3 / 1 / 4 / -1;" block) "the views a switch under the bar")
+      (is (search ":not(.column-open) .railed { visibility: visible; }" block) "the tabs on Dashboard and Control")
+      (is (search ":not(.column-open) #new-session { visibility: hidden; }" block) "New stays on Sessions"))
+    (is (search ".glance-now { grid-template-columns: minmax(0, 1fr) 10px;" css) "Right now's door: its words and its chevron, no lamp column")
+    (is (search "if (lead.dataset) lead.dataset.tone" (web-page-text "observe.js")) "a healthy fact's lead is no mark")))
 
 ;; The page draws from one scale.
 ;; Now :root holds the kit's scale -- six sizes, four corners, two

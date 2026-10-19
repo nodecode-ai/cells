@@ -2509,7 +2509,7 @@ function paintPlace() {
   const back = document.createElement("button");
   back.type = "button";
   back.className = "crumb";
-  back.append(icon("back", 16), t("Control"));
+  back.append(icon("back", 16), el("span", "crumb-word", t("Control")));
   back.addEventListener("click", () => control.back());
   const sep = document.createElement("span");
   sep.className = "sep";
@@ -4522,7 +4522,7 @@ function handOver(link) {
   setTimeout(() => link.setAttribute("href", place));
 }
 
-for (const [id, go] of [["home", openNew], ["usage-open", () => setPane("dashboard")], ["control-open", () => setPane("control")], ["link-open", () => setPane("control", "link")]]) {
+for (const [id, go] of [["home", openNew], ["strip-home", openNew], ["usage-open", () => setPane("dashboard")], ["control-open", () => setPane("control")], ["link-open", () => setPane("control", "link")]]) {
   const link = $(id);
   link.addEventListener("click", (event) => {
     if (!inPlace(event)) { handOver(link); return; }
@@ -4954,7 +4954,12 @@ $("sources").addEventListener("click", (event) => {
   if (chip) chooseSource(chip.dataset.value);
 });
 // A phone's Sessions tab is the page it stands on: a tap goes back to its top.
-$("sessions-tab").addEventListener("click", () => { $("sessions").scrollTop = 0; });
+// A phone's Sessions tab: from Dashboard or Control it opens the Sessions page;
+// on it, the list goes back to its top.
+$("sessions-tab").addEventListener("click", () => {
+  if (app.classList.contains("column-open")) $("sessions").scrollTop = 0;
+  else app.classList.add("column-open");
+});
 $("prune").addEventListener("click", () => setPruning(!state.prune));
 $("prune-form").addEventListener("click", (event) => {
   const p = state.prune;
