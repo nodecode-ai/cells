@@ -124,4 +124,9 @@ it over any platform, and the /channels status surface.")
    #:clear-all-channel-status #:channels-status-report
    #:register-channel-commands
    ;; host.lisp --- a host and its transport lap, started and stopped as one
-   #:run-host))
+   #:run-host
+   ;; board.lisp --- what a thread board says; the platform reads and draws
+   #:+board-sections+ #:+board-rows+ #:+board-done-close-ms+ #:+board-quiet-close-ms+
+   #:board-state #:board-close-p #:board-age #:board-when #:board-question #:board-row
+   #:board-section-rows #:board-lane-phases #:board-list-text
+   #:register-board #:unregister-board #:board-command))

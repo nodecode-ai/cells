@@ -60,9 +60,9 @@
    #:edit-message-plan #:typing-plan #:reaction-plans #:read-back-path
    #:commands-plan #:discord-command-name-p #:interaction-response-plan
    #:interaction-ack-plans #:hydrate-self-roles #:thread-close-plan
-   ;; board.lisp --- the thread board, its pure halves exported for tests
-   #:board-state #:board-close-p #:board-components
-   #:board-list-text #:board-pressed #:start-board #:*board*
+   ;; board.lisp --- the thread board as Discord draws it (its semantics are
+   ;; the kit's NCK:BOARD-ROW), exported for tests
+   #:board-components #:board-list-line #:board-pressed #:start-board #:*board*
    ;; a turn's card: its components, what its message holds of its
    ;; pictures, and the application emojis its marks wear
    #:card-components #:message-media #:*card-marks* #:application-emojis-plan

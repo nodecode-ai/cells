@@ -3,17 +3,12 @@
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
 ;;;; channels.discord.board_channel names a channel the bot keeps ONE message
-;;;; in, edited in place: every open thread the bot started, by who moves next.
-;;;; Needs you: the thread's newest words are an answer of the bot's its turn
-;;;; marked waiting on someone (nck:answer-waits, or choices on it) -- marked,
-;;;; never guessed from a question mark.
-;;;; No answer: someone else spoke last, or nobody did, and nothing runs there.
-;;;; Running: a turn runs there, or waits to. Done: the bot answered and asked
-;;;; nothing. Most urgent first, a stacked list that reads the same on a phone
-;;;; as on a desktop.
+;;;; in, edited in place: every open thread the bot started, by who moves next
+;;;; -- the sections, a thread's state and when it closes are the kit's
+;;;; (NCK:BOARD-ROW); this file reads Discord's threads and draws the message, a
+;;;; stacked list that reads the same on a phone as on a desktop.
 ;;;;
-;;;; The board closes what is finished: a Done thread after 48 hours quiet, any
-;;;; other after 7 days. Closing is Discord's archive: the thread leaves the
+;;;; Closing is Discord's archive: the thread leaves the
 ;;;; channel's open threads, kept and searchable, and opens again once anyone
 ;;;; writes in it. An answer's own Close button (the kit's CLOSE-PRESSED)
 ;;;; closes one at once; the board's Close all done closes every Done thread.
@@ -31,15 +26,6 @@
 (defparameter +board-pass-seconds+ 60
   "How often the board reads the threads again.")
 
-(defparameter +board-done-close-ms+ (* 48 60 60 1000)
-  "How long a Done thread stays open with nothing said in it.")
-
-(defparameter +board-quiet-close-ms+ (* 7 24 60 60 1000)
-  "How long any thread stays open with nothing said in it.")
-
-(defparameter +board-rows+ 5
-  "The threads a section shows, newest first; Show all lists every one.")
-
 (defparameter +board-closes-per-pass+ 40
   "The most threads one pass closes: a backlog closes over several passes.")
 
@@ -47,11 +33,10 @@
   "The state namespace the board keeps its message's id in, one key a board
 channel.")
 
-(defparameter +board-sections+
-  '((:needs "Needs you" #xFA8B3E) (:noans "No answer" #xF23F43)
-    (:running "Running" #x23A55A) (:done "Done" #x80848E))
-  "The board's sections in the order it shows them: the state, its name, its
-accent. Running holds the threads whose turn waits, too.")
+(defparameter +board-accents+
+  '(:needs #xFA8B3E :noans #xF23F43 :running #x23A55A :done #x80848E)
+  "Each of the kit's sections (NCK:+BOARD-SECTIONS+) by the accent its
+container wears.")
 
 (defstruct (board (:copier nil) (:constructor %make-board))
   (adapter nil)
@@ -77,59 +62,20 @@ accent. Running holds the threads whose turn waits, too.")
 
 ;;; --- the pure halves ------------------------------------------------------------------
 
-(defun board-said-lines (text)
-  "TEXT's lines with words in them, small print (`-#') left out."
-  (remove-if (lambda (line) (or (zerop (length line)) (eql 0 (search "-#" line))))
-             (mapcar #'nlk:trimmed (uiop:split-string (or text "") :separator '(#\Newline)))))
-
-(defun board-state (&key phase bot-p waits)
-  "One thread's state: PHASE, its lane's :RUNNING or :QUEUED, first; else
-from its newest words, the bot's when BOT-P: an answer marked waiting
-(WAITS, NCK:ANSWER-WAITING's answer) :NEEDS, the bot's otherwise :DONE,
-anyone else's or none :NOANS."
-  (cond ((member phase '(:running :queued)) phase)
-        ((not bot-p) :noans)
-        (waits :needs)
-        (t :done)))
-
-(defun board-close-p (state quiet-ms)
-  "Whether a thread in STATE, QUIET-MS since anything was said in it, closes
-by itself: never while a turn runs or waits there, a Done one after
-+BOARD-DONE-CLOSE-MS+, any other after +BOARD-QUIET-CLOSE-MS+."
-  (case state
-    ((:running :queued) nil)
-    (:done (>= quiet-ms +board-done-close-ms+))
-    (t (>= quiet-ms +board-quiet-close-ms+))))
-
-(defun board-age (ms &aux (minutes (floor (max ms 0) 60000)))
-  "MS as the board says an age: minutes, then hours, then days."
-  (cond ((< minutes 60) (format nil "~dm" (max 1 minutes)))
-        ((< minutes (* 48 60)) (format nil "~dh" (floor minutes 60)))
-        (t (format nil "~dd" (floor minutes 1440)))))
-
-(defun board-question (text)
-  "The question TEXT ends on, as a line the board can show under its thread."
-  (nlk:when-let (last (car (last (board-said-lines text))))
-    (nlk:clip (ppcre:regex-replace-all "\\*\\*|__|`" (ppcre:regex-replace "^[-*>#]+\\s*" last "") "")
-              90 :ellipsis "…")))
-
 (defun board-line (row &key question)
   "ROW as the board's line: the thread's link and its age -- running or
-waiting for one whose turn does -- and, with QUESTION, the question it ends on
-in small print under it."
+waiting for one whose turn does (NCK:BOARD-WHEN) -- and, with QUESTION, the
+question it ends on in small print under it."
   (format nil "<#~a> · ~a~@[~%-# ~a~]"
           (getf row :id)
-          (case (getf row :state)
-            (:running "running")
-            (:queued "waiting")
-            (t (board-age (getf row :quiet-ms))))
+          (board-when row)
           (and question (getf row :question) (discord-escape (getf row :question)))))
 
-(defun board-section-rows (rows key)
-  "The ROWS section KEY shows: :RUNNING's are those running and waiting."
-  (remove-if-not (lambda (row) (member (getf row :state)
-                                       (if (eq key :running) '(:running :queued) (list key))))
-                 rows))
+(defun board-list-line (row question-p)
+  "ROW as Show all and /threads list it (NCK:BOARD-LIST-TEXT): its line, and
+with QUESTION-P the question it waits on after a dash."
+  (format nil "~a~@[ — ~a~]" (board-line row)
+          (and question-p (getf row :question) (discord-escape (getf row :question)))))
 
 (defun board-components (rows &key (closing 0))
   "ROWS, the open threads newest first, as the board's Components V2 message:
@@ -141,7 +87,8 @@ threads left to close; Show all, and Close all done while any is done."
   ;; characters across its text. Four sections of one text each, a heading, a
   ;; footer and two buttons stay inside both.
   (let* ((sections
-           (loop for (key name accent) in +board-sections+
+           (loop for (key name) in +board-sections+
+                 for accent = (getf +board-accents+ key)
                  for members = (board-section-rows rows key)
                  for shown = (subseq members 0 (min +board-rows+ (length members)))
                  when members
@@ -175,25 +122,6 @@ threads left to close; Show all, and Close all done while any is done."
                             'vector))))
             'vector)))
 
-(defun board-list-text (rows &key (limit 1900))
-  "Every one of ROWS by section, a line a thread, cut to LIMIT characters
-with what was left out counted: what Show all and /threads answer."
-  (let ((lines '()) (left 0) (size 0))
-    (loop for (key name) in +board-sections+
-          for members = (board-section-rows rows key)
-          when members
-            do (dolist (line (cons (format nil "**~a** · ~d" name (length members))
-                                   (mapcar (lambda (row)
-                                             (format nil "~a~@[ — ~a~]" (board-line row)
-                                                     (and (eq key :needs) (getf row :question)
-                                                          (discord-escape (getf row :question)))))
-                                           members)))
-                 (if (< (+ size (length line) 1) limit)
-                     (progn (push line lines) (incf size (1+ (length line))))
-                     (incf left))))
-    (cond ((null rows) "No thread is open.")
-          (t (format nil "~{~a~^~%~}~[~:;~:*~%-# +~d more lines~]" (reverse lines) left)))))
-
 ;;; --- the board's pass -------------------------------------------------------------------
 
 (defun board-call (board method path &optional body)
@@ -202,20 +130,6 @@ with what was left out counted: what Show all and /threads answer."
                               (rest-plan method path "board" t 30 body))))
     (values (execution-ok-p result) (execution-body result)
             (execution-status result) (execution-error result))))
-
-(defun board-lane-phases (host &aux (phases (make-hash-table :test #'equal)))
-  "Thread id -> :RUNNING where a turn of HOST's runs in the thread, :QUEUED
-where one only waits to."
-  (map-lanes (host-lanes host)
-             (lambda (lane &aux (thread (getf (lane-target lane) :thread-id))
-                                (digest (lane-digest lane)))
-               (when thread
-                 (cond ((lane-active-turn-id lane)
-                        (setf (gethash thread phases) :running))
-                       ((and digest (eq :queued (nck::turn-digest-phase digest)))
-                        (unless (gethash thread phases)
-                          (setf (gethash thread phases) :queued)))))))
-  phases)
 
 (defun board-words (board thread-id last-id &aux (bot (discord-adapter-bot-user-id (board-adapter board)))
                                                  (known (gethash thread-id (board-heard board))))
@@ -275,16 +189,12 @@ the board's message. => the open threads' rows."
                          (when (or read-p phase)
                            ;; The mark is read each pass, never kept: an answer
                            ;; read the moment it posted is marked a moment later.
-                           (let* ((waits (and bot-p said-id (answer-waiting adapter.host id said-id)))
-                                  (state (board-state :phase phase :bot-p bot-p :waits waits)))
-                             (if (board-close-p state quiet)
-                                 (push id closing)
-                                 (push (list :id id :state state :quiet-ms quiet
-                                             :question (and (eq state :needs)
-                                                            (if (plusp (length waits))
-                                                                (nlk:clip waits 90 :ellipsis "…")
-                                                                (board-question text))))
-                                       rows)))))))
+                           (multiple-value-bind (row close-p)
+                               (board-row id :phase phase :bot-p bot-p :text text :quiet-ms quiet
+                                             :waits (and bot-p said-id
+                                                         (answer-waiting adapter.host id said-id)))
+                             (cond (row (push row rows))
+                                   (close-p (push id closing))))))))
         (let ((closed (loop for id in closing
                             repeat +board-closes-per-pass+
                             count (board-close board id))))
@@ -336,7 +246,7 @@ other press."
                (done (board-section-rows rows :done))
                (closer (and (equal data "ncd:board:done") (operator-p host (getf press :user-id)))))
           (execute-delivery (interaction-ack-plans
-                             press :text (cond ((equal data "ncd:board:all") (board-list-text rows))
+                             press :text (cond ((equal data "ncd:board:all") (board-list-text rows #'board-list-line))
                                                ((not (equal data "ncd:board:done")) "This button is out of date.")
                                                ((not closer) "Only the room's operators can close threads from the board.")
                                                ((null done) "No thread is done.")
@@ -346,13 +256,6 @@ other press."
             (dolist (row done) (board-close board (getf row :id)))
             (queue-push (board-queue board) :pass)))))
     t))
-
-(defun board-command (args session-id)
-  "/threads: every open thread, by who moves next."
-  (declare (ignore args session-id))
-  (if *board*
-      (board-list-text (board-rows *board*))
-      "No board: set channels.discord.board_channel to a channel the bot can post in."))
 
 (defun start-board (adapter section &aux (channel (config-string section "board_channel")))
   "Start the thread board channels.discord.board_channel names, on a thread
@@ -366,15 +269,16 @@ of its own. => its stop thunk, or NIL when no board channel is named."
         (setf (board-stop-p old) t)
         (queue-push (board-queue old) :stop))
       (setf *board* board)
-      (nle:register-command "nodecode-channel-discord" "threads" 'board-command
-                            :description "Every open thread, by who moves next")
-      (nlk:spawn "channel-discord-board"
-        (loop until (board-stop-p board)
-              do (nlk:with-handlers ((error (condition) (warn "discord: a board pass failed: ~a" condition)))
-                   (board-pass board))
-                 (queue-pop (board-queue board) +board-pass-seconds+)))
-      (lambda ()
-        (setf (board-stop-p board) t)
-        (queue-push (board-queue board) :stop)
-        (when (eq *board* board)
-          (setf *board* nil))))))
+      ;; /threads is the kit's; it answers this board's list.
+      (let ((thunk (register-board "discord" (lambda () (board-list-text (board-rows board) #'board-list-line)))))
+        (nlk:spawn "channel-discord-board"
+          (loop until (board-stop-p board)
+                do (nlk:with-handlers ((error (condition) (warn "discord: a board pass failed: ~a" condition)))
+                     (board-pass board))
+                   (queue-pop (board-queue board) +board-pass-seconds+)))
+        (lambda ()
+          (setf (board-stop-p board) t)
+          (queue-push (board-queue board) :stop)
+          (unregister-board "discord" thunk)
+          (when (eq *board* board)
+            (setf *board* nil)))))))

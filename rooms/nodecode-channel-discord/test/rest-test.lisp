@@ -617,8 +617,7 @@ its section included."
          (texts (card-texts (list :state :failed :elapsed "30s" :headline "Failed at 30s"
                                   :note long :said said :steps steps :meta "m"))))
     (is (<= (reduce #'+ texts :key #'length) 4000) "the whole card stays inside Discord's cap")
-    (is (some (lambda (text) (search (make-string 280 :initial-element #\x) text)) texts)
-        "a long note line shows whole")))
+    (is (some (lambda (text) (search (make-string 280 :initial-element #\x) text)) texts) "a long note line shows whole")))
 
 (deftest channel-discord-a-card-is-components ()
   ;; A turn's card posts as one container of components (IS_COMPONENTS_V2),

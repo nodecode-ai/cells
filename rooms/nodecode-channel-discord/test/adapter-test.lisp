@@ -151,7 +151,7 @@ adapter and the fake gateway have stopped."
         (is (null (wire-row "model-aux" (nck:request-plan-body menu) "name")) "the auxiliary model is /models' own")
         (let ((models (wire-row "models" (nck:request-plan-body menu) "name")))
           (is-present models "/models carries the auxiliary model's form"
-            (is (equal "/models [provider] [model] | aux [provider] [model | default] | list | refresh"
+            (is (equal "/models [provider] [model] | aux [provider] [model | default] | decider [id | none] | list | refresh"
                        (gethash "description"
                                 (aref (gethash "options" models) 0)))))))
       (is-present (defer (await-plan executor :label "interaction_defer" :timeout 15))
@@ -449,7 +449,7 @@ adapter and the fake gateway have stopped."
         (slash "7" "/usage"))
       (is-plan (first (plans)) :label "interaction_defer" (:integer "data" "flags") 64)
       (is-plan (second (plans)) :label "interaction_response"
-               "content" "🔒 /model is operator-only. Ask an operator to run it, or send /help to see what you can use.")
+               "content" "🔒 Only this room's operators can run /model. Press Ask for access to send them a request, or send /help to see what you can use.")
       (is (= 1 (length notices)) "one word to the operator for the two tries")
       (is (search "eve (7) was refused /model in c1" (first notices))))))
 

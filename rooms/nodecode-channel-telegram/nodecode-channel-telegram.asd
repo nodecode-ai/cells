@@ -19,7 +19,8 @@
                (:file "poll")
                (:file "rest")
                (:file "probe")
-               (:file "adapter"))
+               (:file "adapter")
+               (:file "board"))
   :in-order-to ((test-op (test-op "nodecode-channel-telegram/test"))))
 
 (defsystem "nodecode-channel-telegram/test"
@@ -30,6 +31,7 @@
   :serial t
   :components ((:file "poll-test")
                (:file "rest-test")
-               (:file "adapter-test"))
+               (:file "adapter-test")
+               (:file "board-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-channel-tests)))

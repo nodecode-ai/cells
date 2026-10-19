@@ -1775,7 +1775,8 @@ LANE, as the one running channel."
                                       "cache-write-tokens" 300 "reasoning-tokens" 12
                                       "cost_known" t "cost_usd" 0.5 "provider" "qa"
                                       "model" "qa-model" "reasoning-effort" "high"))
-  (is (equal (format nil "qa/qa-model (high)~%↑1.2k c88.0% w300 ↓40 r12 · ctx 10.3k · $0.500")
+  ;; The model id leads with its provider, so the TUI's words name it once.
+  (is (equal (format nil "qa-model (high)~%↑1.2k c88.0% w300 ↓40 r12 · ctx 10.3k · $0.500")
              (getf (nck:digest-card (nck:lane-digest lane) (nck:now-ms)) :meta))))
 
 (deftest channel-host-details-answer-the-presser-alone ()
@@ -1935,11 +1936,9 @@ it would have done on the way out (STOP-HOST's hand-off)."
     (is (loop repeat 40
               thereis (let ((json (nlk:session-state-get "channel-test" nck::+handoff-key+)))
                         (and json (search "\"s1\"" json) (search "Checkout failure" json)))
-              do (sleep 0.1))
-        "written down, with its line, while it runs")
+              do (sleep 0.1)) "written down, with its line, while it runs")
     (crash-host host)
-    (is (null (plan-matching (recorded-plans first-executor) :method "PATCH" :content "Paused at"))
-        "a dead process says nothing on the way out"))
+    (is (null (plan-matching (recorded-plans first-executor) :method "PATCH" :content "Paused at")) "a dead process says nothing on the way out"))
   (let* ((executor (nck:make-recording-executor))
          (host (test-host :executor executor :name "crash-2")))
     (nck:start-host host)
@@ -1958,11 +1957,9 @@ it would have done on the way out (STOP-HOST's hand-off)."
            (is (await-plan executor :content "back where it was") "the answer lands")
            (is (loop repeat 40
                      thereis (null (nlk:session-state-get "channel-test" nck::+handoff-key+))
-                     do (sleep 0.1))
-               "an answered turn is no longer written down"))
+                     do (sleep 0.1)) "an answered turn is no longer written down"))
       (nck:stop-host host))
-    (is (null (nlk:session-state-get "channel-test" nck::+handoff-key+))
-        "a stop with nothing running leaves nothing to take back")))
+    (is (null (nlk:session-state-get "channel-test" nck::+handoff-key+)) "a stop with nothing running leaves nothing to take back")))
 
 (deftest channel-host-an-ask-that-waited-too-long-is-dropped-on-its-line (with-temp-store ())
   ;; A downtime past the horizon must not resurrect yesterday's backlog: the

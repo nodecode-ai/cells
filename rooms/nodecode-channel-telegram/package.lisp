@@ -28,4 +28,10 @@
    #:read-back-path #:telegram-acknowledgement-p #:set-my-commands-plan
    #:telegram-command-name-p #:get-file-plan #:telegram-file-url
    #:telegram-message-id #:telegram-address #:telegram-retry-after-ms
-   #:telegram-failure-message #:telegram-not-modified-p #:wrap-telegram-executor))
+   #:telegram-failure-message #:telegram-not-modified-p #:wrap-telegram-executor
+   ;; board.lisp --- the thread board: the topics the bot opened, as it saw
+   ;; them, and the message it keeps; exported for tests
+   #:start-telegram-board #:*telegram-board* #:board-noting-executor
+   #:note-telegram-write #:note-telegram-update #:telegram-board-pass
+   #:telegram-board-pressed #:telegram-board-text #:telegram-board-line
+   #:telegram-board-rows #:telegram-board-topics #:topic-key))

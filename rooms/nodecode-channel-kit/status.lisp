@@ -138,7 +138,7 @@ unpair USER-ID, paired."
         (t "usage: /channels [pair CODE | unpair USER-ID | paired]")))
 
 (defun register-channel-commands ()
-  "Register /channels, /stop, /sethome and /agent, each answering its report
+  "Register /channels, /stop, /sethome, /agent and /threads, each answering its report
 whole; /agent completes its room's agents."
   (flet ((command (name run description &optional argument-hint complete)
            (nle:register-command "nodecode-channel-kit" name run
@@ -158,4 +158,5 @@ whole; /agent completes its room's agents."
              "off")
     (command "agent" (lambda (args session-id) (agent-command args session-id))
              "Which agent answers here; NAME hands this room to another"
-             "NAME | default" 'agent-choices)))
+             "NAME | default" 'agent-choices)
+    (command "threads" 'board-command "Every open thread, by who moves next")))

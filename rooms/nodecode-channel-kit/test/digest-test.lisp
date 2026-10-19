@@ -168,8 +168,7 @@ it now" (nck:digest-final-text digest)))
     "> 1. claude-code/opus: the provider refused to answer (finish reason refusal)"
     ("> 2. oc/dsf · HTTP 400: Upstream request failed: Model is unavailable." "a blank line is skipped, not the end"))
   (is (equal (list "a" "b" "c" "d" "e" "f" "… 3 more lines in the turn's record")
-             (nck:digest-note-lines (format nil "a~%b~%c~%d~%e~%f~%g~%h~%i")))
-      "past the row cap, the card says how many more the record keeps"))
+             (nck:digest-note-lines (format nil "a~%b~%c~%d~%e~%f~%g~%h~%i"))) "past the row cap, the card says how many more the record keeps"))
 
 (deftest channel-digest-failure-without-a-card (with-digest ())
   ;; The fast failure: a rejected admission dies before earning a card. It
@@ -531,9 +530,11 @@ it now" (nck:digest-final-text digest)))
 (deftest channel-digest-names-what-the-turn-ran-on (with-digest (:evals 1))
   ;; The footer opens with what the newest round ran on, in the finish
   ;; divider's words: provider/model, the model a relay served instead, and
-  ;; the effort; a round silent about any of it keeps the last round's.
+  ;; the effort; a round silent about any of it keeps the last round's. A
+  ;; provider the model id already leads with is not said twice (the TUI's
+  ;; STATUS-IDENTITY-LABEL).
   (nck:digest-note-usage digest '(:provider "deepseek" :model "deepseek-flash" :effort "high"))
-  (is (equal "deepseek/deepseek-flash (high) · 1 step" (getf (nck:digest-card digest 1000) :meta)))
+  (is (equal "deepseek-flash (high) · 1 step" (getf (nck:digest-card digest 1000) :meta)))
   (nck:digest-note-usage digest '(:provider "relay" :model "asked" :response-model "served"))
   (is (search "relay/asked→served (high) · 1 step" (card-at digest 1000)))
   (nck:digest-note-usage digest '(:provider "x" :model "" :effort "low"))

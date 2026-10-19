@@ -79,6 +79,26 @@ opened. Groups that are no forum, and private chats, answer where the ask
 was typed. `thread_behavior: "reply_in_place"` keeps a forum flat too, and
 `flat_channels` names forums to keep flat.
 
+### The thread board
+
+`board_chat` names a chat the bot keeps one message in, edited in place:
+every open topic it opened, by who moves next. **Needs you**: its answer
+waits on you (the turn marked it, or it asked with buttons). **No answer**:
+someone spoke after the bot, or nobody has. **Running**: a turn runs or
+waits there. **Done**: the bot answered and asked nothing. Each topic is a
+link that opens it. A done topic closes after 48 hours quiet, any other after
+7 days. **Show all** sends you every open topic in your chat with the bot;
+**Close all done**, an owner's, closes every done topic; `/threads` lists
+them too. Telegram lets a bot list neither a group's topics nor their
+messages, so the board knows the topics it opened while it ran, as their
+updates and its own posts showed them, kept across restarts.
+
+### Pings
+
+A mention the bot writes, `[name](tg://user?id=…)`, tags and notifies that
+person; the room's instructions tell the model so. The bot's own notices to
+its owners (an access ask, a raised limit) tag them the same way.
+
 ### Who else may talk, and where it answers freely
 
 - `allowed_roles`: `"administrator"` lets every admin of a group drive the
@@ -188,6 +208,7 @@ Every key of `channels.telegram`. A present section is enabled;
 | `other_addressees` | | Names that make a line someone else's when it opens with one. |
 | `thread_behavior` | `"create_per_message"` | In a forum group, open a topic per ask; `"reply_in_place"` or `"disabled"` answer where it was typed. |
 | `flat_channels` | | Forum chat ids where asks are answered in place. |
+| `board_chat` | | A chat the bot keeps the [thread board](#the-thread-board) in. |
 | `catch_up_minutes` | `60` | How old a message from while the bot was away may be and still be answered. `0` answers none. |
 | `allow_private_chats` | `true` | `false` ignores private chats. |
 | `allow_group_chats` | `true` | `false` ignores groups. |

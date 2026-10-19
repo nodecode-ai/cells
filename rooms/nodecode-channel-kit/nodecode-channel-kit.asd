@@ -46,6 +46,7 @@
                (:file "speech")
                (:file "tables")
                (:file "host")
+               (:file "board")
                (:file "operator")
                (:file "setup")
                (:file "cell"))
@@ -71,6 +72,7 @@
                (:file "transcribe-test")
                (:file "host-test")
                (:file "thread-test")
+               (:file "board-test")
                (:file "cell-test")
                (:file "operator-test")
                ;; LAST on purpose: placed ahead of thread-test. Without this,

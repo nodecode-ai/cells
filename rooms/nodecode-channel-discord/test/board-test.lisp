@@ -2,35 +2,11 @@
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
-;;;; What decides a thread's section and when it closes, and the message the
-;;;; board says them in, held inside Discord's caps on one message.
+;;;; The message the board says its threads in, held inside Discord's caps on
+;;;; one message; what decides a thread's section and when it closes is the
+;;;; kit's (its board-test.lisp).
 
 (in-package #:nodecode.test)
-
-(deftest channel-discord-board-sorts-a-thread-by-who-moves-next ()
-  ;; A turn running or waiting there decides first; else the newest words:
-  ;; the bot's answer marked waiting (NCK:ANSWER-WAITING) needs you, the
-  ;; bot's otherwise are done -- a question mark marks nothing -- anyone
-  ;; else's, or none, wait for an answer.
-  (is (eq :running (ncd:board-state :phase :running :bot-p t :waits "Which one?")))
-  (is (eq :queued (ncd:board-state :phase :queued)))
-  (is (eq :needs (ncd:board-state :bot-p t :waits "Push the pin?")))
-  (is (eq :needs (ncd:board-state :bot-p t :waits "")) "marked, on the answer's own last line")
-  (is (eq :done (ncd:board-state :bot-p t)) "an unmarked answer waits on nobody, whatever it ends on")
-  (is (eq :noans (ncd:board-state :bot-p nil :waits "Push?")) "someone else spoke last")
-  (is (eq :noans (ncd:board-state)) "nobody said anything"))
-
-(deftest channel-discord-board-closes-what-went-quiet ()
-  ;; Never while a turn runs or waits; a done thread after 48 hours quiet;
-  ;; any other after 7 days.
-  (let ((hour (* 60 60 1000)) (day (* 24 60 60 1000)))
-    (is (not (ncd:board-close-p :running (* 30 day))))
-    (is (not (ncd:board-close-p :queued (* 30 day))))
-    (is (not (ncd:board-close-p :done (* 47 hour))))
-    (is (ncd:board-close-p :done (* 48 hour)))
-    (is (not (ncd:board-close-p :needs (* 6 day))))
-    (is (ncd:board-close-p :needs (* 7 day)))
-    (is (ncd:board-close-p :noans (* 7 day)))))
 
 (defun board-test-parts (components)
   "Every component inside COMPONENTS, however nested, in order."
@@ -84,9 +60,10 @@
   (let ((rows (list (list :id "1" :state :needs :quiet-ms 3600000 :question "Push it?")
                     (list :id "2" :state :done :quiet-ms 60000))))
     (is (equal (format nil "**Needs you** · 1~%<#1> · 1h — Push it?~%**Done** · 1~%<#2> · 1m")
-               (ncd:board-list-text rows)))
-    (is (equal "No thread is open." (ncd:board-list-text '())))
-    (let ((cut (ncd:board-list-text (loop for i below 200 collect (list :id (format nil "~d" (+ 1000 i)) :state :done :quiet-ms 60000)))))
+               (nck:board-list-text rows #'ncd:board-list-line)))
+    (is (equal "No thread is open." (nck:board-list-text '() #'ncd:board-list-line)))
+    (let ((cut (nck:board-list-text (loop for i below 200 collect (list :id (format nil "~d" (+ 1000 i)) :state :done :quiet-ms 60000))
+                                     #'ncd:board-list-line)))
       (is (< (length cut) 2000))
       (is (search "more lines" cut)))))
 

@@ -143,6 +143,9 @@ what a setup panel offers for allowed_users."
                    :choices #'probe-chat-choices)
   ("allowed_users" :list :doc "user ids allowed to drive the bot"
                    :choices #'probe-user-choices)
+  ("board_chat" :string
+                :choices #'probe-chat-choices
+                :doc "a chat the bot keeps one message in, edited in place: every open forum topic it opened, by who moves next (needs you, no answer, running, done); a done topic closes after 48 hours quiet, any other after 7 days")
   ("owner" :list :doc "the operator's user id, whose word is standing policy in the chat"
            :choices #'probe-user-choices)
   ("pairing" :boolean :default t

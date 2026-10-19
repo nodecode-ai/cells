@@ -19,6 +19,10 @@
 
 (nlk:access (host channel-host))
 
+;; The thread board (board.lisp, loaded after this file).
+(declaim (ftype (function (t t) t) start-telegram-board telegram-board-pressed note-telegram-update)
+         (ftype (function (t) t) board-noting-executor))
+
 (defstruct (telegram-adapter (:copier nil)
                              (:constructor %make-telegram-adapter))
   (host nil)
@@ -81,7 +85,7 @@ names a topic must name its chat (TELEGRAM-TOPIC-CHAT). Live-only.")
 (defparameter +telegram-api-primer+
   "Telegram's Bot API is open to you as the bot, from eval:
   (nct:request \"POST\" PATH &key body headers timeout) => (:status N :body VALUE)
-PATH is any Bot API method, e.g. \"/setMessageReaction\"; a JSON body is a keyword plist: (:chat_id <chat> :message_id 12 :reaction #((:type \"emoji\" :emoji \"👍\"))). A reply carrying something comes back as (:ok T :result …), arrays as vectors, null as :NULL. A file upload is an alist: ((\"chat_id\" . \"<chat>\") (\"document\" . #p\"/path\")). A write that only acknowledges — Telegram’s {\"ok\":true,\"result\":true} — comes back with an empty :body, since a boolean says the request was accepted and nothing about what is there; where the object can be read it carries :state too, the object read fresh afterwards. That covers the pin and chat verbs (getChat), the member verbs (getChatMember) and the command menu (getMyCommands); :read \"/getChat?chat_id=…\" names another read and :read nil none. No read here confirms a MESSAGE: a reaction, an edit and a deletion cannot be checked from this door, so say what you sent and never that it is there. Bots cannot read chat history — the ids in the user lines are the handles you have. The adapter posts your final answer as a reply to the ask: do not send it again yourself."
+PATH is any Bot API method, e.g. \"/setMessageReaction\"; a JSON body is a keyword plist: (:chat_id <chat> :message_id 12 :reaction #((:type \"emoji\" :emoji \"👍\"))). A reply carrying something comes back as (:ok T :result …), arrays as vectors, null as :NULL. A file upload is an alist: ((\"chat_id\" . \"<chat>\") (\"document\" . #p\"/path\")). A write that only acknowledges — Telegram’s {\"ok\":true,\"result\":true} — comes back with an empty :body, since a boolean says the request was accepted and nothing about what is there; where the object can be read it carries :state too, the object read fresh afterwards. That covers the pin and chat verbs (getChat), the member verbs (getChatMember) and the command menu (getMyCommands); :read \"/getChat?chat_id=…\" names another read and :read nil none. No read here confirms a MESSAGE: a reaction, an edit and a deletion cannot be checked from this door, so say what you sent and never that it is there. Bots cannot read chat history — the ids in the user lines are the handles you have. To ping someone, write [their name](tg://user?id=<their user id>) in your answer: Telegram tags and notifies them by that link; a bare name notifies no one. The adapter posts your final answer as a reply to the ask: do not send it again yourself."
   "What the lane contract says about reaching Telegram itself.")
 
 (defun telegram-where-text (candidate bot-username bot-user-id)
@@ -274,6 +278,9 @@ and acts; every other kind falls through."
         (edited (gethash "edited_message" update))
         (reaction (gethash "message_reaction" update))
         (callback (gethash "callback_query" update)))
+    ;; What it says of the bot's topics reaches the thread board first.
+    (nlk:with-handlers ((error (condition) (warn "telegram: the board could not note an update: ~a" condition)))
+      (note-telegram-update adapter update))
     (cond
       ((hash-table-p message)
        (nlk:when-let (candidate (telegram-arrival adapter message))
@@ -410,6 +417,9 @@ bot's messages becomes a line of context for that conversation's next ask
   (let* ((data (gethash "data" callback))
          (line (said-line data))
          (candidate (and line (map-telegram-press callback line))))
+    ;; The thread board's own buttons are the board's (board.lisp).
+    (when (telegram-board-pressed adapter callback)
+      (return-from telegram-handle-callback t))
     (when candidate
       (handle-candidate adapter.host candidate)
       (return-from telegram-handle-callback candidate))
@@ -524,7 +534,9 @@ bot's messages becomes a line of context for that conversation's next ask
       (let* ((host (make-host-from-section
                     section (telegram-platform :bot-username bot-username
                                                :bot-user-id bot-user-id)
-                    :executor executor
+                    ;; Every write the host makes is told to the thread
+                    ;; board: the topics it opens and what it says in them.
+                    :executor (board-noting-executor executor)
                     :owners owners
                     :soul-path (soul-path section)
                     :request-timeout 60
@@ -556,14 +568,19 @@ bot's messages becomes a line of context for that conversation's next ask
                 :catch-up-minutes (config-integer section "catch_up_minutes" 60 :min 0)
                 :roles-p (and (getf settings :allowed-roles) t)
                 :bot-username bot-username
-                :bot-user-id bot-user-id)))
+                :bot-user-id bot-user-id))
+             (stop-board nil))
         (run-host host "poll" (lambda (stop-p) (telegram-poll-lap adapter stop-p))
                   :on-start (lambda ()
                               (setf *telegram-adapter* adapter
                                     *telegram-file-root*
                                     (format nil "~a/file/bot~a"
-                                            (string-right-trim "/" api-base) token)))
+                                            (string-right-trim "/" api-base) token))
+                              (setf stop-board (start-telegram-board adapter section)))
                   :on-stop (lambda ()
+                             (when stop-board
+                               (ignore-errors (funcall stop-board))
+                               (setf stop-board nil))
                              ;; A stale stop thunk racing a respawned lane must
                              ;; not clear the fresh adapter's binding.
                              (when (eq *telegram-adapter* adapter)

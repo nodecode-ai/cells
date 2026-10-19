@@ -49,8 +49,11 @@
 ;; packages above, so ASDF must never plan a define-op against this test
 ;; file (an asdf:defsystem here records THIS file as the system source and
 ;; a later load-system walks straight into a define-op circularity).
+;; REGISTERED-SYSTEM, never FIND-SYSTEM, asks: this file loads inside an ASDF
+;; session (a test-op's), which keeps a FIND-SYSTEM miss for its whole length,
+;; so the suite that session goes on to run would find no system here.
 (dolist (name '("nodecode-channel-fake"))
-  (unless (asdf:find-system name nil)
+  (unless (asdf:registered-system name)
     (asdf::register-system
      (make-instance 'asdf:system :name name :source-file nil))
     (asdf:register-immutable-system name)))
@@ -79,6 +82,10 @@
                      :setf t)
       (with-fake-cells ("nodecode-cell-boom" "nodecode-cell-fake")
         (with-temp-gateway (port)
+          ;; The peripherals start on a thread of their own once the listener
+          ;; is up (START-CELLS-BEHIND-THE-LISTENER), a shell's replay or a
+          ;; few seconds later.
+          (is (await (:timeout 10) (nlk:cell-started-p (nlk:find-cell "nodecode-cell-fake"))))
           (is (= 1 (length *fake-cell-calls*)))
           (is-present (call (first *fake-cell-calls*))
             "the START-CELL call carries the contract argument"
@@ -234,7 +241,9 @@ the help section."
         (is (eq t (nlk:json-value row :any "connected")))
         (is (= 4 (nlk:json-value row :integer "delivered")))
         (is (= 1790000000000 (nlk:json-value row :integer "last_event_at_ms"))))
-      (is (find "telegram" (nlk:json-value body :array "absent") :test #'equal) "a shipped adapter not installed"))
+      ;; The adapters shipped beside the organism and not installed, whatever
+      ;; this tree ships.
+      (is (equal (nck::absent-adapters) (coerce (nlk:json-value body :array "absent") 'list))))
     (with-gateway-http (port :post "/api/channels?op=probe&id=absent")
       (is (search "channels.absent is absent" (nlk:json-value body :string "text")) "the probe's own words")))
   (is-route (port :get "/api/channels") 404 "stopped: the route is gone"))
