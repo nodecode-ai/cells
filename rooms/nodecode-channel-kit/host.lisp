@@ -872,8 +872,13 @@ lane or operates the room; the card says who, by USER-NAME."
   (cond
     ((null lane) nil)
     ((null (lane-active-turn-id lane))
-     (warn "~a: stop press found no active turn on ~a"
-           (host-id host) lane.session-id))
+     (unless (and (or (equal user-id (lane-owner-id lane))
+                      (operator-p host user-id))
+                  (stop-turnless-line host lane (if user-name
+                                                    (format nil "stopped by ~a" user-name)
+                                                    "stopped from the room")))
+       (warn "~a: stop press found no active turn on ~a"
+             (host-id host) lane.session-id)))
     ((or (equal user-id (lane-owner-id lane))
          (operator-p host user-id))
      (or (nlk:request-cancel-turn lane.session-id lane.active-turn-id
@@ -2116,6 +2121,49 @@ dropped now, one still running answers its turn and goes with the next reap."
                      (setf (lane-retired lane) t)
                      (remove-lane host.lanes lane.session-id))))))
 
+(defun bind-admitted-turn (lane admission
+                           &aux (turn-id (nlk:active-input-admission-turn-id admission))
+                             (stopped nil))
+  "LANE's line watches the turn the engine says its ask started -- ADMISSION
+names it -- from the admission on, not from that turn's first frame."
+  ;; A line opened at admission learned its turn only from TURN.STARTED's
+  ;; frame, and a line with no turn is one nothing ends: RECONCILE-TERMINAL-
+  ;; DIGEST finds a missed ending by turn id, Stop cancels by turn id, and the
+  ;; reaper skips a line that reads running. A frame already folded has bound
+  ;; it, and this changes nothing. A line Stop settled while the ask was still
+  ;; being read in (STOP-TURNLESS-LINE) cancels the turn it went on to start.
+  (bt2:with-lock-held ((lane-lock lane))
+    (let ((digest lane.digest))
+      (when (and digest (null digest.turn-id) (null lane.active-turn-id))
+        (case digest.phase
+          (:running (setf digest.turn-id turn-id lane.active-turn-id turn-id))
+          (:cancelled (setf stopped (or digest.detail "stopped from the room")))))))
+  (when stopped
+    (nlk:request-cancel-turn lane.session-id turn-id stopped)))
+
+(defun stop-turnless-line (host lane detail &aux (reactions '()))
+  "Settle LANE's line when it reads running with no turn behind it -- an
+admission that started none -- DETAIL on the card, the ask's mark off and the
+slot back. => T when there was such a line."
+  ;; Stop is the room's one way to end a line, and it cancelled by turn id
+  ;; alone: on a line with none it warned and left it running (2026-10-20,
+  ;; the 'are you here?' card, pressed and still working an hour later).
+  (when (bt2:with-lock-held ((lane-lock lane))
+          (let ((digest lane.digest))
+            (when (and digest (eq digest.phase :running) (null digest.turn-id)
+                       (null lane.active-turn-id))
+              (digest-note-terminal digest :cancelled detail (now-ms))
+              (setf reactions (terminal-reaction-snapshot lane nil))
+              t)))
+    (setf lane.last-active-ms (now-ms))
+    (flet ((settle ()
+             (flush-now host lane)
+             (settle-terminal-reactions host lane reactions nil)
+             (promote-next host lane.owner-id)))
+      (unless (and host.worker (on-worker host (settle)))
+        (settle)))
+    t))
+
 (defun drop-duplicate-admission (host lane admission
                                  &aux (turn-id (nlk:active-input-admission-turn-id admission))
                                       (status-id nil) (reactions '()))
@@ -3337,8 +3385,9 @@ the line."
            (nlk:with-handlers ((error (condition)
                                  (fail-lane host lane (princ-to-string condition))))
              (let ((admission (submit-ask ask "turn.start" "msg")))
-               (when (eq :duplicate (nlk:active-input-admission-disposition admission))
-                 (drop-duplicate-admission host lane admission)))))))
+               (case (nlk:active-input-admission-disposition admission)
+                 (:started (bind-admitted-turn lane admission))
+                 (:duplicate (drop-duplicate-admission host lane admission))))))))
     (error (condition)
       (warn "~a ingress for ~a failed: ~a"
             (host-id host) ask.lane condition)

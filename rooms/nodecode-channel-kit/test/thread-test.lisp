@@ -409,6 +409,33 @@ origin noted — ORIGIN the keys past the three that place it."
       (is (= 1 (length (plans-matching (recorded-plans executor) :content "the answer")))
           "and was answered once"))))
 
+(deftest channel-a-line-holds-its-turn-without-its-first-frame ()
+  ;; A line learned its turn only from TURN.STARTED's frame, and one the fold
+  ;; missed was left running with no turn, which nothing ends. It holds the
+  ;; turn its admission names, so the ending is found in the log and the
+  ;; answer still lands with no frame folded at all.
+  (with-ask-host (host thread-ask-host :answers ("the answer") :threads nil
+                  :name "no-first-frame")
+    (nle:unhook :frame (format nil "channel-~a" (nck::host-id host)))
+    (thread-ask host "<@999> fix the auth bug")
+    (is (await-plan executor :content "the answer" :timeout 20)
+        "the answer landed though no frame was folded")))
+
+(deftest channel-stop-settles-a-line-with-no-turn ()
+  ;; Stop cancelled by turn id alone: on a line with none it warned and left
+  ;; the card working (2026-10-20, pressed on the 'are you here?' card).
+  (with-ask-host (host thread-ask-host :threads nil :name "stop-turnless")
+    (let ((lane (nck:intern-lane (nck:host-lanes host) "chat-100-m9"
+                                 :target '(:channel-id "100") :trigger-message-id "9")))
+      (setf (nck:lane-owner-id lane) "u1")
+      (bt2:with-lock-held ((nck::lane-lock lane))
+        (nck:lane-open-digest lane (nck::now-ms)))
+      (nck::stop-pressed host "u1" "chat-100-m9" "kim")
+      (is (eq :cancelled (nck:turn-digest-phase (nck:lane-digest lane)))
+          "the line settled")
+      (is (equal "stopped by kim" (nck::turn-digest-detail (nck:lane-digest lane))))
+      (is (await (:timeout 10) (not (nck::lane-live-p lane)))))))
+
 ;;; --- the ask's message stays out of the thread --------------------------------------
 
 (deftest channel-thread-lane-answers-without-a-reference ()
