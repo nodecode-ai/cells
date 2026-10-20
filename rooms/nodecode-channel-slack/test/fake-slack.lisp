@@ -60,6 +60,11 @@
        (let ((ts (format nil "1700000000.~6,'0d" (bt2:with-lock-held (fake.lock) (incf fake.ts)))))
          (ok "channel" (gethash "channel" body) "ts" ts
              "message" (nlk:json-object "ts" ts "text" (gethash "text" body)))))
+      ((string= method "chat.getPermalink")
+       (or (ppcre:register-groups-bind (channel ts) ("channel=([^&]+)&message_ts=([^&]+)" (or query ""))
+             (ok "channel" channel "permalink" (format nil "https://fake.slack.com/archives/~a/p~a"
+                                                      channel (remove #\. ts))))
+           (nlk:make-json-object "ok" nil "error" "message_not_found")))
       ((string= method "conversations.history")
        (ok "messages" (coerce fake.history 'vector)))
       ((string= method "conversations.replies")

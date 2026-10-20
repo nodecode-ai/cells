@@ -42,7 +42,10 @@
       "turn_budget_minutes": 0,
       // After the bot was away, read back this many minutes of what was said
       // and answer the asks it missed, marked late; 0 never.
-      "catch_up_minutes": 60
+      "catch_up_minutes": 60,
+      // A channel the bot keeps one message in: every thread it answers in,
+      // by who moves next (README: The thread board). Unset, no board.
+      "board_channel": "<channel id>"
     }
   }
 }

@@ -21,6 +21,10 @@
 
 (nlk:access (host channel-host) (result execution))
 
+;; The thread board (board.lisp, loaded after this file).
+(declaim (ftype (function (t t) t) start-slack-board slack-board-pressed note-slack-message)
+         (ftype (function (t) t) board-noting-executor))
+
 (defparameter +ping-interval-ms+ 15000
   "How often the lap pings Slack.")
 
@@ -221,6 +225,9 @@ line said without typing one; every other event falls through."
         (let* ((edited (slack-edited-message event))
                (message (or edited event))
                (text (nlk:json-value message :string "text")))
+          ;; What it says of the bot's threads reaches the thread board first.
+          (nlk:with-handlers ((error (condition) (warn "slack: the board could not note a message: ~a" condition)))
+            (note-slack-message adapter event))
           (note-thread-message threads (nlk:json-value message :string "channel")
                                (nlk:json-value message :string "ts")
                                (nlk:json-value message :string "thread_ts"))
@@ -402,6 +409,9 @@ button press is relayed to the kit, which acts on it."
          candidate))
       ((equal type "interactive")
        (nlk:when-let (press (slack-control-press payload))
+         ;; The thread board's own buttons are the board's (board.lisp).
+         (when (slack-board-pressed adapter press)
+           (return-from slack-handle-envelope press))
          (let* ((channel (getf press :channel-id))
                 (pressed (getf press :message-id))
                 (line (said-line (getf press :data)))
@@ -583,7 +593,9 @@ legibly, see NCK:CALL."
                  until the lane restarts" (execution-error me))))
     (let* ((host (make-host-from-section
                   section (slack-platform :bot-user-id bot-user-id :threads threads)
-                  :executor bot
+                  ;; Every write the host makes is told to the thread board:
+                  ;; the threads it answers in and what it says there.
+                  :executor (board-noting-executor bot)
                   :owners owners
                   :soul-path (soul-path section)
                   :request-timeout 30
@@ -603,10 +615,16 @@ legibly, see NCK:CALL."
                      :channels (getf settings :allowed-channels)
                      :catch-up-minutes (config-integer section "catch_up_minutes" 60 :min 0)
                      :debug-reconnects-p (config-boolean section "debug_reconnects" nil))))
-      (run-host host "socket" (lambda (stop-p) (slack-socket-lap adapter stop-p))
-                :on-start (lambda () (setf *slack-adapter* adapter))
-                :on-stop (lambda ()
-                           ;; A stale stop thunk racing a respawned lane must
-                           ;; not clear the fresh adapter's binding.
-                           (when (eq *slack-adapter* adapter)
-                             (setf *slack-adapter* nil)))))))
+      (let ((stop-board nil))
+        (run-host host "socket" (lambda (stop-p) (slack-socket-lap adapter stop-p))
+                  :on-start (lambda ()
+                              (setf *slack-adapter* adapter
+                                    stop-board (start-slack-board adapter section)))
+                  :on-stop (lambda ()
+                             (when stop-board
+                               (ignore-errors (funcall stop-board))
+                               (setf stop-board nil))
+                             ;; A stale stop thunk racing a respawned lane must
+                             ;; not clear the fresh adapter's binding.
+                             (when (eq *slack-adapter* adapter)
+                               (setf *slack-adapter* nil))))))))

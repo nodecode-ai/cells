@@ -187,6 +187,8 @@ for allowed_users and owner."
                   :doc "group direct messages")
   ("reactions" :boolean :default :false
                :doc "mark each ask on the message itself: 👀 from admission through the working turn, then ✅ when its answer lands or ❌ when it fails; needs reactions:write")
+  ("board_channel" :string :choices #'probe-channel-choices
+                   :doc "a channel the bot keeps one message in, edited in place: every thread it answers in, by who moves next (needs you, no answer, running, done), named by its ask and linked; a done thread leaves after 48 hours quiet, any other after 7 days; DM threads never show")
   ("catch_up_minutes" :integer :default 60
                       :doc "after the bot was away -- a restart, a machine that was off -- read what its conversations said in the last this-many minutes of it and answer the asks it missed, each marked as late; 0 never")
   ("show_tools" :boolean :default :false

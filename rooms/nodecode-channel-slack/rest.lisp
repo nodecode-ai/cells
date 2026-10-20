@@ -255,17 +255,21 @@ thread."
   ;; come. Slack has no silent message, so PING changes nothing: a thread
   ;; notifies whoever follows it, the way it does for any reply. FILES are
   ;; posted as their own messages (FILE-PLAN). A turn's CARD goes as its words
-  ;; (the chunk), a command's PANEL as its words. Posting in a thread notes
-  ;; that the bot speaks there. Retried: a post that fails is an answer lost.
-  (declare (ignore ping mentions card panel))
+  ;; (the chunk) and its pictures (NOTE-PICTURES), labelled send_card -- the
+  ;; turn's chrome, which the thread board tells from words said -- and a
+  ;; command's PANEL as its words.
+  ;; Posting in a thread notes that the bot speaks there. Retried: a post
+  ;; that fails is an answer lost.
+  (declare (ignore ping mentions panel))
   (let ((thread (reply-thread book target reply-to))
         (channel (getf target :channel-id)))
     (when thread
       (book-note book.spoken (book-key channel thread) t))
-    (let ((body (message-body target chunk.text :thread thread :controls controls))
-          (label (if (> chunk.total 1)
-                     (format nil "send_message_chunk_~a_of_~a" chunk.index chunk.total)
-                     "send_message")))
+    (let ((body (note-pictures (message-body target chunk.text :thread thread :controls controls) card))
+          (label (cond (card "send_card")
+                       ((> chunk.total 1)
+                        (format nil "send_message_chunk_~a_of_~a" chunk.index chunk.total))
+                       (t "send_message"))))
       (if files
           ;; the answer's pictures go under its words, in its thread
           (upload-plan target files :thread thread :message body :label label
@@ -358,14 +362,125 @@ failure when a step fails."
                                           "share_files" :retry t :timeout-seconds timeout))))
       (if (and posted (execution-ok-p shared)) posted shared))))
 
+;;; --- a card's pictures ------------------------------------------------------------
+;;; A turn's card shows the newest pictures the turn looked at (its :IMAGES)
+;;; as image blocks under its words. Slack draws a block's picture from a
+;;; file it holds, so each is uploaded once -- shared nowhere, the bot's own --
+;;; and named by its id on every post and edit after: a card edits every few
+;;; seconds, and a picture sent again would be a new file each time. The
+;;; pictures ride the plan's body under +PICTURES-KEY+, which the Slack
+;;; executor turns into blocks (RUN-WITH-PICTURES) and never sends. Needs
+;;; files:write; a picture that will not upload is left out.
+
+(defparameter +pictures-key+ "nodecode_pictures"
+  "The body member a card's post or edit carries its pictures in, (NAME PATH
+DESCRIPTION) each.")
+
+(defparameter +card-pictures-cap+ 500
+  "Pictures the upload memory holds before it starts over.")
+
+(defparameter +picture-strikes+ 3
+  "Times Slack may refuse to draw a picture before it is left out.")
+
+(defvar *card-pictures* (make-hash-table :test #'equal :synchronized t)
+  "A card picture's path -> (:ID FILE-ID :STRIKES N), the file Slack holds it
+as and the times Slack refused to draw it, or :REFUSED for one left out.")
+
+(defun note-pictures (body card)
+  "BODY carrying CARD's pictures for the Slack executor to draw, when it has
+any. => BODY."
+  (nlk:when-let (images (and (listp card) (getf card :images)))
+    (setf (gethash +pictures-key+ body) images))
+  body)
+
+(defun upload-private (executor file name timeout)
+  "Upload FILE as NAME through EXECUTOR, shared nowhere: the bot's own, for a
+block to draw. => its id, or NIL when a step failed."
+  (let ((minted (execute-plan executor (api-plan "files.getUploadURLExternal"
+                                                 (nlk:json-object "filename" name "length" (file-octets file))
+                                                 "picture_url" :timeout-seconds timeout))))
+    (when (execution-ok-p minted)
+      (let ((id (nlk:json-value (execution-body minted) :string "file_id"))
+            (url (nlk:json-value (execution-body minted) :string "upload_url")))
+        (and id url
+             (execution-ok-p (execute-plan executor (rest-plan "POST" url "picture_bytes" t timeout
+                                                               (list (cons "file" file)))))
+             (execution-ok-p (execute-plan executor
+                                           (api-plan "files.completeUploadExternal"
+                                                     (nlk:json-object "files" (vector (nlk:json-object "id" id "title" name)))
+                                                     "picture_share" :timeout-seconds timeout)))
+             id)))))
+
+(defun upload-picture (executor path name timeout)
+  "The id of the file Slack holds the picture at PATH as -- uploaded now, as
+NAME, when it holds none -- or NIL for a picture left out: one whose file is
+gone, that would not upload, or that Slack would not draw."
+  (let ((known (gethash path *card-pictures*)))
+    (cond ((eq known :refused) nil)
+          (known (getf known :id))
+          (t (let* ((file (and path (probe-file path)))
+                    (id (and file (upload-private executor file name timeout))))
+               (when (>= (hash-table-count *card-pictures*) +card-pictures-cap+)
+                 (clrhash *card-pictures*))
+               (setf (gethash path *card-pictures*) (if id (list :id id :strikes 0) :refused))
+               id)))))
+
+(defun strike-picture (path &aux (known (gethash path *card-pictures*)))
+  "Slack refused once more to draw the picture at PATH: left out from the
++PICTURE-STRIKES+th time."
+  (when (consp known)
+    (setf (gethash path *card-pictures*)
+          (if (>= (1+ (getf known :strikes)) +picture-strikes+)
+              :refused
+              (list :id (getf known :id) :strikes (1+ (getf known :strikes)))))))
+
+(defun plan-with-pictures (plan shown &aux (body (make-hash-table :test #'equal)))
+  "PLAN's request with SHOWN -- (PATH ID ALT) each -- as image blocks under
+its words and above its buttons, its pictures member gone."
+  (maphash (lambda (key value)
+             (unless (equal key +pictures-key+)
+               (setf (gethash key body) value)))
+           plan.body)
+  (let* ((blocks (coerce (or (gethash "blocks" body) #()) 'list))
+         (at (or (position-if-not (lambda (block)
+                                    (member (gethash "type" block) '("markdown" "context") :test #'equal))
+                                  blocks)
+                 (length blocks)))
+         (images (loop for (nil id alt) in shown
+                       collect (nlk:json-object "type" "image" "slack_file" (nlk:json-object "id" id)
+                                                "alt_text" (nlk:clip alt 1999 :ellipsis "…")))))
+    (setf (gethash "blocks" body) (coerce (append (subseq blocks 0 at) images (nthcdr at blocks)) 'vector)))
+  (make-request-plan :method plan.method :path plan.path :body body :headers plan.headers
+                     :timeout-seconds plan.timeout-seconds
+                     :retry-server-errors plan.retry-server-errors
+                     :audit-label plan.audit-label))
+
+(defun run-with-pictures (executor plan &aux (timeout plan.timeout-seconds))
+  "Run PLAN, a card's post or edit carrying its pictures, through EXECUTOR,
+the Slack executor: each picture uploaded once (UPLOAD-PICTURE) and drawn
+under the card's words. Refused for its pictures (invalid_blocks: a file
+not ready yet, or not one Slack draws), the card goes again without them,
+and a picture refused +PICTURE-STRIKES+ times is left out from then on."
+  (let* ((shown (loop for (name path description) in (gethash +pictures-key+ plan.body)
+                      for id = (upload-picture executor path name timeout)
+                      when id collect (list path id (or description name))))
+         (result (execute-plan executor (plan-with-pictures plan shown))))
+    (if (and shown (not (execution-ok-p result))
+             (search "invalid_blocks" (or (execution-error result) "")))
+        (progn (dolist (picture shown) (strike-picture (first picture)))
+               (execute-plan executor (plan-with-pictures plan '())))
+        result)))
+
 (defun edit-plan (target message-id text &key retry controls card media (timeout-seconds 30))
   "chat.update: the status line settled in place, its buttons with it."
   ;; RETRY opts into 5xx/429 retries: a running update leaves it off (the next
   ;; tick supersedes a missed edit), the terminal settle turns it on. CONTROLS
   ;; NIL keeps the message buttonless: an edit sends the blocks whole. A
-  ;; CARD goes as its words (TEXT); its pictures (MEDIA) are not posted.
-  (declare (ignore card media))
-  (let ((body (message-body target text :controls controls)))
+  ;; CARD goes as its words (TEXT) and its pictures, every one named again
+  ;; (RUN-WITH-PICTURES): what the message held (MEDIA) is the executor's to
+  ;; know.
+  (declare (ignore media))
+  (let ((body (note-pictures (message-body target text :controls controls) card)))
     (setf (gethash "ts" body) message-id)
     (api-plan "chat.update" body "edit_message" :retry (and retry t)
                                                 :timeout-seconds timeout-seconds)))
@@ -504,8 +619,9 @@ answers under them (PRESSED-WORDS)."
   "An executor speaking Slack's envelope in the kit's terms: a 200 that says
 ok false fails with Slack's error, the errors that mean `already so' succeed,
 a plan that is NIL -- a typing beat Slack cannot show -- or the socket's
-hold on a command's answer (+SOCKET-HOLD+) is done, and an UPLOAD plan runs
-as Slack's upload steps (RUN-UPLOAD). BOOK, the thread book, keeps the words
+hold on a command's answer (+SOCKET-HOLD+) is done, an UPLOAD plan runs
+as Slack's upload steps (RUN-UPLOAD), and a card carrying pictures uploads
+them once and draws them (RUN-WITH-PICTURES). BOOK, the thread book, keeps the words
 of each pressable message posted (NOTE-POSTED-TEXT)."
   (let ((executor nil))
     (setf executor
@@ -515,6 +631,8 @@ of each pressable message posted (NOTE-POSTED-TEXT)."
                     ((or (null plan) (eq plan +socket-hold+))
                      (make-execution :ok-p t :status 200 :attempts 0))
                     ((equal plan.method +upload-method+) (run-upload executor plan))
+                    ((and (hash-table-p plan.body) (gethash +pictures-key+ plan.body))
+                     (run-with-pictures executor plan))
                     (t
                      (let* ((result (execute-plan inner plan))
                             (body result.body)

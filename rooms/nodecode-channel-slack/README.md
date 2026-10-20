@@ -80,6 +80,19 @@ Connect), `allowed_channels` alone lets its people drive the bot too; set
 as mentioning the bot. See [`config.example.jsonc`](config.example.jsonc)
 for every key.
 
+### The thread board
+
+Set `board_channel` to a channel id and the bot keeps one message there,
+edited in place: every thread it answers in, sorted by who moves next
+(Needs you, No answer, Running, Done). Each thread is named by the first
+line of the message it hangs off and links to it. Slack can't close a
+thread, so a finished one leaves the board instead: a Done thread after 48
+hours quiet, any other after 7 days. **Show all** lists every open thread
+in a message only the presser sees, **Clear done** (owners only) takes the
+Done threads off, and `/threads` answers the same list. DM threads never go
+on the board. The rest do, with their first lines, so pick a channel whose
+members may read every channel the bot answers in.
+
 ## Test
 
 From a Nodecode checkout: `just channels-test` runs this cell's tests with

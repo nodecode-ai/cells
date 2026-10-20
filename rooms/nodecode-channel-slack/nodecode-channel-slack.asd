@@ -26,6 +26,7 @@
                (:file "rest")
                (:file "probe")
                (:file "adapter")
+               (:file "board")
                (:static-file "manifest.json"))
   :in-order-to ((test-op (test-op "nodecode-channel-slack/test"))))
 
@@ -38,6 +39,7 @@
   :components ((:file "fake-slack")
                (:file "events-test")
                (:file "rest-test")
-               (:file "adapter-test"))
+               (:file "adapter-test")
+               (:file "board-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-slack-tests)))
