@@ -93,6 +93,17 @@
       ]
     },
     {
+      "name": "nodecode-channel-x",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "d197e2da0fa5b489ec0a7dc61133fa634474c921",
+      "path": "rooms/nodecode-channel-x",
+      "description": "Talk to nodecode on X (Twitter): replies under mentions, as a bot account of its own",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode-channel-kit"
+      ]
+    },
+    {
       "name": "nodecode-channel-matrix",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "ca1e7e33f880d6678c1573ca90c42d382580f5a7",
