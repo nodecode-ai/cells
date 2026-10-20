@@ -82,6 +82,17 @@
       ]
     },
     {
+      "name": "nodecode-channel-imessage",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "e88dac12479365e22e3becae76eaab45a501fc69",
+      "path": "rooms/nodecode-channel-imessage",
+      "description": "Talk to nodecode over iMessage, through a BlueBubbles server",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode-channel-kit"
+      ]
+    },
+    {
       "name": "nodecode-channel-matrix",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "ca1e7e33f880d6678c1573ca90c42d382580f5a7",
