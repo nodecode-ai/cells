@@ -1568,62 +1568,62 @@ ROOM — bare, the status in words and the dialog (VOICE-DIALOG)."
     ;; A change pressed on a room's card answers the card again, the change
     ;; on it: words alone would take its buttons away.
     (multiple-value-bind (text dialog)
-    (cond
-      ((string= verb "") (values (voice-status-text section) (voice-dialog section room)))
-      ((string= verb "hears") (voice-pick-model :hears object))
-      ((string= verb "speaks") (voice-pick-model :speaks object))
-      ((string= verb "status") (voice-status-text section))
-      ((assoc verb +voice-replies+ :test #'string=)
-       (nlk:with-handlers ((error (condition) (format nil "voice: ~a" condition)))
-         (set-voice-replies room verb)))
-      ((string= verb "replies")
-       (if *command-source*
-           (values (format nil "voice: voice messages here — ~(~a~)" (voice-replies-label room))
-                   (voice-pick-dialog
-                    "Voice messages here" "" "How this room's answers come back."
-                    (loop with mode = (or (nck:room-voice-replies room) "off")
-                          for (key . meaning) in +voice-replies+
-                          collect (voice-row (cdr (assoc key +voice-reply-labels+ :test #'string=))
-                                             meaning "use" (format nil "/voice ~a" key)
-                                             :mark (if (equal key mode) "●" "") :mark-tone :accent))
-                    ""))
-           "voice: voice messages are a room's — pick them there, with `/voice replies`"))
-      ((string= verb "join")
-       ;; Beside the person who asked, wherever they sit in voice, or in the
-       ;; channel named; talking through the channel it was typed in and
-       ;; hearing them where no list names who is heard; answered once
-       ;; Discord has seated the bot.
-       (let ((channel (or object (and by (car (gethash by *voice-states*))))))
-         (if (and (null channel) (null lane))
-             (values "voice: sit in a voice channel first, or pick one" (voice-join-dialog))
-             (bt2:with-lock-held (*voice-seat-lock*)
-               (multiple-value-bind (lane refusal)
-                   (join-voice section :channel channel
-                                       :room (and *command-source* (voice-typed-room *command-source*))
-                                       :speakers (voice-speakers section by))
-                 (cond
-                   ((or (null lane) refusal) (format nil "voice: ~a" refusal))
-                   ((not (voice-await-seat lane)) (format nil "voice: ~a" (voice-unseated-text lane)))
-                   (t (voice-announce lane (voice-joining-line lane) typed))))))))
-      ((not (member verb '("say" "leave" "notes" "room" "hear") :test #'string=))
-       (format nil "voice: no such verb ~s — join, leave, status, room, hear, replies, on, tts, off, ~
-                    notes, hears, speaks, say <words>" verb))
-      ((null lane) "voice: not in a voice channel")
-      ((string= verb "room") (voice-room-command lane object section typed))
-      ((string= verb "hear") (voice-hear-command lane object section by typed))
-      ((string= verb "notes") (voice-notes-command lane object by typed))
-      ((string= verb "say")
-       ;; Say something now, with no turn behind it. The playback path is
-       ;; otherwise only reachable by asking a question and waiting, which
-       ;; makes a fault in it slow and expensive to see.
-       (let ((words (string-trim '(#\Space #\Tab)
-                                 (subseq (or argument "") (min (length (or argument "")) 4)))))
-         (cond
-           ((zerop (length words)) "voice: say what?")
-           (t (nck:queue-push lane.work-queue (list :speak words))
-              (format nil "voice: saying ~s out loud" words)))))
-      (t (prog1 (voice-announce lane (format nil "voice: leaving ~a." (voice-channel-name lane.channel-id)) typed)
-           (leave-voice))))
+      (cond
+        ((string= verb "") (values (voice-status-text section) (voice-dialog section room)))
+        ((string= verb "hears") (voice-pick-model :hears object))
+        ((string= verb "speaks") (voice-pick-model :speaks object))
+        ((string= verb "status") (voice-status-text section))
+        ((assoc verb +voice-replies+ :test #'string=)
+         (nlk:with-handlers ((error (condition) (format nil "voice: ~a" condition)))
+           (set-voice-replies room verb)))
+        ((string= verb "replies")
+         (if *command-source*
+             (values (format nil "voice: voice messages here — ~(~a~)" (voice-replies-label room))
+                     (voice-pick-dialog
+                      "Voice messages here" "" "How this room's answers come back."
+                      (loop with mode = (or (nck:room-voice-replies room) "off")
+                            for (key . meaning) in +voice-replies+
+                            collect (voice-row (cdr (assoc key +voice-reply-labels+ :test #'string=))
+                                               meaning "use" (format nil "/voice ~a" key)
+                                               :mark (if (equal key mode) "●" "") :mark-tone :accent))
+                      ""))
+             "voice: voice messages are a room's — pick them there, with `/voice replies`"))
+        ((string= verb "join")
+         ;; Beside the person who asked, wherever they sit in voice, or in the
+         ;; channel named; talking through the channel it was typed in and
+         ;; hearing them where no list names who is heard; answered once
+         ;; Discord has seated the bot.
+         (let ((channel (or object (and by (car (gethash by *voice-states*))))))
+           (if (and (null channel) (null lane))
+               (values "voice: sit in a voice channel first, or pick one" (voice-join-dialog))
+               (bt2:with-lock-held (*voice-seat-lock*)
+                 (multiple-value-bind (lane refusal)
+                     (join-voice section :channel channel
+                                         :room (and *command-source* (voice-typed-room *command-source*))
+                                         :speakers (voice-speakers section by))
+                   (cond
+                     ((or (null lane) refusal) (format nil "voice: ~a" refusal))
+                     ((not (voice-await-seat lane)) (format nil "voice: ~a" (voice-unseated-text lane)))
+                     (t (voice-announce lane (voice-joining-line lane) typed))))))))
+        ((not (member verb '("say" "leave" "notes" "room" "hear") :test #'string=))
+         (format nil "voice: no such verb ~s — join, leave, status, room, hear, replies, on, tts, off, ~
+                      notes, hears, speaks, say <words>" verb))
+        ((null lane) "voice: not in a voice channel")
+        ((string= verb "room") (voice-room-command lane object section typed))
+        ((string= verb "hear") (voice-hear-command lane object section by typed))
+        ((string= verb "notes") (voice-notes-command lane object by typed))
+        ((string= verb "say")
+         ;; Say something now, with no turn behind it. The playback path is
+         ;; otherwise only reachable by asking a question and waiting, which
+         ;; makes a fault in it slow and expensive to see.
+         (let ((words (string-trim '(#\Space #\Tab)
+                                   (subseq (or argument "") (min (length (or argument "")) 4)))))
+           (cond
+             ((zerop (length words)) "voice: say what?")
+             (t (nck:queue-push lane.work-queue (list :speak words))
+                (format nil "voice: saying ~s out loud" words)))))
+        (t (prog1 (voice-announce lane (format nil "voice: leaving ~a." (voice-channel-name lane.channel-id)) typed)
+             (leave-voice))))
       (values text
               (or dialog
                   (and *command-source*

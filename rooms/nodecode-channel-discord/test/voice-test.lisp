@@ -513,13 +513,11 @@ thinks with aside."
           (let ((nck:*command-source* (nlk:json-object "chat_kind" "channel" "channel_id" "t-1" "user_id" "u1")))
             (is-shape (nth-value 1 (ncd:voice-command "speaks bf_isabella" (voice-section) "tui-1")) (:title "Voice"))
             (is-shape (nth-value 1 (ncd:voice-command "leave" (voice-section) "tui-1")) (:title "Voice"))
-            (is (null (nth-value 1 (ncd:voice-command "status" (voice-section) "tui-1")))
-                "a change pressed in a room answers the card; status stays words")))))
+            (is (null (nth-value 1 (ncd:voice-command "status" (voice-section) "tui-1"))) "a change pressed in a room answers the card; status stays words")))))
     (let ((nck:*transcription* nil) (nck:*speech* nil))
       (is (equal '("Parakeet TDT 0.6B" "en_US lessac")
                  (list (nth-value 1 (ncd::voice-hearing-picks)) (nth-value 1 (ncd::voice-speaking-picks)))))
-      (is (equal "voice: the built-in engine has only en_US lessac" (ncd:voice-command "speaks af_heart" (voice-section)))
-          "none other to pick"))))
+      (is (equal "voice: the built-in engine has only en_US lessac" (ncd:voice-command "speaks af_heart" (voice-section))) "none other to pick"))))
 
 (deftest channel-discord-voice-bare-is-one-dialog-for-shell-and-room ()
   ;; Bare /voice answers its status in words and a dialog: where the bot sits
