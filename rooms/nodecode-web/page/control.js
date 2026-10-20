@@ -42,7 +42,17 @@ const RUNS = {
   serve: t("Runs headless in the foreground (nodecode serve): nothing starts it again if it stops."),
   shell: t("Runs inside a shell, in that shell's terminal."),
 };
-const SOURCES = { config: t("set in config.jsonc"), api_key: t("saved here"), env: t("from the environment"), oauth: t("signed in"), none: t("missing") };
+const SOURCES = { config: t("set in config.jsonc"), api_key: t("saved here"), env: t("from the environment"), oauth: t("signed in") };
+// The ready keys' order: saved here, set in config.jsonc, the environment's, a sign-in.
+const KEY_ORDER = ["api_key", "config", "env", "oauth"];
+// What is wrong with a provider config.jsonc names with no key, as the
+// gateway says it (its fix): the banner's line and why.
+const FIXES = {
+  pasted_key: (name) => [t("{name} is an API key saved as a provider name.", { name }), t("It names no provider. Forget takes it out of config.jsonc.")],
+  keyless_copy: (name, of) => [t("{name} is a copy of {of} with no key.", { name, of }), t("{of} has the key. Forget takes this copy out of config.jsonc.", { of })],
+};
+// A provider's name as the page says it (a pasted key's id comes masked from the gateway).
+const providerName = (p) => p.name || p.id;
 const LEVELS = [["all", t("All")], ["warn", t("Warnings")], ["error", t("Errors")]];
 // A channel's state and a job's in words; the state itself stays on the row for its color.
 const STATES = { starting: t("starting"), running: t("running"), degraded: t("degraded"), stopped: t("stopped"),
@@ -633,7 +643,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   function keyCell(p) {
     const cell = el("span", "ctl-key");
     cell.dataset.source = p.source;
-    cell.append(SOURCES[p.source] || p.source);
+    cell.append(el("span", "ctl-key-from", SOURCES[p.source] || p.source));
     if (p.tail) cell.append(el("span", "tag", ` ····${p.tail}`));
     return cell;
   }
@@ -666,47 +676,104 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     }
     root.append(model);
 
-    const keys = block(t("Provider keys"));
-    const k = c.keys;
-    if (!k || k.error) keys.append(k?.error ? unread(k.error) : waiting(t("Looking…")));
-    else {
-      const rows = el("ol", "ctl-list");
-      for (const p of k.providers) {
-        const li = el("li", "ctl-row");
-        const name = el("span", "ctl-name", p.name || p.id);
-        if (p.name) name.append(el("span", "tag", ` ${p.id}`));
-        const acts = el("span", "ctl-acts");
-        if (p.source === "api_key") acts.append(button("word", t("Replace"), { act: "edit-key", id: p.id }), mark("trash", t("Remove"), { act: "remove-key", id: p.id }));
-        else if (p.source === "none") acts.append(button("word", t("Add key"), { act: "edit-key", id: p.id }));
-        li.append(name, keyCell(p), acts);
-        rows.append(li);
-        if (c.editing === p.id) {
-          const save = button("solid", c.busy === "key" ? t("Checking…") : t("Save"), {});
-          save.type = "submit";
-          const f = form("save-key", field("key", t("Key for {provider}", { provider: p.id }), { type: "password", autocomplete: "off", required: "" }),
-            save, button("word", t("Cancel"), { act: "cancel" }));
-          f.dataset.id = p.id;
-          rows.append(item(f));
-        }
-        if (c.confirm === `key:${p.id}`) rows.append(item(confirmBox(t("Remove the key saved for {provider}? A turn on {provider} has none after, unless the environment gives one.", { provider: p.id }), t("Remove"), "drop-key", { id: p.id })));
-      }
-      if (!k.providers.length) rows.append(el("li", "obs-note", t("No provider is named yet.")));
-      keys.append(rows);
-      const known = el("datalist");
-      known.id = "ctl-providers";
-      for (const s of k.suggest) known.append(Object.assign(el("option"), { value: s.id }));
-      const provider = field("provider", t("Another provider"), { list: "ctl-providers", placeholder: "anthropic", autocomplete: "off", required: "" });
-      const secret = field("key", t("Its key"), { type: "password", autocomplete: "off", required: "" });
-      const save = button("quiet", c.busy === "key" ? t("Checking…") : t("Save key"), {});
-      save.type = "submit";
-      save.disabled = !!c.busy;
-      keys.append(form("save-key", provider, secret, save, known));
-      keys.append(note(t("Saved to {file}, as /connect saves it, once the provider has not refused the key. A key set in config.jsonc wins over one saved here. This page is never sent a key: only its last four characters.", { file: k.file })));
-      const pages = k.suggest.filter((s) => s.page).map((s) => `${s.id}: ${s.page}`).join(" · ");
-      if (pages) keys.append(note(t("Where keys are made: {pages}", { pages })));
-    }
-    root.append(keys, ...cfgs.blocks());
+    root.append(drawKeys(), ...cfgs.blocks());
     return root;
+  }
+
+  // Provider keys (the provider keys variants artifact's A with C's strip; the
+  // operator, 2026-10-20: "Land your pick A with C needs fixing strip"). What is
+  // wrong comes first, the kit's banner with its Forget; then the ready ones, a
+  // row each -- the name, where its key comes from and its last four, the acts
+  // under the hand; then those with no key, a chip each. The head holds the
+  // count, the filter and Add provider.
+  function drawKeys() {
+    const k = c.keys;
+    if (!k || k.error) {
+      const keys = block(t("Provider keys"));
+      keys.append(k?.error ? unread(k.error) : waiting(t("Looking…")));
+      return keys;
+    }
+    const phone = PHONE.matches;
+    const fixes = k.providers.filter((p) => FIXES[p.fix]);
+    const none = k.providers.filter((p) => p.source === "none" && !FIXES[p.fix]);
+    const ready = k.providers.filter((p) => p.source !== "none")
+      .sort((a, b) => KEY_ORDER.indexOf(a.source) - KEY_ORDER.indexOf(b.source) || providerName(a).localeCompare(providerName(b)));
+    const find = el("input", "control ctl-keys-find");
+    Object.assign(find, { type: "search", placeholder: t("Filter {n} providers", { n: k.providers.length }), value: c.keysFind || "" });
+    find.dataset.input = "keys-find";
+    find.setAttribute("aria-label", find.placeholder);
+    const count = el("span", "reading", t("{ready} ready · {none} with no key", { ready: ready.length, none: none.length + fixes.length }));
+    const keys = block(t("Provider keys"), count, find, ...phone ? [] : [button("quiet", t("Add provider"), { act: "add-key" })]);
+    keys.classList.add("ctl-keys-block");
+    for (const p of fixes) {
+      const name = providerName(p);
+      const [what, why] = FIXES[p.fix](name, p.of);
+      const go = button("quiet", t("Forget"), { act: "forget-provider", id: p.id });
+      go.disabled = !!c.busy;
+      keys.append(banner("need", what, why, go));
+      if (c.confirm === `forget:${p.id}`) keys.append(confirmBox(t("Take {name} out of config.jsonc?", { name }), t("Forget"), "drop-provider", { id: p.id, name }));
+    }
+    if (!phone && c.editing === "+") keys.append(addKey(k, true));
+    const rows = el("ol", "ctl-list ctl-keys ctl-keys-ready");
+    for (const p of ready) keyRow(rows, p);
+    if (!k.providers.length) rows.append(el("li", "obs-note", t("No provider is named yet.")));
+    if (ready.length) keys.append(el("p", "micro ctl-keys-group", t("Ready")));
+    keys.append(rows);
+    if (none.length) {
+      const label = el("p", "micro ctl-keys-group");
+      label.append(dot("act"), t("No key"));
+      const chips = el("ol", "ctl-list ctl-keys ctl-keys-none");
+      for (const p of none) keyRow(chips, p);
+      keys.append(label, chips);
+    }
+    if (phone) keys.append(addKey(k, false));
+    keys.append(note(t("Saved to {file}, as /connect saves it, once the provider has not refused the key. A key set in config.jsonc wins over one saved here. This page is never sent a key: only its last four characters.", { file: k.file })));
+    const pages = k.suggest.filter((s) => s.page).map((s) => `${s.id}: ${s.page}`).join(" · ");
+    if (pages) keys.append(note(t("Where keys are made: {pages}", { pages })));
+    siftKeys(keys);
+    return keys;
+  }
+
+  // One provider: a line of the ledger in the ready list, a chip in the no-key one.
+  function keyRow(rows, p) {
+    const li = el("li", "ctl-row");
+    li.dataset.find = `${p.name || ""} ${p.id}`.toLowerCase();
+    const name = el("span", "ctl-name", p.name || p.id);
+    if (p.name) name.append(el("span", "tag", ` ${p.id}`));
+    const acts = el("span", "ctl-acts");
+    if (p.source === "api_key") acts.append(button("word", t("Replace"), { act: "edit-key", id: p.id }), mark("trash", t("Remove"), { act: "remove-key", id: p.id }));
+    else if (p.source === "none") acts.append(button("word", t("Add key"), { act: "edit-key", id: p.id }));
+    li.append(name, ...p.source === "none" ? [] : [keyCell(p)], acts);
+    rows.append(li);
+    if (c.editing === p.id) {
+      const save = button("solid", c.busy === "key" ? t("Checking…") : t("Save"), {});
+      save.type = "submit";
+      const f = form("save-key", field("key", t("Key for {provider}", { provider: p.id }), { type: "password", autocomplete: "off", required: "" }),
+        save, button("word", t("Cancel"), { act: "cancel" }));
+      f.dataset.id = p.id;
+      rows.append(item(f));
+    }
+    if (c.confirm === `key:${p.id}`) rows.append(item(confirmBox(t("Remove the key saved for {provider}? A turn on {provider} has none after, unless the environment gives one.", { provider: p.id }), t("Remove"), "drop-key", { id: p.id })));
+  }
+
+  // Another provider and its key: under the head once Add provider is pressed,
+  // with its Cancel; a phone keeps it at the foot, a row that raises it.
+  function addKey(k, cancel) {
+    const known = el("datalist");
+    known.id = "ctl-providers";
+    for (const s of k.suggest) known.append(Object.assign(el("option"), { value: s.id }));
+    const provider = field("provider", t("Another provider"), { list: "ctl-providers", placeholder: "anthropic", autocomplete: "off", required: "" });
+    const secret = field("key", t("Its key"), { type: "password", autocomplete: "off", required: "" });
+    const save = button("quiet", c.busy === "key" ? t("Checking…") : t("Save key"), {});
+    save.type = "submit";
+    save.disabled = !!c.busy;
+    return form("save-key", provider, secret, save, ...cancel ? [button("word", t("Cancel"), { act: "cancel" })] : [], known);
+  }
+
+  // The keys' filter: the rows and chips whose name or id holds what was typed.
+  function siftKeys(scope) {
+    const needle = (c.keysFind || "").trim().toLowerCase();
+    for (const li of scope.querySelectorAll(".ctl-keys > .ctl-row")) li.hidden = !!needle && !li.dataset.find.includes(needle);
   }
 
   // One cell's row, and the lines under it: why its start was refused, why
@@ -1476,6 +1543,16 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       case "follow": c.log.follow = !c.log.follow; redraw(); schedule(); if (c.log.follow) readLog(false); return;
       case "edit-key": c.editing = d.id; c.confirm = null; redraw(); document.querySelector(".ctl-form input[name=key]")?.focus(); return;
       case "remove-key": c.confirm = `key:${d.id}`; c.editing = null; redraw(); return;
+      case "add-key": c.editing = "+"; c.confirm = null; redraw(); document.querySelector(".ctl-keys-block input[name=provider]")?.focus(); return;
+      case "forget-provider": c.confirm = `forget:${d.id}`; c.editing = null; redraw(); return;
+      // Forget takes a flagged entry out of config.jsonc, named as the listing says it.
+      case "drop-provider":
+        act("key", async () => {
+          c.keys = await api("POST", "/api/gateway/keys", { provider: d.id, forget: true });
+          await cfgs.load();
+          toast(t("{name} is out of config.jsonc.", { name: d.name }));
+        });
+        return;
       case "drop-key":
         act("key", async () => { c.keys = await api("POST", "/api/gateway/keys", { provider: d.id, key: null }); toast(t("The key for {provider} is removed.", { provider: d.id })); });
         return;
@@ -1508,6 +1585,12 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   }
 
   function input(event) {
+    if (event.target.dataset.input === "keys-find") {
+      c.keysFind = event.target.value;
+      const scope = event.target.closest(".ctl-keys-block");
+      if (scope) siftKeys(scope);
+      return;
+    }
     if (event.target.dataset.input === "find") {
       const s = c.lists[event.target.dataset.list];
       Object.assign(s, { find: event.target.value, shown: PAGE });

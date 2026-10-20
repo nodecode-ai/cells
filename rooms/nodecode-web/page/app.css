@@ -1618,13 +1618,35 @@ button.p-row:active { background: var(--field-lit); }
 .ctl-detail, .ctl-key, .ctl-seen { flex: 1 1 220px; min-width: 0; font: var(--fs-detail) var(--mono); color: var(--secondary); overflow-wrap: anywhere; }
 .ctl-seen { flex: 0 1 220px; color: var(--tertiary); }
 .ctl-detail .mono { color: var(--foreground); }
-.ctl-key[data-source="none"] { color: var(--accent); }
 .ctl-key .tag, .ctl-name .tag { font: var(--fs-micro) var(--mono); color: var(--tertiary); }
 .ctl-row[data-level="error"] .ctl-detail { color: var(--danger-lit); }
 .ctl-acts { margin-left: auto; display: flex; gap: 16px; flex: none; }
 .ctl-sub { padding: 0 0 10px 26px; margin-top: -4px; border-bottom: 1px solid var(--seam); font: var(--fs-detail)/1.55 var(--sans); color: var(--tertiary); overflow-wrap: anywhere; }
 .ctl-sub.refused { color: var(--danger-lit); }
 .ctl-sub.probe { color: var(--secondary); white-space: pre-wrap; }
+/* Provider keys (the variants artifact's A): a ledger as wide as it reads, its
+   columns aligned -- the name, where its key comes from and its last four, the
+   acts under the hand -- what is wrong in banners over it, and those with no
+   key a chip each. */
+.ctl-keys-block > .obs-head .ctl-keys-find { margin-left: auto; width: 240px; }
+.ctl-keys-block > .banner { margin-bottom: 8px; }
+.ctl-keys-group { display: flex; align-items: center; gap: 8px; margin: 18px 0 8px; }
+.ctl-keys > li[hidden] { display: none; }
+.ctl-keys .ctl-key { font-family: var(--sans); }
+.control-pane:not(.ctl-phone) .ctl-keys-block { max-width: 860px; }
+.control-pane:not(.ctl-phone) .ctl-keys-ready > .ctl-row { display: grid; grid-template-columns: minmax(0, 1fr) 280px 150px; align-items: center; }
+.control-pane:not(.ctl-phone) .ctl-keys-ready .ctl-key-from { display: inline-block; min-width: 160px; }
+.control-pane:not(.ctl-phone) .ctl-keys-ready .ctl-acts { justify-content: flex-end; }
+.control-pane:not(.ctl-phone) .ctl-keys-none { display: flex; flex-wrap: wrap; gap: 8px; border-top: 0; }
+.control-pane:not(.ctl-phone) .ctl-keys-none > .ctl-row { gap: 10px; align-items: center; padding: 3px 3px 3px 12px; border: 1px dashed var(--seam-lit); border-radius: var(--r-control); }
+.control-pane:not(.ctl-phone) .ctl-keys-none .ctl-name { flex: none; }
+.control-pane:not(.ctl-phone) .ctl-keys-none .ctl-acts { margin-left: 0; }
+.control-pane:not(.ctl-phone) .ctl-keys-none > .ctl-inset { flex-basis: 100%; }
+.ctl-phone .ctl-keys-block > .obs-head { flex-wrap: wrap; }
+.ctl-phone .ctl-keys-block > .obs-head .ctl-keys-find { flex: 1 1 100%; width: auto; margin-left: 0; }
+@media (hover: hover) {
+  .ctl-keys-ready > .ctl-row:not(:hover):not(:focus-within) .ctl-acts > .word { opacity: 0; }
+}
 .ctl-notice { margin: 10px 0 0; font: var(--fs-detail)/1.6 var(--sans); color: var(--muted); overflow-wrap: anywhere; }
 .ctl-notice[data-level="warning"] { color: var(--accent); }
 .ctl-notice[data-level="error"] { color: var(--danger-lit); }

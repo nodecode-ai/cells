@@ -877,6 +877,24 @@ brace that closes it at the start of a line, or NIL."
 ;; on their side), beside it one list of what is in the place the rail lit (the
 ;; sessions; the Dashboard's sections; Settings' sections under their groups,
 ;; saying how each stands), and a page whose head, body and box share one frame.
+;; Provider keys (the provider keys variants artifact's A with C's strip; the
+;; operator, 2026-10-20: "Land your pick A with C needs fixing strip"). What is
+;; wrong comes first, the kit's banner with its Forget, which goes through the
+;; keys route by the name the gateway says (a pasted key's masked); the ready
+;; keys are one ledger of aligned columns, as wide as it reads; a provider with
+;; no key is a chip.
+(deftest web-cell-provider-keys-say-what-needs-fixing-first ()
+  (let* ((control (web-page-text "control.js"))
+         (keys (web-js-function control "drawKeys"))
+         (css (web-css-declarations (web-page-text "app.css"))))
+    (is (search "root.append(drawKeys(), ...cfgs.blocks());" (web-js-function control "drawSettings")) "Config draws the keys")
+    (is (search "keys.append(banner(\"need\", what, why, go));" keys) "what is wrong is the kit's banner")
+    (is (< (search "banner(" keys) (search "ctl-keys-ready" keys)) "over the list")
+    (is (search "{ provider: d.id, forget: true }" control) "Forget goes through the keys route")
+    (is (equal "grid" (web-css-value css ".control-pane:not(.ctl-phone) .ctl-keys-ready > .ctl-row" "display")) "the ready keys are a ledger")
+    (is (equal "860px" (web-css-value css ".control-pane:not(.ctl-phone) .ctl-keys-block" "max-width")) "as wide as it reads")
+    (is (search "dashed" (web-css-value css ".control-pane:not(.ctl-phone) .ctl-keys-none > .ctl-row" "border")) "a provider with no key is a chip")))
+
 (deftest web-cell-a-wide-window-has-a-rail-a-list-and-a-reading-column ()
   (let* ((html (web-page-text "index.html"))
          (app (web-page-text "app.js"))

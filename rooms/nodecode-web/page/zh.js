@@ -845,7 +845,6 @@ export const ZH = {
   "link, leads outside the folder": "链接，指向文件夹之外",
   "mcp.enabled is false in config.jsonc: no server starts until it is true.": "config.jsonc 中 mcp.enabled 为 false：改为 true 之前不会启动任何服务器。",
   "memory": "记忆",
-  "missing": "缺失",
   "model calls per tool": "各工具模型调用",
   "model calls that asked for no step": "未请求任何步骤的模型调用",
   "needs setting up": "待设置",
@@ -1255,5 +1254,16 @@ export const ZH = {
   "Read the log": "查看日志",
   "Show": "显示",
   "{n} cell failed to load.": "{n} 个单元加载失败。",
-  "{n} cells failed to load.": "{n} 个单元加载失败。"
+  "{n} cells failed to load.": "{n} 个单元加载失败。",
+  "{name} is an API key saved as a provider name.": "{name} 是存成了提供商名称的 API 密钥。",
+  "It names no provider. Forget takes it out of config.jsonc.": "它不指向任何提供商。点“忘记”会把它从 config.jsonc 中移除。",
+  "{name} is a copy of {of} with no key.": "{name} 是 {of} 的副本，没有密钥。",
+  "{of} has the key. Forget takes this copy out of config.jsonc.": "{of} 有密钥。点“忘记”会把这个副本从 config.jsonc 中移除。",
+  "Filter {n} providers": "筛选 {n} 个提供商",
+  "{ready} ready · {none} with no key": "{ready} 个可用 · {none} 个没有密钥",
+  "Add provider": "添加提供商",
+  "Take {name} out of config.jsonc?": "把 {name} 从 config.jsonc 中移除？",
+  "Ready": "可用",
+  "No key": "没有密钥",
+  "{name} is out of config.jsonc.": "{name} 已从 config.jsonc 中移除。"
 };
