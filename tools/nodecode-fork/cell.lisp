@@ -241,4 +241,4 @@ Every other session is NEXT's."
   (:hook :frame (nle:observer #'observe "fork"))
   (:hook 'nle:turn-budget #'budget-hook)
   (:hook 'nle:name-session #'naming-hook)
-  (:help :fork "fork: (fork:run \"task\" ...) gives each of up to 4 tasks to a fork of this session that holds this whole context; they run at once and it answers their results. Fork independent branches or a probe that would bury this context, never a plain linear task" +primer+))
+  (:help :fork "fork: whenever an ask splits into two or more independent investigations that each take several reads, run them at once with (fork:run \"task 1\" \"task 2\" ...) instead of one after another: each of up to 4 forks of this session holds this whole context, and the call answers their results. Also for a probe whose output would bury this context; never for a linear task or a quick read" +primer+))
