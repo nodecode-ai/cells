@@ -877,12 +877,12 @@ brace that closes it at the start of a line, or NIL."
 ;; on their side), beside it one list of what is in the place the rail lit (the
 ;; sessions; the Dashboard's sections; Settings' sections under their groups,
 ;; saying how each stands), and a page whose head, body and box share one frame.
-(deftest web-cell-a-wide-window-has-a-rail-a-list-and-one-frame ()
+(deftest web-cell-a-wide-window-has-a-rail-a-list-and-a-reading-column ()
   (let* ((html (web-page-text "index.html"))
          (app (web-page-text "app.js"))
          (control (web-page-text "control.js"))
          (text (web-page-text "app.css"))
-         (at (search "/* --- a wide window: the rail, its list, one frame" text))
+         (at (search "/* --- a wide window: the rail, its list, a reading column" text))
          (block (and at (subseq text at (search (format nil "~%}~%") text :start2 at))))
          (list (web-js-function app "paintList")))
     (is block "a wide window has its block")
@@ -892,10 +892,14 @@ brace that closes it at the start of a line, or NIL."
       (is (search "flex-direction: column; align-items: center; gap: 6px;" block) "the places stand down the rail")
       (is (search "#sessions-tab { display: flex; }" block) "Sessions is one of them, as on a phone")
       (is (search "#app:is([data-pane=\"dashboard\"], [data-pane=\"control\"]) .group { display: none; }" block) "a board's list stands where the sessions were")
-      (is (search ".app { --lane: 1040px; }" block) "one frame's width")
-      (dolist (rule '(".strip { width: 100%; max-width: var(--lane);" ".slab > .rule { width: 100%; max-width: var(--lane);"
-                      ".observe .lane { max-width: var(--lane); }" ".opener { width: 100%; max-width: var(--lane);"))
-        (is (search rule block) (format nil "the frame holds ~a" (subseq rule 0 (position #\{ rule)))))
+      (is (search ".app { --lane: 1040px; }" block) "a board's frame")
+      (is (search ".app { --read: 760px; }" block) "a chat's reading column")
+      (dolist (rule '(".slab > .rule { display: none; }" ".ledger > .lane, .dock { max-width: var(--read); }"
+                      ".ledger .prose > :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6) { max-width: none; }"
+                      ".observe .lane { max-width: var(--lane); }"
+                      ".slab:has(> .ledger > .opener:not([hidden])) .title-block { visibility: hidden; }"))
+        (is (search rule block) (format nil "the wide window holds ~a" (subseq rule 0 (position #\{ rule)))))
+      (is (not (search ".opener {" block)) "the opener keeps its centre")
       (is (search ".dashboard .dash-jumps { display: none; }" block) "the Dashboard's sections are the list's, not a menu's"))
     (is (search "id=\"place\"" (subseq html (search "id=\"column\"" html) (search "class=\"slab\"" html))) "the list is the column's")
     (is (search "export const WIDE = matchMedia(\"(min-width: 1024px)\");" control) "control.js names the same width")

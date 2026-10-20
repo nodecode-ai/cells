@@ -2634,7 +2634,7 @@ button.p-row:active { background: var(--field-lit); }
 .banner .banner-why { font-size: var(--fs-detail); color: var(--muted); }
 .banner > :is(.quiet, .solid) { flex: none; }
 
-/* --- a wide window: the rail, its list, one frame ------------------------------
+/* --- a wide window: the rail, its list, a reading column ------------------------
    The desktop audit's variant B (the operator, 2026-10-19: "Land B"). From
    1024 px every page stands in one skeleton. A 72 px rail on the far left: the
    axolotl, +, then Sessions, Dashboard and Settings -- the phone's tab bar on
@@ -2714,13 +2714,22 @@ button.p-row:active { background: var(--field-lit); }
   /* Folded, the list goes and the rail stays. */
   .app.folded .column { display: grid; width: 72px; grid-template-columns: 72px 0; }
   .app.folded :is(.group, .place, .gateway .where, #fold) { display: none; }
-  /* The page's one frame: the head, its rule, every place's body and the box. */
-  .strip { width: 100%; max-width: var(--lane); height: 60px; margin: 0 auto; }
-  .slab > .rule { width: 100%; max-width: var(--lane); margin: 0 auto; }
+  /* The page's head is one quiet line across it -- the title, its actions at
+     the far right -- and no rule: the list's head draws the one seam. A chat
+     reads in one centred column, --read wide, its prose filling it and the box
+     the same width under a fade; a board's body keeps the --lane frame. A new
+     session's opener stands in the middle of the window, under no title. */
+  .app { --read: 760px; }
+  .slab { padding: 0 20px 0 28px; }
+  .strip { height: 60px; }
+  .strip h1 { color: var(--secondary); }
+  .slab > .rule { display: none; }
+  .ledger { scrollbar-gutter: stable both-edges; }
+  .ledger > .lane, .dock { max-width: var(--read); }
+  .ledger .prose > :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6) { max-width: none; }
+  .dock::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 28px; background: linear-gradient(to bottom, transparent, var(--stage)); pointer-events: none; }
   .observe .lane { max-width: var(--lane); }
-  .opener { width: 100%; max-width: var(--lane); margin: 0 auto; align-items: stretch; justify-content: flex-start; padding-top: 48px; }
-  .opener > * { max-width: none; }
-  .opener .display { text-align: left; }
+  .slab:has(> .ledger > .opener:not([hidden])) .title-block { visibility: hidden; }
   /* The list holds the Dashboard's sections, so its bar holds only the range. */
   .dashboard .dash-jumps { display: none; }
 }
