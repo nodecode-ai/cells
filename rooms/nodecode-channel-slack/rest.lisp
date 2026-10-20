@@ -435,10 +435,7 @@ already is: Slack keeps a response_url open half an hour. Executing it is
 done (WRAP-SLACK-EXECUTOR).")
 
 (defun respond-plan (candidate text &key private controls panel (timeout-seconds 30)
-                                    &aux (url (source-field candidate "response_url"))
-                                         (pressed (candidate-pressed-p candidate))
-                                         (seen-by-one (eq t (gethash "card_ephemeral"
-                                                                     (gethash "source" candidate)))))
+                                    &aux (url (source-field candidate "response_url")))
   "The answer to a slash command or a press, through the response_url it
 arrived with. A command's answer goes in the channel for everyone to read,
 or, PRIVATE, to the person who asked alone (ephemeral); a press's answer
@@ -451,14 +448,16 @@ else, which is answered as a reply."
   ;; press came from, an ephemeral one too -- which chat.update cannot reach
   ;; -- and an ephemeral one stays seen by its one reader.
   (declare (ignore panel))
-  (cond ((null url) nil)
-        ((null text) +socket-hold+)
-        (t (rest-plan "POST" url "respond" t timeout-seconds
-                      (nlk:json-object "response_type" (if private "ephemeral" "in_channel")
-                                       :when (and pressed (or seen-by-one (not private)))
-                                       "replace_original" t
-                                       "text" (notification-text text)
-                                       "blocks" (message-blocks text controls))))))
+  (let ((pressed (candidate-pressed-p candidate))
+        (seen-by-one (eq t (gethash "card_ephemeral" (gethash "source" candidate)))))
+    (cond ((null url) nil)
+          ((null text) +socket-hold+)
+          (t (rest-plan "POST" url "respond" t timeout-seconds
+                        (nlk:json-object "response_type" (if private "ephemeral" "in_channel")
+                                         :when (and pressed (or seen-by-one (not private)))
+                                         "replace_original" t
+                                         "text" (notification-text text)
+                                         "blocks" (message-blocks text controls)))))))
 
 (defun slack-message-id (body)
   "The ts of the message a chat.postMessage execution created."

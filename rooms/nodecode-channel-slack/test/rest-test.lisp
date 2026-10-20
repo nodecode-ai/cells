@@ -41,8 +41,7 @@
     (let ((blocks (plan-field plan "blocks")))
       (is (equal "markdown" (nlk:json-value (aref blocks 0) :string "type")))
       (is (equal (format nil "<@U7> # Title~%~%**bold** and `code`")
-                 (nlk:json-value (aref blocks 0) :string "text"))
-          "the one mention is the kit's")
+                 (nlk:json-value (aref blocks 0) :string "text")) "the one mention is the kit's")
       (is-present (buttons (nlk:json-array (aref blocks 1) "elements")) "the controls ride"
         (is (= 2 (length buttons)))
         (is (equal "danger" (nlk:json-value (aref buttons 0) :string "style")))
@@ -98,8 +97,7 @@
     (is (equal '("Go") (mapcar #'words (buttons '((("Go" "g" :primary) ("Off" "o" :secondary t)))))))
     (is (= 75 (length (words (first (buttons (list (list (make-string 90 :initial-element #\a) "x" nil))))))))
     (is (null (buttons :clear)))
-    (is (= 1 (length (ncs::message-blocks "card" '((("Off" "o" :secondary t))))))
-        "a row of only disabled buttons is no block")))
+    (is (= 1 (length (ncs::message-blocks "card" '((("Off" "o" :secondary t)))))) "a row of only disabled buttons is no block")))
 
 (deftest channel-slack-menus-and-lines-are-block-kit ()
   ;; A kit menu is a static select, its current option the one shown picked;
@@ -117,8 +115,7 @@
     (is (equal "Select effort" (nlk:json-value select :string "placeholder" "text")))
     (is (equal '("nck:p:1" "nck:p:2")
                (map 'list (lambda (o) (nlk:json-value o :string "value")) (nlk:json-array select "options"))))
-    (is (null (nlk:json-value (aref (nlk:json-array select "options") 0) :object "description"))
-        "an empty description is none")
+    (is (null (nlk:json-value (aref (nlk:json-array select "options") 0) :object "description")) "an empty description is none")
     (is (equal "nck:p:2" (nlk:json-value select :string "initial_option" "value")))
     (let ((line (aref blocks 2)))
       (is (equal "section" (nlk:json-value line :string "type")))
@@ -165,8 +162,7 @@
     (is-plan (ncs:typing-plan book (slack-target "C1" "1.1"))
              :path "/assistant.threads.setStatus" :label "typing_indicator"
              "channel_id" "C1" "thread_ts" "1.1" "status" "is working...")
-    (is (null (ncs:typing-plan book (slack-target "D1" "1.1")))
-        "a DM answers in the channel, where Slack shows no status"))
+    (is (null (ncs:typing-plan book (slack-target "D1" "1.1"))) "a DM answers in the channel, where Slack shows no status"))
   (let ((plans (ncs:reaction-plans (slack-target "C1") "5.5" "👀")))
     (is (= 1 (length plans)))
     (is-plan (first plans) :path "/reactions.add" "channel" "C1" "timestamp" "5.5" "name" "eyes"))
@@ -187,8 +183,7 @@
              :method "POST" :path "https://hooks.slack.com/commands/1"
              "response_type" "in_channel" "text" "the answer"))
   (is (null (ncs:respond-plan (ncs:slack-message-candidate (slack-message "C1" "1.1" "hi"))
-                              "the answer"))
-      "a message is answered as a reply"))
+                              "the answer")) "a message is answered as a reply"))
 
 (deftest channel-slack-a-press-answers-through-its-url ()
   ;; A press's answer becomes the message pressed -- replace_original, which
@@ -258,8 +253,7 @@
     (let ((posted (nck:execute-plan executor (nck:rest-plan "POST" "/chat.postMessage"
                                                             "send_message" nil 5))))
       (is (equal "9.9" (ncs:slack-message-id (nck:execution-body posted)))))
-    (is (nck:execution-ok-p (nck:execute-plan executor nil))
-        "a status beat Slack cannot show is done")))
+    (is (nck:execution-ok-p (nck:execute-plan executor nil)) "a status beat Slack cannot show is done")))
 
 (deftest channel-slack-address-carries-the-channel ()
   (is (equal "C1:5.5" (ncs:slack-address (slack-target "C1") "5.5")))

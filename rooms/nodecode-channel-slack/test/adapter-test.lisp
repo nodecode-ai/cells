@@ -49,15 +49,13 @@ once its socket is open; the provider answers `slack reply'."
       (fake-slack-push fake (slack-event-envelope "e1" (slack-message "D1" ts "hi bot"
                                                                       :channel-type "im")))
       (is (await (:timeout 5) (fake-slack-acked-p fake "e1")) "the envelope was acknowledged")
-      (is-present (answer (await (:timeout 15) (first (slack-answers fake "slack reply"))))
-          "the answer was posted"
+      (is-present (answer (await (:timeout 15) (first (slack-answers fake "slack reply")))) "the answer was posted"
         (is (equal "D1" (gethash "channel" answer)))
         (is (null (gethash "thread_ts" answer)) "a DM answers in the DM"))
       (is-lane-carrying "slack" "slack-D1" (format nil "slack-D1-m~a" ts) "slack-channel"
                         "(Slack user id U1)" "(ncs:request")
       (is (wire-row (format nil "kim (operator) [m~a uU1]: hi bot" ts) (first messages-seen)
-                    "content")
-          "the line names its speaker by the name Slack gives")
+                    "content") "the line names its speaker by the name Slack gives")
       ;; Slack sends an unacknowledged envelope again; the ask is one turn.
       (fake-slack-push fake (slack-event-envelope "e1" (slack-message "D1" ts "hi bot"
                                                                       :channel-type "im")))
@@ -71,8 +69,7 @@ once its socket is open; the provider answers `slack reply'."
           (lane "slack-C1-m1700000002.000100"))
       (fake-slack-push fake (slack-event-envelope
                              "e1" (slack-message "C1" root "<@UBOT> what is up")))
-      (is-present (answer (await (:timeout 15) (first (slack-answers fake "slack reply"))))
-          "the answer was posted"
+      (is-present (answer (await (:timeout 15) (first (slack-answers fake "slack reply")))) "the answer was posted"
         (is (equal "C1" (gethash "channel" answer)))
         (is (equal root (gethash "thread_ts" answer)) "in the ask's thread"))
       (is (await (:timeout 15) (plusp (count-session-events lane "turn.completed"))))
@@ -84,11 +81,9 @@ once its socket is open; the provider answers `slack reply'."
       (fake-slack-push fake (slack-event-envelope
                              "e3" (slack-message "C1" "1700000002.000300" "and more"
                                                  :thread root)))
-      (is (await (:timeout 15) (= 2 (length (slack-answers fake "slack reply"))))
-          "the follow-up was answered")
+      (is (await (:timeout 15) (= 2 (length (slack-answers fake "slack reply")))) "the follow-up was answered")
       (is (every (lambda (body) (equal root (gethash "thread_ts" body)))
-                 (slack-answers fake "slack reply"))
-          "both answers are in the one thread")
+                 (slack-answers fake "slack reply")) "both answers are in the one thread")
       (is (await (:timeout 15) (= 2 (count-session-events lane "turn.completed"))))
       (is (= 2 (count-session-events lane "turn.started")) "one lane, two turns")
       (is (not (nlk:session-exists-p "slack-C1-m1700000002.000300")) "no second lane")
@@ -98,8 +93,7 @@ once its socket is open; the provider answers `slack reply'."
   (with-slack-lane (fake "allowed_users" (vector "U1") "owner" (vector "U1"))
     ;; Slack moves the socket on its own schedule and says so first.
     (fake-slack-push fake (nlk:json-object "type" "disconnect" "reason" "refresh_requested"))
-    (is (await (:timeout 10) (and (>= (fake-slack-opened fake) 2) (fake-slack-sockets fake)))
-        "a fresh socket replaced the one Slack moved")
+    (is (await (:timeout 10) (and (>= (fake-slack-opened fake) 2) (fake-slack-sockets fake))) "a fresh socket replaced the one Slack moved")
     (is (getf (nck:channel-status "slack") :connected))
     (fake-slack-push fake (slack-envelope
                            "s1" "slash_commands"
@@ -108,8 +102,7 @@ once its socket is open; the provider answers `slack reply'."
                                             "response_url" (format nil "http://127.0.0.1:~d/response/1"
                                                                    (fake-slack-port fake)))))
     (is (await (:timeout 5) (fake-slack-acked-p fake "s1")))
-    (is-present (response (await (:timeout 15) (first (slack-calls fake "response"))))
-        "/nodecode help answered through its response_url"
+    (is-present (response (await (:timeout 15) (first (slack-calls fake "response")))) "/nodecode help answered through its response_url"
       (is (equal "in_channel" (gethash "response_type" response)))
       (is (plusp (length (slack-block-text response))) "the help says something"))
     (is (null (slack-calls fake "chat.postMessage")) "a command is no turn")))
@@ -134,8 +127,7 @@ once its socket is open; the provider answers `slack reply'."
                                                   "value" value "action_ts" "1700000005.000200"))))))
       (fake-slack-push fake (press "p1" (nck:press-token "/help")))
       (is (await (:timeout 5) (fake-slack-acked-p fake "p1")))
-      (is-present (response (await (:timeout 15) (first (slack-calls fake "response"))))
-          "the line the choice says was answered through the press's response_url"
+      (is-present (response (await (:timeout 15) (first (slack-calls fake "response")))) "the line the choice says was answered through the press's response_url"
         (is (eq t (gethash "replace_original" response)) "the answer becomes the message pressed")
         (is (plusp (length (slack-block-text response))) "the help says something"))
       (is (null (slack-calls fake "chat.postMessage")) "a command is no turn"))))
@@ -164,8 +156,7 @@ once its socket is open; the provider answers `slack reply'."
       (fake-slack-push fake (slack-event-envelope "e2" (slack-edit "C1" "1700000003.000050" "working"
                                                                    :bot-id "BBOT")))
       (fake-slack-push fake (slack-event-envelope "e3" (slack-edit "C1" ts "<@UBOT> what is up")))
-      (is-present (answer (await (:timeout 15) (first (slack-answers fake "slack reply"))))
-          "the edited ask was answered"
+      (is-present (answer (await (:timeout 15) (first (slack-answers fake "slack reply")))) "the edited ask was answered"
         (is (equal ts (gethash "thread_ts" answer)) "in the ask's thread"))
       (is (await (:timeout 15) (plusp (count-session-events (format nil "slack-C1-m~a" ts) "turn.completed"))))
       (is (= 1 (length (slack-answers fake "slack reply"))) "one ask, one answer"))))
@@ -184,8 +175,7 @@ once its socket is open; the provider answers `slack reply'."
                                                  :thread root :parent-user "U2")))
       (is (await (:timeout 15) (first (slack-answers fake "slack reply"))) "the ask was answered")
       (is (equal (format nil "channel=C1&ts=~a&limit=1" root)
-                 (first (slack-calls fake "conversations.replies")))
-          "the thread's first message was read")
+                 (first (slack-calls fake "conversations.replies"))) "the thread's first message was read")
       (is (prompt-says-p messages-seen "the root says hello") "the ask carries what it answers"))))
 
 (deftest channel-slack-what-was-said-while-away-is-caught-up ()
@@ -205,15 +195,13 @@ once its socket is open; the provider answers `slack reply'."
                   (nlk:json-object "type" "message" "user" "U1" "ts" older
                                    "text" "<@UBOT> long ago")))
       (ncs::start-catch-up ncs::*slack-adapter* (- now 300000))
-      (is-present (answer (await (:timeout 15) (first (slack-answers fake "slack reply"))))
-          "the missed ask was answered"
+      (is-present (answer (await (:timeout 15) (first (slack-answers fake "slack reply")))) "the missed ask was answered"
         (is (equal missed (gethash "thread_ts" answer)) "in its thread"))
       (is (prompt-says-p messages-seen "are you there?"))
       (is (equal "channel=C1&limit=50" (first (slack-calls fake "conversations.history"))))
       (sleep 1)
       (is (= 1 (length (slack-answers fake "slack reply"))) "the older ask and the bot's own are left be")))
-  (is (equal "1700000000.123000" (ncs::ms-ts (ncs::ts-ms "1700000000.123456")))
-      "a ts read to the millisecond and back"))
+  (is (equal "1700000000.123000" (ncs::ms-ts (ncs::ts-ms "1700000000.123456"))) "a ts read to the millisecond and back"))
 
 (deftest channel-slack-probe-names-what-the-tokens-see ()
   (with-fake-slack (fake)

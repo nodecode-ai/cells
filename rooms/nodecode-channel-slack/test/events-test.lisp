@@ -26,8 +26,7 @@
 (deftest channel-slack-message-maps-to-the-candidate ()
   (is-present (dm (ncs:slack-message-candidate
                    (slack-message "D1" "1.1" "hi &amp; bye" :channel-type "im")
-                   :bot-user-id "UBOT" :user-name "kim"))
-      "a DM is something said"
+                   :bot-user-id "UBOT" :user-name "kim")) "a DM is something said"
     (is (equal "hi & bye" (gethash "text" dm)))
     (is-source dm "platform" "slack" "chat_kind" "direct_message" "channel_id" "D1"
                "message_id" "1.1" "user_id" "U1" "user_name" "kim" "workspace_id" "T1"
@@ -37,27 +36,22 @@
   ;; when the thread hangs off the bot or the bot speaks in it.
   (is-present (reply (ncs:slack-message-candidate
                       (slack-message "C1" "2.2" "and more" :thread "1.1" :parent-user "UBOT")
-                      :bot-user-id "UBOT"))
-      "a reply under the bot's message"
+                      :bot-user-id "UBOT")) "a reply under the bot's message"
     (is-source reply "chat_kind" "thread" "reply_to_message_id" "1.1")
     (is (nck:candidate-addressed-p reply)))
   (let ((seen '()))
     (is-present (reply (ncs:slack-message-candidate
                         (slack-message "C1" "2.3" "go on" :thread "1.1")
                         :bot-user-id "UBOT"
-                        :bot-thread-p (lambda (channel root) (push (list channel root) seen) t)))
-        "a reply in a thread the bot answers in"
+                        :bot-thread-p (lambda (channel root) (push (list channel root) seen) t))) "a reply in a thread the bot answers in"
       (is (nck:candidate-addressed-p reply))
       (is (equal '(("C1" "1.1")) seen))))
   (is-present (parent (ncs:slack-message-candidate
-                       (slack-message "C1" "1.1" "the ask" :thread "1.1") :bot-user-id "UBOT"))
-      "a thread's own first message replies to nothing"
+                       (slack-message "C1" "1.1" "the ask" :thread "1.1") :bot-user-id "UBOT")) "a thread's own first message replies to nothing"
     (is-source parent "reply_to_message_id" nil))
-  (is (null (ncs:slack-message-candidate (slack-message "C1" "3.3" "x" :subtype "message_changed")))
-      "an edit is bookkeeping")
+  (is (null (ncs:slack-message-candidate (slack-message "C1" "3.3" "x" :subtype "message_changed"))) "an edit is bookkeeping")
   (is (null (ncs:slack-message-candidate (slack-message "C1" "3.4" "x" :subtype "channel_join"))))
-  (is-present (bot (ncs:slack-message-candidate (slack-message "C1" "3.5" "beep" :bot-id "B2")))
-      "another bot's line maps, and says it is a bot's"
+  (is-present (bot (ncs:slack-message-candidate (slack-message "C1" "3.5" "beep" :bot-id "B2"))) "another bot's line maps, and says it is a bot's"
     (is (eq t (gethash "is_bot" (gethash "source" bot)))))
   (is-present (shared (ncs:slack-message-candidate
                        (slack-message "C1" "4.4" "look" :subtype "file_share"
@@ -68,8 +62,7 @@
                                                                        (nlk:json-object
                                                                         "id" "F2" "name" "a.zip"
                                                                         "mimetype" "application/zip"
-                                                                        "url_private_download" "https://files/F2")))))
-      "a file share carries every file: the kit reads what it can in, and saves the rest"
+                                                                        "url_private_download" "https://files/F2"))))) "a file share carries every file: the kit reads what it can in, and saves the rest"
     (let ((files (gethash "attachments" shared)))
       (is (= 2 (length files)))
       (is-shape (aref files 0) ("id" "F1") ("download" "https://files/F1")
@@ -131,8 +124,7 @@
     (is (nck:candidate-pressed-p candidate))
     (is (eq t (source-field-of candidate "addressed")))
     (is (null (source-field-of candidate "card_ephemeral")))
-    (is (equal "Pick one" (source-field-of (ncs:slack-press-candidate payload "/x") "card_text"))
-        "without the book's words, the message's own")))
+    (is (equal "Pick one" (source-field-of (ncs:slack-press-candidate payload "/x") "card_text")) "without the book's words, the message's own")))
 
 (deftest channel-slack-an-edit-is-the-message-it-became ()
   ;; message_changed carries the message as it now stands: it reads as a new
@@ -171,8 +163,7 @@
   (is (null (ncs::slack-reaction-candidate
              (nlk:json-object "type" "reaction_added" "user" "UBOT" "reaction" "eyes"
                               "item" (nlk:json-object "type" "message" "channel" "C1" "ts" "5.5"))
-             :bot-user-id "UBOT"))
-      "the bot's own marks are not read back")
+             :bot-user-id "UBOT")) "the bot's own marks are not read back")
   (is (null (ncs::slack-reaction-candidate
              (nlk:json-object "type" "reaction_added" "user" "U1" "reaction" "eyes"
                               "item" (nlk:json-object "type" "file" "file" "F1"))))))
@@ -194,8 +185,7 @@
       (is-inbound policy (said "<!subteam^S8|@other> help") :observe "mention_required")
       (is-inbound policy (said "Hey Nodecode, status?") :answer)
       (is-inbound policy (said "just chatting") :observe "mention_required")))
-  (is (equal "<!subteam^S9|@oncall> help" (ncs:slack-plain-text "<!subteam^S9|@oncall> help"))
-      "a group mention keeps its handle")
+  (is (equal "<!subteam^S9|@oncall> help" (ncs:slack-plain-text "<!subteam^S9|@oncall> help")) "a group mention keeps its handle")
   ;; Read off the event: the sender's own workspace, before the channel's.
   (is (equal "T2" (source-field-of
                    (ncs:slack-message-candidate

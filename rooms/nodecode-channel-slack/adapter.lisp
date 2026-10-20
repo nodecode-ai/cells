@@ -214,7 +214,7 @@ line said without typing one; every other event falls through."
                 :test #'equal)
         (nlk:when-let (candidate (slack-reaction-candidate
                                   event :team-id team-id :bot-user-id adapter.bot-user-id
-                                        :root-of (lambda (channel ts) (thread-root threads channel ts))))
+                                  :root-of (lambda (channel ts) (thread-root threads channel ts))))
           (name-speaker adapter candidate)
           (reaction-noticed host candidate)
           candidate)
@@ -227,9 +227,9 @@ line said without typing one; every other event falls through."
           (nlk:when-let (candidate (and (or (null edited) (mention-involves-p (host-policy host) text))
                                         (slack-message-candidate
                                          message :team-id team-id
-                                                 :bot-user-id adapter.bot-user-id
-                                                 :bot-thread-p (lambda (channel root)
-                                                                 (bot-thread-p threads channel root)))))
+                                         :bot-user-id adapter.bot-user-id
+                                         :bot-thread-p (lambda (channel root)
+                                                         (bot-thread-p threads channel root)))))
             (name-speaker adapter candidate)
             (add-thread-context adapter candidate text)
             (handle-candidate host (attach-slack-file-fetchers adapter candidate))
@@ -335,9 +335,9 @@ when it was handed on."
                            (nlk:json-value message :string "thread_ts"))
       (nlk:when-let (candidate (slack-message-candidate
                                 message :team-id adapter.team-id
-                                        :bot-user-id adapter.bot-user-id
-                                        :bot-thread-p (lambda (channel root)
-                                                        (bot-thread-p threads channel root))))
+                                :bot-user-id adapter.bot-user-id
+                                :bot-thread-p (lambda (channel root)
+                                                (bot-thread-p threads channel root))))
         (unless (candidate-taken-p adapter.host candidate)
           (setf (gethash "late_minutes" (gethash "source" candidate))
                 (max 1 (round (- (unix-ms) (or (ts-ms (nlk:json-value message :string "ts")) (unix-ms)))
