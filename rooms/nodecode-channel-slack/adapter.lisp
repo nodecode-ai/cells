@@ -41,7 +41,17 @@ it for dead and opens another.")
   ;; channels.slack.debug_reconnects: Slack moves the socket every ~6 minutes.
   (debug-reconnects-p nil :type boolean)
   ;; Liveness, set by the reader's pong callback and read by the lap.
-  (heard-ms 0 :type integer))
+  (heard-ms 0 :type integer)
+  ;; The workspace the app is installed in (auth.test).
+  (team-id nil :type (or null string))
+  ;; channels.slack.allowed_channels: the conversations a catch-up reads,
+  ;; every one the bot is in when the section lists none.
+  (channels '() :type list)
+  ;; channels.slack.catch_up_minutes, and the Unix ms Slack was last heard
+  ;; at while connected, with when that was last written down.
+  (catch-up-minutes 60 :type integer)
+  (heard-until-ms nil :type (or null integer))
+  (heard-saved-ms 0 :type integer))
 
 (nlk:access (adapter slack-adapter))
 
@@ -76,8 +86,10 @@ replies threaded under their ask, a status beat Slack shows for two minutes,
 reactions by name, and a slash command answered through its response_url.
 THREADS is the book the plans and the lap share."
   ;; Slack has no command menu an app may write (the /nodecode command is the
-  ;; manifest's), no thread to open (a reply is the thread), and no file here
-  ;; yet: those slots stay empty.
+  ;; manifest's) and no thread to open (a reply is the thread): those slots
+  ;; stay empty. Its messages carry choices -- buttons, menus, lines -- whose
+  ;; presses come back over the socket (SLACK-HANDLE-ENVELOPE), and files
+  ;; through its upload steps (FILE-PLAN).
   (make-platform
    :id "slack"
    :name "Slack"
@@ -94,6 +106,10 @@ THREADS is the book the plans and the lap share."
    :plan-reaction #'reaction-plans
    :plan-respond #'respond-plan
    :plan-control-ack #'ack-plan
+   :plan-file (lambda (target pathname &rest keys) (apply #'file-plan threads target pathname keys))
+   :choices t
+   :answer-body #'slack-answer-body
+   :mention (lambda (user-id) (format nil "<@~a>" user-id))
    :message-id-of #'slack-message-id
    :address-of #'slack-address
    :strip-mention (lambda (text) (slack-strip-mention text bot-user-id))
@@ -144,34 +160,232 @@ with the bot token."
           do (setf (gethash "fetch" attachment) (slack-file-fetcher adapter.bot-token url)))
   candidate)
 
+(defun name-speaker (adapter candidate)
+  "Give CANDIDATE its speaker's display name: asked for only for a line a
+person wrote."
+  (let ((user (source-field candidate "user_id")))
+    (unless (or (candidate-bot-p candidate) (equal user adapter.bot-user-id))
+      (setf (gethash "user_name" (gethash "source" candidate))
+            (slack-user-name adapter user)))))
+
+(defun add-thread-context (adapter candidate text)
+  "Give CANDIDATE -- a message, TEXT its words as Slack wrote them, in a
+thread the bot does not speak in, that says something to the bot -- the
+thread's first message as the message it answers: an ask in someone else's
+thread reads what the thread is about."
+  ;; One read of the thread's first message (conversations.replies), on this
+  ;; thread as a name is, and only for a message the bot will answer: a
+  ;; thread the bot speaks in is its lane's already, and chatter is none.
+  (let ((root (source-field candidate "reply_to_message_id"))
+        (channel (source-field candidate "channel_id")))
+    (when (and root channel
+               (not (eq t (gethash "addressed" (gethash "source" candidate))))
+               (mention-involves-p (host-policy adapter.host) text))
+      (let* ((result (execute-plan (host-executor adapter.host)
+                                   (rest-plan "GET" (format nil "/conversations.replies?channel=~a&ts=~a&limit=1"
+                                                            channel root)
+                                              "thread_root" nil 10)))
+             (messages (and (execution-ok-p result)
+                            (nlk:json-array (execution-body result) "messages")))
+             (first (and messages (plusp (length messages)) (aref messages 0))))
+        (when (and (hash-table-p first) (equal root (nlk:json-value first :string "ts")))
+          (let ((reply (slack-reply-context first)))
+            (setf (gethash "user_name" reply)
+                  (or (slack-user-name adapter (gethash "user_id" reply)) (gethash "user_name" reply)))
+            (attach-slack-file-fetchers adapter reply)
+            (setf (gethash "reply" candidate) reply)))))))
+
 (defun slack-handle-event (adapter event &optional team-id)
-  "One Events API EVENT, as Slack sent it, on the socket lap: a message
-maps to the shared candidate and goes through the host; every other event
-falls through."
+  "One Events API EVENT, as Slack sent it, on the socket lap: a message --
+or an edit whose new words say something to the bot -- maps to the shared
+candidate and goes through the host, and a reaction reaches the kit as a
+line said without typing one; every other event falls through."
   ;; Exported as the seam a layer advises -- (hook 'ncs:slack-handle-event key
-  ;; fn) sees reactions, joins, whatever the app subscribes to -- with the
-  ;; lap's own rule: return fast, this thread is the one that acknowledges.
-  ;; Every message in a thread is noted in the thread book first, so a reply
-  ;; to it lands in its thread. Returns the candidate admitted, or NIL.
-  (let ((channel (nlk:json-value event :string "channel"))
-        (threads adapter.threads))
-    (note-thread-message threads channel (nlk:json-value event :string "ts")
-                         (nlk:json-value event :string "thread_ts"))
-    (nlk:when-let (candidate (slack-message-candidate
-                              event :team-id team-id
-                                    :bot-user-id adapter.bot-user-id
-                                    :bot-thread-p (lambda (channel root)
-                                                    (bot-thread-p threads channel root))))
-      ;; A person's name is asked for only for a line a person wrote.
-      (let ((user (source-field candidate "user_id")))
-        (unless (or (candidate-bot-p candidate) (equal user adapter.bot-user-id))
-          (setf (gethash "user_name" (gethash "source" candidate))
-                (slack-user-name adapter user))))
-      (handle-candidate adapter.host (attach-slack-file-fetchers adapter candidate))
-      candidate)))
+  ;; fn) sees joins, whatever the app subscribes to -- with the lap's own
+  ;; rule: return fast, this thread is the one that acknowledges. Every
+  ;; message in a thread is noted in the thread book first, so a reply to it
+  ;; lands in its thread. An edit wakes the bot exactly when its new words
+  ;; involve it, by the room's own mention rule (NCK:MENTION-INVOLVES-P): an
+  ;; edit of an ask already taken is the same message, which the kit takes
+  ;; once. Returns the candidate admitted, or NIL.
+  (let ((threads adapter.threads)
+        (host adapter.host))
+    (if (member (nlk:json-value event :string "type") '("reaction_added" "reaction_removed")
+                :test #'equal)
+        (nlk:when-let (candidate (slack-reaction-candidate
+                                  event :team-id team-id :bot-user-id adapter.bot-user-id
+                                        :root-of (lambda (channel ts) (thread-root threads channel ts))))
+          (name-speaker adapter candidate)
+          (reaction-noticed host candidate)
+          candidate)
+        (let* ((edited (slack-edited-message event))
+               (message (or edited event))
+               (text (nlk:json-value message :string "text")))
+          (note-thread-message threads (nlk:json-value message :string "channel")
+                               (nlk:json-value message :string "ts")
+                               (nlk:json-value message :string "thread_ts"))
+          (nlk:when-let (candidate (and (or (null edited) (mention-involves-p (host-policy host) text))
+                                        (slack-message-candidate
+                                         message :team-id team-id
+                                                 :bot-user-id adapter.bot-user-id
+                                                 :bot-thread-p (lambda (channel root)
+                                                                 (bot-thread-p threads channel root)))))
+            (name-speaker adapter candidate)
+            (add-thread-context adapter candidate text)
+            (handle-candidate host (attach-slack-file-fetchers adapter candidate))
+            candidate)))))
 
 (defun candidate-bot-p (candidate)
   (eq t (gethash "is_bot" (gethash "source" candidate))))
+
+;;; --- catching up -------------------------------------------------------------------
+;;; Slack keeps no events for an app with no socket open: what was said while
+;;; the bot was away -- a restart, a machine that was off, a dead link -- is
+;;; read back from the conversations once a socket says hello again, and each
+;;; message the bot missed is handed on, marked late. channels.slack.
+;;; catch_up_minutes bounds how far back: 60 unless set, 0 never.
+
+(defparameter +heard-key+ "heard-until"
+  "The session-state key under channel-slack the last-heard mark is kept in.")
+
+(defparameter +catch-up-messages+ 50
+  "The messages one read of a conversation or a thread takes.")
+
+(defparameter +catch-up-replays+ 100
+  "The most messages one catch-up hands on.")
+
+(defparameter +catch-up-gap-ms+ 10000
+  "A socket away for less than this missed nothing worth a read: Slack opens
+the next before it closes the last.")
+
+(defun unix-ms ()
+  "Milliseconds since the Unix epoch, now: the clock a ts counts and a
+restart keeps."
+  (multiple-value-bind (seconds microseconds) (sb-ext:get-time-of-day)
+    (+ (* seconds 1000) (floor microseconds 1000))))
+
+(defun ts-ms (ts)
+  "Slack's TS -- seconds and microseconds, 1700000000.000100 -- as Unix
+milliseconds, or NIL for no ts."
+  (ignore-errors
+   (let ((dot (position #\. ts)))
+     (+ (* 1000 (parse-integer ts :end dot))
+        (if dot
+            (floor (parse-integer (subseq (concatenate 'string (subseq ts (1+ dot)) "000000") 0 6))
+                   1000)
+            0)))))
+
+(defun ms-ts (ms)
+  "Unix milliseconds MS as a Slack ts."
+  (format nil "~d.~6,'0d" (floor ms 1000) (* 1000 (mod ms 1000))))
+
+(defun note-heard (adapter &key force &aux (now (unix-ms)))
+  "Slack was heard now, the socket open: written down once a minute -- or
+now, FORCE -- so a crash loses at most that much of the mark."
+  (setf adapter.heard-until-ms now)
+  (when (or force (> (- now adapter.heard-saved-ms) 60000))
+    (setf adapter.heard-saved-ms now)
+    (ignore-errors
+     (when (nlk:store-open-p)
+       (nlk:session-state-put "channel-slack" +heard-key+ (princ-to-string now))))))
+
+(defun last-heard-ms (adapter)
+  "When Slack was last heard with the socket open -- this lane's word, else
+the store's -- or NIL when it never was."
+  (or adapter.heard-until-ms
+      (and (nlk:store-open-p)
+           (nlk:when-let (text (ignore-errors (nlk:session-state-get "channel-slack" +heard-key+)))
+             (parse-integer text :junk-allowed t)))))
+
+(defun catch-up-bound (adapter &aux (heard (last-heard-ms adapter)) (now (unix-ms)))
+  "The moment a catch-up reads from -- never further back than
+catch_up_minutes -- or NIL when the bot was not away long enough to miss
+anything."
+  ;; Two seconds before the mark: a message minted as the link died is the
+  ;; one most likely missed, and one already taken is skipped anyway.
+  (and heard (plusp adapter.catch-up-minutes)
+       (> (- now heard) +catch-up-gap-ms+)
+       (max (- heard 2000) (- now (* 60000 adapter.catch-up-minutes)))))
+
+(defun catch-up-conversations (adapter)
+  "The conversations a catch-up reads: the allowed channels the section
+lists, else every one the bot is in."
+  (or adapter.channels
+      (let ((result (execute-plan (host-executor adapter.host)
+                                  (rest-plan "GET" "/users.conversations?types=public_channel,private_channel,mpim,im&exclude_archived=true&limit=200"
+                                             "catch_up_conversations" t 30))))
+        (if (execution-ok-p result)
+            (loop for conversation across (nlk:json-array (execution-body result) "channels")
+                  for id = (nlk:json-value conversation :string "id")
+                  when id collect id)
+            (progn (warn "slack: no conversations to catch up on: ~a" (execution-error result))
+                   '())))))
+
+(defun catch-up-message (adapter channel message)
+  "Hand the kit MESSAGE, one said in CHANNEL while the bot was away, unless
+it is a bot's, is no message a person said, or already opened a lane. => T
+when it was handed on."
+  (setf (gethash "channel" message) channel)
+  (unless (gethash "type" message)
+    (setf (gethash "type" message) "message"))
+  (unless (or (equal (nlk:json-value message :string "user") adapter.bot-user-id)
+              (nlk:json-value message :string "bot_id"))
+    (let ((threads adapter.threads))
+      (note-thread-message threads channel (nlk:json-value message :string "ts")
+                           (nlk:json-value message :string "thread_ts"))
+      (nlk:when-let (candidate (slack-message-candidate
+                                message :team-id adapter.team-id
+                                        :bot-user-id adapter.bot-user-id
+                                        :bot-thread-p (lambda (channel root)
+                                                        (bot-thread-p threads channel root))))
+        (unless (candidate-taken-p adapter.host candidate)
+          (setf (gethash "late_minutes" (gethash "source" candidate))
+                (max 1 (round (- (unix-ms) (or (ts-ms (nlk:json-value message :string "ts")) (unix-ms)))
+                              60000)))
+          (name-speaker adapter candidate)
+          (handle-candidate adapter.host (attach-slack-file-fetchers adapter candidate))
+          t)))))
+
+(defun start-catch-up (adapter since-ms)
+  "Read back, on a thread of its own, what the bot's conversations said since
+SINCE-MS -- each one's newest messages, and the replies of each thread among
+them that moved since -- and hand the kit each message it missed, oldest
+first."
+  ;; A thread is read when its first message is among a conversation's newest
+  ;; (+CATCH-UP-MESSAGES+), however old: a reply in the bot's own thread is
+  ;; the follow-up most likely missed.
+  (nlk:spawn "channel-slack-catch-up"
+    (nlk:with-handlers ((error (condition)
+                          (warn "slack: catching up stopped: ~a" condition)))
+      (let ((handed 0)
+            (oldest (ms-ts since-ms))
+            (executor (host-executor adapter.host)))
+        (flet ((read-back (path)
+                 (let ((result (execute-plan executor (rest-plan "GET" path "catch_up" t 30))))
+                   (if (execution-ok-p result)
+                       (coerce (nlk:json-array (execution-body result) "messages") 'list)
+                       (progn (warn "slack: could not read back ~a: ~a" path (execution-error result))
+                              '()))))
+               (since-p (ts) (let ((ms (ts-ms ts))) (and ms (> ms since-ms))))
+               (hand (channel message)
+                 (when (and (< handed +catch-up-replays+) (catch-up-message adapter channel message))
+                   (incf handed))))
+          (dolist (channel (catch-up-conversations adapter))
+            ;; newest first, as Slack answers: handed on oldest first
+            (dolist (message (reverse (read-back (format nil "/conversations.history?channel=~a&limit=~d"
+                                                         channel +catch-up-messages+))))
+              (let ((ts (nlk:json-value message :string "ts")))
+                (when (since-p ts)
+                  (hand channel message))
+                (when (since-p (nlk:json-value message :string "latest_reply"))
+                  (dolist (reply (read-back (format nil "/conversations.replies?channel=~a&ts=~a&oldest=~a&limit=~d"
+                                                    channel ts oldest +catch-up-messages+)))
+                    (let ((reply-ts (nlk:json-value reply :string "ts")))
+                      (when (and (since-p reply-ts) (not (equal reply-ts ts)))
+                        (hand channel reply)))))))))
+        (when (plusp handed)
+          (format *error-output* "~&;; slack: ~d message~:p said while the bot was away handed on~%"
+                  handed))))))
 
 (defun slack-handle-envelope (adapter type payload)
   "One acknowledged Socket Mode envelope: an Events API callback goes to
@@ -188,8 +402,26 @@ button press is relayed to the kit, which acts on it."
          candidate))
       ((equal type "interactive")
        (nlk:when-let (press (slack-control-press payload))
-         (control-pressed host press)
-         press)))))
+         (let* ((channel (getf press :channel-id))
+                (pressed (getf press :message-id))
+                (line (said-line (getf press :data)))
+                (candidate (and line
+                                (slack-press-candidate
+                                 payload line
+                                 :card-text (pressed-words adapter.threads channel pressed)))))
+           ;; the message pressed lives in its thread: what answers the press
+           ;; goes there
+           (note-thread-message adapter.threads channel pressed (getf press :thread-id))
+           (cond (candidate
+                  ;; a press on a choice is the presser saying its line,
+                  ;; admitted and answered as typed words are
+                  (setf (gethash "user_name" (gethash "source" candidate))
+                        (or (slack-user-name adapter (getf press :user-id))
+                            (getf press :user-name)))
+                  (handle-candidate host candidate)
+                  candidate)
+                 (t (control-pressed host press)
+                    press))))))))
 
 ;;; --- the socket lap ----------------------------------------------------------------
 
@@ -226,7 +458,8 @@ socket or the link dies, and come back for another."
     (let ((inbound (make-work-queue "channel-slack-inbound" :cap 1024))
           (ws (wsd:make-client url))
           (pings 0)
-          (pinged-ms (now-ms)))
+          (pinged-ms (now-ms))
+          (connected nil))
       (wsd:on :message ws
               (lambda (message &aux (frame (ignore-errors (nlk:decode-json message))))
                 (setf adapter.heard-ms (now-ms))
@@ -242,6 +475,7 @@ socket or the link dies, and come back for another."
              (setf adapter.heard-ms (now-ms))
              (loop
                (when (funcall stop-p) (return-from lap :stop))
+               (when connected (note-heard adapter))
                ;; A socket that answers neither frames nor pings is gone, even
                ;; when no close ever arrives to say so.
                (when (> (- (now-ms) adapter.heard-ms) +dead-link-ms+)
@@ -262,7 +496,12 @@ socket or the link dies, and come back for another."
                       (dolist (action (read-socket-frame (second item)))
                         (ecase (first action)
                           (:hello
-                           (set-channel-status "slack" :state :running :connected t :detail nil))
+                           (set-channel-status "slack" :state :running :connected t :detail nil)
+                           ;; what was said while no socket was open, read back
+                           (let ((since (catch-up-bound adapter)))
+                             (setf connected t)
+                             (note-heard adapter :force t)
+                             (when since (start-catch-up adapter since))))
                           (:ack
                            (wsd:send ws (nlk:encode-json-object (ack-frame (second action)))))
                           (:envelope
@@ -281,6 +520,7 @@ socket or the link dies, and come back for another."
         ;; Runs on the lap thread while wsd's reader may be parked in SSL_read
         ;; on this wss: sever the transport, never WSD:CLOSE-CONNECTION
         ;; (cross-thread SSL_free; see NLK:SEVER-WEBSOCKET).
+        (when connected (ignore-errors (note-heard adapter :force t)))
         (ignore-errors (nlk:sever-websocket ws))))))
 
 ;;; --- the door ----------------------------------------------------------------------
@@ -321,12 +561,13 @@ legibly, see NCK:CALL."
                                  configured-users "allowed_channels"))
          (allowed-users (and configured-users (union configured-users owners :test #'string=)))
          (api-base (config-string section "api_base" +slack-api-base+))
-         (bot (if executor
-                  (wrap-slack-executor executor)
-                  (make-slack-executor :api-base api-base :token bot-token)))
-         (app (if executor bot (make-slack-executor :api-base api-base :token app-token)))
          (threads (make-thread-book))
-         (bot-user-id nil))
+         (bot (if executor
+                  (wrap-slack-executor executor :book threads)
+                  (make-slack-executor :api-base api-base :token bot-token :book threads)))
+         (app (if executor bot (make-slack-executor :api-base api-base :token app-token)))
+         (bot-user-id nil)
+         (team-id nil))
     (require-non-empty-allowlist "slack"
                                  "allowed_channels" (getf settings :allowed-channels)
                                  "allowed_users" allowed-users)
@@ -336,7 +577,8 @@ legibly, see NCK:CALL."
     (let ((me (execute-plan bot (api-plan "auth.test" nil "auth_test" :retry t
                                                                       :timeout-seconds 15))))
       (if (execution-ok-p me)
-          (setf bot-user-id (nlk:json-value (execution-body me) :string "user_id"))
+          (setf bot-user-id (nlk:json-value (execution-body me) :string "user_id")
+                team-id (nlk:json-value (execution-body me) :string "team_id"))
           (warn "slack: auth.test failed (~a); mention-gated channels reject every ask ~
                  until the lane restarts" (execution-error me))))
     (let* ((host (make-host-from-section
@@ -357,6 +599,9 @@ legibly, see NCK:CALL."
                      :bot-token bot-token
                      :bot-user-id bot-user-id
                      :threads threads
+                     :team-id team-id
+                     :channels (getf settings :allowed-channels)
+                     :catch-up-minutes (config-integer section "catch_up_minutes" 60 :min 0)
                      :debug-reconnects-p (config-boolean section "debug_reconnects" nil))))
       (run-host host "socket" (lambda (stop-p) (slack-socket-lap adapter stop-p))
                 :on-start (lambda () (setf *slack-adapter* adapter))

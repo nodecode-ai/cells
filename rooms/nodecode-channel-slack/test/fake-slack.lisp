@@ -12,7 +12,7 @@
 
 (in-package #:nodecode.test)
 
-(define-test-slice "slack" "CHANNEL-SLACK-" :recipe "slack")
+(define-test-slice "slack" "CHANNEL-SLACK-" :recipe "channels")
 
 (defstruct (fake-slack (:copier nil))
   (lock (bt2:make-lock :name "fake-slack"))
@@ -26,7 +26,11 @@
   ;; The sockets open now, and how many apps.connections.open answered.
   (sockets '())
   (opened 0 :type integer)
-  (ts 100 :type integer))
+  (ts 100 :type integer)
+  ;; What conversations.history and conversations.replies answer: message
+  ;; objects, history's newest first as Slack orders it.
+  (history '())
+  (replies '()))
 
 (nlk:access (fake fake-slack))
 
@@ -56,6 +60,10 @@
        (let ((ts (format nil "1700000000.~6,'0d" (bt2:with-lock-held (fake.lock) (incf fake.ts)))))
          (ok "channel" (gethash "channel" body) "ts" ts
              "message" (nlk:json-object "ts" ts "text" (gethash "text" body)))))
+      ((string= method "conversations.history")
+       (ok "messages" (coerce fake.history 'vector)))
+      ((string= method "conversations.replies")
+       (ok "messages" (coerce fake.replies 'vector)))
       ((string= method "users.conversations")
        (ok "channels" (vector (nlk:json-object "id" "C1" "name" "general" "is_private" nil)
                               (nlk:json-object "id" "G2" "name" "ops" "is_private" t)

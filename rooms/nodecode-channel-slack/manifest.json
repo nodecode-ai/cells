@@ -30,12 +30,14 @@
         "chat:write",
         "commands",
         "files:read",
+        "files:write",
         "groups:history",
         "groups:read",
         "im:history",
         "im:read",
         "mpim:history",
         "mpim:read",
+        "reactions:read",
         "reactions:write",
         "users:read"
       ]
@@ -47,7 +49,9 @@
         "message.channels",
         "message.groups",
         "message.im",
-        "message.mpim"
+        "message.mpim",
+        "reaction_added",
+        "reaction_removed"
       ]
     },
     "interactivity": {

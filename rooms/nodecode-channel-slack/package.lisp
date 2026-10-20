@@ -24,9 +24,9 @@
    ;; events.lisp --- pure, exported for table-driven tests
    #:slack-plain-text #:slack-mention-p #:slack-strip-mention
    #:slack-message-candidate #:slack-command-candidate #:slack-control-press
-   #:slack-inbound-policy
+   #:slack-press-candidate #:slack-inbound-policy
    ;; rest.lisp
-   #:make-thread-book #:note-thread-message #:bot-thread-p #:reply-thread
+   #:make-thread-book #:note-thread-message #:bot-thread-p #:reply-thread #:pressed-words
    #:message-plan #:edit-plan #:delete-plan #:typing-plan #:reaction-plans
-   #:respond-plan #:slack-message-id #:slack-address #:wrap-slack-executor
-   #:make-slack-executor))
+   #:respond-plan #:file-plan #:upload-plan #:slack-message-id #:slack-address
+   #:wrap-slack-executor #:make-slack-executor))

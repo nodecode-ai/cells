@@ -36,11 +36,24 @@
 (defparameter +thread-book-cap+ 20000
   "Entries either table holds before it starts over.")
 
+(defparameter +card-text-cap+ 1000
+  "Pressable messages whose words the book keeps before it starts over.")
+
 (defstruct (thread-book (:copier nil))
   ;; "<channel>:<ts>" -> the ts of the thread's first message.
   (roots (make-hash-table :test #'equal :synchronized t))
   ;; "<channel>:<root ts>" -> T once the bot has posted in that thread.
-  (spoken (make-hash-table :test #'equal :synchronized t)))
+  (spoken (make-hash-table :test #'equal :synchronized t))
+  ;; "<channel>:<ts>" -> the words of a message the bot posted with
+  ;; something to press on it: a press on it answers under those words
+  ;; (NCK::ANSWER-CARD), and Slack hands a press back the message as rich
+  ;; text blocks, never the Markdown it was posted as.
+  (texts (make-hash-table :test #'equal :synchronized t)))
+
+(defun pressed-words (book channel ts)
+  "The words of the message TS in CHANNEL the bot posted with controls, or
+NIL when the book holds none."
+  (and book channel ts (gethash (book-key channel ts) (thread-book-texts book))))
 
 (nlk:access (book thread-book))
 
@@ -57,6 +70,11 @@
   "Remember that message TS in CHANNEL lives in the thread ROOT starts."
   (when (and channel ts root (not (equal ts root)))
     (book-note book.roots (book-key channel ts) root)))
+
+(defun thread-root (book channel ts)
+  "The first message of the thread message TS in CHANNEL lives in, or NIL
+when the book has not seen it in one."
+  (gethash (book-key channel ts) book.roots))
 
 (defun bot-thread-p (book channel root)
   "Whether the bot has posted in the thread ROOT starts in CHANNEL."
@@ -83,50 +101,134 @@ channel itself."
 LABEL naming it in audits and failure copy."
   (rest-plan "POST" (format nil "/~a" method) label retry timeout-seconds body))
 
+(defun plain-text (text limit)
+  "TEXT as a Block Kit plain_text object, cut to LIMIT characters: Slack
+refuses a whole message (invalid_blocks) over one that runs longer."
+  (nlk:json-object "type" "plain_text" "text" (nlk:clip text (1- limit) :ellipsis "…")))
+
+(defun mrkdwn-escape (text)
+  "TEXT with the three characters Slack's mrkdwn reads as markup escaped."
+  (uiop:frob-substrings (or text "") '("&" "<" ">")
+                        (lambda (match emit)
+                          (funcall emit (cond ((string= match "&") "&amp;")
+                                              ((string= match "<") "&lt;")
+                                              (t "&gt;"))))))
+
 (defun control-button (control index &aux (style (third control)))
-  "One of the kit's (LABEL DATA STYLE) controls as a Block Kit button."
-  ;; Slack refuses a whole message (invalid_blocks) over a button whose words
-  ;; pass 75 characters.
+  "One kit button -- (LABEL DATA STYLE DISABLED) -- as a Block Kit button
+whose value carries DATA back on a press; INDEX tells it from the other
+elements on its message."
   (nlk:json-object "type" "button"
                    "action_id" (format nil "nodecode-~d" index)
-                   "text" (nlk:json-object "type" "plain_text"
-                                           "text" (nlk:clip (first control) 74 :ellipsis "…"))
+                   "text" (plain-text (first control) 75)
                    "value" (second control)
                    :when (member style '(:danger :primary))
                    "style" (string-downcase (symbol-name style))))
 
-(defun control-buttons (controls)
-  "CONTROLS, the kit's buttons in every shape it sends, as one list of (LABEL
-DATA STYLE) buttons in order: a lone (LABEL DATA STYLE DISABLED) button, a row
-of them, a (:MENU ...) whose options become buttons, the current one checked,
-and a (:ROW MARK LABEL DETAIL CHOICE) line saying its choice; :CLEAR none."
-  ;; Block Kit draws no disabled button and no menu of these, so a disabled
-  ;; one is left out and a menu's options are buttons, as on Telegram.
-  (loop for control in (unless (eq controls :clear) controls)
-        append (cond ((eq (first control) :menu)
-                      (loop for (label data description current) in (third control)
-                            collect (list (format nil "~:[~;✓ ~]~a~@[ · ~a~]"
-                                                  current label description)
-                                          data nil)))
-                     ((eq (first control) :row)
-                      (destructuring-bind (mark label detail choice) (rest control)
-                        (and choice (not (fourth choice))
-                             (list (list (format nil "~@[~a ~]~a~@[ · ~a~]" mark label detail)
-                                         (second choice) (third choice))))))
-                     (t (loop for (label data style disabled)
-                                in (if (consp (first control)) control (list control))
-                              unless disabled collect (list label data style))))))
+(defun control-menu (menu index)
+  "One kit menu -- (:MENU PLACEHOLDER OPTIONS) -- as a Block Kit static
+select: each option (LABEL DATA DESCRIPTION CURRENT) carries DATA back as
+the picked value, CURRENT is the one shown picked. NIL for a menu with no
+option Slack would take."
+  ;; An option's value is at most 150 characters and a select 100 options; an
+  ;; option whose data runs longer is left out rather than cut, since cut data
+  ;; names something else. Its words and description are plain text of at
+  ;; most 75, and an empty description is none.
+  (let ((options (loop for (label data description current) in (third menu)
+                       when (<= 1 (length data) 150)
+                         collect (cons current
+                                       (nlk:json-object
+                                        "text" (plain-text (if (plusp (length label)) label data) 75)
+                                        "value" data
+                                        :when (plusp (length description))
+                                        "description" (plain-text description 75))))))
+    (when options
+      (let ((options (subseq options 0 (min 100 (length options)))))
+        (nlk:json-object "type" "static_select"
+                         "action_id" (format nil "nodecode-~d" index)
+                         "placeholder" (plain-text (or (second menu) "Pick one") 150)
+                         "options" (coerce (mapcar #'cdr options) 'vector)
+                         :opt "initial_option" (cdr (find-if #'car options)))))))
+
+(defun actions-block (elements)
+  "ELEMENTS side by side in one actions block, NIL for none: Slack takes 25."
+  (and elements
+       (nlk:json-object "type" "actions"
+                        "elements" (coerce (subseq elements 0 (min 25 (length elements))) 'vector))))
+
+(defun control-line (line index)
+  "One kit line -- (:ROW MARK LABEL DETAIL BUTTON), NCK::LINE-CHOICE -- as a
+section: its words, BUTTON beside them. A line with no words is its button
+alone, and one with neither is NIL."
+  (destructuring-bind (mark label detail button) (rest line)
+    (let* ((label (and (plusp (length label)) label))
+           (detail (and (plusp (length detail)) detail))
+           (words (format nil "~@[~a ~]~@[*~a*~]~:[~; · ~]~@[~a~]"
+                          mark (and label (mrkdwn-escape label)) (and label detail)
+                          (and detail (mrkdwn-escape detail))))
+           (button (and button (not (fourth button)) (control-button button index))))
+      (cond ((plusp (length (nlk:trimmed words)))
+             (nlk:json-object "type" "section"
+                              "text" (nlk:json-object "type" "mrkdwn"
+                                                      "text" (nlk:clip words 2999 :ellipsis "…"))
+                              :opt "accessory" button))
+            (button (actions-block (list button)))))))
+
+(defun control-blocks (controls)
+  "CONTROLS -- the kit's buttons, rows of buttons, menus and lines -- as Block
+Kit blocks in order: a lone button or a row of them an actions block, a menu
+its static select in one, a line its section with its button beside it;
+:CLEAR or NIL none."
+  ;; Block Kit draws no disabled button: one is left out, and a row of only
+  ;; those is no block. Slack takes 50 blocks a message, one of them the
+  ;; words; the kit's cards stay inside, and anything past it is dropped here,
+  ;; not refused there.
+  (loop with index = 0
+        for control in (unless (eq controls :clear) controls)
+        for block = (cond ((eq (first control) :menu)
+                           (nlk:when-let (menu (control-menu control (incf index)))
+                             (actions-block (list menu))))
+                          ((eq (first control) :row)
+                           (control-line control (incf index)))
+                          (t (actions-block
+                              (loop for button in (if (consp (first control)) control (list control))
+                                    unless (fourth button)
+                                      collect (control-button button (incf index))))))
+        when block collect block into blocks
+        finally (return (subseq blocks 0 (min 48 (length blocks))))))
+
+;;; A line under a message's words drawn small and grey -- the mark a card
+;;; pressed keeps, "Answered: ..." (NCK::ANSWER-CARD) -- rides the text after
+;;; this private-use character, which MESSAGE-BLOCKS draws as a context block.
+(defparameter +footer-mark+ (string (code-char #xE000)))
+
+(defun slack-answer-body (text footer)
+  "The platform's ANSWER-BODY: TEXT, FOOTER under it as small grey words."
+  (format nil "~a~a~a" text +footer-mark+ footer))
+
+(defun split-footer (text)
+  "(values WORDS FOOTER): TEXT before and after its footer mark, FOOTER NIL
+when it carries none."
+  (let ((at (search +footer-mark+ (or text ""))))
+    (if at
+        (values (subseq text 0 at) (subseq text (+ at (length +footer-mark+))))
+        (values text nil))))
 
 (defun message-blocks (text controls)
-  "TEXT as a markdown block, followed by CONTROLS -- the kit's buttons, or
-:CLEAR for none -- as an actions block."
-  (let ((buttons (loop for control in (control-buttons controls)
-                       for index from 0
-                       collect (control-button control index))))
-    (coerce (list* (nlk:json-object "type" "markdown" "text" text)
-                   (and buttons
-                        (list (nlk:json-object "type" "actions"
-                                               "elements" (coerce buttons 'vector)))))
+  "TEXT as a markdown block -- its footer, when it carries one, a context
+block under it -- followed by CONTROLS, the kit's buttons, menus and lines
+(CONTROL-BLOCKS), or :CLEAR for none."
+  (multiple-value-bind (words footer) (split-footer text)
+    (coerce (append (and (plusp (length (nlk:trimmed words)))
+                         (list (nlk:json-object "type" "markdown" "text" words)))
+                    (and footer
+                         (list (nlk:json-object
+                                "type" "context"
+                                "elements" (vector (nlk:json-object
+                                                    "type" "mrkdwn"
+                                                    "text" (nlk:clip (mrkdwn-escape footer) 2999
+                                                                     :ellipsis "…"))))))
+                    (control-blocks controls))
             'vector)))
 
 (defun message-body (target text &key thread controls)
@@ -134,40 +236,127 @@ and a (:ROW MARK LABEL DETAIL CHOICE) line saying its choice; :CLEAR none."
 notification's words."
   (nlk:json-object "channel" (getf target :channel-id)
                    :opt "thread_ts" thread
-                   "text" (nlk:clip (nlk:one-line text) 1000)
+                   "text" (notification-text text)
                    "blocks" (message-blocks text controls)))
 
-(defun mentions-text (chunk mentions &aux (text chunk.text))
-  "CHUNK's text, the first chunk opening with a mention of each of MENTIONS:
-the note that needs the operator reaches them."
-  (if (and mentions (= 1 chunk.index))
-      (format nil "~{<@~a> ~}~a" mentions text)
-      text))
+(defun notification-text (text)
+  "TEXT as the notification's words: one line, its footer a sentence after it."
+  (multiple-value-bind (words footer) (split-footer text)
+    (nlk:clip (nlk:one-line (format nil "~a~@[ ~a~]" words footer)) 1000)))
 
 (defun message-plan (book target chunk &key reply-to ping controls files mentions card panel
                                             (timeout-seconds 30))
   "One chat.postMessage CHUNK (a kit text-chunk), in the thread REPLY-TO
 lives in or starts (REPLY-THREAD); every chunk of one post goes in the same
 thread."
-  ;; CONTROLS ride the first chunk. Slack has no silent message, so PING
-  ;; changes nothing: a thread notifies whoever follows it, the way it does
-  ;; for any reply. FILES are refused before a message is planned: the
-  ;; platform carries none (see SLACK-PLATFORM). A turn's CARD goes as its
-  ;; words (the chunk), a command's PANEL as its words. Posting in a thread
-  ;; notes that the bot speaks there. Retried: a post that fails is an answer
-  ;; lost.
-  (declare (ignore ping files card panel))
+  ;; The kit decides what each chunk carries: CONTROLS ride the last, under
+  ;; the words they answer, and MENTIONS are spelled into the first chunk's
+  ;; text already (the platform's MENTION), so they are passed through as they
+  ;; come. Slack has no silent message, so PING changes nothing: a thread
+  ;; notifies whoever follows it, the way it does for any reply. FILES are
+  ;; posted as their own messages (FILE-PLAN). A turn's CARD goes as its words
+  ;; (the chunk), a command's PANEL as its words. Posting in a thread notes
+  ;; that the bot speaks there. Retried: a post that fails is an answer lost.
+  (declare (ignore ping mentions card panel))
   (let ((thread (reply-thread book target reply-to))
         (channel (getf target :channel-id)))
     (when thread
       (book-note book.spoken (book-key channel thread) t))
-    (api-plan "chat.postMessage"
-              (message-body target (mentions-text chunk mentions)
-                            :thread thread :controls (and (= 1 chunk.index) controls))
-              (if (> chunk.total 1)
-                  (format nil "send_message_chunk_~a_of_~a" chunk.index chunk.total)
-                  "send_message")
-              :retry t :timeout-seconds timeout-seconds)))
+    (let ((body (message-body target chunk.text :thread thread :controls controls))
+          (label (if (> chunk.total 1)
+                     (format nil "send_message_chunk_~a_of_~a" chunk.index chunk.total)
+                     "send_message")))
+      (if files
+          ;; the answer's pictures go under its words, in its thread
+          (upload-plan target files :thread thread :message body :label label
+                                    :timeout-seconds (max 60 timeout-seconds))
+          (api-plan "chat.postMessage" body label :retry t :timeout-seconds timeout-seconds)))))
+
+;;; --- files -----------------------------------------------------------------------
+;;; Slack takes a file in three calls -- a link minted for its bytes
+;;; (files.getUploadURLExternal), the bytes sent to that link, and one share of
+;;; every file so sent (files.completeUploadExternal) -- so a file's plan is one
+;;; UPLOAD plan, which the Slack executor runs as those steps (RUN-UPLOAD). The
+;;; app needs files:write.
+
+(defparameter +upload-method+ "UPLOAD"
+  "The method of a plan the Slack executor runs as Slack's upload steps.")
+
+(defun upload-plan (target pathnames &key thread comment message (label "send_file")
+                                          (timeout-seconds 60))
+  "The plan that shares PATHNAMES, files, where TARGET is -- in THREAD when
+given -- COMMENT the words above them; MESSAGE, a chat.postMessage body, is
+posted first and the files go under it, in its thread. Retried step by step."
+  (make-request-plan :method +upload-method+ :path "/files.completeUploadExternal"
+                     :body (nlk:json-object "channel_id" (getf target :channel-id)
+                                            :opt "thread_ts" thread
+                                            :opt "initial_comment" comment
+                                            "files" (coerce (mapcar #'namestring pathnames) 'vector)
+                                            :opt "message" message)
+                     :timeout-seconds timeout-seconds
+                     :retry-server-errors t
+                     :audit-label label))
+
+(defun file-plan (book target pathname &key content reply-to voice (timeout-seconds 60))
+  "The platform's PLAN-FILE: one file shared where TARGET is, in the thread
+REPLY-TO lives in or starts (REPLY-THREAD), CONTENT the words above it. A
+VOICE reply's Ogg Opus is shared as the audio file it is: Slack draws it a
+player, and has no voice message a bot can send."
+  (let ((thread (reply-thread book target reply-to)))
+    (when thread
+      (book-note book.spoken (book-key (getf target :channel-id) thread) t))
+    (upload-plan target (list (pathname pathname))
+                 :thread thread
+                 :comment (and (plusp (length content)) content)
+                 :label (if voice "send_voice" "send_file")
+                 :timeout-seconds (max 60 (or timeout-seconds 0)))))
+
+(defun file-octets (path)
+  "The size of the file at PATH, in octets."
+  (with-open-file (stream path :element-type '(unsigned-byte 8))
+    (file-length stream)))
+
+(defun run-upload (executor plan &aux (body plan.body) (timeout plan.timeout-seconds))
+  "Run an UPLOAD-PLAN through EXECUTOR, the Slack executor: the message it
+carries posted first; then, file by file, a link minted and the bytes sent
+to it; then one share of them all, under the message, in its thread. => the
+message's execution when the plan carries one, else the share's; the first
+failure when a step fails."
+  (let* ((message (gethash "message" body))
+         (posted (and message
+                      (execute-plan executor (api-plan "chat.postMessage" message plan.audit-label
+                                                       :retry t :timeout-seconds timeout))))
+         (files '()))
+    (when (and posted (not (execution-ok-p posted)))
+      (return-from run-upload posted))
+    (loop for path across (gethash "files" body)
+          for file = (pathname path)
+          for minted = (execute-plan executor
+                                     (api-plan "files.getUploadURLExternal"
+                                               (nlk:json-object "filename" (file-namestring file)
+                                                                "length" (file-octets file))
+                                               "upload_url" :retry t :timeout-seconds timeout))
+          do (unless (execution-ok-p minted)
+               (return-from run-upload minted))
+             (let ((sent (execute-plan executor
+                                       (rest-plan "POST" (nlk:json-value (execution-body minted)
+                                                                         :string "upload_url")
+                                                  "upload_bytes" t timeout (list (cons "file" file))))))
+               (unless (execution-ok-p sent)
+                 (return-from run-upload sent))
+               (push (nlk:json-object "id" (nlk:json-value (execution-body minted) :string "file_id")
+                                      "title" (file-namestring file))
+                     files)))
+    (let ((shared (execute-plan executor
+                                (api-plan "files.completeUploadExternal"
+                                          (nlk:json-object
+                                           "files" (coerce (nreverse files) 'vector)
+                                           "channel_id" (gethash "channel_id" body)
+                                           :opt "thread_ts" (or (and message (gethash "thread_ts" message))
+                                                                (gethash "thread_ts" body))
+                                           :opt "initial_comment" (gethash "initial_comment" body))
+                                          "share_files" :retry t :timeout-seconds timeout))))
+      (if (and posted (execution-ok-p shared)) posted shared))))
 
 (defun edit-plan (target message-id text &key retry controls card media (timeout-seconds 30))
   "chat.update: the status line settled in place, its buttons with it."
@@ -216,8 +405,9 @@ since Slack shows the status only in a thread."
                                "status" "is working...")
               "typing_indicator" :timeout-seconds timeout-seconds)))
 
-(defparameter +reaction-names+ '(("👀" . "eyes"))
-  "Slack names a reaction by its emoji name: the kit's glyphs, spelled that way.")
+(defparameter +reaction-names+ '(("👀" . "eyes") ("✅" . "white_check_mark") ("❌" . "x"))
+  "Slack names a reaction by its emoji name: the kit's glyphs -- seen, done,
+failed (NCK:+REACTION-SEEN+ and its two) -- spelled that way.")
 
 (defun reaction-name (emoji)
   "EMOJI as Slack names it: the kit's glyph through the table, a name as is."
@@ -245,19 +435,29 @@ already is: Slack keeps a response_url open half an hour. Executing it is
 done (WRAP-SLACK-EXECUTOR).")
 
 (defun respond-plan (candidate text &key private controls panel (timeout-seconds 30)
-                                    &aux (url (source-field candidate "response_url")))
-  "The answer to a slash command, through the response_url it arrived with:
-in the channel for everyone to read, or, PRIVATE, to the person who asked
-alone (ephemeral), CONTROLS under it. With TEXT NIL, the hold the kit asks
-for first, which the socket's acknowledgement already is (+SOCKET-HOLD+).
-NIL for anything else, which is answered as a reply."
-  ;; A PANEL goes as its words: TEXT.
+                                    &aux (url (source-field candidate "response_url"))
+                                         (pressed (candidate-pressed-p candidate))
+                                         (seen-by-one (eq t (gethash "card_ephemeral"
+                                                                     (gethash "source" candidate)))))
+  "The answer to a slash command or a press, through the response_url it
+arrived with. A command's answer goes in the channel for everyone to read,
+or, PRIVATE, to the person who asked alone (ephemeral); a press's answer
+becomes the message pressed -- unless it is PRIVATE and that message is
+the channel's, when it is a word to the presser alone under it. CONTROLS
+ride under it. With TEXT NIL, the hold the kit asks for first, which the
+socket's acknowledgement already is (+SOCKET-HOLD+). NIL for anything
+else, which is answered as a reply."
+  ;; A PANEL goes as its words: TEXT. replace_original edits the message the
+  ;; press came from, an ephemeral one too -- which chat.update cannot reach
+  ;; -- and an ephemeral one stays seen by its one reader.
   (declare (ignore panel))
   (cond ((null url) nil)
         ((null text) +socket-hold+)
         (t (rest-plan "POST" url "respond" t timeout-seconds
                       (nlk:json-object "response_type" (if private "ephemeral" "in_channel")
-                                       "text" (nlk:clip (nlk:one-line text) 1000)
+                                       :when (and pressed (or seen-by-one (not private)))
+                                       "replace_original" t
+                                       "text" (notification-text text)
                                        "blocks" (message-blocks text controls))))))
 
 (defun slack-message-id (body)
@@ -279,33 +479,65 @@ already on or already off, a status line already gone.")
   "One failed call in words: Slack's error code when the envelope names one."
   (format nil "slack ~a failed with status ~a: ~a" plan.audit-label status detail))
 
-(defun wrap-slack-executor (inner)
+(defun note-posted-text (book plan result)
+  "Keep in BOOK the words of the message a successful post or edit PLAN made
+(RESULT its execution) when it carries something to press: a press on it
+answers under them (PRESSED-WORDS)."
+  (let ((body plan.body))
+    (when (and book result.ok-p (hash-table-p body)
+               (member plan.path '("/chat.postMessage" "/chat.update") :test #'equal))
+      (let* ((blocks (coerce (or (gethash "blocks" body) #()) 'list))
+             (words (loop for block in blocks
+                          when (equal "markdown" (gethash "type" block))
+                            return (gethash "text" block)))
+             (ts (or (and (hash-table-p result.body) (nlk:json-value result.body :string "ts"))
+                     (gethash "ts" body)))
+             (key (book-key (gethash "channel" body) ts))
+             (texts (thread-book-texts book)))
+        (if (and words ts (some (lambda (block)
+                                  (member (gethash "type" block) '("actions" "section") :test #'equal))
+                                blocks))
+            (progn (when (>= (hash-table-count texts) +card-text-cap+) (clrhash texts))
+                   (setf (gethash key texts) words))
+            (remhash key texts))))))
+
+(defun wrap-slack-executor (inner &key book)
   "An executor speaking Slack's envelope in the kit's terms: a 200 that says
 ok false fails with Slack's error, the errors that mean `already so' succeed,
-and a plan that is NIL -- a typing beat Slack cannot show -- or the socket's
-hold on a command's answer (+SOCKET-HOLD+) is done."
-  (make-plan-executor
-   :run (lambda (plan)
-          (if (or (null plan) (eq plan +socket-hold+))
-              (make-execution :ok-p t :status 200 :attempts 0)
-              (let* ((result (execute-plan inner plan))
-                     (body result.body)
-                     (code (and (hash-table-p body)
-                                (eq nil (gethash "ok" body t))
-                                (or (nlk:json-value body :string "error") "error"))))
-                (when (and result.ok-p code)
-                  (if (member code +settled-errors+ :test #'string=)
-                      (setf result.body nil)
-                      (setf result.ok-p nil
-                            result.error (slack-failure-message plan result.status code))))
-                result)))))
+a plan that is NIL -- a typing beat Slack cannot show -- or the socket's
+hold on a command's answer (+SOCKET-HOLD+) is done, and an UPLOAD plan runs
+as Slack's upload steps (RUN-UPLOAD). BOOK, the thread book, keeps the words
+of each pressable message posted (NOTE-POSTED-TEXT)."
+  (let ((executor nil))
+    (setf executor
+          (make-plan-executor
+           :run (lambda (plan)
+                  (cond
+                    ((or (null plan) (eq plan +socket-hold+))
+                     (make-execution :ok-p t :status 200 :attempts 0))
+                    ((equal plan.method +upload-method+) (run-upload executor plan))
+                    (t
+                     (let* ((result (execute-plan inner plan))
+                            (body result.body)
+                            (code (and (hash-table-p body)
+                                       (eq nil (gethash "ok" body t))
+                                       (or (nlk:json-value body :string "error") "error"))))
+                       (when (and result.ok-p code)
+                         (if (member code +settled-errors+ :test #'string=)
+                             (setf result.body nil)
+                             (setf result.ok-p nil
+                                   result.error (slack-failure-message plan result.status code))))
+                       (note-posted-text book plan result)
+                       result))))))
+    executor))
 
-(defun make-slack-executor (&key (api-base +slack-api-base+) token)
+(defun make-slack-executor (&key (api-base +slack-api-base+) token book)
   "The live executor: the Web API under API-BASE with TOKEN as the bearer,
-which never reaches a failure text."
+which never reaches a failure text; BOOK as WRAP-SLACK-EXECUTOR's."
   (wrap-slack-executor
    (make-dexador-executor
     :base-url api-base
     :headers (list (cons "authorization" (format nil "Bearer ~a" token)))
     :redact-prefixes (list token)
-    :failure-message-fn #'slack-failure-message)))
+    :failure-message-fn #'slack-failure-message)
+   :book book))

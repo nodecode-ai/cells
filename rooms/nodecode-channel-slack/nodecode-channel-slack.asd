@@ -4,9 +4,9 @@
 ;;;;
 ;;;; Loaded by nodecode-channel-kit's START-ADDON when channels.slack is
 ;;;; present in the shared config. The .asd sits inside its own folder so
-;;;; the kit finds it through the folder registry. The kit is shipped with
-;;;; every release; this folder is installed from the add-on hub
-;;;; (/setup, Choose) or cloned into ~/.nodecode/addons/.
+;;;; the kit finds it through the folder registry. Shipped with every
+;;;; release beside the kit, Discord and Telegram (src/cells/bundle.json),
+;;;; and tested with them (just channels-test).
 ;;;;
 ;;;; Slack is reached over Socket Mode -- a websocket the app opens -- so the
 ;;;; organism needs no public address.

@@ -27,13 +27,22 @@
       // Other bots' messages: "none", "mentions" (one that @mentions this
       // bot), or "all". The bot's own are always ignored.
       "allow_bots": "none",
-      // true: each ask carries 👀 on the message itself from admission
-      // through the working turn, removed when the turn ends.
+      // Your own workspace id: in a channel shared with another
+      // organization (Slack Connect), only its people may drive the bot.
+      "allowed_workspaces": ["<workspace id>"],
+      // Wake words, and user group ids, that count as mentioning the bot.
+      "mention_patterns": [],
+      "mention_groups": [],
+      // true: each ask carries 👀 on the message itself while its turn runs,
+      // then ✅ once answered or ❌ if it failed.
       "reactions": false,
       // true: the turn's calls show in the thread as their own messages.
       "show_tools": false,
       // Minutes an ask's turn may run; 0, the default, caps nothing.
-      "turn_budget_minutes": 0
+      "turn_budget_minutes": 0,
+      // After the bot was away, read back this many minutes of what was said
+      // and answer the asks it missed, marked late; 0 never.
+      "catch_up_minutes": 60
     }
   }
 }

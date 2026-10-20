@@ -171,14 +171,24 @@ for allowed_users and owner."
                 :doc "other bots' messages: none ignores them, mentions answers one that @mentions this bot, all treats them as people's; the bot's own are always ignored")
   ("free_response_channels" :list :choices #'probe-channel-choices
                             :doc "channel ids where every allowed message may open a turn")
+  ("require_mention_channels" :list :choices #'probe-channel-choices
+                              :doc "channel ids where a message must mention the bot, whatever require_mention says")
   ("ignored_channels" :list :choices #'probe-channel-choices
                       :doc "channel ids the bot reads neither as prompts nor as context")
+  ("allowed_workspaces" :list
+                        :doc "workspace ids (T...) whose people may drive the bot; empty admits anyone the other lists admit -- set it when a channel is shared with another organization (Slack Connect)")
+  ("mention_patterns" :list
+                      :doc "case-insensitive wake words that address the bot where a mention is required")
+  ("mention_groups" :list
+                    :doc "user group ids (S...) whose mention addresses the bot where a mention is required, as its own does")
   ("dm_policy" :choice :options '("allow" "disabled") :default "allow"
                :doc "direct messages")
   ("group_policy" :choice :options '("allow" "disabled") :default "allow"
                   :doc "group direct messages")
   ("reactions" :boolean :default :false
-               :doc "mark each ask on the message itself: 👀 from admission through the working turn, cleared when the turn ends")
+               :doc "mark each ask on the message itself: 👀 from admission through the working turn, then ✅ when its answer lands or ❌ when it fails; needs reactions:write")
+  ("catch_up_minutes" :integer :default 60
+                      :doc "after the bot was away -- a restart, a machine that was off -- read what its conversations said in the last this-many minutes of it and answer the asks it missed, each marked as late; 0 never")
   ("show_tools" :boolean :default :false
                 :doc "show the turn's calls in the thread as their own messages -- the trail the transcript walks; false, the thread shows the turn's own words only")
   ("turn_budget_minutes" :integer :default 0
