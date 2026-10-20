@@ -482,13 +482,24 @@ its question again when it never got it."
   "The letters K attempts go by: A, B and on."
   (loop for i below k collect (string (code-char (+ (char-code #\A) i)))))
 
-(defun attempt-folder (goal root)
-  "Where in ROOT, an attempt's worktree, GOAL's session folder falls."
+(defun relative (goal)
+  "GOAL's session folder as a path from the top of its repository, the empty
+string at the top."
   (let ((relative (uiop:subpathp (uiop:ensure-directory-pathname
                                   (truename (nlk:find-session-cwd (getf goal :session))))
                                  (uiop:ensure-directory-pathname (getf goal :top)))))
-    (namestring (if relative (merge-pathnames relative root) (pathname root)))))
+    (if relative (namestring relative) "")))
 
+(defun unowned (goal)
+  "The pathspec that leaves out the organism's own folder in GOAL's session
+folder -- .nodecode/, where each turn's workspace snapshots go, as the core's
+snapshot store leaves it out (session/snapshot.lisp) -- so no copy carries it
+and no patch writes it."
+  (list "--" "." (format nil ":(exclude)~a.nodecode" (relative goal))))
+
+(defun attempt-folder (goal root)
+  "Where in ROOT, an attempt's worktree, GOAL's session folder falls."
+  (namestring (merge-pathnames (relative goal) (uiop:ensure-directory-pathname root))))
 (defun snapshot (goal &aux (id (getf goal :id)) (top (getf goal :top)))
   "Commit GOAL's folder as it stands -- tracked and untracked files, the
 ignored left out -- through an index of the cell's own: the folder's index,
@@ -505,7 +516,7 @@ files and branches untouched. => the commit."
                (nlk:trimmed out))))
       (when (probe-file index) (delete-file index))
       (when head (in-index "read-tree" "HEAD"))
-      (in-index "add" "-A")
+      (apply #'in-index "add" "-A" (unowned goal))
       (let ((tree (in-index "write-tree")))
         (delete-file index)
         (apply #'in-index "commit-tree" tree
@@ -560,13 +571,13 @@ files and branches untouched. => the commit."
                                                :order :newest :limit 1 :as :payloads)))))
     (and payload (nlk:fact-message-content payload))))
 
-(defun changes (attempt &rest options)
+(defun changes (goal attempt &rest options)
   "ATTEMPT's changes against the commit it started from, as git diff OPTIONS
-print them. => (values TEXT STATUS ERROR), TEXT as printed."
+print them, GOAL's own folder left out. => (values TEXT STATUS ERROR), TEXT
+as printed."
   (let ((root (field attempt "root")))
-    (git root "add" "-A")
-    (run root (append (list "git" "diff" "--cached") options (list (field attempt "base"))))))
-
+    (apply #'git root "add" "-A" (unowned goal))
+    (run root (append (list "git" "diff" "--cached") options (list (field attempt "base")) (unowned goal)))))
 (defun spawn (goal label base &aux (id (getf goal :id)) (origin (getf goal :session)))
   "Start GOAL's attempt LABEL from the commit BASE: its worktree, a fork of
 the session working there, the goal set on it, then its fact."
@@ -599,8 +610,8 @@ alone: its folder, what its check said, its last answer and its changes."
                                   label (attempt-folder goal (field attempt "root")) (check-label goal)
                                   (nlk:clip (or (field (last-check attempt) "detail") "nothing") 600)
                                   (nlk:clip (or (attempt-answer attempt) "none") 2000)
-                                  (nlk:trimmed (changes attempt "--stat"))
-                                  (nlk:clip (changes attempt) *changes-chars*
+                                  (nlk:trimmed (changes goal attempt "--stat"))
+                                  (nlk:clip (changes goal attempt) *changes-chars*
                                             :ellipsis (format nil "~%... cut here; the rest is in its folder")))))))
 
 (defun shuffled (list)
@@ -649,7 +660,7 @@ first line names after PICK, or NIL and why it names none."
 (defun apply-attempt (goal attempt &aux (root (field attempt "root")))
   "Apply ATTEMPT's changes to GOAL's folder: one patch, whole or not at all,
 the folder's index untouched. => (values APPLIED WHAT-HAPPENED)."
-  (multiple-value-bind (diff status err) (changes attempt "--binary")
+  (multiple-value-bind (diff status err) (changes goal attempt "--binary")
     (cond ((not (eql status 0))
            (values nil (format nil "Its changes could not be read (~a); they stay in ~a." err root)))
           ((string= (nlk:trimmed diff) "")
@@ -663,7 +674,7 @@ the folder's index untouched. => (values APPLIED WHAT-HAPPENED)."
                (if (eql status 0)
                    (values t (format nil "Its changes are applied to ~a: ~a."
                                      (nlk:find-session-cwd (getf goal :session))
-                                     (nlk:trimmed (changes attempt "--shortstat"))))
+                                     (nlk:trimmed (changes goal attempt "--shortstat"))))
                    (values nil (format nil "Its changes do not apply to the folder as it now stands (~a); they stay in ~a, and as the patch ~a."
                                        (said out err) root patch)))))))))
 
@@ -995,5 +1006,6 @@ nothing reads it, stop ends it. => the answer's text."
             :description "Keep working until a check passes: CONDITION sets the goal, --check COMMAND makes the check a command, --k N tries it N ways and keeps the best, nothing reads it, stop ends it"
             :argument-hint "CONDITION [--check COMMAND] [--turns N] [--k N] | stop")
   (:start (lambda ()
-            (setf *worker* (nlk:worker-start "goal" #'tick :wake 30 :prime t))
+                        ;; the symbol, so a live redefinition of TICK reaches the running worker
+            (setf *worker* (nlk:worker-start "goal" 'tick :wake 30 :prime t))
             (nle:on-stop (lambda () (setf *worker* (nlk:worker-stop *worker*)))))))
