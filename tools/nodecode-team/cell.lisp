@@ -389,18 +389,13 @@ hang under, or NIL. DIR's team.sexp already lists them."
   ;; them — while detached keeps them what a team is, identical sessions
   ;; that begin fresh and compose none of the opener's history. An
   ;; opener no session answers for (a snippet outside a turn) leaves them
-  ;; roots. The opener's model pin and its reasoning ride each; a node
-  ;; without one follows the gateway default, as the opener does.
-  (multiple-value-bind (provider model)
-      (and origin (ignore-errors (nlk:session-model-selection origin)))
-    (dolist (id nodes)
-      (nlk:create-session :id id :cwd (namestring dir)
-                          :parent (and origin (nlk:session-exists-p origin) origin)
-                          :detached t)
-      (let ((effort (and origin (ignore-errors (nlk:session-model-effort origin)))))
-        (when (or provider model effort)
-          (nlk:record-session-model-selection id :provider provider :model model
-                                                 :effort effort))))))
+  ;; roots. The opener's model pin and its reasoning ride each, carried by
+  ;; the create; a node without one follows the gateway default, as the
+  ;; opener does.
+  (dolist (id nodes)
+    (nlk:create-session :id id :cwd (namestring dir)
+                        :parent (and origin (nlk:session-exists-p origin) origin)
+                        :detached t)))
 
 (defun start-nodes (dir origin nodes task n command)
   "Put TASK to freshly minted NODES as their first input: TASK, then the

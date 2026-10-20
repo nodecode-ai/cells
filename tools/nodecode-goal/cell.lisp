@@ -351,13 +351,10 @@ admit its next turn."
       (and (stringp session) (uiop:string-prefix-p "goal-" session) (search "-try-" session) t)))
 (defun fork (origin child cwd turn)
   "Make CHILD a fork of ORIGIN at TURN -- of its lineage alone when TURN is
-NIL -- working in CWD on ORIGIN's model: once, whoever asks twice."
+NIL -- working in CWD on ORIGIN's model, which the create carries, so its
+cached prefix is the fork's: once, whoever asks twice."
   (unless (nlk:session-exists-p child)
-    (nlk:create-session :id child :cwd cwd :parent origin :anchor-turn-id turn)
-    ;; the origin's model: its cached prefix is the fork's
-    (multiple-value-bind (provider model) (nlk:session-model-selection origin)
-      (when (or provider model)
-        (nlk:record-session-model-selection child :provider provider :model model)))))
+    (nlk:create-session :id child :cwd cwd :parent origin :anchor-turn-id turn)))
 
 (defun summon (goal turn n &aux (origin (getf goal :session)) (id (getf goal :id)))
   "Fork GOAL's session at TURN as its Nth judge and put the question to it,
@@ -402,12 +399,6 @@ MET, never when it says NOT MET or neither."
               ((word-prefix-p "MET" upper) (values t (detail "MET")))
               (t (values nil (format nil "the judge answered no MET or NOT MET line: ~a"
                                      (nlk:clip (nlk:one-line (or text "nothing")) 300)))))))))
-(defun judge-answer (child)
-  "The judge CHILD's final answer, or NIL."
-  (let ((payload (first (nlk:events :session-id child :kind "turn.assistant_message_completed"
-                                    :order :newest :limit 1 :as :payloads))))
-    (and payload (nlk:fact-message-content payload))))
-
 (defun fork-state (child)
   "Where the fork CHILD's one question stands: :WAITING on its answer, :LOST
 (it never got the question), :ANSWERED and the answer, or :ENDED and how its
@@ -421,7 +412,7 @@ turn ended without one."
                         (plusp (nlk:events :session-id child :kind "turn.started" :as :count))))
                :waiting
                :lost))
-          ((equal kind "turn.completed") (values :answered (judge-answer child)))
+          ((equal kind "turn.completed") (values :answered (nlk:turn-answer child)))
           (t (values :ended
                      (format nil "~:[failed~@[: ~a~]~;was cancelled~*~]"
                              (equal kind "turn.cancelled")
@@ -565,11 +556,8 @@ files and branches untouched. => the commit."
 (defun attempt-answer (attempt)
   "What ATTEMPT answered in the last turn its check read, or NIL."
   (let* ((check (last-check attempt))
-         (turn (and check (check-turn check)))
-         (payload (and turn (first (nlk:events :session-id (field attempt "session") :turn-id turn
-                                               :kind "turn.assistant_message_completed"
-                                               :order :newest :limit 1 :as :payloads)))))
-    (and payload (nlk:fact-message-content payload))))
+         (turn (and check (check-turn check))))
+    (and turn (nlk:turn-answer (field attempt "session") turn))))
 
 (defun changes (goal attempt &rest options)
   "ATTEMPT's changes against the commit it started from, as git diff OPTIONS

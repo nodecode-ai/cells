@@ -1,0 +1,9 @@
+// The fork cell's section of ~/.nodecode/config.jsonc. Nothing here is
+// required: a present section is enabled, and every member has a default.
+{
+  "fork": {
+    // seconds a fork's turn may run before its tools are refused and it
+    // answers where it stands (at least 30)
+    "seconds": 900
+  }
+}

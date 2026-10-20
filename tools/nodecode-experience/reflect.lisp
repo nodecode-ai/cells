@@ -196,16 +196,15 @@ the span says whose they are. NIL for a turn without both ends."
          (reflection (make-reflection :origin origin :turn turn :child child
                                       :command-id command-id
                                       :started (get-universal-time))))
+    ;; The origin's cached prefix needs no copy: the create carries the model
+    ;; pin, and an anchored fork stands on its chain's eviction floor and
+    ;; harness sections (NLK:RETAINED-HISTORY-FLOORS,
+    ;; NLK:STANDING-HARNESS-SECTIONS). A reflection model of its own gives
+    ;; that prefix up.
     (nlk:create-session :id child :cwd session.cwd :parent origin :anchor-turn-id turn)
-    ;; The origin's cached prefix: the model pin. The eviction floor and the
-    ;; harness sections need no copy — an anchored fork stands on its chain's
-    ;; (NLK:RETAINED-HISTORY-FLOORS, NLK:STANDING-HARNESS-SECTIONS).
-    (multiple-value-bind (provider model) (nlk:session-model-selection origin)
-      (when (and (setting :provider) (setting :model))
-        (setf provider (setting :provider)
-              model (setting :model)))
-      (when (or provider model)
-        (nlk:record-session-model-selection child :provider provider :model model)))
+    (when (and (setting :provider) (setting :model))
+      (nlk:record-session-model-selection child :provider (setting :provider)
+                                                 :model (setting :model)))
     (setf (gethash child *children*) (cons origin turn))
     ;; On the list before the submit: a turn that dies inside the submit's
     ;; own publish still finds its record.
