@@ -1613,6 +1613,27 @@ LANE, as the one running channel."
                  (press-lines (nth-value 1 (nck::dialog-card own "/voice"))))
           "a row that names its own press is pressed by that word, over the hint's"))))
 
+(deftest channel-a-dialog-card-draws-a-rows-options-as-its-menu ()
+  ;; A row that offers picks (NLE:LIST-DIALOG's OPTIONS) is a menu in its
+  ;; place, each option saying the row it is a pick of, the one in use the
+  ;; one shown picked, a pick saying its own line; the words still say it.
+  (let ((dialog (flet ((row (label detail mark enter)
+                         (nlk:json-object "label" label "detail" detail "mark" mark
+                                          "run" (nlk:json-object "enter" enter))))
+                  (let ((sitting (row "Sitting in" "#General" "" "/voice leave"))
+                        (speaks (row "Speaks with" "kokoro bf_isabella" "" "/voice speaks")))
+                    (setf (gethash "verb" sitting) "leave"
+                          (gethash "options" speaks) (vector (row "bf_isabella" "kokoro" "●" "/voice speaks bf_isabella")
+                                                             (row "af_heart" "kokoro" "" "/voice speaks af_heart")))
+                    (nlk:json-object "rows" (vector sitting speaks))))))
+    (multiple-value-bind (text controls) (nck::dialog-card dialog "/voice")
+      (is (search "- Speaks with · kokoro bf_isabella" text) "the words say the row")
+      (is (equal '((:row nil "Sitting in" "#General" ("Leave" "/voice leave" :secondary nil))
+                   (:menu "Speaks with…" (("Speaks with · bf_isabella" "/voice speaks bf_isabella" "kokoro" t)
+                                         ("Speaks with · af_heart" "/voice speaks af_heart" "kokoro" nil)))
+                   (("Refresh" "/voice" :secondary nil)))
+                 (press-lines controls))))))
+
 (deftest channel-a-dialog-card-pages-its-rows-and-tabs ()
   ;; A tabbed dialog's card shows a row of its tabs, the one open primary,
   ;; each saying the card's own line on that tab; a menu holds 25, so a

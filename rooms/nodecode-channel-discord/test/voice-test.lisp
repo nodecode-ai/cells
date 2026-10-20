@@ -462,6 +462,65 @@ u1 Ana and u2 Bo named, as GUILD_CREATE would have named them."
         collect (list (getf row :label) (getf row :detail) (getf row :verb)
                       (getf (getf row :run) :enter) (getf row :mark))))
 
+(defun voice-seat-rows (dialog)
+  "DIALOG's rows as VOICE-ROWS has them, the models it hears, speaks and
+thinks with aside."
+  (remove-if (lambda (row) (member (first row) '("Hears with" "Speaks with" "Thinks with") :test #'equal))
+             (voice-rows dialog)))
+
+(defun voice-options (dialog label)
+  "The picks DIALOG's row LABEL offers, as (LABEL MARK ENTER)."
+  (loop for option in (getf (find label (getf dialog :rows) :key (lambda (row) (getf row :label)) :test #'equal)
+                            :options)
+        collect (list (getf option :label) (getf option :mark) (getf (getf option :run) :enter))))
+
+(deftest channel-discord-voice-says-the-models-it-uses-and-offers-their-picks ()
+  ;; Bare /voice says what it hears, speaks and thinks with, each a row
+  ;; offering its picks with the one in use marked: the transcription
+  ;; server's models, the speech server's voices, the models the room may run
+  ;; on. A pick is written to the shared config and to the section the kit
+  ;; speaks with, a name no server lists is refused, and the built-in
+  ;; engines have one pick each. Pressed in a room, a change answers the card
+  ;; again so its buttons stay.
+  (let ((ncd::*voice-catalogs* (make-hash-table :test #'equal))
+        (now (get-universal-time)))
+    (setf (gethash "http://127.0.0.1:9/v1" ncd::*voice-catalogs*) (list now '("whisper-1" "large-v3") nil)
+          (gethash "http://127.0.0.1:8/v1" ncd::*voice-catalogs*) (list now '("kokoro") '("af_heart" "bf_isabella")))
+    (let ((nck:*transcription* (nlk:json-object "base_url" "http://127.0.0.1:9/v1" "model" "whisper-1"))
+          (nck:*speech* (nlk:json-object "base_url" "http://127.0.0.1:8/v1" "model" "kokoro" "voice" "bf_isabella"))
+          (ncd:*voice-lane* nil) (nck:*command-source* nil))
+      (with-stubbed-fdefinitions ((nle:config-get (path)
+                                    (cond ((equal path '("general" "default_model")) (list :provider "p1" :model "m1"))
+                                          ((equal path '("failover" "chain"))
+                                           (vector (list :provider "p1" :model "m1") (list :provider "p2" :model "m2"))))))
+        (let ((dialog (nth-value 1 (ncd:voice-command "" (voice-section) "tui-1"))))
+          (is (equal '(("Hears with" "whisper-1 · a server on this machine" "pick" "/voice hears" nil)
+                       ("Speaks with" "kokoro bf_isabella · a server on this machine" "pick" "/voice speaks" nil)
+                       ("Thinks with" "p1/m1" "pick" "/models" nil))
+                     (subseq (voice-rows dialog) 1)))
+          (is (equal '(("whisper-1" "●" "/voice hears whisper-1") ("large-v3" "" "/voice hears large-v3"))
+                     (voice-options dialog "Hears with")))
+          (is (equal '(("bf_isabella" "●" "/voice speaks bf_isabella") ("af_heart" "" "/voice speaks af_heart"))
+                     (voice-options dialog "Speaks with")))
+          (is (equal '(("m1" "●" "/models p1 m1") ("m2" "" "/models p2 m2"))
+                     (voice-options dialog "Thinks with")))))
+      (is (search "af_ghost is none of bf_isabella, af_heart" (ncd:voice-command "speaks af_ghost" (voice-section))))
+      (with-temp-file (path :contents "{}")
+        (let ((nle::*shared-config-path* path))
+          (is (equal "voice: speaking with af_heart now." (ncd:voice-command "speaks af_heart" (voice-section))))
+          (is (equal "af_heart" (nlk:json-value nck:*speech* :string "voice")) "the kit speaks with the pick")
+          (is (equal "af_heart" (getf (nle:config-get '("speech")) :voice)) "the shared config keeps it")
+          (let ((nck:*command-source* (nlk:json-object "chat_kind" "channel" "channel_id" "t-1" "user_id" "u1")))
+            (is-shape (nth-value 1 (ncd:voice-command "speaks bf_isabella" (voice-section) "tui-1")) (:title "Voice"))
+            (is-shape (nth-value 1 (ncd:voice-command "leave" (voice-section) "tui-1")) (:title "Voice"))
+            (is (null (nth-value 1 (ncd:voice-command "status" (voice-section) "tui-1")))
+                "a change pressed in a room answers the card; status stays words")))))
+    (let ((nck:*transcription* nil) (nck:*speech* nil))
+      (is (equal '("Parakeet TDT 0.6B" "en_US lessac")
+                 (list (nth-value 1 (ncd::voice-hearing-picks)) (nth-value 1 (ncd::voice-speaking-picks)))))
+      (is (equal "voice: the built-in engine has only en_US lessac" (ncd:voice-command "speaks af_heart" (voice-section)))
+          "none other to pick"))))
+
 (deftest channel-discord-voice-bare-is-one-dialog-for-shell-and-room ()
   ;; Bare /voice answers its status in words and a dialog: where the bot sits
   ;; and how to start, or the channel it sits in, the one it talks through,
@@ -474,7 +533,7 @@ u1 Ana and u2 Bo named, as GUILD_CREATE would have named them."
         (is (search "voice: not in a voice channel" text))
         (is-shape dialog (:title "Voice") (:context "not seated") (:tone nil))
         (is (search "Join sits beside you, or in the channel you pick" (getf dialog :summary)))
-        (is (equal '(("Sitting in" "nowhere" "join" "/voice join" "○")) (voice-rows dialog)))))
+        (is (equal '(("Sitting in" "nowhere" "join" "/voice join" "○")) (voice-seat-rows dialog)))))
     (let ((ncd:*voice-lane* (voice-lane-for-test :speakers '("u1" "u2")))
           (nck:*command-source* (nlk:json-object "chat_kind" "channel" "channel_id" "t-1" "user_id" "u1")))
       (let ((dialog (nth-value 1 (ncd:voice-command "" (voice-section) "tui-1"))))
@@ -484,7 +543,7 @@ u1 Ana and u2 Bo named, as GUILD_CREATE would have named them."
                      ("Hearing" "Ana, Bo" "change" "/voice hear" nil)
                      ("Notes" "not taking" "take" "/voice notes" nil)
                      ("Voice messages here" "Words only" "change" "/voice replies" nil))
-                   (voice-rows dialog))))
+                   (voice-seat-rows dialog))))
       (setf (ncd::voice-lane-notes-by ncd:*voice-lane*) "u1"
             (ncd::voice-lane-speakers ncd:*voice-lane*) '("*"))
       (is (equal '(("Hearing" "everyone" "change" "/voice hear" nil)
@@ -492,7 +551,7 @@ u1 Ana and u2 Bo named, as GUILD_CREATE would have named them."
                  (subseq (voice-rows (nth-value 1 (ncd:voice-command "" (voice-section) "tui-1"))) 2 4))))
     (let ((ncd:*voice-lane* (voice-lane-for-test)) (nck:*command-source* nil))
       (is (equal '("Sitting in" "Talking through" "Hearing")
-                 (mapcar #'first (voice-rows (nth-value 1 (ncd:voice-command "" (voice-section) "tui-1")))))
+                 (mapcar #'first (voice-seat-rows (nth-value 1 (ncd:voice-command "" (voice-section) "tui-1")))))
           "a shell's dialog offers no notes to take and no voice messages"))
     (is (null (nth-value 1 (ncd:voice-command "status" (voice-section))))
         "/voice status stays words")))
@@ -545,8 +604,8 @@ u1 Ana and u2 Bo named, as GUILD_CREATE would have named them."
              (let ((ncd:*voice-lane* seat))
                (mapcar (lambda (choice) (getf choice :value)) (ncd::voice-choices text)))))
       (is-table (expected text seat) (equal expected (verbs text seat))
-        ('("join" "status" "replies" "off" "on" "tts") "" nil)
-        ('("leave" "room" "hear" "notes" "say" "status" "replies" "off" "on" "tts") "" lane)
+        ('("join" "status" "hears" "speaks" "replies" "off" "on" "tts") "" nil)
+        ('("leave" "room" "hear" "notes" "say" "status" "hears" "speaks" "replies" "off" "on" "tts") "" lane)
         ('("tts") "TS" lane))
       (setf (ncd::voice-lane-notes-by lane) "u1")
       (is (equal '("notes stop") (verbs "notes" lane))))

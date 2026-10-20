@@ -1141,7 +1141,8 @@ one owner for both."
                 (voice-how-to-start section "Not in a voice channel. Join sits beside you, or in the channel you pick"))
    ;; a shell's selected row says what Enter does there, as a room's button does
    :rows (mapcar (lambda (row) (list* :suffix (format nil "  · enter ~a" (getf row :verb)) row))
-          (remove nil
+          (append
+           (remove nil
                  (list (if lane
                            (voice-row "Sitting in" (voice-channel-name lane.channel-id) "leave" "/voice leave"
                                       :mark "●" :mark-tone :success)
@@ -1154,7 +1155,8 @@ one owner for both."
                                                    "stop" "/voice notes stop"))
                                        (in-room (voice-row "Notes" "not taking" "take" "/voice notes"))))
                        (and in-room (voice-row "Voice messages here" (voice-replies-label room)
-                                               "change" "/voice replies")))))))
+                                               "change" "/voice replies"))))
+           (voice-model-rows (and in-room room))))))
 
 (defun voice-pick-dialog (title context summary rows empty &optional (verb "use"))
   "A /voice sub-list: TITLE over CONTEXT, SUMMARY, ROWS to pick one of, EMPTY
@@ -1176,6 +1178,151 @@ who is in each."
                             :mark (if people "●" "") :mark-tone :success))
    "No voice channels known yet: a server lists its own when the bot connects."
    "join"))
+
+;;; --- what voice hears, speaks and thinks with ---------------------------------------------
+
+(defparameter *voice-catalog-seconds* 300
+  "How long what a model server lists stands before it is asked again.")
+
+(defvar *voice-catalogs* (make-hash-table :test #'equal :synchronized t)
+  "base_url -> (READ-AT MODELS VOICES): what an OpenAI-compatible server
+listed at /models.")
+
+(defun voice-server-catalog (base &aux (now (get-universal-time))
+                                       (seen (gethash base *voice-catalogs*)))
+  "(values MODELS VOICES): the model ids the server at BASE lists at /models
+and the voices it names beside them, where it names any -- NIL for a server
+that does not answer; asked again after *VOICE-CATALOG-SECONDS*."
+  (if (and seen (< (- now (first seen)) *voice-catalog-seconds*))
+      (values (second seen) (third seen))
+      (let* ((json (ignore-errors
+                    (multiple-value-bind (body status)
+                        (nlk:http :get (format nil "~a/models" (string-right-trim "/" base))
+                                  :connect-timeout 2 :timeout 3)
+                      (and (< status 400) (nlk:decode-json (nlk:body-text body))))))
+             (models (and (hash-table-p json)
+                          (loop for entry across (or (nlk:json-value json :array "data") #())
+                                for id = (nlk:json-value entry :string "id")
+                                when id collect id)))
+             (voices (and (hash-table-p json)
+                          (remove-if-not #'stringp (coerce (or (nlk:json-value json :array "voices") #()) 'list)))))
+        (setf (gethash base *voice-catalogs*) (list now models voices))
+        (values models voices))))
+
+(defun voice-where (base)
+  "Where the engine at BASE runs, in words: built in for none, a server on
+this machine for a loopback address, else the server's host."
+  (let ((host (and base (ppcre:register-groups-bind (host) ("^[a-zA-Z]+://\\[?([^/\\]:]+)" base) host))))
+    (cond ((zerop (length base)) "built in")
+          ((member host '("127.0.0.1" "localhost" "::1") :test #'equal) "a server on this machine")
+          (t (or host base)))))
+
+(defun voice-engine (section)
+  "(values BASE MODEL VOICE ON) of SECTION, the transcription or speech
+section as the kit holds it: its server, \"\" for the built-in engine, the
+model and voice it names, and whether it is on."
+  (flet ((said (key) (and (hash-table-p section) (nlk:json-value section :string key))))
+    (values (or (said "base_url") "") (said "model") (said "voice")
+            (not (and (hash-table-p section) (eq (gethash "enabled" section) :false))))))
+
+(defun voice-hearing-picks ()
+  "(values PICKS CURRENT WHERE): the models speech can be heard with -- the
+transcription server's, the one in use first -- and where they run."
+  (multiple-value-bind (base model) (voice-engine nck:*transcription*)
+    (if (zerop (length base))
+        (values (list "Parakeet TDT 0.6B") "Parakeet TDT 0.6B" "built in")
+        (values (remove-duplicates (cons model (voice-server-catalog base)) :test #'equal :from-end t)
+                model (voice-where base)))))
+
+(defun voice-speaking-picks ()
+  "(values PICKS CURRENT WHERE MODEL): the voices an answer can be said in --
+the speech server's, the one in use first, 25 at most -- where they run and
+the model that says them."
+  (multiple-value-bind (base model voice) (voice-engine nck:*speech*)
+    (if (zerop (length base))
+        (values (list "en_US lessac") "en_US lessac" "built in" "Piper")
+        (let* ((voice (or voice "alloy"))
+               (picks (remove-duplicates (cons voice (nth-value 1 (voice-server-catalog base)))
+                                         :test #'equal :from-end t)))
+          (values (subseq picks 0 (min 25 (length picks))) voice (voice-where base) model)))))
+
+(defun voice-thinking-picks (room)
+  "(values PICKS CURRENT): the models ROOM may run on, as (PROVIDER MODEL
+WHAT) -- the one it runs on, the organism's default, its fallbacks -- and
+the one in use."
+  (flet ((pair (entry) (and entry (getf entry :model) (list (getf entry :provider) (getf entry :model)))))
+    (let* ((default (pair (ignore-errors (nle:config-get '("general" "default_model")))))
+           (current (or (multiple-value-bind (provider model) (and room (nck:room-lane-model room))
+                          (and model (list provider model)))
+                        default))
+           (chain (ignore-errors (nle:config-get '("failover" "chain"))))
+           (picks (remove-duplicates
+                   (remove nil (append (list (and current (append current (list (if (equal current default) "default" "this room's"))))
+                                             (and default (append default (list "default"))))
+                                       (and (vectorp chain)
+                                            (loop for entry across chain
+                                                  for each = (pair entry)
+                                                  when each collect (append each (list "fallback"))))))
+                   :test (lambda (a b) (equal (subseq a 0 2) (subseq b 0 2))) :from-end t)))
+      (values picks current))))
+
+(defun voice-model-rows (room)
+  "The rows saying what voice hears, speaks and thinks with, each offering
+the picks its line makes (NLE:LIST-DIALOG's OPTIONS), the one in use
+marked."
+  (flet ((option (label detail current line)
+           (list :label label :detail detail :mark (if current "●" "") :run (list :enter line))))
+    (append
+     (multiple-value-bind (picks current where) (voice-hearing-picks)
+       (list (voice-row "Hears with" (if (nth-value 3 (voice-engine nck:*transcription*))
+                                         (format nil "~a · ~a" current where)
+                                         "off")
+                        "pick" "/voice hears"
+                        :options (loop for each in picks
+                                       collect (option each where (equal each current)
+                                                       (format nil "/voice hears ~a" each))))))
+     (multiple-value-bind (picks current where model) (voice-speaking-picks)
+       (list (voice-row "Speaks with" (if (nck:speech-enabled-p)
+                                          (format nil "~@[~a ~]~a · ~a" model current where)
+                                          "off")
+                        "pick" "/voice speaks"
+                        :options (loop for each in picks
+                                       collect (option each (format nil "~@[~a · ~]~a" model where)
+                                                       (equal each current)
+                                                       (format nil "/voice speaks ~a" each))))))
+     (multiple-value-bind (picks current) (voice-thinking-picks room)
+       (and picks
+            (list (voice-row "Thinks with" (format nil "~{~a/~a~}" current) "pick" "/models"
+                             :options (loop for (provider model what) in picks
+                                            collect (option model (format nil "~a · ~a" provider what)
+                                                            (equal (list provider model) current)
+                                                            (format nil "/models ~a ~a" provider model))))))))))
+
+(defun voice-pick-model (kind word)
+  "/voice hears|speaks [WORD], KIND :hears or :speaks: the
+picks as a sub-list, or the one WORD names made the one in use -- written
+to the shared config and to the section the kit speaks and hears with."
+  (multiple-value-bind (picks current) (if (eq kind :hears) (voice-hearing-picks) (voice-speaking-picks))
+    (let ((what (if (eq kind :hears) "hearing with" "speaking with"))
+          (path (if (eq kind :hears) '("transcription" "model") '("speech" "voice")))
+          (section (if (eq kind :hears) nck:*transcription* nck:*speech*)))
+      (cond
+        ((null word)
+         (values (format nil "voice: ~a ~a" what current)
+                 (voice-pick-dialog
+                  (if (eq kind :hears) "Hears with" "Speaks with") ""
+                  (if (eq kind :hears) "The model speech is heard with." "The voice answers are said in.")
+                  (loop for each in picks
+                        collect (voice-row each "" "use" (format nil "/voice ~(~a~) ~a" kind each)
+                                           :mark (if (equal each current) "●" "") :mark-tone :accent))
+                  "")))
+        ((not (hash-table-p section))
+         (format nil "voice: the built-in engine has only ~a" current))
+        ((not (member word picks :test #'equal))
+         (format nil "voice: ~a is none of ~{~a~^, ~}" word picks))
+        (t (nle:config-set path word)
+           (setf (gethash (second path) section) word)
+           (format nil "voice: ~a ~a now." what word))))))
 
 (defun voice-room-choices (lane section &aux (allowed (config-string-list section "allowed_channels")))
   "(ID . NAME) of the text channels LANE may talk through: its server's,
@@ -1418,8 +1565,13 @@ ROOM — bare, the status in words and the dialog (VOICE-DIALOG)."
          (by (and *command-source* (nlk:json-value *command-source* :text "user_id")))
          (typed (and *command-source* (nlk:json-value *command-source* :text "channel_id")))
          (lane *voice-lane*))
+    ;; A change pressed on a room's card answers the card again, the change
+    ;; on it: words alone would take its buttons away.
+    (multiple-value-bind (text dialog)
     (cond
       ((string= verb "") (values (voice-status-text section) (voice-dialog section room)))
+      ((string= verb "hears") (voice-pick-model :hears object))
+      ((string= verb "speaks") (voice-pick-model :speaks object))
       ((string= verb "status") (voice-status-text section))
       ((assoc verb +voice-replies+ :test #'string=)
        (nlk:with-handlers ((error (condition) (format nil "voice: ~a" condition)))
@@ -1455,7 +1607,7 @@ ROOM — bare, the status in words and the dialog (VOICE-DIALOG)."
                    (t (voice-announce lane (voice-joining-line lane) typed))))))))
       ((not (member verb '("say" "leave" "notes" "room" "hear") :test #'string=))
        (format nil "voice: no such verb ~s — join, leave, status, room, hear, replies, on, tts, off, ~
-                    notes, say <words>" verb))
+                    notes, hears, speaks, say <words>" verb))
       ((null lane) "voice: not in a voice channel")
       ((string= verb "room") (voice-room-command lane object section typed))
       ((string= verb "hear") (voice-hear-command lane object section by typed))
@@ -1471,7 +1623,14 @@ ROOM — bare, the status in words and the dialog (VOICE-DIALOG)."
            (t (nck:queue-push lane.work-queue (list :speak words))
               (format nil "voice: saying ~s out loud" words)))))
       (t (prog1 (voice-announce lane (format nil "voice: leaving ~a." (voice-channel-name lane.channel-id)) typed)
-           (leave-voice))))))
+           (leave-voice))))
+      (values text
+              (or dialog
+                  (and *command-source*
+                       (or (member verb '("join" "leave" "notes" "hears" "speaks") :test #'string=)
+                           (and object (member verb '("room" "hear") :test #'string=))
+                           (assoc verb +voice-replies+ :test #'string=))
+                       (voice-dialog section room)))))))
 
 (defun voice-choices (text &aux (lane *voice-lane*))
   "The /voice argument completions for the tail TEXT: the verbs that would
@@ -1490,6 +1649,8 @@ only while notes are taken."
                                '("say" . "speak the words after it, now"))
                          (list '("join" . "sit in the voice channel you are in, or one you pick")))
                      (list '("status" . "where the bot sits and what it hears")
+                           '("hears" . "the model speech is heard with")
+                           '("speaks" . "the voice answers are said in")
                            '("replies" . "how this room's answers come back: words or voice"))
                      +voice-replies+)
         when (search needle verb :test #'char-equal)
@@ -1503,7 +1664,7 @@ only while notes are taken."
                         (lambda (args session-id)
                           (voice-command args section session-id))
                         :description "Voice: join, leave, where it talks and whom it hears; answers as voice messages (on, tts, off); meeting notes"
-                        :argument-hint "join [channel] | leave | status | room | hear | replies | on | tts | off | notes [stop] | say <words>"
+                        :argument-hint "join [channel] | leave | status | room | hear | replies | on | tts | off | notes [stop] | hears [model] | speaks [voice] | say <words>"
                         :complete (lambda (text session-id)
                                     (declare (ignore session-id))
                                     (voice-choices text))))

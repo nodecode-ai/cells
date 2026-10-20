@@ -387,6 +387,12 @@ answers with (LANE-VOICE-REPLIES), or NIL for a session no channel holds."
   (multiple-value-bind (host target) (room-host room)
     (and host (lane-voice-replies host room target))))
 
+(defun room-lane-model (room)
+  "(values PROVIDER MODEL) ROOM -- a room session of a running channel's --
+runs on (LANE-MODEL, its agent aside), or NIL: the organism's default."
+  (multiple-value-bind (host target) (room-host room)
+    (and host (lane-model host room target nil))))
+
 (defun set-voice-replies (room mode &aux (host (room-host room)))
   "Make ROOM — a room session of a running channel's — answer in voice
 messages as MODE, a key of +VOICE-REPLIES+, says. => the line that says so."
@@ -784,6 +790,11 @@ trigger; test asks each backup once. MAIN is the room's (PROVIDER MODEL)."
 (defparameter +card-said-rows+ 12
   "The most rows that run nothing a dialog's card says in its words.")
 
+(defun dialog-row-options (row &aux (options (nlk:json-value row :array "options")))
+  "The picks ROW, one of a dialog's rows, offers (NLE:LIST-DIALOG's
+OPTIONS), as a vector of rows of their own, or NIL for a row with none."
+  (and options (plusp (length options)) options))
+
 (defun dialog-row-press (row &aux (run (nlk:json-value row :text "run" "enter"))
                                   (value (nlk:trimmed (or (nlk:json-value row :text "value") ""))))
   "(values LINE DRAFT): the line a press on ROW, one of a dialog's rows,
@@ -907,14 +918,15 @@ beside it, the picture in one row (PICTURE-STRIP), the summary, its tone."
   ;; behind a menu; a longer one keeps its words in the text and its
   ;; pressable rows in a menu, a page at a time.
   (multiple-value-bind (rows tabs tab) (dialog-tab-rows dialog tab)
-    (let* ((pressable (remove-if-not #'dialog-row-press rows))
-           (said (remove-if (lambda (row) (or (dialog-row-press row)
+    (let* ((picked (remove-if-not #'dialog-row-options rows))
+           (pressable (remove-if (lambda (row) (or (member row picked) (not (dialog-row-press row)))) rows))
+           (said (remove-if (lambda (row) (or (dialog-row-press row) (member row picked)
                                               (and (equal "" (nlk:trimmed (or (nlk:json-value row :text "label") "")))
                                                    (equal "" (nlk:trimmed (or (nlk:json-value row :text "detail") ""))))))
                             rows))
            ;; few enough that a platform draws each with its button
            (lined (and (<= (length pressable) +card-row-buttons+)
-                       (<= (+ (length pressable) (length said)) (* 2 +card-row-buttons+))))
+                       (<= (+ (length pressable) (length said) (length picked)) (* 2 +card-row-buttons+))))
            (enter (dialog-enter-words dialog)))
       (multiple-value-bind (shown page pages) (if lined (values pressable 1 1) (picker-page pressable page))
         (labels ((field (object key) (nlk:trimmed (or (nlk:json-value object :text key) "")))
@@ -924,6 +936,17 @@ beside it, the picture in one row (PICTURE-STRIP), the summary, its tone."
                  (here (&rest view)
                    ;; this card's own view, VIEW over it: its tab, its page, its way back
                    (append view (list :tab tab :page page :back back :back-tab back-tab :back-page back-page)))
+                 (menu (row)
+                   ;; ROW's options as its menu, each saying the row it is a pick of
+                   (list :menu (format nil "~@[~a~]…" (label row))
+                         (loop for option across (dialog-row-options row)
+                               for line-of = (dialog-row-press option)
+                               when line-of
+                                 collect (menu-choice (format nil "~@[~a · ~]~a" (label row) (or (label option) line-of))
+                                                      line-of
+                                                      :description (detail option)
+                                                      :current (plusp (length (field option "mark")))
+                                                      :back line :back-tab tab :back-page page))))
                  (press (row &optional (as (or (words (field row "verb")) enter "open")))
                    ;; the choice ROW's press says, and the card it answers comes back to
                    (multiple-value-bind (press draft) (dialog-row-press row)
@@ -933,14 +956,14 @@ beside it, the picture in one row (PICTURE-STRIP), the summary, its tone."
                  (context (words (field dialog "context")))
                  (strip (picture-strip dialog))
                  (summary (words (field dialog "summary")))
-                 (said-lines (append (loop for row in said
+                 (said-lines (append (loop for row in (remove-if-not (lambda (row) (or (member row said) (member row picked))) rows)
                                            repeat +card-said-rows+
                                            ;; a row with no label carries on the one above it
                                            collect (if (label row)
                                                        (format nil "- ~@[~a ~]~a~@[ · ~a~]" (row-mark row) (label row) (detail row))
                                                        (format nil "  ~a" (field row "detail"))))
-                                     (and (> (length said) +card-said-rows+)
-                                          (list (format nil "- +~d more" (- (length said) +card-said-rows+))))))
+                                     (and (> (+ (length said) (length picked)) +card-said-rows+)
+                                          (list (format nil "- +~d more" (- (+ (length said) (length picked)) +card-said-rows+))))))
                  (empty (and (null rows) (or (words (field dialog "empty_label")) "Nothing here."))))
             (values
              (format nil "## ~a~@[~%~a~]~@[~%~a~]~@[~%~a~]~{~%~a~}~@[~%~a~]"
@@ -960,11 +983,18 @@ beside it, the picture in one row (PICTURE-STRIP), the summary, its tone."
                                          collect (apply #'menu-choice (field each "label") line
                                                         :current (eql index tab) (here :tab index :page 1)))))))
               (if lined
-                  ;; every row in its order, a button on those that run a line
-                  (loop for row in (remove-if-not (lambda (row) (or (member row pressable) (member row said))) rows)
-                        collect (line-choice (or (label row) "") (and (member row pressable) (press row))
-                                             :mark (row-mark row) :detail (detail row)))
-                  (and shown
+                  ;; every row in its order, a button on those that run a line, a menu
+                  ;; on those that offer picks
+                  (loop for row in (remove-if-not (lambda (row) (or (member row pressable) (member row said)
+                                                                    (member row picked)))
+                                                  rows)
+                        collect (if (member row picked)
+                                    (menu row)
+                                    (line-choice (or (label row) "") (and (member row pressable) (press row))
+                                                 :mark (row-mark row) :detail (detail row))))
+                  (append
+                   (mapcar #'menu picked)
+                   (and shown
                        (list (list :menu (if enter
                                              (format nil "~a…" (first-capital enter))
                                              (format nil "Pick one of ~d" (length pressable)))
@@ -975,7 +1005,7 @@ beside it, the picture in one row (PICTURE-STRIP), the summary, its tone."
                                                                 :description (words (format nil "~@[~a ~]~a" (words mark)
                                                                                             (or (detail row) "")))
                                                                 :confirm draft
-                                                                :back line :back-tab tab :back-page page)))))))
+                                                                :back line :back-tab tab :back-page page))))))))
               (and (> pages 1)
                    (list (list (apply #'choice "Prev" line :disabled (= page 1) (here :page (1- page)))
                                (list (format nil "Page ~d/~d" page pages) "nck:page" :secondary t)

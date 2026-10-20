@@ -108,7 +108,7 @@ it over any platform, and the /channels status surface.")
    #:thread-title #:thread-ask-p #:message-target #:host-id
    #:post-message #:post-file #:answer-file #:answer-choices #:answer-waits #:answer-waiting #:choice #:menu-choice
    #:said-line #:press-token #:press-action #:candidate-press #:fetch-image #:schedule-flush #:*command-source* #:set-voice-replies
-   #:home-target #:offer-card #:room-voice-replies
+   #:home-target #:offer-card #:room-voice-replies #:room-lane-model
    #:flush-now #:deliver-answer #:on-delta #:on-fact-with-turn #:operator-p
    #:candidate-operator-p #:observe-candidate #:build-ask #:continue-lane
    #:intern-ask-lane #:sync-commands #:handle-candidate #:mark-joined-thread
