@@ -204,7 +204,8 @@ adapter and the fake gateway have stopped."
                                     :user-name "scrap" :bot "true")))
         (edit-json (format nil "{\"op\":0,\"t\":\"MESSAGE_UPDATE\",\"s\":3,\"d\":~a}"
                            (dgw-d "88" "is this possible <@999>" :channel "123" :author "42"
-                                  :user-name "kim"))))
+                                  :user-name "kim"
+                                  :fields "\"edited_timestamp\": \"2026-10-20T11:18:07.000000+00:00\","))))
     (with-fake-discord-lane (:reply "answered the edit" :require-mention t
                              :scripts (list status-json edit-json))
       (is (await-plan executor :label "send_message" :content "answered the edit"

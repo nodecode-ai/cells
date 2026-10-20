@@ -435,10 +435,17 @@ the message something said to us, or NIL for every other update."
   ;; bot's message, a partial update that carries no text at all (a pin, an
   ;; embed refresh, a reaction summary), an update that does not even name its
   ;; author, and an edit that leaves a message as unaddressed as it already
-  ;; was.
+  ;; was. Nor is an update nobody typed: Discord restates the whole message,
+  ;; mention and all, when a thread is opened on it or deleted from it, when
+  ;; it is pinned or its embed resolves, and only a typed edit stamps
+  ;; edited_timestamp. Without the stamp, deleting an old ask's thread after
+  ;; its lane was reaped read as that ask arriving again: a second admission
+  ;; under the first one's command id, which the engine dedupes, so no turn
+  ;; ran and its card said "Waiting on the provider" for five hours.
   (let* ((data (dispatch-data payload "MESSAGE_UPDATE"))
          (content (nlk:json-value data :string "content")))
-    (when (and (nlk:json-value data :object "author")
+    (when (and (nlk:json-value data :string "edited_timestamp")
+               (nlk:json-value data :object "author")
                (not (nlk:json-value data :any "author" "bot"))
                (stringp content)
                (plusp (length (nlk:trimmed content)))

@@ -254,6 +254,9 @@ reaches the router."
   (is (null (ncd:route-discord-message (dgw-dispatch "TYPING_START" "{}"))))
   (is (null (ncd:route-discord-message (cell-json "{\"op\": 11}")))))
 
+(defparameter +dgw-edited+ "\"edited_timestamp\": \"2026-10-20T11:18:07.000000+00:00\","
+  "The FIELDS that stamp a d object as an edit someone typed (DGW-D).")
+
 (defun dgw-update (d-json &key (involves-p (lambda (text)
                                              (search "<@999>" text))))
   "The candidate ROUTE-DISCORD-MESSAGE-UPDATE derives from the
@@ -268,30 +271,37 @@ MESSAGE_UPDATE dispatch whose d object is D-JSON."
   ;; lane reads the words that now involve it. Without this, an edit that
   ;; adds a mention would not route.
   (let ((candidate (dgw-update (dgw-d "m7" "is this possible <@999>" :author "u2"
-                                      :user-name "kim"))))
+                                      :user-name "kim" :fields +dgw-edited+))))
     (is-present candidate "an edit whose words involve the bot routes"
       (is-source candidate :text "is this possible <@999>" "chat_kind" "channel"
                  "channel_id" "c1" "user_id" "u2" "message_id" "m7")))
   ;; A wake word is involvement too: the predicate is the room's own rule,
   ;; and this router never restates it.
-  (is-present (dgw-update (dgw-d "m8" "hey bot, take a look" :author "u2")
+  (is-present (dgw-update (dgw-d "m8" "hey bot, take a look" :author "u2" :fields +dgw-edited+)
                           :involves-p (lambda (text) (search "hey bot" text)))
               "an edit the room's mention rule matches routes")
   ;; An edit inside a thread routes the way the thread's own messages do:
   ;; the thread is known from its own events, and the parent follows.
   (dgw-thread-create! "t1" "c1")
-  (let ((candidate (dgw-update (dgw-d "m9" "<@999> look" :channel "t1" :author "u2"))))
+  (let ((candidate (dgw-update (dgw-d "m9" "<@999> look" :channel "t1" :author "u2"
+                                      :fields +dgw-edited+))))
     (is-present candidate "an edit in a thread routes"
       (is-source candidate "chat_kind" "thread" "thread_id" "t1" "parent_channel_id" "c1"))
     (clrhash ncd::*known-threads*))
   ;; Everything else an update can be is not an ask.
   (is-table (d-json) (null (dgw-update d-json))
-    ((dgw-d "m10" "just fixing a typo" :author "u2"))
-    ((dgw-d "m11" "working round 7 <@999>" :author "999" :bot "true"))
+    ((dgw-d "m10" "just fixing a typo" :author "u2" :fields +dgw-edited+))
+    ((dgw-d "m11" "working round 7 <@999>" :author "999" :bot "true" :fields +dgw-edited+))
     ((dgw-d "m12" nil :author "u2" :fields "\"pinned\": true,"))
     ("{\"id\": \"m13\", \"channel_id\": \"c1\",
        \"guild_id\": \"g1\", \"content\": \"now <@999>\"}")
-    ((dgw-d "m14" "   " :author "u2")))
+    ((dgw-d "m14" "   " :author "u2" :fields +dgw-edited+))
+    ;; The whole message restated by an update nobody typed -- a thread
+    ;; opened on it or deleted from it, a pin -- carries no edit stamp: an
+    ;; ask already answered must not arrive again (2026-10-20, "are you here?").
+    ((dgw-d "m15" "<@999> are you here?" :author "u2"))
+    ((dgw-d "m16" "<@999> are you here?" :author "u2"
+            :fields "\"edited_timestamp\": null, \"flags\": 32,")))
   ;; The update router is not the create router.
   (is (null (ncd:route-discord-message-update
              (dgw-dispatch "MESSAGE_CREATE" "{}")
