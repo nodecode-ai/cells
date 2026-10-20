@@ -104,6 +104,17 @@
       ]
     },
     {
+      "name": "nodecode-channel-whatsapp",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "eed9b5f39897aa8f13cd96bf02e543b5b9d2d825",
+      "path": "rooms/nodecode-channel-whatsapp",
+      "description": "Talk to nodecode through WhatsApp, as a linked device",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode-channel-kit"
+      ]
+    },
+    {
       "name": "nodecode-cline-pass",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
