@@ -385,6 +385,30 @@ origin noted — ORIGIN the keys past the three that place it."
     (is (null (nck:find-lane (nck:host-lanes host) "chat-100-m5")))
     (is (= 1 (length (plans-matching (recorded-plans executor) :label "create_thread"))))))
 
+(deftest channel-an-ask-admitted-again-runs-nothing-and-settles ()
+  ;; 2026-10-20: a thread deleted under an answered ask made Discord restate
+  ;; the ask after its lane was reaped, and the kit admitted it again under
+  ;; its spent command id. The engine answered :DUPLICATE and nothing read
+  ;; it: the line stood "Waiting on the provider" for five hours with no turn
+  ;; behind it, Stop found nothing to stop, and the lane never reaped. A
+  ;; second admission of one ask runs nothing and leaves nothing live.
+  (with-ask-host (host thread-ask-host :answers ("the answer") :threads nil
+                  :name "ask-admitted-again")
+    (flet ((lane () (nck:find-lane (nck:host-lanes host) "chat-100-m5"))
+           (started () (length (nlk:events :session-id "chat-100-m5" :kind "turn.started"
+                                           :as :payloads))))
+      (thread-ask host "<@999> fix the auth bug")
+      (is (await-plan executor :content "the answer") "the ask was answered")
+      (is (await (:timeout 10) (and (lane) (not (nck::lane-live-p (lane))))))
+      ;; The reaper lets the lane go; the platform restates the ask.
+      (nck:remove-lane (nck:host-lanes host) "chat-100-m5")
+      (thread-ask host "<@999> fix the auth bug")
+      (is (await (:timeout 10) (and (lane) (not (nck::lane-live-p (lane)))))
+          "the second admission settled: no line left waiting on a turn")
+      (is (= 1 (started)) "the ask ran once")
+      (is (= 1 (length (plans-matching (recorded-plans executor) :content "the answer")))
+          "and was answered once"))))
+
 ;;; --- the ask's message stays out of the thread --------------------------------------
 
 (deftest channel-thread-lane-answers-without-a-reference ()

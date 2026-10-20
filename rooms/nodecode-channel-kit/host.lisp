@@ -2116,6 +2116,38 @@ dropped now, one still running answers its turn and goes with the next reap."
                      (setf (lane-retired lane) t)
                      (remove-lane host.lanes lane.session-id))))))
 
+(defun drop-duplicate-admission (host lane admission
+                                 &aux (turn-id (nlk:active-input-admission-turn-id admission))
+                                      (status-id nil) (reactions '()))
+  "An ask the engine refused as one it had already admitted -- ADMISSION
+names the turn its command id ran -- runs nothing: the line this delivery
+opened settles unseen, a thread it opened goes with the lane, the ask's
+working mark comes off, and the slot goes back."
+  ;; 2026-10-20: a thread deleted under an answered ask made Discord restate
+  ;; the ask after its lane was reaped, and the kit admitted it again under
+  ;; its spent command id. Nothing read the engine's :DUPLICATE: the card
+  ;; waited on the provider for five hours, Stop found no turn to stop, and
+  ;; the reaper never takes a lane whose line still reads running. :COMPLETED
+  ;; is the settle that draws nothing (DIGEST-STATUS-PLAN): the ask's own turn
+  ;; already ended, and said so where it ran.
+  (bt2:with-lock-held ((lane-lock lane))
+    (let ((digest lane.digest))
+      (when (and digest (null digest.turn-id) (member digest.phase '(:queued :running)))
+        (digest-note-terminal digest :completed
+                              (format nil "already admitted as ~a" turn-id) (now-ms))
+        (setf status-id digest.status-id
+              reactions (terminal-reaction-snapshot lane nil)))))
+  (warn "~a: ~a was already admitted as ~a; nothing runs"
+        (host-id host) lane.session-id turn-id)
+  (flet ((settle ()
+           (unless (retire-thread host lane)
+             (retire-chrome host lane status-id))
+           (settle-terminal-reactions host lane reactions nil)
+           (setf lane.last-active-ms (now-ms))
+           (promote-next host lane.owner-id)))
+    (unless (and host.worker (on-worker host (settle)))
+      (settle))))
+
 (defun fail-lane (host lane message)
   "Worker job: a refused admission surfaces in the channel — fail clearly,
 never silently — and gives the slot back."
@@ -3304,7 +3336,9 @@ the line."
          (lambda ()
            (nlk:with-handlers ((error (condition)
                                  (fail-lane host lane (princ-to-string condition))))
-             (submit-ask ask "turn.start" "msg")))))
+             (let ((admission (submit-ask ask "turn.start" "msg")))
+               (when (eq :duplicate (nlk:active-input-admission-disposition admission))
+                 (drop-duplicate-admission host lane admission)))))))
     (error (condition)
       (warn "~a ingress for ~a failed: ~a"
             (host-id host) ask.lane condition)
