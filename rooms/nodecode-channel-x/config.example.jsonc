@@ -1,0 +1,33 @@
+// channels.x: the section ~/.nodecode/config.jsonc needs for this adapter.
+// A present section is enabled; "enabled": false vetoes it. Check it with
+// (nck:probe "x").
+//
+// The bot is an X account of its own, never yours: X may suspend an account
+// that scripts its website. The session cookie is never inline: name it by
+// exactly one of token_file (a file holding it, mode 600) or token_env (an
+// environment variable).
+{
+  "channels": {
+    "x": {
+      // The bot account's handle. The cookie must be signed in as it, or the
+      // lane refuses to start.
+      "handle": "@my_nodecode_bot",
+      // The bot account's cookie header, copied from a signed-in x.com tab:
+      // auth_token=...; ct0=...; ...
+      "token_file": "~/.nodecode/secrets/x-bot-cookie",
+      // Whose mentions the bot answers, by handle. Required: a lane never
+      // starts open to the world.
+      "allowed_users": ["@you"],
+      // Whose word is standing policy.
+      "owner": ["@you"],
+      // Seconds between two reads of the mentions (15 at least).
+      "poll_seconds": 60,
+      // Posts one answer may take, and posts a UTC day allows.
+      "max_posts": 4,
+      "daily_posts": 50,
+      // Conversation ids the bot reads neither as prompts nor as context.
+      "ignored_conversations": [],
+      // "soul_file": "~/.nodecode/SOUL.md"
+    }
+  }
+}
