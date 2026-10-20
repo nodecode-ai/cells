@@ -1,0 +1,79 @@
+// channels.whatsapp -- the section ~/.nodecode/config.jsonc needs for this
+// adapter. Copy it in (a present section is enabled; "enabled": false
+// vetoes it), or say "set up whatsapp" to the agent, which writes it through
+// (config-set ...), links the device with (ncw:link ...) and checks it with
+// (nck:probe "whatsapp").
+//
+// The bot is a linked device of a WhatsApp account. Give it a number of its
+// own, never yours: linked to your number, it speaks as you.
+{
+  "channels": {
+    "whatsapp": {
+      // At least one of allowed_chats / allowed_users must be non-empty:
+      // messages run with full host authority, so a lane never starts open to
+      // the world. Numbers carry their country code; a group is its JID
+      // (...@g.us). The probe lists the account's groups and people.
+      "allowed_users": ["+15551234567"],
+      // "allowed_chats": ["120363000000000000@g.us"],
+      // Whose word is standing policy in the chat.
+      "owner": ["+15551234567"],
+      // A direct message from a number not allowed is answered with a pairing
+      // code; /channels pair CODE lets them in.
+      "pairing": true,
+      // "admin" lets every admin of a group drive the bot; "superadmin" only
+      // its creator.
+      "allowed_roles": [],
+      // true: in groups, answer when @mentioned or when a message quotes one
+      // of the bot's. A direct chat always answers.
+      "require_mention": true,
+      // Groups where every allowed message may open a turn, groups that need
+      // a mention even when require_mention is false, and chats the bot reads
+      // neither as asks nor as context.
+      "free_response_chats": [],
+      "require_mention_chats": [],
+      "ignored_chats": [],
+      // Wake words that address the bot as its @mention does.
+      "mention_patterns": [],
+      "allow_private_chats": true,
+      "allow_group_chats": true,
+      // With the bot linked to your own number: your chat with yourself is
+      // an ask, answered there.
+      "self_chat": false,
+      // Blue ticks on an ask the bot takes.
+      "read_receipts": true,
+      // Decline calls and tell an allowed caller to send a voice message.
+      "reject_calls": true,
+      // Show the account online while connected, so typing shows.
+      "online": true,
+      // The linked device's keys live in ~/.nodecode/channels/whatsapp/<session>.db.
+      "session": "default",
+      // The name the phone's Linked devices list shows.
+      "device_name": "Nodecode",
+      // A driver built elsewhere (cd driver && go build); unset, the cell
+      // builds its own with Go 1.24+.
+      // "driver_path": "~/bin/whatsapp-driver",
+      // After the device was away, answer asks from the last this-many
+      // minutes, each marked late; 0 answers none.
+      "catch_up_minutes": 60,
+      "max_concurrent_turns": 4,
+      // Fewest ms between two edits of a turn's card; every edit is a message
+      // to each of the chat's devices.
+      "status_update_ms": 4000,
+      // The most characters one message carries.
+      "text_chunk_limit": 6000,
+      // true: put eyes on each ask while its turn runs.
+      "reactions": false,
+      // true: edit the answer into place as the model writes it.
+      "stream": false,
+      // "on": a voice answer to a voice ask; "tts": to every ask; "off".
+      "voice_replies": "off",
+      // Minutes an ask's turn may run before its tool calls are refused; 0
+      // caps nothing.
+      "turn_budget_minutes": 0,
+      // The most history a chat keeps, in estimated tokens; 0 keeps all.
+      "room_tokens": 40000
+      // A SOUL.md whose text is the chat's standing persona.
+      // "soul_file": "~/.nodecode/SOUL.md"
+    }
+  }
+}

@@ -77,6 +77,7 @@ is what a new cell is copied from.
 | [`nodecode-channel-imessage`](rooms/nodecode-channel-imessage) | Talk to Nodecode over iMessage, through a BlueBubbles server on a Mac. |
 | [`nodecode-channel-kit`](rooms/nodecode-channel-kit) | **ships** Shared plumbing for the chat bots; comes with Discord or Telegram. |
 | [`nodecode-channel-matrix`](rooms/nodecode-channel-matrix) | Talk to Nodecode through a Matrix account; unencrypted rooms for now. |
+| [`nodecode-channel-whatsapp`](rooms/nodecode-channel-whatsapp) | Talk to Nodecode on WhatsApp, as a linked device of the bot's own number. |
 | [`nodecode-channel-slack`](rooms/nodecode-channel-slack) | Talk to Nodecode through a Slack app. |
 | [`nodecode-channel-telegram`](rooms/nodecode-channel-telegram) | **ships** Talk to nodecode through a Telegram bot. |
 | [`nodecode-link`](rooms/nodecode-link) | **ships** Open this machine's page from anywhere; `/link on` turns it on. |
