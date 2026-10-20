@@ -45,8 +45,9 @@ voice message.
 ## What you need
 
 - **Nothing in the config.** `/voice join` sits beside whoever typed it, in
-  the voice channel they are in, and talks through the text channel it was
-  typed in. The keys [below](#configuration) only change where it talks,
+  the voice channel they are in, and talks through that channel's own chat,
+  where the people in the call already read and type. The keys
+  [below](#configuration) only change where it talks,
   whom it hears, and where it sits on its own.
 - **Permissions**: Connect and Speak in the voice channel, on top of the
   text set (the invite integer with voice is `309240908864`). Without them
@@ -70,9 +71,10 @@ bot. The bot joins your voice channel, in whichever server it is. If you are
 in no voice channel, it joins `voice_channel_id` when one is set, and
 otherwise answers "sit in a voice channel first, then /voice join".
 
-It talks through `voice_text_channel_id` when set, else the channel you typed
-in (a thread's channel), else the home channel (`/sethome`), else the first
-of `allowed_channels`. It hears `voice_speakers`, else `allowed_users`, else
+It talks through `voice_text_channel_id` when set, else the voice channel's
+own chat (`/voice room` picks another for this call; a call you are moved to
+brings its own chat, a channel you picked comes along). It hears
+`voice_speakers`, else `allowed_users`, else
 `owner`, else you. It answers once Discord has seated it, and says the same
 in the text channel when that is not where you typed:
 
@@ -194,6 +196,10 @@ Once the group forms it reads "end-to-end, DAVE v1".
 | `/voice leave` | Leave it. |
 | `/voice on`, `tts`, `off` | Voice messages in this room. See [above](#voice-messages). |
 | `/voice notes` | Take meeting notes. `/voice notes stop` writes them up. |
+| `/voice room [CHANNEL]` | The channel it talks through: the call's own chat or a text channel. |
+| `/voice hear [everyone \| default]` | Whose speech opens a turn. |
+| `/voice hears [MODEL]` | The model speech is heard with: those the transcription server lists. Saved to `transcription.model`. |
+| `/voice speaks [VOICE]` | The voice answers are said in: those the speech server names. Saved to `speech.voice`. |
 | `/voice say WORDS` | Say WORDS now. |
 
 With operators declared, `/voice` is theirs, like every command but `/help`.
@@ -213,9 +219,14 @@ grey while it does not.
 - **Menu:** the room's voice messages: Words only (`off`), Voice for voice
   notes (`on`), Voice for every answer (`tts`). The room's current pick is
   shown.
+- **Models:** three menus, each showing the one in use: **Hears with** (the
+  transcription server's models), **Speaks with** (the speech server's
+  voices, 25 at most), **Thinks with** (the room's model, the default and
+  the failover chain; a pick is the room's `/models`). The built-in engines
+  have one pick each.
 
 Each press runs the `/voice` command it names, as if you typed it, and the
-card updates in place with what it did quoted on top. Where no embed is drawn
+card updates in place: a change answers the card again, so its buttons stay. Where no embed is drawn
 (a terminal, Telegram), `/voice` answers the same in words. A press from someone who may
 not run `/voice` is refused privately, and the card stays as it was.
 
@@ -239,7 +250,7 @@ These keys go in `channels.discord`:
 | Key | Type | Default | Effect |
 | --- | --- | --- | --- |
 | `voice_channel_id` | string | (unset) | The bot's own voice channel: where `voice_autojoin` sits, and where `/voice join` sits when you are in no voice channel. |
-| `voice_text_channel_id` | string | where `/voice join` was typed, then the home channel, then the first of `allowed_channels` | The text channel voice talks through. |
+| `voice_text_channel_id` | string | the voice channel's own chat | The channel voice talks through. |
 | `voice_speakers` | list of user ids | `allowed_users`, then `owner`, then whoever typed `/voice join` | Whose speech opens a turn. `"*"` admits everyone. |
 | `voice_autojoin` | boolean | `false` | Sit in the voice channel whenever somebody is in it. |
 | `voice_follow` | list of user ids | (none) | Follow these people from channel to channel. |

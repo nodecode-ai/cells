@@ -41,7 +41,7 @@
    #:*dave-directory*
    ;; voicelap.lisp --- the live voice lane
    #:join-voice #:leave-voice #:start-voice #:voice-command #:voice-await-seat
-   #:voice-speakers #:voice-room-channel #:voice-typed-room
+   #:voice-speakers #:voice-room-channel
    #:voice-status-text #:voice-candidate #:voice-speaker-allowed-p
    #:voice-note-frame #:voice-close-finished-utterances #:route-voice-dispatch
    #:*voice-lane*

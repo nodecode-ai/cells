@@ -190,7 +190,7 @@ allowed_channels, so ids are picked by name."
                       :doc "a voice channel of the bot's own: voice_autojoin sits in it, and /voice join typed by someone in no voice channel; absent, the bot sits only beside whoever asks or whom it follows")
   ("voice_text_channel_id" :string
                            :choices #'probe-channel-choices
-                           :doc "the text channel the voice lane talks through — its transcript, status and answers; defaults to the channel /voice join is typed in, then the home channel, then the first allowed channel")
+                           :doc "the channel the voice lane talks through — its transcript, status and answers; defaults to the voice channel's own chat")
   ("voice_speakers" :list
                     :doc "user ids whose speech opens a turn; empty falls back to allowed_users, then owner, then whoever typed /voice join")
   ("voice_autojoin" :boolean :default :false

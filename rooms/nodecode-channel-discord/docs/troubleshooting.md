@@ -175,7 +175,6 @@ fails, the log says `discord: could not read the bot's guilds (...); a
 | `voice: sit in a voice channel first, then /voice join` | Join a voice channel yourself, then type it again. Or set `voice_channel_id` for a channel of the bot's own. |
 | `voice: Discord did not seat me in #channel. The bot needs the Connect and Speak permissions there ...` | Grant Connect and Speak to the bot's role in that channel, or invite the bot again with the link it gives. A full channel answers the same. |
 | `voice: #channel is no voice channel of a server the bot is in` | `voice_channel_id` names a channel the bot cannot see. |
-| `voice: no text channel to talk through: ...` | Type `/voice join` in a server channel rather than a DM, or set `voice_text_channel_id`. |
 | `voice: nobody is allowed to speak (channels.discord.voice_speakers)` | Set `voice_speakers` or `allowed_users`. |
 | `voice: the bot does not know its own user id yet` | Reading it from Discord failed at start (see the log). Set `bot_user_id`. |
 | `voice: the Discord gateway is still connecting; try again in a moment` | Wait for `running, connected`. |

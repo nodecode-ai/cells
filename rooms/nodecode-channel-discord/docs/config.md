@@ -145,7 +145,7 @@ See [voice.md](voice.md#configuration).
 | Key | Type | Default | Effect |
 | --- | --- | --- | --- |
 | `voice_channel_id` | string | (unset) | The bot's own voice channel: where `voice_autojoin` sits, and where `/voice join` sits when its asker is in no voice channel. `/voice join` needs no voice key. |
-| `voice_text_channel_id` | string | where `/voice join` was typed, then the home channel, then the first of `allowed_channels` | The text channel voice talks through. |
+| `voice_text_channel_id` | string | the voice channel's own chat | The channel voice talks through. |
 | `voice_speakers` | list of user ids | `allowed_users`, then `owner`, then whoever typed `/voice join` | Whose speech opens a turn. `"*"` admits everyone. |
 | `voice_autojoin` | boolean | `false` | Sit in `voice_channel_id` whenever somebody is in it: join when the first person comes in, leave when the last one goes. |
 | `voice_follow` | list of user ids | (none) | Follow these people into voice: join the channel the first of them is in, move when they move, leave when they leave. |

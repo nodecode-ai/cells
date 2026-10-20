@@ -351,7 +351,7 @@ voice channels the bot knows."
 (deftest channel-discord-voice-a-join-needs-no-configuration ()
   ;; /voice join needs nothing configured: it sits in the voice channel of
   ;; whoever typed it, in the server that channel is in, talks through the
-  ;; channel it was typed in and hears its asker when no list names anyone.
+  ;; call's own chat and hears its asker when no list names anyone.
   ;; Each thing it cannot have is refused in words saying what to do.
   (with-voice-seats (("vc-1" "g1"))
     (flet ((refusal (section &rest keys)
@@ -362,7 +362,6 @@ voice channels the bot knows."
         (is-table (needle section keys) (search needle (apply #'refusal section keys))
           ("sit in a voice channel first" (voice-section) ())
           ("<#vc-9> is no voice channel of a server" (voice-section) '(:channel "vc-9"))
-          ("type /voice join in a server channel" (voice-section) '(:channel "vc-1"))
           ("nobody is allowed to speak" (voice-section) '(:channel "vc-1" :room "t-1"))))
       (let ((ncd::*discord-adapter* (voice-adapter :bot nil)))
         (is (search "own user id" (refusal (voice-section) :channel "vc-1" :room "t-1"
@@ -409,19 +408,13 @@ voice channels the bot knows."
         (setf ncd:*voice-lane* nil)))))
 
 (deftest channel-discord-voice-talks-and-listens-where-it-was-asked ()
-  ;; The text room: named, else where /voice join was typed — a thread's
-  ;; channel, never a direct message — else the first allowed channel. Who
-  ;; is heard: named, else the allowed users, else the owner, else the asker.
-  (let ((ncd::*discord-adapter* nil))
-    (is-table (expected section typed) (equal expected (ncd:voice-room-channel section typed))
-      ("t-1" (voice-section "voice_text_channel_id" "t-1") "t-5")
-      ("t-5" (voice-section "allowed_channels" (vector "t-9")) "t-5")
-      ("t-9" (voice-section "allowed_channels" (vector "t-9" "t-8")) nil)
-      (nil (voice-section) nil)))
-  (is-table (expected kind) (equal expected (ncd:voice-typed-room
-                                             (nlk:json-object "chat_kind" kind "channel_id" "c1"
-                                                              "parent_channel_id" "p1")))
-    ("c1" "channel") ("p1" "thread") (nil "direct_message"))
+  ;; The room it talks through: named, else the call's own chat -- the voice
+  ;; channel it sits in, wherever /voice join was typed. Who is heard: named,
+  ;; else the allowed users, else the owner, else the asker.
+  (is-table (expected section channel) (equal expected (ncd:voice-room-channel section channel))
+    ("t-1" (voice-section "voice_text_channel_id" "t-1") "vc-1")
+    ("vc-1" (voice-section "allowed_channels" (vector "t-9")) "vc-1")
+    (nil (voice-section) nil))
   (is-table (expected section) (equal expected (ncd:voice-speakers section "asker"))
     ('("u-1") (voice-section "voice_speakers" (vector "u-1") "allowed_users" (vector "u-2")))
     ('("u-2") (voice-section "allowed_users" (vector "u-2") "owner" (vector "u-3")))
@@ -574,8 +567,15 @@ thinks with aside."
            (ncd:*voice-lane* lane)
            (nck:*command-source* (nlk:json-object "chat_kind" "channel" "channel_id" "text-1" "user_id" "u1"))
            (section (voice-section "allowed_channels" (vector "text-1" "text-2") "voice_speakers" (vector "u1"))))
-      (is (equal '(("#chat" "" "use" "/voice room text-1" "●") ("#dev" "" "use" "/voice room text-2" ""))
-                 (voice-rows (nth-value 1 (ncd:voice-command "room" section "tui-1")))))
+      (is (equal '(("#General" "the call's own chat" "use" "/voice room vc-1" "")
+                   ("#chat" "" "use" "/voice room text-1" "●") ("#dev" "" "use" "/voice room text-2" "")
+                   ("#news" "" "use" "/voice room text-3" ""))
+                 (voice-rows (nth-value 1 (ncd:voice-command "room" (voice-section) "tui-1")))))
+      (is (equal '(("#chat" "" "use" "/voice room text-1" "●") ("#dev" "" "use" "/voice room text-2" "")) (voice-rows (nth-value 1 (ncd:voice-command "room" section "tui-1")))) "allowed_channels names where it may talk, the call's chat too")
+      (is (equal "voice: talking through #General · the call's own chat now."
+                 (ncd:voice-command "room vc-1" (voice-section))))
+      (is (equal "vc-1" (ncd::voice-lane-room-channel-id lane)))
+      (ncd:voice-command "room text-1" (voice-section))
       (is (search "#news is no text channel I may talk through" (ncd:voice-command "room text-3" section)))
       (is (equal "voice: talking through #dev now." (ncd:voice-command "room text-2" section)))
       (is (equal "text-2" (ncd::voice-lane-room-channel-id lane)))

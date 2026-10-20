@@ -133,22 +133,11 @@ VOICE_STATE_UPDATE that says it is out is its own doing and ends no lane.")
 
 ;;; --- configuration ------------------------------------------------------------------
 
-(defun voice-room-channel (section &optional typed
-                           &aux (host (and *discord-adapter* (discord-adapter-host *discord-adapter*))))
-  "The text channel a voice lane talks through: named, else TYPED — the
-server channel /voice join was typed in — else the bot's home channel, else
-the first allowed channel. Voice never invents a room."
-  (or (config-string section "voice_text_channel_id" nil)
-      typed
-      (getf (and host (nck:home-target host)) :channel-id)
-      (first (config-string-list section "allowed_channels"))))
-
-(defun voice-typed-room (source)
-  "The server channel the command SOURCE describes was typed in — a
-thread's channel — or NIL for a direct message."
-  (let ((kind (nlk:json-value source :string "chat_kind")))
-    (cond ((equal kind "channel") (nlk:json-value source :string "channel_id"))
-          ((equal kind "thread") (nlk:json-value source :string "parent_channel_id")))))
+(defun voice-room-channel (section channel)
+  "The channel a voice lane sitting in CHANNEL talks through: the one the
+section names, else CHANNEL's own chat -- every voice channel carries one,
+where the people in the call already read and type."
+  (or (config-string section "voice_text_channel_id" nil) channel))
 
 (defun voice-speakers (section &optional asker)
   "Whose speech may open a turn: named, else the users allowed to drive the
@@ -753,8 +742,9 @@ the RTP header that is its own AAD. => T when it went."
 
 (defun join-voice (section &key channel room speakers)
   "Sit in CHANNEL, voice_channel_id by default, in the server it is in,
-talking through ROOM where the section names no text channel (VOICE-ROOM-
-CHANNEL) and hearing SPEAKERS where it names nobody (VOICE-SPEAKERS)."
+talking through ROOM, else the channel the section names or the call's own
+chat (VOICE-ROOM-CHANNEL), and hearing SPEAKERS where it names nobody
+(VOICE-SPEAKERS)."
   ;; => (values LANE MESSAGE): the lane, or NIL and the honest reason. Nothing
   ;; here listens yet — the main gateway answers the voice state with a
   ;; server to dial, and VOICE-ATTACH-SERVER starts the threads; whether
@@ -766,7 +756,7 @@ CHANNEL) and hearing SPEAKERS where it names nobody (VOICE-SPEAKERS)."
   (let* ((adapter *discord-adapter*)
          (channel (or channel (config-string section "voice_channel_id" nil)))
          (guild (and channel (gethash channel *voice-channel-guilds*)))
-         (room (voice-room-channel section room))
+         (room (or room (voice-room-channel section channel)))
          (speakers (or speakers (voice-speakers section))))
     (nlk:when-let (refusal
                    (cond ((not (gateway-ready-p))
@@ -774,9 +764,6 @@ CHANNEL) and hearing SPEAKERS where it names nobody (VOICE-SPEAKERS)."
                          ((null channel) "sit in a voice channel first, then /voice join")
                          ((null guild)
                           (format nil "<#~a> is no voice channel of a server the bot is in" channel))
-                         ((null room)
-                          "no text channel to talk through: type /voice join in a server channel, \
-or set channels.discord.voice_text_channel_id")
                          ((null speakers)
                           "nobody is allowed to speak (channels.discord.voice_speakers)")
                          ((null adapter.bot-user-id) "the bot does not know its own user id yet")))
@@ -1147,7 +1134,7 @@ one owner for both."
                            (voice-row "Sitting in" (voice-channel-name lane.channel-id) "leave" "/voice leave"
                                       :mark "●" :mark-tone :success)
                            (voice-row "Sitting in" "nowhere" "join" "/voice join" :mark "○" :mark-tone :muted))
-                       (and lane (voice-row "Talking through" (voice-channel-name lane.room-channel-id)
+                       (and lane (voice-row "Talking through" (voice-talk-through lane)
                                             "change" "/voice room"))
                        (and lane (voice-row "Hearing" (voice-hearing lane) "change" "/voice hear"))
                        (and lane (cond (lane.notes-by
@@ -1325,28 +1312,38 @@ to the shared config and to the section the kit speaks and hears with."
            (format nil "voice: ~a ~a now." what word))))))
 
 (defun voice-room-choices (lane section &aux (allowed (config-string-list section "allowed_channels")))
-  "(ID . NAME) of the text channels LANE may talk through: its server's,
-those allowed_channels names where it names any."
+  "(ID . NAME) of the channels LANE may talk through: the call's own chat,
+then its server's text channels -- those allowed_channels names where it
+names any."
   (remove-if-not (lambda (choice) (or (null allowed) (member (car choice) allowed :test #'equal)))
-                 (voice-channels lane.guild-id '(0 5))))
+                 (cons (cons lane.channel-id (or (first (gethash lane.channel-id *voice-channel-names*))
+                                                 lane.channel-id))
+                       (voice-channels lane.guild-id '(0 5)))))
+
+(defun voice-talk-through (lane)
+  "The channel LANE talks through, in words: the call's own chat said so."
+  (if (equal lane.room-channel-id lane.channel-id)
+      (format nil "~a · the call's own chat" (voice-channel-name lane.channel-id))
+      (voice-channel-name lane.room-channel-id)))
 
 (defun voice-room-command (lane channel section typed &aux (choices (voice-room-choices lane section)))
   "/voice room [CHANNEL]: the text channels LANE may talk through, or talk
 through CHANNEL, typed in the channel TYPED."
   (cond
     ((null channel)
-     (values (format nil "voice: talking through ~a" (voice-channel-name lane.room-channel-id))
+     (values (format nil "voice: talking through ~a" (voice-talk-through lane))
              (voice-pick-dialog
               "Talking through" (voice-channel-name lane.channel-id)
               "The text channel what is said in voice goes to, and answers come from."
               (loop for (id . name) in choices
-                    collect (voice-row (format nil "#~a" name) "" "use" (format nil "/voice room ~a" id)
+                    collect (voice-row (format nil "#~a" name) (if (equal id lane.channel-id) "the call's own chat" "")
+                                       "use" (format nil "/voice room ~a" id)
                                        :mark (if (equal id lane.room-channel-id) "●" "") :mark-tone :accent))
               "No text channels known yet: a server lists its own when the bot connects.")))
     ((not (assoc channel choices :test #'equal))
      (format nil "voice: ~a is no text channel I may talk through" (voice-channel-name channel)))
     (t (setf lane.room-channel-id channel)
-       (voice-announce lane (format nil "voice: talking through ~a now." (voice-channel-name channel)) typed))))
+       (voice-announce lane (format nil "voice: talking through ~a now." (voice-talk-through lane)) typed))))
 
 (defun voice-hear-command (lane whom section by typed &aux (default (voice-speakers section by)))
   "/voice hear [everyone | default]: whom LANE could hear, or hear everyone in
@@ -1490,10 +1487,13 @@ its: that server's part of the tables, the rest kept."
     ;; Dragged into another channel by somebody: a fresh lane there, which
     ;; the server update that follows dials.
     ((and lane.session-id (not (equal channel lane.channel-id)))
-     (let ((section *voice-section*))
+     (let ((section *voice-section*)
+           ;; a room picked apart from the call goes along; the call's own
+           ;; chat stays behind, and the new call's is the one talked through
+           (room (and (not (equal lane.room-channel-id lane.channel-id)) lane.room-channel-id)))
        (leave-voice :send nil :notes nil)
        (multiple-value-bind (seated refusal)
-           (and section (join-voice section :channel channel :room lane.room-channel-id
+           (and section (join-voice section :channel channel :room room
                                             :speakers lane.speakers))
          (if seated
              (voice-attach-server seated :session-id session-id)
@@ -1599,7 +1599,6 @@ ROOM — bare, the status in words and the dialog (VOICE-DIALOG)."
                (bt2:with-lock-held (*voice-seat-lock*)
                  (multiple-value-bind (lane refusal)
                      (join-voice section :channel channel
-                                         :room (and *command-source* (voice-typed-room *command-source*))
                                          :speakers (voice-speakers section by))
                    (cond
                      ((or (null lane) refusal) (format nil "voice: ~a" refusal))
