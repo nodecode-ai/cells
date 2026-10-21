@@ -54,6 +54,8 @@ const state = {
   filter: "",
   scope: "folder", // the list: "folder" the sessions of the folder here, "all" every one; remembered
   source: null, // the column's source choice: null every source, else a kind ("" none recorded)
+  doing: null, // the list's state choice: null every state, else "ask", "run" or "done"
+  doneAll: false, // the Done band lists every session, not its newest DONE_ROWS
   folder: null, // the folder a new session opens in
   gatewayFolder: null, // where a session opens that names none: the gateway's own folder
   folderCheck: null, // { path, exists, why }: the gateway's word on state.folder
@@ -447,7 +449,7 @@ function renderOffline() {
   $("offline-hops").replaceChildren(...hops.map(([name, hop, said]) => {
     const li = el("li");
     if (hop) li.dataset.hop = hop;
-    li.append(el("i", hop === "ok" ? "led live" : hop ? "led" : "led off"), el("span", "name", name), el("span", "said", said));
+    li.append(el("i", hop === "ok" ? "led ok" : hop ? "led" : "led off"), el("span", "name", name), el("span", "said", said));
     return li;
   }));
   $("offline-tries").textContent = t("Not connected · tried {n} times", { n: state.retry });
@@ -725,11 +727,30 @@ function gutter(name) {
   return gut;
 }
 
-// A running thing's mark is the green that means running (the standard's rule
-// 5); one that has ended keeps its place as the hollow ring.
+// A running thing's mark is the red that means running (the standard's rule
+// 5, the operator's balls); one that has ended keeps its place as the hollow
+// ring.
 function lamp(pulse) {
   return el("i", pulse ? "led live pulse" : "led off");
 }
+
+// What a session is doing, as its ball says it (the operator, 2026-10-21:
+// "green, orange or red"): red while a turn runs in it, orange with a halo
+// while its answer waits on you, green once done -- a pulse, a halo and still,
+// so the shape says it to an eye the hue does not reach.
+const DOING_WORDS = { ask: t("Needs you"), run: t("Running"), done: t("Done") };
+const DONE_ROWS = 5;
+
+function ball(kind) {
+  const node = el("i", `ball is-${kind}`);
+  node.setAttribute("role", "img");
+  node.setAttribute("aria-label", DOING_WORDS[kind]);
+  return node;
+}
+
+// What a session's answer waits on, as its row says it: the question its turn
+// named, else that it waits; a newest turn that failed, that it failed.
+const waitsLine = (waits) => (waits?.why === "failed" ? t("its last turn failed") : waits?.question || t("waits on you"));
 
 // A fold the reader can open: native <details>, open where they left it, else
 // where DEFAULT says. KEY is what their choice is remembered by.
@@ -3104,6 +3125,14 @@ function renderSessions() {
     if (up) held.set(up, (held.get(up) || 0) + 1);
   }
   for (const id of state.running) if (!isNote(state.sessionsById.get(id))) for (const up of folds(id)) holding.add(up);
+  // What each session is doing, its ball (the operator, 2026-10-21: green
+  // done, orange waiting on you, red running): "run" while a turn runs in it
+  // or under it, "ask" while its answer waits on the person it answers (the
+  // gateway's `waits': marked by its turn, or a newest turn that failed),
+  // else "done". A session folded away carries what waits under it up.
+  const doing = (entry) => (state.running.has(entry.id) || holding.has(entry.id) ? "run" : entry.waits ? "ask" : "done");
+  const asksUnder = new Set();
+  for (const entry of own(state.sessions)) if (doing(entry) === "ask") for (const up of folds(entry.id)) asksUnder.add(up);
   // Scoped, the head says so: how many of all it lists, and whose folder, with
   // Show all beside it; a scope that hides nothing reads as the whole count.
   const all = own(state.sessions).length;
@@ -3169,12 +3198,18 @@ function renderSessions() {
       button.append(caret);
     }
     const running = state.running.has(entry.id);
-    if (running) button.append(lamp(true));
-    else if (holding.has(entry.id)) button.append(el("i", "led pulse off"));
-    // Two lines: its name, and where it is held -- answering now, while a turn runs in it.
+    const now = doing(entry);
+    button.append(ball(now));
+    if (now === "ask") {
+      button.classList.add("asks");
+      button.title += ` · ${waitsLine(entry.waits)}`;
+    }
+    // Two lines: its name, and where it is held -- answering now, while a turn
+    // runs in it; what it waits on, while its answer waits on you.
     const words = el("span", "words");
     const meta = el("span", "meta", whereOf(entry));
-    if (running || holding.has(entry.id)) meta.append(el("span", "ses-now", ` · ${t("answering now")}`));
+    if (now === "run") meta.append(el("span", "ses-now", ` · ${t("answering now")}`));
+    else if (now === "ask") meta.append(el("span", "ses-asks", ` · ${waitsLine(entry.waits)}`));
     words.append(el("span", "name", sessionName(entry)), meta);
     button.append(words);
     if (kids && !open) button.append(el("span", "n", String(kids)));
@@ -3186,10 +3221,11 @@ function renderSessions() {
     li.append(button);
     return li;
   };
-  // Three bands, as a phone's inbox reads: what runs now, what has news since
-  // this browser last looked, then the rest, each newest first; a session this
-  // tab minted and has not spoken in stands above them. A row carries what
-  // hangs open under it, and the news and the turns under it.
+  // Three bands, as the kanban reads (the operator's B): what needs you, what
+  // runs now, then what is done -- each newest first, Done its newest
+  // DONE_ROWS until Show all; a session this tab minted and has not spoken in
+  // stands above them. A row carries what hangs open under it, and the news
+  // and the turns under it.
   const newest = new Map();
   for (const entry of state.sessions) {
     for (const id of [entry.id, ...folds(entry.id)]) {
@@ -3203,16 +3239,30 @@ function renderSessions() {
     else blocks.at(-1).rows.push(entry);
   }
   const band = ({ head }) => (head.standby ? "minted"
-    : state.running.has(head.id) || holding.has(head.id) ? "running"
-    : unseen(head) || newsUnder.has(head.id) ? "news" : "earlier");
-  const bandHead = (key, label, n) => {
-    const li = el("li", `ses-band ${key}`);
+    : doing(head) === "run" ? "run"
+    : doing(head) === "ask" || asksUnder.has(head.id) ? "ask" : "done");
+  const bandHead = (key, label, n, more) => {
+    const li = el("li", `ses-band ${DOING_WORDS[key] ? `is-${key}` : key}`);
+    if (DOING_WORDS[key]) li.append(ball(key));
     li.append(el("span", "", label));
     if (n) li.append(el("span", "n", String(n)));
+    if (more) li.append(more);
     return li;
   };
+  // Done is most of the list: its newest DONE_ROWS, and the session on
+  // screen, until Show all lists the rest.
+  const doneToggle = () => {
+    const button = el("button", "word more", state.doneAll ? t("Show fewer") : t("Show all"));
+    button.type = "button";
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      state.doneAll = !state.doneAll;
+      renderSessions();
+    });
+    return button;
+  };
   const items = [];
-  let news = 0;
+  let asks = 0;
   if (needle) {
     // A thread named by its first ask is found once, as the thread.
     const found = shown.filter((entry) => !(parentOf(entry) && shownIds.has(parentOf(entry))
@@ -3221,19 +3271,26 @@ function renderSessions() {
     items.push(...found.map(row));
   } else {
     items.push(...blocks.filter((block) => band(block) === "minted").flatMap((block) => block.rows.map(row)));
-    const bands = [["running", t("Running")], ["news", t("Waiting on you")], ["earlier", t("Earlier")]]
+    const bands = [["ask", t("Needs you")], ["run", t("Running")], ["done", t("Done")]]
       .map(([key, label]) => [key, label, blocks.filter((block) => band(block) === key)
-        .sort((a, b) => (newest.get(b.head.id) || 0) - (newest.get(a.head.id) || 0))])
-      .filter(([, , mine]) => mine.length);
+        .sort((a, b) => (newest.get(b.head.id) || 0) - (newest.get(a.head.id) || 0))]);
+    asks = bands[0][2].length;
+    renderDoing(Object.fromEntries(bands.map(([key, , mine]) => [key, mine.length])));
     for (const [key, label, mine] of bands) {
-      if (key === "news") news = mine.length;
-      // The rest needs no head of its own when it is all there is.
-      if (key !== "earlier" || bands.length > 1) items.push(bandHead(key, label, key === "earlier" ? 0 : mine.length));
-      items.push(...mine.flatMap((block) => block.rows.map(row)));
+      // A chosen state lists that band alone.
+      if (!mine.length || (state.doing && state.doing !== key)) continue;
+      const folded = key === "done" && !state.doing && mine.length > DONE_ROWS;
+      items.push(bandHead(key, label, mine.length, folded && doneToggle()));
+      const listed = folded && !state.doneAll
+        ? mine.filter((block, at) => at < DONE_ROWS || block.rows.some((entry) => entry.id === state.current))
+        : mine;
+      items.push(...listed.flatMap((block) => block.rows.map(row)));
     }
   }
-  $("sessions-badge").textContent = String(news);
-  $("sessions-badge").hidden = !news;
+  $("states").hidden = !!needle;
+  $("sessions-badge").textContent = String(asks);
+  $("sessions-badge").hidden = !asks;
+  $("sessions-badge").title = asks ? t("{n} waiting on you", { n: asks }) : "";
   // What a note said is found only where the notes are read.
   const hits = state.found.filter((hit) => (state.source === "experience" || !isNote(state.sessionsById.get(hit.session_id)))
     && (scope !== "folder" || treeFolder(hit.session_id) === here));
@@ -3258,6 +3315,29 @@ function renderSessions() {
   $("sessions").replaceChildren(...items);
   renderPicking();
   renderTitle();
+}
+
+// --- what the sessions are doing: the column's state choice ----------------------------
+// One chip a state -- its ball, its word, how many the list holds in it
+// (counted as the bands are) -- above the sources. A tap lists that state
+// alone; a tap on the chosen one lists every state again.
+
+function renderDoing(counts) {
+  const box = $("states");
+  // Rebuilt only when a count changed, as the sources are.
+  const said = Object.keys(DOING_WORDS).map((key) => `${key}=${counts[key] || 0}`).join("|");
+  if (box.dataset.said !== said) {
+    box.replaceChildren(...Object.entries(DOING_WORDS).map(([key, word]) => {
+      const chip = el("button", "");
+      chip.type = "button";
+      chip.setAttribute("role", "radio");
+      chip.dataset.value = key;
+      chip.append(ball(key), el("span", "", word), el("span", "n", String(counts[key] || 0)));
+      return chip;
+    }));
+    box.dataset.said = said;
+  }
+  for (const chip of box.children) chip.setAttribute("aria-checked", String(chip.dataset.value === state.doing));
 }
 
 // --- the source that began each session: the column's source choice -------------------
@@ -5022,6 +5102,12 @@ $("filter").addEventListener("input", (event) => { state.filter = event.target.v
 $("sources").addEventListener("click", (event) => {
   const chip = event.target.closest("[data-value]");
   if (chip) chooseSource(chip.dataset.value);
+});
+$("states").addEventListener("click", (event) => {
+  const chip = event.target.closest("[data-value]");
+  if (!chip) return;
+  state.doing = state.doing === chip.dataset.value ? null : chip.dataset.value;
+  renderSessions();
 });
 // A phone's Sessions tab is the page it stands on: a tap goes back to its top.
 // A phone's Sessions tab: from Dashboard or Control it opens the Sessions page;

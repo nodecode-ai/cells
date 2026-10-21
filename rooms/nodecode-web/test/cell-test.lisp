@@ -1065,11 +1065,11 @@ brace that closes it at the start of a line, or NIL."
     (is (search "class=\"chips\" id=\"sources\" role=\"radiogroup\"" html) "the sources are chips")
     (is (not (search "<select id=\"source\"" html)) "not a select behind a funnel")
     (is (search "id=\"link-open\"" html) "More reaches Link on a phone")
-    (is (search "[[\"running\", t(\"Running\")], [\"news\", t(\"Waiting on you\")], [\"earlier\", t(\"Earlier\")]]" render) "three bands: running, waiting on you, earlier")
+    (is (search "[[\"ask\", t(\"Needs you\")], [\"run\", t(\"Running\")], [\"done\", t(\"Done\")]]" render) "three bands: needs you, running, done")
     (is (search "sourceOf(entry) !== \"cron\"" render) "the jobs stand under their own chip")
     (is (search "folds(entry.id).every((up) => state.branches.has(up))" render) "a room's threads are rows of their own")
     (is (search "whereOf(entry)" render) "a row says where it is held")
-    (is (search "$(\"sessions-badge\").hidden = !news;" render) "the badge shows only with news")
+    (is (search "$(\"sessions-badge\").hidden = !asks;" render) "the badge shows only while something waits on you")
     (is phone "a phone has the page")
     (when phone
       (let ((block (subseq css phone)))
@@ -1240,8 +1240,9 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (search "if (tag) row.title = tag;" (web-js-function (web-page-text "control.js") "fact")) "a field's name is a tooltip")))
 
 ;; Colour marks exceptions only (step 5 of the standard): one dot(kind) draws a
-;; row's mark -- running green, act here the accent, failed red, off a hollow
-;; ring -- and a healthy row carries none: a connected channel, a ready server,
+;; row's mark -- running red (the operator, 2026-10-21: green done, orange
+;; waiting on you, red running), act here the accent, failed the danger red,
+;; off a hollow ring -- and a healthy row carries none: a connected channel, a ready server,
 ;; a loaded cell, a running profile. An on switch is white (the solid tone), so
 ;; orange keeps its one meaning. Measured before it: orange on connected, on,
 ;; default and needs you alike; every healthy row of Cells, MCP, Channels,
@@ -1254,7 +1255,8 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (search "kind ? el(\"i\", `led ${kind}`) : document.createTextNode(\"\")" (web-js-function observe "dot")) "a healthy row carries none")
     (dolist (file '("control.js" "index.js" "mcp.js" "profiles.js" "access.js"))
       (is (not (search "el(\"i\", `led${" (web-page-text file))) (format nil "~a marks rows through dot" file)))
-    (is (equal "var(--live)" (funcall value ".led.live" "background")) "running is green")
+    (is (equal "var(--run)" (funcall value ".led.live" "background")) "running is red")
+    (is (equal "var(--live)" (funcall value ".led.ok" "background")) "what answers is green")
     (is (equal "var(--accent-fill)" (funcall value ".led.act" "background")) "act here is the accent")
     (is (equal "var(--fail)" (funcall value ".led.fail" "background")) "failed is red")
     (is (equal "transparent" (funcall value ".led.off" "background")) "off is a hollow ring")
@@ -1268,7 +1270,8 @@ corner or letter-spacing instead of naming the kit's scale."
 ;; a phone does not zoom it); a running thing's lamp is the green that means
 ;; running wherever it stands (an answer, the live verb, a command, a session),
 ;; one that has ended the hollow ring; a hop that answers and a link that is back
-;; are green, not the accent.
+;; are green, not the accent. (Running was green until the operator's balls,
+;; 2026-10-21: it is the red now, green is done and what answers.)
 (deftest web-cell-every-place-sits-on-the-kit ()
   (let* ((css (web-css-declarations (web-page-text "app.css")))
          (observe (web-page-text "observe.js"))
@@ -1279,6 +1282,37 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (search "headline(t(\"This session\")" (web-js-function observe "phoneTurn")) "and so does its turn")
     (is (equal "var(--fs-body) var(--sans)" (subseq (web-css-value css ".finder input" "font") 0 26)) "the search is a field at the body's size")
     (is (<= 16 (or (web-css-px css ".finder input" "font-size") 0)) "and under a finger large enough not to zoom")
-    (is (search "pulse ? \"led live pulse\" : \"led off\"" (web-js-function app "lamp")) "running is green, ended the ring")
-    (is (search "hop === \"ok\" ? \"led live\"" app) "a hop that answers is green")
+    (is (search "pulse ? \"led live pulse\" : \"led off\"" (web-js-function app "lamp")) "running is red, ended the ring")
+    (is (search "hop === \"ok\" ? \"led ok\"" app) "a hop that answers is green")
     (is (equal "var(--live)" (web-css-value css ".linkbar.back .led" "background")) "a link that is back is green")))
+
+;; Every session wears a ball (the operator, 2026-10-21: "green, orange or red
+;; ... like the kanban board", the artifact's B): red and pulsing while a turn
+;; runs in it or under it, orange in a halo while its answer waits on you --
+;; the gateway's `waits', marked by the turn or a newest turn that failed --
+;; green and still once done. The list reads as the board does: Needs you,
+;; Running, Done, Done its newest few until Show all; a chip a state lists it
+;; alone; the Sessions badge counts what needs you. Measured before it: only a
+;; running row had a mark, five pixels of green, and `Waiting on you' meant
+;; unread.
+(deftest web-cell-every-session-wears-its-ball ()
+  (let* ((css (web-css-declarations (web-page-text "app.css")))
+         (value (lambda (selector property) (web-css-value css selector property)))
+         (app (web-page-text "app.js"))
+         (html (web-page-text "index.html"))
+         (render (web-js-function app "renderSessions")))
+    (is (search "state.running.has(entry.id) || holding.has(entry.id) ? \"run\" : entry.waits ? \"ask\" : \"done\"" render) "what a session is doing: running, waiting on you, done")
+    (is (search "button.append(ball(now));" render) "every row wears its ball")
+    (is (search "el(\"i\", `ball is-${kind}`)" (web-js-function app "ball")) "one ball, its state its class")
+    (is (search "else if (now === \"ask\") meta.append(el(\"span\", \"ses-asks\"" render) "a waiting row says on what")
+    (is (search "waits?.why === \"failed\"" app) "or that its last turn failed")
+    (is (equal "var(--run)" (funcall value ".ball.is-run" "background")) "running is the red")
+    (is (search "ball-beat" (funcall value ".ball.is-run" "animation")) "and pulses")
+    (is (equal "var(--accent-fill)" (funcall value ".ball.is-ask" "background")) "waiting on you is the accent")
+    (is (search "0 0 0 3px" (funcall value ".ball.is-ask" "box-shadow")) "in a halo")
+    (is (equal "var(--live)" (funcall value ".ball.is-done" "background")) "done is the green")
+    (is (equal "-1" (funcall value ".sessions .row > .ball" "order")) "the ball leads its row")
+    (is (search "class=\"chips states\" id=\"states\" role=\"radiogroup\"" html) "a chip a state, the sources' control")
+    (is (search "state.doing && state.doing !== key" render) "a chosen state lists its band alone")
+    (is (search "at < DONE_ROWS || block.rows.some((entry) => entry.id === state.current)" render) "Done its newest few and the session on screen, until Show all")
+    (is (search "$(\"sessions-badge\").textContent = String(asks);" render) "the badge counts what needs you")))
