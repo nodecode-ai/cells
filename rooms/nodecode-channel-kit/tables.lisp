@@ -9,6 +9,11 @@
 ;;;; way ANSWER-FILE does. No renderer, no python3, no font, or a table
 ;;;; too wide to draw falls back to a fenced code block, the house rule
 ;;;; before the picture existed: raw pipes never post.
+;;;;
+;;;; A platform whose messages draw a table themselves -- Slack's markdown
+;;;; block turns one into its own table block -- says how big a table it
+;;;; draws (PLATFORM-TABLES); there a table inside that posts as the model
+;;;; wrote it, and one past it is drawn here as before.
 
 (in-package #:nodecode-channel-kit)
 
@@ -25,6 +30,27 @@
 ;;; rebind this; production uses RENDER-TABLE-IMAGE.
 (defvar *table-image-renderer* (lambda (rows) (render-table-image rows))
   "ROWS -> a PNG pathname, or NIL when no picture can be drawn here.")
+
+(nlk:define-side-table platform-tables (:test #'eq :weakness :key :synchronized t)
+  "What a PLATFORM's messages draw of a GitHub-style table themselves, as
+(:ROWS R :COLUMNS C :CHARACTERS N): the most rows -- the header among them --
+and columns one table may hold, and the cell characters an answer's tables
+may total. NIL when they draw none. A table inside them posts as the model
+wrote it; any other is drawn here (ANSWER-TABLES-AS-IMAGES).")
+;; A table hung beside the platform rather than a slot of it, as
+;; PLATFORM-PLAN-CLOSE-THREAD is: a running image holds its platforms.
+
+(defun table-cell-characters (rows)
+  "The characters ROWS' cells hold, the header's among them."
+  (loop for row in rows sum (loop for cell in row sum (length cell))))
+
+(defun table-drawn-there-p (rows drawn left)
+  "Whether a platform that draws tables up to DRAWN (PLATFORM-TABLES) draws
+one of ROWS itself, with LEFT of its cell characters still free."
+  (and drawn
+       (<= (length rows) (getf drawn :rows 0))
+       (<= (reduce #'max rows :key #'length :initial-value 0) (getf drawn :columns 0))
+       (<= (table-cell-characters rows) left)))
 
 ;;; --- drawing ----------------------------------------------------------------
 
@@ -135,6 +161,20 @@ out. Rows inside a ``` fence are code and never read."
                     (setf index end)))))
   (nreverse blocks))
 
+(defun table-span-at (text cut &aux (starts (coerce (loop for at = 0 then (1+ newline)
+                                                          for newline = (position #\Newline text :start at)
+                                                          collect at
+                                                          while newline)
+                                                    'vector)))
+  "(values START END) of the table in TEXT a cut at CUT parts -- where its
+header line starts and its last line ends -- or NIL when CUT parts no
+table's rows."
+  (loop for (first last) in (answer-table-blocks text)
+        for start = (aref starts first)
+        for end = (or (position #\Newline text :start (aref starts last)) (length text))
+        when (< start cut end)
+          return (values start end)))
+
 (defun table-picture (rows)
   "ROWS -> a PNG pathname, or NIL when the table is outside what a card
 draws or the renderer refuses."
@@ -147,10 +187,11 @@ draws or the renderer refuses."
 
 ;;; --- the delivery's move ------------------------------------------------------
 
-(defun answer-tables-as-images (text)
+(defun answer-tables-as-images (text &optional drawn)
   "TEXT with every table it carries replaced: a picture that will ride the
 answer's message (the second value, in the order the tables appeared), or
--- when no picture can be drawn -- the same rows in a fenced block."
+-- when no picture can be drawn -- the same rows in a fenced block. A table
+the platform draws itself, inside DRAWN (PLATFORM-TABLES), stays as written."
   ;; Never signals. => (values TEXT FILES); (values NIL NIL) for a non-string.
   (when (stringp text)
     (handler-case
@@ -162,19 +203,26 @@ answer's message (the second value, in the order the tables appeared), or
                     (images '())
                     ;; The blank line a picture's removal left doubled.
                     (skip nil)
-                    (cursor 0))
+                    (cursor 0)
+                    ;; The cell characters the platform's tables have left.
+                    (left (getf drawn :characters 0))
+                    (replaced nil))
                 (flet ((copy (from below)
                          (loop for i from from below below
                                unless (eql i skip)
                                  do (push (nth i lines) out))))
                   (loop for (start end rows) in blocks
-                        for path = (table-picture rows)
+                        for kept = (table-drawn-there-p rows drawn left)
+                        for path = (and (not kept) (table-picture rows))
                         for before = (and (plusp start)
                                           (nth (1- start) lines))
                         for after = (and (< (1+ end) (length lines))
                                          (nth (1+ end) lines))
                         do (copy cursor start)
-                           (cond ((null path)
+                           (cond (kept
+                                  (decf left (table-cell-characters rows))
+                                  (copy start (1+ end)))
+                                 ((null path)
                                   (push "```" out)
                                   (copy start (1+ end))
                                   (push "```" out))
@@ -187,23 +235,27 @@ answer's message (the second value, in the order the tables appeared), or
                                    (plusp (length (string-trim " " before)))
                                    (plusp (length (string-trim " " after))))
                                   (push "" out)))
+                           (unless kept (setf replaced t))
                            (when path (push path images))
                            (setf cursor (1+ end)))
                   (copy cursor (length lines)))
-                (let ((joined (format nil "~{~a~^~%~}" (nreverse out))))
-                  (values (if (plusp (length (nlk:trimmed joined)))
-                              joined
-                              "*(table attached)*")
-                          (nreverse images))))))
+                (if (not replaced)
+                    (values text nil)
+                    (let ((joined (format nil "~{~a~^~%~}" (nreverse out))))
+                      (values (if (plusp (length (nlk:trimmed joined)))
+                                  joined
+                                  "*(table attached)*")
+                              (nreverse images)))))))
       (error (condition)
         (warn "channel: reading answer tables failed: ~a" condition)
         (values text nil)))))
 
-(defun answer-tables-into-files (lane digest)
+(defun answer-tables-into-files (lane digest &optional platform)
   "The delivery's own move before DELIVER-ANSWER: a completed answer that
 carries tables gets them drawn -- the text that will post loses the raw
 pipe rows, and the pictures join the answer's own files, riding its
-message the way ANSWER-FILE's do."
+message the way ANSWER-FILE's do. A table PLATFORM draws itself
+(PLATFORM-TABLES) stays as written."
   ;; An answer with no tables is untouched; a refusal is already a fenced
   ;; block (the transform's own fallback). The answer must survive this: a
   ;; picture is never worth a failed delivery.
@@ -211,7 +263,8 @@ message the way ANSWER-FILE's do."
       (let ((text (and (eq digest.phase :completed)
                        digest.answer)))
         (when (stringp text)
-          (multiple-value-bind (stripped images) (answer-tables-as-images text)
+          (multiple-value-bind (stripped images)
+              (answer-tables-as-images text (and platform (platform-tables platform)))
             (unless (equal stripped text)
               (setf digest.answer stripped)
               (when (and images digest.turn-id)

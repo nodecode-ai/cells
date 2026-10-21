@@ -68,6 +68,17 @@
   ;; a tiny limit cuts raw.
   (is (equal (list (format nil "```a~%") "bc```") (texts (format nil "```a~%bc```") 5))))
 
+(deftest channel-outbound-chunking-moves-a-cut-table-whole ()
+  ;; A table cut across two messages leaves the second its tail alone: pipe
+  ;; rows with no header and no rule, nothing a platform draws. A table that
+  ;; opened in the chunk and fits one message moves to the next whole, as a
+  ;; fence block does.
+  (let* ((table (format nil "| a | b |~%|---|---|~%| 1 | 2 |~%| 3 | 4 |"))
+         (text (format nil "~a~%~%~a~%~%That is all." (make-string 40 :initial-element #\x) table))
+         (texts (mapcar #'nck:text-chunk-text (nck:split-text-chunks text 60))))
+    (is (some (lambda (chunk) (search table chunk)) texts) "one message carries the whole table")
+    (is (every (lambda (chunk) (or (not (find #\| chunk)) (search "|---|" chunk))) texts) "no message opens on a table's tail")))
+
 (deftest channel-outbound-retry-schedule ()
   ;; Opted-in plans retry 429/5xx with linear backoff, three attempts total.
   (let ((result (scripted-execution

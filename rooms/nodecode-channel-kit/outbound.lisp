@@ -116,6 +116,17 @@ position the next chunk starts from, and the fence line it opens with."
               (progn
                 (setf cut (cut-within (- room 4)))
                 (multiple-value-setq (opener language) (open-fence text cut))))))
+      (when (and (< cut size) (null opener))
+        ;; Cut inside a table: one opened in this chunk that fits one message
+        ;; whole moves to the next, as a fence block does. Its tail alone is
+        ;; pipe rows with no header and no rule -- nothing a platform draws.
+        (multiple-value-bind (from to) (table-span-at text cut)
+          (when (and from
+                     (> from start)
+                     (<= (- to from) room)
+                     (find-if-not (lambda (ch) (member ch '(#\Space #\Tab #\Newline #\Return)))
+                                  text :start start :end from))
+            (setf cut from))))
       (let ((piece (subseq text start cut)))
         (values (concatenate 'string reopen piece
                              (cond ((null opener) "")

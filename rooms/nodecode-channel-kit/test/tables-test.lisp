@@ -106,6 +106,50 @@
       (is (equal (list answer) recorded))
       (is (not (find #\| (plan-content (first (nck:recording-executor-plans executor)))))))))
 
+(deftest channel-tables-a-platform-that-draws-them-keeps-them ()
+  ;; Slack's markdown block draws a table as its own table block: there the
+  ;; answer posts its tables as the model wrote them, and no picture is
+  ;; drawn for one.
+  (with-file-host (host "table-native" :responses (replies "a1"))
+    (let ((asked nil)
+          (answer (format nil "spend:~%| window | spend |~%|---|---|~%| 28h | ¥102 |")))
+      (setf (nck:platform-tables (nck::host-platform host)) '(:rows 100 :columns 20 :characters 10000))
+      (setf (nck:lane-active-turn-id lane) "t9")
+      (let ((nck::*table-image-renderer* (lambda (rows)
+                                           (declare (ignore rows))
+                                           (setf asked t)
+                                           #p"/tmp/pea.png")))
+        (with-stubbed-fdefinition (nck::write-back-rooms (host lane text typed-room) nil)
+          (nck::finish-turn host lane (nck:make-turn-digest :turn-id "t9" :phase :completed
+                                                            :answer answer))))
+      (let ((plan (first (nck:recording-executor-plans executor))))
+        (is (search "| 28h | ¥102 |" (plan-content plan)) "the table posts as written")
+        (is (null (plan-field plan "files")) "no picture rides the answer")
+        (is (null asked) "no picture was drawn")))))
+
+(deftest channel-tables-past-what-the-platform-draws-are-drawn-here ()
+  ;; Past its rows or columns Slack drops the rest unsaid, and past the cell
+  ;; characters a message's tables may total it refuses the message whole: a
+  ;; table past the platform's limits, or past what the tables before it left
+  ;; of the characters, is drawn here as before.
+  (let ((nck::*table-image-renderer* (lambda (rows) (declare (ignore rows)) #p"/tmp/pea.png"))
+        (drawn '(:rows 3 :columns 2 :characters 12))
+        (small (format nil "| a | b |~%|---|---|~%| 1 | 2 |"))
+        (wide (format nil "| a | b | c |~%|---|---|---|~%| 1 | 2 | 3 |"))
+        (long (format nil "| a | b |~%|---|---|~%| 1 | 2 |~%| 3 | 4 |~%| 5 | 6 |"))
+        (heavy (format nil "| aaaa | bbbb |~%|---|---|~%| 1 | 2 |")))
+    (flet ((drawn-here (text) (nth-value 1 (nck::answer-tables-as-images text drawn))))
+      (is (equal small (nck::answer-tables-as-images small drawn)) "inside the limits it stays as written")
+      (is (null (drawn-here small)))
+      (is (= 1 (length (drawn-here wide))) "a column past them is drawn")
+      (is (= 1 (length (drawn-here long))) "a row past them, the header counted, is drawn")
+      (is (null (drawn-here heavy)) "ten cell characters fit twelve")
+      (multiple-value-bind (text files)
+          (nck::answer-tables-as-images (format nil "~a~%~%~a" small heavy) drawn)
+        (is (search "| a | b |" text) "the first stays as written")
+        (is (not (search "aaaa" text)) "the second needs ten of the eight the first left")
+        (is (= 1 (length files)))))))
+
 (deftest channel-tables-draw-a-real-picture (let ((png (nck::render-table-image
                                                          (list '("piece" "where")
                                                                '("detect" "kit/tables.lisp")

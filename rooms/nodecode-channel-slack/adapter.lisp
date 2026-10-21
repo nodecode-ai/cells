@@ -83,7 +83,17 @@ conversation, its kind, the bot's own mention -- whichever are known."
           bot-user-id
           (not (dm-channel-p (getf target :channel-id)))))
 
-(defun slack-platform (&key bot-user-id (threads (make-thread-book)))
+(defun slack-platform (&key bot-user-id (threads (make-thread-book))
+                       &aux (platform (slack-platform-record bot-user-id threads)))
+  "The Slack PLATFORM (SLACK-PLATFORM-RECORD), and what it carries beside the
+record: an answer's table posts as Slack's own. Its markdown block draws one
+as a table block up to 100 rows, the header among them, and 20 columns --
+past them it drops the rest unsaid -- and refuses a message whose tables'
+cells pass 10,000 characters (probed 2026-10-21)."
+  (setf (platform-tables platform) '(:rows 100 :columns 20 :characters 10000))
+  platform)
+
+(defun slack-platform-record (bot-user-id threads)
   "The Slack PLATFORM: Web API plans, 12,000-character markdown blocks, the
 <@U...> mention, per-channel message ts (so an address carries the channel),
 replies threaded under their ask, a status beat Slack shows for two minutes,

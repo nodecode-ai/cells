@@ -1746,7 +1746,7 @@ write-back, and concurrency slot."
                             (cons lane.target
                                   (lane-reference lane (or digest.ask-id
                                                            lane.trigger-message-id))))))
-         (answer-tables-into-files lane digest)
+         (answer-tables-into-files lane digest host.platform)
          (multiple-value-bind (answer typed-room posted) (deliver-answer host lane digest)
            ;; A thread lane's first exchange settles in the room the ask was
            ;; typed in too (DELIVER-ANSWER), so the next ask typed there forks

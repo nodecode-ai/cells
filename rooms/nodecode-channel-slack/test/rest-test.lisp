@@ -78,6 +78,22 @@
         (is (= 1 (length (plan-field (first plans) "blocks"))) "no buttons on the first chunk")
         (is (= 2 (length (plan-field (second plans) "blocks"))) "the buttons ride the last")))))
 
+(deftest channel-slack-answers-keep-the-tables-slack-draws ()
+  ;; Slack's markdown block draws a table as its own table block, up to 100
+  ;; rows (the header among them) and 20 columns -- past them it drops the
+  ;; rest unsaid -- and refuses a message whose tables' cells pass 10,000
+  ;; characters. A Slack answer keeps a table inside those as written; one
+  ;; past them never posts cut.
+  (let ((nck::*table-image-renderer* (constantly nil))
+        (drawn (nck:platform-tables (ncs:slack-platform)))
+        (table (format nil "| window | spend |~%|---|---|~%| 28h | ¥102 |"))
+        (wide (format nil "|~{ h~d |~}~%|~{~a|~}~%|~{ ~d |~}"
+                      (loop for i below 21 collect i) (loop repeat 21 collect "---")
+                      (loop for i below 21 collect i))))
+    (is (equal '(:rows 100 :columns 20 :characters 10000) drawn))
+    (is (equal table (nck::answer-tables-as-images table drawn)) "a table Slack draws posts as written")
+    (is (search "```" (nck::answer-tables-as-images wide drawn)) "21 columns post as a fence, never cut")))
+
 (deftest channel-slack-card-controls-are-buttons-of-words ()
   ;; The kit's running card sends Stop beside Details as one row; Slack
   ;; refuses the whole post (invalid_blocks) unless every button's text is

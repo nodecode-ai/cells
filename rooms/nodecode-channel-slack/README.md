@@ -15,8 +15,9 @@ same channel kit.
 - **Reactions:** with `reactions` on, an ask shows 👀 while it runs, then ✅
   once answered or ❌ if it failed. A reaction you leave on the bot's message
   reaches the conversation too.
-- **Answers:** written in Markdown, which Slack renders. While a turn runs, a
-  status line with Stop and Details buttons sits in the thread.
+- **Answers:** written in Markdown, which Slack renders; a table comes as
+  Slack's own table (one bigger than Slack draws comes as a picture). While a
+  turn runs, a status line with Stop and Details buttons sits in the thread.
 - **Buttons and menus:** offered answers come as buttons; `/nodecode models`,
   `/nodecode context`, `/nodecode think` and the other dialogs come as cards
   with menus and buttons. A pick runs its line and the card updates in
