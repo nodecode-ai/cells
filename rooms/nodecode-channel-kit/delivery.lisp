@@ -413,21 +413,30 @@ are (TAKE-ANSWER-FILES)."
 
 ;;; An answer that waits on the person it answers -- a question, a go or no-go --
 ;;; is marked so by its turn (ANSWER-WAITS; choices on it mark it too), never
-;;; guessed from its words. The mark is written down beside the messages the
-;;; answer posted as, so whoever reads the room's newest message reads whether
-;;; it waits: a reply after it moves the room on, and the mark with it.
+;;; guessed from its words: a fact in the session's log (NLE:ANSWER-WAITS),
+;;; which every listing of sessions reads. The mark is written down beside the
+;;; messages the answer posted as, too, so whoever reads the room's newest
+;;; message reads whether it waits: a reply after it moves the room on, and
+;;; the mark with it.
 
-(defvar *answer-waits* (make-hash-table :test #'equal :synchronized t)
-  "Session id -> (:turn-id ID :question TEXT-OR-NIL): a running turn's mark,
-with ANSWER-WAITS, that its answer waits on the person it answers.")
+(defun answer-mark (lane turn-id)
+  "(values WAITS-P QUESTION) of the mark LANE's TURN-ID put on its answer
+(ANSWER-WAITS: the session's newest, NLK:SESSION-WAITS), QUESTION NIL for the
+answer's own last line."
+  (multiple-value-bind (question turn) (and (nlk:store-open-p) (nlk:session-waits lane.session-id))
+    (if (and question (equal turn turn-id))
+        (values t (and (plusp (length question)) question))
+        (values nil nil))))
 
-(defun take-answer-waits (lane turn-id &aux (entry (gethash lane.session-id *answer-waits*)))
-  "(values WAITS-P QUESTION) of the mark LANE's TURN-ID gave its answer --
-taken, as choices are (TAKE-ANSWER-CHOICES)."
-  (remhash lane.session-id *answer-waits*)
-  (if (and entry (equal turn-id (getf entry :turn-id)))
-      (values t (getf entry :question))
-      (values nil nil)))
+(defun mark-choices-waiting (lane turn-id)
+  "Mark LANE's TURN-ID answer, posted with choices on it, as waiting: choices
+wait on whoever presses one, whether or not the turn said so."
+  ;; As NOTE-ANSWER-WAITING: the answer has posted, and a store that refuses
+  ;; the mark costs the listing one ball, never the answer.
+  (when (nlk:store-open-p)
+    (nlk:with-handlers ((error (condition)
+                          (warn "could not mark ~a waiting: ~a" lane.session-id condition)))
+      (nle:answer-waits :session lane.session-id :turn turn-id))))
 
 (defun waiting-key (room message-id)
   "The state key the mark on MESSAGE-ID, posted in ROOM, is written under."
@@ -508,8 +517,7 @@ the model's explicit choice, in the order handed."
         (forget-lane-origin lane)
         (forget-lane-retired lane)
         (remhash lane.session-id *answer-files*)
-        (remhash lane.session-id *answer-choices*)
-        (remhash lane.session-id *answer-waits*))
+        (remhash lane.session-id *answer-choices*))
       (remhash session-id lanes.table)
       ;; Removing the entry the walk stands on is the one change a walk allows.
       (loop for address being the hash-keys of addresses

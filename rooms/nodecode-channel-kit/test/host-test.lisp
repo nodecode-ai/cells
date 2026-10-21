@@ -1339,18 +1339,22 @@ LANE, as the one running channel."
   ;; choices mark it too -- and the mark is written down beside the messages
   ;; the answer posted as, so a reader of the room's newest message knows
   ;; whether it waits. An unmarked answer waits on nobody, whatever it ends on.
+  ;; The mark is the session's own, in its log, so a listing of sessions reads
+  ;; it as the room does.
   (with-file-host (host "answer-waits" :responses (replies "a1" "a2" "a3")
                                        :platform (test-platform :choices t))
+    (nlk:create-session :id "chat-123-m1" :cwd ".")
     (setf (nck:lane-active-turn-id lane) "t9")
     (let ((nle::*snippet-touched* nil))
       (is (equal '(:session-id "chat-123-m1" :turn-id "t9" :waits "Push the pin?")
                  (nck:answer-waits :question " Push the pin? " :platform "test" :channel "123")))
       (is (eq t nle::*snippet-touched*) "marking is an act"))
     (is (null (nck:recording-executor-plans executor)) "nothing posts before the answer")
+    (is (equal '("Push the pin?" "t9") (multiple-value-list (nlk:session-waits "chat-123-m1"))) "the session carries the mark")
     (nck::deliver-answer host lane (nck:make-turn-digest :turn-id "t9" :phase :completed
                                                          :answer "Landed. Push the pin?"))
     (is (equal "Push the pin?" (nck:answer-waiting host "123" "a1")) "the posted message waits")
-    (is (null (nck::take-answer-waits lane "t9")) "taken once")
+    (is (null (nck::answer-mark lane "t10")) "a later turn's answer is not marked by an earlier one's")
     (setf (nck:lane-active-turn-id lane) "t10")
     (nck::deliver-answer host lane (nck:make-turn-digest :turn-id "t10" :phase :completed
                                                          :answer "Want that?"))
@@ -1360,6 +1364,7 @@ LANE, as the one running channel."
     (nck::deliver-answer host lane (nck:make-turn-digest :turn-id "t11" :phase :completed
                                                          :answer "Which store?"))
     (is (equal "" (nck:answer-waiting host "123" "a3")) "choices wait, on the answer's own line")
+    (is (equal '("" "t11") (multiple-value-list (nlk:session-waits "chat-123-m1"))) "and the session with them")
     (is-table (needle question)
       (search needle (refusal-text error (nck:answer-waits :question question :platform "test" :channel "123")))
       ("1 to 200 characters" "  ")

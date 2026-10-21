@@ -513,20 +513,15 @@ QUESTION the line that says on what (the answer's own last line when
 omitted). Choices handed with ANSWER-CHOICES mark it already; an answer
 nobody marked waits on nobody, whatever its words end on."
   ;; Nothing posts now, as with ANSWER-FILE, and the room is named the same
-  ;; way; the mark is written down beside the answer's messages once they post
+  ;; way. The mark is the turn's own, in its session's log (NLE:ANSWER-WAITS,
+  ;; which stamps the act, checks QUESTION and answers (:session-id S
+  ;; :turn-id T :waits QUESTION-OR-T)), so every listing of sessions reads it;
+  ;; once the answer posts it is written down beside its messages too
   ;; (DELIVER-ANSWER, ANSWER-WAITING). A second call replaces the first.
-  ;; Answers (:session-id S :turn-id T :waits QUESTION-OR-T). Stamped an act
-  ;; first, as the other answer verbs are.
-  (nle:receipt "calls" (list :verb "answer-waits"))
-  (unless (or (null question)
-              (and (stringp question) (<= 1 (length (nlk:trimmed question)) 200)))
-    (error "answer-waits takes a question of 1 to 200 characters, or none, got ~s" question))
   (multiple-value-bind (host lane turn-id)
       (running-answer "answer-waits" platform channel thread session)
     (declare (ignore host))
-    (let ((question (and question (nlk:trimmed question))))
-      (setf (gethash lane.session-id *answer-waits*) (list :turn-id turn-id :question question))
-      (list :session-id lane.session-id :turn-id turn-id :waits (or question t)))))
+    (nle:answer-waits :question question :session lane.session-id :turn turn-id)))
 
 (defun bind-addresses (host lane target message-ids)
   (dolist (id message-ids)
@@ -1561,7 +1556,7 @@ chunk as an address for the lane, then settle the card above it."
          (target lane.target)
          (files (collect-answer-files lane turn-id))
          (choices (take-answer-choices lane turn-id))
-         (waits (multiple-value-list (take-answer-waits lane turn-id))))
+         (waits (multiple-value-list (answer-mark lane turn-id))))
     (when (and text (null digest.answer))
       ;; A missed live frame is recoverable from the durable event log. Keep
       ;; the recovered text on the captured digest so write-back and tests read
@@ -1612,6 +1607,8 @@ chunk as an address for the lane, then settle the card above it."
                (error (condition) (values nil nil (princ-to-string condition))))
            (bind-addresses host lane target message-ids)
            (note-delivery (host-id host) delivered error lane.session-id)
+           (when (and delivered choices (not (first waits)))
+             (mark-choices-waiting lane turn-id))
            (when (and delivered (or (first waits) choices))
              (note-answer-waiting host (or (getf target :thread-id) (getf target :channel-id))
                                   message-ids (second waits)))
