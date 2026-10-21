@@ -56,7 +56,6 @@ is what a new cell is copied from.
 | [`nodecode-chrome`](tools/nodecode-chrome) | **ships** Drive Chrome; needs the companion extension. |
 | [`nodecode-cron`](tools/nodecode-cron) | **ships** Prompts that run on a schedule. |
 | [`nodecode-experience`](tools/nodecode-experience) | **ships** Learns from each turn: reflection and recaps. |
-| [`nodecode-fork`](tools/nodecode-fork) | **ships** A turn forks itself: its independent tasks run at once, each with the whole context. |
 | [`nodecode-goal`](tools/nodecode-goal) | **ships** Keeps a session taking turns until its goal's check passes. |
 | [`nodecode-guard`](tools/nodecode-guard) | **ships** Refuses risky shell commands before they run. |
 | [`nodecode-lsp`](tools/nodecode-lsp) | Language servers for Nodecode: diagnostics on write, navigation and rename verbs. |
