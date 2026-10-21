@@ -2180,8 +2180,12 @@ button.p-row:active { background: var(--field-lit); }
 }
 @media (prefers-reduced-motion: reduce) { .ball.is-run { animation: none; } }
 /* What waits on you stands out of the list: a wash of the accent, its name
-   at full strength. */
-.sessions .row.asks { background: color-mix(in srgb, var(--accent-fill) 7%, transparent); color: var(--primary); }
+   at full strength, its corners the control's round like every surface here
+   (the operator, 2026-10-21: 'borders has to be smooth edges'); two that wait
+   in a row stand apart, each its own rounded card, reaching 8px into the
+   list's scroll gutter so its age keeps the column every row's age keeps. */
+.sessions .row.asks { width: calc(100% + 8px); margin-right: -8px; padding-right: 8px; border-radius: var(--r-control); background: color-mix(in srgb, var(--accent-fill) 7%, transparent); color: var(--primary); }
+.sessions li:has(> .row.asks) + li:has(> .row.asks) { margin-top: 2px; }
 .sessions .row.asks .name { font-weight: 560; }
 /* Every row leads with its ball, so every name starts in one column; a
    fold's caret keeps the gutter, the news dot stands beside its age. */
