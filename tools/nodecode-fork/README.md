@@ -44,6 +44,64 @@ tasks.
 - Forks are never named (a model call each) and never reflected on: their
   turns' source is `fork`.
 
+## Going back
+
+The same verb forks from the past, never a second primitive:
+
+```lisp
+(fork:run "what did we know before the rename?" :from -2)   ; two turns back
+(fork:run :from 1100 :check '(fboundp 'nle::help))           ; generations 1100..newest
+(fork:run :from '(1100 1142) :check "test -f README.md")      ; a range, a shell check
+```
+
+- `:from -N` (or a turn id) anchors the forks at that earlier turn: they hold
+  what the session knew when it ended, and nothing after it.
+- `:from G` (or `(OLD NEW)`) with `:check` is the way back through the
+  generations this home sealed: each generation is laid into a throwaway home
+  of its own (`nlk:build-generation`, its `cells/`) and asked in a fresh
+  process of today's binary (`nlk:trial`), four at once, both ends first, until
+  the step where the check turned false. A generation that answers nothing is
+  stepped over, never read as the break. The answer is `(:bisect (:verdict
+  :found|:clean|:program|:unanswered :good G :bad G :changes LINES :says
+  WORDS ...))`: `:clean` means the newest passes (the break is outside what a
+  generation records), `:program` that the oldest fails too (every generation
+  ran on today's binary, so the program is to blame; rebuilding old binaries
+  is not built). The step found is asked again, both its ends: a fresh boot
+  that answers otherwise the second time is `:unsteady` and names no step --
+  the first live run met one, a layer variable fetched over the network at
+  load. Tasks given beside it are forked after, told what it found.
+
+## Racing a name
+
+```lisp
+(fork:run "make it faster" "make it faster another way"
+          :keep 'slow-function :check '(= 42 (slow-function 6)))
+```
+
+Fork n writes its version as `fork-n/slow-function`, one defun taking every
+call the name takes. The parent tries each, and what stands, against the check
+in a fresh process laid at the newest generation; the ones that pass are timed
+on the image's own calls of the name, one version serving each live call (the
+call itself the clock, so nothing runs twice; read on the monotonic clock, as
+`get-internal-real-time` moves once a millisecond), 20 calls each within 300 s. The
+fastest goes live if it is 5% faster than what stands, or passes where what
+stands fails, HELD (`nlk:hold-definitions`): written to the layer after one
+clean call made outside an eval, put back if that call signals; `(revert
+'slow-function)` puts the old one back until then. Beside `:from G`, the name
+as the last good generation's layer had it races too. A name with advice on
+it, a held one, a generic function, a macro or a locked package's function is
+refused.
+
+## What a fork may define
+
+A fork runs in the operator's own image. A form of a fork that defines or
+forgets a name that already answers there, or one a sibling claimed, is
+refused before it runs (`nlk:definition-escrow`); nothing a fork defines is
+written to the layer (`nlk:record-definitions`), and no eval -- the fork's, or
+any other open while it runs -- is told a fork's definitions changed but were
+not kept (`nlk:report-unkept-changes`). What it defined stays live; the layer
+gets what the parent keeps.
+
 ## Config
 
 Nothing is required. `config.example.jsonc` shows the section:

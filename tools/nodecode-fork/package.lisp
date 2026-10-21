@@ -17,6 +17,9 @@
    #:run
    ;; data, so a layer can reword it
    #:*task-input*
+   #:*earlier-input*
+   #:*keep-input*
+   #:*bisect-input*
    ;; the one condition
    #:fork-error))
 
