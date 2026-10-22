@@ -610,3 +610,24 @@ it now" (nck:digest-final-text digest)))
     (is (null (find #\Newline line))))
   ;; A single-line note is untouched.
   (is (equal "generated \"ok\"" (nck:digest-note-line "generated \"ok\"" 200))))
+
+(deftest channel-digest-names-the-wait-and-counts-the-stream (with-digest ())
+  ;; A silent round says whom it waits on and how long nothing has come; a
+  ;; streaming one counts what it streamed, four characters a token, and how
+  ;; fast; a round over counts from nothing, whom it waits on kept.
+  (nck:digest-note-visible digest 0)
+  (is (search "Waiting on the provider · no reply for 21s" (card-at digest 21000)) "nobody named yet")
+  (nck::digest-note-provider digest "xiaomi")
+  (is (search "Waiting on xiaomi · no reply for 80s" (card-at digest 80000)))
+  (nck::digest-note-thinking digest "Checking the hosts.")
+  (nck:digest-note-visible digest 100000)
+  (nck::digest-note-streamed digest 4000 100000)
+  (nck:digest-note-visible digest 104000)
+  (nck::digest-note-streamed digest 3200 104000)
+  (is (search "Thinking · ~1.8k tokens · 450 tok/s" (card-at digest 104000)))
+  (nck::digest-note-call-streamed digest 0 200 104000)
+  (nck::digest-note-call-streamed digest 0 400 104000)
+  (is (search "~1.9k tokens" (card-at digest 104000)) "a call's arguments count once, whole so far")
+  (nck::digest-note-round-over digest)
+  (is (not (search "tokens" (card-at digest 105000))) "the next round counts from nothing")
+  (is (search "Waiting on xiaomi · no reply for 26s" (card-at digest 130000)) "whom it waits on stays"))

@@ -317,6 +317,88 @@ failed attempt wrote the same way."
   (when called-p (digest-note-said digest text))
   digest)
 
+;;; --- the round in flight, as the card counts it -------------------------------
+;;; Whom a round waits on, and how much it has streamed and how fast, from the
+;;; deltas the card already folds: a token is four characters, the engine's
+;;; own estimate for a round cut short. The card shows a number that moves --
+;;; `Thinking · ~1.8k tokens · 40 tok/s' -- and names a silence: `Waiting on
+;;; xiaomi · no reply for 1m20s' (2026-10-22: a card that said only `Waiting
+;;; on the provider' over a 100 s cold start read as nodecode being down). A
+;;; table beside the digest, never slots of it: a running image keeps its
+;;; digests.
+
+(nlk:define-side-table round-stream (:test #'eq :weakness :key :synchronized t)
+  "DIGEST -> its round in flight as the card counts it, a plist: :PROVIDER
+whom its rounds wait on and :ASKED once the host looked; :FIRST-MS when the
+round's first part streamed, :CHARS the characters of its thinking and words,
+:CALLS each streaming call's index and the length of its arguments so far.")
+
+(defun digest-note-streamed (digest chars now)
+  "One delta of DIGEST's round in flight streamed CHARS characters at NOW."
+  (let ((round (round-stream digest)))
+    (setf (round-stream digest)
+          (list* :first-ms (or (getf round :first-ms) now)
+                 :chars (+ (max 0 chars) (or (getf round :chars) 0))
+                 (alexandria:remove-from-plist round :first-ms :chars))))
+  digest)
+
+(defun digest-note-call-streamed (digest index length now)
+  "A call of DIGEST's round in flight, its stream INDEX, has streamed
+arguments LENGTH characters long by NOW: a call's delta carries its
+arguments whole so far, so it replaces that call's count."
+  (let* ((round (round-stream digest))
+         (calls (getf round :calls)))
+    (setf (round-stream digest)
+          (list* :first-ms (or (getf round :first-ms) now)
+                 :calls (acons index (max 0 length) (remove index calls :key #'car))
+                 (alexandria:remove-from-plist round :first-ms :calls))))
+  digest)
+
+(defun digest-note-round-over (digest)
+  "DIGEST's round in flight ended or was voided: the next counts from nothing."
+  (setf (round-stream digest)
+        (alexandria:remove-from-plist (round-stream digest) :first-ms :chars :calls))
+  digest)
+
+(defun digest-note-provider (digest provider)
+  "DIGEST's rounds wait on PROVIDER from now on; NIL says the host looked and
+found no name."
+  (setf (round-stream digest)
+        (list* :provider provider :asked t
+               (alexandria:remove-from-plist (round-stream digest) :provider :asked)))
+  digest)
+
+(defun round-provider (digest)
+  "Whom DIGEST's round waits on: the newest the host or a failover named,
+else what its last round ran on, else NIL."
+  (or (getf (round-stream digest) :provider)
+      (getf digest.usage :provider)))
+
+(defun round-flow (digest now)
+  "What DIGEST's round in flight has streamed by NOW -- `~1.8k tokens · 40
+tok/s', the rate once a second has passed -- or NIL before anything streamed."
+  (let* ((round (round-stream digest))
+         (first (getf round :first-ms))
+         (chars (+ (or (getf round :chars) 0)
+                   (reduce #'+ (getf round :calls) :key #'cdr))))
+    (when (and first (plusp chars))
+      (let ((tokens (ceiling chars 4))
+            (seconds (/ (- now first) 1000)))
+        (format nil "~~~a token~p~@[ · ~d tok/s~]"
+                (nle:format-token-count tokens) tokens
+                (and (>= seconds 1) (round tokens seconds)))))))
+
+(defun waiting-headline (digest now)
+  "A silent round's line: whom it waits on, and how long nothing has come."
+  (format nil "Waiting on ~a · no reply for ~a"
+          (or (round-provider digest) "the provider")
+          (elapsed-label (- now (digest-seen-ms digest)))))
+
+(defun flowing-headline (verb digest now)
+  "VERB, and what the round in flight streamed once it streamed anything."
+  (let ((flow (round-flow digest now)))
+    (if flow (format nil "~a · ~a" verb flow) verb)))
+
 ;;; --- a turn that ended with its own work still in flight ---------------------
 ;;; A turn can end on the model's word while a backgrounded evaluation it
 ;;; spawned is still running: the engine says so on the completion fact
@@ -794,10 +876,11 @@ for a turn a steer cut short: the next turn raises its own."
          (card :working
                (cond (digest.background-pending "Waiting on a background evaluation")
                      (open (nlk:clip (digest-step-running open) +digest-step-cap+ :ellipsis "…"))
-                     ((> (- now (digest-seen-ms digest)) +digest-stall-ms+) "Waiting on the provider")
-                     ((plusp (length writing)) "Writing")
-                     (digest.thinking "Thinking")
-                     (t "Working"))
+                     ((> (- now (digest-seen-ms digest)) +digest-stall-ms+)
+                      (waiting-headline digest now))
+                     ((plusp (length writing)) (flowing-headline "Writing" digest now))
+                     (digest.thinking (flowing-headline "Thinking" digest now))
+                     (t (flowing-headline "Working" digest now)))
                :thought (thought-headline digest.thinking)
                :note digest.fallback-text
                :pending (pending-lines digest)

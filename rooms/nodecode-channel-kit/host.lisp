@@ -792,18 +792,35 @@ under it, CURRENT shown as the one picked; VIEW as CHOICE's."
 press_data), or NIL for words typed."
   (press-action (source-field candidate "press_data")))
 
+(defun switch-offered-p (digest now)
+  "True while DIGEST's turn has shown nothing past the stall window and its
+provider attempt still waits for a first token with a failover candidate
+behind it (NLE:PROVIDER-ATTEMPT-NEXT)."
+  (and (eq digest.phase :running)
+       (not digest.background-pending)
+       (null (digest-open-step digest))
+       (> (- now (digest-seen-ms digest)) +digest-stall-ms+)
+       digest.turn-id
+       (nle:provider-attempt-next digest.turn-id)
+       t))
+
 (defun line-controls (lane digest)
   "The controls LANE's card carries for DIGEST's turn: while it waits, Raise
-limit (LIFT-PRESSED); while it runs, Stop beside Details on one row; once it
-settled, Details alone, the card staying as the turn's record. Each turn's
-press routes back through the lane's session id; Raise limit is the host's."
+limit (LIFT-PRESSED); while it runs, Stop beside Details on one row, Switch
+model between them while a silent provider has a failover candidate behind
+it (SKIP-PRESSED); once it settled, Details alone, the card staying as the
+turn's record. Each turn's press routes back through the lane's session id;
+Raise limit is the host's."
   ;; (LABEL DATA STYLE): the kit names the button's weight, the platform
   ;; styles it.
   (let ((details (list "Details" (format nil "nck:details:~a" lane.session-id) :secondary)))
     (case digest.phase
       (:queued (list (list (list "Raise limit" "nck:lift" :primary))))
-      (:running (list (list (list "Stop" (format nil "nck:stop:~a" lane.session-id) :danger)
-                            details)))
+      (:running (list (append (list (list "Stop" (format nil "nck:stop:~a" lane.session-id) :danger))
+                              (when (switch-offered-p digest (now-ms))
+                                (list (list "Switch model" (format nil "nck:skip:~a" lane.session-id)
+                                            :secondary)))
+                              (list details))))
       ((:completed :failed :cancelled :paused) (list details)))))
 
 (defun deliver-or-warn (host plans what)
@@ -835,6 +852,17 @@ warning naming WHAT. => whether they were delivered."
   (when (and (stringp data) (stringp user-id)
              (eql 0 (search "nck:stop:" data)))
     (stop-pressed host user-id (subseq data (length "nck:stop:")) (getf payload :user-name)))
+  ;; Switch model is a stop's kin: a flag the walking attempt looks at once
+  ;; a second, set here; the worker only says where the round went.
+  (let ((switched (and (stringp data) (stringp user-id)
+                       (eql 0 (search "nck:skip:" data))
+                       (skip-pressed host user-id (subseq data (length "nck:skip:"))
+                                     (getf payload :user-name)))))
+    (when switched
+      (on-worker host
+        (deliver-or-warn host (host-plan host #'platform-plan-control-ack payload :text switched)
+                         (format nil "control ack for ~a failed" (getf payload :id))))
+      (return-from control-pressed nil)))
   (on-worker host
     (flet ((after (prefix) (and (stringp data) (eql 0 (search prefix data)) (subseq data (length prefix)))))
       (let ((session-id (after "nck:details:"))
@@ -856,6 +884,25 @@ warning naming WHAT. => whether they were delivered."
                                            (host-plan host #'platform-plan-control-ack payload
                                                       :text "This button is out of date: run the command again."))
                                   (format nil "control ack for ~a failed" (getf payload :id)))))))))
+
+(defun skip-pressed (host user-id session-id &optional user-name
+                     &aux (lane (find-lane host.lanes session-id)))
+  "The Switch model control: cut SESSION-ID's provider attempt while it waits
+for a first token, so its round leaves for the failover candidate, when
+USER-ID owns the lane or operates the room. => what the presser is told."
+  ;; Runs on the thread the press arrived on, as a stop does: it sets a flag
+  ;; and makes no platform call.
+  (cond
+    ((or (null lane) (null (lane-active-turn-id lane)))
+     "Nothing to switch: the turn has ended.")
+    ((not (or (equal user-id (lane-owner-id lane)) (operator-p host user-id)))
+     "Only whoever asked, or a room operator, can switch the model.")
+    (t (let ((next (nle:skip-provider-attempt
+                    (lane-active-turn-id lane)
+                    (if user-name (format nil "switched by ~a" user-name) "switched from the room"))))
+         (if next
+             (format nil "Switching to ~a/~a." (getf next :provider) (getf next :model))
+             "Nothing to switch: the model has started answering.")))))
 
 (defun stop-pressed (host user-id session-id &optional user-name
                      &aux (lane (find-lane host.lanes session-id)))
@@ -1222,12 +1269,24 @@ WHAT when the platform refused it, and answer the execution either way."
     (warn-lane host lane what result.error))
   result)
 
+(defun note-lane-provider (lane &aux (digest (lane-digest lane)))
+  "Tick thread, no lock held: tell LANE's running card whom its rounds wait
+on, once, when it has heard of nobody -- the identity a turn of the lane's
+session binds (NLE:GATEWAY-TARGET), a store read the lane lock is never held
+over."
+  (when (and digest
+             (eq (turn-digest-phase digest) :running)
+             (not (getf (round-stream digest) :asked))
+             (null (getf (turn-digest-usage digest) :provider)))
+    (digest-note-provider digest (ignore-errors (values (nle:gateway-target lane.session-id))))))
+
 (defun schedule-flush (host lane &aux kind card status-id terminal-p reply-to controls media)
   "Tick thread: plan LANE's card under the lane lock (pure), and enqueue the
 platform call it implies."
   ;; At most one flush per lane is ever outstanding — with a pool of drainers,
   ;; two jobs planned from the same digest would race to create two cards.
   ;; What the turn says on its way rides the card (digest.lisp).
+  (note-lane-provider lane)
   (with-lane-digest (digest lane)
     (unless lane.flush-in-flight-p
       (setf controls (or (line-controls lane digest) :clear))
@@ -1930,12 +1989,19 @@ enqueueing a reaction step."
                                 (when to
                                   (with-turn-digest (digest lane turn-id now)
                                     (setf (turn-digest-fallback-text digest)
-                                          (format nil "fell back to ~a~@[ (~a)~]" to reason))))))
+                                          (format nil "fell back to ~a~@[ (~a)~]" to
+                                                  (and reason (substitute #\Space #\_ reason))))
+                                    ;; The round starts over on the candidate.
+                                    (digest-note-provider
+                                     digest (nlk:json-value payload :string "to-provider"))
+                                    (digest-note-round-over digest)))))
      ;; The provider's own count of what the round read, cached, wrote and
      ;; thought, its price, and what it ran on: the card's footer, as the
      ;; TUI's meter and finish divider read the same fact.
     ("turn.usage" (flet ((field (type key) (nlk:json-value payload type key)))
                     (with-turn-digest (digest lane turn-id now)
+                      ;; The round is over: the next one counts from nothing.
+                      (digest-note-round-over digest)
                       (digest-note-usage
                        digest (list :input (field :integer "input-tokens")
                                     :output (field :integer "output-tokens")
@@ -1982,11 +2048,22 @@ shows the round writing — string append under the lane lock, no I/O."
         ;; Any typed part is the turn showing something — text and
         ;; reasoning alike clear the stall window; reasoning also feeds
         ;; the note. A retried round voids what its failed attempt wrote.
-        (digest-note-visible digest (now-ms))
-        (nlk:dispatch (gethash "type" delta) equal
-          ("reasoning" (digest-note-thinking digest (gethash "text" delta)))
-          ("text" (when (host-stream-p host) (digest-note-writing digest (gethash "text" delta))))
-          ("stream_reset" (digest-note-written digest nil nil)))))))
+        (let ((now (now-ms)))
+          (flet ((chars (key)
+                   (let ((value (gethash key delta)))
+                     (if (stringp value) (length value) 0))))
+            (digest-note-visible digest now)
+            ;; Every streamed word counts on the card's flow (ROUND-FLOW).
+            (nlk:dispatch (gethash "type" delta) equal
+              ("reasoning" (digest-note-thinking digest (gethash "text" delta))
+                           (digest-note-streamed digest (chars "text") now))
+              ("text" (when (host-stream-p host) (digest-note-writing digest (gethash "text" delta)))
+                      (digest-note-streamed digest (chars "text") now))
+              ("tool_call" (let ((index (gethash "index" delta)))
+                             (when (integerp index)
+                               (digest-note-call-streamed digest index (chars "arguments") now))))
+              ("stream_reset" (digest-note-written digest nil nil)
+                              (digest-note-round-over digest)))))))))
 
 (defun terminal-phase (kind payload)
   "(values PHASE DETAIL): the phase the terminal turn fact KIND settles a

@@ -2214,3 +2214,37 @@ it would have done on the way out (STOP-HOST's hand-off)."
           (is (= 1 (closes)) "and only that press did")
           (is (equal "Closed. Write in it to open it again." (tap "i4" "mike")))
           (is (await (:timeout 10) (= 2 (closes))) "so does an operator's"))))))
+
+(deftest channel-host-a-silent-wait-offers-switch-model
+    (with-digest-host (host lane :host-keys (:platform (test-platform :choices t))))
+  ;; Past the stall window, while the engine says the attempt still waits
+  ;; with a failover candidate behind it, the running card carries Switch
+  ;; model between Stop and Details. The owner's press cuts the wait to that
+  ;; candidate and says where the round goes; a stranger's moves nothing.
+  (fact "turn.started" (nlk:json-object))
+  (setf (nck:lane-owner-id lane) "alice")
+  (let ((digest (nck:lane-digest lane))
+        (skipped '()))
+    (setf (nck::turn-digest-started-at-ms digest) (- (nck:now-ms) 30000)
+          (nck::turn-digest-visible-at-ms digest) (- (nck:now-ms) 30000))
+    (with-stubbed-fdefinitions
+        ((nle:provider-attempt-next (turn-id)
+           (and (equal "t1" turn-id) (null skipped) '(:provider "deepseek" :model "deepseek-flash")))
+         (nle:skip-provider-attempt (turn-id &optional reason)
+           (push (list turn-id reason) skipped)
+           '(:provider "deepseek" :model "deepseek-flash")))
+      (is (equal (list (list (list "Stop" "nck:stop:chat-123-m1" :danger)
+                             (list "Switch model" "nck:skip:chat-123-m1" :secondary)
+                             (list "Details" "nck:details:chat-123-m1" :secondary)))
+                 (nck::line-controls lane digest)))
+      (flet ((switch (id user)
+               (nck:control-pressed host (list :id id :user-id user :user-name user :message-id "s1"
+                                               :channel-id "123" :data "nck:skip:chat-123-m1"))
+               (plan-field (await-plan executor :path (format nil "/presses/~a" id)) "text")))
+        (is (equal "Only whoever asked, or a room operator, can switch the model." (switch "i1" "stranger")))
+        (is (null skipped) "a stranger's press moves nothing")
+        (is (equal "Switching to deepseek/deepseek-flash." (switch "i2" "alice")))
+        (is (equal '(("t1" "switched by alice")) skipped)))
+      (is (equal (list (list (list "Stop" "nck:stop:chat-123-m1" :danger)
+                             (list "Details" "nck:details:chat-123-m1" :secondary)))
+                 (nck::line-controls lane digest)) "once switched, no second offer"))))
