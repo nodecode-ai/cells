@@ -127,6 +127,21 @@
       ]
     },
     {
+      "name": "nodecode-claude-code",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "38148e7b4a3c025cb028e39042b4d562a1d9e4e1",
+      "path": "providers/nodecode-claude-code",
+      "description": "Claude Code's own login as a provider lane: the claude CLI writes each request, Nodecode sends it",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "platforms": [
+        "linux",
+        "macos"
+      ]
+    },
+    {
       "name": "nodecode-cline-pass",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
