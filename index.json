@@ -382,7 +382,7 @@
     {
       "name": "nodecode-security-patches",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "53b984341d9e6ebb908038a351586426a6b0ae68",
+      "commit": "1d140c74e5690b2c094267cf7659586284625320",
       "path": "tools/nodecode-security-patches",
       "description": "The last two weeks' breaches, each with the fix its vendor shipped",
       "license": "MIT",
