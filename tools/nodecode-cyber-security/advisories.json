@@ -1,8 +1,239 @@
 {
   "format": 1,
-  "updated": "2026-10-22T10:28:00Z",
+  "updated": "2026-10-22T16:21:12Z",
   "window": "2026-10-08 to 2026-10-22",
   "advisories": [
+    {
+      "id": "nextjs-2026-10",
+      "title": "Next.js before 15.5.28 / 16.4.1: unauthenticated RCE through Image Optimization with SVG, and a Server Actions denial of service",
+      "date": "2026-10-22",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-96889",
+        "CVE-2026-94482"
+      ],
+      "summary": "Two bugs, one upgrade. The Image Optimization API can be made to trigger a use-after-free in librsvg while processing an SVG through sharp, and when Next.js runs on glibc-based Linux that memory bug is exploitable for unauthenticated remote code execution (CVE-2026-96889, the librsvg bug listed separately in this feed as librsvg-xinclude-uaf). Separately, crafted requests to an App Router application with at least one Server Action drive CPU usage until the process stops answering other requests (CVE-2026-94482). Upgrading Next.js moves sharp to a build that carries the fixed librsvg.",
+      "affected": "next 10.0.0 up to 15.5.27 and 16.0.0 up to 16.4.0 for the RCE (needs the Image Optimization API processing SVG files, Next.js on a glibc Linux); next 13.0.0 up to 15.5.27 and 16.0.0 up to 16.4.0 for the DoS (needs App Router with at least one Server Action; Pages Router apps and apps without Server Actions are not hit). sharp below 0.35.5 carries the vulnerable librsvg.",
+      "fixed": [
+        "15.5.28",
+        "16.4.1"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "next",
+          "package": "next",
+          "line": 1,
+          "min": "10.0.0",
+          "fixed": [
+            "15.5.28",
+            "16.4.1"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install next@^15.5.28 or next@^16.4.1 (or your framework's pinned upgrade), rebuild and redeploy; a fresh install pulls a sharp with the fixed librsvg",
+        "Docker: rebuild the image so the new sharp/librsvg lands, then redeploy"
+      ],
+      "mitigation": [
+        "Until upgraded: keep the Image Optimization API from processing SVGs - do not allow SVG sources into the optimizer",
+        "Or ensure the sharp Next.js uses is 0.35.5 or newer (the vendor's own workaround); check npm ls sharp",
+        "For the DoS: rate-limit or block unauthenticated POSTs to Server Action endpoints at the proxy until upgraded"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/vercel/next.js/security/advisories/GHSA-2464-fhr4-w9xw",
+        "https://github.com/vercel/next.js/security/advisories/GHSA-p3m5-59mp-jv5r",
+        "https://github.com/vercel/next.js/releases/tag/v15.5.28",
+        "https://github.com/vercel/next.js/releases/tag/v16.4.1"
+      ]
+    },
+    {
+      "id": "librsvg-xinclude-uaf",
+      "title": "Librsvg before 2.57.5 / 2.60.3 / 2.61.5 / 2.62.4 / 2.63.2: use-after-free rendering an SVG whose XML includes declare a duplicated entity (CVE-2026-96889)",
+      "date": "2026-10-22",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-96889"
+      ],
+      "summary": "Librsvg parses XML with libxml2. In an SVG with a nested XInclude, an XML entity declaration whose name duplicates one already in use makes the included parse free an xmlEntity that the outer parse keeps using - a use-after-free over a freed 144-byte node that a crafted SVG triggers in whatever renders it. Hosts that render untrusted SVGs are exposed (rsvg-convert, thumbnailers, media pipelines, image proxies); through sharp the same bug also reaches Next.js Image Optimization, where it is unauthenticated RCE on glibc Linux (see nextjs-2026-10). The fix stops freeing xmlEntity pointers libxml2 still uses. Red Hat has shipped errata; the GNOME work item is 1241.",
+      "affected": "librsvg up to 2.57.4, 2.60.0-beta up to 2.60.2, 2.61.0 up to 2.61.4, 2.62.0-beta up to 2.62.3, 2.63.0-beta up to 2.63.1. Distro builds may carry the fix under an older number (the changelog check below reads that).",
+      "fixed": [
+        "2.57.5",
+        "2.60.3",
+        "2.61.5",
+        "2.62.4",
+        "2.63.2"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "librsvg",
+          "command": [
+            "sh",
+            "-c",
+            "rsvg-convert --version 2>/dev/null || pkg-config --modversion librsvg-2.0 2>/dev/null"
+          ],
+          "fixed": [
+            "2.57.5",
+            "2.60.3",
+            "2.61.5",
+            "2.62.4",
+            "2.63.2"
+          ],
+          "backport": [
+            "sh",
+            "-c",
+            "zgrep -l 'CVE-2026-96889' /usr/share/doc/librsvg*/changelog* 2>/dev/null | head -1; rpm -q --changelog librsvg2 2>/dev/null | grep -m1 'CVE-2026-96889'"
+          ]
+        }
+      ],
+      "patch": [
+        "Debian/Ubuntu: apt update && apt install librsvg2-common librsvg2-bin librsvg2-2 (the distro's fixed or backported build); Fedora/RHEL: dnf update librsvg2 librsvg2-tools",
+        "Rebuild containers and image pipelines that bundle librsvg, and any sharp below 0.35.5, then redeploy"
+      ],
+      "mitigation": [
+        "Until updated: do not render untrusted SVGs with librsvg - reject SVG uploads at the edge or convert them with a renderer outside librsvg",
+        "The bug is in XML includes: stripping xi:include elements and entity declarations from incoming SVGs removes the trigger"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://rustsec.org/advisories/RUSTSEC-2026-0305.html",
+        "https://github.com/GNOME/librsvg/releases/tag/2.63.2",
+        "https://github.com/GNOME/librsvg/releases/tag/2.57.5"
+      ]
+    },
+    {
+      "id": "pyjwt-empty-hmac-key",
+      "title": "PyJWT before 2.14.0: HS256/384/512 verification accepts an empty HMAC key from an oct JWK, so a forged token passes (PyJWK / PyJWKClient)",
+      "date": "2026-10-22",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "HMACAlgorithm.from_jwk accepts a symmetric JWK (kty=oct) whose k value is the empty string and returns a zero-length key without raising. Verifying a token with that key object - a PyJWK, or one built by PyJWKSet or PyJWKClient from a JWKS - computes the HMAC with an empty key, so any token an attacker forged with the same empty key verifies: no secret knowledge needed, just reproduce the digest with key b\"\" and set the token's kid to the empty-key JWK. The empty-key rejection that prepare_key gained in 2.13.0 for string and bytes secrets never reached the from_jwk path, and by default a short key only warns (InsecureKeyLengthWarning) instead of failing. The same empty-HMAC-key defect is being closed across the JWT ecosystem (fast-jwt CVE-2026-44351).",
+      "affected": "PyJWT up to 2.13.0 where verification uses JWK or JWKS keys (PyJWK, PyJWKSet, PyJWKClient) with HMAC algorithms HS256/384/512. Applications that pass a plain string or bytes secret to jwt.decode are not affected: that path has rejected empty keys since 2.13.0.",
+      "fixed": [
+        "2.14.0"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "PyJWT",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('PyJWT'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "2.14.0"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'PyJWT>=2.14.0' everywhere tokens are verified, then restart the app workers"
+      ],
+      "mitigation": [
+        "Until upgraded: verify with enforce_minimum_key_length so a short key raises instead of warning, or reject oct JWKs with an empty or short k when you load JWKS",
+        "Prefer passing the HMAC secret as a string or bytes key (that path has rejected empty keys since 2.13.0) over JWK objects",
+        "Rotate signing keys if untrusted JWKS input could reach the verifier"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/jpadilla/pyjwt/security/advisories/GHSA-pxh4-856f-4h89",
+        "https://github.com/jpadilla/pyjwt/releases/tag/2.14.0"
+      ]
+    },
+    {
+      "id": "jupyter-gateway-authz",
+      "title": "Jupyter Server 2.0.0-2.5.0: gateway WebSocket handler skips the kernel execute authorization check (CVE-2026-114135)",
+      "date": "2026-10-22",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114135"
+      ],
+      "summary": "When GatewayClient.url is configured, Jupyter Server replaces the normal kernel channel handler with a gateway-specific one. That handler checks only that the caller is authenticated and never asks the configured Authorizer whether the user may execute on kernels, so an authenticated user who is deliberately denied execute - a read-only or otherwise limited account - can still open a kernel channel and send messages to the upstream kernel, obtaining kernel execution with whatever data and credentials that kernel holds. A missing authorization check, not an authentication bypass: it matters in deployments that use a restrictive custom Authorizer together with Jupyter Gateway or Enterprise Gateway. The 2.6.0 fix routes gateway traffic through GatewayWebSocketConnection instead of replacing the handler; the deprecated handler is still present and must not be registered by hand.",
+      "affected": "jupyter-server 2.0.0 up to 2.5.0 with GatewayClient.url set (Jupyter Gateway / Enterprise Gateway deployments).",
+      "fixed": [
+        "2.6.0"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "jupyter-server",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('jupyter-server'))"
+          ],
+          "line": 1,
+          "min": "2.0.0",
+          "fixed": [
+            "2.6.0"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'jupyter-server>=2.6.0' (or your JupyterLab / Hub distribution's equivalent), then restart the jupyter server or gateway"
+      ],
+      "mitigation": [
+        "Until upgraded: do not register the deprecated gateway WebSocketChannelsHandler yourself, and keep execute-denied users off the gateway's kernel routes at the proxy (authentication is checked, execute rights are not)",
+        "Audit the Authorizer: the gap only matters where authorization is stricter than 'any authenticated user may execute'"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/jupyter-server/jupyter_server/security/advisories/GHSA-354v-3q48-cv69",
+        "https://github.com/jupyter-server/jupyter_server/releases/tag/v2.6.0"
+      ]
+    },
+    {
+      "id": "sentry-tunnel-middleware-bypass",
+      "title": "Sentry-Javascript before 9.47.2 / 10.75.2 / 11.0.0-rc.1: the Next.js tunnel route skips middleware on more than the tunnel path (CVE-2026-114139)",
+      "date": "2026-10-22",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114139"
+      ],
+      "summary": "With tunnelRoute set, the Sentry Next.js SDK sends browser events to a path on your own Next.js server and skips middleware for those envelope requests so the tunnel rewrite can pass them on. The skip was wider than the rewrite: the rewrite only serves the tunnel path itself, but the skip covered everything under it, so a request in that gap - /monitoring/foo for a /monitoring tunnel, or anything a dynamic app/[locale]/ segment matches - reaches your application with middleware never running. Skipping middleware grants no privileges of its own: routes that check the session server-side stay protected. Sentry itself rates the issue Moderate (the setup it needs is narrow); the advisory database rates it critical.",
+      "affected": "@sentry/nextjs 9.36.0 up to 9.47.1, 10.x up to 10.75.1 and 11.0.0 pre-releases up to 11.0.0-rc.0, and only where all of these hold: tunnelRoute is set, the app is built with webpack (Turbopack builds are not affected), some route resolves under the tunnel path, and middleware is the only place that enforces authorization for that route. Sentry's own services and organization data are not affected.",
+      "fixed": [
+        "9.47.2",
+        "10.75.2",
+        "11.0.0-rc.1"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@sentry/nextjs",
+          "package": "@sentry/nextjs",
+          "line": 1,
+          "min": "9.36.0",
+          "fixed": [
+            "9.47.2",
+            "10.75.2",
+            "11.0.0-rc.1"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install @sentry/nextjs@^9.47.2 (or ^10.75.2, or the 11.0.0-rc.1 pre-release) and rebuild; no configuration change is needed"
+      ],
+      "mitigation": [
+        "Until upgraded: set tunnelRoute to a path no route of yours can resolve under, or remove the option",
+        "Build with Turbopack (the default for next build from Next.js 16), which is not affected",
+        "Enforce authorization in the route, layout or data-access path as well as in middleware"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/getsentry/sentry-javascript/security/advisories/GHSA-mchm-gjx6-7h55",
+        "https://github.com/getsentry/sentry-javascript/releases/tag/9.47.2",
+        "https://github.com/getsentry/sentry-javascript/releases/tag/10.75.2"
+      ]
+    },
     {
       "id": "virtualenv-2026-10",
       "title": "virtualenv before 21.14.9: generated activate scripts and pip launchers run commands from an attacker-named path",
