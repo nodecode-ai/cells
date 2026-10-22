@@ -3243,7 +3243,6 @@ function renderSessions() {
     : doing(head) === "ask" || asksUnder.has(head.id) ? "ask" : "done");
   const bandHead = (key, label, n, more) => {
     const li = el("li", `ses-band ${DOING_WORDS[key] ? `is-${key}` : key}`);
-    if (DOING_WORDS[key]) li.append(ball(key));
     li.append(el("span", "", label));
     if (n) li.append(el("span", "n", String(n)));
     if (more) li.append(more);

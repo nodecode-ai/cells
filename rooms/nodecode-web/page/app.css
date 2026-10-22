@@ -2150,6 +2150,9 @@ button.p-row:active { background: var(--field-lit); }
 .chips button[aria-checked="true"] { background: var(--selected); color: var(--primary); }
 .chips .n { font: var(--fs-detail) var(--mono); color: var(--tertiary); font-variant-numeric: tabular-nums; }
 .chips [aria-checked="true"] .n { color: var(--secondary); }
+/* A band head is its words in its state's hue under its rule, no ball: the
+   balls are the rows' (the operator, 2026-10-21: 'remove the green dot, make
+   those separately stand out'). */
 .sessions .ses-band {
   display: flex; gap: 0.6em; margin: 18px 0 2px; padding-left: 16px;
   font: 500 var(--fs-micro)/1.6 var(--micro); letter-spacing: var(--ls-micro); text-transform: uppercase; color: var(--tertiary);

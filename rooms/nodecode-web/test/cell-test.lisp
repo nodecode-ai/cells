@@ -1313,6 +1313,7 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (equal "var(--live)" (funcall value ".ball.is-done" "background")) "done is the green")
     (is (equal "-1" (funcall value ".sessions .row > .ball" "order")) "the ball leads its row")
     (is (equal "1px solid var(--seam-lit)" (funcall value ".sessions .ses-band:not(:first-child)" "border-top")) "a band below another stands apart under its rule")
+    (is (not (search "li.append(ball(key))" render)) "a band head wears no ball: the balls are the rows'")
     (is (search "class=\"chips states\" id=\"states\" role=\"radiogroup\"" html) "a chip a state, the sources' control")
     (is (search "state.doing && state.doing !== key" render) "a chosen state lists its band alone")
     (is (search "at < DONE_ROWS || block.rows.some((entry) => entry.id === state.current)" render) "Done its newest few and the session on screen, until Show all")
