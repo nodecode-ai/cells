@@ -93,17 +93,6 @@
       ]
     },
     {
-      "name": "nodecode-channel-x",
-      "git": "https://github.com/nodecode-ai/cells",
-      "commit": "d197e2da0fa5b489ec0a7dc61133fa634474c921",
-      "path": "rooms/nodecode-channel-x",
-      "description": "Talk to nodecode on X (Twitter): replies under mentions, as a bot account of its own",
-      "license": "MIT",
-      "depends_on": [
-        "nodecode-channel-kit"
-      ]
-    },
-    {
       "name": "nodecode-channel-matrix",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "ca1e7e33f880d6678c1573ca90c42d382580f5a7",
@@ -123,6 +112,18 @@
       "license": "MIT",
       "depends_on": [
         "nodecode-channel-kit"
+      ]
+    },
+    {
+      "name": "nodecode-channel-x",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "d197e2da0fa5b489ec0a7dc61133fa634474c921",
+      "path": "rooms/nodecode-channel-x",
+      "description": "Talk to nodecode over X (Twitter), as a bot account of its own",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode-channel-kit",
+        "sb-concurrency"
       ]
     },
     {
@@ -362,6 +363,17 @@
       "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
       "path": "tools/nodecode-perplexity",
       "description": "Perplexity web search: sign in with a Pro/Max account, or use a key, and search from eval",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ]
+    },
+    {
+      "name": "nodecode-security-audit",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "8050c414cbec466b9876009afc5a7adc10660f2f",
+      "path": "tools/nodecode-security-audit",
+      "description": "Cloudflare's security-audit skill: multi-phase security audits with independently verified, machine-readable findings",
       "license": "MIT",
       "depends_on": [
         "nodecode"

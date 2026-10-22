@@ -63,6 +63,7 @@ is what a new cell is copied from.
 | [`nodecode-perplexity`](tools/nodecode-perplexity) | Perplexity web search: sign in with a Pro/Max account, or use a key, and search from eval. |
 | [`nodecode-prs`](tools/nodecode-prs) | **ships** Pull requests ranked and reviewed minutes after each push. |
 | [`nodecode-qa`](tools/nodecode-qa) | **ships** Anonymous usage counts, one page a week, sent only if you say so. |
+| [`nodecode-security-audit`](tools/nodecode-security-audit) | Cloudflare's security-audit skill: multi-phase security audits with independently verified, machine-readable findings. |
 | [`nodecode-team`](tools/nodecode-team) | **ships** Several sessions work one task together in a shared folder. |
 | [`nodecode-typesafe`](tools/nodecode-typesafe) | TypeSafe: typed judgments over a state (System One), called through eval. |
 | [`nodecode-web-provider`](tools/nodecode-web-provider) | Web search engines: Google, Startpage, DuckDuckGo, Ecosia, Mojeek, SearXNG and their merge, keyless. |
