@@ -2,16 +2,18 @@
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 
-(in-package #:nodecode-security-patches)
+(in-package #:nodecode-cyber-security)
 
-(nlk:define-peripheral security-patches :not-running t)
+(nlk:define-peripheral cyber-security :not-running t)
 
 (defvar *worker* nil "The feed refresher, while the cell runs.")
 
 (defparameter +manual+
-  "security: the last two weeks' breaches and the fix each vendor shipped,
-from a feed the nodecode team keeps current (it refreshes itself; an
-installed copy never goes stale).
+  "security: cyber security for the sites and servers people run -- the last two weeks'
+breaches, the fix each vendor shipped, and checks that say whether a machine still needs
+it. The feed is kept current by the nodecode team (re-scanned every 6 hours, re-read here
+on its own), so this is the first stop for any ask about cyber security, a breach, a CVE
+or exploit in the news, \"is my site/server safe\", or \"check / patch / harden my website\".
 
 (security:report :dir \"/var/www/site\" :host \"example.com\")
     checks THIS machine against every advisory and says what to patch first.
@@ -22,20 +24,34 @@ installed copy never goes stale).
 (security:advisories)       every advisory (hash tables; (security:field a \"id\")).
 (security:refresh)          re-read the live feed now. /security does all of this too.
 
+Checking someone's sites:
+1. Ask which sites, and where each runs: this machine (its folder and host name), another
+   server you can reach over ssh, or only a public URL. Several sites: one report each.
+2. This machine: security:report there. Over ssh: run each advisory's check commands on
+   that server (security:show lists the fix versions; the feed's checks name the commands),
+   or install nodecode there and run the report.
+3. Only a URL: read what the outside shows and say what it cannot. curl -sI https://HOST
+   (Server, X-Powered-By gives the PHP version); the page's <meta name=\"generator\"> (WordPress,
+   Drupal, Joomla version); ?ver= on /wp-content/plugins/SLUG/ assets and
+   /wp-content/plugins/SLUG/readme.txt (Stable tag) for each wp-plugin slug in the feed;
+   the certificate issuer (openssl s_client -connect HOST:443 -servername HOST </dev/null |
+   openssl x509 -noout -issuer) for the eMudhra entry. A hidden version is unknown, not safe.
+4. The report's first line says which feed answered and how old it is; a bundled or stale
+   copy is said out loud.
+
 Patching a site for someone:
-1. Ask where the site lives (its folder, and its host name), run security:report there.
-   A site on another server: run the same detect commands over ssh, or ask them to
-   install nodecode there.
-2. For each PATCH line, read (security:show ID) and say what you will run before you
+1. For each PATCH line, read (security:show ID) and say what you will run before you
    run it: package upgrades, a restart, a config line. Back up config files first.
    Upgrades need sudo and restart services: get a yes for each, never on your own.
-3. If the fix cannot land now, apply the advisory's stopgap and say it is partial.
-4. Re-run security:report; a hit that remains is not done. For the supply-chain and
-   platform entries (LiteLLM, Railway, OpenCode, Zeabur...) the patch is rotating
-   secrets: list which, the person does it.
-5. Signs of compromise listed under an advisory mean: stop and say so before patching
+2. If the fix cannot land now, apply the advisory's stopgap and say it is partial.
+3. Re-run security:report; a hit that remains is not done. For the supply-chain and
+   platform entries (stolen keys, poisoned packages, breached hosts) the patch is
+   rotating secrets: list which, the person does it.
+4. Signs of compromise listed under an advisory mean: stop and say so before patching
    -- patching does not remove a backdoor.
-Never disable TLS verification, a WAF or a security check to make an error go away.")
+Never disable TLS verification, a WAF or a security check to make an error go away.
+The feed covers recent breaches, not a full audit: for a review of the site's own code,
+offer the nodecode-security-audit cell.")
 
 (defun list-text ()
   (with-output-to-string (s)
@@ -67,18 +83,18 @@ Never disable TLS verification, a WAF or a security check to make an error go aw
   (refresh)
   nil)
 
-(nle:define-cell security-patches
-  (:section ("security-patches")
+(nle:define-cell cyber-security
+  (:section ("cyber-security")
     (:guide "nothing is required: the advisory feed is read from the cells repository and refreshed on its own; feed_url points at a mirror, refresh_hours sets how often")
     ("feed_url" :string :default *feed-url* :doc "where the advisory feed is read from")
     ("refresh_hours" :integer :default 6 :min 1 :doc "how often the feed is re-read"))
-  (:help :security "security: the last two weeks' breaches and their patches - (security:report :dir \"/var/www/site\" :host \"example.com\")" +manual+)
+  (:help :security "cyber security, start here for breaches, CVEs, patches or 'check/secure my website or server': (security:report :dir \"/var/www/site\" :host \"example.com\"), then (help :security) for checking and patching a site" +manual+)
   (:command "security" 'run-slash
             :description "Recent breaches and the patch for each; check this machine"
             :argument-hint "[check FOLDER HOST | show ID | refresh]")
   (:start (lambda ()
             (setf *feed-url* (setting :feed-url))
             (load-feed :fetch nil)
-            (setf *worker* (nlk:worker-start "security-patches" 'step-refresh
+            (setf *worker* (nlk:worker-start "cyber-security" 'step-refresh
                                              :wake (* 3600 (setting :refresh-hours)) :prime t))
             (nle:on-stop (lambda () (setf *worker* (nlk:worker-stop *worker*)))))))

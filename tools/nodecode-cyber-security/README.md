@@ -1,10 +1,10 @@
-# nodecode-security-patches
+# nodecode-cyber-security
 
 The last two weeks' breaches, each with the fix its vendor shipped, and a check that
 says whether *this* machine or site still needs it.
 
 ```
-nodecode add nc://nodecode-security-patches
+nodecode add nc://nodecode-cyber-security
 ```
 
 Then ask nodecode to "check my site for the latest breaches", or:
@@ -44,8 +44,15 @@ network does not, and the report's first line always says which copy answered an
 how old it is.
 
 ```jsonc
-"security-patches": { "feed_url": "https://...", "refresh_hours": 6 }  // both optional
+"cyber-security": { "feed_url": "https://...", "refresh_hours": 6 }  // both optional
 ```
+
+## Kept current every 6 hours
+
+The nodecode team's organism re-scans for new breaches and fixes every 6 hours (CISA's
+known-exploited list, GitHub's reviewed advisories, vendor and news posts), edits
+`advisories.json`, and pushes it only when `security:feed-problems` and this cell's tests
+pass. [`UPDATING.md`](UPDATING.md) is the procedure it follows.
 
 ## Patching
 

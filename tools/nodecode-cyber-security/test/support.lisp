@@ -8,8 +8,8 @@
 
 (in-package #:nodecode.test)
 
-(define-test-slice "security-patches" "SECURITY-PATCHES-"
-  :start nodecode-security-patches:start-cell)
+(define-test-slice "cyber-security" "CYBER-SECURITY-"
+  :start nodecode-cyber-security:start-cell)
 
 (defvar *sp-fetch-answer* '(nil 599)
   "(BODY STATUS) the stubbed feed fetch answers.")
@@ -29,16 +29,16 @@ or, for sh -c, by a substring of the script.")
 
 (defmacro with-stubbed-security (&body body)
   "BODY with the feed fetch and the command runner stubbed, and the feed state fresh."
-  `(with-saved-globals (nodecode-security-patches::*fetch* nodecode-security-patches::*run*
-                        nodecode-security-patches::*feed* nodecode-security-patches::*feed-state*
-                        nodecode-security-patches::*feed-url*)
+  `(with-saved-globals (nodecode-cyber-security::*fetch* nodecode-cyber-security::*run*
+                        nodecode-cyber-security::*feed* nodecode-cyber-security::*feed-state*
+                        nodecode-cyber-security::*feed-url*)
      (setf *sp-fetch-answer* '(nil 599)
            *sp-outputs* '()
-           nodecode-security-patches::*feed* nil
-           nodecode-security-patches::*feed-state* (list :source :none)
-           nodecode-security-patches::*fetch* (lambda (url) (declare (ignore url))
+           nodecode-cyber-security::*feed* nil
+           nodecode-cyber-security::*feed-state* (list :source :none)
+           nodecode-cyber-security::*fetch* (lambda (url) (declare (ignore url))
                                                 (values-list *sp-fetch-answer*))
-           nodecode-security-patches::*run* 'sp-run)
+           nodecode-cyber-security::*run* 'sp-run)
      ,@body))
 
 (defun sp-check (json)

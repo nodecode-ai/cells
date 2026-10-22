@@ -23,7 +23,7 @@
 ;;;; the first LINE parts of a version: 2 by default (PHP 8.3, GitLab 19.4),
 ;;;; 1 where a project numbers its lines by major alone (Node 24).
 
-(in-package #:nodecode-security-patches)
+(in-package #:nodecode-cyber-security)
 
 (defun run-command (argv)
   "Run ARGV with no shell of ours => (VALUES OUTPUT EXIT). A program that

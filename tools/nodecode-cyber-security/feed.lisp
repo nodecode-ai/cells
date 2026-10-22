@@ -11,10 +11,10 @@
 ;;;; FEED-STATUS says which copy answered and how old it is, so a stale
 ;;;; answer is never silent.
 
-(in-package #:nodecode-security-patches)
+(in-package #:nodecode-cyber-security)
 
 (defparameter *feed-url*
-  "https://raw.githubusercontent.com/nodecode-ai/cells/main/tools/nodecode-security-patches/advisories.json"
+  "https://raw.githubusercontent.com/nodecode-ai/cells/main/tools/nodecode-cyber-security/advisories.json"
   "Where the live feed lives: the cells repository's main branch.")
 
 (defparameter *feed-timeout* 15 "One fetch's ceiling, in seconds.")
@@ -34,7 +34,7 @@
 
 (defun packaged-path ()
   "The advisories.json shipped beside this file."
-  (asdf:system-relative-pathname "nodecode-security-patches" "advisories.json"))
+  (asdf:system-relative-pathname "nodecode-cyber-security" "advisories.json"))
 
 (defun field (entry key &optional default)
   "ENTRY's KEY, a vector of values as a list, or DEFAULT."

@@ -2,7 +2,7 @@
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 
-(defpackage #:nodecode-security-patches
+(defpackage #:nodecode-cyber-security
   (:use #:cl)
   (:nicknames #:security)
   (:export
@@ -11,5 +11,7 @@
    #:packaged-entries #:load-feed
    ;; the checks
    #:check #:report #:show #:run-slash
+   ;; publishing the feed
+   #:feed-problems
    ;; start (defined by NLE:DEFINE-CELL)
    #:start-cell #:stop-cell))

@@ -2,7 +2,7 @@
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 
-(in-package #:nodecode-security-patches)
+(in-package #:nodecode-cyber-security)
 
 (defparameter +rank+ '(:vulnerable 0 :error 1 :skipped 2 :manual 3 :ok 4 :absent 5)
   "How a status sorts in a report: what needs a hand first.")
