@@ -9,7 +9,7 @@
 ;;;; refreshed at runtime, so an installed copy never goes stale.
 
 (defsystem "nodecode-cyber-security"
-  :description "The last two weeks' breaches, each with the fix its vendor shipped"
+  :description "Cyber security: the latest breaches and the fix for each, re-scanned every 6 hours; checks your server and website and walks you through patching"
   :license "MIT"
   :version "0.1.0"
   :depends-on ("nodecode")
