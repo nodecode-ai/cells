@@ -1,8 +1,394 @@
 {
   "format": 1,
-  "updated": "2026-10-22T16:21:12Z",
+  "updated": "2026-10-22T22:20:51Z",
   "window": "2026-10-08 to 2026-10-22",
   "advisories": [
+    {
+      "id": "next-use-cache-rce",
+      "title": "Next.js 16.0.0-16.4.0: unauthenticated RCE in `use cache` functions returning typed arrays",
+      "date": "2026-10-22",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [],
+      "summary": "An application using the App Router with Cache Components can be driven to remote code execution through a use cache function that returns multiple typed arrays. No authentication is needed, and Vercel publishes no workaround for applications that have such functions: upgrade immediately even if yours does not look like the shape they name. This is the third Next.js advisory in this feed this week, after the Image Optimization RCE and the Server Actions DoS (nextjs-2026-10); 16.4.1 carries all three fixes.",
+      "affected": "next 16.0.0 up to 16.4.0, when the app uses App Router with Cache Components and has a use cache function returning multiple typed arrays.",
+      "fixed": [
+        "16.4.1"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "next",
+          "package": "next",
+          "line": 1,
+          "min": "16.0.0",
+          "fixed": [
+            "16.4.1"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install next@^16.4.1, rebuild and redeploy"
+      ],
+      "mitigation": [
+        "No workaround is published for affected applications - upgrading is the only fix, and Vercel says to do it even when you think you have no such function",
+        "While planning the upgrade, audit use cache functions that return multiple typed arrays"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/vercel/next.js/security/advisories/GHSA-673q-mjm6-r5xr",
+        "https://github.com/vercel/next.js/releases/tag/v16.4.1"
+      ]
+    },
+    {
+      "id": "dompurify-3-4-17",
+      "title": "DOMPurify before 3.4.17: SAFE_FOR_TEMPLATES bypass through shadow root content, and armed handlers in hook-detached subtrees",
+      "date": "2026-10-22",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [],
+      "summary": "Two sanitization gaps closed in one release. With SAFE_FOR_TEMPLATES and a DOM-returning mode (RETURN_DOM, RETURN_DOM_FRAGMENT or IN_PLACE), template expressions like {{...}}, ${...} and <%...%> split across text nodes inside an attached shadow root survive sanitization: DOMPurify's final normalize-and-re-scrub pass never descends into shadow trees (per DOM spec, neither normalize() nor NodeIterator does), so once the disallowed elements between the fragments are removed they join into an expression a downstream template engine evaluates - cross-site scripting client-side, template injection server-side. Second: in IN_PLACE mode a hook that removes a node other than itself - its parent or a later sibling - leaves that detached subtree unvisited and un-neutralized, so event handlers on it stay armed and an img onerror already loading fires after sanitize() returns (an incomplete fix for GHSA-p98j-92pf-mc4p).",
+      "affected": "dompurify up to 3.4.16. The shadow-root bypass needs SAFE_FOR_TEMPLATES together with RETURN_DOM, RETURN_DOM_FRAGMENT or IN_PLACE and attacker-influenced DOM nodes carrying an attached shadow root (3.4.4+); the handler gap needs IN_PLACE with hooks that remove a parent or sibling (tested on 2.5.8 through 3.4.16).",
+      "fixed": [
+        "3.4.17"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "dompurify",
+          "package": "dompurify",
+          "line": 1,
+          "fixed": [
+            "3.4.17"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install dompurify@^3.4.17 and rebuild"
+      ],
+      "mitigation": [
+        "Until upgraded: do not feed DOM nodes with shadow roots into a SAFE_FOR_TEMPLATES configuration",
+        "Do not trust an IN_PLACE hook that removes a parent or sibling to neutralize what it detached - scrub that subtree yourself before removing it"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/cure53/DOMPurify/security/advisories/GHSA-cg2g-xh64-v4q7",
+        "https://github.com/cure53/DOMPurify/security/advisories/GHSA-mrv2-3pqr-j5jr",
+        "https://github.com/cure53/DOMPurify/releases/tag/3.4.17"
+      ]
+    },
+    {
+      "id": "gitpython-submodule-git",
+      "title": "GitPython before 3.2.1: create_submodule clones into .git/hooks before the path check, planting a git hook (RCE)",
+      "date": "2026-10-22",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114145"
+      ],
+      "summary": "create_submodule(name, path, url) clones the submodule before it rejects the destination path. A path of .git/hooks passes the pre-clone check, so the clone lands in the repository's live hooks directory and a file named post-checkout in the submodule becomes an executable .git/hooks/post-checkout - code execution at the next git operation. On 3.2.0 the later index check does raise, but only after the clone wrote to disk and without removing the planted hook; on 3.1.x nothing checks and the call succeeds silently. Reachable wherever an application hands an attacker-influenced path or URL to Submodule.add()/create_submodule() - repo tooling, web UIs that add submodules, CI utilities.",
+      "affected": "GitPython 3.1.x and 3.2.0 (fixed in 3.2.1).",
+      "fixed": [
+        "3.2.1"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "GitPython",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('gitpython'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "3.2.1"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'GitPython>=3.2.1' wherever submodules are added through it, then restart the services using it"
+      ],
+      "mitigation": [
+        "Until upgraded: never pass an untrusted path or URL to Submodule.add()/create_submodule(); add submodules through the git CLI after reviewing the path"
+      ],
+      "iocs": [
+        "a git hook you did not write appearing under .git/hooks of a repository this library manages"
+      ],
+      "sources": [
+        "https://github.com/gitpython-developers/GitPython/security/advisories/GHSA-83vg-56qc-22m7",
+        "https://github.com/gitpython-developers/GitPython/releases/tag/3.2.1"
+      ]
+    },
+    {
+      "id": "toml-node-prototype-pollution",
+      "title": "toml (toml-node) before 5.0.1: parsing a crafted TOML document writes to Object.prototype",
+      "date": "2026-10-22",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114142"
+      ],
+      "summary": "The 4.1.2 fix for CVE-2026-63376 is bypassable: the path-key encoding is still ambiguous (a quote plays the dot's role, and a quote inside a segment is never escaped), a table-array header can clear another key's guard bookkeeping, and the assign() descent has no owned-container check - a TOML datetime is a Date object whose prototype chain reaches Object.prototype. A four-line TOML document parsed with toml.parse() writes a property onto Object.prototype where every object in the process sees it, including objects from unrelated libraries - the classic prototype pollution foothold. (The npm package is toml; the advisory record lists it as tome.)",
+      "affected": "toml up to 5.0.0 (npm package toml, the BinaryMuse/toml-node parser).",
+      "fixed": [
+        "5.0.1"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "toml",
+          "package": "toml",
+          "line": 1,
+          "fixed": [
+            "5.0.1"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install toml@^5.0.1 wherever TOML is parsed with toml.parse(), then restart"
+      ],
+      "mitigation": [
+        "Until upgraded: do not parse TOML from untrusted sources with this package - JSON or a validated parser avoids the whole class"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/BinaryMuse/toml-node/security/advisories/GHSA-h895-cgqg-jf52",
+        "https://github.com/BinaryMuse/toml-node/releases/tag/v5.0.1"
+      ]
+    },
+    {
+      "id": "graphql-tools-prototype-pollution",
+      "title": "@graphql-tools/utils before 12.0.2: prototype pollution in mergeIncrementalResult via non-primitive path segments",
+      "date": "2026-10-22",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114604"
+      ],
+      "summary": "mergeIncrementalResult merges an incremental GraphQL response part into the accumulated result by walking ['data', ...path] and writing at the resolved location. setObjectKeyPath blocks __proto__, constructor and prototype by strict string equality but never checks that a path segment is a primitive string or number, so a segment like a ['__proto__'] array slips past the guard and lands a write on Object.prototype. No options are involved: the vulnerable path is on by default. An attacker who influences an incremental (defer/stream) response can pollute the prototype of a GraphQL server or client process.",
+      "affected": "@graphql-tools/utils 10.10.1 up to 12.0.1 (10.10.0 and older do not carry the vulnerable code). The fix ships only on the 12.x line.",
+      "fixed": [
+        "12.0.2"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@graphql-tools/utils",
+          "package": "@graphql-tools/utils",
+          "line": 1,
+          "min": "10.10.1",
+          "fixed": [
+            "12.0.2"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install @graphql-tools/utils@^12.0.2 - a major bump from 10.x/11.x; move the other @graphql-tools/* packages with it - then rebuild and redeploy"
+      ],
+      "mitigation": [
+        "Until upgraded: do not merge incremental GraphQL results from untrusted subgraphs or executors; validate that response paths contain only strings before incremental merging"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/ardatan/graphql-tools/security/advisories/GHSA-c4qx-w738-7hr3",
+        "https://github.com/ardatan/graphql-tools/releases/tag/@graphql-tools/utils@12.0.2"
+      ]
+    },
+    {
+      "id": "nbconvert-path-traversal",
+      "title": "nbconvert before 7.17.2: arbitrary file write through cell output filenames (path traversal when exporting)",
+      "date": "2026-10-22",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114140"
+      ],
+      "summary": "ExtractOutputPreprocessor joins an attacker-controlled filename attribute from ipynb cell output metadata onto output_files_dir with no canonicalization check, so converting a malicious notebook writes attacker-chosen data to attacker-chosen paths - the report's example overwrites targets reached through ../ traversal, such as authorized_keys. Vulnerable exports: --to markdown, latex, rst and asciidoc. A sibling of GHSA-4c99-qj7h-p3vg. Any service, CI job or doc pipeline that converts notebooks it did not author is the exposure; running the cells in Jupyter first would overwrite the malicious output and hide it.",
+      "affected": "nbconvert 5.4.0 up to 7.17.1.",
+      "fixed": [
+        "7.17.2"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "nbconvert",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('nbconvert'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "7.17.2"
+          ],
+          "min": "5.4.0"
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'nbconvert>=7.17.2' on every host that converts notebooks (Jupyter servers, CI images, doc pipelines)"
+      ],
+      "mitigation": [
+        "Until upgraded: do not run nbconvert on .ipynb files you did not author; strip output metadata (the filename attributes) from untrusted notebooks before converting"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/jupyter/nbconvert/security/advisories/GHSA-pjvx-prjx-h659",
+        "https://github.com/jupyter/nbconvert/releases/tag/v7.17.2"
+      ]
+    },
+    {
+      "id": "black-action-required-version",
+      "title": "Black before 26.10.1: its GitHub Action installs an unvalidated required-version from pyproject.toml (RCE via pull request)",
+      "date": "2026-10-22",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114134"
+      ],
+      "summary": "The GitHub Action bundled with Black reads tool.black.required-version from pyproject.toml when use_pyproject is true and installs that value as the Black version without validating it, so a pull request that edits pyproject.toml can point the action at a malicious repository and run its code in the context of the victim's repository - the same class as CVE-2026-31900. Anyone running psf/black's action with use_pyproject: true on pull_request events is exposed, and the attacker only needs to open a PR.",
+      "affected": "The bundled GitHub Action in Black releases before 26.10.1, in workflows that set use_pyproject: true.",
+      "fixed": [
+        "26.10.1"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "black",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('black'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "26.10.1"
+          ]
+        }
+      ],
+      "patch": [
+        "In every workflow using psf/black's action, pin it to 26.10.1 or newer (uses: psf/black@26.10.1 or a tag you verified); pip install --upgrade 'black>=26.10.1' where Black is used from PyPI"
+      ],
+      "mitigation": [
+        "Until the action pin is fixed: stop setting use_pyproject: true (then the required-version path is not read), or require approval for pull_request runs from forks and protect pyproject.toml with CODEOWNERS"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/psf/black/security/advisories/GHSA-cg8m-r9f2-5wm2",
+        "https://github.com/psf/black/releases/tag/26.10.1"
+      ]
+    },
+    {
+      "id": "djangorestframework-3-18-2",
+      "title": "Django REST framework before 3.18.2: silent no-op token revocation, an Accept-header CPU denial of service, and request-stream codec injection",
+      "date": "2026-10-22",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114137",
+        "CVE-2026-114138",
+        "CVE-2026-114136"
+      ],
+      "summary": "Three bugs, one upgrade. TokenProxy.delete() reports success and revokes nothing: its pk returns the user id and Model.delete() matches that against the 40-character key column, so every caller that revokes a token through TokenProxy - anything outside the shipped admin, which re-fetches the concrete row - believes a live credential is gone (CVE-2026-114137). A crafted Accept header of many large quoted parameters burns about 19 seconds of CPU per unauthenticated request in content negotiation; two concurrent requests stop a default two-worker deployment answering (CVE-2026-114138). And JSONParser applies an attacker-named codec from the Content-Type charset parameter to the request stream: charset=bz2_codec turns a 108-byte body into a 50-million-character value inside the view, defeating DATA_UPLOAD_MAX_MEMORY_SIZE and ballooning worker memory (CVE-2026-114136).",
+      "affected": "djangorestframework up to 3.18.1: the codec injection from 3.6.4, TokenProxy.delete() from 3.12.0, the Accept-header DoS per the record in all of < 3.18.2. The shipped TokenAdmin path is not affected by the revocation bug.",
+      "fixed": [
+        "3.18.2"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "djangorestframework",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('djangorestframework'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "3.18.2"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'djangorestframework>=3.18.2', then restart the app workers"
+      ],
+      "mitigation": [
+        "Until upgraded: revoke tokens through the concrete model (Token.objects.get(key=...).delete()), never TokenProxy.delete(), and re-check anything your scripts believe they revoked since 3.12.0",
+        "Cap request header sizes at the proxy and reject Content-Type charset values that are not plain text codecs",
+        "Rotate any token whose revocation you cannot prove"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/encode/django-rest-framework/security/advisories/GHSA-xw6w-gcfp-cf8m",
+        "https://github.com/encode/django-rest-framework/security/advisories/GHSA-33wh-fxxf-88vv",
+        "https://github.com/encode/django-rest-framework/security/advisories/GHSA-3547-9m27-7rxg",
+        "https://github.com/encode/django-rest-framework/releases/tag/3.18.2"
+      ]
+    },
+    {
+      "id": "opencode-skills-collection-malware",
+      "title": "Malware in opencode-skills-collection (npm): agent skill collection releases carry malicious code",
+      "date": "2026-10-22",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "Releases of the opencode-skills-collection npm package - an OpenCode CLI plugin that downloads and keeps agent skills up to date - are malware (CWE-506, embedded malicious code). GitHub's advisory carries no patched version and no source to review. Agent-skill packages run with the privileges of the agent that loads them, which on a developer or CI machine means the keys in its environment: the poisoned releases sit in the 4.0.56-4.1.20 range the advisory lists, and the advisory's standing advice is that any computer that installed the package is fully compromised.",
+      "affected": "opencode-skills-collection 4.0.56, 4.0.57, 4.0.77 and 4.1.0 through 4.1.20 (the releases the advisory lists). There is no clean upgrade: the package should be removed.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "opencode-skills-collection",
+          "package": "opencode-skills-collection",
+          "line": 1,
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall opencode-skills-collection; delete it from lockfiles and CI images)",
+        "Treat the machine as compromised: rotate every secret and key it held, from a different machine, and rebuild from a clean image - removing the package does not guarantee the machine is clean"
+      ],
+      "mitigation": [],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-9855-prwc-mfp2",
+        "https://www.npmjs.com/package/opencode-skills-collection"
+      ]
+    },
+    {
+      "id": "agentic-awesome-skills-malware",
+      "title": "Malware in agentic-awesome-skills (npm): agent skill collection releases carry malicious code",
+      "date": "2026-10-22",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "Releases of the agentic-awesome-skills npm package - AAS Core, a local collection of 2700+ agentic skills that agents discover and load - are malware (CWE-506, embedded malicious code), with no patched version and no source to review. A skill collection runs with the privileges of the agent that loads it: on a developer or CI machine that is the whole key environment. The advisory lists the poisoned releases across 18.9.0-18.14.0 and 19.0.0-19.13.0, and its standing advice is that any computer that installed the package is fully compromised.",
+      "affected": "agentic-awesome-skills 18.9.0 through 18.14.0 and 19.0.0 through 19.13.0 (the releases the advisory lists). There is no clean upgrade: the package should be removed.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "agentic-awesome-skills",
+          "package": "agentic-awesome-skills",
+          "line": 1,
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall agentic-awesome-skills; delete it from lockfiles and CI images)",
+        "Treat the machine as compromised: rotate every secret and key it held, from a different machine, and rebuild from a clean image - removing the package does not guarantee the machine is clean"
+      ],
+      "mitigation": [],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-rgwm-3jj9-h563",
+        "https://www.npmjs.com/package/agentic-awesome-skills"
+      ]
+    },
     {
       "id": "nextjs-2026-10",
       "title": "Next.js before 15.5.28 / 16.4.1: unauthenticated RCE through Image Optimization with SVG, and a Server Actions denial of service",
