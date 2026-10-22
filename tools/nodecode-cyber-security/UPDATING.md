@@ -9,7 +9,7 @@ same way. Every installed copy reads `advisories.json` from `main` within
 
 ```sh
 FEED=~/.nodecode/cyber-security-feed
-[ -d "$FEED/.git" ] || git clone -q https://github.com/nodecode-ai/cells "$FEED"
+[ -d "$FEED/.git" ] || git clone -q git@github.com:nodecode-ai/cells.git "$FEED"   # ssh: the push needs write access
 cd "$FEED" && git fetch -q origin && git checkout -q -B main origin/main
 ```
 
