@@ -21,6 +21,35 @@
   "Characters per message when an answer is split: half of a rich message's
 32768, leaving room for the entities and line breaks RICH-MARKDOWN adds.")
 
+(defparameter +telegram-caption-limit+ 1024
+  "UTF-16 code units a media message's caption holds — the count the Bot API
+keeps, an astral character costing two. A text message holds far more, so an
+answer whose words outrun this keeps a clipped caption on its file and goes
+on in text messages after it: the Bot API refuses the whole call — the
+picture among it — when a caption does not fit.")
+
+(defun clip-caption (text limit)
+  "(values CAPTION REST): the longest head of TEXT that fits LIMIT UTF-16
+code units, cut back to its last line break, else its last space, when one
+falls in the half it keeps, and the words it left; both trimmed."
+  (let ((units 0)
+        (cut 0))
+    (loop for index from 0 below (length text)
+          for size = (if (> (char-code (aref text index)) #xffff) 2 1)
+          while (<= (+ units size) limit)
+          do (incf units size)
+          do (setf cut (1+ index)))
+    (if (>= cut (length text))
+        (values text "")
+        ;; A cut inside a word reads as a typo in a caption, so it backs up
+        ;; to the last line break, else the last space, it can keep.
+        (let* ((floor (truncate cut 2))
+               (break (or (position #\Newline text :start floor :end cut :from-end t)
+                          (position #\Space text :start floor :end cut :from-end t)))
+               (head (subseq text 0 (or break cut))))
+          (values (string-right-trim '(#\Space #\Tab) head)
+                  (string-left-trim '(#\Space #\Tab #\Newline) (subseq text (or break cut))))))))
+
 (defun target-body (target &aux (thread (getf target :thread-id)))
   (nlk:json-object "chat_id" (getf target :channel-id)
                    :when thread
@@ -243,9 +272,66 @@ saying the same."
                  (when (and next (not (blank-line-p line)) (not (blank-line-p next)))
                    (write-string "  " out)))))))))
 
+(defun media-group-plan (target files caption reply-to timeout-seconds)
+  "One sendMediaGroup carrying FILES, CAPTION above the first of them — all
+photos only when every file's bytes render inline."
+  (let* ((paths (mapcar #'pathname files))
+         (photos-p (every #'telegram-image-file-p paths))
+         (media (coerce
+                 (loop for index from 0 below (length paths)
+                       collect (nlk:json-object
+                                "type" (if photos-p "photo" "document")
+                                "media" (format nil "attach://file~d" index)
+                                :when (and (zerop index) (plusp (length caption)))
+                                "caption" caption))
+                 'vector)))
+    (bot-plan "/sendMediaGroup"
+              (append (upload-parts target reply-to)
+                      (list (cons "media" (nlk:encode-json-object media)))
+                      (loop for path in paths
+                            for index from 0
+                            collect (cons (format nil "file~d" index) path)))
+              timeout-seconds t "send_media_group")))
+
+(defun message-plan (target chunk &key reply-to ping controls mentions card label
+                                         (timeout-seconds 60))
+  "One sendRichMessage of CHUNK's words — CARD's HTML when CARD, its pictures
+left out — its CONTROLS inside it."
+  (let ((body (target-body target)))
+    (setf (gethash "rich_message" body) (rich-message chunk.text card controls))
+    (when (and reply-to (= 1 chunk.index))
+      (setf (gethash "reply_parameters" body) (reply-parameters reply-to)))
+    (unless (or ping mentions)
+      (setf (gethash "disable_notification" body) t))
+    (when (and controls (not card))
+      (setf (gethash "reply_markup" body) (controls-markup controls)))
+    (bot-plan "/sendRichMessage" body timeout-seconds t
+              (let ((label (or label "send_rich_message")))
+                (if (> chunk.total 1)
+                    (format nil "~a_chunk_~a_of_~a" label chunk.index chunk.total)
+                    label)))))
+
+(defun continuation-plans (target text &key ping controls mentions (timeout-seconds 60))
+  "The plans for TEXT — the words a media message's caption could not hold —
+as text messages after the file that carries the answer, CONTROLS on the
+last."
+  ;; Neither replies to the ask nor notifies again: the file is the answer's
+  ;; first message, and its face. A text message holds far more than a
+  ;; caption, so this is where an answer's words are never lost.
+  (when (plusp (length (string-trim '(#\Space #\Tab #\Newline) text)))
+    (loop for chunk in (split-text-chunks text +telegram-message-text-limit+)
+          for last = (= chunk.index chunk.total)
+          collect (message-plan target chunk
+                                :ping ping
+                                :controls (and last controls)
+                                :mentions mentions
+                                :label "answer_continuation"
+                                :timeout-seconds timeout-seconds))))
+
 (defun send-message-plan (target chunk &key reply-to ping controls files mentions card panel media
                                              (timeout-seconds 60))
-  "One sendRichMessage of CHUNK (a kit text-chunk) or of a turn's CARD."
+  "The plans for CHUNK (a kit text-chunk) or of a turn's CARD: its file first,
+then the words a media message's caption could not hold."
   ;; CHUNK's words go as rich Markdown (RICH-MARKDOWN); a CARD as its HTML
   ;; (CARD-HTML), its CONTROLS inside it and its pictures (MEDIA) left out; a
   ;; command's PANEL as its words.
@@ -263,44 +349,31 @@ saying the same."
   ;; the message's inline keyboard; an empty list posts it buttonless. FILES —
   ;; the answer's own picture — ride the first chunk too: one file as the
   ;; caption-carrying file message, several as one media group, so the message
-  ;; that carries the answer carries the picture, its caption plain text. A
-  ;; rich message unfurls no link, so a link stays a link.
+  ;; that carries the answer carries the picture. A rich message unfurls no
+  ;; link, so a link stays a link.
   (if (and files (= 1 chunk.index))
-      (if (rest files)
-          ;; One sendMediaGroup: all photos only when every file's bytes render inline.
-          (let* ((paths (mapcar #'pathname files))
-                 (photos-p (every #'telegram-image-file-p paths))
-                 (media (coerce
-                         (loop for index from 0 below (length paths)
-                               collect (nlk:json-object
-                                        "type" (if photos-p "photo" "document")
-                                        "media" (format nil "attach://file~d" index)
-                                        :when (zerop index)
-                                        "caption" chunk.text))
-                         'vector)))
-            (bot-plan "/sendMediaGroup"
-                      (append (upload-parts target reply-to)
-                              (list (cons "media" (nlk:encode-json-object media)))
-                              (loop for path in paths
-                                    for index from 0
-                                    collect (cons (format nil "file~d" index) path)))
-                      timeout-seconds t "send_media_group"))
-          (telegram-file-plan target (first files)
-                              :content chunk.text
-                              :reply-to reply-to
-                              :timeout-seconds timeout-seconds))
-      (let ((body (target-body target)))
-        (setf (gethash "rich_message" body) (rich-message chunk.text card controls))
-        (when (and reply-to (= 1 chunk.index))
-          (setf (gethash "reply_parameters" body) (reply-parameters reply-to)))
-        (unless (or ping mentions)
-          (setf (gethash "disable_notification" body) t))
-        (when (and controls (not card))
-          (setf (gethash "reply_markup" body) (controls-markup controls)))
-        (bot-plan "/sendRichMessage" body timeout-seconds t
-                  (if (> chunk.total 1)
-                      (format nil "send_rich_message_chunk_~a_of_~a" chunk.index chunk.total)
-                      "send_rich_message")))))
+      ;; A media message's caption holds a quarter of what a text message
+      ;; does, and the Bot API refuses the whole upload — picture and all —
+      ;; for one over +TELEGRAM-CAPTION-LIMIT+ (400 "message caption is too
+      ;; long"), which is how an answer carrying a picture used to be lost
+      ;; whole. So the caption is the head of the answer that fits, and the
+      ;; words it could not hold follow as text messages.
+      (multiple-value-bind (caption rest)
+          (clip-caption chunk.text +telegram-caption-limit+)
+        (cons (if (rest files)
+                  (media-group-plan target files caption reply-to timeout-seconds)
+                  (telegram-file-plan target (first files)
+                                       :content caption
+                                       :reply-to reply-to
+                                       :timeout-seconds timeout-seconds))
+              (continuation-plans target rest
+                                  :ping ping
+                                  :controls (and (= chunk.index chunk.total) controls)
+                                  :mentions mentions
+                                  :timeout-seconds timeout-seconds)))
+      (list (message-plan target chunk :reply-to reply-to :ping ping :controls controls
+                          :mentions mentions :card card
+                          :timeout-seconds timeout-seconds))))
 
 (defun telegram-image-file-p (pathname)
   "Whether PATHNAME's bytes open an image the platform renders inline: the

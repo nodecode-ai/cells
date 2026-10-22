@@ -313,8 +313,8 @@ when there is none yet or it was deleted."
               ;; Only a message that is gone is posted again: any other refusal
               ;; keeps the one board, and the next pass tries the edit again.
               ((or (null edited) (message-gone-p edited))
-               (let ((posted (board-execute board (send-message-plan target (first (split-text-chunks text +telegram-message-text-limit+))
-                                                                     :controls controls))))
+               (let ((posted (board-execute board (first (send-message-plan target (first (split-text-chunks text +telegram-message-text-limit+))
+                                                                           :controls controls)))))
                  (if (execution-ok-p posted)
                      (let ((new (telegram-message-id (execution-body posted))))
                        (setf (telegram-board-message-id board) new (telegram-board-sent board) said)
@@ -340,11 +340,11 @@ topic -- or NIL for any other press."
                  (done (board-section-rows rows :done))
                  (closer (and (equal data "nct:board:done") (operator-p host user)))
                  (said (cond ((equal data "nct:board:all")
-                              (let ((sent (board-execute board (send-message-plan
-                                                                (list :channel-id user)
-                                                                (first (split-text-chunks
-                                                                        (board-list-text rows #'telegram-board-line)
-                                                                        +telegram-message-text-limit+))))))
+                              (let ((sent (board-execute board (first (send-message-plan
+                                                                        (list :channel-id user)
+                                                                        (first (split-text-chunks
+                                                                                (board-list-text rows #'telegram-board-line)
+                                                                                +telegram-message-text-limit+)))))))
                                 (if (execution-ok-p sent)
                                     "Every open topic is in your chat with the bot."
                                     "Open a chat with the bot first: Telegram lets a bot write only to who wrote to it.")))

@@ -64,7 +64,7 @@ executor records into."
     (let* ((target '(:channel-id "-100555" :thread-id "7"))
            (answer (nct:telegram-message-id
                     (nck:execution-body
-                     (board-test-say adapter (nct:send-message-plan target (first (nck:split-text-chunks (format nil "It was the pin.~%~%Push it now?") 4000))))))))
+                     (board-test-say adapter (send-plan target (first (nck:split-text-chunks (format nil "It was the pin.~%~%Push it now?") 4000))))))))
       ;; A turn's card: its HTML, the chrome over the words.
       (board-test-say adapter (nct::bot-plan "/sendRichMessage"
                                              (nlk:json-object "chat_id" "-100555" "message_thread_id" 7
@@ -99,7 +99,7 @@ executor records into."
   ;; nothing; one that does edits the same message.
   (with-test-board (board adapter plans)
     (board-test-say adapter (nct::topic-plan '(:channel-id "-100555") "Fix the build"))
-    (board-test-say adapter (nct:send-message-plan '(:channel-id "-100555" :thread-id "7")
+    (board-test-say adapter (send-plan '(:channel-id "-100555" :thread-id "7")
                                                    (first (nck:split-text-chunks "Fixed." 4000))))
     (setf (car plans) '())
     (nct:telegram-board-pass board)
@@ -128,7 +128,7 @@ executor records into."
   ;; A done topic quiet 48 hours is closed by the pass and leaves the board.
   (with-test-board (board adapter plans)
     (board-test-say adapter (nct::topic-plan '(:channel-id "-100555") "Fix the build"))
-    (board-test-say adapter (nct:send-message-plan '(:channel-id "-100555" :thread-id "7")
+    (board-test-say adapter (send-plan '(:channel-id "-100555" :thread-id "7")
                                                    (first (nck:split-text-chunks "Fixed." 4000))))
     (let ((record (gethash "-100555:7" (nct:telegram-board-topics board))))
       (setf (getf record :said) 0 (getf record :opened) 0

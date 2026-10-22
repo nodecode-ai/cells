@@ -363,13 +363,17 @@ rides the first chunk, drawn where the platform draws one."
                             for spelling = (funcall (platform-mention host.platform) id)
                             when spelling collect spelling))
              (chunks (split-text-chunks (format nil "~{~a ~}~a" spelled text) host.text-limit))
+             ;; A platform whose media message holds fewer words than its text
+             ;; message answers one chunk with several plans — the file, then
+             ;; what its caption could not hold — so this is a flattening.
              (plans (loop for chunk in chunks
-                          collect (host-plan host #'platform-plan-message target chunk
+                          append (alexandria:ensure-list
+                                  (host-plan host #'platform-plan-message target chunk
                                              :reply-to reply-to :ping ping
                                              :controls (and (= chunk.index chunk.total) controls)
                                              :mentions mentions
                                              :files (and (= 1 chunk.index) files)
-                                             :panel (and (= 1 chunk.index) panel))))
+                                             :panel (and (= 1 chunk.index) panel)))))
              (id-of (platform-message-id-of host.platform))
              ((delivered results error) (execute-delivery plans host.executor)))
     (unless (or delivered (null what))
@@ -1319,11 +1323,12 @@ REFUSED), MEDIA what the message holds of the card's pictures (MEDIA-OF),
 REFUSED whether the platform refused the request itself (a 4xx, not a rate
 limit), so the same post would be refused again."
   ;; One message, never chunks: a card is a few lines, and the platform that
-  ;; posts its words posts them whole.
+  ;; posts its words posts them whole — the first plan of what it answers.
   (let ((result (execute-plan host.executor
-                              (host-plan host #'platform-plan-message target
-                                         (make-text-chunk :text (nlk:clip (card-text card) (1- host.text-limit) :ellipsis "…"))
-                                         :reply-to reply-to :controls controls :card card))))
+                              (first (alexandria:ensure-list
+                                      (host-plan host #'platform-plan-message target
+                                                 (make-text-chunk :text (nlk:clip (card-text card) (1- host.text-limit) :ellipsis "…"))
+                                                 :reply-to reply-to :controls controls :card card))))))
     (values result.ok-p
             (and result.ok-p (funcall (platform-message-id-of host.platform) result.body))
             result.error

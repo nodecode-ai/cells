@@ -6,6 +6,12 @@
 
 (nlk:access (document nck::request-plan) (photo nck::request-plan) (second-plan nck::request-plan))
 
+(defun send-plan (&rest args)
+  "The first plan SEND-MESSAGE-PLAN answers for one chunk — the file, when the
+chunk carries one; a long answer answers with more (see
+CHANNEL-TELEGRAM-CAPTION-SPLITS-A-LONG-ANSWER)."
+  (first (apply #'nct:send-message-plan args)))
+
 (defun telegram-wrapped (plan body &optional (status 200))
   "PLAN executed through WRAP-TELEGRAM-EXECUTOR over a recording executor
 that answers STATUS with BODY."
@@ -14,20 +20,20 @@ that answers STATUS with BODY."
                     plan))
 
 (deftest channel-telegram-message-plans ()
-  (let ((plan (nct:send-message-plan '(:channel-id "555" :thread-id "33")
+  (let ((plan (send-plan '(:channel-id "555" :thread-id "33")
                                      (first-chunk "hello") :ping t)))
     (is-plan plan :path "/sendRichMessage" :retry t :label "send_rich_message" "chat_id" "555"
                   "message_thread_id" 33 (:string "rich_message" "markdown") "hello" "text" nil
                   "disable_notification" nil)
     (is (null (gethash "reply_parameters" (nck:request-plan-body plan))) "no ask, no reply"))
-  (is-plan (nct:send-message-plan '(:channel-id "555") (first-chunk "hi"))
+  (is-plan (send-plan '(:channel-id "555") (first-chunk "hi"))
            "message_thread_id" nil "disable_notification" t)
   ;; The answer replies to the ask on chunk 1 only.
   (let* ((chunks (nck:split-text-chunks (make-string 5000 :initial-element #\y)
                                         4096))
-         (first-plan (nct:send-message-plan '(:channel-id "555") (first chunks)
+         (first-plan (send-plan '(:channel-id "555") (first chunks)
                                             :reply-to "12" :ping t))
-         (second-plan (nct:send-message-plan '(:channel-id "555") (second chunks)
+         (second-plan (send-plan '(:channel-id "555") (second chunks)
                                              :reply-to "12" :ping t)))
     (is (= 2 (length chunks)))
     (is-plan first-plan (:any "reply_parameters" "message_id") 12
@@ -96,7 +102,7 @@ that answers STATUS with BODY."
       (is-shape (button rows 3) ((:string "text") "Next"))))
   (is (zerop (length (nlk:json-value (nct::controls-markup :clear) :array "inline_keyboard"))))
   (let ((rows (nlk:json-value (nck:request-plan-body
-                               (nct:send-message-plan '(:channel-id "555") (first-chunk "Working · 3s")
+                               (send-plan '(:channel-id "555") (first-chunk "Working · 3s")
                                                       :controls (list (list (list "Stop" "nck:stop:s1" :danger)
                                                                             (list "Details" "nck:details:s1" :secondary)))))
                               :array "reply_markup" "inline_keyboard")))
@@ -116,7 +122,7 @@ that answers STATUS with BODY."
                         :steps '((:done "Ran find . | head" "0s" nil) (:done "Searched 2 patterns" "7s" nil))
                         :meta (format nil "deepseek/deepseek-flash (max) · 4 steps~%↑37.2k · $0.013")))
          (running (list (list (list "Stop" "nck:stop:s1" :danger) (list "Details" "nck:details:s1" :secondary))))
-         (post (nct:send-message-plan '(:channel-id "555") (first-chunk "plain") :card working :controls running
+         (post (send-plan '(:channel-id "555") (first-chunk "plain") :card working :controls running
                                                                                  :reply-to "12")))
     (is (equal (concatenate 'string
                             "<tg-button-row align=\"left\"><tg-button type=\"disabled\" style=\"primary\">"
@@ -185,14 +191,14 @@ that answers STATUS with BODY."
      "a table gets the blank line over it Telegram needs")
     ((format nil "```html~%<p>a~%b</p>~%```~%after <x>") (format nil "```html~%<p>a~%b</p>~%```~%after &lt;x>")
      "a fence passes as written, its lines as they are"))
-  (is-plan (nct:send-message-plan '(:channel-id "555") (first-chunk "see https://example.com <b>"))
+  (is-plan (send-plan '(:channel-id "555") (first-chunk "see https://example.com <b>"))
            :path "/sendRichMessage" (:string "rich_message" "markdown") "see https://example.com &lt;b>"
            "text" nil "link_preview_options" nil))
 
 (deftest channel-telegram-an-addressed-post-notifies ()
   ;; Telegram spells a bare user id no mention, so the addressed post simply
   ;; notifies: the note that needs the operator reaches them.
-  (is-plan (nct:send-message-plan '(:channel-id "555")
+  (is-plan (send-plan '(:channel-id "555")
                                   (first-chunk "⚠ needs your attention")
                                   :mentions '("8071918233"))
            :path "/sendRichMessage" :retry t "disable_notification" nil
@@ -236,7 +242,7 @@ that answers STATUS with BODY."
     (is-shape result (nck:execution-ok-p is) (nck:execution-retry-delays '(2000)))))
 
 (deftest channel-telegram-failure-classifier ()
-  (let ((send (nct:send-message-plan '(:channel-id "5") (first-chunk "x")))
+  (let ((send (send-plan '(:channel-id "5") (first-chunk "x")))
         (poll (nct:get-updates-plan nil)))
     (is-table (needle plan status detail)
       (search needle (nct:telegram-failure-message plan status detail))
@@ -263,7 +269,7 @@ that answers STATUS with BODY."
     (is-shape result (nck:execution-ok-p is "still a success")
       (nck:execution-status = 200 "still its own status") (nck:execution-body null)))
   (let* ((created (cell-json "{\"ok\":true,\"result\":{\"message_id\":90}}"))
-         (result (telegram-wrapped (nct:send-message-plan '(:channel-id "5") (first-chunk "hi"))
+         (result (telegram-wrapped (send-plan '(:channel-id "5") (first-chunk "hi"))
                                    created)))
     (is (eq created (nck:execution-body result)))))
 
@@ -303,7 +309,7 @@ that answers STATUS with BODY."
                          (cell-json "{\"ok\":false,\"error_code\":400,\"description\":\"Bad Request: message is not modified\"}")
                          400)))
   (is (not (nck:execution-ok-p
-            (telegram-wrapped (nct:send-message-plan '(:channel-id "5") (first-chunk "x"))
+            (telegram-wrapped (send-plan '(:channel-id "5") (first-chunk "x"))
                               (cell-json "{\"ok\":false,\"error_code\":400,\"description\":\"Bad Request: message thread not found\"}")
                               400)))))
 
@@ -414,14 +420,47 @@ written twice, so a probe that names each once is seen to."
 (deftest channel-telegram-answer-carries-its-files ()
   ;; The answer's own picture: one file as the caption-carrying file
   ;; message, several as one media group.
-  (let ((plan (nct:send-message-plan '(:channel-id "1") (first-chunk "the answer")
+  (let ((plan (send-plan '(:channel-id "1") (first-chunk "the answer")
                                     :files (list #p"/tmp/notes.pdf"))))
     (is-plan plan :path "/sendDocument" "caption" "the answer" "document" #P"/tmp/notes.pdf"))
-  (let ((plan (nct:send-message-plan '(:channel-id "1") (first-chunk "two pictures")
+  (let ((plan (send-plan '(:channel-id "1") (first-chunk "two pictures")
                                     :files (list #p"/tmp/a.pdf" #p"/tmp/b.pdf"))))
     (is-plan plan :path "/sendMediaGroup" :label "send_media_group"
                   "file0" #P"/tmp/a.pdf" "file1" #P"/tmp/b.pdf")
     (is (search "attach://file0" (plan-field plan "media")))))
+
+(deftest channel-telegram-caption-splits-a-long-answer ()
+  ;; A media message's caption holds +TELEGRAM-CAPTION-LIMIT+ UTF-16 units,
+  ;; and the Bot API refuses the whole upload — picture and all — for one
+  ;; more: 400 "message caption is too long", which lost an answer carrying a
+  ;; picture whole (a beta tester, 2026-10-22). The caption keeps the head of
+  ;; the answer that fits; the words it could not hold follow as text
+  ;; messages, which hold far more.
+  (let* ((words (format nil "~{~a ~}" (loop repeat 60 collect "Explore the total vps please.")))
+         (plans (nct:send-message-plan '(:channel-id "1") (first-chunk words)
+                                       :files (list #P"/tmp/notes.pdf")
+                                       :reply-to "7" :ping t
+                                       :controls '(("Go" "go"))))
+         (file (first plans))
+         (caption (plan-field file "caption"))
+         (continuation (second plans))
+         (rest (and continuation
+                    (gethash "markdown" (plan-field continuation "rich_message")))))
+    (is (= 2 (length plans)) "the file, then the words its caption could not hold")
+    (is (search "/sendDocument" (nck:request-plan-path file)))
+    (is (<= (length caption) 1024) "the caption fits the media limit")
+    (is (search "/sendRichMessage" (nck:request-plan-path continuation)))
+    (is (search "answer_continuation" (nck:request-plan-audit-label continuation)))
+    (let ((kept (remove #\Space (concatenate 'string caption rest)))
+          (said (remove #\Space (string-trim " " words)))
+          (markup (nlk:encode-json-object (plan-field continuation "reply_markup"))))
+      (is (equal kept said) "no word of the answer is lost between caption and text")
+      (is (null (plan-field continuation "reply_parameters")) "only the file replies to the ask")
+      (is (search "Go" markup) "the buttons ride the last message")))
+  ;; The Bot API counts UTF-16 code units, an astral character costing two.
+  (multiple-value-bind (caption rest) (nct::clip-caption (make-string 600 :initial-element (code-char #x1F600)) 1024)
+    (is (= 512 (length caption)))
+    (is (= 88 (length rest)))))
 
 (deftest channel-telegram-file-message-plans ()
   ;; A photo renders inline and a document files: the plan picks sendPhoto
