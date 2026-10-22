@@ -65,6 +65,5 @@
       (is (eq :absent (status "{\"kind\":\"wp-plugin\",\"slugs\":[\"updraftplus\"],\"fixed\":[\"1.26.13\"]}"))))
     (is (eq :skipped (getf (nodecode-cyber-security::run-check
                             (sp-check "{\"kind\":\"npm\",\"package\":\"x\",\"fixed\":[\"1.0\"]}"))
-                           :status))
-        "a project check without a folder is skipped, not passed")
+                           :status)))
     (uiop:delete-directory-tree dir :validate t)))
