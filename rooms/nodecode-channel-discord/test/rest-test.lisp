@@ -591,6 +591,37 @@ then TAIL."
     (is (= 2000 (length (nlk:json-value (nck:request-plan-body plan) :string "data" "content"))))
     (is (equalp #() (nlk:json-value (nck:request-plan-body plan) :array "data" "allowed_mentions" "parse")))))
 
+(deftest channel-discord-interaction-ack-answers-whole ()
+  ;; WHOLE keeps every word: the answer carries the first message's worth and
+  ;; each further message is an ephemeral follow-up under the interaction's
+  ;; application, in order, never retried -- the board's Show all, whose list
+  ;; outgrew one message and lost every section after the first two.
+  (let* ((lines (loop for i below 150 collect (format nil "<#~d> · 2d" (+ 1562000000000000000 i))))
+         (text (format nil "~{~a~^~%~}" lines))
+         (plans (ncd:interaction-ack-plans '(:id "i3" :token "tok" :application-id "a1")
+                                           :text text :whole t :timeout-seconds 4))
+         (contents (cons (nlk:json-value (nck:request-plan-body (first plans)) :string "data" "content")
+                         (mapcar (lambda (plan) (nlk:json-value (nck:request-plan-body plan) :string "content"))
+                                 (rest plans)))))
+    (is (< 2000 (length text)) "the list is longer than one message")
+    (is (= 3 (length plans)))
+    (is-plan (first plans) :label "interaction_private_answer" :path "/interactions/i3/tok/callback"
+                           :retry nil "type" 4 (:integer "data" "flags") 64)
+    (dolist (plan (rest plans))
+      (is-plan plan :method "POST" :label "interaction_private_followup" :path "/webhooks/a1/tok"
+                    :retry nil :timeout 4 (:integer "flags") 64)
+      (is (equalp #() (nlk:json-value (nck:request-plan-body plan) :array "allowed_mentions" "parse"))))
+    (is (every (lambda (content) (< (length content) 2000)) contents))
+    ;; Every line once, in order, none cut.
+    (is (equal lines (loop for content in contents
+                           append (uiop:split-string (string-right-trim '(#\Newline) content)
+                                                     :separator '(#\Newline))))))
+  ;; One message's worth needs no follow-up, nor the application; more
+  ;; without it is refused, never posted under a path naming none.
+  (is (= 1 (length (ncd:interaction-ack-plans '(:id "i4" :token "tok") :text "short" :whole t))))
+  (signals-error error
+    (ncd:interaction-ack-plans '(:id "i5" :token "tok") :text (make-string 2500 :initial-element #\s) :whole t)))
+
 (defun card-parts (body)
   "The components inside the one container a card's message BODY holds."
   (coerce (nlk:json-value (aref (nlk:json-value body :array "components") 0) :array "components") 'list))

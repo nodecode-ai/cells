@@ -532,9 +532,10 @@ is a press on a message's component, or NIL for every other payload — a
 slash command is not a press, and neither is a message."
   ;; A press carries what its ack and the act both need: the data the button
   ;; or the menu's option sent, the person who pressed and their name, the message and
-  ;; channel it sits on, and the interaction's id and token, the return path
-  ;; the platform's ack answers through. A press on a choice routes as the line
-  ;; it says (ROUTE-DISCORD-INTERACTION), which is tried first.
+  ;; channel it sits on, and the interaction's id, token and application, the
+  ;; return path the platform's ack answers through -- the application the
+  ;; one its follow-up messages post under. A press on a choice routes as the
+  ;; line it says (ROUTE-DISCORD-INTERACTION), which is tried first.
   (let* ((data (dispatch-data payload "INTERACTION_CREATE"))
          (pressed (press-data data))
          (user (or (nlk:json-value data :object "member" "user")
@@ -543,6 +544,7 @@ slash command is not a press, and neither is a message."
                pressed)
       (list :id (nlk:json-value data :string "id")
             :token (nlk:json-value data :string "token")
+            :application-id (nlk:json-value data :string "application_id")
             :data pressed
             :user-id (nlk:json-value user :string "id")
             ;; The name a card says stopped it: the one the room reads.

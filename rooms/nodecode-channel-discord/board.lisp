@@ -77,15 +77,36 @@ with QUESTION-P the question it waits on after a dash."
   (format nil "~a~@[ — ~a~]" (board-line row)
           (and question-p (getf row :question) (discord-escape (getf row :question)))))
 
+(defun board-section-data (key)
+  "The data a section's own Show all sends: ncd:board:all:<section>."
+  (format nil "ncd:board:all:~(~a~)" key))
+
+(defun board-show-text (data rows)
+  "What a Show all press sending DATA answers: every one of ROWS by section
+for the board's own, every thread of one section for a section's
+(BOARD-SECTION-DATA) -- never cut, however many messages it takes -- or NIL
+for a press that is no Show all this board draws."
+  (flet ((listed (rows) (board-list-text rows #'board-list-line :limit most-positive-fixnum)))
+    (if (equal data "ncd:board:all")
+        (listed rows)
+        (nlk:when-let (section (find data +board-sections+
+                                     :key (lambda (section) (board-section-data (first section)))
+                                     :test #'equal))
+          (let ((members (board-section-rows rows (first section))))
+            (if members
+                (listed members)
+                (format nil "No thread is under ~a now." (second section))))))))
+
 (defun board-components (rows &key (closing 0))
   "ROWS, the open threads newest first, as the board's Components V2 message:
 a heading; for each section holding a thread, a container wearing its
 accent, its name and count over its newest +BOARD-ROWS+ threads (Needs you's
-each with the question it ends on); the counts in small print, CLOSING the
-threads left to close; Show all, and Close all done while any is done."
+each with the question it ends on), and a section holding more its own Show
+all; the counts in small print, CLOSING the threads left to close; Show all,
+and Close all done while any is done."
   ;; Discord's caps on one message: 40 components however nested, 4000
-  ;; characters across its text. Four sections of one text each, a heading, a
-  ;; footer and two buttons stay inside both.
+  ;; characters across its text. Four sections of a text and a one-button row
+  ;; each, a heading, a footer and two buttons -- 21 -- stay inside both.
   (let* ((sections
            (loop for (key name) in +board-sections+
                  for accent = (getf +board-accents+ key)
@@ -95,14 +116,23 @@ threads left to close; Show all, and Close all done while any is done."
                    collect (nlk:json-object
                             "type" 17 "accent_color" accent
                             "components"
-                            (vector (text-display
-                                     (format nil "**~a** · ~d~%~{~a~^~%~}~@[~%-# +~d more: Show all~]"
-                                             name (length members)
-                                             (mapcar (lambda (row) (board-line row :question (eq key :needs)))
-                                                     shown)
-                                             (and (> (length members) (length shown))
-                                                  (- (length members) (length shown))))
-                                     850)))))
+                            (coerce
+                             (cons (text-display
+                                    (format nil "**~a** · ~d~%~{~a~^~%~}"
+                                            name (length members)
+                                            (mapcar (lambda (row) (board-line row :question (eq key :needs)))
+                                                    shown))
+                                    850)
+                                   ;; The threads this section leaves out are one
+                                   ;; press away, under the section they belong to.
+                                   (and (> (length members) (length shown))
+                                        (list (nlk:json-object
+                                               "type" 1
+                                               "components"
+                                               (vector (control-button
+                                                        (list (format nil "Show all ~d" (length members))
+                                                              (board-section-data key) :secondary)))))))
+                             'vector))))
          (done (length (board-section-rows rows :done))))
     (coerce (append
              (list (text-display "### Threads" 40))
@@ -235,7 +265,8 @@ when there is none yet or it was deleted."
 
 (defun board-pressed (press &aux (data (getf press :data)) (board *board*))
   "Adapter thread: a press on one of the board's own buttons, answered on a
-thread of its own -- Show all lists every open thread to the presser alone;
+thread of its own -- Show all lists every open thread, a section's Show all
+every one of that section, to the presser alone and whole (BOARD-SHOW-TEXT);
 Close all done, a room operator's, closes every Done thread -- or NIL for any
 other press."
   (when (and board (stringp data) (eql 0 (search "ncd:board:" data)))
@@ -246,11 +277,13 @@ other press."
                (done (board-section-rows rows :done))
                (closer (and (equal data "ncd:board:done") (operator-p host (getf press :user-id)))))
           (execute-delivery (interaction-ack-plans
-                             press :text (cond ((equal data "ncd:board:all") (board-list-text rows #'board-list-line))
-                                               ((not (equal data "ncd:board:done")) "This button is out of date.")
-                                               ((not closer) "Only the room's operators can close threads from the board.")
-                                               ((null done) "No thread is done.")
-                                               (t (format nil "Closing ~d done thread~:p." (length done)))))
+                             press
+                             :whole t
+                             :text (cond ((board-show-text data rows))
+                                         ((not (equal data "ncd:board:done")) "This button is out of date.")
+                                         ((not closer) "Only the room's operators can close threads from the board.")
+                                         ((null done) "No thread is done.")
+                                         (t (format nil "Closing ~d done thread~:p." (length done)))))
                             (host-executor host))
           (when (and closer done)
             (dolist (row done) (board-close board (getf row :id)))

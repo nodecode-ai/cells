@@ -374,6 +374,7 @@ ROUTE-DISCORD-AUTOCOMPLETE."
   (flet ((route (d-json) (dgw-interaction d-json #'ncd:route-discord-control)))
     (let ((press (route
                   "{\"id\": \"i9\", \"token\": \"tok\", \"type\": 3,
+                  \"application_id\": \"a1\",
                   \"guild_id\": \"g1\", \"channel_id\": \"c1\",
                   \"data\": {\"custom_id\": \"nck:stop:discord-c1-m9\",
                              \"component_type\": 2},
@@ -382,6 +383,7 @@ ROUTE-DISCORD-AUTOCOMPLETE."
                   \"message\": {\"id\": \"m9\"}}")))
       (is-present press "a guild button press routes"
         (is-shape press (:id "i9") (:token "tok" "the ack's return path")
+          (:application-id "a1" "the application its follow-ups post under")
           (:data "nck:stop:discord-c1-m9") (:user-id "u1") (:message-id "m9") (:channel-id "c1"))))
     (let ((press (route
                   "{\"id\": \"i10\", \"token\": \"tok\", \"type\": 3,

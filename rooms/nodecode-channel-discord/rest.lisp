@@ -750,27 +750,41 @@ answer an interaction takes."
   (rest-plan "POST" (format nil "/interactions/~a/~a/callback" interaction-id token)
              label nil timeout-seconds body))
 
-(defun interaction-ack-plans (payload &key text (timeout-seconds 30))
+(defun interaction-ack-plans (payload &key text whole (timeout-seconds 30))
   "The one answer a control press takes: POST
 /interactions/<id>/<token>/callback, type 6 (deferred update) — the
 spinner on the pressed button stops and the message stays as it is; the
 card the press touched settles on its own — or, with TEXT, type 4 flagged
-ephemeral: TEXT answers the presser alone, a card's Details."
-  ;; PAYLOAD is the kit's normal press plus the interaction token that return
-  ;; path needs. Not retried: a late answer is refused as an unknown
-  ;; interaction and a second try would be too.
-  (list (interaction-callback-plan (getf payload :id) (getf payload :token)
-                                   (if text
-                                       (nlk:json-object
-                                        "type" 4
-                                        "data" (nlk:json-object
-                                                "content" (nlk:clip text (1- +discord-message-content-limit+)
-                                                                    :ellipsis "…")
-                                                "flags" 64
-                                                "allowed_mentions" (nlk:json-object "parse" #())))
-                                       (nlk:json-object "type" 6))
-                                   (if text "interaction_private_answer" "interaction_ack")
-                                   timeout-seconds)))
+ephemeral: TEXT answers the presser alone, a card's Details, clipped to one
+message. WHOLE answers every word of TEXT: the answer carries the first
+message's worth and each further one is a follow-up, POST
+/webhooks/<application>/<token>, ephemeral too."
+  ;; PAYLOAD is the kit's normal press plus the interaction token and
+  ;; application that return path needs. Not retried: a late answer is
+  ;; refused as an unknown interaction and a second try would be too, and a
+  ;; follow-up tried again could say its words twice. The follow-ups run
+  ;; after the answer, in order (EXECUTE-DELIVERY): Discord takes none before it.
+  (let* ((limit (1- +discord-message-content-limit+))
+         (messages (cond ((null text) '())
+                         (whole (mapcar #'text-chunk-text (split-text-chunks text limit)))
+                         (t (list (nlk:clip text limit :ellipsis "…")))))
+         (application (getf payload :application-id)))
+    (when (and (rest messages) (null application))
+      (error "discord: a press's answer past one message needs its interaction's application id"))
+    (flet ((private (content)
+             (nlk:json-object "content" content
+                              "flags" 64
+                              "allowed_mentions" (nlk:json-object "parse" #()))))
+      (cons (interaction-callback-plan (getf payload :id) (getf payload :token)
+                                       (if messages
+                                           (nlk:json-object "type" 4 "data" (private (first messages)))
+                                           (nlk:json-object "type" 6))
+                                       (if text "interaction_private_answer" "interaction_ack")
+                                       timeout-seconds)
+            (loop for content in (rest messages)
+                  collect (rest-plan "POST" (format nil "/webhooks/~a/~a" application (getf payload :token))
+                                     "interaction_private_followup" nil timeout-seconds
+                                     (private content)))))))
 
 (defun interaction-autocomplete-plans (payload choices &key (timeout-seconds 3))
   "POST /interactions/<id>/<token>/callback — the one answer the autocomplete
