@@ -19,6 +19,7 @@
                (:file "detect")
                (:file "validate")
                (:file "check")
+               (:file "scan")
                (:file "cell"))
   :in-order-to ((test-op (test-op "nodecode-cyber-security/test"))))
 
@@ -31,6 +32,7 @@
   :components ((:file "support")
                (:file "feed-test")
                (:file "detect-test")
+               (:file "scan-test")
                (:file "cell-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-cyber-security-tests)))

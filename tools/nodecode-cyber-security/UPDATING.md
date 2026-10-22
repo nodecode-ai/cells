@@ -15,7 +15,33 @@ cd "$FEED" && git fetch -q origin && git checkout -q -B main origin/main
 
 This clone is the job's own: never edit the feed in a shared checkout.
 
-## 2. Scan since the feed's `updated` time (minus a day of overlap)
+## 2. Triage first: the scan sorts, you investigate
+
+```lisp
+(security:scan-report :seen "~/.nodecode/cyber-security-seen.json")
+```
+
+It collects everything published since the feed's `updated` time (minus a day of overlap)
+with no model: CISA's exploited list, GitHub's reviewed critical/high and malware
+advisories, and the news search below when this image has one. It drops what the feed
+already carries and what an earlier scan already sorted (the `:seen` ledger), and sorts
+the rest with **Decide v1, nodecode's decider model** (`foresight-decide-v1` on provider
+`nodecode`, https://api.nodecode.ai/v1, the key `nodecode login` saved). Never sort these
+items with another model.
+
+- `decider ... answered`, `keep: 0`, `expiring: none`: nothing to do. Answer exactly
+  `SILENT` (section 7) and stop; do not search further.
+- Items kept: investigate those only. Open each link, find the vendor's own advisory, and
+  section 3 decides whether it goes in: the decider's call is a lead, never a verdict.
+  `[exploited]` items are always read; `[popular-malware]` means the poisoned package has
+  real downloads.
+- `expiring` ids: drop them (section 4), unless attacks on one are still being reported.
+- `decider UNAVAILABLE` (no nodecode key, the provider down): run the full scan below by
+  hand over the same window, and the answer's first line says
+  `decider unavailable: full scan`.
+- A source `FAILED`: run that one source by hand.
+
+### The full scan: only when the decider is unavailable
 
 - **CISA KEV** (exploited, authoritative):
   `curl -s https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json`,

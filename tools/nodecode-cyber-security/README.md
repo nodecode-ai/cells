@@ -54,6 +54,13 @@ known-exploited list, GitHub's reviewed advisories, vendor and news posts), edit
 `advisories.json`, and pushes it only when `security:feed-problems` and this cell's tests
 pass. [`UPDATING.md`](UPDATING.md) is the procedure it follows.
 
+Each scan starts cheap: `(security:scan-report)` collects the window's items with no
+model and has **Decide v1**, nodecode's decider model (`foresight-decide-v1` on
+https://api.nodecode.ai/v1), sort them; the agent then reads only what it kept. Items on
+CISA's exploited list always go on, malware advisories go on when the package has real
+downloads, and when the decider cannot answer the scan says so and the agent scans in
+full.
+
 ## Patching
 
 The cell finds and explains; the person decides. Upgrades need sudo and restart

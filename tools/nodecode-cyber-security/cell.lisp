@@ -23,6 +23,11 @@ or exploit in the news, \"is my site/server safe\", or \"check / patch / harden 
 (security:show \"php2shell\") one advisory: affected, fix, stopgap, signs of compromise, sources.
 (security:advisories)       every advisory (hash tables; (security:field a \"id\")).
 (security:refresh)          re-read the live feed now. /security does all of this too.
+(security:scan-report)      what is new since the feed's update, sorted by Decide v1:
+    CISA KEV, GitHub advisories and news, with what the feed already lists dropped.
+    Deciding whether a finding matters (is this breach relevant: act or not) goes to
+    Decide v1, nodecode's decider model -- provider nodecode, model foresight-decide-v1,
+    on the key `nodecode login` saves (security:*decider*) -- never to another model.
 
 Checking someone's sites:
 1. Ask which sites, and where each runs: this machine (its folder and host name), another

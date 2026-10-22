@@ -12,6 +12,6 @@
    ;; the checks
    #:check #:report #:show #:run-slash
    ;; publishing the feed
-   #:feed-problems
+   #:feed-problems #:scan #:scan-report #:*decider*
    ;; start (defined by NLE:DEFINE-CELL)
    #:start-cell #:stop-cell))
