@@ -102,6 +102,12 @@ page is the source. Add a machine `check` only when the version can be read reli
 cd "$FEED" && .github/test-cell.sh tools/nodecode-cyber-security cyber-feed
 ```
 
+The test run needs a Nodecode checkout at the commit `.github/nodecode-rev` pins
+(`~/nodecode/nodecode` or `NODECODE_SRC`). On a machine without one it stops at once with
+`not a valid object name`: there a change to `advisories.json` alone is gated by
+`feed-problems` alone (the shipped-feed test is that same check). Do not debug the test
+run, and change nothing but `advisories.json` on such a machine.
+
 ## 6. Publish
 
 ```sh
