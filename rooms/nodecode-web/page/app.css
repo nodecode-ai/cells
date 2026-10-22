@@ -2155,6 +2155,10 @@ button.p-row:active { background: var(--field-lit); }
   font: 500 var(--fs-micro)/1.6 var(--micro); letter-spacing: var(--ls-micro); text-transform: uppercase; color: var(--tertiary);
 }
 .sessions .ses-band:first-child { margin-top: 0; }
+/* A band below anything is its own section: a rule across the column above
+   its head (the operator, 2026-10-21: DONE and its Show all "look like a
+   split section to what is above it"). */
+.sessions .ses-band:not(:first-child) { margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--seam-lit); }
 .sessions .ses-band > span { flex: none; }
 .ses-band .n::before { content: "\00b7  "; }
 .ses-band { align-items: center; }
