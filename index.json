@@ -380,6 +380,17 @@
       ]
     },
     {
+      "name": "nodecode-security-patches",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "53b984341d9e6ebb908038a351586426a6b0ae68",
+      "path": "tools/nodecode-security-patches",
+      "description": "The last two weeks' breaches, each with the fix its vendor shipped",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ]
+    },
+    {
       "name": "nodecode-snowflake",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",

@@ -64,6 +64,7 @@ is what a new cell is copied from.
 | [`nodecode-prs`](tools/nodecode-prs) | **ships** Pull requests ranked and reviewed minutes after each push. |
 | [`nodecode-qa`](tools/nodecode-qa) | **ships** Anonymous usage counts, one page a week, sent only if you say so. |
 | [`nodecode-security-audit`](tools/nodecode-security-audit) | Cloudflare's security-audit skill: multi-phase security audits with independently verified, machine-readable findings. |
+| [`nodecode-security-patches`](tools/nodecode-security-patches) | The last two weeks' breaches, each with the fix its vendor shipped; checks your machine and site, and keeps itself current. |
 | [`nodecode-team`](tools/nodecode-team) | **ships** Several sessions work one task together in a shared folder. |
 | [`nodecode-typesafe`](tools/nodecode-typesafe) | TypeSafe: typed judgments over a state (System One), called through eval. |
 | [`nodecode-web-provider`](tools/nodecode-web-provider) | Web search engines: Google, Startpage, DuckDuckGo, Ecosia, Mojeek, SearXNG and their merge, keyless. |
