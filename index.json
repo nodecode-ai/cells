@@ -173,7 +173,7 @@
     {
       "name": "nodecode-cyber-security",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "072d9639d2d2f6989e065221c6d06d94ce5e75e0",
+      "commit": "1f1d56c65b82fee3a4bb3dbb0d3669f6b1f3b5cf",
       "path": "tools/nodecode-cyber-security",
       "description": "Cyber security: the latest breaches and the fix for each, re-scanned every 6 hours; checks your server and website and walks you through patching",
       "license": "MIT",
