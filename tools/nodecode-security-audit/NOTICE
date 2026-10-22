@@ -1,0 +1,11 @@
+nodecode-security-audit carries Cloudflare's security-audit skill:
+
+  https://github.com/cloudflare/security-audit-skill
+  commit c1c8a8c1471069fb0e188eeaff69b8e8db6564a8 (2026-09-14)
+  MIT License, Copyright (c) 2025-2026 Cloudflare, Inc. (LICENSE)
+
+skill/ is that repository's skills/security-audit/ folder, unchanged.
+
+security-audit.lisp is skill/SKILL.md as a prose define-skill: its
+frontmatter description is the docstring and its body the prose, whole, with
+a short paragraph added at the head saying where skill/ sits.
