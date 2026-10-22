@@ -171,6 +171,17 @@
       ]
     },
     {
+      "name": "nodecode-cyber-security",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "29f590af78e6634df0819a51856e13296f19062f",
+      "path": "tools/nodecode-cyber-security",
+      "description": "Cyber security: the latest breaches and the fix for each, re-scanned every 6 hours; checks your server and website and walks you through patching",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ]
+    },
+    {
       "name": "nodecode-devin",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
@@ -374,17 +385,6 @@
       "commit": "8050c414cbec466b9876009afc5a7adc10660f2f",
       "path": "tools/nodecode-security-audit",
       "description": "Cloudflare's security-audit skill: multi-phase security audits with independently verified, machine-readable findings",
-      "license": "MIT",
-      "depends_on": [
-        "nodecode"
-      ]
-    },
-    {
-      "name": "nodecode-security-patches",
-      "git": "https://github.com/nodecode-ai/cells",
-      "commit": "1d140c74e5690b2c094267cf7659586284625320",
-      "path": "tools/nodecode-security-patches",
-      "description": "The last two weeks' breaches, each with the fix its vendor shipped",
       "license": "MIT",
       "depends_on": [
         "nodecode"

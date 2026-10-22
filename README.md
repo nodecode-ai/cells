@@ -55,6 +55,7 @@ is what a new cell is copied from.
 | --- | --- |
 | [`nodecode-chrome`](tools/nodecode-chrome) | **ships** Drive Chrome; needs the companion extension. |
 | [`nodecode-cron`](tools/nodecode-cron) | **ships** Prompts that run on a schedule. |
+| [`nodecode-cyber-security`](tools/nodecode-cyber-security) | **ships** Cyber security: the latest breaches and the fix for each, re-scanned every 6 hours; checks your server and website and walks you through patching. |
 | [`nodecode-experience`](tools/nodecode-experience) | **ships** Learns from each turn: reflection and recaps. |
 | [`nodecode-goal`](tools/nodecode-goal) | **ships** Keeps a session taking turns until its goal's check passes. |
 | [`nodecode-guard`](tools/nodecode-guard) | **ships** Refuses risky shell commands before they run. |
@@ -64,7 +65,6 @@ is what a new cell is copied from.
 | [`nodecode-prs`](tools/nodecode-prs) | **ships** Pull requests ranked and reviewed minutes after each push. |
 | [`nodecode-qa`](tools/nodecode-qa) | **ships** Anonymous usage counts, one page a week, sent only if you say so. |
 | [`nodecode-security-audit`](tools/nodecode-security-audit) | Cloudflare's security-audit skill: multi-phase security audits with independently verified, machine-readable findings. |
-| [`nodecode-security-patches`](tools/nodecode-security-patches) | The last two weeks' breaches, each with the fix its vendor shipped; checks your machine and site, and keeps itself current. |
 | [`nodecode-team`](tools/nodecode-team) | **ships** Several sessions work one task together in a shared folder. |
 | [`nodecode-typesafe`](tools/nodecode-typesafe) | TypeSafe: typed judgments over a state (System One), called through eval. |
 | [`nodecode-web-provider`](tools/nodecode-web-provider) | Web search engines: Google, Startpage, DuckDuckGo, Ecosia, Mojeek, SearXNG and their merge, keyless. |
