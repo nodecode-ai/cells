@@ -1900,9 +1900,10 @@ settling.observe(ledger);
 // --- the nodecode.ai account's meter ----------------------------------------------------------
 
 // The organism reads the account's usage from api.nodecode.ai with this home's key
-// (/api/gateway/account, nodecode's surface/account-login.lisp) and this chip draws its words:
-// the plan's requests left while the plan pays, the credit once it does. Hidden on a home that
-// is not signed in. Its title carries the lines /usage prints; a click opens the account.
+// (/api/gateway/account, nodecode's surface/account-login.lisp) and this chip draws its badge:
+// the plan's name, then its requests left while the plan pays or the credit once it does, on a
+// chip of the meter's tone. Hidden on a home that is not signed in. Its title carries the lines
+// /usage prints; a click opens the account.
 let accountRead = null;
 async function loadAccount() {
   if (accountRead) return accountRead;
@@ -1910,10 +1911,16 @@ async function loadAccount() {
     try {
       const account = await api("GET", "/api/gateway/account");
       const chip = $("account");
-      chip.hidden = !account?.meter;
-      chip.textContent = account?.meter || "";
+      const meter = account?.meter;
+      chip.hidden = !meter;
+      chip.replaceChildren(...(meter ? [["k", meter.label], ["v", meter.value]] : []).map(([part, text]) => {
+        const span = document.createElement("span");
+        span.className = part;
+        span.textContent = text || "";
+        return span;
+      }));
       chip.title = [t("nodecode.ai account"), ...(account?.lines || [])].join("\n");
-      if (account?.tone) chip.dataset.tone = account.tone; else delete chip.dataset.tone;
+      if (meter?.tone) chip.dataset.tone = meter.tone; else delete chip.dataset.tone;
     } catch {} finally { accountRead = null; }
   })();
   return accountRead;

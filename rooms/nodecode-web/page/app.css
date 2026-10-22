@@ -732,9 +732,15 @@ code, pre, kbd { font-family: var(--mono); }
 .chip:hover { color: var(--primary); }
 /* The account meter leads the foot's right side; the model chip follows it closely. */
 .chip.account:not([hidden]) + .chip { margin-left: 12px; }
-.chip.account { text-decoration: none; }
-.chip.account[data-tone="tool"] { color: var(--accent); }
-.chip.account[data-tone="danger"] { color: var(--danger-lit); }
+/* The account's badge: the plan's name on a quiet chip, what is left on a chip of its tone. */
+.chip.account { display: inline-flex; flex: none; padding: 0; border-radius: var(--r-pill); text-decoration: none; }
+.chip.account[hidden] { display: none; }
+.chip.account .k, .chip.account .v { padding: 3px 8px; line-height: 1.2; }
+.chip.account .k { background: var(--selected); color: var(--secondary); transition: color 130ms; }
+.chip.account:hover .k { color: var(--primary); }
+.chip.account .v { background: var(--live); color: var(--ink); font-weight: 600; }
+.chip.account[data-tone="tool"] .v { background: var(--accent-fill); }
+.chip.account[data-tone="danger"] .v { background: var(--run); }
 
 .chip .tone { color: var(--tertiary); }
 .chip:hover .tone { color: var(--secondary); }
