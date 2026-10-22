@@ -1,8 +1,137 @@
 {
   "format": 1,
-  "updated": "2026-10-22T04:15:06Z",
+  "updated": "2026-10-22T10:28:00Z",
   "window": "2026-10-08 to 2026-10-22",
   "advisories": [
+    {
+      "id": "virtualenv-2026-10",
+      "title": "virtualenv before 21.14.9: generated activate scripts and pip launchers run commands from an attacker-named path",
+      "date": "2026-10-21",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-113722",
+        "CVE-2026-113725",
+        "CVE-2026-113726",
+        "CVE-2026-113732",
+        "CVE-2026-113776"
+      ],
+      "summary": "virtualenv writes the environment's directory name and path into every script it generates, and five bugs let that text run as shell code. The attacker's input is a directory name: a cloned repository, an unpacked archive, or a CI path built from a branch or job name. In bash, activate escapes the name for only one of bash's two PS1 passes, so a name like a\\$(touch pwned) runs at every prompt; under zsh with PROMPT_SUBST on (oh-my-zsh's default) the raw name is expanded the same way; activate.fish quotes with POSIX sh rules that fish reads differently, so a backslash before a quote escapes out of the literal; a path containing a placeholder name such as __VIRTUAL_NAME__ is rewritten after quoting and breaks out into code; and the POSIX console launchers (bin/pip and friends) hand the interpreter path to distlib's #!/bin/sh wrapper unescaped, which expands the payload when the user runs the launcher. Nothing runs when the environment is created - the user must source activate or run a generated script from an environment an attacker named. Per bug: launchers CVE-2026-113722 (21.14.8 only, fixed 21.14.9), bash PS1 CVE-2026-113725 (up to 21.14.6, fixed 21.14.7), zsh PROMPT_SUBST CVE-2026-113726 (up to 21.14.3, fixed 21.14.4), fish quoting CVE-2026-113732 (up to 21.14.1, fixed 21.14.2), placeholder rewrite CVE-2026-113776 (20.26.6-21.14.1, fixed 21.14.2).",
+      "affected": "virtualenv up to 21.14.8, per vector: console launchers 21.14.8, bash activate up to 21.14.6, zsh up to 21.14.3, activate.fish and the template rewrite up to 21.14.1 (the rewrite bug only since 20.26.6). Windows exe launchers are not affected. A dev-machine and CI bug: build hosts that create environments under paths named after a branch, project or job are the exposure.",
+      "fixed": [
+        "21.14.9"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "virtualenv",
+          "command": [
+            "sh",
+            "-c",
+            "virtualenv --version 2>/dev/null || python3 -c \"import importlib.metadata as m; print(m.version('virtualenv'))\""
+          ],
+          "line": 1,
+          "fixed": [
+            "21.14.9"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'virtualenv>=21.14.9' wherever environments are created (pipx upgrade virtualenv, your distro package, or the CI image)",
+        "Recreate environments whose path or prompt was not fully trusted: the generated activate and launcher scripts carry the bug and upgrading virtualenv does not rewrite them"
+      ],
+      "mitigation": [
+        "Do not create an environment under a path someone else named: check a cloned repository's or unpacked archive's directory names before running virtualenv there",
+        "VIRTUAL_ENV_DISABLE_PROMPT=1 before sourcing activate (bash, zsh), or shopt -u promptvars (bash) / unsetopt prompt_subst (zsh) when the prompt needs no expansion; inspect activate.fish and the bin/ scripts before running one you did not create",
+        "pip's vendored distlib can write the vulnerable launcher wrapper again on a later pip install or upgrade inside an environment - the virtualenv fix does not patch pip's copy, so keep pip current"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/pypa/virtualenv/security/advisories/GHSA-c978-59m8-c77v",
+        "https://github.com/pypa/virtualenv/security/advisories/GHSA-vxj4-q4g9-crj7",
+        "https://github.com/pypa/virtualenv/security/advisories/GHSA-5vjq-rrrf-7h2q",
+        "https://github.com/pypa/virtualenv/security/advisories/GHSA-c947-3pg5-gm8q",
+        "https://github.com/pypa/virtualenv/security/advisories/GHSA-8rjx-v5ww-45pp"
+      ]
+    },
+    {
+      "id": "openchoreo-workflowrun-authz",
+      "title": "OpenChoreo before 1.0.6 / 1.1.7 / 1.2.5: WorkflowRun update authorization bypass lets one project take over another's runs",
+      "date": "2026-10-21",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-113727"
+      ],
+      "summary": "The OpenChoreo API server authorized PUT .../workflowruns/{runName} against the openchoreo.dev/project and openchoreo.dev/component labels supplied in the request body, while the run it mutated is the one named in the URL. A caller holding workflowrun:update on one component could name a run of another project or component in the URL, send their own labels, pass the check, and rewrite the victim run's ownership labels. Every other WorkflowRun permission - view, logs, events, status, delete - derives from those stored labels, so after the write the attacker legitimately reads the victim's build logs (raw pod logs that routinely carry source paths, registry destinations and credentials a build step echoed), deletes the run, or overwrites a pending run's parameters. Needs an authenticated caller with an AuthzRoleBinding or ClusterAuthzRoleBinding for workflowrun:update in the same namespace plus the run's name; anonymous callers cannot reach it; cross-project and cross-component inside one namespace, not cross-tenant.",
+      "affected": "OpenChoreo 1.0.0-1.0.5, 1.1.0-1.1.6, 1.2.0-1.2.4.",
+      "fixed": [
+        "1.0.6",
+        "1.1.7",
+        "1.2.5"
+      ],
+      "checks": [],
+      "patch": [
+        "Upgrade to the patched release on your line: 1.0.6, 1.1.7 or 1.2.5; no configuration change is needed after upgrading (the fix also makes the two ownership labels immutable on update)"
+      ],
+      "mitigation": [
+        "Until upgraded: restrict who holds workflowrun:update - audit AuthzRole and ClusterAuthzRole definitions for that action and drop it from any role held by principals you would not trust with write access to every workflow run in the namespace",
+        "Among the shipped roles only workload-publisher lists workflowrun:update (admin holds it through its * wildcard), and custom roles in your own values file may too: treat any credential bound to workload-publisher, typically a CI token, as privileged"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/openchoreo/openchoreo/security/advisories/GHSA-46r4-q7wv-32fc",
+        "https://github.com/openchoreo/openchoreo/releases/tag/v1.2.5"
+      ]
+    },
+    {
+      "id": "apostrophe-import-export-dos",
+      "title": "ApostropheCMS before 4.33.0: unauthenticated big-upload processing drains the server (@apostrophecms/import-export)",
+      "date": "2026-10-21",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-113711"
+      ],
+      "summary": "The chunked import routes (importExportImport on pages and piece types) run bigUploadMiddleware() before the import handler's own req.user check and pass it no authorize callback, so an unauthenticated request drives the whole aposBigUpload start / chunk / end flow first: the server creates upload state, writes attacker chunk data into big-uploads, processes temporary files, and loops cleanup over an attacker-declared chunk count - only then does the import handler reject the caller. An anonymous remote attacker burns storage, filesystem I/O and CPU at will (CWE-400 denial of service) and gets arbitrary file content written to the server before any authentication. Reported by Kai Zhi; no exploitation known.",
+      "affected": "@apostrophecms/import-export 3.6.2 (confirmed) and likely earlier 3.x with the big-upload import implementation, paired with apostrophe up to 4.32.x.",
+      "fixed": [
+        "4.33.0",
+        "3.7.0"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "apostrophe",
+          "package": "apostrophe",
+          "line": 1,
+          "fixed": [
+            "4.33.0"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@apostrophecms/import-export",
+          "package": "@apostrophecms/import-export",
+          "line": 1,
+          "fixed": [
+            "3.7.0"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install apostrophe@^4.33.0 @apostrophecms/import-export@^3.7.0 (or update package.json and reinstall), then restart the app"
+      ],
+      "mitigation": [
+        "Until upgraded: block unauthenticated POSTs to /api/v1/@apostrophecms/*/importExportImport at the reverse proxy, or remove @apostrophecms/import-export if nobody imports",
+        "Watch the big-uploads and temp directories for growth you did not cause and clean up orphaned chunk files"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/apostrophecms/apostrophe/security/advisories/GHSA-86wm-68pq-5jwq",
+        "https://github.com/apostrophecms/apostrophe/releases/tag/apostrophe@4.33.0"
+      ]
+    },
     {
       "id": "pillow-13-0-0",
       "title": "Pillow before 13.0.0: Ghostscript argument injection to RCE, and a heap overflow saving TIFF",
