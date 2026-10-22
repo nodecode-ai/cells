@@ -26,7 +26,12 @@
     (is (eq :ok (sp-judge "1.106.2" litellm)))
     (is (eq :vulnerable (sp-judge "1.43.2.10000" plex)) "four-part versions")
     (is (eq :ok (sp-judge "1.43.3.10861" plex)))
-    (is (equal '(24 1 0) (nodecode-security-patches::parse-version "v24.1.0")) "node -v's leading v")))
+    (is (equal '(24 1 0) (nodecode-security-patches::parse-version "v24.1.0")) "node -v's leading v")
+    (let ((node "{\"line\":1,\"fixed\":[\"22.23.4\",\"24.22.1\",\"26.12.1\"]}"))
+      (is (eq :vulnerable (sp-judge "26.3.1" node)) "Node's line is its major: 26.3.1 < 26.12.1")
+      (is (eq :ok (sp-judge "24.23.0" node)) "a later minor of a fixed major passes")
+      (is (eq :vulnerable (sp-judge "20.19.0" node)) "an end-of-life major")
+      (is (search "26.3.1 < 26.12.1" (nth-value 1 (nodecode-security-patches::judge '(26 3 1) (sp-check node))))))))
 
 (deftest security-patches-a-command-check-reads-its-output (with-stubbed-security)
   (let ((php (sp-check "{\"kind\":\"version\",\"command\":[\"php\",\"-r\",\"echo PHP_VERSION;\"],\"fixed\":[\"8.3.36\"],\"backport\":[\"sh\",\"-c\",\"zgrep CVE\"]}"))

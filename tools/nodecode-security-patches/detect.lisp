@@ -19,7 +19,9 @@
 ;;;; "*" for any), MIN (older is unaffected) and FIXED (one entry per
 ;;;; release line). A version on a line FIXED names is vulnerable below that
 ;;;; entry; a version on a line it does not name is vulnerable when older
-;;;; than the newest fix (an end-of-life line) and fine when newer.
+;;;; than the newest fix (an end-of-life line) and fine when newer. A line is
+;;;; the first LINE parts of a version: 2 by default (PHP 8.3, GitLab 19.4),
+;;;; 1 where a project numbers its lines by major alone (Node 24).
 
 (in-package #:nodecode-security-patches)
 
@@ -53,9 +55,10 @@ is not installed answers exit 127, as a shell would."
 
 (defun version-string (v) (format nil "~{~d~^.~}" v))
 
-(defun same-line-p (a b)
-  "A and B share a release line: their first two parts agree."
-  (and (eql (first a) (first b)) (eql (or (second a) 0) (or (second b) 0))))
+(defun same-line-p (a b &optional (depth 2))
+  "A and B share a release line: their first DEPTH parts agree (2 for PHP's
+8.3, 1 for Node's 24)."
+  (loop for i below depth always (eql (or (nth i a) 0) (or (nth i b) 0))))
 
 (defun judge (version check)
   "VERSION (a list) against CHECK's bad/min/fixed => (VALUES STATUS WHY)."
@@ -72,7 +75,8 @@ is not installed answers exit 127, as a shell would."
           ((null fixed)
            (values :ok (format nil "~a is not a bad build" shown)))
           (t
-           (let ((line (find-if (lambda (f) (same-line-p f version)) fixed))
+           (let ((line (let ((depth (field check "line" 2)))
+                         (find-if (lambda (f) (same-line-p f version depth)) fixed)))
                  (newest (reduce (lambda (a b) (if (version< a b) b a)) fixed)))
              (cond (line
                     (if (version< version line)
