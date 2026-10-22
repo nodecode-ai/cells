@@ -1,22 +1,140 @@
 {
   "format": 1,
-  "updated": "2026-10-22T04:00:00Z",
+  "updated": "2026-10-22T04:15:06Z",
   "window": "2026-10-08 to 2026-10-22",
   "advisories": [
+    {
+      "id": "pillow-13-0-0",
+      "title": "Pillow before 13.0.0: Ghostscript argument injection to RCE, and a heap overflow saving TIFF",
+      "date": "2026-10-21",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-112900",
+        "CVE-2026-112393"
+      ],
+      "summary": "Two critical bugs in Python's image library. When the file name passed to Image.open() for an EPS is attacker-influenced (an upload stored under its own name), Pillow hands it to Ghostscript unchecked: a leading - or @ injects Ghostscript arguments, verified to run commands even with -dSAFER. Re-saving an uploaded image as TIFF to an in-memory target (BytesIO, an HTTP response, a storage stream) overflows the heap and copies stale heap bytes into the output. 13.0.0 also fixes about a dozen high-severity crash and memory bugs published the same day.",
+      "affected": "Pillow 2.0.0 up to 13.0.0 (TIFF save to a non-file target), Pillow 2.6.0 up to 13.0.0 (EPS via Ghostscript, needs Ghostscript installed). Saves to real file paths are not affected by the TIFF bug.",
+      "fixed": [
+        "13.0.0"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "Pillow",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('Pillow'))"
+          ],
+          "fixed": [
+            "13.0.0"
+          ],
+          "line": 1
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'Pillow>=13.0.0' in every virtualenv that handles user images (pin it in requirements / lock files), then restart the app workers",
+        "Docker: rebuild images with Pillow 13.0.0 or newer and redeploy"
+      ],
+      "mitigation": [
+        "Until upgraded: never pass a user-chosen file name to Image.open(); store uploads under generated names or open them from a file object",
+        "Where EPS is not needed, keep it from reaching Ghostscript (Image.open(f, formats=[...]) with only the formats you accept, or no Ghostscript on the host)",
+        "Save TIFFs to a real file path, not io.BytesIO or a stream"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/python-pillow/Pillow/security/advisories/GHSA-w889-685w-c8fh",
+        "https://github.com/python-pillow/Pillow/security/advisories/GHSA-332p-7hrc-92wf",
+        "https://github.com/python-pillow/Pillow/releases/tag/13.0.0"
+      ]
+    },
+    {
+      "id": "storybook-dev-server-2026-10",
+      "title": "Storybook dev server: a malicious website can change project files (CVE-2026-114125)",
+      "date": "2026-10-21",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114125"
+      ],
+      "summary": "While storybook dev runs, a website open in the developer's browser can reach the dev server on localhost and change files in the project; under further conditions a changed file is then run with the developer's privileges. Built Storybooks, and dev servers never opened in a browser (headless automation, MCP clients), are not affected. Storybook knows of no exploitation.",
+      "affected": "storybook (and @storybook/core, @storybook/core-server, @storybook/experimental-addon-test, @storybook/addon-vitest, @storybook/addon-mcp) 8.0.0 before 8.6.19, 9.x before 9.1.21, 10.x before 10.6.2, 11.0.0-alpha before 11.0.0-alpha.6.",
+      "fixed": [
+        "8.6.19",
+        "9.1.21",
+        "10.6.2",
+        "11.0.0-alpha.6"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "storybook",
+          "package": "storybook",
+          "min": "8.0.0",
+          "fixed": [
+            "8.6.19",
+            "9.1.21",
+            "10.6.2"
+          ],
+          "line": 1
+        }
+      ],
+      "patch": [
+        "Upgrade storybook and every @storybook/* package to 10.6.2 (9.1.21 on 9.x, 8.6.19 on 8.x, 11.0.0-alpha.6 on the 11 alpha) and commit the lockfile before running storybook dev again",
+        "Read the advisory's list of changed network defaults: the fix changes how the dev server accepts connections, also on 8.x and 9.x"
+      ],
+      "mitigation": [
+        "Do not run an affected storybook dev server until it is upgraded",
+        "Deny the browser's permission prompt for a website to connect to localhost unless you trust the site"
+      ],
+      "iocs": [
+        "Project file changes you did not make while storybook dev was running (git status / git diff)"
+      ],
+      "sources": [
+        "https://github.com/storybookjs/storybook/security/advisories/GHSA-f2ph-cmg5-wxc8",
+        "https://github.com/storybookjs/storybook/releases/tag/v10.6.2"
+      ]
+    },
     {
       "id": "php2shell",
       "title": "PHP2Shell: unauthenticated remote code execution in PHP core",
       "date": "2026-10-21",
       "severity": "critical",
       "exploited": true,
-      "cves": ["CVE-2026-109618", "CVE-2026-109619"],
+      "cves": [
+        "CVE-2026-109618",
+        "CVE-2026-109619"
+      ],
       "summary": "Two memory-corruption bugs in PHP's session upload-progress path (on by default since PHP 5.4) let one request run code on the server before any application code runs. WordPress, Drupal, Joomla and MediaWiki are all reachable. Details leaked before the fix; exploit attempts started the same day.",
       "affected": "PHP 8.5 before 8.5.12, 8.4 before 8.4.27, 8.3 before 8.3.36, 8.2 before 8.2.35, and every end-of-life line (8.1 and older), under every SAPI (FPM, mod_php, CGI, FrankenPHP, LiteSpeed).",
-      "fixed": ["8.5.12", "8.4.27", "8.3.36", "8.2.35"],
+      "fixed": [
+        "8.5.12",
+        "8.4.27",
+        "8.3.36",
+        "8.2.35"
+      ],
       "checks": [
-        {"kind": "version", "label": "php", "command": ["php", "-r", "echo PHP_VERSION;"],
-         "fixed": ["8.5.12", "8.4.27", "8.3.36", "8.2.35"],
-         "backport": ["sh", "-c", "zgrep -l 'CVE-2026-109618' /usr/share/doc/php*-common/changelog.Debian.gz 2>/dev/null | head -1; rpm -q --changelog php-common 2>/dev/null | grep -m1 'CVE-2026-109618'"]}
+        {
+          "kind": "version",
+          "label": "php",
+          "command": [
+            "php",
+            "-r",
+            "echo PHP_VERSION;"
+          ],
+          "fixed": [
+            "8.5.12",
+            "8.4.27",
+            "8.3.36",
+            "8.2.35"
+          ],
+          "backport": [
+            "sh",
+            "-c",
+            "zgrep -l 'CVE-2026-109618' /usr/share/doc/php*-common/changelog.Debian.gz 2>/dev/null | head -1; rpm -q --changelog php-common 2>/dev/null | grep -m1 'CVE-2026-109618'"
+          ]
+        }
       ],
       "patch": [
         "Debian/Ubuntu: sudo apt update && sudo apt install --only-upgrade 'php*' then sudo systemctl restart 'php*-fpm' apache2 (whichever you run)",
@@ -31,7 +149,9 @@
         "post_max_size 8M (32M if you take uploads) with upload_max_filesize below it",
         "These only narrow the attack; only the update fixes it"
       ],
-      "iocs": ["Unexpected child processes of php-fpm/apache (shells, curl, wget): watch with https://github.com/Neo23x0/process-watcher"],
+      "iocs": [
+        "Unexpected child processes of php-fpm/apache (shells, curl, wget): watch with https://github.com/Neo23x0/process-watcher"
+      ],
       "sources": [
         "https://www.php.net/archive/2026.php#2026-10-20-1",
         "https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w",
@@ -48,12 +168,40 @@
       "date": "2026-10-21",
       "severity": "high",
       "exploited": false,
-      "cves": ["CVE-2026-111497", "CVE-2026-105483", "CVE-2026-106069", "CVE-2026-105482", "CVE-2026-105481", "CVE-2026-106072", "CVE-2026-106074", "CVE-2026-106070", "CVE-2026-106071", "CVE-2026-106073"],
+      "cves": [
+        "CVE-2026-111497",
+        "CVE-2026-105483",
+        "CVE-2026-106069",
+        "CVE-2026-105482",
+        "CVE-2026-105481",
+        "CVE-2026-106072",
+        "CVE-2026-106074",
+        "CVE-2026-106070",
+        "CVE-2026-106071",
+        "CVE-2026-106073"
+      ],
       "summary": "An out-of-bounds write in Node's Brotli decoder can run code when a server decompresses attacker data; the same release fixes TLS hostname-check bypasses and a dns.resolve truncation, and drops the eMudhra CA from Node's bundled store.",
       "affected": "Node.js 22.x, 24.x and 26.x before the fixed releases, and every end-of-life line.",
-      "fixed": ["22.23.4", "24.22.1", "26.12.1"],
+      "fixed": [
+        "22.23.4",
+        "24.22.1",
+        "26.12.1"
+      ],
       "checks": [
-        {"kind": "version", "label": "node", "command": ["node", "-v"], "line": 1, "fixed": ["22.23.4", "24.22.1", "26.12.1"]}
+        {
+          "kind": "version",
+          "label": "node",
+          "command": [
+            "node",
+            "-v"
+          ],
+          "line": 1,
+          "fixed": [
+            "22.23.4",
+            "24.22.1",
+            "26.12.1"
+          ]
+        }
       ],
       "patch": [
         "nvm: nvm install 24.22.1 (or 22.23.4 / 26.12.1) && nvm alias default 24.22.1",
@@ -61,7 +209,9 @@
         "Docker: rebuild on node:22.23.4 / 24.22.1 / 26.12.1 (or newer) and redeploy",
         "Restart every Node process after upgrading"
       ],
-      "mitigation": ["Until patched: refuse Content-Encoding: br request bodies at the reverse proxy and do not decompress untrusted Brotli in app code (Vercel's WAF already blocks known patterns for Vercel deployments)"],
+      "mitigation": [
+        "Until patched: refuse Content-Encoding: br request bodies at the reverse proxy and do not decompress untrusted Brotli in app code (Vercel's WAF already blocks known patterns for Vercel deployments)"
+      ],
       "iocs": [],
       "sources": [
         "https://nodejs.org/en/blog/vulnerability/october-2026-security-releases",
@@ -74,13 +224,40 @@
       "date": "2026-10-21",
       "severity": "critical",
       "exploited": false,
-      "cves": ["CVE-2026-110264", "CVE-2026-97229"],
+      "cves": [
+        "CVE-2026-110264",
+        "CVE-2026-97229"
+      ],
       "summary": "An integer overflow in GitLab's regex compiler lets anyone reach code execution on a self-managed server; it spans 12 years of releases. The same fixed releases supersede the October 12 fix for CVE-2026-97229 (CI/CD regex RCE, also CVSS 10). GitLab.com and Dedicated are already patched.",
       "affected": "GitLab CE/EE self-managed 7.0 up to 18.11.12, 19.0 before 19.0.10, 19.1 before 19.1.9, 19.2 before 19.2.9, 19.3 before 19.3.6, 19.4 before 19.4.3, 19.5 before 19.5.1.",
-      "fixed": ["19.5.1", "19.4.3", "19.3.6", "19.2.9", "19.1.9", "19.0.10", "18.11.13"],
+      "fixed": [
+        "19.5.1",
+        "19.4.3",
+        "19.3.6",
+        "19.2.9",
+        "19.1.9",
+        "19.0.10",
+        "18.11.13"
+      ],
       "checks": [
-        {"kind": "version", "label": "gitlab", "command": ["cat", "/opt/gitlab/embedded/service/gitlab-rails/VERSION"], "min": "7.0",
-         "fixed": ["19.5.1", "19.4.3", "19.3.6", "19.2.9", "19.1.9", "19.0.10", "18.11.13"]}
+        {
+          "kind": "version",
+          "label": "gitlab",
+          "command": [
+            "cat",
+            "/opt/gitlab/embedded/service/gitlab-rails/VERSION"
+          ],
+          "min": "7.0",
+          "fixed": [
+            "19.5.1",
+            "19.4.3",
+            "19.3.6",
+            "19.2.9",
+            "19.1.9",
+            "19.0.10",
+            "18.11.13"
+          ]
+        }
       ],
       "patch": [
         "Omnibus (Debian/Ubuntu): sudo apt update && sudo apt install gitlab-ee (or gitlab-ce) to 19.5.1 or the fixed patch of your minor",
@@ -88,8 +265,12 @@
         "Docker: pull gitlab/gitlab-ee:19.5.1-ee.0 (or your minor's fixed tag) and recreate the container",
         "Then: sudo gitlab-ctl reconfigure && sudo gitlab-ctl restart"
       ],
-      "mitigation": ["None published; take the instance off the public internet until upgraded"],
-      "iocs": ["GitLab published detections for CVE-2026-97229 (e.g. Onigmo native worker crashes) in its 19.4.2 release post"],
+      "mitigation": [
+        "None published; take the instance off the public internet until upgraded"
+      ],
+      "iocs": [
+        "GitLab published detections for CVE-2026-97229 (e.g. Onigmo native worker crashes) in its 19.4.2 release post"
+      ],
       "sources": [
         "https://docs.gitlab.com/releases/patches/patch-release-gitlab-19-5-1-released/",
         "https://docs.gitlab.com/releases/patches/patch-release-gitlab-19-4-2-released/",
@@ -102,16 +283,39 @@
       "date": "2026-09-10",
       "severity": "critical",
       "exploited": true,
-      "cves": ["CVE-2026-85706"],
+      "cves": [
+        "CVE-2026-85706"
+      ],
       "summary": "A path traversal in the commits API reads any file on the server with one request: CI/CD secrets, deploy tokens, SSH keys. In CISA's exploited list since September 11 and still being hit (reposted widely on October 21).",
       "affected": "GitLab CE/EE 18.7 before 19.1.8, 19.2 before 19.2.6, 19.3 before 19.3.2. An 18.x instance should move to a current 19.x release.",
-      "fixed": ["19.1.8", "19.2.6", "19.3.2"],
-      "checks": [
-        {"kind": "version", "label": "gitlab", "command": ["cat", "/opt/gitlab/embedded/service/gitlab-rails/VERSION"], "min": "18.7",
-         "fixed": ["19.1.8", "19.2.6", "19.3.2"]}
+      "fixed": [
+        "19.1.8",
+        "19.2.6",
+        "19.3.2"
       ],
-      "patch": ["Upgrade as for gitlab-110264 (its fixed releases include this fix)", "Then rotate CI/CD variables, deploy tokens, runner tokens and SSH keys, and hunt for unknown access"],
-      "mitigation": ["None; upgrade"],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "gitlab",
+          "command": [
+            "cat",
+            "/opt/gitlab/embedded/service/gitlab-rails/VERSION"
+          ],
+          "min": "18.7",
+          "fixed": [
+            "19.1.8",
+            "19.2.6",
+            "19.3.2"
+          ]
+        }
+      ],
+      "patch": [
+        "Upgrade as for gitlab-110264 (its fixed releases include this fix)",
+        "Then rotate CI/CD variables, deploy tokens, runner tokens and SSH keys, and hunt for unknown access"
+      ],
+      "mitigation": [
+        "None; upgrade"
+      ],
       "iocs": [],
       "sources": [
         "https://www.rapid7.com/blog/post/etr-cve-2026-85706-critical-gitlab-path-traversal-exploited-in-the-wild/",
@@ -124,14 +328,34 @@
       "date": "2026-10-14",
       "severity": "critical",
       "exploited": false,
-      "cves": ["CVE-2026-108097"],
+      "cves": [
+        "CVE-2026-108097"
+      ],
       "summary": "A remote code execution bug in Drupal core's Field UI, reachable through contributed modules or custom code. Drupal sites also run on PHP, so patch php2shell too.",
       "affected": "Drupal core before 11.4.10, 11.3.19 and 10.6.19.",
-      "fixed": ["11.4.10", "11.3.19", "10.6.19"],
-      "checks": [
-        {"kind": "composer", "label": "drupal/core", "packages": ["drupal/core", "drupal/core-recommended"], "fixed": ["11.4.10", "11.3.19", "10.6.19"]}
+      "fixed": [
+        "11.4.10",
+        "11.3.19",
+        "10.6.19"
       ],
-      "patch": ["composer update 'drupal/core-*' --with-all-dependencies, then drush updatedb && drush cache:rebuild"],
+      "checks": [
+        {
+          "kind": "composer",
+          "label": "drupal/core",
+          "packages": [
+            "drupal/core",
+            "drupal/core-recommended"
+          ],
+          "fixed": [
+            "11.4.10",
+            "11.3.19",
+            "10.6.19"
+          ]
+        }
+      ],
+      "patch": [
+        "composer update 'drupal/core-*' --with-all-dependencies, then drush updatedb && drush cache:rebuild"
+      ],
       "mitigation": [],
       "iocs": [],
       "sources": [
@@ -149,10 +373,31 @@
       "cves": [],
       "summary": "The PRO build downloaded between Oct 15 20:02 and Oct 16 07:12 UTC carried a self-rebuilding backdoor. Updating alone is not enough once it was active: it re-plants itself.",
       "affected": "Rank Math PRO 3.0.123, if it was activated. The free wordpress.org plugin is not affected.",
-      "fixed": ["3.0.124"],
+      "fixed": [
+        "3.0.124"
+      ],
       "checks": [
-        {"kind": "wp-plugin", "label": "rank-math-pro", "slugs": ["seo-by-rank-math-pro", "rank-math-pro"], "bad": ["3.0.123"]},
-        {"kind": "command", "label": "rank1cdn.com in wp-content", "needs": "dir", "command": ["sh", "-c", "grep -rl 'rank1cdn.com' '{dir}/wp-content' 2>/dev/null | head -5"]}
+        {
+          "kind": "wp-plugin",
+          "label": "rank-math-pro",
+          "slugs": [
+            "seo-by-rank-math-pro",
+            "rank-math-pro"
+          ],
+          "bad": [
+            "3.0.123"
+          ]
+        },
+        {
+          "kind": "command",
+          "label": "rank1cdn.com in wp-content",
+          "needs": "dir",
+          "command": [
+            "sh",
+            "-c",
+            "grep -rl 'rank1cdn.com' '{dir}/wp-content' 2>/dev/null | head -5"
+          ]
+        }
       ],
       "patch": [
         "Best: restore files and database from a backup taken before 2026-10-15 20:02 UTC, then install 3.0.124",
@@ -160,7 +405,10 @@
         "Then rotate WordPress passwords, DB credentials, salts, and API/payment/SMTP/hosting/SSH keys"
       ],
       "mitigation": [],
-      "iocs": ["wp_options: _uf6qdn2hmm, t8krdk990phb, _np5pvf754c", "domain: rank1cdn.com"],
+      "iocs": [
+        "wp_options: _uf6qdn2hmm, t8krdk990phb, _np5pvf754c",
+        "domain: rank1cdn.com"
+      ],
       "sources": [
         "https://rankmath.com/kb/pro-3-0-123-security-incident/",
         "https://www.wordfence.com/blog/2026/10/rank-math-seo-pro-3-0-123-malware/",
@@ -176,17 +424,35 @@
       "cves": [],
       "summary": "teamupdraft.com was breached; stolen UpdraftCentral cloud keys were used to create admins and install malicious plugins on connected WordPress sites. The fixed UpdraftPlus revokes keys made before Oct 18.",
       "affected": "WordPress sites connected to UpdraftCentral cloud; UpdraftPlus Premium users should check. Self-hosted UpdraftCentral is not affected.",
-      "fixed": ["1.26.13", "2.26.13"],
+      "fixed": [
+        "1.26.13",
+        "2.26.13"
+      ],
       "checks": [
-        {"kind": "wp-plugin", "label": "updraftplus", "slugs": ["updraftplus"], "line": 1, "fixed": ["1.26.13", "2.26.13"]}
+        {
+          "kind": "wp-plugin",
+          "label": "updraftplus",
+          "slugs": [
+            "updraftplus"
+          ],
+          "line": 1,
+          "fixed": [
+            "1.26.13",
+            "2.26.13"
+          ]
+        }
       ],
       "patch": [
         "Update UpdraftPlus to 1.26.13 (free) or 2.26.13 (Premium)",
         "Delete the UpdraftCentral key, remove unknown admins and plugins, change admin passwords, re-authorise remote storage, change your teamupdraft.com password"
       ],
       "mitigation": [],
-      "iocs": ["Admin accounts or plugins you did not create"],
-      "sources": ["https://teamupdraft.com/blog/security-incident-october-2026/"]
+      "iocs": [
+        "Admin accounts or plugins you did not create"
+      ],
+      "sources": [
+        "https://teamupdraft.com/blog/security-incident-october-2026/"
+      ]
     },
     {
       "id": "strapi-kev-2026-10",
@@ -194,16 +460,33 @@
       "date": "2026-10-08",
       "severity": "critical",
       "exploited": true,
-      "cves": ["CVE-2023-22621", "CVE-2023-22894"],
+      "cves": [
+        "CVE-2023-22621",
+        "CVE-2023-22894"
+      ],
       "summary": "Two 2023 Strapi bugs chain to unauthenticated code execution on self-hosted instances; CISA added them to its exploited list on Oct 8.",
       "affected": "Strapi 4 before 4.8.0 (CVE-2023-22621: 4.5.5 and older) and every Strapi 3.",
-      "fixed": ["4.8.0"],
-      "checks": [
-        {"kind": "npm", "label": "@strapi/strapi", "package": "@strapi/strapi", "fixed": ["4.8.0"]}
+      "fixed": [
+        "4.8.0"
       ],
-      "patch": ["npm install @strapi/strapi@latest (4.8.0 or newer; Strapi 5 is current) and rebuild", "Strapi 3: migrate, it gets no fix"],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@strapi/strapi",
+          "package": "@strapi/strapi",
+          "fixed": [
+            "4.8.0"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install @strapi/strapi@latest (4.8.0 or newer; Strapi 5 is current) and rebuild",
+        "Strapi 3: migrate, it gets no fix"
+      ],
       "mitigation": [],
-      "iocs": ["PUT /users-permissions/email-templates in access logs"],
+      "iocs": [
+        "PUT /users-permissions/email-templates in access logs"
+      ],
       "sources": [
         "https://strapi.io/blog/security-disclosure-of-vulnerabilities-cve",
         "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
@@ -216,17 +499,40 @@
       "date": "2026-10-14",
       "severity": "critical",
       "exploited": true,
-      "cves": ["CVE-2026-110447"],
+      "cves": [
+        "CVE-2026-110447"
+      ],
       "summary": "Unauthenticated command injection through proxy.php in the Collabora Online built-in CODE server app (richdocumentscode).",
       "affected": "richdocumentscode before 26.4.303.",
-      "fixed": ["26.4.303"],
-      "checks": [
-        {"kind": "version", "label": "richdocumentscode", "needs": "dir", "command": ["sh", "-c", "grep -o '<version>[^<]*' '{dir}/apps/richdocumentscode/appinfo/info.xml' 2>/dev/null | cut -d'>' -f2"], "fixed": ["26.4.303"]}
+      "fixed": [
+        "26.4.303"
       ],
-      "patch": ["sudo -u www-data php occ app:update richdocumentscode (or update it in Apps), or disable the app"],
-      "mitigation": ["php occ app:disable richdocumentscode until updated"],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "richdocumentscode",
+          "needs": "dir",
+          "command": [
+            "sh",
+            "-c",
+            "grep -o '<version>[^<]*' '{dir}/apps/richdocumentscode/appinfo/info.xml' 2>/dev/null | cut -d'>' -f2"
+          ],
+          "fixed": [
+            "26.4.303"
+          ]
+        }
+      ],
+      "patch": [
+        "sudo -u www-data php occ app:update richdocumentscode (or update it in Apps), or disable the app"
+      ],
+      "mitigation": [
+        "php occ app:disable richdocumentscode until updated"
+      ],
       "iocs": [],
-      "sources": ["https://www.tenable.com/cve/CVE-2026-110447", "https://x.com/ThreatWire_/status/2110224199604220150"]
+      "sources": [
+        "https://www.tenable.com/cve/CVE-2026-110447",
+        "https://x.com/ThreatWire_/status/2110224199604220150"
+      ]
     },
     {
       "id": "plex2shell",
@@ -234,16 +540,40 @@
       "date": "2026-10-20",
       "severity": "critical",
       "exploited": true,
-      "cves": ["CVE-2026-96652", "CVE-2026-96654", "CVE-2026-96655", "CVE-2026-96656"],
+      "cves": [
+        "CVE-2026-96652",
+        "CVE-2026-96654",
+        "CVE-2026-96655",
+        "CVE-2026-96656"
+      ],
       "summary": "A four-bug chain in Plex Media Server, exploited since Oct 17 to drop crypto miners and proxy malware; CISA added it to its exploited list on Oct 20.",
       "affected": "Plex Media Server before 1.43.3.10861.",
-      "fixed": ["1.43.3.10861"],
-      "checks": [
-        {"kind": "version", "label": "plexmediaserver", "command": ["sh", "-c", "dpkg-query -W -f='${Version}' plexmediaserver 2>/dev/null || rpm -q --qf '%{VERSION}' plexmediaserver 2>/dev/null"], "fixed": ["1.43.3.10861"]}
+      "fixed": [
+        "1.43.3.10861"
       ],
-      "patch": ["Update Plex Media Server to 1.43.3.10861 or newer (package manager or Plex's download page)"],
-      "mitigation": ["Keep Plex off the public internet until updated"],
-      "iocs": ["Unknown processes using CPU (miners) under the plex user"],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "plexmediaserver",
+          "command": [
+            "sh",
+            "-c",
+            "dpkg-query -W -f='${Version}' plexmediaserver 2>/dev/null || rpm -q --qf '%{VERSION}' plexmediaserver 2>/dev/null"
+          ],
+          "fixed": [
+            "1.43.3.10861"
+          ]
+        }
+      ],
+      "patch": [
+        "Update Plex Media Server to 1.43.3.10861 or newer (package manager or Plex's download page)"
+      ],
+      "mitigation": [
+        "Keep Plex off the public internet until updated"
+      ],
+      "iocs": [
+        "Unknown processes using CPU (miners) under the plex user"
+      ],
       "sources": [
         "https://www.cisa.gov/news-events/alerts/2026/10/20/cisa-adds-six-known-exploited-vulnerabilities-catalog",
         "https://www.bleepingcomputer.com/news/security/cisa-hackers-chain-plex-flaws-in-plex2shell-attacks-to-breach-servers/",
@@ -258,20 +588,53 @@
       "exploited": true,
       "cves": [],
       "summary": "A release built from a lookalike repo put cook.pth in site-packages, so the stealer runs on every Python start. It takes cloud keys, SSH keys, .env files, AI tool configs, and every provider key in the LiteLLM database.",
-      "affected": "litellm==1.107.0 from PyPI (Oct 21 11:39-13:53 UTC); Docker ghcr.io/berriai/litellm* and docker.io/litellm/litellm tags v1.107.0, latest, main-latest, main-stable pulled in that window.",
-      "fixed": ["1.106.2"],
+      "affected": "litellm==1.107.0 from PyPI (all seven wheels, Oct 21 11:39-13:23 UTC); Docker Hub and GHCR (ghcr.io/berriai/litellm, litellm-database, litellm-non_root) tags v1.107.0, latest, main-latest, main-stable pulled Oct 21 11:46-14:20 UTC (GHCR until 13:51 UTC). The GitHub v1.107.0 source tag is clean.",
+      "fixed": [
+        "1.106.2"
+      ],
       "checks": [
-        {"kind": "version", "label": "litellm", "command": ["python3", "-c", "import importlib.metadata as m; print(m.version('litellm'))"], "bad": ["1.107.0"]},
-        {"kind": "command", "label": "cook.pth in site-packages", "command": ["python3", "-c", "import site,glob,os; d=site.getsitepackages()+[site.getusersitepackages()]; print(chr(10).join(f for x in d for f in glob.glob(os.path.join(x,'cook.p*'))))"]},
-        {"kind": "files", "label": "stealer marker", "paths": ["/tmp/.pc_once_*"]}
+        {
+          "kind": "version",
+          "label": "litellm",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('litellm'))"
+          ],
+          "bad": [
+            "1.107.0"
+          ]
+        },
+        {
+          "kind": "command",
+          "label": "cook.pth in site-packages",
+          "command": [
+            "python3",
+            "-c",
+            "import site,glob,os; d=site.getsitepackages()+[site.getusersitepackages()]; print(chr(10).join(f for x in d for f in glob.glob(os.path.join(x,'cook.p*'))))"
+          ]
+        },
+        {
+          "kind": "files",
+          "label": "stealer marker",
+          "paths": [
+            "/tmp/.pc_once_*"
+          ]
+        }
       ],
       "patch": [
         "Isolate the host; rebuild the virtualenv or image from scratch (do not pip install over it); pin litellm==1.106.2 or a later clean release, and pin Docker images by digest",
         "Rotate everything the host could read: cloud keys and instance roles, SSH/GPG keys, .env files, .npmrc/.pypirc/.git-credentials, kube/docker/gh tokens, AI tool keys, and every provider key stored in LiteLLM's database"
       ],
       "mitigation": [],
-      "iocs": ["site-packages/cook.pth, cook.py", "/tmp/.pc_once_72129118c59f5636c0bb", "POST http://www.litellm.dev/healthcheck"],
+      "iocs": [
+        "site-packages/cook.pth, cook.py",
+        "/tmp/.pc_once_72129118c59f5636c0bb",
+        "POST http://www.litellm.dev/healthcheck",
+        "Docker image index sha256:1bbcb1443bc962e45f5aad53fe3d2c30600e0379715fb6c664cdd3ac126c339e (ghcr.io/berriai/litellm, Docker Hub)"
+      ],
       "sources": [
+        "https://docs.litellm.ai/blog/security-incident-oct-21-2026",
         "https://github.com/BerriAI/litellm/issues/47826",
         "https://www.wiz.io/blog/litellm-compromised-steals-credentials",
         "https://x.com/JFrogSecurity/status/2112882176156909646"
@@ -286,11 +649,27 @@
       "cves": [],
       "summary": "Release binaries v0.11.0 to v0.15.0 were swapped for a secret stealer through a compromised contributor account, for installs via install.sh, Homebrew or GitHub tarballs on Oct 19 14:47-16:21 UTC.",
       "affected": "ovhcloud-cli v0.11.0 to v0.15.0 installed in that window (Go-module, source and Docker installs are clean).",
-      "fixed": ["0.16.0"],
-      "checks": [
-        {"kind": "version", "label": "ovhcloud", "command": ["ovhcloud", "version"], "min": "0.11.0", "fixed": ["0.16.0"]}
+      "fixed": [
+        "0.16.0"
       ],
-      "patch": ["Update to v0.16.0 or delete the binary", "If it was installed in the window: change every secret on that disk"],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "ovhcloud",
+          "command": [
+            "ovhcloud",
+            "version"
+          ],
+          "min": "0.11.0",
+          "fixed": [
+            "0.16.0"
+          ]
+        }
+      ],
+      "patch": [
+        "Update to v0.16.0 or delete the binary",
+        "If it was installed in the window: change every secret on that disk"
+      ],
       "mitigation": [],
       "iocs": [],
       "sources": [
@@ -310,12 +689,30 @@
       "affected": "Any project or machine that installed @apexacc/cli or @apexacc/audit.",
       "fixed": [],
       "checks": [
-        {"kind": "npm", "label": "@apexacc/cli", "package": "@apexacc/cli", "bad": ["*"]},
-        {"kind": "npm", "label": "@apexacc/audit", "package": "@apexacc/audit", "bad": ["*"]}
+        {
+          "kind": "npm",
+          "label": "@apexacc/cli",
+          "package": "@apexacc/cli",
+          "bad": [
+            "*"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@apexacc/audit",
+          "package": "@apexacc/audit",
+          "bad": [
+            "*"
+          ]
+        }
       ],
-      "patch": ["Remove the packages, check your AI agent configs for an MCP server or model proxy you did not add, rotate keys on that machine"],
+      "patch": [
+        "Remove the packages, check your AI agent configs for an MCP server or model proxy you did not add, rotate keys on that machine"
+      ],
       "mitigation": [],
-      "iocs": ["apexacc in ~/.config or agent config folders"],
+      "iocs": [
+        "apexacc in ~/.config or agent config folders"
+      ],
       "sources": [
         "https://www.elastic.co/security-labs/threat-command/apex-accelerator-malicious-npm-packages",
         "https://x.com/TheHackersNews/status/2112123909063491916"
@@ -327,13 +724,24 @@
       "date": "2026-10-20",
       "severity": "critical",
       "exploited": false,
-      "cves": ["CVE-2026-111943"],
+      "cves": [
+        "CVE-2026-111943"
+      ],
       "summary": "Eight eMudhra intermediate CA keys were generated with weak entropy (one key was the number 4), so certificates for any domain could be forged. Chrome blocked them on Oct 17 and removes the emSign ECC Root CA - G3 on Oct 27.",
       "affected": "Sites whose certificate chains to eMudhra/emSign (they stop working in Chrome on Oct 27); servers and apps with old trust stores.",
       "fixed": [],
       "checks": [
-        {"kind": "command", "label": "site certificate issuer", "needs": "host", "match": "(?i)emsign|emudhra",
-         "command": ["sh", "-c", "echo | openssl s_client -connect '{host}:443' -servername '{host}' 2>/dev/null | openssl x509 -noout -issuer"]}
+        {
+          "kind": "command",
+          "label": "site certificate issuer",
+          "needs": "host",
+          "match": "(?i)emsign|emudhra",
+          "command": [
+            "sh",
+            "-c",
+            "echo | openssl s_client -connect '{host}:443' -servername '{host}' 2>/dev/null | openssl x509 -noout -issuer"
+          ]
+        }
       ],
       "patch": [
         "If your certificate is issued by eMudhra/emSign: get a new one from another CA (e.g. Let's Encrypt: certbot --nginx -d {host}) before Oct 27",
@@ -360,10 +768,15 @@
       "affected": "Anyone who deploys on Railway.",
       "fixed": [],
       "checks": [],
-      "patch": ["Rotate every Railway environment variable, API key, database password and private-registry credential; review service logs"],
+      "patch": [
+        "Rotate every Railway environment variable, API key, database password and private-registry credential; review service logs"
+      ],
       "mitigation": [],
       "iocs": [],
-      "sources": ["https://blog.railway.com/p/security-disclosure-wednesday-october-21st", "https://status.railway.com/incident/QH8L8B3E"]
+      "sources": [
+        "https://blog.railway.com/p/security-disclosure-wednesday-october-21st",
+        "https://status.railway.com/incident/QH8L8B3E"
+      ]
     },
     {
       "id": "opencode-console-keys",
@@ -376,10 +789,15 @@
       "affected": "Anyone who linked provider keys to OpenCode Console.",
       "fixed": [],
       "checks": [],
-      "patch": ["Revoke and reissue every provider key you linked to OpenCode Console; check provider bills"],
+      "patch": [
+        "Revoke and reissue every provider key you linked to OpenCode Console; check provider bills"
+      ],
       "mitigation": [],
       "iocs": [],
-      "sources": ["http://x.com/opencode/status/2111519637049319818", "https://www.bleepingcomputer.com/news/security/opencode-hack-exposes-api-keys-amid-ai-distillation-attacks/"]
+      "sources": [
+        "http://x.com/opencode/status/2111519637049319818",
+        "https://www.bleepingcomputer.com/news/security/opencode-hack-exposes-api-keys-amid-ai-distillation-attacks/"
+      ]
     },
     {
       "id": "zeabur-2026-10",
@@ -392,10 +810,14 @@
       "affected": "Anyone who deployed on Zeabur.",
       "fixed": [],
       "checks": [],
-      "patch": ["Replace every password and key stored on Zeabur, even ones rotated in August, and migrate off"],
+      "patch": [
+        "Replace every password and key stored on Zeabur, even ones rotated in August, and migrate off"
+      ],
       "mitigation": [],
       "iocs": [],
-      "sources": ["https://zeabur.com/blogs/october-2026-security-incident"]
+      "sources": [
+        "https://zeabur.com/blogs/october-2026-security-incident"
+      ]
     },
     {
       "id": "connectwise-cloud-backup",
@@ -408,10 +830,17 @@
       "affected": "Microsoft 365 tenants that granted the ConnectWise Cloud Backup (SkyKick) app.",
       "fixed": [],
       "checks": [],
-      "patch": ["In Entra ID, disable (not delete) enterprise apps 506e08f9-6e9a-4da4-942b-a099a03644ae and 24205314-2b89-4e07-a2a4-579e898a5640; review credentials added to all apps"],
+      "patch": [
+        "In Entra ID, disable (not delete) enterprise apps 506e08f9-6e9a-4da4-942b-a099a03644ae and 24205314-2b89-4e07-a2a4-579e898a5640; review credentials added to all apps"
+      ],
       "mitigation": [],
-      "iocs": ["Sign-ins from 144.172.64.128"],
-      "sources": ["https://www.huntress.com/blog/vendor-credential-enables-unauthorized-access", "https://x.com/MsftSecIntel/status/2111358888125878426"]
+      "iocs": [
+        "Sign-ins from 144.172.64.128"
+      ],
+      "sources": [
+        "https://www.huntress.com/blog/vendor-credential-enables-unauthorized-access",
+        "https://x.com/MsftSecIntel/status/2111358888125878426"
+      ]
     },
     {
       "id": "linux-pwnescape",
@@ -419,15 +848,23 @@
       "date": "2026-10-16",
       "severity": "critical",
       "exploited": false,
-      "cves": ["CVE-2026-99999"],
+      "cves": [
+        "CVE-2026-99999"
+      ],
       "summary": "Crafted packets from a guest VM leak host memory, crash the host, or run code as root on it. It matters to anyone hosting other people's VMs (VPS providers, sandboxes); a site on a VPS depends on its provider having rebooted into a patched kernel.",
       "affected": "KVM hosts on unpatched kernels.",
       "fixed": [],
       "checks": [],
-      "patch": ["VM hosts: install the distro's patched kernel and reboot", "VPS customers: confirm your provider patched its hosts"],
+      "patch": [
+        "VM hosts: install the distro's patched kernel and reboot",
+        "VPS customers: confirm your provider patched its hosts"
+      ],
       "mitigation": [],
       "iocs": [],
-      "sources": ["https://almalinux.org/blog/2026-10-16-pwnescape-cve-2026-99999/", "https://x.com/PaulosYibelo/status/2111541156572013043"]
+      "sources": [
+        "https://almalinux.org/blog/2026-10-16-pwnescape-cve-2026-99999/",
+        "https://x.com/PaulosYibelo/status/2111541156572013043"
+      ]
     },
     {
       "id": "tomcat-2026-10",
@@ -438,12 +875,19 @@
       "cves": [],
       "summary": "Eight vulnerabilities, including an authentication bypass and an HTTP/2 response mix-up.",
       "affected": "Tomcat 11 before 11.0.27 and 10.1 before 10.1.61.",
-      "fixed": ["11.0.27", "10.1.61"],
+      "fixed": [
+        "11.0.27",
+        "10.1.61"
+      ],
       "checks": [],
-      "patch": ["Upgrade to 11.0.27 or 10.1.61 ($CATALINA_HOME/bin/version.sh shows yours)"],
+      "patch": [
+        "Upgrade to 11.0.27 or 10.1.61 ($CATALINA_HOME/bin/version.sh shows yours)"
+      ],
       "mitigation": [],
       "iocs": [],
-      "sources": ["https://tomcat.apache.org/security-11.html"]
+      "sources": [
+        "https://tomcat.apache.org/security-11.html"
+      ]
     },
     {
       "id": "siteguard-106931",
@@ -451,15 +895,27 @@
       "date": "2026-10-20",
       "severity": "high",
       "exploited": true,
-      "cves": ["CVE-2026-106931"],
+      "cves": [
+        "CVE-2026-106931"
+      ],
       "summary": "The host WAF's statistics feature (on by default) lets a low-privilege local user become root; CISA added it to its exploited list on Oct 20.",
       "affected": "SiteGuard Server Edition 2.20 and later with statistics on.",
-      "fixed": ["8.00 Update 5", "7.00 Update 6 (FreeBSD)"],
+      "fixed": [
+        "8.00 Update 5",
+        "7.00 Update 6 (FreeBSD)"
+      ],
       "checks": [],
-      "patch": ["Apply Ver8.00 Update 5 (Apache/Nginx/IIS) or Ver7.00 Update 6 (FreeBSD), or the vendor's file-replacement patch"],
-      "mitigation": ["Turn the statistics feature off until patched"],
+      "patch": [
+        "Apply Ver8.00 Update 5 (Apache/Nginx/IIS) or Ver7.00 Update 6 (FreeBSD), or the vendor's file-replacement patch"
+      ],
+      "mitigation": [
+        "Turn the statistics feature off until patched"
+      ],
       "iocs": [],
-      "sources": ["https://jvn.jp/en/jp/JVN88474777/", "https://www.eg-secure.co.jp/siteguard/news/alert-202610-1"]
+      "sources": [
+        "https://jvn.jp/en/jp/JVN88474777/",
+        "https://www.eg-secure.co.jp/siteguard/news/alert-202610-1"
+      ]
     }
   ]
 }
