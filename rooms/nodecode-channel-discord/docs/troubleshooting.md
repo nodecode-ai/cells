@@ -165,7 +165,6 @@ fails, the log says `discord: could not read the bot's guilds (...); a
 | `cancelled · ... the bot stopped before this ran: ask again when it is back` | The ask was still queued when the bot shut down. Ask again. |
 | `the turn ended without an answer — nothing was posted.` | The model replied with no words. Ask again, or try another model. |
 | `turn failed: DETAIL` | A turn failed after its conversation had closed. |
-| `this question is no longer open` (private) | The question's conversation closed; see [choices.md](choices.md#a-question-that-is-no-longer-open). |
 | `[the recording "NAME" could not be transcribed: ...]` (in the model's prompt) | See [files.md](files.md#transcription). The usual cause is `no transcriber is installed`: run `(nck:install-transcriber)`, or set a hosted `transcription.base_url`. |
 
 ## Voice

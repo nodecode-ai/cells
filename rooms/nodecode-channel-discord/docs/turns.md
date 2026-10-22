@@ -309,7 +309,6 @@ messages:
   menu;
 - every refusal of a command run from the menu or a button ("/X is the
   operator's; /help lists what you can run", "not allowed here: REASON");
-- "this question is no longer open" for a press on a stale question;
 - a card's **Details**.
 
 A private answer is one message: text past 2,000 characters is not sent.

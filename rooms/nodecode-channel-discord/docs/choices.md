@@ -63,13 +63,15 @@ A press is the presser's reply to the question, with the label as its words.
   passes the same checks as a typed message from that person.
 - Typing a reply instead still works: the buttons are a shortcut.
 
-### A question that is no longer open
+### A question whose conversation closed
 
-The buttons work while the conversation that asked is open: until 30 minutes
-after its turn ended with no further reply, and not across a restart of the
-bot. A press after that tells the presser privately "this question is no
-longer open", and nothing runs. The question keeps its buttons. Type a reply
-or ask again.
+The conversation that asked stays open until 30 minutes after its turn ended
+with no further reply, and not across a restart of the bot. A press after
+that still works, as a typed reply to the question would: the question is
+marked answered and loses its buttons, and the label starts a new
+conversation that sees everything the room has said, the question included.
+Its answer replies to the question. Only the tool work the old conversation
+did is out of reach.
 
 ## The /models picker
 

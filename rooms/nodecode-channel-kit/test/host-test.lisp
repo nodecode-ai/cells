@@ -1447,21 +1447,33 @@ LANE, as the one running channel."
         (is (not (equal first second)) "another card's press is another ask")
         (is (equal second again) "the same press twice is one ask")))))
 
-(deftest channel-a-press-on-a-card-no-lane-answers ()
-  ;; A card whose lane is gone has no question open: the presser is told so,
-  ;; privately, and nothing runs.
+(deftest channel-a-press-on-a-card-no-lane-opens-one ()
+  ;; A card whose lane is gone -- reaped after its idle window, or lost to a
+  ;; restart -- still takes its press, as a typed reply to it would: the card
+  ;; is answered in place, its buttons gone, and the label opens a new lane at
+  ;; the room's head, anchored on the card. The press used to tell the presser
+  ;; alone "this question is no longer open" and leave every button on.
   (with-digest-host (host lane :name "stale-press" :host-keys (:platform (test-platform :choices t)))
     (setf (nck:host-policy host) (channel-policy))
-    (with-stubbed-fdefinition (nck:continue-lane (host lane ask)
-                                (error "a stale press continued a lane"))
-      (nck:handle-candidate host (test-press "Zero setup" "c404"))
+    (let ((gated '()))
+      (with-stubbed-fdefinitions ((nck:continue-lane (host lane ask)
+                                    (error "a stale press continued a lane"))
+                                  (nck::gate-ask (host ask)
+                                    (push ask gated)))
+        (is (eq :answer (nck:handle-candidate host (test-press "Zero setup" "c404")))))
+      (is (= 1 (length gated)) "one new lane")
+      (let ((ask (first gated)))
+        (is (search "Zero setup" (nck:ask-prompt ask)))
+        (is (equal "c404" (nck::ask-message-id ask)) "anchored on the card: its answer replies there")
+        (is (search "-mc404" (nck::ask-lane ask)) "the lane is named for the card")
+        (is (not (nck::ask-continue-p ask)) "a fork at the room's head"))
       (is (posted 2))
-      (is-plan (first (labelled "interaction_defer")) "private" t)
-      (is-plan (first (labelled "interaction_response"))
-               "content" "this question is no longer open"
-               ;; the answer says so too: where privacy rides the answer
-               ;; (Slack, Telegram), the hold alone would post it for all
-               "private" t))))
+      (is-plan (first (labelled "interaction_defer")) "private" nil "pressed" t)
+      (let ((answer (first (labelled "interaction_response"))))
+        (is (search "What matters most?" (plan-content answer)) "the question stays")
+        (is (search "Answered: Zero setup" (plan-content answer)))
+        (is (eq :clear (plan-field answer "controls")) "its buttons go")
+        (is (null (search "no longer open" (plan-content answer))))))))
 
 (deftest channel-a-press-is-a-short-id-the-store-keeps ()
   ;; A choice's data is a press: one short id for one line and the view its

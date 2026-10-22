@@ -3074,7 +3074,10 @@ the one active there last."
   ;; A press on a choice (CHOICE) is a reply to the card pressed, wherever the
   ;; room would open threads: it answers the lane that posted the card, and
   ;; the card says which answer it took (ANSWER-CARD). A card whose lane is
-  ;; gone has nothing to answer, and the presser is told so.
+  ;; gone -- reaped after its idle window, or lost to a restart -- is
+  ;; answered as a typed reply to it would be: a new lane forked at the
+  ;; room's head, anchored on the card, so a button works for as long as the
+  ;; card shows it.
   (let* ((reply-to (source-field candidate "reply_to_message_id"))
          (pressed (candidate-pressed-p candidate))
          (message-id (source-field candidate "message_id"))
@@ -3100,9 +3103,6 @@ the one active there last."
     (cond
       ((slash-line-p line)
        (on-worker host (command-message host candidate line)))
-      ((and pressed (null existing))
-       (on-worker host (respond host candidate (lambda () "this question is no longer open")
-                                :private t)))
       ;; A message a lane already took — the gateway replays what it thinks a
       ;; resume missed — is not a second steer or a second turn: the first
       ;; delivery bound it as that lane's address.
@@ -3115,10 +3115,16 @@ the one active there last."
        (note-replied-line existing reply-to)
        (continue-lane host existing (build-ask host candidate existing.session-id t)))
       (t
-       (let* ((lane-id (and message-id
+       ;; A press is no message: the card it answers anchors the new lane --
+       ;; its id, its claim, the reply its answer carries -- and is answered
+       ;; in place first, its buttons gone.
+       (when pressed
+         (on-worker host (answer-card host candidate line)))
+       (let* ((anchor (or message-id (and pressed reply-to)))
+              (lane-id (and anchor
                             (lane-id
                              (room-session-id (platform-session-prefix host.platform) candidate)
-                             message-id))))
+                             anchor))))
                   ;; The lane id IS the message id, so a redelivered event finds its own lane
          ;; already interned, and a lane that moved into a thread is addressed by that
          ;; message too (BIND-LANE-ADDRESS, at admission), so the address book catches
@@ -3132,10 +3138,10 @@ the one active there last."
                     (null (find-lane host.lanes lane-id))
                     (null (lane-for-address
                            host.lanes
-                           (address-of host target message-id)))
+                           (address-of host target anchor)))
                     ;; The claim is this delivery's, unless another has the same ask in flight.
                     (sb-ext:with-locked-hash-table (*ask-claims*)
-                      (let ((key (cons (host-id host) message-id)))
+                      (let ((key (cons (host-id host) anchor)))
                         (unless (gethash key *ask-claims*)
                           (setf (gethash key *ask-claims*) t)))))
            ;; Opening a thread is platform I/O and is done off this
@@ -3146,10 +3152,11 @@ the one active there last."
                    (lambda ()
                      (if own-thread-p
                          (start-threaded-ask host candidate lane-id)
-                         (nlk:with-cleanup ((release-ask-claim host message-id))
-                           (gate-ask host
-                                     (build-ask host candidate lane-id nil
-                                                :ambient-room parent-room)))))))
+                         (nlk:with-cleanup ((release-ask-claim host anchor))
+                           (let ((ask (build-ask host candidate lane-id nil
+                                                 :ambient-room parent-room)))
+                             (setf (ask-message-id ask) anchor)
+                             (gate-ask host ask)))))))
              (unless (and (or own-thread-p parent-room) host.worker
                           (delivery-worker-enqueue host.worker thunk))
                (funcall thunk)))))))))
