@@ -1318,3 +1318,24 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (search "state.doing && state.doing !== key" render) "a chosen state lists its band alone")
     (is (search "at < DONE_ROWS || block.rows.some((entry) => entry.id === state.current)" render) "Done its newest few and the session on screen, until Show all")
     (is (search "$(\"sessions-badge\").textContent = String(asks);" render) "the badge counts what needs you")))
+
+;; The operator, 2026-10-21: "I would like to be able to delete this, add a
+;; delete knob or something for a conversation" -- deleting took the Sessions
+;; menu's Select, a tick and its trash; a row now carries a trash of its own.
+(deftest web-cell-a-session-row-deletes-its-own-session ()
+  (let* ((css (web-css-declarations (web-page-text "app.css")))
+         (value (lambda (selector property) (web-css-value css selector property)))
+         (app (web-page-text "app.js"))
+         (render (web-js-function app "renderSessions"))
+         (click (web-js-listener app "sessions")))
+    (is (search "iconButton(\"trash\", t(\"Delete this session, and every session under it\"), \"icon drop ses-del\")" render) "a stored session's row carries its own trash mark")
+    (is (search "if (!state.picking && !entry.standby)" render) "none on a session not yet spoken in, nor in Select, whose ticks delete")
+    (is (search "panel.append(...deleteAsk(state.dropping));" render) "what it asked stands under its row, in Select's words")
+    (is (search "`${sessionPath(id)}?dry_run=1`" (web-js-function app "askDrop")) "the mark asks the gateway first, a dry run")
+    (is (search "deleteAnswered(ask.answers" (web-js-function app "drop")) "Delete deletes what the dry run named")
+    (is (search "deleteAnswered(ask.answers" (web-js-function app "deletePicked")) "the one delete Select's ticks take too")
+    (is (search "if (mark) { askDrop(mark.dataset.id); return; }" click) "pressing the mark opens no session")
+    (is (equal "0" (funcall value ".sessions .ses-del" "opacity")) "the mark waits out of sight")
+    (is (equal "1" (funcall value ".sessions li:is(:hover, :focus-within) > .ses-del, .sessions .ses-del[aria-expanded=\"true\"]" "opacity")) "and comes up under the hand or the focus")
+    (is (equal "1" (funcall value ".sessions li > .ses-del" "opacity")) "and stands up where there is no hover")
+    (is (search "\"Delete this session, and every session under it\":" (web-page-text "zh.js")) "its words in Chinese")))

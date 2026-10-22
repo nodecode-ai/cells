@@ -195,6 +195,7 @@ export const ZH = {
   "Delete the job {id}? It fires no more; its session keeps what it did.": "删除任务 {id}？它将不再触发；它的会话会保留它做过的一切。",
   "Delete the sessions no one has touched in a while": "删除一段时间内无人使用的会话",
   "Delete the ticked sessions, and every session under them": "删除勾选的会话，以及其下的所有会话",
+  "Delete this session, and every session under it": "删除此会话，以及其下的所有会话",
   "Delete {name}? Its whole home goes for good: its store with every session, its layer, its config, and whatever memory and keys it holds of its own.": "删除 {name}？它的整个主目录将永久删除：存有全部会话的存储、代码层、配置，以及它自己持有的记忆和密钥。",
   "Delete {name}? Its whole home goes for good: its store with every session, its layer, its config, and whatever memory and keys it holds of its own. What it shares by link ({shares}) stays with {source}.": "删除 {name}？它的整个主目录将永久删除：存有全部会话的存储、代码层、配置，以及它自己持有的记忆和密钥。通过链接共享的内容（{shares}）仍保留在 {source}。",
   "Delete {n} session and the {m} session under it?": "删除 {n} 个会话及其下的 {m} 个会话？",

@@ -101,6 +101,7 @@ const state = {
   dashEnter: false, // that sheet rises on the next draw alone, not on each read landing under it
   phoneOpen: new Set(), // what a phone's rows hold open in place: a row's +, a group's Show all (observe.js prow, pgroup)
   picking: null, // { ids, confirm } while the list is ticked to export or delete
+  dropping: null, // { id, answers, busy } while one row's trash mark asks to delete its session
   prune: null, // { days, empty, answer, error, busy, failed } while the prune form is open
 };
 
@@ -3219,6 +3220,20 @@ function renderSessions() {
     }
     button.append(el("span", "reading", running ? t("now") : since(entry.updated_at)));
     li.append(button);
+    // Its own trash mark, beside the row and not in it (a button holds no
+    // button): a session not yet spoken in is in no store to delete, and in
+    // Select the ticks are the delete. What the mark asked stands under it.
+    if (!state.picking && !entry.standby) {
+      const mark = iconButton("trash", t("Delete this session, and every session under it"), "icon drop ses-del");
+      mark.dataset.id = entry.id;
+      li.append(mark);
+      if (state.dropping?.id === entry.id) {
+        mark.setAttribute("aria-expanded", "true");
+        const panel = el("div", "confirm ses-drop");
+        panel.append(...deleteAsk(state.dropping));
+        li.append(panel);
+      }
+    }
     return li;
   };
   // Three bands, as the kanban reads (the operator's B): what needs you, what
@@ -3829,6 +3844,7 @@ function pickable(button, entry) {
 
 function setPicking(on) {
   state.picking = on ? { ids: new Set(), confirm: null } : null;
+  if (on) state.dropping = null;
   if (on && state.prune) setPruning(false);
   renderSessions();
 }
@@ -3909,13 +3925,50 @@ async function askDelete() {
 // before the gateway takes it away.
 async function deletePicked() {
   const ask = state.picking.confirm;
-  const gone = new Set(ask.answers.flatMap((answer) => answer.plan?.sessions || []));
   state.picking.confirm = { ...ask, busy: true };
   renderPicking();
+  await deleteAnswered(ask.answers, () => setPicking(false));
+}
+
+// One session's own delete, its row's trash mark (the operator, 2026-10-21:
+// "add a delete knob or something for a conversation"): asked of the gateway
+// first, as Select's delete is, the question under the row it was pressed on;
+// the mark pressed again, Cancel or Escape lets it be.
+async function askDrop(id) {
+  if (state.picking) return;
+  if (state.dropping?.id === id) { dropDone(); return; }
+  state.dropping = { id, answers: null };
+  renderSessions();
+  const answers = [await api("DELETE", `${sessionPath(id)}?dry_run=1`)
+    .then((plan) => ({ id, plan }), (error) => ({ id, error: error.message }))];
+  if (state.dropping?.id !== id) return;
+  state.dropping = { id, answers };
+  renderSessions();
+}
+
+function dropDone() {
+  const id = state.dropping?.id;
+  state.dropping = null;
+  renderSessions();
+  if (id) $("sessions").querySelector(`.row[data-id="${CSS.escape(id)}"]`)?.focus();
+}
+
+async function drop() {
+  const ask = state.dropping;
+  if (!ask?.answers || ask.busy) return;
+  state.dropping = { ...ask, busy: true };
+  renderSessions();
+  await deleteAnswered(ask.answers, () => { state.dropping = null; renderSessions(); });
+}
+
+// Each answered session deleted, the one on screen let go of first; what went
+// forgotten here, AFTER run, and said. A Select delete and a row's alike.
+async function deleteAnswered(answers, after) {
+  const gone = new Set(answers.flatMap((answer) => answer.plan?.sessions || []));
   if (gone.has(state.current)) openNew();
   let deleted = 0;
   const kept = [];
-  for (const { id } of ask.answers.filter((answer) => answer.plan)) {
+  for (const { id } of answers.filter((answer) => answer.plan)) {
     try {
       deleted += (await api("DELETE", sessionPath(id))).sessions.length;
     } catch (error) {
@@ -3927,7 +3980,7 @@ async function deletePicked() {
     state.sessionsById.delete(id);
   }
   state.sessions = state.sessions.filter((entry) => !gone.has(entry.id));
-  setPicking(false);
+  after();
   toast(kept.length
     ? plural(deleted, t("Deleted {n} session; kept {kept}", { kept: kept.join(", ") }), t("Deleted {n} sessions; kept {kept}", { kept: kept.join(", ") }))
     : plural(deleted, t("Deleted {n} session"), t("Deleted {n} sessions")), { error: kept.length > 0 });
@@ -5008,6 +5061,10 @@ $("history").addEventListener("click", (event) => {
   renderHistory();
 });
 $("sessions").addEventListener("click", (event) => {
+  const said = event.target.closest(".ses-drop [data-act]");
+  if (said) { if (said.dataset.act === "delete") drop(); else dropDone(); return; }
+  const mark = event.target.closest(".ses-del");
+  if (mark) { askDrop(mark.dataset.id); return; }
   const item = event.target.closest(".row");
   if (!item) return;
   if (event.target.closest(".caret")) { branch(item.dataset.id, !state.branches.has(item.dataset.id)); return; }
@@ -5018,7 +5075,14 @@ $("sessions").addEventListener("click", (event) => {
 // Right opens the row's session, Left closes it -- or, holding nothing open,
 // closes the session it hangs under and moves there: the shell's own keys.
 $("sessions").addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.dropping) { dropDone(); event.preventDefault(); return; }
   const item = event.target.closest(".row");
+  // Delete on a row asks to delete its session, as its trash mark does.
+  if (item && event.key === "Delete" && !state.picking && item.parentElement.querySelector(":scope > .ses-del")) {
+    askDrop(item.dataset.id);
+    event.preventDefault();
+    return;
+  }
   if (!item || state.filter || state.source !== null || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
   const id = item.dataset.id;
   const up = parentOf(state.sessionsById.get(id));

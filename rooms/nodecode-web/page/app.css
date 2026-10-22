@@ -2198,6 +2198,25 @@ button.p-row:active { background: var(--field-lit); }
    fold's caret keeps the gutter, the news dot stands beside its age. */
 .sessions .row > .ball { order: -1; }
 .sessions .row > .reading { order: 3; }
+/* A session's own trash mark (app.js row; the operator, 2026-10-21: "add a
+   delete knob or something for a conversation"): stacked on its row's right
+   end, it comes up under the hand or the focus in the place of the row's age
+   and news dot, its stroke ending where the age ends; where there is no hover
+   it stands up in a column of its own. What it asked stands under the row. */
+.sessions li:has(> .ses-del) { display: grid; grid-template-columns: minmax(0, 1fr); }
+.sessions li > .row, .sessions li > .ses-del { grid-area: 1 / 1; }
+.sessions .ses-del { justify-self: end; align-self: center; margin-right: -7px; opacity: 0; pointer-events: none; transition: opacity 130ms, color 130ms, background 130ms; }
+.sessions li:is(:hover, :focus-within) > .ses-del, .sessions .ses-del[aria-expanded="true"] { opacity: 1; pointer-events: auto; }
+@media (hover: hover) {
+  .sessions li:has(> .ses-del):is(:hover, :focus-within) > .row > :is(.reading, .news-dot),
+  .sessions li:has(> .ses-del[aria-expanded="true"]) > .row > :is(.reading, .news-dot) { visibility: hidden; }
+}
+.sessions .ses-drop { grid-area: 2 / 1 / 3 / -1; margin: 6px 0 12px; }
+@media (hover: none) {
+  .sessions li:has(> .ses-del) { grid-template-columns: minmax(0, 1fr) auto; column-gap: 4px; }
+  .sessions li > .ses-del { grid-area: 1 / 2; margin-right: 0; opacity: 1; pointer-events: auto; }
+  .sessions li:has(> .ses-del) > .row.asks { width: 100%; margin-right: 0; }
+}
 .badge {
   flex: none; align-self: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--r-control);
   background: var(--accent-fill); color: var(--void); font: 600 var(--fs-micro)/18px var(--mono); text-align: center; font-variant-numeric: tabular-nums;
