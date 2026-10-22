@@ -23,7 +23,9 @@ This clone is the job's own: never edit the feed in a shared checkout.
 
 It collects everything published since the feed's `updated` time (minus a day of overlap)
 with no model: CISA's exploited list, GitHub's reviewed critical/high and malware
-advisories, and the news search below when this image has one. It drops what the feed
+advisories, and news through DeepSeek's own web search (its native `web_search` tool on
+https://api.deepseek.com, on this image's `deepseek` provider key), or Exa's when there is no
+DeepSeek key. The report names which search answered. It drops what the feed
 already carries and what an earlier scan already sorted (the `:seen` ledger), and sorts
 the rest with **Decide v1, nodecode's decider model** (`foresight-decide-v1` on provider
 `nodecode`, https://api.nodecode.ai/v1, the key `nodecode login` saved). Never sort these

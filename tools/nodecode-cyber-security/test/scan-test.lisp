@@ -110,3 +110,26 @@
   (let ((entries (nodecode-cyber-security::read-feed
                   "{\"advisories\":[{\"id\":\"old\",\"date\":\"2026-09-01\",\"exploited\":false},{\"id\":\"old-exploited\",\"date\":\"2026-09-01\",\"exploited\":true},{\"id\":\"fresh\",\"date\":\"2026-10-20\",\"exploited\":false}]}")))
     (is (equal '("old") (nodecode-cyber-security::expiring entries (nodecode-cyber-security::parse-iso "2026-10-22T00:00:00Z"))) "past 14 days and not exploited is due to go; exploited stays for the agent to judge")))
+
+(defparameter *sp-deepseek-answer*
+  "{\"content\":[
+     {\"type\":\"server_tool_use\",\"name\":\"web_search\"},
+     {\"type\":\"web_search_tool_result\",\"content\":[
+        {\"type\":\"web_search_result\",\"url\":\"https://a.example/breach\",\"title\":\"A breach\",\"page_age\":\"\"},
+        {\"type\":\"web_search_result\",\"url\":\"https://b.example/old\",\"title\":\"Old news\",\"page_age\":\"\"},
+        {\"type\":\"web_search_result\",\"url\":\"https://c.example/unlisted\",\"title\":\"Unlisted\"}]},
+     {\"type\":\"web_search_tool_result\",\"content\":{\"type\":\"web_search_tool_result_error\",\"error_code\":\"unavailable\"}},
+     {\"type\":\"text\",\"text\":\"{\\\"url\\\": \\\"https://a.example/breach\\\", \\\"date\\\": \\\"2026-10-21\\\", \\\"summary\\\": \\\"keys leaked\\\"}\\n{\\\"url\\\": \\\"https://b.example/old\\\", \\\"date\\\": \\\"2026-07-06\\\", \\\"summary\\\": \\\"old\\\"}\\n{\\\"url\\\": \\\"https://made.up/x\\\", \\\"date\\\": \\\"2026-10-22\\\", \\\"summary\\\": \\\"from memory\\\"}\"}]}")
+
+(deftest cyber-security-deepseek-search-keeps-only-what-its-search-returned ()
+  (let ((r (nodecode-cyber-security::deepseek-results *sp-deepseek-answer*)))
+    (is (equal '("https://a.example/breach" "https://b.example/old") (mapcar (lambda (x) (getf x :url)) r)) "only results the search returned and the answer listed; a URL written from memory is not one")
+    (is (equal "keys leaked" (getf (first r) :text)) "the listed summary rides as the item's text")
+    (is (equal "2026-10-21" (getf (first r) :date))))
+  (is (search "no web search" (handler-case (progn (nodecode-cyber-security::deepseek-results "{\"content\":[{\"type\":\"text\",\"text\":\"hi\"}]}") "") (error (e) (princ-to-string e)))) "an answer with no search in it is an error, not an empty result")
+  (with-stubbed-security
+    (with-saved-globals (nodecode-cyber-security::*deepseek-search-url*)
+      (with-stubbed-fdefinition (nodecode-cyber-security::deepseek-key () "k")
+        (with-stubbed-fdefinition (nlk:http (method url &key headers content timeout)
+                                    (values *sp-deepseek-answer* 200))
+          (is (equal '("https://a.example/breach") (mapcar (lambda (x) (getf x :url)) (nodecode-cyber-security::deepseek-search "q" "2026-10-20T00:00:00Z"))) "a result dated before the window is dropped"))))))

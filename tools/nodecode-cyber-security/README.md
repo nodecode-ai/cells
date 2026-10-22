@@ -56,7 +56,9 @@ pass. [`UPDATING.md`](UPDATING.md) is the procedure it follows.
 
 Each scan starts cheap: `(security:scan-report)` collects the window's items with no
 model and has **Decide v1**, nodecode's decider model (`foresight-decide-v1` on
-https://api.nodecode.ai/v1), sort them; the agent then reads only what it kept. Items on
+https://api.nodecode.ai/v1), sort them; the agent then reads only what it kept. News comes
+from DeepSeek's own web search (its native `web_search` tool), or Exa's when the machine
+has no DeepSeek key. Items on
 CISA's exploited list always go on, malware advisories go on when the package has real
 downloads, and when the decider cannot answer the scan says so and the agent scans in
 full.

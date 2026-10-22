@@ -57,7 +57,7 @@ a few hundred to a few thousand, so the bar sits well above that.")
 (defparameter +kinds+
   '(("act" . "They must patch, upgrade or rotate secrets now: remote code execution, command injection, authentication or authorization bypass, secret or data exposure in server-side software, CMSs and their plugins, web servers, databases, CI/CD, Linux hosts and virtualization, TLS or certificate authorities; a poisoned release of a widely used package; or a hosting or SaaS platform breach that leaks customers' keys.")
     ("minor" . "A crash, denial of service, infinite loop, resource exhaustion or memory bug from a crafted file or request, or a bug in a developer's local tool or shell script, that does not let an outsider take over a server or read its data.")
-    ("elsewhere" . "Not theirs to act on: phones, desktop or end-user apps, industrial or embedded devices, opinion or roundup pieces, or news with no vulnerability in it."))
+    ("elsewhere" . "Not theirs to act on: phones, desktop or end-user apps, industrial or embedded devices, opinion or roundup pieces, news with no vulnerability in it, or news about a vulnerability or breach more than two weeks old."))
   "The options of +KIND-QUESTION+; only \"act\" is kept.")
 
 ;;; ---------------------------------------------------------------- small helpers
@@ -205,37 +205,135 @@ Runs *DECIDER* through the organism's own side call, so the key is the one
                              (github-advisories (format nil "type=reviewed&severity=~a" severity) since)))
          (mapcar (lambda (a) (github-item a :malware)) (github-advisories "type=malware" since))))
 
+(defparameter *deepseek-search-url* "https://api.deepseek.com/anthropic/v1/messages"
+  "DeepSeek's own web search: its Anthropic-format Messages endpoint, asked to use
+the native `web_search' server tool (as DeepSeek's harness does).")
+
+(defparameter *deepseek-search-model* "deepseek-v4-flash" "The model that runs DeepSeek's search turn.")
+
+(defun deepseek-key ()
+  "This image's DeepSeek API key (provider `deepseek'), or NIL."
+  (let ((k (getf (ignore-errors (nle::resolve-provider-credential "deepseek")) :key)))
+    (and (stringp k) (plusp (length k)) k)))
+
+(defun deepseek-listed (text)
+  "The JSON-object lines of TEXT, DeepSeek's answer, as a table url => (DATE SUMMARY)."
+  (let ((h (make-hash-table :test 'equal)))
+    (dolist (line (uiop:split-string text :separator '(#\Newline)) h)
+      (let* ((line (string-trim '(#\Space #\Tab #\Return #\` #\- #\*) line))
+             (o (and (plusp (length line)) (char= (char line 0) #\{)
+                     (handler-case (shasht:read-json line) (error () nil))))
+             (url (and (hash-table-p o) (str (gethash "url" o)))))
+        (when url
+          (setf (gethash url h) (list (or (str (gethash "date" o)) "") (or (str (gethash "summary" o)) ""))))))))
+
+(defun deepseek-results (body)
+  "BODY, DeepSeek's Messages answer, as ((:url :title :date :text) ...). Only
+URLs its web_search_result blocks returned are kept, so nothing it wrote from
+memory gets in; when its answer lists results (one JSON object per line:
+url, date, summary) only those are kept -- the ones it dated inside the
+window -- with its date and summary. Signals when the turn ran no search."
+  (let* ((obj (shasht:read-json body))
+         (blocks (coerce (or (and (hash-table-p obj) (gethash "content" obj)) #()) 'list))
+         (listed (deepseek-listed (format nil "~{~a~^~%~}"
+                                          (loop for b in blocks
+                                                when (equal (gethash "type" b) "text")
+                                                  collect (or (str (gethash "text" b)) "")))))
+         (seen (make-hash-table :test 'equal)))
+    (unless (some (lambda (b) (equal (gethash "type" b) "web_search_tool_result")) blocks)
+      (error "DeepSeek ran no web search for this query"))
+    (loop for b in blocks
+          when (equal (gethash "type" b) "web_search_tool_result")
+            nconc (loop for r across (let ((c (gethash "content" b))) (if (vectorp c) c #()))
+                        for url = (str (gethash "url" r))
+                        for mine = (and url (gethash url listed))
+                        when (and url (equal (gethash "type" r) "web_search_result") (not (gethash url seen))
+                                  (or mine (zerop (hash-table-count listed))))
+                          collect (progn (setf (gethash url seen) t)
+                                         (list :url url :title (or (str (gethash "title" r)) url)
+                                               :date (or (and mine (plusp (length (first mine))) (first mine))
+                                                         (str (gethash "page_age" r)) "")
+                                               :text (or (second mine) "")))))))
+
+(defun deepseek-search (query since)
+  "News about QUERY since SINCE through DeepSeek's own web search."
+  (let ((key (deepseek-key)))
+    (unless key (error "no deepseek key"))
+    (multiple-value-bind (body status)
+        (nlk:http "POST" *deepseek-search-url*
+                  :headers `(("x-api-key" . ,key) ("anthropic-version" . "2023-06-01")
+                             ("content-type" . "application/json"))
+                  :content (shasht:write-json
+                            (json-object
+                             `(("model" . ,*deepseek-search-model*)
+                               ("max_tokens" . 4096)
+                               ("messages" . ,(vector (json-object
+                                                       `(("role" . "user")
+                                                         ("content" . ,(format nil "Search the web for news published on or after ~a about: ~a. Then answer with one line per result your search returned that was published on or after ~a, each line one JSON object: {\"url\": the result's URL exactly, \"date\": its publication date, \"summary\": one sentence on what happened and what to patch or rotate}. No other text." (day since) query (day since)))))))
+                               ("tools" . ,(vector (json-object '(("type" . "web_search_20250305")
+                                                                  ("name" . "web_search")
+                                                                  ("max_uses" . 3)))))
+                               ("thinking" . (("type" . "disabled")))))
+                            nil)
+                  :timeout 120)
+      (unless (eql status 200)
+        (error "DeepSeek search answered ~a: ~a" status (clip (princ-to-string body) 200)))
+      ;; its own dates are not to be trusted to honour the window: one it wrote
+      ;; as a day before SINCE drops the result
+      (remove-if (lambda (r) (let ((d (getf r :date)))
+                               (and (>= (length d) 10) (digit-char-p (char d 0)) (char= (char d 4) #\-)
+                                    (string< (subseq d 0 10) (day since)))))
+                 (deepseek-results body)))))
+
+(defun exa-search (query since)
+  "News about QUERY since SINCE through Exa's search, when this image has it through MCP."
+  (let* ((text (funcall (find-symbol "EXA/WEB-SEARCH-ADVANCED-EXA" "NODECODE-MCP")
+                        :query query :category "news" :num-results 10 :text-max-characters 1200
+                        :limit 200000 :start-published-date (day since)))
+         (obj (handler-case (shasht:read-json text) (error () nil))))
+    (unless (hash-table-p obj)
+      (error "the news search answered no results list: ~a" (clip (princ-to-string text) 120)))
+    (loop for r across (or (gethash "results" obj) #())
+          for url = (str (gethash "url" r))
+          when url
+            collect (list :url url :title (or (str (gethash "title" r)) url)
+                          :date (or (str (gethash "publishedDate" r)) "") :text (or (str (gethash "text" r)) "")))))
+
 (defun news-search ()
-  "The image's news search, when it has one: Exa's, through MCP. It takes
-:QUERY :CATEGORY :NUM-RESULTS :TEXT-MAX-CHARACTERS :LIMIT :START-PUBLISHED-DATE
-and answers JSON text with a `results' list of {url, title, publishedDate, text}."
-  (let ((f (find-symbol "EXA/WEB-SEARCH-ADVANCED-EXA" "NODECODE-MCP")))
-    (and f (fboundp f) f)))
+  "The news search this image has => (VALUES FUNCTION NAME), FUNCTION taking
+(QUERY SINCE) and answering ((:url :title :date :text) ...): DeepSeek's own web
+search when a deepseek key resolves, else Exa's through MCP, else NIL."
+  (cond ((deepseek-key) (values #'deepseek-search "deepseek"))
+        ((let ((f (find-symbol "EXA/WEB-SEARCH-ADVANCED-EXA" "NODECODE-MCP"))) (and f (fboundp f)))
+         (values #'exa-search "exa"))))
 
 (defparameter *news-search* 'news-search
-  "(funcall *NEWS-SEARCH*) => the search function, or NIL when there is none; tests stub it.")
+  "(funcall *NEWS-SEARCH*) => (VALUES FUNCTION NAME) as NEWS-SEARCH, or NIL; tests stub it.")
+
+(defvar *news-engine* nil "The news search the last scan used, by name.")
 
 (defun news-items (since)
-  "News and vendor posts since SINCE for each of *NEWS-QUERIES*, or :SKIPPED with no search."
-  (let ((search (funcall *news-search*)) (seen (make-hash-table :test 'equal)))
+  "News since SINCE for each of *NEWS-QUERIES*, or :SKIPPED with no search. A
+query that fails is passed over; every query failing signals."
+  (multiple-value-bind (search name) (funcall *news-search*)
+    (setf *news-engine* name)
     (if (null search)
         :skipped
-        (loop for query in *news-queries*
-              for text = (funcall search :query query :category "news" :num-results 10
-                                         :text-max-characters 1200 :limit 200000
-                                         :start-published-date (day since))
-              for obj = (handler-case (shasht:read-json text) (error () nil))
-              unless (hash-table-p obj)
-                do (error "the news search answered no results list: ~a" (clip (princ-to-string text) 120))
-              nconc (loop for r across (or (gethash "results" obj) #())
-                          for url = (str (gethash "url" r))
-                          when (and url (not (gethash url seen)))
-                            collect (progn (setf (gethash url seen) t)
-                                           (item :news url (or (str (gethash "title" r)) url) url
-                                                 (format nil "News, ~a: ~a. ~a" (gethash "publishedDate" r "")
-                                                         (or (str (gethash "title" r)) "")
-                                                         (clip (or (str (gethash "text" r)) "") 1200))
-                                                 :ids (list url))))))))
+        (let ((seen (make-hash-table :test 'equal)) (failures '()) (items '()))
+          (dolist (query *news-queries*)
+            (handler-case
+                (dolist (r (funcall search query since))
+                  (let ((url (getf r :url)))
+                    (unless (gethash url seen)
+                      (setf (gethash url seen) t)
+                      (push (item :news url (getf r :title) url
+                                  (format nil "News, ~a: ~a. ~a" (getf r :date) (getf r :title) (clip (getf r :text) 1200))
+                                  :ids (list url))
+                            items))))
+              (error (e) (push (princ-to-string e) failures))))
+          (when (= (length failures) (length *news-queries*))
+            (error "~a: every news query failed: ~a" name (first failures)))
+          (nreverse items)))))
 
 ;;; ---------------------------------------------------------------- malware: a count, not a model
 
@@ -467,7 +565,9 @@ source gave, why each item stays, and what was dropped. Same keys as SCAN."
                                     (case a
                                       (:skipped (format nil "~(~a~) skipped (no search here)" name))
                                       (:failed (format nil "~(~a~) FAILED: ~a" name b))
-                                      (t (format nil "~(~a~) ~d, ~d not yet listed or sorted" name a b)))))
+                                      (t (if (and (eq name :news) *news-engine*)
+                                             (format nil "news via ~a ~d, ~d not yet listed or sorted" *news-engine* a b)
+                                             (format nil "~(~a~) ~d, ~d not yet listed or sorted" name a b))))))
                       (getf r :sources)))
       (format s "dropped: ~{~(~a~) ~d~^, ~}~%"
               (loop for (k . n) in (getf r :dropped) collect k collect n))
