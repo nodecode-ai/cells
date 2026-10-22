@@ -1264,6 +1264,7 @@ export const ZH = {
   "Take {name} out of config.jsonc?": "把 {name} 从 config.jsonc 中移除？",
   "Ready": "可用",
   "No key": "没有密钥",
+  "nodecode.ai account": "nodecode.ai 账户",
   "{name} is out of config.jsonc.": "{name} 已从 config.jsonc 中移除。",
   "What the sessions are doing": "会话在做什么",
   "Needs you: its answer waits on you, or its last turn failed. Running: a turn runs in it or under it. Done: the rest.": "需要你处理：它的回答在等你，或它最近一轮失败了。运行中：它或它下面有一轮正在运行。完成：其余的。",

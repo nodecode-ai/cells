@@ -567,6 +567,7 @@ function receive(message) {
       loadSessions();
       loadGatewayFolder();
       loadTarget();
+      loadAccount();
       loadSlash();
       loadTimeline();
       loadDashboard();
@@ -586,6 +587,8 @@ function receive(message) {
     case "organism.notice":
       if (payload.text && freshNotice(payload)) toast(payload.text, { error: payload.level === "error", key: payload.key });
       readLinkSoon();
+      // A sign-in from a shell's /login ends in a notice; the meter is read again (cached there).
+      loadAccount();
       break;
     case "organism.activity": {
       const before = state.running;
@@ -595,6 +598,8 @@ function receive(message) {
       // One that stopped has news the listing's stamp is not yet showing.
       if ([...state.running].some((id) => !state.sessionsById.get(id) || state.sessionsById.get(id).standby)
         || [...before].some((id) => !state.running.has(id))) loadSessionsSoon();
+      // A turn that ended may have spent the account's requests or credit.
+      if ([...before].some((id) => !state.running.has(id))) loadAccount();
       renderSessions();
       break;
     }
@@ -1891,6 +1896,28 @@ function placeJump() {
 const settling = new ResizeObserver(follow);
 settling.observe(rowsEl);
 settling.observe(ledger);
+
+// --- the nodecode.ai account's meter ----------------------------------------------------------
+
+// The organism reads the account's usage from api.nodecode.ai with this home's key
+// (/api/gateway/account, nodecode's surface/account-login.lisp) and this chip draws its words:
+// the plan's requests left while the plan pays, the credit once it does. Hidden on a home that
+// is not signed in. Its title carries the lines /usage prints; a click opens the account.
+let accountRead = null;
+async function loadAccount() {
+  if (accountRead) return accountRead;
+  accountRead = (async () => {
+    try {
+      const account = await api("GET", "/api/gateway/account");
+      const chip = $("account");
+      chip.hidden = !account?.meter;
+      chip.textContent = account?.meter || "";
+      chip.title = [t("nodecode.ai account"), ...(account?.lines || [])].join("\n");
+      if (account?.tone) chip.dataset.tone = account.tone; else delete chip.dataset.tone;
+    } catch {} finally { accountRead = null; }
+  })();
+  return accountRead;
+}
 
 // --- the model a turn runs on ------------------------------------------------------------
 
