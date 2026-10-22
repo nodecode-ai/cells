@@ -206,8 +206,42 @@ before a frame is read. The secret goes only in the hello."
   (setf *next-dial* 0)
   (nlk:worker-poke *worker*))
 
+;;; --- the account ------------------------------------------------------------------------
+;;; The account's Machines page shows this machine's address once the machine tells it its
+;;; name here (NLE:MACHINE-UPDATE, with the secret its link left in auth.json). A lap with the
+;;; line up tells it whenever the name is not the one last told, or +REPORT-SECONDS+ have gone
+;;; since: a home linked while the line was already up is told within a lap, a new name at once.
+
+(defparameter +report-seconds+ 3600)
+(defparameter +account-notice-key+ "nodecode-link-account")
+
+(defvar *reported* nil
+  "(NAME . WHEN) the account was last told, or NIL.")
+
+(defvar *report-after* 0
+  "No report before this universal time: a refused one waits ten minutes.")
+
+(defun report-address (now &aux (machine (kept "machine")))
+  "Tell the account this machine's name at the relay, when it was not told it lately."
+  (when (and machine (>= now *report-after*)
+             (not (and (equal machine (car *reported*))
+                       (< (- now (cdr *reported*)) +report-seconds+))))
+    (handler-case
+        ;; By name: the gateway may run a binary older than this folder (an installed release
+        ;; loads the home's cells), and a reader error would refuse the whole link; that binary
+        ;; is named instead. NIL: this home was never linked, so there is no one to tell yet.
+        (when (funcall (or (find-symbol "MACHINE-UPDATE" :nodecode.evolved)
+                           (error "this nodecode is older than the link cell; update it"))
+                       (nlk:make-json-object "relay" machine))
+          (setf *reported* (cons machine now))
+          (nle:notice nil :key +account-notice-key+))
+      (error (condition)
+        (setf *report-after* (+ now 600))
+        (nle:notice (format nil "link: nodecode.ai was not told this machine's address: ~a" condition)
+                    :level :warning :key +account-notice-key+)))))
+
 (defun keep-line ()
-  "One lap of the worker: dial, ping, or drop what went quiet."
+  "One lap of the worker: dial, ping, or drop what went quiet; then tell the account."
   (let ((line *line*)
         (now (get-universal-time)))
     (cond
@@ -221,7 +255,9 @@ before a frame is read. The secret goes only in the hello."
        (sever line))
       ((>= (- now line.pinged) *ping-seconds*)
        (setf line.pinged now)
-       (ignore-errors (send-on-line "{\"t\":\"ping\"}"))))))
+       (ignore-errors (send-on-line "{\"t\":\"ping\"}"))))
+    (when (and *line* (eq (line-state *line*) :up))
+      (report-address now))))
 
 (defun await-line (seconds)
   "Wait up to SECONDS for a welcomed line => T when there is one."
