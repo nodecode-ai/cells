@@ -108,6 +108,11 @@ With voice, use `permissions=309240908864`. The `applications.commands`
 scope is what lets the bot's slash commands appear in the server. If you
 invited the bot without it, open the URL again.
 
+After step 4, `nodecode gateway setup discord` does steps 5 to 8 in the
+terminal: it turns the cell on, keeps the token you paste in a 0600 file,
+checks it with Discord, offers the channels by name and starts the bot.
+The steps below are the same walk by hand.
+
 ## 5. Install the cell
 
 The Discord cell ships with Nodecode but is not installed in a new home.
