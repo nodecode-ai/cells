@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "updated": "2026-10-23T10:17:03Z",
+  "updated": "2026-10-23T22:19:54Z",
   "window": "2026-10-09 to 2026-10-23",
   "advisories": [
     {
@@ -34,6 +34,359 @@
       "sources": [
         "https://github.com/advisories/GHSA-xvgg-qjjh-gq34",
         "https://www.npmjs.com/package/@tekmidian/pai"
+      ]
+    },
+    {
+      "id": "wasmtime-cranelift-2026-10",
+      "title": "Wasmtime before 36.0.19 / 43.0.0: Cranelift SSA-index overflow lets a crafted Wasm module escape the sandbox (CVE-2026-115889)",
+      "date": "2026-10-23",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-115889"
+      ],
+      "summary": "Cranelift bit-packs its SSA value indices; in release builds a very large or specially crafted Wasm function body can make that packing silently overflow, so the IR carries incorrect value references - arbitrary miscompilation that a crafted module turns into type confusion, side effects and escape from the Wasmtime sandbox. Default settings on any architecture are affected. v43 switched to a full u32 index with an explicit check; the 36 line got the fix in 36.0.19.",
+      "affected": "wasmtime before 36.0.19 on the 36 line, and 37.0.0 through 42.x on newer lines (fixed by the v43 change). Language bindings embed the same compiler, so their crate and package versions matter too.",
+      "fixed": [
+        "36.0.19",
+        "43.0.0"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "wasmtime",
+          "command": [
+            "wasmtime",
+            "--version"
+          ],
+          "line": 1,
+          "fixed": [
+            "36.0.19",
+            "43.0.0"
+          ]
+        }
+      ],
+      "patch": [
+        "cargo update wasmtime (>=36.0.19 on the 36 line, or 43.0.0) and rebuild every service that embeds it; rebuild bindings (pip install -U wasmtime and friends) to match"
+      ],
+      "mitigation": [
+        "Until rebuilt: do not run untrusted Wasm through the Cranelift compiler - sandbox limits do not help against a compiler bug; move the untrusted workload to a patched engine"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/bytecodealliance/wasmtime/security/advisories/GHSA-897f-g5gm-fmxm",
+        "https://github.com/bytecodealliance/wasmtime/releases/tag/v36.0.19"
+      ]
+    },
+    {
+      "id": "laravel-tokenguard-bypass",
+      "title": "Laravel before 12.68.0 / 13.29.0: TokenGuard authentication bypass with a non-string API credential (CVE-2026-114509)",
+      "date": "2026-10-23",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114509"
+      ],
+      "summary": "TokenGuard, used as the standard token-based API guard, can be bypassed: on MySQL/MariaDB the authentication lookup mishandles a specially crafted non-string credential value, so the query matches an unintended user record instead of failing. An unauthenticated attacker authenticates as an existing user without their API token - account takeover on any route the guard protects.",
+      "affected": "laravel/framework before 12.68.0 and 13.0.0 through 13.28.x, with TokenGuard configured as the API guard on a MySQL or MariaDB connection.",
+      "fixed": [
+        "12.68.0",
+        "13.29.0"
+      ],
+      "checks": [
+        {
+          "kind": "composer",
+          "label": "laravel/framework",
+          "packages": [
+            "laravel/framework"
+          ],
+          "line": 1,
+          "fixed": [
+            "12.68.0",
+            "13.29.0"
+          ]
+        }
+      ],
+      "patch": [
+        "composer update laravel/framework (>=12.68.0 or >=13.29.0), then redeploy"
+      ],
+      "mitigation": [
+        "Until upgraded: reject non-string credentials before they reach the guard (an explicit is_string() check in middleware), and review access logs for sessions opened without a token"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/laravel/framework/security/advisories/GHSA-f9x3-7vq9-cph6",
+        "https://github.com/laravel/framework/releases/tag/v12.68.0"
+      ]
+    },
+    {
+      "id": "echo-ws-proxy-2026-10",
+      "title": "Echo v4/v5 before 4.16.1 / 5.4.1: WebSocket-upgrade proxy bypass, retained WS connections, unbounded gzip and BodyDump buffering",
+      "date": "2026-10-23",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [],
+      "summary": "Four fixes in one release. The proxy middleware took a raw tunnel when a client requested a WebSocket upgrade before checking that the upstream accepted it: if the upstream answers with ordinary HTTP and keeps the connection alive, later HTTP requests on that connection go straight to the upstream past Echo's router and route middleware, bypassing authentication enforced only at those routes (Echo rates this one Moderate; the advisory database critical). Also: the WebSocket proxy could retain connections and handlers after a client disconnected (4.15.0+), the Decompress middleware allowed unbounded gzip expansion, and BodyDump captured request and response bodies with no size limit - both memory-exhaustion paths in v4.",
+      "affected": "github.com/labstack/echo/v4 up to 4.16.0 and /v5 up to 5.4.0 (the upgrade bypass reaches back to v4.0.0; the retained-connection bug is 4.15.0+).",
+      "fixed": [
+        "4.16.1",
+        "5.4.1"
+      ],
+      "checks": [],
+      "patch": [
+        "go get github.com/labstack/echo/v4@v4.16.1 (or /v5@v5.4.1), then rebuild and redeploy every service on it"
+      ],
+      "mitigation": [
+        "Until rebuilt: reject WebSocket upgrade requests before they reach affected proxy routes, and enforce authorization independently at every upstream resource - a non-101 answer from the upstream is not enough",
+        "Cap request body size and gzip expansion at the proxy or through the Decompress middleware options"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/labstack/echo/security/advisories/GHSA-cxf3-9h37-7rr8",
+        "https://github.com/labstack/echo/security/advisories/GHSA-9969-6676-49h5",
+        "https://github.com/labstack/echo/security/advisories/GHSA-h7wr-284f-5qvc",
+        "https://github.com/labstack/echo/security/advisories/GHSA-f48p-c9v4-h7xv",
+        "https://github.com/labstack/echo/releases/tag/v4.16.1"
+      ]
+    },
+    {
+      "id": "obsidian-tc-2026-10",
+      "title": "obsidian-tc (npm) before 1.3.1 / 1.31.4: drive-by vault access on loopback, tokens reaching any vault, masked destructive calls",
+      "date": "2026-10-23",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-77363",
+        "CVE-2026-77366",
+        "CVE-2026-115477",
+        "CVE-2026-115478"
+      ],
+      "summary": "Four holes in the Obsidian MCP server. The Streamable HTTP transport ran with no DNS-rebinding protection and no Origin validation, so with the documented auth.mode 'none' loopback default a drive-by web page could POST http://127.0.0.1/mcp and answer as caller http-local with scopes ['*'] - full vault read/write through DNS rebinding or a forged Origin (CVE-2026-77363). Tokens could also reach arbitrary configured vaults (CVE-2026-77366). Both fixed in 1.3.1 (an invalid Origin now gets 403, per MCP 2025-11-25). Later: memory-lifecycle tools could overwrite unowned notes or partially commit lifecycle changes (CVE-2026-115478), and a declined human-in-the-loop confirmation could still permit destructive calls over HTTP (CVE-2026-115477, since 1.13.0) - fixed in 1.31.4.",
+      "affected": "obsidian-tc below 1.3.1 for the transport and cross-vault issues; 1.0.1 through 1.31.3 for the lifecycle and confirmation issues (the confirmation bug from 1.13.0).",
+      "fixed": [
+        "1.31.4"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "obsidian-tc",
+          "package": "obsidian-tc",
+          "line": 1,
+          "fixed": [
+            "1.31.4"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install obsidian-tc@^1.31.4 and restart the MCP server"
+      ],
+      "mitigation": [
+        "Until upgraded: do not run the HTTP transport with auth.mode none - require JWT auth, or bind to a non-loopback interface behind a proxy that validates Origin"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-pqh8-4pj7-32xx",
+        "https://github.com/advisories/GHSA-84c9-qqpq-2pq5",
+        "https://github.com/advisories/GHSA-737x-cwfr-5vvc",
+        "https://github.com/advisories/GHSA-r3g7-r4hr-m258",
+        "https://github.com/The-40-Thieves/obsidian-tc/releases/tag/v1.31.4"
+      ]
+    },
+    {
+      "id": "happy-dom-esm-alias-rce",
+      "title": "happy-dom 17.0.0-21.0.3: unsanitized ESM import alias reaches host code execution (CVE-2026-115895, incomplete fix for CVE-2026-33943)",
+      "date": "2026-10-23",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-115895"
+      ],
+      "summary": "The ESM compiler does not validate imported local binding aliases before interpolating them into generated JavaScript, so an invalid alias can become a working destructuring default initializer and execute. A page or test input that reaches Window or a <script type='module'> escapes the simulated DOM into the Node.js host - the report's PoC obtains node:fs and writes to the host filesystem. It is an alternate injection path the CVE-2026-33943 fix left open in the named-import handler; the ESM compiler arrived in v17.",
+      "affected": "happy-dom 17.0.0 up to 21.0.3 (16.8.1 and earlier are not affected).",
+      "fixed": [
+        "21.0.4"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "happy-dom",
+          "package": "happy-dom",
+          "line": 1,
+          "min": "17.0.0",
+          "fixed": [
+            "21.0.4"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install happy-dom@^21.0.4 (or bump the transitive pin) and rebuild the test/CI image"
+      ],
+      "mitigation": [
+        "Until upgraded: do not let untrusted HTML or module scripts reach happy-dom - keep it out of any path that processes untrusted input - and run the tests that need it without host secrets in the environment"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/capricorn86/happy-dom/security/advisories/GHSA-834v-8h66-3h79",
+        "https://github.com/advisories/GHSA-6q6h-j7hj-3r64"
+      ]
+    },
+    {
+      "id": "strands-a2a-session-mixup",
+      "title": "Strands Agents SDK: the A2A server shares conversation history across callers (CVE-2026-115419)",
+      "date": "2026-10-23",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-115419"
+      ],
+      "summary": "The Agent2Agent (A2A) server did not isolate conversation state by caller: callers with different context_id values could land in one session, so an authenticated remote user can read another caller's conversation history and influence model behavior for other callers (CWE-488). Any A2A server reachable by more than one user or tenant is affected. The fix gives the server an agent factory so state is isolated per context_id.",
+      "affected": "strands-agents (Python) with the multiagent.a2a module below 1.43.0, and @strands-agents/sdk (TypeScript) below 1.5.0.",
+      "fixed": [
+        "1.43.0",
+        "1.5.0"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "strands-agents",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('strands-agents'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "1.43.0"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@strands-agents/sdk",
+          "package": "@strands-agents/sdk",
+          "line": 1,
+          "fixed": [
+            "1.5.0"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'strands-agents>=1.43.0' or npm install @strands-agents/sdk@^1.5.0, then restart the A2A servers"
+      ],
+      "mitigation": [
+        "No workaround fully addresses it: until upgraded, do not expose an A2A server to more than one user or tenant - run a separate instance per tenant"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/strands-agents/harness-sdk/security/advisories/GHSA-4v6f-7vjh-6x4m",
+        "https://github.com/strands-agents/harness-sdk/releases/tag/python/v1.43.0"
+      ]
+    },
+    {
+      "id": "mistune-include-directive",
+      "title": "Mistune before 3.3.0: the Include directive allows path traversal reads and XSS (CVE-2026-115355)",
+      "date": "2026-10-23",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-115355"
+      ],
+      "summary": "The Include directive (the include plugin, which must be enabled explicitly) resolves a path without checking that it stays inside the source directory, so ../ sequences pull arbitrary files into the rendered output. Error messages and included content are rendered without HTML escaping even with escape=True, giving XSS. Both fixed in 3.3.0.",
+      "affected": "mistune up to 3.2.0 with the include plugin enabled.",
+      "fixed": [
+        "3.3.0"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "mistune",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('mistune'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "3.3.0"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'mistune>=3.3.0' and restart the service"
+      ],
+      "mitigation": [
+        "Until upgraded: do not enable the include plugin on untrusted Markdown - it is off unless you configure it"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/lepture/mistune/security/advisories/GHSA-h7ww-273w-6cm8",
+        "https://github.com/advisories/GHSA-8cqv-vvq2-6p8c",
+        "https://github.com/lepture/mistune/releases/tag/v3.3.0"
+      ]
+    },
+    {
+      "id": "siyuan-ws-parser-differential",
+      "title": "SiYuan: a parser differential on the WebSocket URI lets an unauthenticated caller into the kernel event stream (CVE-2026-73054)",
+      "date": "2026-10-23",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-73054"
+      ],
+      "summary": "Two checks on the same WebSocket request URI parse it differently: the keepalive exemption matches raw substrings ('/ws?app=siyuan' and '&id=auth&type=auth') while the quarantine reads a parsed query parameter and takes only its first value. A URI like /ws?app=siyuan&id=main&type=main&id=auth&type=auth satisfies the exemption and still resolves to a non-auth session, so an unauthenticated remote caller - no cookie, JWT or access code - joins the general broadcast pool and receives the live kernel event stream. Fixed by the 2026-07-31 commit; the first stable release carrying it is v3.8.0.",
+      "affected": "SiYuan kernel builds before v3.8.0 (fix commit 67bc300b6ea6, 2026-07-31) where the kernel WebSocket is reachable.",
+      "fixed": [
+        "3.8.0"
+      ],
+      "checks": [],
+      "patch": [
+        "Upgrade SiYuan to v3.8.0 or later (Docker images included) and restart the kernel"
+      ],
+      "mitigation": [
+        "Until upgraded: keep the SiYuan kernel off untrusted networks - bind it to loopback behind your own authenticated proxy"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/siyuan-note/siyuan/security/advisories/GHSA-c8w8-3pqp-wr83",
+        "https://github.com/siyuan-note/siyuan/releases/tag/v3.8.0"
+      ]
+    },
+    {
+      "id": "gamipress-8-0-8",
+      "title": "GamiPress (WordPress plugin) up to 8.0.7: blind SQL injection (CVE-2026-112837)",
+      "date": "2026-10-23",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-112837"
+      ],
+      "summary": "GamiPress up to and including 8.0.7 has a blind SQL injection (CWE-89, CVSS 8.5): crafted input reaches the plugin's database queries, letting an attacker query, modify or delete data through the WordPress database user. Fixed in 8.0.8. Not on the known-exploited list.",
+      "affected": "GamiPress 8.0.7 and earlier, any deployment size.",
+      "fixed": [
+        "8.0.8"
+      ],
+      "checks": [
+        {
+          "kind": "wp-plugin",
+          "label": "gamipress",
+          "slugs": [
+            "gamipress"
+          ],
+          "line": 1,
+          "fixed": [
+            "8.0.8"
+          ]
+        }
+      ],
+      "patch": [
+        "Update the GamiPress plugin to 8.0.8 or later from the WordPress admin, or wp plugin update gamipress"
+      ],
+      "mitigation": [
+        "Until updated: keep SQL-injection rules on the site's WAF and watch for unexplained admin activity"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://wordpress.org/plugins/gamipress/",
+        "https://app.opencve.io/cve/CVE-2026-112837"
       ]
     },
     {
@@ -731,6 +1084,82 @@
       ]
     },
     {
+      "id": "mem0ai-databricks-sqli",
+      "title": "mem0ai before 1.0.8: SQL injection in the Databricks vector store through stored memory text (CVE-2026-115324)",
+      "date": "2026-10-22",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-115324"
+      ],
+      "summary": "mem0's Databricks vector store interpolates values into SQL statements unescaped: crafted memory text, metadata or message names reach the insert() and update() strings and execute as SQL on the configured Databricks SQL warehouse. Anyone who can write memories into the store - a user whose chat input becomes a memory is enough - can run statements with the adapter's database permissions.",
+      "affected": "mem0ai 0.1.117 up to 1.0.7, using the Databricks vector store.",
+      "fixed": [
+        "1.0.8"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "mem0ai",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('mem0ai'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "1.0.8"
+          ],
+          "min": "0.1.117"
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'mem0ai>=1.0.8', then restart the service and rebuild images that pin it"
+      ],
+      "mitigation": [
+        "Until upgraded: keep untrusted text out of the Databricks vector store (disable that store or funnel writes through an allow-listed path), and give the warehouse credential the least privilege it needs"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/mem0ai/mem0/security/advisories/GHSA-7587-9684-52r6",
+        "https://github.com/mem0ai/mem0/releases/tag/v1.0.8"
+      ]
+    },
+    {
+      "id": "arista-velocloud-114625",
+      "title": "Arista VeloCloud Orchestrator on-prem before 5.2.3.18: SQL injection lets the lowest tenant role become superuser, exploited (CVE-2026-114625)",
+      "date": "2026-10-22",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [
+        "CVE-2026-114625"
+      ],
+      "summary": "A SQL injection (CWE-89, CVSS 9.9/9.4) in the on-prem VCO lets any authenticated user gain operator privileges and masquerade as a local superuser operator, reaching internally-only functionality not meant to be remotely reachable. The only privilege needed is the lowest built-in tenant role, Enterprise Read Only. VCO is exposed by default: the attack needs network access to the web interface and a valid session, and no configuration prevents it. Arista detected the flaw and reports it actively exploited; CISA's KEV catalog added it on October 23 with a due date of October 26 and forensic triage required.",
+      "affected": "VeloCloud Orchestrator on-prem (formerly by Broadcom) 5.2.x releases before 5.2.3.18. Hosted and Dedicated VCO were patched by Arista. VeloCloud Gateway and Edge are not affected.",
+      "fixed": [
+        "5.2.3.18",
+        "6.1.3.10",
+        "6.4.2.12"
+      ],
+      "checks": [],
+      "patch": [
+        "Upgrade to VCO 5.2.3.18 (5.2 train), 6.1.3.10 (6.1) or 6.4.2.12 (6.4); for a train no longer supported, contact Arista TAC"
+      ],
+      "mitigation": [
+        "Until upgraded: restrict VCO web interface access to trusted administrative networks, monitor for the known malicious source IPs and for unexpected outbound activity, backdoor daemons and webshells, and review recent administrator activity",
+        "Preserve VCO web, backend, system and database logs plus file timestamps before remediating where operationally feasible"
+      ],
+      "iocs": [
+        "74.82.197.86",
+        "38.54.50.151"
+      ],
+      "sources": [
+        "https://www.arista.com/en/support/advisories-notices/security-advisory/24838-security-advisory-0199",
+        "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
+        "https://nvd.nist.gov/vuln/detail/CVE-2026-114625"
+      ]
+    },
+    {
       "id": "virtualenv-2026-10",
       "title": "virtualenv before 21.14.9: generated activate scripts and pip launchers run commands from an attacker-named path",
       "date": "2026-10-21",
@@ -1131,6 +1560,37 @@
         "https://docs.gitlab.com/releases/patches/patch-release-gitlab-19-5-1-released/",
         "https://docs.gitlab.com/releases/patches/patch-release-gitlab-19-4-2-released/",
         "https://x.com/TheHackersNews/status/2112981939984671090"
+      ]
+    },
+    {
+      "id": "ahsaycbs-chain-2026-10",
+      "title": "AhsayCBS: authentication bypass chained with command injection on the Replication Receiver, exploited (CVE-2026-105133, CVE-2026-105134)",
+      "date": "2026-10-14",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [
+        "CVE-2026-105133",
+        "CVE-2026-105134"
+      ],
+      "summary": "Two flaws that chain on Ahsay's cloud backup server: an improper-authentication bug in the API's checkSysPwd function (CVE-2026-105133) lets a remote attacker bypass authentication by manipulating the random parameter, and a command injection in the Replication Receiver's /rps/api/json/UpdateReceivers.do endpoint (CVE-2026-105134) executes operating-system commands through the same parameter - remote code execution on the backup server, where every customer's backup data and credentials sit. Both are on CISA's KEV catalog since October 14 (due October 17; the command injection also requires forensic triage). Ahsay's October 12 update says the earlier patches v9.15.2.59 and v10.3.4.0 were not sufficient.",
+      "affected": "AhsayCBS v10 builds needing hotfix 10.3.4.45 and v7/v8/v9 builds needing 9.15.2.70 - anything not on those hotfixes (the earlier v9.15.2.59 / v10.3.4.0 patches left the flaws reachable).",
+      "fixed": [
+        "9.15.2.70",
+        "10.3.4.45"
+      ],
+      "checks": [],
+      "patch": [
+        "Apply the v10.3.4.45 hotfix (v10) or v9.15.2.70 (v7/v8/v9) from Ahsay's partner portal, then reboot the server as the vendor instructs"
+      ],
+      "mitigation": [
+        "Until patched: keep the AhsayCBS web interface and the /rps endpoints off the public internet where your topology allows, and treat a reachable Replication Receiver as exposed",
+        "With KEV forensic triage on the command injection: hunt for unexpected processes, cron entries and webshells on the backup host, and preserve logs before remediating"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://www.ahsay.com/en/company/announcements/patch-cve-105133-105134-update",
+        "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
+        "https://www.bitdefender.com/en-au/blog/businessinsights/technical-advisory-ahsaycbs-exploitation-chain-cve-2026-105133-cve-2026-105134"
       ]
     },
     {
