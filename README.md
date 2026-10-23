@@ -19,7 +19,6 @@ is what a new cell is copied from.
 | [`nodecode-alibaba-coding-plan`](providers/nodecode-alibaba-coding-plan) | Alibaba Coding Plan: Model Studio's coding subscription as a Nodecode provider. |
 | [`nodecode-alibaba-token-plan`](providers/nodecode-alibaba-token-plan) | QwenCloud Token Plan: Alibaba's regional token subscription as a Nodecode provider. |
 | [`nodecode-amazon-bedrock`](providers/nodecode-amazon-bedrock) | Amazon Bedrock: the Converse Stream wire, SigV4 signing and the AWS event stream, on a lane of its own. |
-| [`nodecode-anthropic`](providers/nodecode-anthropic) | Anthropic (Claude Pro/Max): sign in, and serve the anthropic provider on the subscription when no key is set. |
 | [`nodecode-apple`](providers/nodecode-apple) | Apple Foundation Models: the on-device model, through omp's Swift bridge, as a provider lane (macOS only). |
 | [`nodecode-azure`](providers/nodecode-azure) | Azure OpenAI: the Responses API on an Azure resource, with its api-version and api-key. |
 | [`nodecode-claude-code`](providers/nodecode-claude-code) | Claude models through your own logged-in Claude Code CLI. Linux and macOS. |

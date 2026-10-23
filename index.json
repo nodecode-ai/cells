@@ -35,17 +35,6 @@
       ]
     },
     {
-      "name": "nodecode-anthropic",
-      "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
-      "path": "providers/nodecode-anthropic",
-      "description": "Anthropic (Claude Pro/Max): sign in, and serve the anthropic provider on the subscription when no key is set",
-      "license": "MIT",
-      "depends_on": [
-        "nodecode"
-      ]
-    },
-    {
       "name": "nodecode-apple",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
