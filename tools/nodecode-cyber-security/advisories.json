@@ -1,8 +1,41 @@
 {
   "format": 1,
-  "updated": "2026-10-23T01:16:02Z",
-  "window": "2026-10-08 to 2026-10-22",
+  "updated": "2026-10-23T04:16:29Z",
+  "window": "2026-10-09 to 2026-10-23",
   "advisories": [
+    {
+      "id": "tekmidian-pai-malware",
+      "title": "Malware in @tekmidian/pai (npm): releases 1.0.8-1.0.10 carry malicious code",
+      "date": "2026-10-23",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "Releases 1.0.8, 1.0.9 and 1.0.10 of @tekmidian/pai - a Personal AI Infrastructure / knowledge-OS package with federated memory and project management, run beside an agent that holds local project data - are malware (CWE-506, embedded malicious code). GitHub's advisory carries no patched version and no source to review; npm's latest tag is back at the clean 1.0.7. The advisory's standing advice: any computer that installed a poisoned release is fully compromised - rotate its secrets from a different machine, remove the package, and do not assume removing it cleans the machine.",
+      "affected": "@tekmidian/pai 1.0.8, 1.0.9 and 1.0.10 (the releases the advisory lists). There is no patched build of those releases: 1.0.7 is the latest clean one, and the package should be removed.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@tekmidian/pai",
+          "package": "@tekmidian/pai",
+          "bad": [
+            "1.0.8",
+            "1.0.9",
+            "1.0.10"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall @tekmidian/pai; delete it from lockfiles and CI images), then treat the machine as compromised",
+        "Rotate every secret and key the machine held - from a different machine - and rebuild from a clean image; removing the package does not guarantee the machine is clean"
+      ],
+      "mitigation": [],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-xvgg-qjjh-gq34",
+        "https://www.npmjs.com/package/@tekmidian/pai"
+      ]
+    },
     {
       "id": "linux-ksmbd-zdi-2026-10",
       "title": "Linux KSMBD (in-kernel SMB server): two unpatched remote code execution bugs, one before login (ZDI-CAN-33774, ZDI-CAN-33549)",
