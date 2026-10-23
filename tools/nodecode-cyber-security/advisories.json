@@ -1,8 +1,46 @@
 {
   "format": 1,
-  "updated": "2026-10-22T22:20:51Z",
+  "updated": "2026-10-23T01:16:02Z",
   "window": "2026-10-08 to 2026-10-22",
   "advisories": [
+    {
+      "id": "linux-ksmbd-zdi-2026-10",
+      "title": "Linux KSMBD (in-kernel SMB server): two unpatched remote code execution bugs, one before login (ZDI-CAN-33774, ZDI-CAN-33549)",
+      "date": "2026-10-22",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [],
+      "summary": "Trend Micro's ZDI sent two CVSS 9.0 KSMBD reports to public kernel mailing lists before any fix existed. ZDI-CAN-33774: a race in protocol dispatch (a burst of short SMB1 packets followed by an SMB2 packet in one TCP write) makes the server read past a buffer with no authentication, over TCP 445; with access to a share it can also write past it. ZDI-CAN-33549: an integer underflow in the SMB Direct (RDMA) path overruns a buffer; it needs an RDMA-capable interface (or the rxe software driver), a writable share and a client negotiating SMB Direct. No fix in mainline, linux-next or stable yet, so no CVE. Samba (smbd) is separate software and is not affected.",
+      "affected": "Linux machines running KSMBD (the ksmbd kernel module loaded, started by ksmbd-tools / ksmbd.service), above all with TCP 445 reachable from untrusted networks. A kernel that merely ships the module, unloaded, is not exposed; Samba is not affected.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "command",
+          "label": "ksmbd module loaded",
+          "command": [
+            "sh",
+            "-c",
+            "awk '$1==\"ksmbd\"{print \"ksmbd kernel module is loaded\"}' /proc/modules 2>/dev/null"
+          ]
+        }
+      ],
+      "patch": [
+        "No kernel fix exists yet: when your distro ships a kernel that names ZDI-CAN-33774 / ZDI-CAN-33549 (or their CVEs), install it and reboot"
+      ],
+      "mitigation": [
+        "Not using KSMBD: stop it and keep it from loading: systemctl disable --now ksmbd; rmmod ksmbd; echo 'install ksmbd /bin/false' > /etc/modprobe.d/disable-ksmbd.conf",
+        "Need the share: allow TCP 445 only from trusted hosts at the firewall, never from the internet",
+        "SMB Direct (ZDI-CAN-33549): do not load rdma_rxe or offer SMB Direct on the share host until it is patched"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://www.zerodayinitiative.com/advisories/upcoming/",
+        "https://lore.kernel.org/lkml/BYAPR01MB383076AC412E19C48CFBEAE980662@BYAPR01MB3830.prod.exchangelabs.com/",
+        "https://lore.kernel.org/lkml/BYAPR01MB3830472B5702C089B0BBB77D80662@BYAPR01MB3830.prod.exchangelabs.com/",
+        "https://thehackernews.com/2026/10/two-cvss-90-linux-ksmbd-rce-flaws.html",
+        "https://x.com/markgadala/status/2113385154458583370"
+      ]
+    },
     {
       "id": "next-use-cache-rce",
       "title": "Next.js 16.0.0-16.4.0: unauthenticated RCE in `use cache` functions returning typed arrays",
@@ -1474,7 +1512,7 @@
         "CVE-2026-111943"
       ],
       "summary": "Eight eMudhra intermediate CA keys were generated with weak entropy (one key was the number 4), so certificates for any domain could be forged. Chrome blocked them on Oct 17 and removes the emSign ECC Root CA - G3 on Oct 27.",
-      "affected": "Sites whose certificate chains to eMudhra/emSign (they stop working in Chrome on Oct 27); servers and apps with old trust stores.",
+      "affected": "Sites whose certificate chains to eMudhra/emSign (they stop working in Chrome on Oct 27); servers, apps and Python environments whose trust store still holds the emSign ECC Root CA - G3 (OS ca-certificates, certifi, pip's and uv's bundled copies, container images).",
       "fixed": [],
       "checks": [
         {
@@ -1487,11 +1525,21 @@
             "-c",
             "echo | openssl s_client -connect '{host}:443' -servername '{host}' 2>/dev/null | openssl x509 -noout -issuer"
           ]
+        },
+        {
+          "kind": "command",
+          "label": "trust store still has emSign ECC Root CA - G3",
+          "command": [
+            "sh",
+            "-c",
+            "ls /etc/ssl/certs 2>/dev/null | grep -i 'emSign_ECC_Root_CA_-_G3' | sed 's|^|system trust store: /etc/ssl/certs/|'; trust list 2>/dev/null | grep -q 'emSign ECC Root CA - G3' && echo 'system trust store: emSign ECC Root CA - G3'; python3 -c \"import certifi; p=certifi.where(); print('certifi ' + certifi.__version__ + ': ' + p) if 'emSign ECC Root CA - G3' in open(p).read() else None\" 2>/dev/null; true"
+          ]
         }
       ],
       "patch": [
         "If your certificate is issued by eMudhra/emSign: get a new one from another CA (e.g. Let's Encrypt: certbot --nginx -d {host}) before Oct 27",
         "Update OS ca-certificates, language runtimes (Node 22.23.4/24.22.1/26.12.1, Go's crypto/x509 fix GO-2026-6809) and bundled trust stores; rebuild images; restart",
+        "Python: certifi 2026.10.19, pip 26.2.2, uv 0.13.4, conda 26.9.4 in every virtualenv and tool install (pipx, uv tool); pip and uv carry their own copy, so upgrade them too",
         "Never fix new certificate errors by turning verification off"
       ],
       "mitigation": [],
@@ -1500,6 +1548,8 @@
         "https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/",
         "https://blog.cloudflare.com/emudhra-certificate-compromise",
         "https://pkg.go.dev/vuln/GO-2026-6809",
+        "https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576",
+        "https://github.com/certifi/python-certifi/security/advisories/GHSA-6q48-6c7w-9gw2",
         "https://x.com/AFpost/status/2112926349891412345"
       ]
     },
