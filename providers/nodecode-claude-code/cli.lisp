@@ -44,12 +44,35 @@ the markers of a Claude Code session this process may itself run inside.")
   (exit nil)
   (stderr nil))
 
+(defparameter +windows-program-types+ '("exe" "cmd" "bat")
+  "The types a command that names none is looked for as on Windows, in this
+order: the native installer's claude.exe first, then npm's claude.cmd shim.
+The extensionless `claude' npm puts beside the shim is a sh script, which
+Windows cannot start.")
+
+(defun program-names (command &key (windows #+win32 t #-win32 nil))
+  "The names COMMAND is looked for as: itself, or on WINDOWS, when it ends in
+none of +WINDOWS-PROGRAM-TYPES+, itself with each of them."
+  (flet ((typed-p (type)
+           (let ((suffix (concatenate 'string "." type)))
+             (and (> (length command) (length suffix))
+                  (string-equal suffix command
+                                :start2 (- (length command) (length suffix)))))))
+    (if (and windows (notany #'typed-p +windows-program-types+))
+        (loop for type in +windows-program-types+
+              collect (format nil "~a.~a" command type))
+        (list command))))
+
 (defun cli-program (command)
-  "COMMAND's executable: a path as itself, a bare name found on PATH; NIL
-when there is none."
-  (if (find #\/ command)
-      (probe-file command)
-      (nlk::executable-on-path command)))
+  "COMMAND's executable: a path (either slash) as itself, a bare name found on
+PATH, each name PROGRAM-NAMES gives looked for in turn; NIL when there is
+none."
+  (loop for name in (program-names command)
+        thereis (if (find-if (lambda (char) (find char "/\\")) name)
+                    ;; a Windows path read natively; elsewhere as before, ~ included
+                    (ignore-errors (probe-file #+win32 (uiop:parse-native-namestring name)
+                                               #-win32 name))
+                    (nlk::executable-on-path name))))
 
 (defun cli-environment (relay max-tokens)
   "The run's environment: this process's, without +WITHHELD-PREFIXES+, with
@@ -69,10 +92,14 @@ ceiling the CLI checks thinking against."
   (append (list (uiop:native-namestring program) "-p"
                 "--model" model
                 "--input-format" "stream-json" "--output-format" "stream-json" "--verbose"
-                "--tools" ""
+                ;; an empty value rides its option (`--tools=', not `--tools'
+                ;; ""): one argument with no empty string in it, so nothing
+                ;; rests on how a Windows command line, npm's claude.cmd and
+                ;; cmd.exe pass an empty one along
+                "--tools="
                 "--system-prompt-file" (uiop:native-namestring system-file)
                 "--settings" (uiop:native-namestring settings-file)
-                "--setting-sources" ""
+                "--setting-sources="
                 "--strict-mcp-config"
                 "--disable-slash-commands"
                 "--max-turns" "1"
