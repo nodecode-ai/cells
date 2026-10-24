@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "updated": "2026-10-23T22:19:54Z",
-  "window": "2026-10-09 to 2026-10-23",
+  "updated": "2026-10-24T04:18:45Z",
+  "window": "2026-10-10 to 2026-10-24",
   "advisories": [
     {
       "id": "tekmidian-pai-malware",
@@ -387,6 +387,43 @@
       "sources": [
         "https://wordpress.org/plugins/gamipress/",
         "https://app.opencve.io/cve/CVE-2026-112837"
+      ]
+    },
+    {
+      "id": "msal-node-authcode-disclosure",
+      "title": "@azure/msal-node before 7.1.0: authorization code flow may disclose parameters to an attacker-controlled endpoint (CVE-2026-109461)",
+      "date": "2026-10-23",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-109461"
+      ],
+      "summary": "An origin validation error in Microsoft Authentication Library for Node.js lets an unauthorized attacker disclose information over the network: in the auth_code flow, request parameters can reach an attacker-controlled endpoint. Microsoft rates it Moderate (5.9); the advisory database rates it high. Version 7.1.0 is patched.",
+      "affected": "@azure/msal-node 5.0.0-beta.0 and later, below 7.1.0, when the application uses the authorization code (auth_code) flow.",
+      "fixed": [
+        "7.1.0"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@azure/msal-node",
+          "package": "@azure/msal-node",
+          "line": 1,
+          "fixed": [
+            "7.1.0"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install @azure/msal-node@^7.1.0, then rebuild and redeploy the application"
+      ],
+      "mitigation": [
+        "Until upgraded: pass in only the auth_code to acquireTokenByCode (Microsoft's workaround) - do not forward extra request parameters into the flow"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/AzureAD/microsoft-authentication-library-for-js/security/advisories/GHSA-xcx6-jx8p-x3h5",
+        "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-109461"
       ]
     },
     {
@@ -1563,6 +1600,33 @@
       ]
     },
     {
+      "id": "onamae-desktop-cloud-2026-10",
+      "title": "Onamae.com Desktop Cloud: malware planted in customer servers, stored credentials may have been viewed (GMO Internet, 26,739 systems)",
+      "date": "2026-10-21",
+      "severity": "high",
+      "exploited": true,
+      "cves": [],
+      "summary": "Attackers installed malicious programs in the server environments of customers of Onamae.com Desktop Cloud, GMO Internet's Japanese desktop-as-a-service. GMO confirmed it on October 20 after a customer inquiry on the 19th, suspended the service across all plans, and says 26,739 servers are potentially affected. Unauthorized operations were observed on customers' brokerage trading accounts (MT4/MT5 and similar), and login data stored on the servers may have been viewed and used: the company's urgent request is to change those credentials from a different device and to check transaction histories. Investigation with an external cybersecurity firm is ongoing.",
+      "affected": "Onamae.com Desktop Cloud customers: the provider identified 26,739 potentially affected servers and stopped the service across all plans. Any credential stored on those servers should be treated as viewed.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Change passwords for trading tools (MT4/MT5) and trading accounts from a device other than the Service's servers, then log off - GMO's urgent request",
+        "If you stored credentials (IDs, passwords, API keys) on the server, change them promptly, including everywhere the same password was reused; enable two-factor authentication where your broker offers it",
+        "Check the transaction history and balance of every trading account used on the servers and contact the broker about anything you do not recognize"
+      ],
+      "mitigation": [
+        "Treat everything on the affected servers as compromised: once service is restored, rebuild from clean images rather than cleaning in place",
+        "Reissue SSH keys, API tokens and certificates the server held, and review connected systems for what its credentials could reach"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://internet.gmo/en/news/article/247/",
+        "https://internet.gmo/en/news/article/246/",
+        "https://www.bleepingcomputer.com/news/security/japans-onamae-desktop-cloud-hacked-up-to-27-000-servers-affected/"
+      ]
+    },
+    {
       "id": "ahsaycbs-chain-2026-10",
       "title": "AhsayCBS: authentication bypass chained with command injection on the Replication Receiver, exploited (CVE-2026-105133, CVE-2026-105134)",
       "date": "2026-10-14",
@@ -1628,6 +1692,50 @@
         "https://community.citrix.com/techzone-blogs/110_security-updates/understanding-and-addressing-cve-2026-88779-in-citrix-netscaler-adc-and-citrix-netscaler-gateway/",
         "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
         "https://www.cert.ug/index.php/citrix-netscaler-gets-another-exploited-zero-day-and-last-weeks-patches-do-not-cover-it-cve-2026"
+      ]
+    },
+    {
+      "id": "citrix-netscaler-88771",
+      "title": "Citrix NetScaler ADC/Gateway before 14.1-73.37: unauthenticated RCE batch (CVE-2026-88771 through 88778) exploited to drop web shells and FreeBSD malware",
+      "date": "2026-09-27",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [
+        "CVE-2026-88771",
+        "CVE-2026-88772",
+        "CVE-2026-88773",
+        "CVE-2026-88774",
+        "CVE-2026-88775",
+        "CVE-2026-88776",
+        "CVE-2026-88777",
+        "CVE-2026-88778"
+      ],
+      "summary": "The late-September NetScaler batch includes an improper-input-validation flaw that gives an unauthenticated attacker remote command execution (CVE-2026-88771, CVSS 9.8) and a memory-buffer flaw that can be driven to RCE or denial of service (CVE-2026-88772); both are on CISA's known-exploited list since September 27. Exploitation is active and evolving: Zscaler ThreatLabz observed a staged chain - poisoned access logs, crafted authentication requests, appliance fingerprinting, attempted web-shell installation, then delivery of a Rust-based FreeBSD x64 malware payload - with a burst from at least 26 source IPs, and Gurucul published 28 IP indicators. Patching does not remove installed implants or web shells. Note the October 4 batch (citrix-netscaler-88779) needs a second upgrade on top of these fixes.",
+      "affected": "NetScaler ADC and NetScaler Gateway 14.1 before 14.1-73.37, 13.1 before 13.1-64.23, ADC FIPS before 14.1-73.37 FIPS, and ADC FIPS/NDcPP before 13.1-37.279. Secure Private Access Hybrid deployments using NetScaler instances are affected too.",
+      "fixed": [
+        "14.1-73.37",
+        "13.1-64.23",
+        "14.1-73.37 FIPS",
+        "13.1-37.279"
+      ],
+      "checks": [],
+      "patch": [
+        "Upgrade to 14.1-73.37 (FIPS: 14.1-73.37 FIPS; 13.1 line: 13.1-64.23; ADC FIPS/NDcPP on 13.1: 13.1-37.279), then upgrade again to the October 4 builds (14.1-73.41 / 13.1-64.28 / 14.1-73.41 FIPS / 13.1-37.282), which also fix CVE-2026-88779"
+      ],
+      "mitigation": [
+        "Treat patching as remediation for future attacks only: preserve forensic evidence, isolate appliances you suspect, and hunt for web shells and the FreeBSD malware before and after upgrading - Citrix's steps-if-compromised guidance is CTX694799",
+        "Block the observed source IPs at the edge and run the bulletin's console IOCs to identify exploitation"
+      ],
+      "iocs": [
+        "Rust-based FreeBSD x64 malware payload delivered to appliances",
+        "web-shell installation attempts on the management plane",
+        "at least 26 attacking source IPs in the observed burst (Zscaler); Gurucul's report lists 28 IP indicators"
+      ],
+      "sources": [
+        "https://support.citrix.com/support-home/kbsearch/article?articleNumber=CTX697096",
+        "https://community.citrix.com/techzone-blogs/110_security-updates/netscaler-adc-and-netscaler-gateway-security-bulletin-for-cve-2026-88771-through-cve-2026-88778",
+        "https://mallory.ai/stories/01a15988-a20d-701d-bac7-2dcba6ffc9d3",
+        "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
       ]
     },
     {
