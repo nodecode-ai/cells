@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "updated": "2026-10-24T04:18:45Z",
+  "updated": "2026-10-24T16:16:47Z",
   "window": "2026-10-10 to 2026-10-24",
   "advisories": [
     {
@@ -1194,6 +1194,49 @@
         "https://www.arista.com/en/support/advisories-notices/security-advisory/24838-security-advisory-0199",
         "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
         "https://nvd.nist.gov/vuln/detail/CVE-2026-114625"
+      ]
+    },
+    {
+      "id": "basercms-theme-file-traversal",
+      "title": "baserCMS 5.2.3-5.3.1 / 5.4.0-5.4.1: encoded path traversal in the theme file Admin API allows PHP upload and RCE (CVE-2026-114622)",
+      "date": "2026-10-22",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114622"
+      ],
+      "summary": "The BcThemeFile plugin's Admin API validates the raw path before decoding it with rawurldecode, so an encoded traversal slips past the containment check and writes files outside the intended theme directory: an authenticated administrator can upload PHP into writable locations such as the webroot and get remote code execution and full compromise of the installation (CWE-22 with CWE-180). The same security release also closes a related theme-file viewing traversal reachable with view-only permissions (GHSA-rqr8-gmx5-xvrr). Exploitation needs an administrator session, the non-default BcThemeFile plugin and a same-origin Origin header; USE_CORE_ADMIN_API=FALSE does not block the request. baserCMS notes the admin-side fixes in this release only need action where the admin screen is open to untrusted users.",
+      "affected": "baserproject/basercms 5.2.3 through 5.3.1 and 5.4.0 through 5.4.1, where the BcThemeFile plugin's Admin API is reachable.",
+      "fixed": [
+        "5.3.2",
+        "5.4.2"
+      ],
+      "checks": [
+        {
+          "kind": "composer",
+          "label": "baserproject/basercms",
+          "packages": [
+            "baserproject/basercms"
+          ],
+          "line": 1,
+          "fixed": [
+            "5.3.2",
+            "5.4.2"
+          ]
+        }
+      ],
+      "patch": [
+        "composer update baserproject/basercms (5.3.2 on the 5.3 line, 5.4.2 on 5.4), then redeploy"
+      ],
+      "mitigation": [
+        "Until upgraded: keep administrator accounts trusted and few - the attack needs an admin session and a same-origin request",
+        "Watch for PHP files outside theme directories and review the theme file Admin API's access logs"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/baserproject/basercms/releases/tag/5.4.2",
+        "https://github.com/baserproject/basercms/releases/tag/5.3.2",
+        "https://app.opencve.io/cve/CVE-2026-114622"
       ]
     },
     {
