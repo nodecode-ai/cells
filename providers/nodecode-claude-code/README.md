@@ -39,12 +39,17 @@ It follows NousResearch's
 
 ## Install
 
-Linux and macOS.
+Linux, macOS and Windows.
 
 Install [Claude Code](https://claude.com/claude-code), run `claude` once and
-`/login`. Then copy this folder into
+`/login`. Then run `nodecode add nc://claude-code`, or copy this folder into
 `~/.nodecode/cells/nodecode-claude-code/` and restart Nodecode (or run
 `(restart-cells)`). When no `claude` is on PATH, a notice says so.
+
+On Windows a bare `command` is looked for as `claude.exe`, then `claude.cmd`:
+the native installer's binary first (it lands in `%USERPROFILE%\.local\bin`;
+add that folder to your PATH when the installer says it is not on it), then
+npm's shim. `command` may also name the file itself.
 
 ## Configure
 
