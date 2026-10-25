@@ -138,6 +138,7 @@
       (is (nodecode-qa::pushed-p (first (nodecode-qa::read-notes))) "marked")
       (is (search "1 note kept on this machine, 0 unpushed" (qa:notes)))
       (is (search "no unpushed notes" (qa-slash "push")) "pushed once")
+      (is (search "report_issue" (qa-slash "push")) "and says where a note comes from")
       (is (= 1 (length *qa-posts*)))
       ;; The weekly page never carries the text, pushed or not.
       (is (not (search "never came back" (nlk:encode-json-object (page-now)))))

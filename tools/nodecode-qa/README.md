@@ -37,17 +37,20 @@ from a turn is refused.
 
 ## The switch
 
-The setup wizard asks once, as one panel with two options; `/setup` asks
-again; `(config-set '("qa") '(:share "never"))` answers it in a
-conversation. `"enabled": false` vetoes the cell, tool and all.
-`NODECODE_QA=0` in the environment turns sending off whatever the
-config says, `push` included.
+`/settings`, Diagnostics, asks it (Weekly report: weekly or never);
+`(config-set '("qa") '(:share "never"))` answers it in a conversation,
+and `qa.share` in `config.jsonc` by hand. `"enabled": false` vetoes the
+cell, tool and all. `NODECODE_QA=0` in the environment turns sending off
+whatever the config says, `push` included.
 
-The answer is read when the cell starts. The wizard installs the folder,
-asks, then starts it, so a first run reads the answer; a folder that was
-already running when `/setup` asked keeps what it read at boot until
-`(restart-cells "nodecode-qa")` or the next launch, and `/qa`
-says which it is.
+The answer is read when the cell starts. A cell already running when it
+was answered keeps what it read at its start until
+`(restart-cells "nodecode-qa")` or the next launch; until then `/qa`
+says the answer waits, and `/qa send` refuses whichever way it went.
+
+`/qa push` ships the model's notes, so it has something to send only
+after the model filed one through `report_issue`; `/qa notes` lists
+them.
 
 ```
 /qa          one line: sharing or not, when the next page is due, notes kept
@@ -88,6 +91,7 @@ in `web/src/lib/qa.ts`, the tables in `db/migrations/0029_telemetry.sql`
 `just qa-test` — the page is counts only and carries no text from any
 fact; a refused page keeps its nonce and cursor and the retry resends the same
 page; the first look begins at the consent moment and sends nothing; never,
-unanswered and the environment switch ship nothing; the tool keeps a bounded
+unanswered and the environment switch ship nothing; an answer written since
+the start is named and ships nothing; the tool keeps a bounded
 note and never fails; notes leave only by hand; the page's keys are the
 schema's.

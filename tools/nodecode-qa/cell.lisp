@@ -101,18 +101,45 @@ true on 2xx, else (values NIL REASON); a test binds it.")
                :test #'string=)
        t))
 
+(defparameter +unanswered+
+  "not answered yet: choose weekly or never in /settings, Diagnostics, or set qa.share in config.jsonc"
+  "What /qa and /qa send say before qa.share has an answer: the surface that
+asks it.")
+
+(defun written-share ()
+  "qa.share as config.jsonc says it now, or NIL: unanswered there too, or a
+document this process cannot read."
+  ;; The cell runs on what it read at its start (SETTING); this is the one
+  ;; read of the document as written, so /qa can say an answer given since —
+  ;; /settings saves it and leaves the restart to the operator — is waiting.
+  (ignore-errors
+   (nlk:config-string (nlk:section-table (nle:read-shared-config) '("qa")) "share")))
+
+(defun pending-answer (&aux (running (setting :share)) (written (written-share)))
+  "When config.jsonc answers qa.share otherwise than this cell read at its
+start: the sentence that says so and how it applies, else NIL."
+  (when (and written (not (equal written running)))
+    (format nil "qa.share is ~a in config.jsonc, but this cell started ~:[unanswered~;on ~:*~a~]: ~
+                 restart nodecode, or ask for (restart-cells \"nodecode-qa\"), to apply it"
+            written running)))
+
 (defun send ()
   "Send the page now instead of at the week's end: fold the page since the
 cursor and post it; on 2xx the cursor moves past it."
   ;; The nonce is written before the post, so a crash between the two resends
   ;; the same page under the same nonce and the collector keeps one. => the
   ;; sentence the verb answers; a refusal is QA-ERROR.
+  ;; An answer written since the start refuses too, whichever way it went:
+  ;; a never the operator chose is never overridden by the weekly this
+  ;; cell started on, and a weekly waits for the restart that applies it.
   (cond ((setting :off-by-env)
          (fail "NODECODE_QA turns sharing off in this environment"))
+        ((pending-answer)
+         (fail "~a" (pending-answer)))
         ((equal (setting :share) "never")
          (fail "not sharing: qa.share is never"))
         ((null (setting :share))
-         (fail "not answered yet: /setup, or set qa.share to weekly or never")))
+         (fail "~a" +unanswered+)))
   (unless (nlk:store-open-p)
     (fail "no store is open"))
   (with-qa-lock
@@ -166,12 +193,13 @@ never sooner than a minute."
          (notes (read-notes)))
     (format nil "qa: ~a~@[ · counting since ~a~] · ~d note~:p kept here~@[, ~d unpushed~]"
             (cond ((setting :off-by-env) "off by NODECODE_QA")
+                  ((pending-answer))
                   ((equal share "weekly")
                    (format nil "sharing weekly with ~a, next page in ~a~@[, last refused: ~a~]"
                            (setting :url) (nlk:duration-text (seconds-until-due))
                            *last-error*))
                   ((equal share "never") "not sharing (share: never)")
-                  (t "not answered yet: /setup, or set qa.share to weekly or never"))
+                  (t +unanswered+))
             (and since (subseq since 0 (min 10 (length since))))
             (length notes)
             (let ((unpushed (count-if-not #'pushed-p notes)))
@@ -215,7 +243,10 @@ turn, never on the weekly page."
     (fail "notes leave only by /qa push, the operator's own act"))
   (when (setting :off-by-env)
     (fail "NODECODE_QA turns sharing off in this environment"))
-  (let* ((notes (or (remove-if #'pushed-p (read-notes)) (fail "no unpushed notes")))
+  (let* ((notes (or (remove-if #'pushed-p (read-notes))
+                    (fail "no unpushed notes: a note is what the model files with report_issue ~
+                           when one of its tools misbehaves, and none is waiting; /qa notes lists ~
+                           what is kept")))
          (url (format nil "~a/api/qa/notes" (setting :url)))
          (body (nlk:encode-json-object
                 (nlk:json-object

@@ -118,8 +118,12 @@
       (nodecode-qa::look)
       (is (search "not sharing" (nodecode-qa::status-line))))
     (with-qa (:share nil)
-      (is (search "not answered" (refusal-text qa:qa-error (qa:send))))
-      (is (search "not answered" (nodecode-qa::status-line))))
+      (with-stubbed-fdefinitions ((nodecode-qa::written-share () nil))
+        (is (search "not answered" (refusal-text qa:qa-error (qa:send))))
+        (is (search "not answered" (nodecode-qa::status-line)))
+        ;; The walk stopped asking cell sections; /settings is what asks now.
+        (is (search "/settings" (nodecode-qa::status-line)) "names the surface that asks")
+        (is (not (search "/setup" (nodecode-qa::status-line))) "never the walk that does not")))
     (with-qa (:share :weekly :off-by-env t)
       (is (search "NODECODE_QA" (refusal-text qa:qa-error (qa:send))))
       (is (search "off by NODECODE_QA" (nodecode-qa::status-line)))
@@ -129,6 +133,28 @@
     (is (null *qa-posts*))
     (is-table (value expected) (eq expected (and (nodecode-qa::env-off-p value) t))
       ("0" t) ("off" t) ("never" t) ("FALSE" t) ("" nil) (nil nil) ("1" nil) ("weekly" nil))))
+
+(deftest qa-cell-an-answer-written-since-the-start-is-named-and-ships-nothing
+    (with-session-store ("s1"))
+  ;; /settings saves qa.share and leaves the restart to the operator: until
+  ;; it, /qa says the answer waits instead of `not answered', and send
+  ;; refuses whichever way the answer went.
+  (with-stubbed-collector
+    (record-a-week (nlk:admit-turn "s1" "c1" "hi"))
+    (with-qa (:share nil)
+      (with-stubbed-fdefinitions ((nodecode-qa::written-share () "weekly"))
+        (is (search "qa.share is weekly in config.jsonc, but this cell started unanswered"
+                    (nodecode-qa::status-line)))
+        (is (not (search "not answered" (nodecode-qa::status-line))))
+        (is (search "restart" (refusal-text qa:qa-error (qa:send))))))
+    (with-qa (:share :weekly)
+      (with-stubbed-fdefinitions ((nodecode-qa::written-share () "never"))
+        (is (search "qa.share is never in config.jsonc, but this cell started on weekly"
+                    (refusal-text qa:qa-error (qa:send))) "a later never wins")))
+    (with-qa (:share :weekly)
+      (with-stubbed-fdefinitions ((nodecode-qa::written-share () "weekly"))
+        (is (null (nodecode-qa::pending-answer)) "the same answer waits on nothing")))
+    (is (null *qa-posts*))))
 
 (deftest qa-cell-the-page-matches-the-checked-in-schema (with-session-store ("s1"))
   (with-qa (:share :never)
