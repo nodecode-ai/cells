@@ -29,6 +29,10 @@
   :license "MIT"
   :version "0.1.0"
   :depends-on ("nodecode")
+  ;; what /models offers this folder by before it is installed: picking it
+  ;; installs it, and its login is the claude CLI's own, so the pick goes on
+  ;; to its models
+  :properties ((:serves (:provider "claude-code" :name "Claude Pro/Max (Claude Code)")))
   :serial t
   :components ((:file "package")
                (:file "wire")
