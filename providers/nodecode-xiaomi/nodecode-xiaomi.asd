@@ -15,6 +15,8 @@
   :license "MIT"
   :version "0.1.0"
   :depends-on ("nodecode")
+  ;; what /models offers this folder by before it is installed: picking it installs it, then asks for its key
+  :properties ((:serves (:provider "xiaomi" :name "Xiaomi MiMo" :sign-in "key")))
   :serial t
   :components ((:file "package")
                (:file "provider")
