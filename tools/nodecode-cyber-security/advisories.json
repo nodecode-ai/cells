@@ -1,8 +1,107 @@
 {
   "format": 1,
-  "updated": "2026-10-24T16:16:47Z",
-  "window": "2026-10-10 to 2026-10-24",
+  "updated": "2026-10-25T16:21:09Z",
+  "window": "2026-10-11 to 2026-10-25",
   "advisories": [
+    {
+      "id": "npm-sham-scopes-2026-10",
+      "title": "npm: eight sham scoped packages (@greenlake, @drone-js-ext, @factoryz, @futurae-public and others) beacon hosts and pull an off-registry payload",
+      "date": "2026-10-25",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "Eight packages published to npm are malware (CWE-506), reported by Amazon Inspector. All are scoped-namespace shams: zero-functionality stubs whose main entry exports a Proxy of no-op functions so consumer builds resolve the name, versioned 99.x to win resolution over the real package. Their real behavior is twofold: a beacon (postinstall or a beacon.cjs) that collects host identifiers - hostname, install path, working directory, Node version - and POSTs them in cleartext; and/or a sole dependency 'ltidisafe' declared as a bare HTTPS tarball URL on ltidi.storage.googleapis.com/depenconf/ (3.9.1-3.9.3) instead of the npm registry, so npm fetches and executes whatever the attacker serves there at install time. There is no clean version of any of them: remove and rotate.",
+      "affected": "@greenlake/session 99.0.1, @greenlake/common-context 99.0.1, @drone-js-ext/vip-badge 99.0.1, @drone-js-ext/core 99.0.1, @generic-means/ing-feat-scanner-libs 99.9.1, @factoryz/apollo 99.9.1, @futurae-public/adaptive-js 99.9.1, @fmr-ap153177/apex-kit-icons 99.9.1 (npm). The packages should be removed.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@greenlake/session",
+          "package": "@greenlake/session",
+          "bad": [
+            "99.0.1"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@greenlake/common-context",
+          "package": "@greenlake/common-context",
+          "bad": [
+            "99.0.1"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@drone-js-ext/vip-badge",
+          "package": "@drone-js-ext/vip-badge",
+          "bad": [
+            "99.0.1"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@drone-js-ext/core",
+          "package": "@drone-js-ext/core",
+          "bad": [
+            "99.0.1"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@generic-means/ing-feat-scanner-libs",
+          "package": "@generic-means/ing-feat-scanner-libs",
+          "bad": [
+            "99.9.1"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@factoryz/apollo",
+          "package": "@factoryz/apollo",
+          "bad": [
+            "99.9.1"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@futurae-public/adaptive-js",
+          "package": "@futurae-public/adaptive-js",
+          "bad": [
+            "99.9.1"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@fmr-ap153177/apex-kit-icons",
+          "package": "@fmr-ap153177/apex-kit-icons",
+          "bad": [
+            "99.9.1"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the packages (npm uninstall <name>; delete them from lockfiles and CI images) and reinstall from the public registry",
+        "Treat every machine that installed one as compromised: rotate its secrets from a different machine and rebuild from a clean image"
+      ],
+      "mitigation": [
+        "Block ltidi.storage.googleapis.com at build-host egress and pin npm to the public registry so an off-registry tarball cannot resolve",
+        "Watch the dependency tree for 99.x sham scoped names: npm ls --all, and review any scoped package you did not add"
+      ],
+      "iocs": [
+        "ltidi.storage.googleapis.com/depenconf/ltidisafe-3.9.{1,2,3}.tgz (the off-registry payload)",
+        "cleartext beacon POSTs carrying hostname, install path, working directory and Node version"
+      ],
+      "sources": [
+        "https://github.com/advisories/GHSA-ph7p-r8mj-5q6r",
+        "https://github.com/advisories/GHSA-p5fc-j294-qr5q",
+        "https://github.com/advisories/GHSA-3qv7-4fg6-54gp",
+        "https://github.com/advisories/GHSA-8wg4-rwxf-cv7v",
+        "https://github.com/advisories/GHSA-79qp-32qv-632x",
+        "https://github.com/advisories/GHSA-vw9v-ghxv-m2gw",
+        "https://github.com/advisories/GHSA-g6h7-w896-4p29",
+        "https://github.com/advisories/GHSA-68q8-r62c-rwgx"
+      ]
+    },
     {
       "id": "tekmidian-pai-malware",
       "title": "Malware in @tekmidian/pai (npm): releases 1.0.8-1.0.10 carry malicious code",
@@ -1698,6 +1797,75 @@
         "https://www.ahsay.com/en/company/announcements/patch-cve-105133-105134-update",
         "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
         "https://www.bitdefender.com/en-au/blog/businessinsights/technical-advisory-ahsaycbs-exploitation-chain-cve-2026-105133-cve-2026-105134"
+      ]
+    },
+    {
+      "id": "tensorlake-0-5-144-malware",
+      "title": "Malware in tensorlake (npm) 0.5.144: preinstall steals developer and cloud credentials, then spreads with the stolen npm tokens",
+      "date": "2026-10-08",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "Version 0.5.144 of the tensorlake npm SDK - Tensorlake's SDK for running untrusted LLM-generated code in isolated sandboxes - was trojanized in a ChainDrop / Shai-Hulud campaign and published October 8 at 01:12 UTC; Socket flagged it 11 minutes later. A preinstall script runs the payload before any sandbox can matter: it harvests npm and GitHub tokens, AWS credentials, Kubernetes and HashiCorp Vault credentials, SSH keys, .env files and data from certain AI development tools, exfiltrates over an encrypted channel (an Ethereum contract resolves the remote endpoint, with a dead-man switch reacting to token revocation), then uses stolen npm tokens to modify packages and spread. npm has unpublished 0.5.144; releases from 0.5.145 up are clean (latest is 0.5.158).",
+      "affected": "tensorlake 0.5.144 (npm), installed or built on between October 8 and its removal. Releases up to 0.5.143 and from 0.5.145 on are not affected.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "tensorlake",
+          "package": "tensorlake",
+          "bad": [
+            "0.5.144"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove 0.5.144 from lockfiles and reinstall tensorlake at 0.5.145 or newer (npm has unpublished the poisoned release; verify no lockfile or CI cache still references it)",
+        "Treat any machine that installed 0.5.144 as compromised: rotate npm and GitHub tokens, AWS keys, Kubernetes and Vault credentials, SSH keys and .env secrets - from a different machine"
+      ],
+      "mitigation": [
+        "Review what the machine's npm token touched between October 8 and its rotation: the malware spreads by modifying packages",
+        "Hunt for follow-on activity the dead-man switch enables: unexpected npm publishing after tokens were revoked or rotated"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://www.thaicert.or.th/en/2026/10/09/supply-chain-attack-through-tensorlake-npm-package-steals-credentials-and-spreads-malware/",
+        "https://badge.socket.dev/blog/tensorlake-compromise",
+        "https://www.npmjs.com/package/tensorlake"
+      ]
+    },
+    {
+      "id": "subql-common-5-8-3-malware",
+      "title": "Malware in @subql/common (npm) 5.8.3: credential stealer that rides SubQuery's transitive dependencies into CI",
+      "date": "2026-10-05",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "StepSecurity found malware in @subql/common 5.8.3 - the npm package at the base of the SubQuery project - and published details on October 5. The release runs on an ordinary install, or whenever the package is loaded later, and searches developer systems and CI/CD jobs for credentials: it gathers them, sends them over an encrypted channel and accepts commands. Because SubQuery tooling pulls @subql/common transitively, the poisoned release reached workstations, Linux runners, containers and deployment jobs where its name never appeared in a package list, and provenance did not stop it. npm has unpublished 5.8.3 and rolled the latest tag back to the clean 5.8.2.",
+      "affected": "@subql/common 5.8.3 (npm), anywhere it landed - including transitively through SubQuery tooling. npm has removed the release; 5.8.2 is the current clean latest.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@subql/common",
+          "package": "@subql/common",
+          "bad": [
+            "5.8.3"
+          ]
+        }
+      ],
+      "patch": [
+        "Confirm no lockfile or CI cache still references @subql/common 5.8.3 and reinstall dependencies from the public registry",
+        "Treat every machine and runner that installed or loaded it as compromised: rotate the CI credentials it could reach (registry tokens, cloud keys, repository and deployment secrets) from a different machine"
+      ],
+      "mitigation": [
+        "Audit CI logs from the window for jobs that pulled 5.8.3 and what credentials those jobs held",
+        "Pin and lock transitive dependencies - a poisoned base package rides in through tooling you never listed"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://linuxsecurity.com/news/security-vulnerabilities/subquery-supply-chain-attack",
+        "https://www.npmjs.com/package/@subql/common"
       ]
     },
     {
