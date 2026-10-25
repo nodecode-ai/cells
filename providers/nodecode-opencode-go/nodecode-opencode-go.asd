@@ -15,6 +15,9 @@
   :license "MIT"
   :version "0.1.0"
   :depends-on ("nodecode")
+  ;; what /models offers this folder by before it is installed: picking
+  ;; OpenCode Go installs it, then asks for the Go key
+  :properties ((:serves (:provider "opencode-go" :name "OpenCode Go" :sign-in "key")))
   :serial t
   :components ((:file "package")
                (:file "provider")
