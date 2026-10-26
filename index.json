@@ -4,23 +4,37 @@
     {
       "name": "nodecode-alibaba-coding-plan",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-alibaba-coding-plan",
       "description": "Alibaba Coding Plan: Model Studio's coding subscription as a Nodecode provider",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "alibaba-coding-plan",
+          "name": "Alibaba Coding Plan",
+          "sign_in": "key"
+        }
       ]
     },
     {
       "name": "nodecode-alibaba-token-plan",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-alibaba-token-plan",
       "description": "QwenCloud Token Plan: Alibaba's regional token subscription as a Nodecode provider",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "alibaba-token-plan",
+          "name": "QwenCloud Token Plan",
+          "sign_in": "key"
+        }
       ]
     },
     {
@@ -118,7 +132,7 @@
     {
       "name": "nodecode-claude-code",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "a3fa7ef03a7635adef21bd8a82537d4de15da9fb",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-claude-code",
       "description": "Claude Code's own login as a provider lane: the claude CLI writes each request, Nodecode sends it",
       "license": "MIT",
@@ -129,17 +143,30 @@
         "linux",
         "macos",
         "windows"
+      ],
+      "serves": [
+        {
+          "provider": "claude-code",
+          "name": "Claude Pro/Max (Claude Code)"
+        }
       ]
     },
     {
       "name": "nodecode-cline-pass",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-cline-pass",
       "description": "ClinePass: Cline's model subscription as a Nodecode provider",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "cline-pass",
+          "name": "ClinePass",
+          "sign_in": "key"
+        }
       ]
     },
     {
@@ -167,12 +194,19 @@
     {
       "name": "nodecode-cursor",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-cursor",
       "description": "Cursor: a browser sign-in, and Cursor's Agent protocol (Connect over HTTP, protobuf) as a lane of its own",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "cursor",
+          "name": "Cursor",
+          "sign_in": "/cursor login"
+        }
       ]
     },
     {
@@ -189,78 +223,127 @@
     {
       "name": "nodecode-devin",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-devin",
       "description": "Devin: a browser sign-in, and Codeium's Cascade wire (Connect over protobuf) as a lane of its own",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "devin",
+          "name": "Devin",
+          "sign_in": "/devin login"
+        }
       ]
     },
     {
       "name": "nodecode-factory-droid",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-factory-droid",
       "description": "Factory Droid: Factory's model subscription as a Nodecode provider, signed in with a WorkOS device code",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "factory-droid",
+          "name": "Factory Droid",
+          "sign_in": "/factory-droid login"
+        }
       ]
     },
     {
       "name": "nodecode-github-copilot",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-github-copilot",
       "description": "GitHub Copilot: a GitHub device sign-in, and Copilot's Messages, chat and Responses wires as one provider",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "github-copilot",
+          "name": "GitHub Copilot",
+          "sign_in": "/github-copilot login"
+        }
       ]
     },
     {
       "name": "nodecode-gitlab-duo",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-gitlab-duo",
       "description": "GitLab Duo Non-Agentic: Duo's chat models through GitLab's AI gateway, as a Nodecode provider",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "gitlab-duo",
+          "name": "GitLab Duo",
+          "sign_in": "/gitlab-duo login"
+        }
       ]
     },
     {
       "name": "nodecode-gitlab-duo-agent",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-gitlab-duo-agent",
       "description": "GitLab Duo Agent: the Duo Workflow Service as a Nodecode provider lane",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "gitlab-duo-agent",
+          "name": "GitLab Duo Agent",
+          "sign_in": "/gitlab-duo-agent login"
+        }
       ]
     },
     {
       "name": "nodecode-google-antigravity",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-google-antigravity",
       "description": "Antigravity: a Google sign-in, and Antigravity's Cloud Code Assist wire as a lane of its own",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "google-antigravity",
+          "name": "Google Antigravity",
+          "sign_in": "/google-antigravity login"
+        }
       ]
     },
     {
       "name": "nodecode-google-gemini-cli",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-google-gemini-cli",
       "description": "Google Cloud Code Assist: a Google sign-in, and the Gemini CLI's wire as a lane of its own",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "google-gemini-cli",
+          "name": "Google Gemini CLI",
+          "sign_in": "/google-gemini-cli login"
+        }
       ]
     },
     {
@@ -277,23 +360,37 @@
     {
       "name": "nodecode-kilo",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-kilo",
       "description": "Kilo Gateway: sign in with a device code, and serve its models",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "kilo",
+          "name": "Kilo Gateway",
+          "sign_in": "/kilo login"
+        }
       ]
     },
     {
       "name": "nodecode-kimi-code",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-kimi-code",
       "description": "Kimi Code: Moonshot's coding subscription as a Nodecode provider, signed in with a device code",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "kimi-code",
+          "name": "Kimi Code",
+          "sign_in": "/kimi-code login"
+        }
       ]
     },
     {
@@ -321,34 +418,55 @@
     {
       "name": "nodecode-muse-code",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-muse-code",
       "description": "Muse Code: Meta's Muse subscription as a Nodecode provider, signed in with a device code",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "muse-code",
+          "name": "Muse Code",
+          "sign_in": "/muse-code login"
+        }
       ]
     },
     {
       "name": "nodecode-ollama-cloud",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-ollama-cloud",
       "description": "Ollama Cloud: Ollama's native /api/chat wire as a Nodecode provider lane",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "ollama-cloud",
+          "name": "Ollama Cloud",
+          "sign_in": "key"
+        }
       ]
     },
     {
       "name": "nodecode-openai-codex",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-openai-codex",
       "description": "ChatGPT Plus/Pro (Codex subscription): sign in, and serve the Codex models",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "openai-codex",
+          "name": "ChatGPT Plus/Pro (Codex)",
+          "sign_in": "/openai-codex login"
+        }
       ]
     },
     {
@@ -360,6 +478,24 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ]
+    },
+    {
+      "name": "nodecode-opencode-go",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
+      "path": "providers/nodecode-opencode-go",
+      "description": "OpenCode Go: OpenCode's model subscription as a Nodecode provider",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "opencode-go",
+          "name": "OpenCode Go",
+          "sign_in": "key"
+        }
       ]
     },
     {
@@ -431,34 +567,55 @@
     {
       "name": "nodecode-xai-oauth",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-xai-oauth",
       "description": "xAI Grok through a SuperGrok or X Premium+ sign-in, as a Nodecode provider",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "xai-oauth",
+          "name": "SuperGrok (xAI)",
+          "sign_in": "/xai-oauth login"
+        }
       ]
     },
     {
       "name": "nodecode-xiaomi",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-xiaomi",
       "description": "Xiaomi MiMo: its models, on a pay-as-you-go key or a regional Token Plan key",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "xiaomi",
+          "name": "Xiaomi MiMo",
+          "sign_in": "key"
+        }
       ]
     },
     {
       "name": "nodecode-zai-coding-plan",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
       "path": "providers/nodecode-zai-coding-plan",
       "description": "Z.AI GLM Coding Plan, signed in from the browser, as a Nodecode provider",
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ],
+      "serves": [
+        {
+          "provider": "zai-coding-plan",
+          "name": "Z.AI GLM Coding Plan",
+          "sign_in": "/zai-coding-plan login"
+        }
       ]
     }
   ]
