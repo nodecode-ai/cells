@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "updated": "2026-10-25T16:21:09Z",
-  "window": "2026-10-11 to 2026-10-25",
+  "updated": "2026-10-26T04:16:03Z",
+  "window": "2026-10-12 to 2026-10-26",
   "advisories": [
     {
       "id": "npm-sham-scopes-2026-10",
@@ -2548,29 +2548,6 @@
       "sources": [
         "https://almalinux.org/blog/2026-10-16-pwnescape-cve-2026-99999/",
         "https://x.com/PaulosYibelo/status/2111541156572013043"
-      ]
-    },
-    {
-      "id": "tomcat-2026-10",
-      "title": "Apache Tomcat: 8 fixes including an authentication bypass",
-      "date": "2026-10-12",
-      "severity": "high",
-      "exploited": false,
-      "cves": [],
-      "summary": "Eight vulnerabilities, including an authentication bypass and an HTTP/2 response mix-up.",
-      "affected": "Tomcat 11 before 11.0.27 and 10.1 before 10.1.61.",
-      "fixed": [
-        "11.0.27",
-        "10.1.61"
-      ],
-      "checks": [],
-      "patch": [
-        "Upgrade to 11.0.27 or 10.1.61 ($CATALINA_HOME/bin/version.sh shows yours)"
-      ],
-      "mitigation": [],
-      "iocs": [],
-      "sources": [
-        "https://tomcat.apache.org/security-11.html"
       ]
     },
     {
