@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "updated": "2026-10-26T10:16:53Z",
+  "updated": "2026-10-26T22:17:12Z",
   "window": "2026-10-12 to 2026-10-26",
   "advisories": [
     {
@@ -1824,6 +1824,46 @@
         "https://www.ahsay.com/en/company/announcements/patch-cve-105133-105134-update",
         "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
         "https://www.bitdefender.com/en-au/blog/businessinsights/technical-advisory-ahsaycbs-exploitation-chain-cve-2026-105133-cve-2026-105134"
+      ]
+    },
+    {
+      "id": "s4yhi-r2-https-b-malware",
+      "title": "Malware in @s4yhiitestpoc/r2-https-b (npm): postinstall beacons installer and internal registry data to a collector",
+      "date": "2026-10-12",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "Version 1.0.0 of @s4yhiitestpoc/r2-https-b runs postinstall.js at npm install, which collects installer-side identifying data - hostname, username, home directory, non-internal network interface addresses, DNS servers, current working directory, install directory, and npm_config_registry (which discloses the installer's internal or private npm registry URL) - and POSTs it as JSON over HTTPS to a hardcoded collector at collector.oob.s4yhii.com/_npm-poc/beacon, with a parallel DNS lookup to a unique per-run subdomain under oob.s4yhii.com as an out-of-band confirmation channel that survives blocked HTTPS. The dual-channel beacon, internal-registry capture and install-time trigger match the fingerprint of a dependency-confusion probe: the package self-describes as a proof of concept, but installer-side host and internal-infrastructure data leaves the host to an attacker-controlled destination without opt-in. Reported by Amazon Inspector (IN-MAL-2026-021460); GitHub's advisory carries the standing malware advice: consider the machine compromised, rotate its secrets from a different machine, and remove the package.",
+      "affected": "@s4yhiitestpoc/r2-https-b 1.0.0 - every version of the npm package. No patched build exists: the package should be removed.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@s4yhiitestpoc/r2-https-b",
+          "package": "@s4yhiitestpoc/r2-https-b",
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall @s4yhiitestpoc/r2-https-b; check lockfiles and CI images) and rotate the machine's secrets from a different machine, per the advisory's standing advice",
+        "If your CI pulled it: treat your internal registry URL and build-host details as disclosed and review who could have received them"
+      ],
+      "mitigation": [
+        "Block collector.oob.s4yhii.com and *.oob.s4yhii.com at build-host egress",
+        "Alert on postinstall scripts reaching OOB or per-run DNS-lookup domains - a unique subdomain lookup per install is a classic probe channel"
+      ],
+      "iocs": [
+        "collector.oob.s4yhii.com/_npm-poc/beacon (HTTPS beacon endpoint)",
+        "per-run DNS lookups under oob.s4yhii.com",
+        "postinstall.js sha256 4e1c182ebf45e34a28a3e7b757eb8442d3b307372dbbc0d2b50898c03fb738d6",
+        "r2-https-b-1.0.0.tgz sha1 8a275bc95b24a3acaa524dcad29bc9007355fc19"
+      ],
+      "sources": [
+        "https://osv.dev/vulnerability/MAL-2026-17808",
+        "https://github.com/advisories/GHSA-h99w-8693-g33v",
+        "https://vulnerability.circl.lu/vuln/mal-2026-17808"
       ]
     },
     {
