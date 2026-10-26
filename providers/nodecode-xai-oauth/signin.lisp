@@ -58,8 +58,12 @@
      (sb-sys:deadline-timeout ()
        (error "~a did not answer within ~d s" ,url ,seconds))))
 
-(defun answer (body status)
-  "(values BODY STATUS) with BODY decoded as JSON, else its text."
+(defun answer (body status &rest more)
+  "(values BODY STATUS) with BODY decoded as JSON, else its text. MORE is the
+rest of what dexador answers (headers, address, stream), which no caller reads."
+  ;; dexador answers five values: an ANSWER of two signalled `invalid number of
+  ;; arguments: 5' on every 200, so the sign-in failed whenever it got that far.
+  (declare (ignore more))
   (let ((text (nlk:body-text body)))
     (values (or (ignore-errors (nlk:decode-json text)) text) status)))
 
