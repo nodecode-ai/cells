@@ -110,7 +110,9 @@ STATUS), any status answered as a value; a transport failure signals KILO-ERROR.
   (deadline 0)
   (auth-path nil)
   (cancelled nil)
-  (thread nil))
+  (thread nil)
+  ;; what /kilo login answered, answered again while the sign-in waits
+  (answer ""))
 
 (defvar *login* nil
   "The sign-in waiting for its code to be approved, or NIL.")
@@ -191,7 +193,16 @@ say how it went."
 
 (defun start-login (auth-path)
   "Ask Kilo for a code and answer what the operator does with it; the
-polling runs on a thread of its own."
+polling runs on a thread of its own. A sign-in still waiting is answered
+again, its page and code unchanged."
+  ;; Kilo refuses a new code while too many wait (429 `Too many pending
+  ;; authorization requests'): the /models wizard's Esc, then Enter, asked for
+  ;; one each time.
+  (let ((waiting *login*))
+    (when (and waiting (not (login-cancelled waiting))
+               (< (unix-seconds) (login-deadline waiting))
+               (equal auth-path (login-auth-path waiting)))
+      (return-from start-login (login-answer waiting))))
   (cancel-login)
   (multiple-value-bind (code url expires-in) (request-code)
     (let ((login (make-login :code code :deadline (+ (unix-seconds) (floor expires-in))
@@ -204,10 +215,11 @@ polling runs on a thread of its own."
       ;; (device-auth?code=3ECM-HRLB), and the poll code is a secret the
       ;; answer must not show -- it said `enter the code YCUgHl...' (43
       ;; characters) where the page asked for none.
-      (format nil "Open ~a~@[ and check it shows the code ~a~], then approve the sign-in. ~
-                   This machine checks every ~d seconds for ~d minutes and finishes the sign-in once you approve it."
-              url (ignore-errors (cdr (assoc "code" (quri:uri-query-params (quri:uri url)) :test #'string=)))
-              +poll-seconds+ (ceiling expires-in 60)))))
+      (setf (login-answer login)
+            (format nil "Open ~a~@[ and check it shows the code ~a~], then approve the sign-in. ~
+                         This machine checks every ~d seconds for ~d minutes and finishes the sign-in once you approve it."
+                    url (ignore-errors (cdr (assoc "code" (quri:uri-query-params (quri:uri url)) :test #'string=)))
+                    +poll-seconds+ (ceiling expires-in 60))))))
 
 ;;; --- the slash command -----------------------------------------------------------------
 

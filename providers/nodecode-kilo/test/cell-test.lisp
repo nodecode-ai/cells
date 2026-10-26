@@ -88,6 +88,27 @@ answers the statuses POLLS in turn, a 200 with the status APPROVED and a token."
 
 ;;; --- the sign-in -----------------------------------------------------------------
 
+(deftest kilo-cell-answers-a-waiting-sign-in-again ()
+  ;; Sent again while its code waits (the /models wizard's Esc, then Enter),
+  ;; login answers the same page and code and asks Kilo for none: Kilo
+  ;; refuses a new one while too many wait.
+  (with-cell-stop ((kilo-start))
+    (with-temp-auth (auth "{}")
+      (let ((nle::*auth-file-path* auth) (posts 0))
+        (with-stubbed-fdefinitions
+            ((dex:post (url &rest args)
+               url args (incf posts)
+               (values "{\"code\":\"poll-secret\",\"verificationUrl\":\"https://kilo.ai/device-auth?code=3ECM-HRLB\",\"expiresIn\":300}" 200))
+             (dex:get (url &rest args) url args (values "" 202))
+             (nodecode-kilo::pause (seconds) (sleep 0.05)))
+          (unwind-protect
+               (let ((first (cell-entry "nodecode-kilo" "kilo" "login")))
+                 (is (search "3ECM-HRLB" first))
+                 (is (equal first (cell-entry "nodecode-kilo" "kilo" "login")) "the same page and code again")
+                 (is (= 1 posts) "one code asked of Kilo"))
+            (nodecode-kilo::cancel-login)
+            (kilo-await-login)))))))
+
 (deftest kilo-cell-signs-in-with-a-device-code ()
   (with-kilo-login (auth answer asked notices)
     (is (search "https://kilo.ai/device-auth?code=3ECM-HRLB" answer) "the page Kilo names")
