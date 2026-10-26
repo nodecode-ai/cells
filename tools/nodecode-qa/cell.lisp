@@ -85,11 +85,26 @@ beside whose /dl path the collector's route sits, as the release feed's does."
   "The POST the collector is asked with, a function of URL and BODY answering
 true on 2xx, else (values NIL REASON); a test binds it.")
 
+(defun collector-reason (status answer)
+  "The refusal as /qa prints it: STATUS and the sentence the collector's
+ANSWER names, `HTTP 400: rounds.0.ttft_ms: Invalid input'."
+  (format nil "HTTP ~d~@[: ~a~]" status
+          (ignore-errors (nlk:json-value (nlk:decode-json (nlk:body-text answer)) :text "error"))))
+
 (defun post-json (url body)
   "POST BODY (JSON text) to URL => T on 2xx, else (values NIL REASON)."
-  (let ((status (nth-value 1 (nle:http-fetch url :content body :timeout +post-timeout+
-                                               :headers '(("content-type" . "application/json"))))))
-    (if (integerp status) t (values nil status))))
+  ;; Not NLE:HTTP-FETCH: its refusal drops the body, and the collector's 400
+  ;; names the first thing wrong for the operator to read. One deadline over
+  ;; the whole exchange, as there.
+  (handler-case
+      (multiple-value-bind (answer status)
+          (sb-sys:with-deadline (:seconds +post-timeout+)
+            (nlk:http :post url :content body :timeout +post-timeout+
+                                :connect-timeout +post-timeout+
+                                :headers '(("content-type" . "application/json"))))
+        (if (< status 300) t (values nil (collector-reason status answer))))
+    ((or error sb-sys:deadline-timeout) (condition)
+      (values nil (nle:transport-failure-label condition url)))))
 
 ;;; --- sending ------------------------------------------------------------------
 

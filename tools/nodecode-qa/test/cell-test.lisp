@@ -167,3 +167,26 @@
       (is (search "the next page" (qa-slash "show")))
       (is (search "unknown subcommand bogus" (qa-slash "bogus")))
       (is (null *qa-posts*) "show and status send nothing"))))
+
+;;; --- the post --------------------------------------------------------------
+
+(deftest qa-cell-a-refusal-names-what-the-collector-said ()
+  ;; The collector's 400 names the first thing wrong in its body; /qa printed
+  ;; only `HTTP 400' and left the operator nothing to act on.
+  (with-stubbed-fdefinitions
+      ((nlk:http (method url &key headers content timeout connect-timeout max-bytes binary stream pool proxy)
+         (declare (ignore method url headers content timeout connect-timeout max-bytes binary stream pool proxy))
+         (values "{\"error\":\"rounds.0.ttft_ms: Invalid input\"}" 400)))
+    (multiple-value-bind (ok reason) (nodecode-qa::post-json "https://collector.test/api/qa" "{}")
+      (is (null ok))
+      (is (equal "HTTP 400: rounds.0.ttft_ms: Invalid input" reason) "the status and the collector's sentence")))
+  (with-stubbed-fdefinitions
+      ((nlk:http (method url &key headers content timeout connect-timeout max-bytes binary stream pool proxy)
+         (declare (ignore method url headers content timeout connect-timeout max-bytes binary stream pool proxy))
+         (values "<html>bad gateway</html>" 502)))
+    (is (equal "HTTP 502" (nth-value 1 (nodecode-qa::post-json "https://collector.test/api/qa" "{}"))) "a body with no sentence, the status alone"))
+  (with-stubbed-fdefinitions
+      ((nlk:http (method url &key headers content timeout connect-timeout max-bytes binary stream pool proxy)
+         (declare (ignore method url headers content timeout connect-timeout max-bytes binary stream pool proxy))
+         (values nil 204)))
+    (is (eq t (nodecode-qa::post-json "https://collector.test/api/qa" "{}")) "a 204 is taken")))

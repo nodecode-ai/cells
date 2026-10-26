@@ -59,6 +59,24 @@
         (when (> (length host) 3)
           (is (not (search host body)) "no hostname"))))))
 
+(deftest qa-cell-a-negative-first-token-time-stays-off-the-page (with-session-store ("s1"))
+  ;; A negative wait is a broken measurement (a failover once timed the
+  ;; candidate from the refused attempt's first token), and the collector
+  ;; refuses a page that carries one: the page leaves it out.
+  (with-qa (:share :never)
+    (nodecode-qa::begin-cursor)
+    (let ((turn (nlk:admit-turn "s1" "c1" "hi")))
+      (nlk:record-turn-provider-request turn :provider "anthropic" :model "claude-opus-5" :ttft-ms -7863)
+      (nlk:record-turn-provider-request turn :provider "anthropic" :model "claude-opus-5" :ttft-ms 900)
+      (nlk:record-turn-usage turn :provider "openai" :model "gpt-5"
+                                  :input-tokens 300 :output-tokens 100 :finish-reason "stop")
+      (nlk:record-turn-provider-request turn :provider "openai" :model "gpt-5" :ttft-ms -24))
+    (let ((rounds (gethash "rounds" (page-now))))
+      (is-present (opus (wire-row "claude-opus-5" rounds "model")) "the opus lane"
+        (is-shape opus ("ttft_ms" = 900 "the one real wait")))
+      (is-present (gpt (wire-row "gpt-5" rounds "model")) "the gpt lane"
+        (is (null (nth-value 1 (gethash "ttft_ms" gpt))) "no real wait, no key")))))
+
 (deftest qa-cell-a-refused-page-keeps-its-nonce-and-cursor (with-session-store ("s1"))
   (with-stubbed-collector
     (with-qa (:share :weekly)

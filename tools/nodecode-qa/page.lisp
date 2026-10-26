@@ -185,7 +185,9 @@ duration; the notes since SINCE by tool and symptom."
           (incf (lane-cached lane) (or cached 0))))
       (each ((facts-of "turn.provider_request") (provider :text "provider") (model :text "model")
              (ttft :integer "ttft-ms"))
-        (when ttft
+        ;; A negative wait is a broken measurement, not a time: the page
+        ;; leaves it out, and the collector refuses a page that carries one.
+        (when (and ttft (not (minusp ttft)))
           (push ttft (lane-ttfts (lane-of provider model)))))
       (each ((facts-of "turn.provider_retry") (provider :text "provider") (model :text "model"))
         (incf (lane-retries (lane-of provider model))))
