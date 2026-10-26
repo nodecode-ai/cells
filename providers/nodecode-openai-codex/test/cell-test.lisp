@@ -216,6 +216,26 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
     (is (equal "c-9" (cdr (assoc "code" (cdr (first posts)) :test #'equal))))
     (is (equal +oc-access+ (nlk:json-value (oc-entry auth) :string "access_token")))))
 
+(deftest openai-codex-cell-answers-a-waiting-sign-in-again ()
+  ;; Sent again while its browser is still out (the /models wizard's Esc,
+  ;; then Enter), login answers the same address on the one port OpenAI
+  ;; allows: closing the listener for a new one left that port bound for the
+  ;; waiting poll's quarter second, and the new one said it was in use.
+  (let ((port (let ((probe (usocket:socket-listen "127.0.0.1" 0 :reuse-address t)))
+                (prog1 (usocket:get-local-port probe) (usocket:socket-close probe)))))
+    (with-cell-stop ((openai-codex-start))
+      (with-temp-auth (auth "{}")
+        (let ((nle::*auth-file-path* auth)
+              (nodecode-openai-codex::*callback-port* port))
+          (let ((first (cell-entry "nodecode-openai-codex" "openai-codex" "login"))
+                (login nodecode-openai-codex::*login*))
+            (unwind-protect
+                 (progn
+                   (is (search "Open this address" first))
+                   (is (equal first (cell-entry "nodecode-openai-codex" "openai-codex" "login")) "the same address again")
+                   (is (eq login nodecode-openai-codex::*login*) "the same sign-in, still waiting"))
+              (nodecode-openai-codex::cancel-login))))))))
+
 (deftest openai-codex-cell-refuses-a-busy-callback-port ()
   (let ((held (usocket:socket-listen "127.0.0.1" 0 :reuse-address t)))
     (unwind-protect

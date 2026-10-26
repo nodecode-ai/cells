@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key itself lives in auth.json (/connect) or OPENCODE_API_KEY.
+{
+  "opencode-go": {
+    "enabled": true,
+
+    // Where OpenCode Go is served. Every lane appends its own path:
+    // /chat/completions, /responses, /messages, /models/<id>:streamGenerateContent.
+    "base_url": "https://opencode.ai/inference/go/v1"
+  }
+}

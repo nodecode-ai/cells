@@ -442,9 +442,27 @@ DEADLINE (a universal time)."
     (setf (login-cancelled login) t)
     (close-listeners login)))
 
+(defun login-answer (login)
+  "What /openai-codex login answers for LOGIN: the address to open, and what
+to do when the browser runs elsewhere."
+  (format nil "Open this address in a browser to sign in to ChatGPT:~%~%~a~%~%~
+               This machine waits ~d minutes for the browser to return to ~a. ~
+               If the browser runs elsewhere, copy the address it ends on (a page that does ~
+               not load) and send /openai-codex code ADDRESS."
+          (login-url login) (floor +login-seconds+ 60) (login-redirect login)))
+
 (defun start-login (auth-path)
   "Open the callback and answer what the operator does next; the rest of the
-sign-in runs on a thread of its own."
+sign-in runs on a thread of its own. A sign-in still waiting for its browser
+is answered again, its address unchanged."
+  ;; Its listener holds the one port OpenAI allows: closing it for a new one
+  ;; left the port bound until the waiting poll's quarter second ran out, so
+  ;; a login sent again at once -- the /models wizard's Esc, then Enter --
+  ;; said the port was in use.
+  (let ((waiting *login*))
+    (when (and waiting (not (login-cancelled waiting)) (login-listeners waiting)
+               (equal auth-path (login-auth-path waiting)))
+      (return-from start-login (login-answer waiting))))
   (cancel-login)
   (multiple-value-bind (verifier challenge) (pkce)
     (multiple-value-bind (listeners port) (open-listeners *callback-port*)
@@ -456,11 +474,7 @@ sign-in runs on a thread of its own."
         (setf *login* login
               (login-thread login) (bt2:make-thread (lambda () (finish-login login))
                                                     :name "openai-codex sign-in"))
-        (format nil "Open this address in a browser to sign in to ChatGPT:~%~%~a~%~%~
-                     This machine waits ~d minutes for the browser to return to ~a. ~
-                     If the browser runs elsewhere, copy the address it ends on (a page that does ~
-                     not load) and send /openai-codex code ADDRESS."
-                (login-url login) (floor +login-seconds+ 60) redirect)))))
+        (login-answer login)))))
 
 (defun paste-code (text)
   "Hand the waiting sign-in the code the operator pasted."

@@ -49,7 +49,8 @@ answers the statuses POLLS in turn, a 200 with the status APPROVED and a token."
               (nle:notice (text &key level key) (push (list text level key) ,notices))
               (dex:post (url &rest args)
                (push (list :post url (getf args :headers)) ,asked)
-               (values "{\"code\":\"ABC123\",\"verificationUrl\":\"https://kilo.ai/verify\",\"expiresIn\":300}" 200))
+               ;; as Kilo answers: the poll code, and the operator's own code in the page's address
+               (values "{\"code\":\"YCUgHlwyvAu1S1KgwqIEcYiRYZCIWsba-lpkGBRSHmM\",\"verificationUrl\":\"https://kilo.ai/device-auth?code=3ECM-HRLB\",\"expiresIn\":300}" 200))
               (dex:get (url &rest args)
                (push (list :get url (getf args :headers)) ,asked)
                (let ((status (or (pop polls) 200)))
@@ -87,10 +88,32 @@ answers the statuses POLLS in turn, a 200 with the status APPROVED and a token."
 
 ;;; --- the sign-in -----------------------------------------------------------------
 
+(deftest kilo-cell-answers-a-waiting-sign-in-again ()
+  ;; Sent again while its code waits (the /models wizard's Esc, then Enter),
+  ;; login answers the same page and code and asks Kilo for none: Kilo
+  ;; refuses a new one while too many wait.
+  (with-cell-stop ((kilo-start))
+    (with-temp-auth (auth "{}")
+      (let ((nle::*auth-file-path* auth) (posts 0))
+        (with-stubbed-fdefinitions
+            ((dex:post (url &rest args)
+               url args (incf posts)
+               (values "{\"code\":\"poll-secret\",\"verificationUrl\":\"https://kilo.ai/device-auth?code=3ECM-HRLB\",\"expiresIn\":300}" 200))
+             (dex:get (url &rest args) url args (values "" 202))
+             (nodecode-kilo::pause (seconds) (sleep 0.05)))
+          (unwind-protect
+               (let ((first (cell-entry "nodecode-kilo" "kilo" "login")))
+                 (is (search "3ECM-HRLB" first))
+                 (is (equal first (cell-entry "nodecode-kilo" "kilo" "login")) "the same page and code again")
+                 (is (= 1 posts) "one code asked of Kilo"))
+            (nodecode-kilo::cancel-login)
+            (kilo-await-login)))))))
+
 (deftest kilo-cell-signs-in-with-a-device-code ()
   (with-kilo-login (auth answer asked notices)
-    (is (search "https://kilo.ai/verify" answer) "the page Kilo names")
-    (is (search "ABC123" answer) "the code to approve")
+    (is (search "https://kilo.ai/device-auth?code=3ECM-HRLB" answer) "the page Kilo names")
+    (is (search "the code 3ECM-HRLB" answer) "the operator's own code, from the page's address")
+    (is (not (search "YCUgHlwyvAu1S1KgwqIEcYiRYZCIWsba" answer)) "never the poll code, a secret")
     (is (= 3 (length asked)) "a code, a poll still waiting, a poll approved")
     (destructuring-bind (method url headers) (first asked)
       (is (eq :post method))
@@ -99,7 +122,7 @@ answers the statuses POLLS in turn, a 200 with the status APPROVED and a token."
     (destructuring-bind (method url headers) (second asked)
       (declare (ignore headers))
       (is (eq :get method))
-      (is (equal "https://api.kilo.ai/api/device-auth/codes/ABC123" url)))
+      (is (equal "https://api.kilo.ai/api/device-auth/codes/YCUgHlwyvAu1S1KgwqIEcYiRYZCIWsba-lpkGBRSHmM" url)))
     (let ((entry (nlk:json-value (nle::read-auth-file auth) :object "oauth_tokens" "kilo")))
       (is (equal "kilo-access-token" (nlk:json-value entry :string "access_token")))
       (is (equal "" (nlk:json-value entry :string "refresh_token")) "no refresh token, as omp keeps it")

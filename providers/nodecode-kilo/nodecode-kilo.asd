@@ -16,6 +16,8 @@
   :license "MIT"
   :version "0.1.0"
   :depends-on ("nodecode")
+  ;; what /models offers this folder by before it is installed: picking it installs it, then runs its sign-in
+  :properties ((:serves (:provider "kilo" :name "Kilo Gateway" :sign-in "/kilo login")))
   :serial t
   :components ((:file "package")
                (:file "provider")

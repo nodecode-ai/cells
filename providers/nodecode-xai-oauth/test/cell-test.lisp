@@ -164,7 +164,8 @@ each poll interval the flow would have slept."
                   (push (list method url (getf args :content) (getf args :headers)) ,requests)
                   (let ((answer (if (eq method :post) (pop posts) (pop gets))))
                     (assert (equal url (first answer)) () "asked ~a, scripted ~a" url (first answer))
-                    (values (second answer) (third answer)))))
+                    ;; as dexador answers: body, status, headers, address, stream
+                    (values (second answer) (third answer) (make-hash-table :test 'equal) (quri:uri url) nil))))
            (with-stubbed-fdefinitions
                ((dex:post (url &rest args) (next-answer :post url args))
                 (dex:get (url &rest args) (next-answer :get url args))
