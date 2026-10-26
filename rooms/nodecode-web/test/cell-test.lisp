@@ -526,6 +526,7 @@ no enclosing try block holds, as the line it is on."
     (44 ".strip h1 .crumb" "min-height")            ; Control / a tab: back to the list, on a phone
     (44 ".fs-acts .icon" "width" "height")          ; Read again, Upload
     (44 "button.sw" "min-height")                   ; a switch, on a phone
+    (44 ".ctl-prof-row" "min-height")               ; a profile, its panel on a tap
     (32 ".icon" "width" "height")                    ; every other mark
     (32 ".looks .icon" "width" "height")             ; the foot's link, look and language
     (32 ".views .view" "min-width" "height")

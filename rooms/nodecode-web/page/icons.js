@@ -26,6 +26,7 @@ const SHAPES = {
   expand: '<path d="M5 5.5l2.5-2.5L10 5.5M5 9.5L7.5 12 10 9.5"/>',
   fork: '<circle cx="4.5" cy="3" r="1.5"/><circle cx="4.5" cy="12" r="1.5"/><circle cx="10.5" cy="4.5" r="1.5"/><path d="M4.5 4.5v6M10.5 6c0 3.5-6 2-6 4.5"/>',
   info: '<circle cx="7.5" cy="7.5" r="5.5"/><path d="M7.5 7v3.5"/><circle cx="7.5" cy="4.8" r=".8" fill="currentColor" stroke="none"/>',
+  link: '<path d="M6.3 8.7a2.5 2.5 0 0 0 3.5 0l2.2-2.2a2.5 2.5 0 0 0-3.5-3.5l-.9.9"/><path d="M8.7 6.3a2.5 2.5 0 0 0-3.5 0L3 8.5A2.5 2.5 0 0 0 6.5 12l.9-.9"/>',
   list: '<path d="M5.5 4h7M5.5 7.5h7M5.5 11h7"/><circle cx="2.8" cy="4" r=".8" fill="currentColor" stroke="none"/><circle cx="2.8" cy="7.5" r=".8" fill="currentColor" stroke="none"/><circle cx="2.8" cy="11" r=".8" fill="currentColor" stroke="none"/>',
   next: '<path d="M3.5 3.2v8.6l6.5-4.3z"/><path d="M12 3v9"/>',
   pause: '<path d="M5 3v9M10 3v9"/>',
