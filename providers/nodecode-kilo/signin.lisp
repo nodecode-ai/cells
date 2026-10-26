@@ -199,9 +199,15 @@ polling runs on a thread of its own."
       (setf *login* login
             (login-thread login) (bt2:make-thread (lambda () (finish-login login))
                                                   :name "kilo sign-in"))
-      (format nil "Open ~a and enter the code~%~%    ~a~%~%~
-                   This machine checks every ~d seconds for ~d minutes and finishes the sign-in once the code is approved."
-              url code +poll-seconds+ (ceiling expires-in 60)))))
+      ;; CODE is what this machine polls with, never what the operator types:
+      ;; Kilo's page carries the operator's own code in its address
+      ;; (device-auth?code=3ECM-HRLB), and the poll code is a secret the
+      ;; answer must not show -- it said `enter the code YCUgHl...' (43
+      ;; characters) where the page asked for none.
+      (format nil "Open ~a~@[ and check it shows the code ~a~], then approve the sign-in. ~
+                   This machine checks every ~d seconds for ~d minutes and finishes the sign-in once you approve it."
+              url (ignore-errors (cdr (assoc "code" (quri:uri-query-params (quri:uri url)) :test #'string=)))
+              +poll-seconds+ (ceiling expires-in 60)))))
 
 ;;; --- the slash command -----------------------------------------------------------------
 
