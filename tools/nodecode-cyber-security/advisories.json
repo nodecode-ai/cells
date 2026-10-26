@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "updated": "2026-10-26T04:16:03Z",
+  "updated": "2026-10-26T10:16:53Z",
   "window": "2026-10-12 to 2026-10-26",
   "advisories": [
     {
@@ -1766,6 +1766,33 @@
         "https://internet.gmo/en/news/article/247/",
         "https://internet.gmo/en/news/article/246/",
         "https://www.bleepingcomputer.com/news/security/japans-onamae-desktop-cloud-hacked-up-to-27-000-servers-affected/"
+      ]
+    },
+    {
+      "id": "pingcap-tidb-cloud-breach",
+      "title": "TiDB Cloud (PingCAP): September-October breach exposed customer records, SQL editor text and API-key material - rotate credentials",
+      "date": "2026-10-19",
+      "severity": "high",
+      "exploited": true,
+      "cves": [],
+      "summary": "Between September 9 and October 7 an unauthorized party used stolen service account credentials to access PingCAP's internal systems, copy data and obtain source code; the company discovered it on October 7, disabled the credentials the same day, and had all identified compromised credentials invalidated by October 14. PingCAP confirms exported records included user names and email addresses, organization and project associations, SQL editor text and errors, organization/project/cluster identifiers, and business and billing data (customer contacts, contract terms, orders, pricing, payment terms, billing configuration), plus a table of encrypted TiDB Cloud API-key values - one investigator-tested value did not work as a live API key, but whether other usable credentials were exposed is still being determined. The extortion group FulcrumSec claims 10.6 TB including 115K console API key pairs (40K+ allegedly active), around 1,800 external database endpoints with root and admin accounts for customer MySQL/Aurora hosts used in migration jobs, and four years of connection logs; those claims are not verified. Investigators found no commands or persistence in the systems reviewed and no evidence that data stored in TiDB itself was impacted.",
+      "affected": "TiDB Cloud customers: per-customer scope is still being determined. The confirmed exposed categories are account, project and SQL-editor data, billing data, and encrypted API-key material; the attacker additionally claims live API keys and external migration endpoints.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Rotate TiDB Cloud console API keys: the attacker claims key pairs and the investigation has not ruled out usable ones - mint new keys and delete the old ones",
+        "If your migration jobs used external database endpoints (MySQL/Aurora), rotate those root and admin credentials and review their access logs for the September 9 - October 7 window",
+        "Review what your SQL editor traffic carried: query text and errors were exported, so treat anything typed in the console as seen"
+      ],
+      "mitigation": [
+        "Watch TiDB Cloud audit and connection logs for unknown access during and after the window",
+        "Phishing risk is elevated: real names, emails, organization and billing data are confirmed exposed - brief finance staff and administrators"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://www.pingcap.com/trust-hub/security/security-update-october-2026/",
+        "https://www.infoq.com/news/2026/10/pingcap-cloud-data-breach/",
+        "https://imasters.com/news/pingcap-confirms-tidb-cloud-data-and-source-code-breach"
       ]
     },
     {
