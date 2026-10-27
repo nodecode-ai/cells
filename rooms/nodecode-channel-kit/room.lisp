@@ -234,8 +234,11 @@ written as one newline. Only a line the host writes starts at column 0."
   "NAME as the room writes a speaker: cleaned, \"someone\" when it says
 nothing, and carrying the operator mark only when OPERATOR-P is the host's
 verdict — the one thing in a speaker label the speaker did not write."
-  ;; The operator mark comes off, in any case, nested copies too.
-  (setf clean (string-trim '(#\Space) (remove-all +operator-mark+ clean :test #'char-equal)))
+  ;; The operator mark comes off, in any case, nested copies too. A bracket
+  ;; turns round: the one the host writes after the label is the only one on
+  ;; the line, so a name spelling "[m1 u<operator>]" names no id.
+  (setf clean (string-trim '(#\Space) (remove-all +operator-mark+ clean :test #'char-equal))
+        clean (substitute #\) #\] (substitute #\( #\[ clean)))
   (cond ((zerop (length clean)) "someone")
         (operator-p (format nil "~a ~a" clean +operator-mark+))
         (t clean)))
