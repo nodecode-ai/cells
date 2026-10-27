@@ -1,8 +1,33 @@
 {
   "format": 1,
-  "updated": "2026-10-26T22:17:12Z",
-  "window": "2026-10-12 to 2026-10-26",
+  "updated": "2026-10-27T10:18:18Z",
+  "window": "2026-10-13 to 2026-10-27",
   "advisories": [
+    {
+      "id": "idcf-cloud-ransomware-2026-10",
+      "title": "IDCF Cloud (IDC Frontier): ransomware through an OSS flaw in the cloud portal stopped and encrypted customer VMs; up to 71 customers' registration data queried",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": true,
+      "cves": [],
+      "summary": "On October 7 attackers exploited an open-source software vulnerability in the authentication system of the IDCF Cloud Portal - the control plane IDC Frontier (SoftBank group) customers use to start virtual servers and check billing - moved through the admin console to hypervisor administrator rights, and stopped and encrypted customers' virtual servers in four zones of East Japan Region 1 (tesla, henry, pascal, joule): a ransomware attack affecting 495 corporate and municipal customers. The investigation, completed October 27 with an external security firm, found no exfiltration of data from customers' virtual servers, but confirmed improper lookups of registration information for up to 71 customers (48 as of October 14). IDC Frontier did not contact the attacker or pay. The portal stays offline while it is rebuilt on new infrastructure with all credentials rotated, the vulnerable authentication system replaced by an external IdP, and customer-IP restriction plus mandatory MFA; until it reopens, the provider operates customer environments on their behalf in stages, and affected customers get alternative environments and backup extraction (206 customers' backups retrievable).",
+      "affected": "IDCF Cloud customers: the 495 organizations in the four affected zones (contacted individually) and up to 71 whose portal registration information was queried.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "IDCF customers: change your IDCF Cloud Portal credentials when the service reopens - the vendor is rotating every server credential and moving to an external IdP with mandatory MFA",
+        "The 495 affected customers work with IDC Frontier and SoftBank on alternative environments and backup extraction through the individual support channel",
+        "If IDCF contacts you about queried registration information: treat names, contacts and contract details as exposed and expect targeted phishing"
+      ],
+      "mitigation": [
+        "Rebuild rather than restore when recovering affected VMs: the attacker held hypervisor administrator rights",
+        "Keep portal access limited to known IPs and switch on MFA once the portal reopens"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://www.idcf.jp/news/topics/20261027001"
+      ]
+    },
     {
       "id": "npm-sham-scopes-2026-10",
       "title": "npm: eight sham scoped packages (@greenlake, @drone-js-ext, @factoryz, @futurae-public and others) beacon hosts and pull an off-registry payload",
@@ -1824,6 +1849,59 @@
         "https://www.ahsay.com/en/company/announcements/patch-cve-105133-105134-update",
         "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
         "https://www.bitdefender.com/en-au/blog/businessinsights/technical-advisory-ahsaycbs-exploitation-chain-cve-2026-105133-cve-2026-105134"
+      ]
+    },
+    {
+      "id": "microsoftsystem64-github-2026-10",
+      "title": "MicrosoftSystem64 campaign: 88+ GitHub repos ship a cross-platform RAT through rotating malicious npm dependencies",
+      "date": "2026-10-13",
+      "severity": "high",
+      "exploited": true,
+      "cves": [],
+      "summary": "Island traced a software supply-chain campaign across at least 88 public GitHub repositories to the MicrosoftSystem64 malware cluster: a cross-platform remote access trojan (Windows, macOS, Linux) that executes commands, reads files, maintains persistence and deploys further payloads. The repositories are presented as functional, credible projects - copies of genuine open-source work with the original functions intact and a malicious npm dependency added under a plausible pretext (the Shopify example added a Redis connection manager and token cache to justify it). The delivery package name rotates - ioredis-xyz, then oscar-redis, then oracle-redis - so the repository, not the package name, is the lasting distribution asset. One such repository (Cesarjoquin/shopify-mcp) was recommended unprompted by both ChatGPT and Google AI Overview: the campaign is built to look legitimate enough for developers and coding agents to recommend and install. Account credibility is manufactured - aged-looking profiles whose repositories were burst-created within days, with upstream commit histories imported or generated.",
+      "affected": "Developer machines and CI that installed GitHub projects through their npm dependency chains - in the reported cases anything pulling ioredis-xyz, oscar-redis or oracle-redis (the name rotates).",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "ioredis-xyz",
+          "package": "ioredis-xyz",
+          "bad": [
+            "*"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "oscar-redis",
+          "package": "oscar-redis",
+          "bad": [
+            "*"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "oracle-redis",
+          "package": "oracle-redis",
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove any project pulling ioredis-xyz, oscar-redis or oracle-redis (npm uninstall; clean lockfiles and CI images) and treat the machine as compromised: rotate its secrets from a different machine",
+        "Re-vet any repository an AI tool recommended before installing it - the campaign deliberately games those recommendations"
+      ],
+      "mitigation": [
+        "A package name is a weak indicator here: watch for a plausible-but-unneeded dependency handling tokens or connections, and diff a suspicious project against its upstream original",
+        "Manufactured legitimacy signals - burst-created repositories, imported or reattributed commit histories, inflated fork counts - deserve a look before you trust a project"
+      ],
+      "iocs": [
+        "npm packages ioredis-xyz, oscar-redis, oracle-redis (rotating delivery names)",
+        "github.com/Cesarjoquin/shopify-mcp (campaign repository)"
+      ],
+      "sources": [
+        "https://www.island.io/blog/how-attackers-built-software-an-ai-would-recommend",
+        "https://itbrief.co.nz/story/island-finds-microsoftsystem64-campaign-in-github-repos"
       ]
     },
     {
