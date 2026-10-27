@@ -2582,7 +2582,8 @@ why none."
                 (t (values :file (cons (save-attachment attachment octets) bytes) nil)))))))))
 
 (defun attachment-name (attachment &aux (name (gethash "filename" attachment)))
-  (and (stringp name) (plusp (length name)) name))
+  ;; The sender picked it, and it lands inside the room record: one line.
+  (and (stringp name) (plusp (length (room-line name))) (room-line name)))
 
 (defun recording-text (attachment data index &aux (declared (gethash "seconds" attachment)))
   "The text a recording leaves in the prompt: its transcript under a
@@ -2593,7 +2594,7 @@ none. DATA is READ-ATTACHMENT's (OCTETS . CONTAINER)."
                                 (attachment-name attachment) condition)))
     (nlk:bind (((text seconds) (transcribe-audio (car data) (cdr data)
                                                  :seconds (and (realp declared) declared)))
-               (length (duration-text (or seconds declared))) (text (nlk:one-line text)))
+               (length (duration-text (or seconds declared))) (text (room-line text)))
       (if (plusp (length text))
           (format nil "[Audio #~d~@[, ~a~], transcribed] \"~a\"" index length text)
           (format nil "[Audio #~d~@[, ~a~], transcribed: no speech heard]"
