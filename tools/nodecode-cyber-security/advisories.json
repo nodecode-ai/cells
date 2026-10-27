@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "updated": "2026-10-27T16:17:55Z",
+  "updated": "2026-10-27T22:18:22Z",
   "window": "2026-10-13 to 2026-10-27",
   "advisories": [
     {
@@ -496,6 +496,331 @@
       "sources": [
         "https://github.com/Project-MONAI/MONAI/security/advisories/GHSA-6hp3-vr39-rqw8",
         "https://github.com/advisories/GHSA-6hp3-vr39-rqw8"
+      ]
+    },
+    {
+      "id": "mlflow-2026-10",
+      "title": "MLflow 3.10-3.16: unauthenticated RCE through third-party scorer deserialization, and arbitrary file read via prompt model versions",
+      "date": "2026-10-27",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-116692",
+        "CVE-2026-116690"
+      ],
+      "summary": "Two flaws in MLflow's tracking server, both reachable without authentication. Loading a third-party scorer deserializes attacker-placed artifact modules and imports them - remote code execution in the MLflow process (CVE-2026-116692). And the prompt model version source can be pointed at arbitrary files, reading them back (CVE-2026-116690). An MLflow server on a shared or public network runs both without a login. 3.17.0 fixes both.",
+      "affected": "mlflow 3.10.0 and later below 3.17.0 (file read), 3.12.0-rc0 and later below 3.17.0 (scorer RCE).",
+      "fixed": [
+        "3.17.0"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "mlflow",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('mlflow'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "3.17.0"
+          ],
+          "min": "3.10.0"
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'mlflow>=3.17.0' and restart the tracking server"
+      ],
+      "mitigation": [
+        "Until upgraded: do not expose the MLflow tracking server without authentication - put it behind an authenticating proxy and disable third-party scorers"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-26p8-2jq9-3vq9",
+        "https://github.com/advisories/GHSA-m65p-9j7q-6w33"
+      ]
+    },
+    {
+      "id": "tinymce-2026-10",
+      "title": "TinyMCE 7.9.3 / 8.5.1-8.9.2: XSS through the media plugin's data-mce-object serialization (CVE-2026-116675)",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-116675"
+      ],
+      "summary": "The TinyMCE rich-text editor can be tricked through the media plugin's data-mce-object serialization into rendering attacker-controlled markup - stored cross-site scripting in every page that shows sanitized-looking editor output, which is exactly the content path editors exist for.",
+      "affected": "tinymce 7.9.3 (fixed 7.9.4) and 8.5.1 up to 8.9.2 (fixed 8.9.3), on npm, NuGet and Composer.",
+      "fixed": [
+        "8.9.3",
+        "7.9.4"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "tinymce",
+          "package": "tinymce",
+          "line": 1,
+          "min": "7.9.3",
+          "fixed": [
+            "8.9.3",
+            "7.9.4"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install tinymce@^8.9.3 (or 7.9.4 on the 7 line; NuGet: TinyMCE 8.9.3 / 7.9.4; Composer: tinymce/tinymce), then rebuild the app"
+      ],
+      "mitigation": [
+        "Until upgraded: sanitize editor output server-side as well - do not trust the editor's own filtering"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-mf2p-h6hf-fcwm"
+      ]
+    },
+    {
+      "id": "ckeditor-2026-10",
+      "title": "CKEditor 5 (ckeditor5 / @ckeditor/ckeditor5-engine) 45.0.0-48.5.0: cross-site scripting in the engine package (CVE-2026-116688)",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-116688"
+      ],
+      "summary": "An XSS flaw in the CKEditor 5 engine package - the core that processes document content - lets crafted content execute script in the page hosting the editor. Fixed in 47.7.4 (the 45-47 lines) and 48.5.1 (the 48 line).",
+      "affected": "ckeditor5 and @ckeditor/ckeditor5-engine 45.0.0 up to 47.7.3, and 48.0.0 up to 48.5.0.",
+      "fixed": [
+        "47.7.4",
+        "48.5.1"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "ckeditor5",
+          "package": "ckeditor5",
+          "line": 1,
+          "min": "45.0.0",
+          "fixed": [
+            "47.7.4",
+            "48.5.1"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@ckeditor/ckeditor5-engine",
+          "package": "@ckeditor/ckeditor5-engine",
+          "line": 1,
+          "min": "45.0.0",
+          "fixed": [
+            "47.7.4",
+            "48.5.1"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install ckeditor5@^48.5.1 (or 47.7.4 on the 47 line) and rebuild; move @ckeditor/ckeditor5-engine with it"
+      ],
+      "mitigation": [
+        "Until upgraded: sanitize content entering the editor from untrusted sources server-side"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-rh54-vffm-5fvp"
+      ]
+    },
+    {
+      "id": "atlantis-pr-rce",
+      "title": "Atlantis up to 0.47.0: OS command injection through a PR-controlled Terraform workspace runs code during plan (CVE-2026-116676)",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-116676"
+      ],
+      "summary": "Atlantis executes Terraform for pull requests by design, and the workspace name comes from the PR: an attacker who can open a PR injects OS commands through the workspace value and runs them during plan - code execution on the Atlantis host with the runner's credentials (cloud keys, state access, VCS tokens). Fixed in 0.47.1.",
+      "affected": "github.com/runatlantis/atlantis 0.4.0 up to 0.47.0.",
+      "fixed": [
+        "0.47.1"
+      ],
+      "checks": [],
+      "patch": [
+        "Upgrade Atlantis to 0.47.1 and restart it"
+      ],
+      "mitigation": [
+        "Until upgraded: restrict who can open PRs against repos Atlantis watches, and require maintainer approval before plan runs on untrusted branches"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/runatlantis/atlantis/security/advisories/GHSA-rjh2-4xgw-p2hj",
+        "https://github.com/advisories/GHSA-rjh2-4xgw-p2hj"
+      ]
+    },
+    {
+      "id": "filebrowser-symlink-escape",
+      "title": "FileBrowser (gtsteffaniak fork): symlink following escapes the user scope for arbitrary file reads (CVE-2026-116682)",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-116682"
+      ],
+      "summary": "FileBrowser follows symlinks without checking they stay inside the user's served directory, so a user who can create a symlink reads arbitrary files the service account can reach - the multi-tenant file-share escape. The fix (commit 4126edeb, 2026-08-14) ships in v2.0.2-stable and v2.1.2-beta and later.",
+      "affected": "FileBrowser builds before the 2026-08-14 fix commit (v2.0.2-stable and v2.1.2-beta are the first releases carrying it).",
+      "fixed": [
+        "2.0.2",
+        "2.1.2"
+      ],
+      "checks": [],
+      "patch": [
+        "Upgrade to v2.0.2-stable or v2.1.2-beta / v2.1.3-beta or newer and restart the service"
+      ],
+      "mitigation": [
+        "Until upgraded: do not let untrusted users create symlinks in served directories - disable link creation, or run one instance per user"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-mgqf-5mf5-prfj",
+        "https://github.com/gtsteffaniak/filebrowser/releases"
+      ]
+    },
+    {
+      "id": "undici-2026-10",
+      "title": "undici before 6.29.1 / 7.30.1 / 8.12.2: cache poisoning and cross-user disclosure via redirects, TLS validation bypass, and a TLS 1.2 renegotiation DoS",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-109829",
+        "CVE-2026-109383",
+        "CVE-2026-87018"
+      ],
+      "summary": "Three flaws in Node.js's HTTP client. Cross-origin redirects can poison caches and disclose one user's response to another (CVE-2026-109829). An Agent can end up dropping its tls options, so TLS certificate validation is silently bypassed (CVE-2026-109383). And a TLS 1.2 peer that renegotiates with a changing certificate drives a denial of service (CVE-2026-87018). undici ships inside Node.js and every fetch-based service, so the fix reaches you through your runtime or dependency tree.",
+      "affected": "undici 4.2.1 and later below 6.29.1, 7.x below 7.30.1, 8.x below 8.12.2.",
+      "fixed": [
+        "6.29.1",
+        "7.30.1",
+        "8.12.2"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "undici",
+          "package": "undici",
+          "line": 1,
+          "min": "4.2.1",
+          "fixed": [
+            "6.29.1",
+            "7.30.1",
+            "8.12.2"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install undici@^8.12.2 (or 7.30.1 / 6.29.1 on your line); if undici is bundled with your Node.js runtime, take the runtime's security release instead"
+      ],
+      "mitigation": [
+        "Until upgraded: do not build shared caches on undici fetch responses across users, and verify TLS explicitly where Agent config is attacker-influenced"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-4w7w-5xrc-9h26",
+        "https://github.com/advisories/GHSA-2m5v-pch6-74hx",
+        "https://github.com/advisories/GHSA-qrxm-fqhp-jwvm"
+      ]
+    },
+    {
+      "id": "ctfd-terraform-provider-2026-10",
+      "title": "CTFd Terraform provider stores team passwords in state as non-sensitive values (CVE-2026-116683)",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-116683"
+      ],
+      "summary": "CTFer.io's Terraform provider for CTFd writes team passwords into Terraform state without the sensitive flag, so anyone who can read the state - a local user, a remote state backend viewer, a CI log - recovers every team password in plain text.",
+      "affected": "github.com/ctfer-io/terraform-provider-ctfd 0.1.5 through 1.1.0 (no fix on the v1 line) and v2 below 2.8.2.",
+      "fixed": [
+        "2.8.2"
+      ],
+      "checks": [],
+      "patch": [
+        "Move to the v2 provider at 2.8.2 or newer; v1 has no fix - migrate your configuration",
+        "Rotate every team password the state ever held and scrub old state versions from remote backends and CI caches"
+      ],
+      "mitigation": [
+        "Until migrated: restrict who can read Terraform state and mark the state backend private; never paste plan output into tickets or logs"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-vg84-c5mg-76xh"
+      ]
+    },
+    {
+      "id": "hydra-pyyaml-legacy-target",
+      "title": "hydra-core before 1.3.8: the legacy target blacklist permits unsafe PyYAML loading",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Hydra's legacy target blacklist path still loads YAML with PyYAML's unsafe loader, so a target list that reaches it can construct arbitrary Python objects - code execution in the process that loads the targets. Fixed in 1.3.8 (and 1.4.0rc3 on the 1.4 line).",
+      "affected": "hydra-core 1.3.6 up to 1.3.7 (fixed 1.3.8) and 1.4.0-dev9 up to 1.4.0rc2 (fixed 1.4.0rc3).",
+      "fixed": [
+        "1.3.8",
+        "1.4.0rc3"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "hydra-core",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('hydra-core'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "1.3.8",
+            "1.4.0rc3"
+          ],
+          "min": "1.3.6"
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'hydra-core>=1.3.8' and restart the service"
+      ],
+      "mitigation": [
+        "Until upgraded: do not load target lists from untrusted sources - convert them to a safe format first"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-wf6j-7hvr-gr93"
+      ]
+    },
+    {
+      "id": "adobe-commerce-48356",
+      "title": "Adobe Commerce and Magento: unauthenticated unrestricted file upload gives privilege escalation, exploited (CVE-2026-48356)",
+      "date": "2026-10-27",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [
+        "CVE-2026-48356"
+      ],
+      "summary": "An unrestricted upload of a file with a dangerous type (CWE-434) in Adobe Commerce and Magento Open Source lets an unauthenticated attacker upload and run code in the current user's context, escalating to control of the account or session - CVSS 9.6, and CISA added it to the known-exploited list on October 27 with a federal due date of November 10. The bulletin APSB26-73 also patches several other critical flaws (webhook output-escaping code execution, stored XSS, authorization bypasses).",
+      "affected": "Adobe Commerce and Magento Open Source 2.4.x: every patch level the APSB26-73 version table lists as affected.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Apply the newest security patch for your line from Adobe's APSB26-73 bulletin - its version table names the fixed patch level per release line - then flush caches and reindex as Adobe directs"
+      ],
+      "mitigation": [
+        "Until patched: restrict admin and upload endpoints, watch for uploaded PHP under pub/media and other writable roots, and block the exploitation patterns at the WAF"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://www.adobe.com/trust/security/products/commerce/apsb26-73.html",
+        "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
       ]
     },
     {
