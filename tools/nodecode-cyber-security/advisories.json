@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "updated": "2026-10-27T10:18:18Z",
+  "updated": "2026-10-27T16:17:55Z",
   "window": "2026-10-13 to 2026-10-27",
   "advisories": [
     {
@@ -26,6 +26,503 @@
       "iocs": [],
       "sources": [
         "https://www.idcf.jp/news/topics/20261027001"
+      ]
+    },
+    {
+      "id": "better-auth-2026-10",
+      "title": "better-auth before 1.7.7: OAuth state usable as a Magic Link, an OAuth Proxy takeover, and device approvals that hide the requesting client",
+      "date": "2026-10-27",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114607"
+      ],
+      "summary": "Three sign-in flaws in the better-auth JS authentication library. A crafted OAuth state can be replayed as a Magic Link to sign in as another user (CVE-2026-114607). The OAuth Proxy path lets an attacker sign in as another user. And the device-login approval screen does not show which client and permissions are being approved, so users approve a client they cannot see. 1.7.7 fixes the first two; the device-login disclosure was fixed in 1.7.0-rc.3, so upgrading to 1.7.7 covers all three.",
+      "affected": "better-auth 1.3.8-beta.3 and later, below 1.7.7 (the device-login flaw up to 1.7.0-rc.2; the OAuth state and OAuth Proxy flaws up to 1.7.6).",
+      "fixed": [
+        "1.7.7"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "better-auth",
+          "package": "better-auth",
+          "line": 1,
+          "min": "1.3.8-beta.3",
+          "fixed": [
+            "1.7.7"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install better-auth@^1.7.7 and redeploy; after upgrading, have users re-authenticate so old sessions and pending device approvals do not survive"
+      ],
+      "mitigation": [
+        "Until upgraded: review your OAuth callbacks and disable the OAuth Proxy if you do not need it",
+        "Tell users to reject device-login prompts they did not start - the approval screen will not tell them which client is asking"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-965c-763c-88jm",
+        "https://github.com/advisories/GHSA-r4xp-prcw-77qf",
+        "https://github.com/advisories/GHSA-q84f-53jg-9ppm"
+      ]
+    },
+    {
+      "id": "authlib-2026-10",
+      "title": "Authlib before 1.9.1: empty JWS signatures accepted, HMAC forgery with prefixed public keys, and an empty HMAC key that forges HS256/384/512",
+      "date": "2026-10-27",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-96760",
+        "CVE-2026-114615",
+        "CVE-2026-114616"
+      ],
+      "summary": "Three signature-validation holes in Python's Authlib, the same empty-HMAC-key class as the PyJWT advisory earlier in this feed. JWS JSON deserialization accepted empty signatures (CVE-2026-96760). The incomplete algorithm-confusion fix still permitted HMAC forgery with prefixed public keys (CVE-2026-114615). And an empty HMAC key was accepted, letting an attacker forge HS256/HS384/HS512 tokens with no secret (CVE-2026-114616). 1.9.1 is the superset fix.",
+      "affected": "authlib up to 1.9.0 (JWS/JWT signature verification paths); 1.3.1 and later for the algorithm-confusion bypass, any version below 1.9.1 for the empty-key forgery.",
+      "fixed": [
+        "1.9.1"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "authlib",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('authlib'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "1.9.1"
+          ],
+          "min": "1.3.1"
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'Authlib>=1.9.1' everywhere tokens are verified, then restart the services"
+      ],
+      "mitigation": [
+        "Until upgraded: reject empty or short HMAC keys when you configure them, and refuse JWS objects with no signature",
+        "Rotate signing keys if untrusted JWKS or token input could reach the verifier"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-6v38-4h7w-rj9h",
+        "https://github.com/advisories/GHSA-7vr2-2fgp-9w7p",
+        "https://github.com/advisories/GHSA-8m4g-j4wp-wgcg"
+      ]
+    },
+    {
+      "id": "agno-function-call-rce",
+      "title": "Agno before 2.3.24: eval() on the FunctionCall field_type allows arbitrary code execution (CVE-2026-35002)",
+      "date": "2026-10-27",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-35002"
+      ],
+      "summary": "The Agno agent framework evaluates the field_type of a FunctionCall with eval(), so input that reaches a FunctionCall can run arbitrary Python in the server process that hosts the agent - full compromise of an agent backend that handles untrusted tool/function definitions.",
+      "affected": "agno below 2.3.24.",
+      "fixed": [
+        "2.3.24"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "agno",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('agno'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "2.3.24"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'agno>=2.3.24' and restart the agent service"
+      ],
+      "mitigation": [
+        "Until upgraded: do not let untrusted input define function calls or their field types; run agents that accept external function definitions in a sandboxed process"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/agno-agi/agno/security/advisories/GHSA-m4w4-3r8h-jw98",
+        "https://github.com/advisories/GHSA-m4w4-3r8h-jw98"
+      ]
+    },
+    {
+      "id": "vllm-mm-processor-rce",
+      "title": "vLLM 0.7.3-0.30.x: request-controlled mm_processor_kwargs.code_revision allows remote code execution (CVE-2026-114053)",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114053"
+      ],
+      "summary": "A vLLM API request can set mm_processor_kwargs.code_revision, which the server uses to fetch and run multimodal processor code at that revision - so anyone who can send a request to the inference server can run code on the host. Fixed in 0.31.0.",
+      "affected": "vllm 0.7.3 up to 0.30.x.",
+      "fixed": [
+        "0.31.0"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "vllm",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('vllm'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "0.31.0"
+          ],
+          "min": "0.7.3"
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'vllm>=0.31.0' and restart the inference server"
+      ],
+      "mitigation": [
+        "Until upgraded: do not expose the vLLM API to untrusted callers - put the server behind an authenticated proxy that strips mm_processor_kwargs"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/vllm-project/vllm/security/advisories/GHSA-h3rc-6mm3-gc2m",
+        "https://github.com/advisories/GHSA-h3rc-6mm3-gc2m"
+      ]
+    },
+    {
+      "id": "snappy-java-2026-10",
+      "title": "snappy-java up to 1.1.10.8: heap buffer overflow in typed-array uncompress, and unbounded allocation from a declared length",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-93451",
+        "CVE-2026-108106"
+      ],
+      "summary": "Two memory-safety bugs in the widely embedded Java Snappy codec (Kafka, Hadoop, Cassandra, Elasticsearch and anything else decompressing untrusted Snappy data). The Snappy.uncompress*Array typed-array methods overflow the heap on crafted compressed input, and a compressed block's attacker-declared uncompressed length drives an unbounded allocation - remote crash or memory corruption from data the service decodes. Fixed in 1.1.10.9.",
+      "affected": "org.xerial.snappy:snappy-java 1.1.10.8 and earlier (all versions).",
+      "fixed": [
+        "1.1.10.9"
+      ],
+      "checks": [],
+      "patch": [
+        "Upgrade the snappy-java dependency to 1.1.10.9 or later in every service that decodes Snappy (Maven/Gradle: org.xerial.snappy:snappy-java), rebuild and redeploy"
+      ],
+      "mitigation": [
+        "Until upgraded: do not decompress Snappy blocks from untrusted producers; cap input sizes where the codec is unavoidable"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-gwq9-9ffj-mvrv",
+        "https://github.com/advisories/GHSA-q233-g92q-qxp6"
+      ]
+    },
+    {
+      "id": "flexible-graphrag-cypher-injection",
+      "title": "Flexible GraphRAG 0.6.0-0.8.1: Cypher injection in the FalkorDB adapter wipes the graph from ingested document content (CVE-2026-114510)",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-114510"
+      ],
+      "summary": "The FalkorDB adapter's _escape() escapes strings incorrectly, so content that reaches it from ingested documents can break out into the Cypher query - an attacker who controls any document text ingested into the graph can run Cypher statements against FalkorDB, including a full graph wipe.",
+      "affected": "flexible-graphrag 0.6.0 up to 0.8.1.",
+      "fixed": [
+        "0.8.2"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "flexible-graphrag",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('flexible-graphrag'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "0.8.2"
+          ],
+          "min": "0.6.0"
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'flexible-graphrag>=0.8.2' and restart the ingestion service"
+      ],
+      "mitigation": [
+        "Until upgraded: do not ingest untrusted documents into a FalkorDB-backed graph, and give the database user no DDL/DROP rights"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/infiniflow/flexible-graphrag/security/advisories/GHSA-vqrg-773h-4wxc",
+        "https://github.com/advisories/GHSA-vqrg-773h-4wxc"
+      ]
+    },
+    {
+      "id": "nltk-weka-path-bypass",
+      "title": "NLTK before 3.10.4: WekaClassifier passes an unvalidated model path to the weka JVM, bypassing path containment",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "NLTK's WekaClassifier hands a caller-controlled model path straight to the weka JVM without the nltk.pathsec containment check, so code that passes an untrusted path can load or read files outside the allowed root through Weka.",
+      "affected": "nltk up to 3.10.3.",
+      "fixed": [
+        "3.10.4"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "nltk",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('nltk'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "3.10.4"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'nltk>=3.10.4' and restart the service"
+      ],
+      "mitigation": [
+        "Until upgraded: never pass a caller-supplied path to WekaClassifier - resolve and validate the model path yourself"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/nltk/nltk/security/advisories/GHSA-j456-xh4h-cpf2",
+        "https://github.com/advisories/GHSA-j456-xh4h-cpf2"
+      ]
+    },
+    {
+      "id": "rembg-sam-injection",
+      "title": "Rembg before 2.0.82: unauthenticated SAM model injection reads local files through malicious ONNX graphs (CVE-2026-115924)",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-115924"
+      ],
+      "summary": "Rembg's server lets an unauthenticated caller supply the SAM model; a malicious ONNX graph runs during inference and can read local files from the host, so a background-removal service open to the internet leaks whatever the process can read.",
+      "affected": "rembg below 2.0.82, when the SAM model is caller-supplied (the rembg server/SAM API path).",
+      "fixed": [
+        "2.0.82"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "rembg",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('rembg'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "2.0.82"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'rembg>=2.0.82' and restart the service"
+      ],
+      "mitigation": [
+        "Until upgraded: do not let callers choose the model - pin it server-side - and keep the service off untrusted networks"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/danielgatis/rembg/security/advisories/GHSA-qr6x-7v33-6qmg",
+        "https://github.com/advisories/GHSA-qr6x-7v33-6qmg"
+      ]
+    },
+    {
+      "id": "oauthlib-device-flow-token",
+      "title": "OAuthLib 3.3.0-3.x: a bearer token can be retrieved with a known client ID in the device workflow (CVE-2026-49272)",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-49272"
+      ],
+      "summary": "In OAuthLib's device authorization workflow, anyone who knows a victim's valid client ID can retrieve that user's bearer token - client IDs are often public, so this is a practical token theft for services that rely on the device flow. Fixed in 4.0.0.",
+      "affected": "oauthlib 3.3.0 and later 3.x versions, for applications using the device workflow.",
+      "fixed": [
+        "4.0.0"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "oauthlib",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('oauthlib'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "4.0.0"
+          ],
+          "min": "3.3.0"
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'oauthlib>=4.0.0' and restart the OAuth service"
+      ],
+      "mitigation": [
+        "Until upgraded: avoid the device workflow, or bind issued tokens to the requesting device and require a confirmation step",
+        "Rotate tokens issued through the device flow"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/oauthlib/oauthlib/security/advisories/GHSA-3jp2-3mrg-2vxc",
+        "https://github.com/advisories/GHSA-3jp2-3mrg-2vxc"
+      ]
+    },
+    {
+      "id": "ajenti-rce-2026-10",
+      "title": "Ajenti (pip package aj) before 2.2.13: potential remote code execution (CVE-2026-27975)",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-27975"
+      ],
+      "summary": "Ajenti, the Python/JS Linux control panel (its pip package is named aj), has a remote code execution flaw fixed in 2.2.13. A control panel that runs commands on the host is the worst place for RCE: it is reachable from the network by design and holds root-level access.",
+      "affected": "aj (Ajenti) below 2.2.13.",
+      "fixed": [
+        "2.2.13"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "aj",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('aj'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "2.2.13"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'aj>=2.2.13' and restart Ajenti"
+      ],
+      "mitigation": [
+        "Until upgraded: keep the panel off untrusted networks - behind a VPN or an IP allow-list - and watch its access log for unusual requests"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/ajenti/ajenti/security/advisories/GHSA-vcw3-r3fx-j444",
+        "https://github.com/advisories/GHSA-vcw3-r3fx-j444"
+      ]
+    },
+    {
+      "id": "dolibarr-sqli-localtax",
+      "title": "Dolibarr up to 23.0.0: SQL injection via localtax1_value in the Third Party editor, no patched release yet (CVE-2026-33944)",
+      "date": "2026-10-27",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-33944"
+      ],
+      "summary": "Dolibarr ERP/CRM concatenates the localtax1_value parameter (lt1) directly into an SQL UPDATE in societe/class/societe.class.php without escaping or binding. An authenticated user with the standard 'Third Party: Create/Edit' permission can extract anything from the database - password hashes, API keys, all business data. The vendor advisory lists no patched version; 23.0.0 is the latest stable tested.",
+      "affected": "dolibarr/dolibarr up to 23.0.0 (any installation where untrusted users can edit third parties).",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "No patched release is published: apply the vendor's fix or a patched build as soon as Dolibarr ships one, and track the advisory"
+      ],
+      "mitigation": [
+        "Until patched: restrict 'Third Party: Create/Edit' to trusted staff - the attack needs an authenticated user with that permission",
+        "Put SQL-injection rules in front of the admin/back office and watch for anomalous UPDATE traffic"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/Dolibarr/dolibarr/security/advisories/GHSA-v5fq-cf5m-vwv7",
+        "https://github.com/advisories/GHSA-v5fq-cf5m-vwv7"
+      ]
+    },
+    {
+      "id": "monai-dicom-2026-10",
+      "title": "MONAI before 1.6.1: crafted DICOM crashes the server and silently corrupts inference (pydicom DS/IS validation bypass, CVE-2026-48705)",
+      "date": "2026-10-27",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-48705"
+      ],
+      "summary": "A crafted DICOM file that bypasses pydicom's DS/IS validation makes MONAI's server crash and silently corrupts inference results - for a medical imaging pipeline, corrupted inference is its own patient-safety problem, not just an outage.",
+      "affected": "monai below 1.6.1 (server/inference paths that parse DICOM).",
+      "fixed": [
+        "1.6.1"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "monai",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('monai'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "1.6.1"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'monai>=1.6.1' and restart the MONAI server"
+      ],
+      "mitigation": [
+        "Until upgraded: validate uploaded DICOM files against a strict parser before inference, and do not expose the inference endpoint to untrusted uploaders"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/Project-MONAI/MONAI/security/advisories/GHSA-6hp3-vr39-rqw8",
+        "https://github.com/advisories/GHSA-6hp3-vr39-rqw8"
+      ]
+    },
+    {
+      "id": "testmetest-npm-worm-2026-10",
+      "title": "testmetest npm worm (Miasma family): 18 malicious packages across three npm accounts and 42 GitHub repositories armed",
+      "date": "2026-10-26",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "The testmetest npm worm keeps spreading: JFrog reported on October 26 that it had armed 42 GitHub repositories belonging to 11 owners, beyond the operator's test accounts, and SafeDep counted 18 malicious npm packages published through the accounts alexjoipamiba, testnewtestme and iobandamwer - three iobandamwer packages still carried a malicious latest version as of October 26. The Miasma-family payload steals developer, cloud, CI/CD and AI-tool credentials, exfiltrates through GitHub repositories or aiarmor[.]website, and spreads through package registries, repositories and SSH-reachable hosts. The trigger moved from binding.gyp to a postinstall script loading a native Node.js addon.",
+      "affected": "Anything that installed packages published by the npm accounts alexjoipamiba, testnewtestme or iobandamwer, and the 42 GitHub repositories (11 owners) armed by the worm's spread.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Remove the 18 packages from projects, lockfiles and CI images; audit every repository your tokens can write for commits you did not make",
+        "Rotate npm, GitHub, cloud and CI/CD tokens from a different machine, and audit SSH-reachable hosts for the worm's persistence"
+      ],
+      "mitigation": [
+        "Treat any machine that ran a malicious package as compromised: the payload harvests AI-tool credentials too, so rotate those as well",
+        "Block aiarmor.website at egress and watch for exfiltration through GitHub repos (commits, gists, release assets)"
+      ],
+      "iocs": [
+        "aiarmor[.]website (exfiltration endpoint)",
+        "npm accounts alexjoipamiba, testnewtestme, iobandamwer (18 packages)"
+      ],
+      "sources": [
+        "https://mallory.ai/stories/01a17a82-b4c3-744b-b077-1dafe1cafe9d"
       ]
     },
     {
@@ -1818,6 +2315,32 @@
         "https://www.pingcap.com/trust-hub/security/security-update-october-2026/",
         "https://www.infoq.com/news/2026/10/pingcap-cloud-data-breach/",
         "https://imasters.com/news/pingcap-confirms-tidb-cloud-data-and-source-code-breach"
+      ]
+    },
+    {
+      "id": "oqtane-settings-bypass",
+      "title": "Oqtane through 10.2.6: a site administrator can read another tenant's SMTP password and client secret (CVE-2026-111616)",
+      "date": "2026-10-16",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-111616"
+      ],
+      "summary": "Oqtane's SettingController does not enforce tenant isolation: an authenticated user with the Administrators role on one site can request another co-tenant site's entityId through their own alias and retrieve the stored SMTPPassword and SMTPClientSecret values - credential disclosure across tenants of a multi-tenant .NET CMS. 10.2.6 is the latest release and is affected; no patched version is published yet.",
+      "affected": "Oqtane Framework 10.2.6 and earlier, on multi-tenant installations where tenant-site administrators are not fully trusted.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "No patched release is published: watch the Oqtane releases and upgrade as soon as a fix ships"
+      ],
+      "mitigation": [
+        "Until patched: only grant the Administrators role on a tenant site to people you would trust with the mail credentials of every tenant on the host, and rotate SMTP passwords and client secrets of co-hosted tenants",
+        "Separate untrusted tenants onto separate Oqtane instances where the isolation matters"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://vuldb.com/cve/CVE-2026-111616",
+        "https://nvd.nist.gov/vuln/detail/CVE-2026-111616"
       ]
     },
     {
