@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "updated": "2026-10-27T22:18:22Z",
-  "window": "2026-10-13 to 2026-10-27",
+  "updated": "2026-10-28T04:15:56Z",
+  "window": "2026-10-14 to 2026-10-28",
   "advisories": [
     {
       "id": "idcf-cloud-ransomware-2026-10",
@@ -848,6 +848,44 @@
       ],
       "sources": [
         "https://mallory.ai/stories/01a17a82-b4c3-744b-b077-1dafe1cafe9d"
+      ]
+    },
+    {
+      "id": "postcss-semantic-themes-malware",
+      "title": "Malware in postcss-semantic-themes (npm), brandjacked as tailwindcss: obfuscated staged payload with anti-analysis native binaries",
+      "date": "2026-10-26",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "postcss-semantic-themes 1.0.0 and 1.0.1 present themselves as a zero-runtime CSS theming kit but on require/import execute a chain of obfuscated JavaScript modules: lib.mjs pulls tokens.mjs which top-level imports cache-warm.mjs, a ~279KB single-line hex string array of XOR/base64 blobs decoded at runtime, with three more staged modules of the same shape shipped in the files manifest (build-cache.mjs, cache-sweep.mjs, workspaces.js). The tarball also bundles prebuilt N-API native binaries (native/{linux,darwin,win32}/{arm64,x64}/cache-probe.node) whose exports implement extensive hypervisor, container and sandbox detection - VMDetect, qemu_fw_cfg, dockerenv, vbox_module, wsl, azure, mac address checks - gating execution away from analysis hosts. None of it has any role in CSS. The README tells victims to install it as 'npm install -D tailwindcss@npm:postcss-semantic-themes', aliasing the legitimate tailwindcss name onto this package so existing import 'tailwindcss' call sites resolve to the loader. GitHub's advisory carries the standing malware advice: consider the machine compromised, rotate its secrets from a different machine, and remove the package.",
+      "affected": "postcss-semantic-themes 1.0.0 and 1.0.1 (npm), and anything installed through the 'tailwindcss@npm:postcss-semantic-themes' alias the README instructs. No patched build exists: the package should be removed.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "postcss-semantic-themes",
+          "package": "postcss-semantic-themes",
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall postcss-semantic-themes) and fix any package.json or lockfile line that aliases tailwindcss to it - reinstall the real tailwindcss from the public registry",
+        "Treat every machine that installed or imported it as compromised: rotate its secrets from a different machine and rebuild from a clean image"
+      ],
+      "mitigation": [
+        "Check install lines and lockfiles for name aliases ('npm:other-package') - the brandjack hides behind the tailwindcss name",
+        "Alert on CSS tooling pulling prebuilt .node native binaries or shipping multi-hundred-KB obfuscated modules - neither has a place in a theming plugin"
+      ],
+      "iocs": [
+        "native/*/cache-probe.node (hypervisor/container/sandbox detection binaries)",
+        "cache-warm.mjs, build-cache.mjs, cache-sweep.mjs, workspaces.js (staged obfuscated payloads)"
+      ],
+      "sources": [
+        "https://osv.dev/vulnerability/MAL-2026-18334",
+        "https://github.com/advisories/GHSA-fh55-fq5h-h352",
+        "https://db.fluidattacks.com/vul/FLAT-ZBOJU/"
       ]
     },
     {
@@ -2985,48 +3023,6 @@
       "sources": [
         "https://www.rapid7.com/blog/post/etr-cve-2026-85706-critical-gitlab-path-traversal-exploited-in-the-wild/",
         "https://x.com/offsectraining/status/2112955084963230173"
-      ]
-    },
-    {
-      "id": "drupal-sa-core-2026-014",
-      "title": "Drupal core: remote code execution in Field UI (SA-CORE-2026-014)",
-      "date": "2026-10-14",
-      "severity": "critical",
-      "exploited": false,
-      "cves": [
-        "CVE-2026-108097"
-      ],
-      "summary": "A remote code execution bug in Drupal core's Field UI, reachable through contributed modules or custom code. Drupal sites also run on PHP, so patch php2shell too.",
-      "affected": "Drupal core before 11.4.10, 11.3.19 and 10.6.19.",
-      "fixed": [
-        "11.4.10",
-        "11.3.19",
-        "10.6.19"
-      ],
-      "checks": [
-        {
-          "kind": "composer",
-          "label": "drupal/core",
-          "packages": [
-            "drupal/core",
-            "drupal/core-recommended"
-          ],
-          "fixed": [
-            "11.4.10",
-            "11.3.19",
-            "10.6.19"
-          ]
-        }
-      ],
-      "patch": [
-        "composer update 'drupal/core-*' --with-all-dependencies, then drush updatedb && drush cache:rebuild"
-      ],
-      "mitigation": [],
-      "iocs": [],
-      "sources": [
-        "https://www.drupal.org/sa-core-2026-014",
-        "https://digital.nhs.uk/cyber-alerts/2026/cc-4871",
-        "https://x.com/ThreatWire_/status/2111744851205120016"
       ]
     },
     {
