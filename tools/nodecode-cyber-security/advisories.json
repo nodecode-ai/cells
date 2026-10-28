@@ -1,8 +1,451 @@
 {
   "format": 1,
-  "updated": "2026-10-28T10:16:16Z",
+  "updated": "2026-10-28T22:18:29Z",
   "window": "2026-10-14 to 2026-10-28",
   "advisories": [
+    {
+      "id": "zip-cloaking-2026-10",
+      "title": "zip (Rust) before 9.0.5: dual-header parser differentials cloak entries past security controls, leading to file overwrite and RCE (CVE-2026-115905)",
+      "date": "2026-10-28",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-115905"
+      ],
+      "summary": "The Rust zip crate reads archive entries with two headers that can disagree: a parser differential between the central directory and local headers lets an archive show one content to the scanner and another to the extractor - 'zip cloaking'. Anything that checks a zip for dangerous paths or content and then extracts it with this crate can be bypassed into writing arbitrary files outside the target, which in an upload pipeline is remote code execution.",
+      "affected": "zip (crates.io) 9.0.4 and earlier.",
+      "fixed": [
+        "9.0.5"
+      ],
+      "checks": [],
+      "patch": [
+        "cargo update zip (>=9.0.5) and rebuild every service that extracts archives"
+      ],
+      "mitigation": [
+        "Until rebuilt: extract untrusted archives in a sandbox and validate paths after extraction as well as before"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-m665-v7pm-7grj"
+      ]
+    },
+    {
+      "id": "langgraph-api-store-access",
+      "title": "LangGraph Platform API before 0.15.0: custom authentication may permit cross-user Store access (CVE-2026-118668)",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-118668"
+      ],
+      "summary": "In LangGraph Platform deployments that use custom authentication, the authorization boundary around the shared Store is not enforced per user: one authenticated user can reach another user's stored data. Multi-tenant agent deployments are the exposure.",
+      "affected": "langgraph-api 0.1.2 up to 0.14.x.",
+      "fixed": [
+        "0.15.0"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "langgraph-api",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('langgraph-api'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "0.15.0"
+          ],
+          "min": "0.1.2"
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'langgraph-api>=0.15.0' and restart the platform servers"
+      ],
+      "mitigation": [
+        "Until upgraded: run one Store per tenant where possible, and treat the Store as shared-readable in your threat model"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-4hm6-w6qq-w73v"
+      ]
+    },
+    {
+      "id": "vue-i18n-xss-srcdoc",
+      "title": "Vue I18n before 11.4.14: escapeParameter does not stop XSS through srcdoc in translation messages (CVE-2026-118257)",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-118257"
+      ],
+      "summary": "Vue I18n's escapeParameter sanitizes translation parameters but does not stop an iframe srcdoc payload: a translation message (or a parameter reaching one) can carry script into the page. The flaw spans the @intlify packages (vue-i18n, petite-vue-i18n, @intlify/core, @intlify/core-base, @intlify/vue-i18n-core, @intlify/shared); 9.14.5 and 10.0.8 have no fix and are left behind.",
+      "affected": "vue-i18n and @intlify packages 11.1.10 up to 11.4.13 (fixed 11.4.14) and 12.0.0-alpha.4 (fixed 12.0.0-alpha.5); 9.14.5 and 10.0.8 are affected with no fix on those lines.",
+      "fixed": [
+        "11.4.14",
+        "12.0.0"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "vue-i18n",
+          "package": "vue-i18n",
+          "line": 1,
+          "min": "9.14.5",
+          "fixed": [
+            "11.4.14",
+            "12.0.0"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "petite-vue-i18n",
+          "package": "petite-vue-i18n",
+          "line": 1,
+          "min": "9.14.5",
+          "fixed": [
+            "11.4.14",
+            "12.0.0"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install vue-i18n@^11.4.14 (or 12.0.0-alpha.5) and rebuild; move the whole @intlify set with it",
+        "On 9.x or 10.x: those lines have no fix - plan the move to 11.4.14"
+      ],
+      "mitigation": [
+        "Until upgraded: never render translation output with v-html; keep parameters out of srcdoc-bearing message formats"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-83rm-6c8r-g728"
+      ]
+    },
+    {
+      "id": "graphql-tools-ws-auth",
+      "title": "@graphql-tools/executor-legacy-ws before 1.1.36: per-request connection parameters persist into later users' WebSocket authentications (CVE-2026-118665)",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-118665"
+      ],
+      "summary": "The legacy WebSocket executor keeps per-request connection parameters around and applies them to later users' connection authentications - one user's parameters leak into another user's session on a shared GraphQL subscriptions server.",
+      "affected": "@graphql-tools/executor-legacy-ws 1.1.35 and earlier.",
+      "fixed": [
+        "1.1.36"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@graphql-tools/executor-legacy-ws",
+          "package": "@graphql-tools/executor-legacy-ws",
+          "line": 1,
+          "fixed": [
+            "1.1.36"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install @graphql-tools/executor-legacy-ws@^1.1.36 and restart the GraphQL server"
+      ],
+      "mitigation": [
+        "Until upgraded: restart the server between multi-user sessions if you cannot upgrade, and keep connection_init parameters out of long-lived processes"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-434m-5hcj-pxf3"
+      ]
+    },
+    {
+      "id": "mcp-sanitizer-2026-10",
+      "title": "mcp-sanitizer before 1.4.0: SSRF bypass through loopback ports and bracketed IPv6, and file-path sanitizer permits user-home paths",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Two holes in the sanitizer MCP servers lean on to make agent tool calls safe. The URL sanitizer treats localhost and IPv6 loopback as blocked but an explicit port or a bracketed IPv6 literal slips past - server-side request forgery to internal services. And the file path sanitizer lets absolute paths under the user's home through, so a constrained file tool can be steered to files outside its roots.",
+      "affected": "mcp-sanitizer below 1.4.0.",
+      "fixed": [
+        "1.4.0"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "mcp-sanitizer",
+          "package": "mcp-sanitizer",
+          "line": 1,
+          "fixed": [
+            "1.4.0"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install mcp-sanitizer@^1.4.0 and restart the MCP servers"
+      ],
+      "mitigation": [
+        "Until upgraded: enforce allow-lists at the network layer too - a sanitizer alone should never be the only SSRF control"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-4mfg-r38w-w8fg",
+        "https://github.com/advisories/GHSA-7w82-6f9j-v9jp"
+      ]
+    },
+    {
+      "id": "rucio-url-signing-authz",
+      "title": "Rucio before 35.9.0 / 38.6.0 / 41.0.0rc1: authorization bypass on the URL-signing REST endpoint (CVE-2026-58273)",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-58273"
+      ],
+      "summary": "The REST endpoint that signs URLs does not enforce authorization, so a caller who should not be able to mint signed transfer URLs can: data-locus access control in a Rucio data lake can be bypassed to pull objects directly.",
+      "affected": "rucio 1.16.1 up to 35.8.x (fixed 35.9.0), 36.0.0-rc1 up to 38.5.x (fixed 38.6.0), 39.0.0-rc1 up to 41.0.0-rc0 (fixed 41.0.0-rc1).",
+      "fixed": [
+        "35.9.0",
+        "38.6.0",
+        "41.0.0"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "rucio",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('rucio'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "35.9.0",
+            "38.6.0",
+            "41.0.0"
+          ],
+          "min": "1.16.1"
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'rucio>=35.9.0' (or the fix on your line) and restart the Rucio servers"
+      ],
+      "mitigation": [
+        "Until upgraded: restrict who can reach the URL-signing endpoint at the proxy and review signed-URL issuance logs"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-5j9r-fx4x-rpvg"
+      ]
+    },
+    {
+      "id": "echo-static-bypass",
+      "title": "Echo v4 before 4.16.0 / v5 before 5.4.0: a %2F-encoded path bypasses middleware guarding a statically-served route (CVE pending)",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "middleware.Static serves files after the route and group middleware that guards the path - but a %2F-encoded path segment does not match the guard and still reaches the static file, so authentication or authorization middleware in front of a static route is bypassed. Fixed in 4.16.0 / 5.4.0; the WebSocket-proxy fixes in 4.16.1 / 5.4.1 (see echo-ws-proxy-2026-10) ride on top of these.",
+      "affected": "github.com/labstack/echo/v4 below 4.16.0 and /v5 below 5.4.0.",
+      "fixed": [
+        "4.16.0",
+        "5.4.0"
+      ],
+      "checks": [],
+      "patch": [
+        "go get github.com/labstack/echo/v4@v4.16.1 (or /v5@v5.4.1 - the later line includes this fix), then rebuild and redeploy"
+      ],
+      "mitigation": [
+        "Until rebuilt: do not rely on route middleware to guard middleware.Static paths - serve protected static content through a handler that checks the request itself"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-375p-5qhx-8wq4"
+      ]
+    },
+    {
+      "id": "highcharts-core-2026-10",
+      "title": "Highcharts before 11.4.9 / 12.6.2 / 13.1.1: javascript: URLs survive filtering, prototype pollution in series keys, and unfiltered innerHTML during printing",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Six fixes in Highcharts Core for chart content that comes from users or feeds. A javascript: URL in credits.href runs on click; a javascript: URL in an xlink:href survives text filtering and reaches exported charts; breadcrumbs.style keys become SVG event-handler attributes; HTML text parsing falls back to unfiltered innerHTML during printing; and dotted series.keys paths and series column construction write to Object.prototype (two prototype-pollution holes). Chart content is data, and each of these turns it into script.",
+      "affected": "highcharts 6.1.0 and later below 11.4.9, 12.0.0 up to 12.6.1, 13.0.0 up to 13.1.0 (the xlink:href issue runs to 13.1.0).",
+      "fixed": [
+        "11.4.9",
+        "12.6.2",
+        "13.1.1"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "highcharts",
+          "package": "highcharts",
+          "line": 1,
+          "min": "6.1.0",
+          "fixed": [
+            "11.4.9",
+            "12.6.2",
+            "13.1.1"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install highcharts@^13.1.1 (or 12.6.2 / 11.4.9 on your line) and rebuild"
+      ],
+      "mitigation": [
+        "Until upgraded: sanitize or strip URLs and style keys from chart configuration and data you do not control - especially credits, breadcrumbs and text fields"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-5793-x2q3-c3q7",
+        "https://github.com/advisories/GHSA-rmqc-xvr3-v46c",
+        "https://github.com/advisories/GHSA-gfvx-2c2g-38wq",
+        "https://github.com/advisories/GHSA-35rr-xwfh-x789",
+        "https://github.com/advisories/GHSA-65hg-cf3f-5m39",
+        "https://github.com/advisories/GHSA-mw4f-gj5x-6xr4"
+      ]
+    },
+    {
+      "id": "highcharts-dashboards-2026-10",
+      "title": "Highcharts Dashboards before 4.2.3: label and credits fields parsed as HTML, and chartConstructor is an unchecked namespace lookup",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Four fixes in Highcharts Dashboards: fullscreen labels and sidebar component labels are parsed as HTML (stored XSS from dashboard config or content), a javascript: URL in credits.href runs on click, and chartConstructor takes an unchecked lookup into the Highcharts namespace - a configuration value steering which constructor runs.",
+      "affected": "@highcharts/dashboards 1.0.0 up to 4.2.2 (the javascript: credits fix dates from 4.0.0; the label and chartConstructor fixes arrive at 4.2.2 / 4.2.3).",
+      "fixed": [
+        "4.2.3"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@highcharts/dashboards",
+          "package": "@highcharts/dashboards",
+          "line": 1,
+          "min": "1.0.0",
+          "fixed": [
+            "4.2.3"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install @highcharts/dashboards@^4.2.3 and rebuild"
+      ],
+      "mitigation": [
+        "Until upgraded: keep dashboard labels and credits out of untrusted input, and never pass user data into chartConstructor"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-6hgp-fmhr-mrg4",
+        "https://github.com/advisories/GHSA-58g7-7f52-h92c",
+        "https://github.com/advisories/GHSA-rcqf-f6h2-ccg9",
+        "https://github.com/advisories/GHSA-grj7-r4jv-pw9j"
+      ]
+    },
+    {
+      "id": "highcharts-grid-2026-10",
+      "title": "Highcharts Grid (grid-lite / grid-pro) before 3.2.0: pagination and icon fields parsed as HTML, raw setAttribute on renderer attributes",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Four fixes across Highcharts Grid packages: pagination language options and custom icon definition objects are parsed as HTML, a cell-renderer attributes map is written with raw setAttribute (attribute injection into rendered cells), and a javascript: URL in credits.href runs on click. The grid renders data from users and APIs, so these turn table data into script.",
+      "affected": "@highcharts/grid-lite 2.0.0 up to 3.1.0 and @highcharts/grid-pro 2.0.0 up to 3.1.0 (icons from 2.3.0 / 2.0.0 respectively).",
+      "fixed": [
+        "3.2.0"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@highcharts/grid-lite",
+          "package": "@highcharts/grid-lite",
+          "line": 1,
+          "min": "2.0.0",
+          "fixed": [
+            "3.2.0"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@highcharts/grid-pro",
+          "package": "@highcharts/grid-pro",
+          "line": 1,
+          "min": "2.0.0",
+          "fixed": [
+            "3.2.0"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install @highcharts/grid-lite@^3.2.0 or @highcharts/grid-pro@^3.2.0 and rebuild"
+      ],
+      "mitigation": [
+        "Until upgraded: keep pagination labels, icon definitions and cell-renderer attributes out of untrusted configuration"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-r5wg-q8fc-p6w2",
+        "https://github.com/advisories/GHSA-6g3c-p4fg-xv47",
+        "https://github.com/advisories/GHSA-5ghw-9mgr-jvx2",
+        "https://github.com/advisories/GHSA-6hgp-fmhr-mrg4"
+      ]
+    },
+    {
+      "id": "vmware-esx-41709",
+      "title": "Broadcom VMware ESX: admin operations can be performed without being logged, exploited (CVE-2026-41709)",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": true,
+      "cves": [
+        "CVE-2026-41709"
+      ],
+      "summary": "VMware ESX has an insufficient-logging vulnerability that lets a malicious actor with admin access perform certain operations without leaving a log trail - the anti-forensics primitive that turns a compromised admin account into an undetected foothold on the hypervisor. CISA added it to the known-exploited list on October 28 with a due date of November 11. The fix is in Broadcom's security advisory 38017; hypervisor logging is also your only way to see this class of abuse, so treat unpatched ESX audit trails as incomplete.",
+      "affected": "VMware ESX versions as listed in Broadcom's advisory 38017.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Apply the fixed ESX build named in Broadcom's security advisory 38017 across your hypervisor fleet"
+      ],
+      "mitigation": [
+        "Until patched: monitor ESX at the network and storage layers (vCenter, syslog shipping, network flows) since the hypervisor's own audit log can be bypassed",
+        "Rotate vSphere admin credentials and review admin sessions for the window"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/38017",
+        "https://nvd.nist.gov/vuln/detail/CVE-2026-41709"
+      ]
+    },
+    {
+      "id": "linux-kernel-46300",
+      "title": "Linux Kernel: shared-fragment marker lost in socket buffer coalescing lets ESP decrypt shared pages in place, chains to root webshells (CVE-2026-46300)",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": true,
+      "cves": [
+        "CVE-2026-46300"
+      ],
+      "summary": "A missing initialization in the kernel's socket buffer coalescing drops the shared-fragment marker, so ESP input processing decrypts shared fragments in place and modifies page-cache-backed data it does not own - memory corruption of shared pages from the network. CISA's known-exploited entry (added October 28, due October 31) notes it chains with CVE-2026-109618 and CVE-2026-109619 (the PHP management-interface pair already in this feed) to implant PHP webshells and run commands as root. Eight fix commits landed across the stable trees.",
+      "affected": "Linux kernels before the stable-tree backport of the eight fix commits (CVE-2026-109618/109619 chains make NetScaler-side PHP hosts and any exposed kernel network stack the target).",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Take your distribution's kernel update carrying the CVE-2026-46300 fix commits and reboot; the KEV due date is October 31",
+        "Network appliances (NetScaler and friends) carry their own kernels and firmware - patch those from the vendor, not the distro"
+      ],
+      "mitigation": [
+        "Until patched: filter ESP/IPsec traffic from untrusted networks at the edge where you do not use it, and prioritize hosts that expose PHP management interfaces (the chain partner CVEs)",
+        "Hunt for PHP webshells on hosts reachable from the network - the chain's end state"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://git.kernel.org/stable/c/3599e6b3cc1ada96883d496a50a210d3afbb6987",
+        "https://nvd.nist.gov/vuln/detail/CVE-2026-46300",
+        "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+      ]
+    },
     {
       "id": "idcf-cloud-ransomware-2026-10",
       "title": "IDCF Cloud (IDC Frontier): ransomware through an OSS flaw in the cloud portal stopped and encrypted customer VMs; up to 71 customers' registration data queried",
