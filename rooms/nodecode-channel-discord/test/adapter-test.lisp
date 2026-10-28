@@ -151,7 +151,13 @@ adapter and the fake gateway have stopped."
         (is (null (wire-row "model-aux" (nck:request-plan-body menu) "name")) "the auxiliary model is /models' own")
         (let ((models (wire-row "models" (nck:request-plan-body menu) "name")))
           (is-present models "/models carries the auxiliary model's form"
-            (is (equal "/models [provider] [model] | aux [provider] [model | default] | decider [id | none] | list | refresh"
+            ;; Core's own usage, as the menu clips it to Discord's 100:
+            ;; a copy of the text here goes stale when core's grows.
+            (is (equal (nlk:clip (getf (find "models" (nle:slash-catalog)
+                                             :key (lambda (entry) (getf entry :name))
+                                             :test #'equal)
+                                       :usage)
+                                 100 :ellipsis "")
                        (gethash "description"
                                 (aref (gethash "options" models) 0)))))))
       (is-present (defer (await-plan executor :label "interaction_defer" :timeout 15))
