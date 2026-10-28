@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "updated": "2026-10-28T04:15:56Z",
+  "updated": "2026-10-28T10:16:16Z",
   "window": "2026-10-14 to 2026-10-28",
   "advisories": [
     {
@@ -2651,6 +2651,46 @@
         "https://internet.gmo/en/news/article/247/",
         "https://internet.gmo/en/news/article/246/",
         "https://www.bleepingcomputer.com/news/security/japans-onamae-desktop-cloud-hacked-up-to-27-000-servers-affected/"
+      ]
+    },
+    {
+      "id": "yootheme-pro-5-0-53",
+      "title": "YOOtheme Pro before 5.0.53: unauthenticated remote code execution via the image handler (CVE-2026-102785)",
+      "date": "2026-10-21",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-102785"
+      ],
+      "summary": "YOOtheme Pro, the website builder for WordPress and Joomla, fixes an unauthenticated remote code execution flaw in its image handler in 5.0.53: an attacker who can reach the site runs code without logging in. YOOtheme pre-announced the critical update to customers on October 20 and shipped it October 21, with the changelog naming the CVE. Image handling is reachable on every site that runs the builder, so every YOOtheme Pro 5 site should take the update immediately.",
+      "affected": "YOOtheme Pro 5 below 5.0.53, on WordPress and Joomla.",
+      "fixed": [
+        "5.0.53"
+      ],
+      "checks": [
+        {
+          "kind": "wp-plugin",
+          "label": "yootheme-pro",
+          "slugs": [
+            "yootheme-pro"
+          ],
+          "line": 1,
+          "fixed": [
+            "5.0.53"
+          ]
+        }
+      ],
+      "patch": [
+        "Update YOOtheme Pro to 5.0.53 through the theme's own updater, or install the package from your YOOtheme account, on every WordPress and Joomla site that runs it"
+      ],
+      "mitigation": [
+        "Until updated: block unauthenticated access to the image handling endpoints at the proxy or WAF where you can identify them",
+        "Watch for unexpected PHP execution and new files under the yootheme directories"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://yootheme.com/changelog",
+        "https://yootheme.com/support/question/175883"
       ]
     },
     {
