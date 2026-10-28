@@ -79,8 +79,8 @@
   (let ((payload (discord-upload-payload
                   (ncd:discord-file-message-plan
                    '(:channel-id "c1" :thread-id "t9")
-                   #P"/tmp/pea.png" :content "see https://example.com")
-                  #P"/tmp/pea.png" "see https://example.com")))
+                   *pea-path* :content "see https://example.com")
+                  *pea-path* "see https://example.com")))
     (is (= 4 (nlk:json-value payload :integer "flags")))))
 
 (deftest channel-discord-default-replies-stay-in-channel ()
@@ -255,8 +255,8 @@ then files[0] — carrying CONTENT and its one attachment; answers the payload."
 (deftest channel-discord-file-message-plan ()
   (let ((payload (discord-upload-payload
                   (ncd:discord-file-message-plan '(:channel-id "c1" :thread-id "t9")
-                                                 #P"/tmp/pea.png" :content "here")
-                  #P"/tmp/pea.png" "here")))
+                                                 *pea-path* :content "here")
+                  *pea-path* "here")))
     (is (equalp #() (nlk:json-value payload :array "allowed_mentions" "parse"))))
   (let* ((plan (ncd:discord-file-message-plan '(:channel-id "c1")
                                               #P"pea.png"
@@ -296,8 +296,8 @@ then files[0] — carrying CONTENT and its one attachment; answers the payload."
   (let ((payload (discord-upload-payload
                   (ncd:discord-message-plan '(:channel-id "c1" :thread-id "t9")
                                             (first-chunk "the answer") :reply-to "m7"
-                                            :ping t :files (list #p"/tmp/pea.png"))
-                  #p"/tmp/pea.png" "the answer")))
+                                            :ping t :files (list *pea-path*))
+                  *pea-path* "the answer")))
     (is (equal "m7" (nlk:json-value payload :string "message_reference" "message_id")))
     ;; The upload's reference names the thread the multipart POST lands in, too.
     (is (equal "t9" (nlk:json-value payload :string "message_reference" "channel_id")))

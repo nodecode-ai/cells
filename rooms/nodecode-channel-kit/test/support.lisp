@@ -10,6 +10,13 @@
 
 (in-package #:nodecode.test)
 
+(defvar *pea-path*
+  (merge-pathnames (format nil "nc-pea-~36r/pea.png" (random (expt 36 8) (make-random-state t)))
+                   (uiop:temporary-directory))
+  "The picture the file tests hand around, in a folder of this image's own:
+a fixed /tmp/pea.png is one file for every run and account on a box, and a
+run under another account cannot open the one an earlier run left.")
+
 ;; Hermetic: the core posture does not redirect $HOME, so without this a
 ;; developer's real ~/.nodecode/SOUL.md would ride into every e2e session.
 ;; The path names nothing and is never created; tests that want a soul

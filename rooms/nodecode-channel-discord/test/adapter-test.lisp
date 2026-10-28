@@ -383,9 +383,9 @@ adapter and the fake gateway have stopped."
   (let* ((platform (ncd:discord-platform :bot-user-id "999"))
          (plan (funcall (nck:platform-plan-file platform)
                         '(:channel-id "c1" :thread-id "t9")
-                        #P"/tmp/pea.png"
+                        *pea-path*
                         :content "here" :reply-to "m1"))
-         (payload (discord-upload-payload plan #P"/tmp/pea.png" "here")))
+         (payload (discord-upload-payload plan *pea-path* "here")))
     (is-plan plan :method "POST" :path "/channels/t9/messages")
     (is (>= plan.timeout-seconds 60))
     (is-shape payload ((:string "message_reference" "message_id") "m1")

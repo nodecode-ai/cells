@@ -1209,12 +1209,13 @@ picture's weight."
            #(137 80 78 71 13 10 26 10)))
 
 (defun write-pea-fixture ()
-  "Write /tmp/pea.png — the picture the file tests hand around — so a
+  "Write *PEA-PATH* — the picture the file tests hand around — so a
  delivery that checks the file exists has one to join."
-  ;; The fixture is the test's own: an ambient /tmp/pea.png would be a silent
+  ;; The fixture is the test's own: an ambient picture would be a silent
   ;; dependency, and a test that reads it would go red whenever /tmp is cleaned.
-  (alexandria:write-byte-vector-into-file (test-png-octets) #p"/tmp/pea.png" :if-exists :supersede)
-  #p"/tmp/pea.png")
+  (ensure-directories-exist *pea-path*)
+  (alexandria:write-byte-vector-into-file (test-png-octets) *pea-path* :if-exists :supersede)
+  *pea-path*)
 
 (defmacro with-file-host ((host name &key responses (platform '(test-platform))) &body body)
   "BODY with HOST, WITH-DIGEST-HOST's host named NAME over PLATFORM and its lane
@@ -1232,7 +1233,7 @@ LANE, as the one running channel."
   ;; platform created — the id a read-back would name.
   (with-file-host (host "post-file" :responses (replies "f1") :platform (test-platform :files t))
     (is (equal '(:status 200 :body (:id "f1"))
-               (nck:post-file #p"/tmp/pea.png" :platform "test"
+               (nck:post-file *pea-path* :platform "test"
                               :channel "123" :thread "t9"
                               :content "the picture" :reply-to "m1")))
     (let ((plan (first (nck:recording-executor-plans executor))))
@@ -1243,7 +1244,7 @@ LANE, as the one running channel."
   ;; A platform that cannot carry a file answers why and sends nothing: the
   ;; caller reads the refusal instead of a caption naming a picture nobody
   ;; can see.
-  (let ((answer (nck:post-file #p"/tmp/pea.png" :platform "test"
+  (let ((answer (nck:post-file *pea-path* :platform "test"
                                :channel "123")))
     (is (zerop (getf answer :status)))
     (is (search "carries no files" (getf answer :error)))
@@ -1252,18 +1253,18 @@ LANE, as the one running channel."
 (deftest channel-post-file-refuses-a-platform-that-is-not-running (let ((nck::*hosts* '())))
   (is (search "no nowhere channel is running"
               (refusal-text error
-                (nck:post-file #p"/tmp/pea.png" :platform "nowhere" :channel "1")))))
+                (nck:post-file *pea-path* :platform "nowhere" :channel "1")))))
 
 (deftest channel-answer-file-notes-the-running-turn (with-file-host (host "answer-file"))
   ;; A file handed to the answer is recorded on the running turn — read
   ;; back as the turn's own file, never posted now.
   (setf (nck:lane-active-turn-id lane) "t9")
   (is (equal (list :session-id "chat-123-m1" :turn-id "t9"
-                   :files (list #p"/tmp/pea.png"))
-             (nck:answer-file #p"/tmp/pea.png" :platform "test"
+                   :files (list *pea-path*))
+             (nck:answer-file *pea-path* :platform "test"
                               :channel "123")))
   (is (null (nck:recording-executor-plans executor)))
-  (is (equal (list #p"/tmp/pea.png")
+  (is (equal (list *pea-path*)
              (nck::take-answer-files lane "t9")))
   (is (null (nck::take-answer-files lane "t9"))))
 
@@ -1272,7 +1273,7 @@ LANE, as the one running channel."
   ;; two is missing rather than posting beside an answer that never comes.
   (is-table (needle channel)
     (search needle (refusal-text error
-                     (nck:answer-file #p"/tmp/pea.png" :platform "test" :channel channel)))
+                     (nck:answer-file *pea-path* :platform "test" :channel channel)))
     ("no turn is running" "123")
     ("no lane answers" "999")))
 
@@ -1282,7 +1283,7 @@ LANE, as the one running channel."
   (with-file-host (host "answer-carries" :responses (replies "a1"))
     (let ((digest (nck:make-turn-digest :turn-id "t9" :phase :completed :answer "the answer")))
       (setf (nck:lane-active-turn-id lane) "t9")
-      (nck:answer-file #p"/tmp/pea.png" :platform "test" :channel "123")
+      (nck:answer-file *pea-path* :platform "test" :channel "123")
       (nck::deliver-answer host lane digest)
       (let ((plan (first (nck:recording-executor-plans executor))))
         (is (search "the answer" (plan-content plan)))
@@ -1383,7 +1384,7 @@ LANE, as the one running channel."
     (nck:answer-choices '("Postgres" "SQLite") :platform "test" :channel "123")
     (is (eq t nle::*snippet-touched*) "handing choices is an act"))
   (let ((nle::*snippet-touched* nil))
-    (nck:answer-file #p"/tmp/pea.png" :platform "test" :channel "123")
+    (nck:answer-file *pea-path* :platform "test" :channel "123")
     (is (eq t nle::*snippet-touched*) "handing a file is an act"))
   (is (equal '("Postgres" "SQLite") (nck::take-answer-choices lane "t9")))
   (nck::take-answer-files lane "t9")

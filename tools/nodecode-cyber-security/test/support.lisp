@@ -48,7 +48,11 @@ or, for sh -c, by a substring of the script.")
 (defun sp-scratch-dir (name)
   "A fresh empty directory under the temp folder."
   (let ((dir (uiop:ensure-directory-pathname
-              (merge-pathnames (format nil "sp-~a-~d/" name (random 1000000))
+              ;; A fresh random state: the default one is the same in every
+              ;; fresh image, so every run named the same folder, and a run
+              ;; under another account found it already there and not its own.
+              (merge-pathnames (format nil "sp-~a-~36r/" name
+                                       (random (expt 36 8) (make-random-state t)))
                                (uiop:temporary-directory)))))
     (ensure-directories-exist dir)
     dir))

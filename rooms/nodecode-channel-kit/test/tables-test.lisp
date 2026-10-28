@@ -36,10 +36,10 @@
   (let* ((nck::*table-image-renderer*
            (lambda (rows)
              (declare (ignore rows))
-             #p"/tmp/pea.png"))
+             *pea-path*))
          (text (format nil "before~%~%| a | b |~%|---|---|~%| 1 | 2 |~%~%after")))
     (multiple-value-bind (stripped images) (nck::answer-tables-as-images text)
-      (is (equal (list #p"/tmp/pea.png") images))
+      (is (equal (list *pea-path*) images))
       (is (not (find #\| stripped)) "the pipes are gone: the picture carries the table")
       (is (search "before" stripped))
       (is (search "after" stripped))
@@ -63,7 +63,7 @@
            (lambda (rows)
              (declare (ignore rows))
              (setf asked t)
-             #p"/tmp/pea.png"))
+             *pea-path*))
          (long (cons '("a" "b") (loop repeat 61 collect '("1" "2"))))
          (wide (list (loop repeat 15 collect "h") (loop repeat 15 collect "1"))))
     (is (null (nck::table-picture long)) "61 rows are a dataset, not a card")
@@ -78,7 +78,7 @@
     (let ((nck::*table-image-renderer*
             (lambda (rows)
               (declare (ignore rows))
-              #p"/tmp/pea.png"))
+              *pea-path*))
           (digest (nck:make-turn-digest
                    :turn-id "t9" :phase :completed
                    :answer (format nil "spend:~%| window | spend |~%|---|---|~%| 28h | ¥102 |"))))
@@ -97,7 +97,7 @@
   ;; table as the model wrote it. It used to keep the text that posted, and
   ;; a later turn read its own answer back with the list missing.
   (with-file-host (host "table-record" :responses (replies "a1"))
-    (let ((nck::*table-image-renderer* (lambda (rows) (declare (ignore rows)) #p"/tmp/pea.png"))
+    (let ((nck::*table-image-renderer* (lambda (rows) (declare (ignore rows)) *pea-path*))
           (answer (format nil "spend:~%| window | spend |~%|---|---|~%| 28h | ¥102 |"))
           (recorded '()))
       (setf (nck:lane-active-turn-id lane) "t9")
@@ -118,7 +118,7 @@
       (let ((nck::*table-image-renderer* (lambda (rows)
                                            (declare (ignore rows))
                                            (setf asked t)
-                                           #p"/tmp/pea.png")))
+                                           *pea-path*)))
         (with-stubbed-fdefinition (nck::write-back-rooms (host lane text typed-room) nil)
           (nck::finish-turn host lane (nck:make-turn-digest :turn-id "t9" :phase :completed
                                                             :answer answer))))
@@ -132,7 +132,7 @@
   ;; characters a message's tables may total it refuses the message whole: a
   ;; table past the platform's limits, or past what the tables before it left
   ;; of the characters, is drawn here as before.
-  (let ((nck::*table-image-renderer* (lambda (rows) (declare (ignore rows)) #p"/tmp/pea.png"))
+  (let ((nck::*table-image-renderer* (lambda (rows) (declare (ignore rows)) *pea-path*))
         (drawn '(:rows 3 :columns 2 :characters 12))
         (small (format nil "| a | b |~%|---|---|~%| 1 | 2 |"))
         (wide (format nil "| a | b | c |~%|---|---|---|~%| 1 | 2 | 3 |"))

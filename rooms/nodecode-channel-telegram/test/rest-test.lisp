@@ -468,12 +468,12 @@ written twice, so a probe that names each once is seen to."
   ;; names follows the file into it. The bytes decide photo-or-document —
   ;; TELEGRAM-IMAGE-FILE-P's call — so the plan asks.
   (let* ((photo (nct:telegram-file-plan '(:channel-id "1" :thread-id "5")
-                                        #P"/tmp/pea.png"
+                                        *pea-path*
                                         :content "look" :reply-to "7"
                                         :photo-p t))
          (body photo.body))
     (is-plan photo :path "/sendPhoto" :label "send_photo" "chat_id" "1" "message_thread_id" "5"
-                   "caption" "look" "photo" #P"/tmp/pea.png")
+                   "caption" "look" "photo" *pea-path*)
     (is (nck:multipart-body-p body) "files ride as form-data")
     (is (search "message_id" (plan-field photo "reply_parameters"))))
   (let* ((document (nct:telegram-file-plan '(:channel-id "1")
