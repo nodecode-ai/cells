@@ -132,6 +132,12 @@ schedule, the delivery rule, the limit. Data, so a layer can reword it.")
                         (warn "cron: notice for ~a not posted: ~a" (job-id job) condition)))
     (nle:notice (apply #'format nil control args) :level level :key (format nil "cron:~a" job.id))))
 
+(defun post-clear (job)
+  "Take down what stands on the board under JOB's key."
+  (nlk:with-handlers ((error (condition)
+                        (warn "cron: notice for ~a not cleared: ~a" (job-id job) condition)))
+    (nle:notice nil :key (format nil "cron:~a" job.id))))
+
 (defparameter +line-limit+ 160
   "How much of an answer's first line rides on the board and the record.")
 
@@ -266,7 +272,15 @@ Data, so a layer can reword it.")
          (if (member (nlk:trimmed (or fire.answer ""))
                      '("" "silent" "[silent]" "no_reply" "no reply")
                      :test #'string-equal)
-             (set-last job now "silent" nil turn-id)
+             (progn
+               ;; A silent fire is a success: a failure or a cancel still
+               ;; standing under the job's key is over, and the board drops
+               ;; it. Left up, it rode every round's notices as the job's
+               ;; state -- hn-dead-watch read "failed: not logged in" for
+               ;; hours of silent fires after the login came back (2026-10-29).
+               (when (member (getf job.last :status) '("failed" "cancelled") :test #'equal)
+                 (post-clear job))
+               (set-last job now "silent" nil turn-id))
              (let ((line (nlk:first-line (nlk:trimmed fire.answer) +line-limit+))
                    (origin job.origin))
                (set-last job now "ok" (and (plusp (length line)) line) turn-id)

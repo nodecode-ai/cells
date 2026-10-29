@@ -144,6 +144,21 @@ session ORIGIN when given."
           (format nil "~s settles silently" answer))
       (is (null (cron-board-text "quiet")) "nothing on the board"))))
 
+(deftest cron-cell-a-silent-success-takes-a-failure-off-the-board ()
+  ;; A watcher answers SILENT until there is news: its first good fire after
+  ;; a failed one must not leave the failure standing as the job's state.
+  (with-cron-runtime (:submits t :job (job "15m" "Report only news" :name "watch"))
+    (nodecode-cron::tick (+ +cron-now+ 900))
+    (cron-publish "turn.failed" "cron-watch" :payload (nlk:json-object "detail" "not logged in"))
+    (nodecode-cron::tick (+ +cron-now+ 901))
+    (is (equal "cron watch failed: not logged in" (cron-board-text "watch")))
+    (nodecode-cron::tick (+ +cron-now+ 1800))
+    (cron-finish "cron-watch" "SILENT")
+    (nodecode-cron::tick (+ +cron-now+ 1801))
+    (is (equal "silent" (getf (nodecode-cron::job-last job) :status)))
+    (is (null (cron-board-text "watch")) "the failure is off the board")
+    (is (null (cell-notice "cron:watch")) "and off the notices")))
+
 (deftest cron-cell-failed-and-cancelled-turns-land-on-the-record ()
   (with-cron-runtime (:submits t :job (job "30m" "x" :name "fails"))
     (nodecode-cron::tick (+ +cron-now+ 1800))
