@@ -1,8 +1,227 @@
 {
   "format": 1,
-  "updated": "2026-10-29T04:16:10Z",
+  "updated": "2026-10-29T22:21:13Z",
   "window": "2026-10-15 to 2026-10-29",
   "advisories": [
+    {
+      "id": "shopify-app-token-exchange",
+      "title": "shopify_app (Ruby) 22.1.0-23.0.2: token exchange shop context confusion may allow cross-shop authorization bypass (CVE-2026-63414)",
+      "date": "2026-10-29",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-63414"
+      ],
+      "summary": "Shopify's official shopify_app gem confuses the shop context during token exchange: an app that exchanges tokens across shops can end up authorizing against the wrong shop, so a request intended for one shop is honored against another - cross-shop authorization bypass inside affected Shopify apps. Fixed in 23.0.3.",
+      "affected": "shopify_app 22.1.0 up to 23.0.2.",
+      "fixed": [
+        "23.0.3"
+      ],
+      "checks": [],
+      "patch": [
+        "bundle update shopify_app (>=23.0.3) and restart the app"
+      ],
+      "mitigation": [
+        "Until upgraded: pin the shop context explicitly in your token exchange calls and re-verify that each session is bound to the shop it was issued for"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-6j52-38f8-qhxr"
+      ]
+    },
+    {
+      "id": "cert-manager-dns01-policy",
+      "title": "cert-manager 1.18-1.19.5 / 1.20.x: direct ACME Challenge resources bypass Issuer DNS01 solver policy and use ClusterIssuer DNS credentials (CVE-2026-62290)",
+      "date": "2026-10-29",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-62290"
+      ],
+      "summary": "cert-manager lets a user who can create ACME Challenge resources bypass the Issuer's DNS01 solver policy and have the challenge solved with the ClusterIssuer's DNS credentials - the policy that says which DNS solver may be used is not enforced on direct Challenge resources, so lower-privileged Kubernetes users can drive DNS updates with cluster-level credentials. Fixed in 1.19.6 (1.18/1.19 line) and 1.20.3.",
+      "affected": "cert-manager 1.18.0 up to 1.19.5 (fixed 1.19.6) and 1.20.0-alpha through 1.20.2 (fixed 1.20.3).",
+      "fixed": [
+        "1.19.6",
+        "1.20.3"
+      ],
+      "checks": [],
+      "patch": [
+        "Upgrade cert-manager to 1.19.6 or 1.20.3 and re-apply your Issuer/ClusterIssuer configuration"
+      ],
+      "mitigation": [
+        "Until upgraded: restrict who can create ACME Challenge resources (RBAC), and scope the ClusterIssuer DNS credentials to the zones they need"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-8rvj-mm4h-c258"
+      ]
+    },
+    {
+      "id": "keycloak-uri-bypass-2026-10",
+      "title": "Keycloak before 26.6.4: XSS via case-insensitive URI validation bypass, and authorization bypass via incorrect URI comparison",
+      "date": "2026-10-29",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-9086",
+        "CVE-2026-9800"
+      ],
+      "summary": "Two URI-comparison flaws in Keycloak. The URI validation for redirect and content checks is case-insensitive where the parser is not, so a mixed-case URI slips past validation and delivers cross-site scripting (CVE-2026-9086). And an incorrect URI comparison in the policy enforcer lets a request pass an authorization check it should fail (CVE-2026-9800). Both fixed in 26.6.4 (the policy enforcer also in 26.0.10).",
+      "affected": "org.keycloak:keycloak-services below 26.6.4, and org.keycloak:keycloak-policy-enforcer below 26.0.10.",
+      "fixed": [
+        "26.6.4",
+        "26.0.10"
+      ],
+      "checks": [],
+      "patch": [
+        "Upgrade Keycloak to 26.6.4 (or the policy enforcer to 26.0.10 on the 26.0 line) and restart the servers"
+      ],
+      "mitigation": [
+        "Until upgraded: keep client redirect URIs on exact-match allow-lists and review policy-enforcer rules for URI patterns that rely on case"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-v3f7-2p4r-mwfw",
+        "https://github.com/advisories/GHSA-f5p5-6xmx-p252"
+      ]
+    },
+    {
+      "id": "volto-chatbot-danswer-proxy",
+      "title": "@eeacms/volto-chatbot before 2.0.4: unauthenticated Danswer API confused-deputy proxy",
+      "date": "2026-10-29",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "The Volto chatbot add-on proxies requests to the Danswer API without authentication of its own - a confused deputy: anyone who can reach the site can make the server query Danswer with the site's backend access, reading whatever that connection can reach. Fixed in 2.0.4.",
+      "affected": "@eeacms/volto-chatbot 2.0.3 and earlier.",
+      "fixed": [
+        "2.0.4"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@eeacms/volto-chatbot",
+          "package": "@eeacms/volto-chatbot",
+          "line": 1,
+          "fixed": [
+            "2.0.4"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install @eeacms/volto-chatbot@^2.0.4 and restart the site"
+      ],
+      "mitigation": [
+        "Until upgraded: require authentication in front of the chatbot endpoints and scope the Danswer API token to the least data the chatbot needs"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-w9x9-j56r-h98r"
+      ]
+    },
+    {
+      "id": "pdf-reader-mcp-auth-bypass",
+      "title": "@sylphx/pdf-reader-mcp 2.2.0-3.0.0: HTTP transport accepts unauthenticated requests despite a configured MCP_API_KEY (CVE-2026-62264)",
+      "date": "2026-10-29",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-62264"
+      ],
+      "summary": "This PDF-reading MCP server ignores its own MCP_API_KEY on the HTTP transport: requests arrive unauthenticated even when the operator configured a key - anyone who can reach the port reads PDFs through the server with its filesystem access. Fixed in 3.0.1.",
+      "affected": "@sylphx/pdf-reader-mcp 2.2.0 up to 3.0.0.",
+      "fixed": [
+        "3.0.1"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@sylphx/pdf-reader-mcp",
+          "package": "@sylphx/pdf-reader-mcp",
+          "line": 1,
+          "min": "2.2.0",
+          "fixed": [
+            "3.0.1"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install @sylphx/pdf-reader-mcp@^3.0.1 and restart the MCP server"
+      ],
+      "mitigation": [
+        "Until upgraded: bind the transport to loopback and put your own authenticating proxy in front of it - do not trust MCP_API_KEY alone"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-q344-5v34-gm84"
+      ]
+    },
+    {
+      "id": "praisonai-ast-sandbox-rce",
+      "title": "PraisonAI before 4.6.78: remote code execution via a broken AST sandbox (CVE-2026-61438)",
+      "date": "2026-10-29",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-61438"
+      ],
+      "summary": "PraisonAI's AST sandbox - the guard meant to keep agent-authored code from running freely - is broken, so code that reaches the sandbox escapes it: remote code execution in whatever service lets agents run code through PraisonAI. Fixed in 4.6.78.",
+      "affected": "praisonai below 4.6.78.",
+      "fixed": [
+        "4.6.78"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "praisonai",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('praisonai'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "4.6.78"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'praisonai>=4.6.78' and restart the agent services"
+      ],
+      "mitigation": [
+        "Until upgraded: do not let untrusted input reach the code sandbox - run agent code in an isolated process or container regardless of the sandbox"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-26mh-57q7-jfvr"
+      ]
+    },
+    {
+      "id": "cisco-asa-ftd-76418",
+      "title": "Cisco Secure Firewall ASA and FTD: unchecked return value leads to NULL dereference and device reload, exploited (CVE-2026-76418)",
+      "date": "2026-10-29",
+      "severity": "high",
+      "exploited": true,
+      "cves": [
+        "CVE-2026-76418"
+      ],
+      "summary": "An unchecked return value in Cisco Secure Firewall ASA and FTD software turns into a NULL pointer dereference an unauthenticated remote attacker can trigger across the network, reloading the device - a denial of service that takes the firewall down on demand. CISA added it to the known-exploited list on October 29 with a due date of November 1.",
+      "affected": "Cisco Secure Firewall ASA Software and Secure FTD Software as listed in Cisco's advisory cisco-sa-asaftd-tunnel-dos-s6mgkb75.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Apply the fixed ASA/FTD software named in Cisco's advisory cisco-sa-asaftd-tunnel-dos-s6mgkb75 across the firewall fleet"
+      ],
+      "mitigation": [
+        "Until patched: filter the affected tunnel protocols at the edge where the topology allows, and plan for failover churn - the trigger is a device reload",
+        "Monitor for unexpected reboots; they are the exploitation signal for this class"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://sec.cloudapps.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-asaftd-tunnel-dos-s6mgkb75",
+        "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+      ]
+    },
     {
       "id": "zip-cloaking-2026-10",
       "title": "zip (Rust) before 9.0.5: dual-header parser differentials cloak entries past security controls, leading to file overwrite and RCE (CVE-2026-115905)",
