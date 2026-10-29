@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "updated": "2026-10-28T22:18:29Z",
-  "window": "2026-10-14 to 2026-10-28",
+  "updated": "2026-10-29T04:16:10Z",
+  "window": "2026-10-15 to 2026-10-29",
   "advisories": [
     {
       "id": "zip-cloaking-2026-10",
@@ -444,6 +444,42 @@
         "https://git.kernel.org/stable/c/3599e6b3cc1ada96883d496a50a210d3afbb6987",
         "https://nvd.nist.gov/vuln/detail/CVE-2026-46300",
         "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+      ]
+    },
+    {
+      "id": "systeminformation-5-33-16",
+      "title": "systeminformation before 5.33.16: Windows command injection in services() through Unicode quotation marks (CVE-2026-116576)",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-116576"
+      ],
+      "summary": "The systeminformation npm package's services() call builds a Windows shell command with an untrusted service name and does not stop Unicode quotation marks: a crafted service name breaks out of the quoting and runs commands with the privileges of the process collecting system info - in monitoring dashboards and agent tooling, that is often an operator-level service. Fixed in 5.33.16.",
+      "affected": "systeminformation below 5.33.16 on Windows (the services() path).",
+      "fixed": [
+        "5.33.16"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "systeminformation",
+          "package": "systeminformation",
+          "line": 1,
+          "fixed": [
+            "5.33.16"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install systeminformation@^5.33.16 and restart the services that use it"
+      ],
+      "mitigation": [
+        "Until upgraded: do not pass names from untrusted sources into services(), and run system-info collectors with least privilege"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-3f7j-7jwc-fxfj"
       ]
     },
     {
@@ -3187,6 +3223,33 @@
       "sources": [
         "https://vuldb.com/cve/CVE-2026-111616",
         "https://nvd.nist.gov/vuln/detail/CVE-2026-111616"
+      ]
+    },
+    {
+      "id": "studio-design-2026-10",
+      "title": "Studio (studio.design): cloud environment breach exposed customer data and the keys to the encrypted credentials - rotate everything stored in settings",
+      "date": "2026-10-16",
+      "severity": "high",
+      "exploited": true,
+      "cves": [],
+      "summary": "Studio株式会社 (studio.design, the website builder) disclosed on October 16 that a third party exploited a vulnerability in one of its features between September 30 and October 1 to access the company's cloud environment and leave customer data exfiltratable. Studio found it during internal checks on October 13 and closed the vulnerability and the access path by October 14. Potentially exposed for every registered customer: account information (usernames, email addresses, hashed passwords), managed data (design editor and CMS content, form submissions, Google reCAPTCHA v3 configuration, webhook URLs), live-preview URLs, and credentials in settings (external-service API keys and tokens, password-protected page passwords, Google Sheets integration credentials, custom proxy keys). Critically, the decryption keys for the stored-encrypted parts were also read in the same access, so form submissions, API keys and tokens, Sheets credentials, proxy keys, reCAPTCHA config and webhook URLs may be known in clear. Studio is contacting affected customers individually and is engaging external specialists for the ongoing investigation.",
+      "affected": "All registered Studio (studio.design) accounts potentially; customers using API integrations, password-protected pages, forms or the custom proxy feature held the most sensitive credentials in the exposed settings.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Rotate every credential stored in Studio settings: external service API keys and tokens, password-protected page passwords, Google Sheets integration credentials, custom proxy keys - the keys to the encrypted copies were taken too",
+        "Change your Studio account password (hashed passwords were taken) and anywhere else you reused it",
+        "Treat form submissions and reCAPTCHA/webhook configuration as exposed: expect phishing that references your Studio content"
+      ],
+      "mitigation": [
+        "Watch the external services those API keys reach for unfamiliar activity through the window and after",
+        "Follow Studio's incident notice for the affected-count follow-up and any further guidance"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://studio.design/ja/security/notice/2026-10-incident",
+        "https://studio.design/ja/whats-new/unauthorized-access-2026-10",
+        "https://scan.netsecurity.ne.jp/article/2026/10/28/56606.html"
       ]
     },
     {
