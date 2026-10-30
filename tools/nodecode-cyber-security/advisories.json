@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "updated": "2026-10-29T22:21:13Z",
-  "window": "2026-10-15 to 2026-10-29",
+  "updated": "2026-10-30T04:17:33Z",
+  "window": "2026-10-16 to 2026-10-30",
   "advisories": [
     {
       "id": "shopify-app-token-exchange",
@@ -3419,32 +3419,6 @@
       ]
     },
     {
-      "id": "oqtane-settings-bypass",
-      "title": "Oqtane through 10.2.6: a site administrator can read another tenant's SMTP password and client secret (CVE-2026-111616)",
-      "date": "2026-10-16",
-      "severity": "high",
-      "exploited": false,
-      "cves": [
-        "CVE-2026-111616"
-      ],
-      "summary": "Oqtane's SettingController does not enforce tenant isolation: an authenticated user with the Administrators role on one site can request another co-tenant site's entityId through their own alias and retrieve the stored SMTPPassword and SMTPClientSecret values - credential disclosure across tenants of a multi-tenant .NET CMS. 10.2.6 is the latest release and is affected; no patched version is published yet.",
-      "affected": "Oqtane Framework 10.2.6 and earlier, on multi-tenant installations where tenant-site administrators are not fully trusted.",
-      "fixed": [],
-      "checks": [],
-      "patch": [
-        "No patched release is published: watch the Oqtane releases and upgrade as soon as a fix ships"
-      ],
-      "mitigation": [
-        "Until patched: only grant the Administrators role on a tenant site to people you would trust with the mail credentials of every tenant on the host, and rotate SMTP passwords and client secrets of co-hosted tenants",
-        "Separate untrusted tenants onto separate Oqtane instances where the isolation matters"
-      ],
-      "iocs": [],
-      "sources": [
-        "https://vuldb.com/cve/CVE-2026-111616",
-        "https://nvd.nist.gov/vuln/detail/CVE-2026-111616"
-      ]
-    },
-    {
       "id": "studio-design-2026-10",
       "title": "Studio (studio.design): cloud environment breach exposed customer data and the keys to the encrypted credentials - rotate everything stored in settings",
       "date": "2026-10-16",
@@ -3743,6 +3717,34 @@
         "https://community.citrix.com/techzone-blogs/110_security-updates/netscaler-adc-and-netscaler-gateway-security-bulletin-for-cve-2026-88771-through-cve-2026-88778",
         "https://mallory.ai/stories/01a15988-a20d-701d-bac7-2dcba6ffc9d3",
         "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+      ]
+    },
+    {
+      "id": "linux-kernel-ebtables-53266",
+      "title": "Linux Kernel ebtables SNAT: out-of-bounds write into splice-backed fragments, exploited since September (CVE-2026-53266); RHEL 8 kpatch live patches out",
+      "date": "2026-09-18",
+      "severity": "high",
+      "exploited": true,
+      "cves": [
+        "CVE-2026-53266"
+      ],
+      "summary": "An out-of-bounds write in the Linux kernel's ebtables SNAT target: an ARP sender hardware address rewrite can write directly into a nonlinear socket-buffer fragment backed by a splice-imported file page - kernel memory corruption from the network. CISA listed it as known-exploited on September 18 with a September 21 deadline, forty days before the CVE record published on October 28; public proof-of-concept exploits are on GitHub. The stable trees carry eight fix commits. The affected code sits in lines CISA flags as possibly end-of-life: Red Hat shipped kpatch live patches for RHEL 8 (kpatch-patch-4_18_0-477_107_1 and kpatch-patch-4_18_0-477_120_1) covering this and related kernel fixes.",
+      "affected": "Linux kernels before the backported fix commits across the supported stable trees. RHEL 8 (4.18.0-477.x) customers can take the kpatch live patches; other distributions ship the fix in their kernel updates. Where the running kernel line is end-of-life, CISA advises discontinuing use.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Take your distribution's kernel update carrying the CVE-2026-53266 fix commits and reboot; on RHEL 8 apply kpatch-patch-4_18_0-477_107_1 / kpatch-patch-4_18_0-477_120_1 or newer as a live patch",
+        "On end-of-life kernels with no fix: plan the move to a supported kernel - the standing advice on this KEV record"
+      ],
+      "mitigation": [
+        "Restrict ebtables and ARP manipulation paths: the trigger needs the ebtables SNAT target reachable - keep untrusted traffic out of netfilter paths where the topology allows",
+        "This has been exploited since September and exploits are public: preserve logs and hunt for prior activity before remediating"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
+        "https://git.kernel.org/stable/c/bf84ad7c7a9ede46e31afaa41a1ba06a159e8c87",
+        "https://radar.offseq.com/threat/red-hat-security-advisory-kpatch-patch-4180-4771071-kpatch-patch-4180-4771201-ec9cb462eba09c64"
       ]
     },
     {
@@ -4278,30 +4280,6 @@
       "sources": [
         "https://www.huntress.com/blog/vendor-credential-enables-unauthorized-access",
         "https://x.com/MsftSecIntel/status/2111358888125878426"
-      ]
-    },
-    {
-      "id": "linux-pwnescape",
-      "title": "Linux KVM PwnEscape: guest VM can take over the host (CVE-2026-99999)",
-      "date": "2026-10-16",
-      "severity": "critical",
-      "exploited": false,
-      "cves": [
-        "CVE-2026-99999"
-      ],
-      "summary": "Crafted packets from a guest VM leak host memory, crash the host, or run code as root on it. It matters to anyone hosting other people's VMs (VPS providers, sandboxes); a site on a VPS depends on its provider having rebooted into a patched kernel.",
-      "affected": "KVM hosts on unpatched kernels.",
-      "fixed": [],
-      "checks": [],
-      "patch": [
-        "VM hosts: install the distro's patched kernel and reboot",
-        "VPS customers: confirm your provider patched its hosts"
-      ],
-      "mitigation": [],
-      "iocs": [],
-      "sources": [
-        "https://almalinux.org/blog/2026-10-16-pwnescape-cve-2026-99999/",
-        "https://x.com/PaulosYibelo/status/2111541156572013043"
       ]
     },
     {
