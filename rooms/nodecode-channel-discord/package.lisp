@@ -49,7 +49,7 @@
    #:initial-gateway-session #:gateway-url-with-params #:heartbeat-tick
    #:reduce-gateway-payload #:reduce-gateway-close
    ;; ingress normalization
-   #:route-discord-message #:route-discord-message-update
+   #:route-discord-message #:route-discord-message-update #:route-discord-thread-restatement
    #:route-discord-interaction #:route-discord-control
    #:route-discord-autocomplete #:route-discord-reaction
    #:interaction-autocomplete-plans #:discord-inbound-policy
@@ -60,6 +60,7 @@
    #:edit-message-plan #:typing-plan #:reaction-plans #:read-back-path
    #:commands-plan #:discord-command-name-p #:interaction-response-plan
    #:interaction-ack-plans #:hydrate-self-roles #:thread-close-plan
+   #:message-read-plan #:message-restate-plan
    ;; board.lisp --- the thread board as Discord draws it (its semantics are
    ;; the kit's NCK:BOARD-ROW), exported for tests
    #:board-components #:board-list-line #:board-show-text #:board-pressed #:start-board #:*board*

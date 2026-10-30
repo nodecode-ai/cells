@@ -97,6 +97,15 @@ The sum for text is `309237763136`; with voice it is `309240908864`. Embed
 Links draws each turn's card; every other message the bot sends has its link
 previews suppressed.
 
+Optional: Manage Messages (`1 << 13`, so `309237771328` for text and
+`309240917056` with voice). Discord resolves a message's link preview after
+the message lands, and when the thread for an ask opened first, it sends
+every reader the ask as it was before the thread: the link to the thread
+drops from under the ask until their client reloads. With Manage Messages
+the bot writes the ask's embed flag back as it stands, a change of nothing
+that makes Discord send the ask again with its thread. Without it, the
+thread is still there; only that link is missing.
+
 Open this URL with your application id in place of `APPLICATION_ID`, pick
 the server, and authorize:
 

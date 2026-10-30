@@ -312,6 +312,49 @@ adapter and the fake gateway have stopped."
       (is-source routed :text "✅" "reaction" "add" "reply_to_message_id" "a1"))
     (is (zerop (nck:lane-count host.lanes)))))
 
+(deftest channel-discord-a-restated-ask-gets-its-thread-back ()
+  ;; The wiring: Discord's stale copy of an ask reaches the dispatch, which
+  ;; queues one read of the message and -- the platform still holding the
+  ;; thread -- one write of its flags as they stand, which Discord answers by
+  ;; restating the message whole, thread and all. The fresh restatement asks
+  ;; for nothing more, and a thread gone since the copy reads back without
+  ;; its flag: nothing is written.
+  (clrhash ncd::*known-threads*)
+  (clrhash ncd::*thread-owners*)
+  (clrhash ncd::*thread-restatements*)
+  (let* ((executor (nck:make-recording-executor
+                    :responses (list (reply 200 "id" "m1" "flags" 36)
+                                     (reply 200 "id" "m1" "flags" 36)
+                                     (reply 200 "id" "m2" "flags" 0))))
+         (host (test-host :platform (ncd:discord-platform :bot-user-id "999")
+                          :executor executor :name "discord-restated-thread"))
+         (adapter (ncd::%make-discord-adapter :host host :bot-user-id "999")))
+    (setf (nck:host-worker host) :inline)
+    (flet ((dispatch (event d-json)
+             (ncd:discord-handle-dispatch adapter (dgw-dispatch event d-json)))
+           (plans () (nck:recording-executor-plans executor)))
+      (with-stubbed-fdefinition (nck:delivery-worker-enqueue (worker job)
+                                  (is (eq :inline worker) "queued on the host's own pool")
+                                  (funcall job)
+                                  t)
+        (dispatch "THREAD_CREATE" "{\"id\": \"m1\", \"parent_id\": \"c1\", \"owner_id\": \"999\"}")
+        (dispatch "MESSAGE_UPDATE" (dgw-d "m1" "<@999> look https://x.com/a/status/1" :author "u2"
+                                          :fields "\"flags\": 0, \"embeds\": [{\"type\": \"rich\"}],"))
+        (is (= 2 (length (plans))) "one read, one write")
+        (is-plan (first (plans)) :method "GET" :path "/channels/c1/messages/m1")
+        (is-plan (second (plans)) :method "PATCH" :path "/channels/c1/messages/m1"
+                 :label "restate_message" (:integer "flags") 4)
+        (dispatch "MESSAGE_UPDATE" (dgw-d "m1" "<@999> look https://x.com/a/status/1" :author "u2"
+                                          :fields "\"flags\": 36,"))
+        (is (= 2 (length (plans))) "the fresh restatement asks for nothing")
+        (dispatch "THREAD_CREATE" "{\"id\": \"m2\", \"parent_id\": \"c1\", \"owner_id\": \"999\"}")
+        (dispatch "MESSAGE_UPDATE" (dgw-d "m2" "<@999> hi" :author "u2" :fields "\"flags\": 0,"))
+        (is (= 3 (length (plans))) "a thread gone since is read, never written")
+        (is-plan (third (plans)) :method "GET" :path "/channels/c1/messages/m2"))))
+  (clrhash ncd::*known-threads*)
+  (clrhash ncd::*thread-owners*)
+  (clrhash ncd::*thread-restatements*))
+
 (deftest channel-discord-edit-involves-the-bot ()
   ;; The edit path asks the room's own mention rule — MENTION-INVOLVES-P
   ;; through the host policy — rather than a copy of it: an entity mention

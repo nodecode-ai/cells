@@ -184,6 +184,12 @@ falls through."
   ;; The error boundary is the caller's, outside the seam, so advice that
   ;; signals costs that event and not the connection.
   (note-channel-dispatches payload)
+  ;; Discord's stale copy of a message the bot opened a thread on gives the
+  ;; thread back to every client (RESTATE-THREAD-LINK). It routes nothing:
+  ;; the routes below still read the update.
+  (nlk:when-let (restated (route-discord-thread-restatement
+                           payload :bot-user-id adapter.bot-user-id))
+    (restate-thread-link adapter.host restated))
   (when (route-voice-dispatch adapter payload)
     (return-from discord-handle-dispatch :voice))
   ;; The first route that reads PAYLOAD acts on it and is the answer. A
@@ -207,6 +213,65 @@ falls through."
                    (or (board-pressed press) (control-pressed host press))))
           (route (route-discord-autocomplete payload) #'completion-requested)
           (route (route-discord-reaction payload :bot-user-id bot) #'reaction-noticed)))))
+
+;;; --- a thread's link, given back -----------------------------------------------------
+;;; A stale copy of a message (ROUTE-DISCORD-THREAD-RESTATEMENT) costs every
+;;; client the link to the thread the bot opened on it. Nothing a thread does
+;;; restates its starter message -- a rename, a post, an archive -- but a write
+;;; of the message's own flags, as they stand, does: Discord answers it with
+;;; the whole message as it holds it, thread and all, and stamps no edit.
+
+(defparameter +thread-restatement-cap+ 3
+  "How many stale copies of one message this process answers in
++THREAD-RESTATEMENT-WINDOW-MS+: a platform that kept sending one would cost a
+few writes, never a loop.")
+
+(defparameter +thread-restatement-window-ms+ 600000
+  "The window +THREAD-RESTATEMENT-CAP+ counts in: ten minutes.")
+
+(defvar *thread-restatements* (make-hash-table :test #'equal)
+  "Message id -> (COUNT . FIRST-MS): the stale copies of it answered lately.")
+
+(defvar *thread-restatements-lock* (bt2:make-lock :name "discord-thread-restatements"))
+
+(defun claim-thread-restatement (message-id now)
+  "Whether the stale copy of MESSAGE-ID seen at NOW, in ms, is one to answer."
+  (flet ((old-p (seen) (> (- now (cdr seen)) +thread-restatement-window-ms+)))
+    (bt2:with-lock-held (*thread-restatements-lock*)
+      (when (> (hash-table-count *thread-restatements*) 512)
+        (maphash (lambda (id seen) (when (old-p seen) (remhash id *thread-restatements*)))
+                 *thread-restatements*))
+      (let ((seen (gethash message-id *thread-restatements*)))
+        (cond ((or (null seen) (old-p seen))
+               (setf (gethash message-id *thread-restatements*) (cons 1 now))
+               t)
+              ((< (car seen) +thread-restatement-cap+)
+               (incf (car seen))
+               t))))))
+
+(defun restate-thread-link (host restated)
+  "Connection lap thread: queue on HOST's delivery pool the calls that give
+the message RESTATED names -- ROUTE-DISCORD-THREAD-RESTATEMENT's answer -- its
+thread back in every client. Enqueues; never calls out."
+  (nlk:when-let (worker (host-worker host))
+    (when (claim-thread-restatement (getf restated :message-id) (unix-ms))
+      (delivery-worker-enqueue worker (lambda () (perform-thread-restatement host restated))))))
+
+(defun perform-thread-restatement (host restated &aux (executor (host-executor host))
+                                                      (channel (getf restated :channel-id))
+                                                      (message (getf restated :message-id)))
+  "Delivery pool: read the message RESTATED names as the platform holds it and,
+when its thread still hangs there, write its flags back as they stand -- the
+write Discord answers by restating the message whole. A thread gone since the
+copy was taken leaves nothing to give back."
+  (let* ((read (execute-plan executor (message-read-plan channel message)))
+         (flags (and (execution-ok-p read)
+                     (nlk:json-value (execution-body read) :integer "flags"))))
+    (when (and flags (logtest flags +discord-has-thread+))
+      (let ((written (execute-plan executor (message-restate-plan channel message flags))))
+        (unless (execution-ok-p written)
+          (warn "~a: the thread on message ~a stays unlinked in the clients that took Discord's stale copy: ~a"
+                (host-id host) message (execution-error written)))))))
 
 ;;; --- the close code a peer sent -------------------------------------------------------
 ;;; websocket-driver answers a peer's close frame with its own and then reports

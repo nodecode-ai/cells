@@ -578,6 +578,25 @@ room it was typed in. A TARGET naming a :THREAD-ID is PATCH
                (nlk:json-object "name" name
                                 :when (null message-id) "type" +discord-public-thread-type+))))
 
+(defun message-read-plan (channel-id message-id &key (timeout-seconds 30))
+  "GET /channels/<channel>/messages/<message>: the message as the platform
+holds it now."
+  ;; Retried: a read changes nothing.
+  (rest-plan "GET" (format nil "/channels/~a/messages/~a" channel-id message-id)
+             "read_message" t timeout-seconds))
+
+(defun message-restate-plan (channel-id message-id flags &key (timeout-seconds 30))
+  "PATCH /channels/<channel>/messages/<message> {flags}: the one flag a bot may
+set on another member's message, SUPPRESS_EMBEDS, written as FLAGS holds it.
+Nothing about the message changes, and Discord answers by restating the whole
+message, as it holds it now, to every client."
+  ;; Another member's message needs Manage Messages; the bot's own needs
+  ;; nothing. Flags alone stamp no edit: the message reads as it did.
+  ;; Retried: a second write is the first one again.
+  (rest-plan "PATCH" (format nil "/channels/~a/messages/~a" channel-id message-id)
+             "restate_message" t timeout-seconds
+             (nlk:json-object "flags" (logand flags +discord-suppress-embeds+))))
+
 (defun thread-delete-plan (thread-id &key (timeout-seconds 30))
   "DELETE /channels/<thread> — a thread is a channel, and the bot that opened
 one may remove it: the permission the guild withholds (Manage Threads) is not

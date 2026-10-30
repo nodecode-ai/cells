@@ -308,6 +308,17 @@ then files[0] — carrying CONTENT and its one attachment; answers the payload."
            :method "DELETE" :path "/channels/456/messages/m9" :label "delete_message"
            :retry t :headers nil))
 
+(deftest channel-discord-restate-message-plans ()
+  ;; A message read as the platform holds it, and its flags written back as
+  ;; they stand: SUPPRESS_EMBEDS is the one flag the bot may set, so the
+  ;; write names that bit alone and changes nothing.
+  (is-plan (ncd:message-read-plan "c1" "m9")
+           :method "GET" :path "/channels/c1/messages/m9" :label "read_message" :retry t)
+  (is-plan (ncd:message-restate-plan "c1" "m9" 36)
+           :method "PATCH" :path "/channels/c1/messages/m9" :label "restate_message"
+           :retry t (:integer "flags") 4)
+  (is-plan (ncd:message-restate-plan "c1" "m9" 32) (:integer "flags") 0))
+
 (deftest channel-discord-only-the-answer-pings ()
   ;; The one mention this adapter emits. parse stays [] everywhere, so no
   ;; text a model produces can ping a role, a bystander, or @everyone.
