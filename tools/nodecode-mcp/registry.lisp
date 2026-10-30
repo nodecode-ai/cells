@@ -117,7 +117,9 @@
 named -- with nothing said on it yet."
   (make-client :transport (ecase spec.transport
                             (:stdio (start-stdio spec allowlist))
-                            (:http (make-http-transport :url spec.url :headers spec.headers)))))
+                            (:http (make-http-transport
+                                    :url spec.url
+                                    :headers (resolved-alist spec.headers "headers"))))))
 
 (defun elapsed-ms (from to)
   "The whole milliseconds between two NOW-SECONDS readings."
@@ -143,7 +145,8 @@ to answer the handshake (a process's start-up inside it) and how long to list."
 
 (defun failure-text (server condition &aux (spec server.spec))
   "CONDITION's text, with the stderr log named for a process."
-  (if (eq spec.transport :stdio)
+  ;; A reference that names nothing failed before any process started: no log to read.
+  (if (and (eq spec.transport :stdio) (not (typep condition 'reference-unresolved)))
       (let ((detail (princ-to-string condition)) (log (namestring (stderr-log-path spec.name))))
         (if (search log detail) detail (format nil "~a; see ~a" detail log)))
       (princ-to-string condition)))

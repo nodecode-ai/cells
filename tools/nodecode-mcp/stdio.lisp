@@ -48,8 +48,10 @@ and again after SIGTERM, before SIGKILL.")
     (values pid output input process)))
 
 (defun start-stdio (spec allowlist)
-  "Launch SPEC's command; a STDIO-TRANSPORT, or TRANSPORT-CLOSED naming why."
-  (let ((log-path (stderr-log-path spec.name)) (argv (cons spec.command spec.args)))
+  "Launch SPEC's command; a STDIO-TRANSPORT, or TRANSPORT-CLOSED naming why
+(REFERENCE-UNRESOLVED, before any launch, for an env reference that names nothing)."
+  (let ((log-path (stderr-log-path spec.name)) (argv (cons spec.command spec.args))
+        (environment (child-environment spec allowlist)))
     (handler-case
         (progn
           ;; Create the log (:APPEND opens without O_CREAT) and stamp the launch.
@@ -61,7 +63,7 @@ and again after SIGTERM, before SIGKILL.")
                     spec.name (nlk:iso-time (nlk:unix-now) :millis nil) spec.command spec.args))
           (multiple-value-bind (pid output input process)
               (launch argv
-                      :environment (child-environment spec allowlist)
+                      :environment environment
                       :error-log log-path)
             (make-stdio-transport
              :pid pid

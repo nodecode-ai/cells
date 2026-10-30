@@ -39,7 +39,7 @@ project's own docs.
 "mcp": {
   "servers": {
     "files":  {"command": "mcp-files", "args": ["--root", "/tmp"], "env": {"K": "v"}, "timeout_ms": 30000},
-    "remote": {"url": "https://host/mcp", "headers": {"Authorization": "Bearer ..."}},
+    "remote": {"url": "https://host/mcp", "headers": {"Authorization": "Bearer ${file:~/.secrets/host}"}},
     "off":    {"command": "x", "enabled": false}
   },
   "inherit_env_allowlist": ["PATH", "HOME"]
@@ -49,8 +49,17 @@ project's own docs.
 A url without a command is HTTP and anything else is stdio; `transport`
 overrides. Header values never appear in a status or an error. An entry that
 fails to validate shows as `refused` while the others run. Not supported:
-`cwd`, `${VAR}` expansion, per-tool allow and deny lists, OAuth, and the old
-two-endpoint SSE transport.
+`cwd`, per-tool allow and deny lists, OAuth, and the old two-endpoint SSE
+transport.
+
+A header or env value can name its secret instead of holding it, so the key
+stays out of the config. `${NAME}` (or `${env:NAME}`) is a variable of the
+process running nodecode. `${file:PATH}` is a file's text, trimmed, with
+`PATH` absolute or under `~/`. Each connect reads it again, so a rotated key
+takes effect at the next reconnect (`/mcp restart NAME`). The background
+gateway's service doesn't get your shell's variables, so use `${file:...}`
+there. A reference that names nothing fails that server's connect and says
+which reference it was; the value itself is never shown.
 
 ## No reader thread
 
