@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "updated": "2026-10-30T16:19:09Z",
+  "updated": "2026-10-30T22:20:16Z",
   "window": "2026-10-16 to 2026-10-30",
   "advisories": [
     {
@@ -49,6 +49,132 @@
       "iocs": [],
       "sources": [
         "https://github.com/advisories/GHSA-qm8w-vx34-5j9j"
+      ]
+    },
+    {
+      "id": "pypi-publish-action-1-14-3",
+      "title": "pypa/gh-action-pypi-publish <= 1.14.2: a CA in the Sigstore chain the action pins for PyPI Trusted Publishing and attestations was revoked",
+      "date": "2026-10-30",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [],
+      "summary": "The pypa/gh-action-pypi-publish GitHub Action carries a certificate-authority chain that Sigstore uses when it issues Trusted Publishing and digital-attestation certificates for PyPI. A CA in that chain was revoked, and the action up to 1.14.2 still pins it - uploads through the old action trust a revoked CA, so their attestations cannot be relied on and registry-side verification may fail open or closed depending on the verifier. Fixed in 1.14.3.",
+      "affected": "pypa/gh-action-pypi-publish 1.14.2 and earlier, anywhere GitHub Actions publish to PyPI with Trusted Publishing or attestations.",
+      "fixed": [
+        "1.14.3"
+      ],
+      "checks": [],
+      "patch": [
+        "Bump the action to pypa/gh-action-pypi-publish@1.14.3 (or a later verified tag) in every publishing workflow",
+        "Re-verify the attestations of packages published through the old action - a revoked CA in the chain is exactly what attestation consumers must not trust blindly"
+      ],
+      "mitigation": [
+        "Until bumped: publish from a workflow pinned to 1.14.3 or upload through a maintained toolchain rather than the stale action"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-5xjx-3w67-w9x9",
+        "https://github.com/pypa/gh-action-pypi-publish/releases"
+      ]
+    },
+    {
+      "id": "adminneo-version-cache-dos",
+      "title": "AdminNeo 4.6.2-4.x: version-cache array injection causes persistent denial of service (CVE-2026-59978)",
+      "date": "2026-10-30",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-59978"
+      ],
+      "summary": "AdminNeo (the Adminer fork for managing MySQL/MariaDB databases) writes version-cache data from request input into an array slot an attacker can shape, so a crafted request poisons the cache and keeps the database admin tool failing - a persistent denial of service against the tool operators rely on when things break. Fixed in 5.5.0.",
+      "affected": "adminneo-org/adminneo 4.6.2 up to 4.x (fixed in 5.5.0).",
+      "fixed": [
+        "5.5.0"
+      ],
+      "checks": [
+        {
+          "kind": "composer",
+          "label": "adminneo-org/adminneo",
+          "packages": [
+            "adminneo-org/adminneo"
+          ],
+          "line": 1,
+          "min": "4.6.2",
+          "fixed": [
+            "5.5.0"
+          ]
+        }
+      ],
+      "patch": [
+        "composer require adminneo-org/adminneo:^5.5.0 and redeploy"
+      ],
+      "mitigation": [
+        "Until upgraded: keep the AdminNeo deployment off untrusted networks - it already holds database credentials"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-jm85-8cpp-9cjc"
+      ]
+    },
+    {
+      "id": "ivanti-connect-secure-2026-10",
+      "title": "Ivanti Connect Secure: predictable identifiers allow file upload and missing authentication allows privilege escalation - KEV chain exploited (CVE-2026-118527, CVE-2026-111357, CVE-2026-104935)",
+      "date": "2026-10-30",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [
+        "CVE-2026-118527",
+        "CVE-2026-111357",
+        "CVE-2026-104935"
+      ],
+      "summary": "A three-CVE chain on Ivanti Connect Secure, the remote-access VPN appliance. CVE-2026-118527 generates predictable numbers or identifiers, letting a remote authenticated attacker upload files with attacker-controlled content to a known location on disk. CVE-2026-111357 is a missing authentication check for a critical function that lets a local authenticated attacker escalate privileges. Both chain with CVE-2026-104935, the flaw CISA alerted on as newly exploited in October. CISA's known-exploited catalog added 118527 and 111357 on October 30 (due November 13 and November 2). Upload plus privilege escalation on the edge appliance is a webshell path - treat VPN appliances as compromised-until-verified.",
+      "affected": "Ivanti Connect Secure appliances on the versions named in Ivanti's security advisory for CVE-2026-104935 (which covers the chain).",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Apply the fixed Ivanti Connect Secure build named in Ivanti's advisory; the chain is actively exploited - do not wait on the KEV deadlines",
+        "After patching, run Ivanti's integrity check and hunt for uploaded webshells and unexpected processes - an upload primitive means the device may already be owned"
+      ],
+      "mitigation": [
+        "Until patched: restrict management access to trusted networks, enable the appliance's built-in integrity monitoring, and preserve logs before remediation"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://hub.ivanti.com/s/article/Security-Advisory-Ivanti-Connect-Secure-CVE-2026-104935?language=en_US",
+        "https://www.cisa.gov/news-events/alerts/2026/10/13/cisa-urges-patching-newly-exploited-vulnerability-ivanti-connect-secure",
+        "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+      ]
+    },
+    {
+      "id": "ourin-baileys-malware",
+      "title": "Malware in ourin-baileys (npm): a poisoned WhatsApp (Baileys) library lookalike",
+      "date": "2026-10-30",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "The npm package ourin-baileys - named after Baileys, the popular WhatsApp Web library - is malware: every version the advisory covers carries embedded malicious code (CWE-506), with no patched build and no source to review. A package that plugs into a WhatsApp session also sits beside the account's session credentials, so an infected install exposes the messaging account as well as the host. GitHub's advisory carries the standing malware advice: consider the machine compromised, rotate its secrets from a different machine, and remove the package.",
+      "affected": "ourin-baileys: every version (npm). No clean version exists - the package should be removed.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "ourin-baileys",
+          "package": "ourin-baileys",
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall ourin-baileys; clean lockfiles and CI images) and reinstall the real baileys from its official source",
+        "Treat the machine as compromised: rotate its secrets from a different machine, including the WhatsApp session/creds the library touched"
+      ],
+      "mitigation": [
+        "A name that echoes a popular library is a signal: verify package names against the official docs before installing"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-5qgv-v3j9-f64g"
       ]
     },
     {
@@ -773,6 +899,32 @@
         "https://thehackernews.com/2026/10/26400-valid-cloud-and-ai-credentials.html",
         "https://securityonline.info/gitee-exposed-credentials-scan/",
         "https://aiweekly.my/items/40765/26-400-valid-cloud-and-ai-credentials-found-exposed-in-public-gitee-repositories"
+      ]
+    },
+    {
+      "id": "oracle-ebs-101767",
+      "title": "Oracle E-Business Suite TCF servlet: unauthenticated SQL injection (CVSS 9.8) chained to OS command execution, probed within 24 hours of the patch (CVE-2026-101767)",
+      "date": "2026-10-28",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [
+        "CVE-2026-101767"
+      ],
+      "summary": "A CVSS 9.8 unauthenticated SQL injection in Oracle E-Business Suite's Thin Client Framework (TCF) servlet: any attacker with network access can chain SQL execution as the APPS database user into full operating-system command execution on the EBS application host, reaching financials, payroll, HR and procurement data. Horizon3.ai found it and disclosed it to Oracle on July 24; Oracle fixed it in the October 2026 Critical Patch Update, and threat intelligence firm Defused Cyber recorded live exploit probes against honeypot decoys on October 27 - one day after the patch. Two earlier EBS flaws of the same class (CVE-2025-61882, exploited by Cl0p, and CVE-2026-46817) show EBS is a repeat ransomware target.",
+      "affected": "Oracle E-Business Suite deployments on versions fixed by the October 2026 CPU (the TCF servlet exposed to the network).",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Apply Oracle's October 2026 Critical Patch Update for E-Business Suite (the CPU advisory's EBS rows) on every internet-reachable deployment"
+      ],
+      "mitigation": [
+        "Until patched: take EBS off the public internet - put the TCF servlet behind a VPN or an allow-list - and watch for SQLi probe patterns in the web logs",
+        "Preserve logs and hunt for command execution on the EBS host - the SQL-to-OS chain is the endgame"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://www.oracle.com/security-alerts/cpuoct2026.html",
+        "https://aviatrix.ai/threat-research-center/hackers-target-critical-oracle-e-business-suite-rce-flaw-cve-2026-101767/"
       ]
     },
     {
