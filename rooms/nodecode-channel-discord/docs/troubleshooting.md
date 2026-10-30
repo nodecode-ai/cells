@@ -149,6 +149,7 @@ fails, the log says `discord: could not read the bot's guilds (...); a
 | --- | --- |
 | `discord: ask ID runs in the channel, no thread opened: ...` | The bot could not open a thread, usually a missing Create Public Threads permission. The ask was answered in the channel. |
 | `discord: thread ID keeps its first words: ...` | Renaming the thread failed (the model call or Discord's rename). Harmless. |
+| `discord: the thread on message ID stays unlinked in the clients that took Discord's stale copy: ...` | The ask carried a link whose preview resolved after its thread opened, and Discord sent readers the ask as it was before the thread. The bot could not write the ask's flags back to resend it, usually a missing Manage Messages permission (see [setup.md](setup.md#4-permissions-and-the-invite)). The thread is there; a reload shows its link. |
 | `discord reaction on ID for SESSION refused, the lane stops reacting: ...` | Add Reactions or Read Message History is missing. |
 | `Discord REST METHOD LABEL forbidden; verify the bot's guild membership, channel permissions, and privileged intents (status 403: ...)` | Discord refused a call: check the bot's permissions in that channel. This line also shows as the `/channels` detail when an answer could not be posted. |
 | `Discord REST METHOD LABEL rate limited; retry later (status 429: ...)` | Discord's rate limit. Answers, final edits, deletions and reactions are retried up to three times before this shows. |

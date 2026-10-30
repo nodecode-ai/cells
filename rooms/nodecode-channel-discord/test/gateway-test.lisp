@@ -219,6 +219,50 @@ reaches the router."
       (is (equal "c3" (ncd::thread-channel-parent "t11")))))
   (clrhash ncd::*known-threads*))
 
+(deftest channel-discord-thread-restatement-routing ()
+  ;; Discord resolves a link preview after the message lands and restates
+  ;; the whole message from the copy it took then: a thread the bot opened in
+  ;; between is missing from it -- flags without HAS_THREAD -- and every
+  ;; client drops the thread's link from under the message.
+  (clrhash ncd::*known-threads*)
+  (clrhash ncd::*thread-owners*)
+  (flet ((opened (id owner)
+           (ncd::note-channel-dispatches
+            (dgw-dispatch "THREAD_CREATE"
+                          (format nil "{\"id\": ~s, \"parent_id\": \"c1\", \"owner_id\": ~s}" id owner))))
+         (restated (d-json)
+           (ncd:route-discord-thread-restatement (dgw-dispatch "MESSAGE_UPDATE" d-json)
+                                                 :bot-user-id "999")))
+    (opened "m1" "999")
+    (opened "m2" "u2")
+    (is (equal "999" (gethash "m1" ncd::*thread-owners*)))
+    (is (equal '(:channel-id "c1" :message-id "m1")
+               (restated (dgw-d "m1" "<@999> look https://x.com/a/status/1" :author "u2"
+                                :fields "\"flags\": 0, \"embeds\": [{\"type\": \"rich\"}],"))) "the preview's copy drops the bot's thread")
+    (is (equal '(:channel-id "c1" :message-id "m1")
+               (restated (dgw-d "m1" "<@999> look" :author "u2" :fields "\"flags\": 4,"))) "previews suppressed or not")
+    (is-table (d-json) (null (restated d-json))
+      ;; The fresh restatement carries the thread.
+      ((dgw-d "m1" "<@999> look" :author "u2" :fields "\"flags\": 32,"))
+      ((dgw-d "m1" "<@999> look" :author "u2" :fields "\"flags\": 36,"))
+      ;; An update that names no flags leaves a client's as they were.
+      ((dgw-d "m1" nil :author "u2" :fields "\"embeds\": [],"))
+      ;; No thread hangs off the message, or none in its channel.
+      ((dgw-d "m3" "<@999> look" :author "u2" :fields "\"flags\": 0,"))
+      ((dgw-d "m1" "<@999> look" :channel "c2" :author "u2" :fields "\"flags\": 0,"))
+      ;; A member's own thread is theirs to keep.
+      ((dgw-d "m2" "my topic" :author "u2" :fields "\"flags\": 0,")))
+    ;; A deleted thread is forgotten with its opener.
+    (ncd::note-channel-dispatches (dgw-dispatch "THREAD_DELETE" "{\"id\": \"m1\", \"parent_id\": \"c1\"}"))
+    (is (null (gethash "m1" ncd::*thread-owners*)))
+    (is (null (restated (dgw-d "m1" "<@999> look" :author "u2" :fields "\"flags\": 0,"))))
+    ;; Only an update restates a message.
+    (is (null (ncd:route-discord-thread-restatement
+               (dgw-dispatch "MESSAGE_CREATE" (dgw-d "m2" "my topic" :fields "\"flags\": 0,"))
+               :bot-user-id "999"))))
+  (clrhash ncd::*known-threads*)
+  (clrhash ncd::*thread-owners*))
+
 (deftest channel-discord-message-routing ()
   ;; Guild channel message.
   (let ((candidate (dgw-said "m1" "hi there" :user-name "kim" :bot "false")))

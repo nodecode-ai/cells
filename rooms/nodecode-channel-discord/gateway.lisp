@@ -218,15 +218,22 @@ NIL."
   "Thread channel id -> parent channel id, kept from the gateway's own thread
 dispatches.")
 
+(defvar *thread-owners* (make-hash-table :test #'equal)
+  "Thread channel id -> the id of the user who opened it, kept beside
+*KNOWN-THREADS* from the same dispatches.")
+
 (defun note-thread-channel (thread &aux (id (nlk:json-value thread :string "id")))
   "THREAD — a thread channel object (a GUILD_CREATE threads entry, the d of
 a THREAD_CREATE or THREAD_UPDATE, a starter message's thread) — into
-*KNOWN-THREADS* under its id, with its parent."
+*KNOWN-THREADS* under its id, with its parent, and who opened it into
+*THREAD-OWNERS*."
   ;; Answers the id, or NIL for anything that is not one.
   (when id
     (setf (gethash id *known-threads*)
           (or (nlk:json-value thread :string "parent_id")
-              (gethash id *known-threads*))))
+              (gethash id *known-threads*)))
+    (nlk:when-let (owner (nlk:json-value thread :string "owner_id"))
+      (setf (gethash id *thread-owners*) owner)))
   id)
 
 (defun thread-channel-parent (id)
@@ -273,7 +280,7 @@ CHANNEL_DELETE forget theirs."
                      do (note-channel-topic channel)))
               ((one-of "THREAD_CREATE" "THREAD_UPDATE") (note-thread-channel data))
               ((one-of "CHANNEL_CREATE" "CHANNEL_UPDATE") (note-channel-topic data))
-              ((one-of "THREAD_DELETE") (forget *known-threads*))
+              ((one-of "THREAD_DELETE") (forget *known-threads*) (forget *thread-owners*))
               ((one-of "CHANNEL_DELETE") (forget *channel-topics*))
               (t (return-from note-channel-dispatches nil)))
         t))))
@@ -452,6 +459,36 @@ the message something said to us, or NIL for every other update."
                involves-p
                (funcall involves-p content))
       (discord-message-candidate data bot-user-id))))
+
+;;; Discord resolves a message's link previews after the message lands and
+;;; announces them as an update of the whole message, written from the copy
+;;; it took when the message arrived. A thread opened on the message in
+;;; between is missing from that copy -- flags without HAS_THREAD, no thread
+;;; -- and a client takes the update as the message's new state: the link to
+;;; the thread drops from under the message until the client reloads, while
+;;; the platform holds the thread all along. An ask that carries a link
+;;; loses its thread's link this way whenever the thread opens before the
+;;; preview resolves, a few hundred milliseconds either way.
+(defparameter +discord-has-thread+ (ash 1 5)
+  "HAS_THREAD: a thread hangs off the message.")
+
+(defun route-discord-thread-restatement (payload &key bot-user-id)
+  "(:CHANNEL-ID C :MESSAGE-ID M) when PAYLOAD, a MESSAGE_UPDATE dispatch,
+restates message M of channel C without the thread BOT-USER-ID opened on it;
+NIL for every other dispatch."
+  ;; A thread hung off a message takes the message's own id, in the
+  ;; message's channel. Only an update that names its flags counts -- one
+  ;; that names none leaves a client's flags as they were -- and only a
+  ;; thread the bot opened: a member's own thread is theirs to keep.
+  (let* ((data (dispatch-data payload "MESSAGE_UPDATE"))
+         (id (nlk:json-value data :string "id"))
+         (channel (nlk:json-value data :string "channel_id"))
+         (flags (nlk:json-value data :integer "flags")))
+    (when (and id channel flags bot-user-id
+               (not (logtest flags +discord-has-thread+))
+               (equal channel (thread-channel-parent id))
+               (equal bot-user-id (gethash id *thread-owners*)))
+      (list :channel-id channel :message-id id))))
 
 (defun press-data (data)
   "What a component press in the INTERACTION_CREATE object DATA carries back:
