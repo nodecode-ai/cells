@@ -1,8 +1,56 @@
 {
   "format": 1,
-  "updated": "2026-10-30T04:17:33Z",
+  "updated": "2026-10-30T16:19:09Z",
   "window": "2026-10-16 to 2026-10-30",
   "advisories": [
+    {
+      "id": "nx-maven-gradle-cmdi",
+      "title": "@nx/maven and @nx/gradle before 22.7.9 / 23.1.2: OS command injection via nx.json plugin options (CVE-2026-119282)",
+      "date": "2026-10-30",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-119282"
+      ],
+      "summary": "The Nx Maven and Gradle plugins pass nx.json plugin options into shell commands without escaping: whoever can influence nx.json - a malicious dependency, a compromised repository, a merged pull request - injects OS commands that run with the developer's or CI runner's privileges. Fixed in 22.7.9 (the 21/22 lines) and 23.1.2.",
+      "affected": "@nx/maven 22.0.2 up to 22.7.8 and 23.0.0 up to 23.1.1; @nx/gradle 21.0.0 up to 22.7.8 and 23.0.0 up to 23.1.1.",
+      "fixed": [
+        "22.7.9",
+        "23.1.2"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@nx/maven",
+          "package": "@nx/maven",
+          "line": 1,
+          "fixed": [
+            "22.7.9",
+            "23.1.2"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@nx/gradle",
+          "package": "@nx/gradle",
+          "line": 1,
+          "fixed": [
+            "22.7.9",
+            "23.1.2"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install @nx/maven@^23.1.2 or @nx/gradle@^23.1.2 (22.7.9 on the 22 line) and rebuild the workspace"
+      ],
+      "mitigation": [
+        "Until upgraded: treat nx.json as executable code - review plugin option changes before they run in CI"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-qm8w-vx34-5j9j"
+      ]
+    },
     {
       "id": "shopify-app-token-exchange",
       "title": "shopify_app (Ruby) 22.1.0-23.0.2: token exchange shop context confusion may allow cross-shop authorization bypass (CVE-2026-63414)",
@@ -699,6 +747,32 @@
       "iocs": [],
       "sources": [
         "https://github.com/advisories/GHSA-3f7j-7jwc-fxfj"
+      ]
+    },
+    {
+      "id": "gitee-exposed-credentials-2026-10",
+      "title": "26,400 still-valid cloud and AI keys found in public Gitee repositories - anything ever committed there must be rotated",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Independent researcher Ben Zimmermann scanned 7.25 million public Gitee repositories with TruffleHog and Kingfisher and kept only the credentials that still worked: 26,400 live keys, led by 9,473 Alibaba Cloud AccessKey pairs, then 3,805 YouTube API keys, 3,170 DeepSeek keys, 1,489 Zhipu BigModel keys, 1,348 OpenAI keys, and smaller counts for GitHub, AWS, Google Cloud and Gemini. The scanners read every repository's full commit history - a key deleted from the code later is still in history and still counted. The vendors holding the most exposed keys received lists, but the developers who leaked them were not contacted and revocation is unconfirmed: if you have ever pushed a key to a public Gitee repository, you cannot assume it was revoked. Nearly half the credentials date from 2025; some go back to the late 2000s.",
+      "affected": "Any organization or developer whose keys were ever committed to a public Gitee repository - by commit date 12,242 of the exposed credentials are from 2025 alone.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Rotate every cloud and AI API key that ever touched a public Gitee repository, including keys you already deleted from the code - git history still holds them",
+        "Run a secret scan over the full commit history of your Gitee repositories (TruffleHog and Kingfisher found these) and rotate everything it flags",
+        "Move to scoped, short-lived credentials and secret scanning on push so the next leak dies quickly"
+      ],
+      "mitigation": [
+        "Watch billing and usage on Alibaba Cloud, YouTube, DeepSeek, BigModel, OpenAI, GitHub, AWS, GCP and Gemini accounts for unfamiliar activity - those hold the largest exposed pools"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://thehackernews.com/2026/10/26400-valid-cloud-and-ai-credentials.html",
+        "https://securityonline.info/gitee-exposed-credentials-scan/",
+        "https://aiweekly.my/items/40765/26-400-valid-cloud-and-ai-credentials-found-exposed-in-public-gitee-repositories"
       ]
     },
     {
@@ -1584,6 +1658,33 @@
         "https://osv.dev/vulnerability/MAL-2026-18334",
         "https://github.com/advisories/GHSA-fh55-fq5h-h352",
         "https://db.fluidattacks.com/vul/FLAT-ZBOJU/"
+      ]
+    },
+    {
+      "id": "foundation-passport-phishing-2026-10",
+      "title": "Foundation (Passport): backend breach through a self-hosted app exposed the support inbox and customer details, driving a 23,000-email phishing wave",
+      "date": "2026-10-26",
+      "severity": "high",
+      "exploited": true,
+      "cves": [],
+      "summary": "Attackers reached part of Foundation's backend (foundation.xyz, the Passport hardware wallet) through a vulnerability in a self-hosted application, likely gained access to the customer support inbox, and sent emails that appeared to come from Foundation's official domains - over 23,000 phishing attempts in the wave. Some emails carried customers' mailing addresses or phone numbers, and recipients included people who never ordered: the attacker appears to combine several recent data leaks, with some details possibly from the support inbox and recent orders on Foundation's Shopify store. Foundation shut down the sending within ten minutes of the first reports, revoked all API keys and took down the malicious domain. The Passport devices and funds are not affected.",
+      "affected": "Foundation customers: anyone whose mailing address, phone number or order details sat in the support inbox or the recent Shopify orders - expect targeted mail, SMS and voice phishing.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Re-issue any Foundation API keys from your account rather than reusing pre-incident ones",
+        "Treat addresses and phone numbers as exposed: expect phishing that references orders or Passport devices",
+        "The rule that decides everything: Foundation will never ask for seed words, recovery phrases, PINs or passphrases - anyone who does is stealing"
+      ],
+      "mitigation": [
+        "Verify any support contact through foundation.xyz channels only - the support inbox itself was reachable by the attacker",
+        "Hardware and funds are unaffected per the vendor: nobody legitimate will ask you to move funds because of this incident"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://community.foundation.xyz/t/important-security-notice-emails-that-appeared-to-come-from-foundation/1296",
+        "https://ambcrypto.com/foundation-hit-by-23000-phishing-emails-legacy-database-may-be-exposed/",
+        "https://www.chaincatcher.com/en/article/2299776"
       ]
     },
     {
