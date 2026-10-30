@@ -16,9 +16,11 @@
 ;;;;
 ;;;; A url without a command is streamable HTTP, anything else is stdio; an
 ;;;; explicit "transport" ("stdio" | "http" | "streamable-http", or an object
-;;;; with that "type") wins. No cwd, no ${VAR} expansion, no per-tool
-;;;; allow/deny, no OAuth — as the Zig client had none. Header values are
-;;;; secrets: nothing in this cell ever prints one; surfaces show a count.
+;;;; with that "type") wins. No cwd, no per-tool allow/deny, no OAuth — as
+;;;; the Zig client had none. Header values are secrets: nothing in this cell
+;;;; ever prints one; surfaces show a count. A header or env value may name
+;;;; its secret rather than hold it (references, below), so the config need
+;;;; carry none.
 ;;;;
 ;;;; Each entry validates on its own: a refused entry becomes a spec carrying
 ;;;; the refusal text (the server shows as `refused` in every status) and its
@@ -69,6 +71,114 @@
                  #'string< :key #'car))
           (t (nlk:config-error "~a must be an object, got ~s" key value)))))
 
+;;; --- references -------------------------------------------------------------
+;;;
+;;; A header or env value may name its secret rather than hold it:
+;;;
+;;;   "Authorization": "Bearer ${GITHUB_TOKEN}"          a variable of this process
+;;;   "Authorization": "Bearer ${env:GITHUB_TOKEN}"      the same
+;;;   "Authorization": "Bearer ${file:~/.secrets/gh}"    a file's text, trimmed
+;;;
+;;; ${NAME} is how Claude Code's .mcp.json and trellage write one. The spec
+;;; keeps the reference and each connect resolves it afresh, so a rotated
+;;; secret takes the next reconnect and the value lives only in the
+;;; transport: never in a spec, a status or a refusal. A background
+;;; gateway's unit passes none of a shell's variables; ${file:...} is the
+;;; reference that reaches it.
+
+(nlk:define-error reference-unresolved (error) (detail)
+  (:report "~a" detail)
+  (:documentation "A reference names a variable that is unset or empty, or a
+file that cannot be read: DETAIL names the reference, never a value."))
+
+(defun variable-name-p (text)
+  "Whether TEXT is a variable name: [A-Za-z_][A-Za-z0-9_]*."
+  (and (plusp (length text))
+       (not (digit-char-p (char text 0)))
+       (every (lambda (char) (or (char= char #\_) (char<= #\a char #\z)
+                                 (char<= #\A char #\Z) (char<= #\0 char #\9)))
+              text)))
+
+(defun parse-reference (inner where)
+  "(:env NAME INNER) or (:file PATH INNER) for INNER, the text between ${ and }."
+  (flet ((refuse ()
+           (nlk:config-error "~a: ${~a} is not a reference this client reads: ${NAME}, ${env:NAME} or ${file:PATH}"
+                             where inner)))
+    (cond ((variable-name-p inner) (list :env inner inner))
+          ((uiop:string-prefix-p "env:" inner)
+           (if (variable-name-p (subseq inner 4)) (list :env (subseq inner 4) inner) (refuse)))
+          ((uiop:string-prefix-p "file:" inner)
+           (let ((path (subseq inner 5)))
+             ;; The gateway's working directory is nobody's choice: no relative path.
+             (unless (or (uiop:string-prefix-p "~/" path)
+                         (uiop:absolute-pathname-p (ignore-errors (uiop:parse-native-namestring path))))
+               (nlk:config-error "~a: ${~a} needs an absolute path or one under ~~/" where inner))
+             (list :file path inner)))
+          (t (refuse)))))
+
+(defun reference-pieces (text where &aux (pieces '()) (start 0))
+  "TEXT as its pieces: literal strings, and a PARSE-REFERENCE list for each
+${...}. WHERE (\"headers.Authorization\") heads a config refusal."
+  (loop
+    (let ((open (search "${" text :start2 start)))
+      (unless open
+        (when (< start (length text)) (push (subseq text start) pieces))
+        (return (nreverse pieces)))
+      ;; Only the reference is ever quoted: an unclosed ${ may be a literal secret's.
+      (let ((close (or (position #\} text :start open)
+                       (nlk:config-error "~a: a ${ is unclosed" where))))
+        (when (< start open) (push (subseq text start open) pieces))
+        (push (parse-reference (subseq text (+ open 2) close) where) pieces)
+        (setf start (1+ close))))))
+
+(defun checked-references (alist key)
+  "ALIST, the ((name . value) ...) of KEY (\"headers\", \"env\"), once every
+reference in its values parses."
+  (dolist (pair alist alist)
+    (reference-pieces (cdr pair) (format nil "~a.~a" key (car pair)))))
+
+(defun reference-path (path)
+  "PATH as a pathname, a leading ~/ read as the home."
+  (uiop:parse-native-namestring
+   (if (uiop:string-prefix-p "~/" path)
+       (concatenate 'string (uiop:native-namestring (user-homedir-pathname)) (subseq path 2))
+       path)))
+
+(defun reference-value (piece where one-line)
+  "What PIECE names, trimmed; REFERENCE-UNRESOLVED when it names nothing,
+holds a NUL, or (ONE-LINE, a header's rule) a line break."
+  (destructuring-bind (kind name inner) piece
+    (flet ((unresolved (control &rest arguments)
+             (error 'reference-unresolved :detail (format nil "~a: ~?" where control arguments))))
+      (let* ((raw (ecase kind
+                    (:env (uiop:getenv name))
+                    (:file (handler-case (uiop:read-file-string (reference-path name))
+                             (error (condition)
+                               (unresolved "cannot read ${~a}: ~a" inner condition))))))
+             (value (and raw (nlk:trimmed raw))))
+        (cond ((null raw) (unresolved "${~a} is unset" inner))
+              ((zerop (length value)) (unresolved "${~a} is empty" inner))
+              ((find (code-char 0) value) (unresolved "${~a} holds a NUL" inner))
+              ((and one-line (find-if (lambda (char) (member char '(#\Return #\Newline))) value))
+               (unresolved "${~a} holds a line break" inner))
+              (t value))))))
+
+(defun resolve-references (text where &key (one-line t))
+  "TEXT with each reference in it replaced by what it names. WHERE heads a
+refusal; ONE-LINE, a header's rule, refuses a value holding a line break."
+  (if (search "${" text)
+      (format nil "~{~a~}" (mapcar (lambda (piece)
+                                     (if (stringp piece) piece (reference-value piece where one-line)))
+                                   (reference-pieces text where)))
+      text))
+
+(defun resolved-alist (alist key &key (one-line t))
+  "ALIST, the ((name . value) ...) of KEY, with every value's references resolved."
+  (mapcar (lambda (pair)
+            (cons (car pair)
+                  (resolve-references (cdr pair) (format nil "~a.~a" key (car pair)) :one-line one-line)))
+          alist))
+
 (defun parse-server-entry (name entry)
   "A SERVER-SPEC for ENTRY, or one carrying the refusal text."
   (nlk:with-handlers ((nlk:config-refusal (condition)
@@ -112,9 +222,9 @@
        :transport transport
        :command command
        :args (nlk:config-string-list entry "args")
-       :env (string-alist entry "env")
+       :env (checked-references (string-alist entry "env") "env")
        :url url
-       :headers (string-alist entry "headers")
+       :headers (checked-references (string-alist entry "headers") "headers")
        :timeout-ms (let ((value (nlk:config-integer entry "timeout_ms" 0)))
                      (cond ((zerop value) +default-timeout-ms+)
                            ((minusp value)
@@ -144,10 +254,12 @@ own validation, and the env allowlist."
          allowlist))
       (values '() +default-inherit-env+)))
 
-(defun child-environment (spec allowlist &aux (env spec.env))
+(defun child-environment (spec allowlist
+                          &aux (env (resolved-alist spec.env "env" :one-line nil)))
   "The child's whole environment as \"NAME=VALUE\" strings: the allowlisted
 variables that exist here (exported shell functions, the \"() {\" values,
-skipped as the reference SDK skips them), then the entry's env on top."
+skipped as the reference SDK skips them), then the entry's env on top, its
+references resolved."
   (mapcar (lambda (pair) (format nil "~a=~a" (car pair) (cdr pair)))
           (append (loop for name in allowlist
                         for value = (uiop:getenv name)

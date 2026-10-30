@@ -60,6 +60,7 @@
                (:file "rpc-test")
                (:file "stdio-test")
                (:file "http-test")
+               (:file "reference-test")
                (:file "surface-test")
                (:file "wrappers-test")
                (:file "primer-test")

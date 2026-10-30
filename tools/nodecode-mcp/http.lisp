@@ -41,6 +41,12 @@
 
 (nlk:access (transport http-transport))
 
+;;; Its headers are resolved values: printed, a transport shows a count.
+(defmethod print-object ((transport http-transport) stream)
+  (print-unreadable-object (transport stream :type t :identity t)
+    (format stream "~a (~d header~:p)" (http-transport-url transport)
+            (length (http-transport-headers transport)))))
+
 (defun request-headers (transport)
   (append `(("content-type" . "application/json")
             ("accept" . "application/json, text/event-stream")
