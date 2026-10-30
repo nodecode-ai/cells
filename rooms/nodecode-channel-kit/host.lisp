@@ -2202,7 +2202,7 @@ dropped now, one still running answers its turn and goes with the next reap."
 
 (defun bind-admitted-turn (lane admission
                            &aux (turn-id (nlk:active-input-admission-turn-id admission))
-                             (stopped nil))
+                           (stopped nil))
   "LANE's line watches the turn the engine says its ask started -- ADMISSION
 names it -- from the admission on, not from that turn's first frame."
   ;; A line opened at admission learned its turn only from TURN.STARTED's
@@ -2245,7 +2245,7 @@ slot back. => T when there was such a line."
 
 (defun drop-duplicate-admission (host lane admission
                                  &aux (turn-id (nlk:active-input-admission-turn-id admission))
-                                      (status-id nil) (reactions '()))
+                                 (status-id nil) (reactions '()))
   "An ask the engine refused as one it had already admitted -- ADMISSION
 names the turn its command id ran -- runs nothing: the line this delivery
 opened settles unseen, a thread it opened goes with the lane, the ask's

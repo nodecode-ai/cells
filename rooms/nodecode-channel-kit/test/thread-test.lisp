@@ -403,11 +403,10 @@ origin noted — ORIGIN the keys past the three that place it."
       ;; The reaper lets the lane go; the platform restates the ask.
       (nck:remove-lane (nck:host-lanes host) "chat-100-m5")
       (thread-ask host "<@999> fix the auth bug")
-      (is (await (:timeout 10) (and (lane) (not (nck::lane-live-p (lane)))))
-          "the second admission settled: no line left waiting on a turn")
+      ;; The second admission settled: no line left waiting on a turn.
+      (is (await (:timeout 10) (and (lane) (not (nck::lane-live-p (lane))))))
       (is (= 1 (started)) "the ask ran once")
-      (is (= 1 (length (plans-matching (recorded-plans executor) :content "the answer")))
-          "and was answered once"))))
+      (is (= 1 (length (plans-matching (recorded-plans executor) :content "the answer"))) "and was answered once"))))
 
 (deftest channel-a-line-holds-its-turn-without-its-first-frame ()
   ;; A line learned its turn only from TURN.STARTED's frame, and one the fold
@@ -418,8 +417,7 @@ origin noted — ORIGIN the keys past the three that place it."
                   :name "no-first-frame")
     (nle:unhook :frame (format nil "channel-~a" (nck::host-id host)))
     (thread-ask host "<@999> fix the auth bug")
-    (is (await-plan executor :content "the answer" :timeout 20)
-        "the answer landed though no frame was folded")))
+    (is (await-plan executor :content "the answer" :timeout 20) "the answer landed though no frame was folded")))
 
 (deftest channel-stop-settles-a-line-with-no-turn ()
   ;; Stop cancelled by turn id alone: on a line with none it warned and left
@@ -431,8 +429,7 @@ origin noted — ORIGIN the keys past the three that place it."
       (bt2:with-lock-held ((nck::lane-lock lane))
         (nck:lane-open-digest lane (nck::now-ms)))
       (nck::stop-pressed host "u1" "chat-100-m9" "kim")
-      (is (eq :cancelled (nck:turn-digest-phase (nck:lane-digest lane)))
-          "the line settled")
+      (is (eq :cancelled (nck:turn-digest-phase (nck:lane-digest lane))) "the line settled")
       (is (equal "stopped by kim" (nck::turn-digest-detail (nck:lane-digest lane))))
       (is (await (:timeout 10) (not (nck::lane-live-p lane)))))))
 

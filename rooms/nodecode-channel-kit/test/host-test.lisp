@@ -1511,11 +1511,10 @@ LANE, as the one running channel."
                     (mapcar #'nck:press-token lines))))
       (is (eql count (length datas)) "every press was minted")
       (let ((nck::*presses* (make-hash-table :test #'equal :synchronized t)))
-        (is (equal (car (last lines)) (nck:said-line (car (last datas))))
-            "the newest press reads back from the store")
+        (is (equal (car (last lines)) (nck:said-line (car (last datas)))) "the newest press reads back from the store")
+        ;; A displaced press says nothing, never another's line.
         (is (loop for line in lines for data in datas
-                  always (member (nck:said-line data) (list nil line) :test #'equal))
-            "a displaced press says nothing, never another's line")))))
+                  always (member (nck:said-line data) (list nil line) :test #'equal)))))))
 
 (deftest channel-a-command-answers-a-room-its-dialog-as-a-card ()
   ;; A command answers a shell with a dialog beside its words (NLE:SLASH's
@@ -1626,10 +1625,10 @@ LANE, as the one running channel."
       (is (equal "Evict through…" (second (first (nth-value 1 (nck::dialog-card many "/context history"))))) "seven rows keep a menu that says what a pick does"))
     (let ((own (nlk:json-object "rows" (vector (nlk:json-object "label" "Sitting in" "detail" "#General" "verb" "leave"
                                                                 "run" (nlk:json-object "enter" "/voice leave"))))))
+      ;; A row that names its own press is pressed by that word, over the hint's.
       (is (equal '((:row nil "Sitting in" "#General" ("Leave" "/voice leave" :secondary nil))
                    (("Refresh" "/voice" :secondary nil)))
-                 (press-lines (nth-value 1 (nck::dialog-card own "/voice"))))
-          "a row that names its own press is pressed by that word, over the hint's"))))
+                 (press-lines (nth-value 1 (nck::dialog-card own "/voice"))))))))
 
 (deftest channel-a-dialog-card-draws-a-rows-options-as-its-menu ()
   ;; A row that offers picks (NLE:LIST-DIALOG's OPTIONS) is a menu in its
