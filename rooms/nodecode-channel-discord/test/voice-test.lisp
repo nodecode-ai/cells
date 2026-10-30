@@ -542,10 +542,8 @@ thinks with aside."
                  (subseq (voice-rows (nth-value 1 (ncd:voice-command "" (voice-section) "tui-1"))) 2 4))))
     (let ((ncd:*voice-lane* (voice-lane-for-test)) (nck:*command-source* nil))
       (is (equal '("Sitting in" "Talking through" "Hearing")
-                 (mapcar #'first (voice-seat-rows (nth-value 1 (ncd:voice-command "" (voice-section) "tui-1")))))
-          "a shell's dialog offers no notes to take and no voice messages"))
-    (is (null (nth-value 1 (ncd:voice-command "status" (voice-section))))
-        "/voice status stays words")))
+                 (mapcar #'first (voice-seat-rows (nth-value 1 (ncd:voice-command "" (voice-section) "tui-1"))))) "a shell's dialog offers no notes to take and no voice messages"))
+    (is (null (nth-value 1 (ncd:voice-command "status" (voice-section)))) "/voice status stays words")))
 
 (deftest channel-discord-voice-sub-lists-pick-and-the-pick-lands ()
   ;; Join with nobody to sit beside lists the voice channels and who is in
@@ -809,12 +807,9 @@ thinks with aside."
           (gethash 11 (ncd::voice-lane-speaker-ids lane)) "u-allowed"
           (gethash 12 (ncd::voice-lane-speaker-ids lane)) "u-allowed")
     (ncd::voice-close-finished-utterances lane)
-    (is (null (gethash 11 (ncd::voice-lane-utterances lane)))
-        "a quiet entry that never held a word is dropped")
-    (is (not (null (gethash 12 (ncd::voice-lane-utterances lane))) )
-        "one still filling is not")
-    (is (null (nck:queue-pop (ncd::voice-lane-work-queue lane) 0))
-        "and neither becomes an ask")))
+    (is (null (gethash 11 (ncd::voice-lane-utterances lane))) "a quiet entry that never held a word is dropped")
+    (is (not (null (gethash 12 (ncd::voice-lane-utterances lane)))) "one still filling is not")
+    (is (null (nck:queue-pop (ncd::voice-lane-work-queue lane) 0)) "and neither becomes an ask")))
 
 (deftest channel-discord-voice-audio-that-never-opens-is-deafness ()
   ;; Audio from a mouth this lane holds a key for that decrypts to nothing
