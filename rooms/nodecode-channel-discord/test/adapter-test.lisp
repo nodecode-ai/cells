@@ -248,10 +248,18 @@ adapter and the fake gateway have stopped."
                (ncd:discord-strip-mention "<@999> fix the auth bug" "999")))
     (is (equal "fix it" (ncd:discord-strip-mention "<@!999> fix it" "999")))
     (is (equal "<@1> hi" (ncd:discord-strip-mention "<@1> hi" nil)))
-    (is (equal "Discord guild g1, channel c1, thread t1 (thread). The bot's own user id is 999."
-               (ncd:discord-where-text
-                (candidate :guild "g1" :thread "t1" :parent "c1" :kind "thread")
-                "999")))
+    (let ((ncd::*discord-user-names* (make-hash-table :test #'equal)))
+      (is (equal "Discord guild g1, channel c1, thread t1 (thread). The bot's own user id is 999."
+                 (ncd:discord-where-text
+                  (candidate :guild "g1" :thread "t1" :parent "c1" :kind "thread")
+                  "999")))
+      ;; Once a message has carried the bot's name, the lane knows the @name
+      ;; a mention of it reads as.
+      (setf (gethash "999" ncd::*discord-user-names*) "scrap")
+      (is (equal "Discord guild g1, channel c1, thread t1 (thread). The bot's own user id is 999, its name @scrap."
+                 (ncd:discord-where-text
+                  (candidate :guild "g1" :thread "t1" :parent "c1" :kind "thread")
+                  "999"))))
     ;; The channel's topic rides along, a thread's its parent's: quoted, one
     ;; line, and named as a label, never an instruction.
     (ncd::note-channel-topic (nlk:json-object "id" "c1" "topic" (format nil "Ship notes~%\"v2\" only")))
@@ -287,6 +295,38 @@ adapter and the fake gateway have stopped."
         ("ncd:discord-handle-dispatch (adapter payload)"
          "naming where gateway events can be observed")
         ("nck:deliver-answer (host lane digest)" "beneath the kit's own seams")))))
+
+(deftest channel-discord-a-second-thread-on-a-message-is-the-first ()
+  ;; Two bots one message names both open a thread off it. Discord lets the
+  ;; first, and refuses the second with 400 and code 160004; the thread already
+  ;; there carries the message's own id, so the second takes it.
+  (flet ((refused (status &rest body)
+           (ncd::discord-thread-of-refusal
+            (nck:make-execution :ok-p nil :status status :body (apply #'nlk:make-json-object body))
+            "m1")))
+    (is (equal "m1" (refused 400 "code" 160004
+                             "message" "A thread has already been created for this message")))
+    (is (null (refused 400 "code" 50035 "message" "Invalid Form Body")) "another refusal names no thread")
+    (is (null (refused 403 "code" 50013 "message" "Missing Permissions")))
+    (is (null (ncd::discord-thread-of-refusal
+               (nck:make-execution :ok-p t :status 201 :body (nlk:make-json-object "id" "t9"))
+               "m1")) "an opened thread is no refusal"))
+  (is (eq #'ncd::discord-thread-of-refusal
+          (nck::platform-thread-of-refusal (ncd:discord-platform :bot-user-id "999"))) "the Discord platform carries the reader"))
+
+(deftest channel-discord-mentions-read-as-names ()
+  ;; The line the model reads: our own mention goes when it is the only one,
+  ;; and stays, as our name, beside another's -- with it gone, `<@us> <@them>
+  ;; yo!' would open by naming somebody else, the line the room contract
+  ;; leaves to them. Every mention whose name a message carried reads @name.
+  (let ((ncd::*discord-user-names* (make-hash-table :test #'equal)))
+    (setf (gethash "999" ncd::*discord-user-names*) "scrap"
+          (gethash "777" ncd::*discord-user-names*) "Elektra")
+    (is (equal "fix it" (ncd:discord-strip-mention "<@999> fix it" "999")))
+    (is (equal "@scrap @Elektra yo!" (ncd:discord-strip-mention "<@999> <@777> yo!" "999")))
+    (is (equal "@Elektra @scrap yo!" (ncd:discord-strip-mention "<@!777> <@!999> yo!" "999")))
+    (is (equal "<@555> saw @Elektra" (ncd:discord-strip-mention "<@555> saw <@777>" "999")) "a name never carried stays an id")
+    (is (equal "<@&4> ping" (ncd:discord-strip-mention "<@999> <@&4> ping" "999")) "a role is nobody's name")))
 
 (deftest channel-discord-dispatch-hands-a-reaction-to-the-kit ()
   ;; The wiring, which neither the route nor the kit handler sees on its

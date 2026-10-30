@@ -606,6 +606,25 @@ whose d object is D-JSON. KEYS reach the router as they are."
     (is (not (nck:candidate-addressed-p (candidate :bot-user-id "1"))))
     (is (not (nck:candidate-addressed-p (candidate))))))
 
+(deftest channel-discord-a-message-names-the-bots-it-asks ()
+  ;; A person who names other bots beside this one asks them too: the
+  ;; candidate carries them, never this bot or a person, and every name the
+  ;; message carries is learned for the line the model reads. A notice of a
+  ;; deed -- a thread renamed -- is no line at all; a reply is one.
+  (let ((ncd::*discord-user-names* (make-hash-table :test #'equal)))
+    (let ((candidate (dgw-said "m1" "<@999> <@777> <@42> yo!"
+                               :author "u2" :user-name "peas" :bot-user-id "999"
+                               :fields "\"mentions\": [{\"id\": \"999\", \"username\": \"scrap\", \"bot\": true},
+                                                    {\"id\": \"777\", \"username\": \"Elektra\", \"bot\": true},
+                                                    {\"id\": \"42\", \"username\": \"kim\"}],")))
+      (is (equal '(("777" . "Elektra")) (nck::candidate-mentioned-bots candidate)))
+      (is (equal "Elektra" (gethash "777" ncd::*discord-user-names*)) "a mention's name is learned")
+      (is (equal "scrap" (gethash "999" ncd::*discord-user-names*)))
+      (is (equal "peas" (gethash "u2" ncd::*discord-user-names*)) "and the author's"))
+    (is (null (nck::candidate-mentioned-bots (dgw-said "m2" "<@999> hi" :author "u2" :bot-user-id "999"))) "a message naming no other bot carries none")
+    (is (null (dgw-said "m3" "compare notes" :author "999" :bot-user-id "999" :fields "\"type\": 4,")) "a thread renamed is no line")
+    (is (dgw-said "m4" "and?" :author "u2" :bot-user-id "999" :fields "\"type\": 19,") "a reply is")))
+
 (deftest channel-discord-reply-carries-the-answered-message ()
   ;; The reply gesture decides the lane; what was answered must ride with the
   ;; ask — the lane reads it without a fetch.

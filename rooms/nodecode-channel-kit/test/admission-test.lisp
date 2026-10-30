@@ -81,6 +81,33 @@
                 :reject "bot_not_mentioned" "a bot let in by mention only")
     (is-inbound policy (test-candidate :text "status?") :answer nil "a person needs no mention")))
 
+(deftest channel-admission-a-peer-talks-by-name ()
+  ;; A peer -- a bot a person called into this thread beside this one -- is let
+  ;; in whatever allow_bots says, and talks to it by name alone: a line of its
+  ;; that mentions the bot is an ask, every other line is the thread's
+  ;; context, in a room that speaks freely and as a reply to the bot's own
+  ;; message too. Every other gate still holds.
+  (flet ((peer (&rest keys)
+           (let ((candidate (apply #'test-candidate (append keys (list :is-bot t :user "777"
+                                                                       :thread "t1" :parent "100")))))
+             (setf (gethash "peer" (nck::candidate-source candidate)) t)
+             candidate)))
+    (let ((policy (channel-policy :self-id "999" :mention-target "999"
+                                  :mention-test #'nck:discord-mention-p)))
+      (is-inbound policy (peer :text "<@999> your turn") :answer nil "a peer that names the bot asks it")
+      (is-inbound policy (peer :text "done, over to the room")
+                  :observe "peer_not_mentioned" "a line that names nobody is the thread's context")
+      (is-inbound policy (peer :text "agreed" :addressed t)
+                  :observe "peer_not_mentioned" "a reply to the bot is no ask from a peer")
+      (is-inbound policy (test-candidate :is-bot t :user "777" :thread "t1" :parent "100"
+                                         :text "<@999> your turn")
+                  :reject "bot_author" "a bot nobody called in is still refused")
+      (is-inbound policy (peer :user "999" :text "<@999> me") :reject "self_author"))
+    (is-inbound (channel-policy :allowed-users '("42") :self-id "999" :mention-target "999"
+                                :mention-test #'nck:discord-mention-p)
+                (peer :text "<@999> your turn")
+                :reject "user_not_allowed" "a peer passes the user gate like anyone")))
+
 (deftest channel-admission-roles-and-pairing ()
   ;; Who may talk is three grants in one gate: a listed user, one holding a
   ;; listed role, one the operator paired.

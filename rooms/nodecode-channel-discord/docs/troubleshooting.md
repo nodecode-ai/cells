@@ -106,6 +106,9 @@ recorded as refusals: the message becomes context for the next ask instead.
   or list the channel in `free_response_channels`.
 - The message opens by addressing someone else (another user's mention, or a
   name from `other_addressees`).
+- A peer (another bot named beside this one in the ask that opened the
+  thread) posted without mentioning this bot, or asked it a fourth time
+  since a person last wrote there. See [other bots](rooms.md#other-bots).
 
 Other causes:
 
