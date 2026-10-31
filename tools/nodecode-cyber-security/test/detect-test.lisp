@@ -36,6 +36,7 @@
 (deftest cyber-security-a-command-check-reads-its-output (with-stubbed-security)
   (let ((php (sp-check "{\"kind\":\"version\",\"command\":[\"php\",\"-r\",\"echo PHP_VERSION;\"],\"fixed\":[\"8.3.36\"],\"backport\":[\"sh\",\"-c\",\"zgrep CVE\"]}"))
         (tls (sp-check "{\"kind\":\"command\",\"needs\":\"host\",\"match\":\"(?i)emsign|emudhra\",\"command\":[\"sh\",\"-c\",\"openssl s_client -connect '{host}:443'\"]}")))
+    (sp-pin php tls)
     (is (eq :absent (getf (nodecode-cyber-security::run-check php) :status)) "no php here")
     (setf *sp-outputs* '(("php" "8.3.6" 0)))
     (is (eq :vulnerable (getf (nodecode-cyber-security::run-check php) :status)) "8.3.6 by number")

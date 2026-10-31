@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "updated": "2026-10-31T04:20:19Z",
+  "updated": "2026-10-31T21:21:15Z",
   "window": "2026-10-17 to 2026-10-31",
   "advisories": [
     {
@@ -542,6 +542,47 @@
       ]
     },
     {
+      "id": "drupal-commerce-118539",
+      "title": "Drupal Commerce Core before 3.3.13 / 8.x-2.41: missing authorization (Forceful Browsing) bypasses access controls on storefront routes and fields, exploited",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": true,
+      "cves": [
+        "CVE-2026-118539"
+      ],
+      "summary": "A missing authorization check - Drupal's 'Forceful Browsing' class - in the Commerce Core module lets an attacker bypass access controls on certain routes and entity fields. On a storefront that reaches orders, prices and customer data, and Drupal states the flaw is actively exploited in the wild (it is not in CISA's catalog yet - do not wait for it). Drupal rates the advisory highly critical; impact is on the store owner's finances and data. Reported by Dan Puccetti, Marcus Johansson and Robert Snyder.",
+      "affected": "Drupal Commerce Core 3.x before 3.3.13 and the 8.x-2.x line before 8.x-2.41.",
+      "fixed": [
+        "3.3.13",
+        "2.41"
+      ],
+      "checks": [
+        {
+          "kind": "composer",
+          "label": "drupal/commerce",
+          "packages": [
+            "drupal/commerce"
+          ],
+          "line": 1,
+          "fixed": [
+            "3.3.13",
+            "2.41"
+          ]
+        }
+      ],
+      "patch": [
+        "Update Drupal Commerce Core to 3.3.13 (3.x) or 8.x-2.41 (older sites) - drush updb/composer update drupal/commerce - and clear caches"
+      ],
+      "mitigation": [
+        "Until upgraded: review orders, prices and account changes from the last few weeks for anything unfamiliar (Drupal's own guidance), and keep commerce admin routes behind the admin network"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://briandeitch.com/blog/drupal-commerce-exploited-wordpress-core-rce-race",
+        "https://www.drupal.org/security"
+      ]
+    },
+    {
       "id": "nx-maven-gradle-cmdi",
       "title": "@nx/maven and @nx/gradle before 22.7.9 / 23.1.2: OS command injection via nx.json plugin options (CVE-2026-119282)",
       "date": "2026-10-30",
@@ -713,6 +754,30 @@
       "iocs": [],
       "sources": [
         "https://github.com/advisories/GHSA-5qgv-v3j9-f64g"
+      ]
+    },
+    {
+      "id": "au-bank-salesforce-leak-2026-10",
+      "title": "AU Small Finance Bank: potential data leak through a Salesforce-hosted platform exposes vehicle loan customer data; listed on the Scarlettgroup leak site",
+      "date": "2026-10-30",
+      "severity": "high",
+      "exploited": true,
+      "cves": [],
+      "summary": "AU Small Finance Bank (India) is investigating a potential data leak involving a software-as-a-service platform managed and hosted by Salesforce that holds limited data on the bank's vehicle loan customers; the bank states its own systems are unaffected and banking services are normal. The bank was listed on the Scarlettgroup cybercrime leak site on October 29; what was accessed and how has not been independently established. It lands in a wave of Indian banking-sector exposures - State Bank of India identified 3,897 customer records among dark-web data this month, and Bank of Baroda disclosed an employee-email compromise in July.",
+      "affected": "AU Small Finance Bank vehicle loan customers: the exposed platform held limited vehicle-loan data - treat personal details as potentially known to the extortion group.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Vehicle loan customers: expect targeted phishing referencing loans, vehicles or KYC details - verify any contact through the bank's official channels only",
+        "Watch account and credit activity and report anything unfamiliar to the bank promptly"
+      ],
+      "mitigation": [
+        "Follow the bank's investigation updates for the confirmed scope",
+        "The bank's own systems are unaffected per its statement: nobody legitimate will ask for credentials or to move funds because of this incident"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://bfsi.economictimes.indiatimes.com/articles/au-small-finance-bank-says-investigating-potential-data-leak-involving-salesforce-hosted-platform/135350887"
       ]
     },
     {
@@ -1463,6 +1528,50 @@
       "sources": [
         "https://www.oracle.com/security-alerts/cpuoct2026.html",
         "https://aviatrix.ai/threat-research-center/hackers-target-critical-oracle-e-business-suite-rce-flaw-cve-2026-101767/"
+      ]
+    },
+    {
+      "id": "wordpress-core-7-1-4",
+      "title": "WordPress 4.7-7.1.3: RCE through the upgrade unpack race - installer files land web-reachable, 60,000 attacks a day",
+      "date": "2026-10-28",
+      "severity": "high",
+      "exploited": true,
+      "cves": [],
+      "summary": "A remote code execution in WordPress core itself (CVSS 8.1): during full-package core upgrades the updater unpacks files, including the installer, into a predictable web-reachable folder under wp-content/upgrade, and an attacker who wins the seconds-long race - polling installer paths and setup-config.php until an upgrade starts - runs code. Wordfence blocked 60,471 attempts in one 24-hour window (62,969 in a wider count), the biggest sources hammering small sets of sites for about 14.5 hours; auto-updates make the timing more predictable than it sounds. No CVE has been assigned; WordPress shipped the fix in the 7.1.4 security release of October 28.",
+      "affected": "WordPress 4.7 through 7.1.3 - any site that runs full-package core upgrades with wp-content/upgrade reachable from the web.",
+      "fixed": [
+        "7.1.4"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "needs": "dir",
+          "label": "wordpress",
+          "command": [
+            "sh",
+            "-c",
+            "grep -o \"wp_version *= *'[^']*\" '{dir}/wp-includes/version.php' 2>/dev/null | head -1"
+          ],
+          "line": 1,
+          "fixed": [
+            "7.1.4"
+          ]
+        }
+      ],
+      "patch": [
+        "Update WordPress to 7.1.4 or later (Dashboard - Updates - Update Now, or your deployment pipeline) and confirm the version even if auto-updates are on"
+      ],
+      "mitigation": [
+        "Hunt: review web logs for requests to installer paths under wp-content/upgrade and to setup-config.php during upgrade windows - the observed pattern is ~14.5h polling of the same sites",
+        "Deny web access to wp-content/upgrade and the installer at the server or WAF, and keep admin panels off the open internet"
+      ],
+      "iocs": [
+        "probes of setup-config.php and installer paths under wp-content/upgrade (Wordfence: 60,471 blocked attempts in 24 hours)"
+      ],
+      "sources": [
+        "https://wordpress.org/news/2026/10/wordpress-7-1-4/",
+        "https://tsecurity.de/de/4310630/sicherheitsluecken-cve/over-60000-attacks-target-wordpress-rce-vulnerability-within-24-hours/",
+        "https://briandeitch.com/blog/drupal-commerce-exploited-wordpress-core-rce-race"
       ]
     },
     {
