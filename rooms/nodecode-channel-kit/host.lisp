@@ -1666,7 +1666,10 @@ chunk as an address for the lane, then settle the card above it."
          (wordless-completion-p (and assistant-facts (null text)))
          (status-id digest.status-id)
          (origin (lane-thread-origin lane))
-         (reply-to (lane-reference lane (or digest.ask-id lane.trigger-message-id)))
+         ;; An answer built on a peer's line goes up as a reply to that line,
+         ;; and pings nobody: the peer reads it as the thread's context.
+         (heard (heard-reply lane turn-id))
+         (reply-to (or heard (lane-reference lane (or digest.ask-id lane.trigger-message-id))))
          (target lane.target)
          (files (collect-answer-files lane turn-id))
          (choices (take-answer-choices lane turn-id))
@@ -1714,7 +1717,7 @@ chunk as an address for the lane, then settle the card above it."
              ;; read working, the ask kept its eye.
              (handler-case
                  (post-message host target (peer-addressed-text host target text)
-                               :reply-to reply-to :ping (null origin)
+                               :reply-to reply-to :ping (and (null origin) (null heard))
                                :mentions (and origin lane.owner-id (list lane.owner-id))
                                :files files
                                :controls (answer-controls host lane choices))
@@ -3457,7 +3460,10 @@ is only the thread's context."
 by the person who asked. ~a what you post here, and what ~a reaches you as the thread's ~
 context. A line of ~a that mentions you is an ask, and yours to answer. To hand ~a a ~
 question or a part of the work, write ~a in your answer: ~a answers here. Between two ~
-lines a person types here, you answer ~a at most ~d times."
+lines a person types here, you answer ~a at most ~d times. What a peer posts while you work ~
+reaches your running turn, and your answer then goes up as a reply to it: say only what you ~
+add, correct or dispute, never a second copy of what it said, and answer exactly NO_REPLY ~
+when you have nothing to add."
           names
           (if one "another bot" "other bots")
           (if one "It reads" "They read")

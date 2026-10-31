@@ -303,8 +303,9 @@ your turn with your answer; if it does not, post FAIL with what you saw and keep
          (format nil "[A ~a post from your peer ~a reached you on the thread's board while you ~
 work: a claim until your own verify reproduces it. Weigh it and keep working.]" kind who))
         ((candidate-bot-p candidate)
-         (format nil "[Your peer ~a said this in the thread while you work: context, not an ask. ~
-Keep working.]" who))
+         (format nil "[Your peer ~a posted this in the thread while you work. Your answer goes up as ~
+a reply to it: build on it, with only what you add, correct or dispute and never a second copy ~
+of what it said, and answer exactly NO_REPLY when you have nothing to add.]" who))
         (t
          (format nil "[Said in the thread while you work, to someone else: context, not an ask ~
 of you. Keep working unless it changes your task.]"))))))
@@ -331,17 +332,21 @@ last typed in its thread; counts it when it is not."
           +thread-steers+)))
 
 (defparameter +steering-kinds+ '("CLAIM" "SCORER" "FINDING" "FAIL" "SOLVED")
-  "The posts that can change what a running peer does next: an approach
-taken, the scorer, a measured gain, an idea ruled out, the task solved. An
-ADOPT, and a peer's untagged line, wait for its next ask.")
+  "The board posts that can change what a running peer does next: an
+approach taken, the scorer, a measured gain, an idea ruled out, the task
+solved. An ADOPT waits for its next ask.")
 
 (defun steering-line-p (host candidate)
   "Whether CANDIDATE is worth cutting a running turn short for: a person's
-line, or a peer's post of one of +STEERING-KINDS+."
+line, a peer's board post of one of +STEERING-KINDS+, or a peer's untagged
+line -- its answer, or what it says to the thread -- which the turn builds on
+and answers as a reply to."
   (declare (ignore host))
   (or (not (candidate-bot-p candidate))
-      (and (member (parse-board-line (gethash "text" candidate)) +steering-kinds+ :test #'equal)
-           t)))
+      (let ((kind (parse-board-line (gethash "text" candidate))))
+        (if kind
+            (and (member kind +steering-kinds+ :test #'equal) t)
+            t))))
 
 (defun hear-in-running-turn (host candidate)
   "Steer this bot's running turn in CANDIDATE's thread with CANDIDATE -- a
@@ -357,6 +362,13 @@ it works. => T when it steered."
     (when (and lane (lane-active-turn-id lane)
                (steering-line-p host candidate)
                (not (steers-spent-p host candidate)))
+      ;; A peer's untagged line is what the next answer builds on: it goes up
+      ;; as a reply to it (DELIVER-ANSWER). A board post is a status line, and
+      ;; a person's line said to someone else is theirs.
+      (nlk:when-let (id (and (candidate-bot-p candidate)
+                             (null (parse-board-line (gethash "text" candidate)))
+                             (source-field candidate "message_id")))
+        (setf (lane-heard-line lane) (cons id (lane-active-turn-id lane))))
       (continue-lane host lane (heard-ask host candidate lane))
       t)))
 
@@ -404,8 +416,12 @@ ADOPT and end your turn if it reproduces, FAIL and keep going if not. ~
 your turn with your full answer either way. ~
 Post with (nck:board-post ~s :claim \"...\") -- or :scorer, :finding, :fail, :adopt, :solved; ~
 a scored post carries your newest verify's score itself -- and read the board with ~
-(nck:board-read ~s). An ask that is no single measurable task -- a question each of you ~
-answers for yourself -- skips the board."
+(nck:board-read ~s). An ask that is no single measurable task -- a question, a status, an ~
+opinion -- skips the board and is talked through here instead: whoever has an answer first ~
+posts it whole, a peer's post reaches your running turn, and your answer then goes up as a ~
+reply to it with only what you add, correct or dispute -- never a second copy of what it ~
+said -- or exactly NO_REPLY when you have nothing to add. To ask a peer something, ~
+@mention it: it answers you here."
             (length slots) (or (slot-of host thread-id self room) 0) others
             thread-id thread-id thread-id thread-id)))
 
