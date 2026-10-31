@@ -528,6 +528,62 @@ origin noted — ORIGIN the keys past the three that place it."
         (is-plan built :path "/rooms/42/messages" "reply_to" "p9" "ping" nil))
       (is (null (nck::lane-heard-line lane)) "the line is spent"))))
 
+(deftest channel-thread-the-answer-that-closes-a-talk-is-its-final-answer ()
+  ;; Bots a person names together end their talk in one final answer: the
+  ;; answer of this bot's last peer turn, or one that opens with FINAL ANSWER,
+  ;; goes up under the heading, to the person who asked and as a reply to no
+  ;; peer, so it wakes no one -- and the talk is closed in this kit too.
+  (with-digest-host (host lane :name "thread-final" :session "chat-100-t43-m5"
+                     :host-keys (:platform (test-platform :threads t)))
+    (unwind-protect
+         (flet ((answer (text turn-id)
+                  (fact "turn.started" (nlk:json-object) turn-id)
+                  (said text turn-id)
+                  (fact "turn.completed" (nlk:json-object) turn-id)))
+           (nck::note-thread-peers host "43" '(("777" . "elektra")))
+           (setf (nck:lane-owner-id lane) "u1"
+                 (nck:lane-target lane) '(:channel-id "100" :thread-id "43")
+                 (nck:lane-origin lane) '(:channel-id "100" :message-id "5" :thread-id "43"
+                                          :room "chat-100" :landed t)
+                 (nck::lane-heard-line lane) '("p9" . "t1"))
+           (answer "I add the TTL" "t2")
+           (is-present (reply (await-plan executor :content "I add the TTL"))
+             "an answer with wakes left replies to the peer's line"
+             (is-plan reply "reply_to" "p9")
+             (is (not (search "Final answer" (plan-content reply)))))
+           (setf (nck::lane-heard-line lane) '("p10" . "t2")
+                 (gethash (cons "test" "43") nck::*peer-runs*) nck::+peer-turns+)
+           (answer "the cache, and its TTL" "t3")
+           (is-present (final (await-plan executor :content "the cache, and its TTL"))
+             "the answer of the last peer turn is the final answer"
+             (is (search (format nil "**Final answer**~%the cache, and its TTL") (plan-content final)) "under its heading")
+             (is-plan final "reply_to" nil)
+             (is (equalp #("u1") (plan-field final "mentions")) "to the person who asked"))
+           (is (nck::talk-closed-p host "43") "and it closes the talk")
+           (answer "a late word" "t4")
+           (is-present (late (await-plan executor :content "a late word"))
+             "an answer after it is no second final answer"
+             (is (not (search "Final answer" (plan-content late)))))
+           (remhash (cons "test" "43") nck::*peer-runs*)
+           (nck::forget-board host "43")
+           (answer (format nil "FINAL ANSWER~%my first take") "t5")
+           (is-present (first-take (await-plan executor :content "my first take"))
+             "a first answer that calls itself final closes nothing: no peer was heard to agree with"
+             (is (not (search "inal answer" (plan-content first-take))) "and loses the line, so no peer reads it as final")
+             (is (not (search "FINAL ANSWER" (plan-content first-take)))))
+           (is (not (nck::talk-closed-p host "43")))
+           (setf (gethash (cons "test" "43") nck::*peer-runs*) 1)
+           (answer (format nil "FINAL ANSWER~%we agree: the cache") "t6")
+           (is-present (agreed (await-plan executor :content "we agree: the cache"))
+             "once a peer has woken it, an answer that opens with FINAL ANSWER closes the talk sooner"
+             (is (search (format nil "**Final answer**~%we agree: the cache") (plan-content agreed)))
+             (is (not (search "FINAL ANSWER" (plan-content agreed))) "its own line gives way to the heading")
+             (is-plan agreed "reply_to" nil))
+           (is (nck::talk-closed-p host "43")))
+      (remhash (cons "test" "43") nck::*peer-runs*)
+      (nck::forget-board host "43")
+      (remhash (cons "test" "43") nck::*thread-peers*))))
+
 ;;; --- a thread the bot takes part in is one conversation ------------------------------
 
 (deftest channel-thread-joined-marks-a-thread-the-bot-is-in (with-temp-store ())

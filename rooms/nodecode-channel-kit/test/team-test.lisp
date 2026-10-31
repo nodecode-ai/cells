@@ -114,6 +114,36 @@ names; forget the thread after."
         (is (= 3 (length steered)) "a settled lane is not steered")
         (setf (nck::lane-heard-line lane) nil)))))
 
+(deftest channel-team-a-final-answer-closes-the-talk ()
+  ;; A peer's final answer reaches the turn running in its thread once, as
+  ;; what it is; after it a peer's line neither steers nor wakes this bot,
+  ;; until a person types again. A bot at its last peer turn hears a peer's
+  ;; line as the last word it writes: the final answer.
+  (with-team-thread (host "42" :peers '(("777" . "elektra")))
+    (let ((lane (running-thread-lane host))
+          (steered '()))
+      (setf (nck::inbound-policy-require-mention (nck:host-policy host)) t)
+      (with-stubbed-fdefinition (nck::continue-lane (host lane ask)
+                                  (declare (ignore host))
+                                  (push (list lane ask) steered))
+        (is (eq :observe (nck:handle-candidate
+                          host (said-in-thread host (format nil "<@u1> **Final answer**~%the cache it is")
+                                               :message "20"))))
+        (is-present (heard (first steered)) "the final answer reaches the running turn"
+          (is (search "posted the thread's final answer" (nck::ask-prompt (second heard)))))
+        (is (nck::talk-closed-p host "42"))
+        (nck:handle-candidate host (said-in-thread host "one more thought" :message "21"))
+        (is (= 1 (length steered)) "a peer's line after it steers nothing")
+        (is (eq :observe (nck:handle-candidate host (said-in-thread host "<@999> and you?" :message "22"))) "and its ask wakes no one")
+        (is (= 1 (length steered)))
+        (nck:handle-candidate host (said-in-thread host "elektra, one more" :user "u1" :bot nil
+                                                   :message "23" :name "alice"))
+        (is (not (nck::talk-closed-p host "42")) "a person's line opens a new talk")
+        (setf (gethash (cons "test" "42") nck::*peer-runs*) nck::+peer-turns+)
+        (nck:handle-candidate host (said-in-thread host "and the TTL" :message "24"))
+        (is (search "closes it: write the final answer" (nck::ask-prompt (second (first steered)))) "at its last peer turn, what it hears it answers with the final answer")
+        (setf (nck::lane-heard-line lane) nil)))))
+
 (deftest channel-team-a-post-keeps-the-slot-its-poster-holds ()
   ;; A post reads as its tag, slot, score and words; it is kept once, and
   ;; only in the slot its poster holds.
@@ -167,7 +197,9 @@ names; forget the thread after."
       (is (search "goes up as a reply to it" where))
       (is (search "goes up as a reply to it" (nck::peers-paragraph '(("777" . "elektra")))) "peers without a board talk the same way")
       (is (search "or reply to its message: either wakes it" where) "a reply wakes the peer it answers")
-      (is (search "replies to a message of yours, is an ask and" (nck::peers-paragraph '(("777" . "elektra"))))))))
+      (is (search "replies to a message of yours, is an ask and" (nck::peers-paragraph '(("777" . "elektra")))))
+      (is (search "The talk ends in one final answer for the person" where) "a talk has an end")
+      (is (search "The talk ends in one final answer for the person" (nck::peers-paragraph '(("777" . "elektra"))))))))
 
 (deftest channel-team-verify-is-the-only-source-of-a-score ()
   ;; The scorer's last line is the score: kept as this bot's, put on its card,
