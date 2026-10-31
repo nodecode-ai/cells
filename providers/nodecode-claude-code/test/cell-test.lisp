@@ -142,6 +142,13 @@ call: (values MESSAGE URL HEADERS CONTENT)."
     (is (= 4000 (gethash "max_tokens" extra)))
     (is (equal "disabled" (nlk:json-value extra :string "thinking" "type")) "no thinking asked is thinking off")
     (is (equalp #() (nlk:json-value extra :array "context_management" "edits")) "and the CLI's thinking edit goes with it"))
+  ;; Sonnet 5.5 turns thinking off as between_tools, and the API refuses the
+  ;; CLI's clear-thinking edit there too: `clear_thinking_20251015 strategy
+  ;; requires thinking to be enabled or adaptive'.
+  (let ((extra (nodecode-claude-code::extra-body
+                (cc-json "{\"messages\":[],\"max_tokens\":9000,\"thinking\":{\"type\":\"between_tools\"}}"))))
+    (is (equal "between_tools" (nlk:json-value extra :string "thinking" "type")))
+    (is (equalp #() (nlk:json-value extra :array "context_management" "edits")) "between_tools is thinking off too"))
   (let* ((body (cc-json "{\"messages\":[],\"max_tokens\":9000,\"thinking\":{\"type\":\"adaptive\"},\"output_config\":{\"effort\":\"high\"}}"))
          (extra (nodecode-claude-code::extra-body body)))
     (is (equal "adaptive" (nlk:json-value extra :string "thinking" "type")))
@@ -238,20 +245,16 @@ call: (values MESSAGE URL HEADERS CONTENT)."
           (is (equal "1" (nlk:json-value seen :string "env" "CLAUDE_CODE_DISABLE_AUTO_MEMORY")))
           (is (find "--strict-mcp-config" (nlk:json-value seen :array "argv") :test #'equal))
           (is (find "--tools=" (nlk:json-value seen :array "argv") :test #'equal) "no tools of the CLI's own")
-          (is (notany (lambda (argument) (equal "" argument)) (nlk:json-value seen :array "argv"))
-              "no argument is empty: nothing rests on how a Windows command line passes one")
+          (is (notany (lambda (argument) (equal "" argument)) (nlk:json-value seen :array "argv")) "no argument is empty: nothing rests on how a Windows command line passes one")
           (is (equal "claude-haiku-4-5" (let ((argv (coerce (nlk:json-value seen :array "argv") 'list)))
                                           (second (member "--model" argv :test #'equal))))))))))
 
 (deftest claude-code-cell-looks-for-a-windows-cli-by-its-type ()
   (is (equal '("claude.exe" "claude.cmd" "claude.bat")
-             (nodecode-claude-code::program-names "claude" :windows t))
-      "the native installer's .exe first, then npm's .cmd, never the sh script beside it")
+             (nodecode-claude-code::program-names "claude" :windows t)) "the native installer's .exe first, then npm's .cmd, never the sh script beside it")
   (is (equal '("C:\\tools\\claude.CMD")
-             (nodecode-claude-code::program-names "C:\\tools\\claude.CMD" :windows t))
-      "a command that names its type is taken as it is")
-  (is (equal '("claude") (nodecode-claude-code::program-names "claude" :windows nil))
-      "elsewhere the name is the name"))
+             (nodecode-claude-code::program-names "C:\\tools\\claude.CMD" :windows t)) "a command that names its type is taken as it is")
+  (is (equal '("claude") (nodecode-claude-code::program-names "claude" :windows nil)) "elsewhere the name is the name"))
 
 (deftest claude-code-cell-says-when-the-cli-is-logged-out ()
   (with-cc-round (:mode "logged-out")

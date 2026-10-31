@@ -109,8 +109,10 @@ frame naming MODEL."
 their request names, the output ceiling, thinking, the effort and the tool
 choice."
   ;; Thinking absent is thinking off: the CLI's own default is a budget near
-  ;; max_tokens. With it off, the CLI's clear-thinking context edit is
-  ;; refused by the API, so the edits go too.
+  ;; max_tokens. With it off, in either spelling (disabled, or Sonnet 5.5's
+  ;; between_tools), the API refuses the CLI's clear-thinking context edit
+  ;; (`clear_thinking_20251015 strategy requires thinking to be enabled or
+  ;; adaptive'), so the edits go too.
   (let ((extra (nlk:json-object
                 "tools" (map 'vector (lambda (tool)
                                        (plain-block tool "name" (concatenate 'string +tool-prefix+
@@ -121,7 +123,8 @@ choice."
                                (nlk:json-object "type" "disabled"))
                 :opt "output_config" (nlk:json-value body :object "output_config")
                 :opt "tool_choice" (nlk:json-value body :object "tool_choice"))))
-    (when (equal "disabled" (nlk:json-value extra :string "thinking" "type"))
+    (unless (member (nlk:json-value extra :string "thinking" "type") '("enabled" "adaptive")
+                    :test #'equal)
       (setf (gethash "context_management" extra) (nlk:json-object "edits" #())))
     extra))
 
