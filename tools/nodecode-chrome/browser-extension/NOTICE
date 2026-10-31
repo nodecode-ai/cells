@@ -24,6 +24,11 @@ with these changes, and no others:
 - On a visible page whose frames are slow (a throttled window), a mouse path,
   drag or wheel flick that waits more than 100 ms for one event finishes in
   one more event instead of paying a frame per step.
+- The bridge secret (cells#14): the poll and each result carry
+  `Authorization: Bearer <secret>`, read from bridge-secret.txt, which the
+  host writes 0600 into the folder Chrome loads. A poll the host answers
+  "unauthorized" drops the cached secret and reads it again after the usual
+  backoff. Upstream's host takes a poll or result from any local process.
 - Model-facing error text names this cell's verbs ((chrome:snapshot),
   (chrome:tabs), :target/:url-includes/:title-includes) instead of pi's
   chrome_* tools.
