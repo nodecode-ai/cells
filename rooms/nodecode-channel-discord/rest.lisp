@@ -843,20 +843,25 @@ carries."
                  mention of the bot will read as mention_required"
                 (execution-error guilds))
           :failed)
-        (note-self-roles
-         (loop for guild across (or (probe-array (execution-body guilds)) #())
-               for id = (nlk:json-value guild :string "id")
-               when id
-                 append (let ((member (execute-plan
-                                       executor
-                                       (rest-plan "GET"
-                                                  (format nil "/guilds/~a/members/~a"
-                                                          id bot-user-id)
-                                                  "hydrate_self_roles" nil
-                                                  timeout-seconds))))
-                          (when (execution-ok-p member)
-                            (coerce (nlk:json-array (execution-body member) "roles")
-                                    'list))))))))
+        ;; Each guild's roles are noted as that guild's whole set, so a
+        ;; second read replaces the first; a guild whose member read fails
+        ;; keeps what it had.
+        (progn
+          (loop for guild across (or (probe-array (execution-body guilds)) #())
+                for id = (nlk:json-value guild :string "id")
+                when id
+                  do (let ((member (execute-plan
+                                    executor
+                                    (rest-plan "GET"
+                                               (format nil "/guilds/~a/members/~a"
+                                                       id bot-user-id)
+                                               "hydrate_self_roles" nil
+                                               timeout-seconds))))
+                       (when (execution-ok-p member)
+                         (note-self-roles (coerce (nlk:json-array (execution-body member) "roles")
+                                                  'list)
+                                          id))))
+          (discord-self-role-ids)))))
 
 ;;; --- what a write names -----------------------------------------------------
 

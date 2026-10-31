@@ -660,6 +660,57 @@ whose d object is D-JSON. KEYS reach the router as they are."
       (is-inbound policy (dgw-said "m1" "<@&456> oi" :author "42")
                   :answer nil "an ask that mentioned the bot with the role pill answers"))))
 
+(deftest channel-discord-a-role-given-while-the-lane-runs-addresses-the-bot ()
+  ;; Operator report: a "bot" role made and handed to all three bots after
+  ;; their lanes started, then pinged -- <@&role> look into X -- and no bot
+  ;; answered. The roles were read once, when the lane started, so the new
+  ;; role addressed nobody. The gateway tells the bot of its own role changes
+  ;; (GUILD_MEMBER_UPDATE, which Discord sends a bot about itself without
+  ;; the GUILD_MEMBERS intent), and every identify restates its member in
+  ;; GUILD_CREATE: both keep the set the mention rule reads.
+  (let ((ncd:*self-role-ids* (make-hash-table :test #'equal)))
+    (let ((policy (ncd:discord-inbound-policy
+                   :allowed-guilds '("g1" "g2")
+                   :allowed-users '("42")
+                   :require-mention t
+                   :bot-user-id "999")))
+      (flet ((involves (text) (nck:mention-involves-p policy text))
+             (dispatch (event d-json)
+               (ncd:note-self-dispatches (dgw-dispatch event d-json) "999")))
+        (ncd:note-self-roles '("456") "g1")
+        (is (not (involves "<@&777> look into X")))
+        (is (dispatch "GUILD_MEMBER_UPDATE"
+                      "{\"guild_id\": \"g1\", \"roles\": [\"456\", \"777\"],
+                        \"user\": {\"id\": \"999\", \"bot\": true}}"))
+        (is (involves "<@&777> look into X") "the role given while the lane runs")
+        (is (involves "<@&456> oi") "and the one it held before")
+        (is-inbound policy (dgw-said "m1" "<@&777> look into X" :author "42")
+                    :answer nil "the ask the new role carried answers")
+        (is (not (dispatch "GUILD_MEMBER_UPDATE"
+                           "{\"guild_id\": \"g1\", \"roles\": [],
+                             \"user\": {\"id\": \"42\"}}"))
+            "another member's update is not the bot's")
+        (is (involves "<@&777> oi"))
+        (dispatch "GUILD_MEMBER_UPDATE"
+                  "{\"guild_id\": \"g1\", \"roles\": [\"456\"],
+                    \"user\": {\"id\": \"999\"}}")
+        (is (not (involves "<@&777> oi")) "a role taken away stops addressing it")
+        (is (involves "<@&456> oi"))
+        ;; A guild joined while the lane runs: its GUILD_CREATE carries the
+        ;; bot's own member among the members.
+        (is (dispatch "GUILD_CREATE"
+                      "{\"id\": \"g2\", \"channels\": [], \"threads\": [],
+                        \"members\": [{\"user\": {\"id\": \"999\"}, \"roles\": [\"888\"]}]}"))
+        (is (involves "<@&888> oi"))
+        (is (involves "<@&456> oi") "one guild's set leaves another's alone")
+        (dispatch "GUILD_ROLE_DELETE" "{\"guild_id\": \"g2\", \"role_id\": \"888\"}")
+        (is (not (involves "<@&888> oi")) "a deleted role")
+        (dispatch "GUILD_DELETE" "{\"id\": \"g1\", \"unavailable\": true}")
+        (is (involves "<@&456> oi") "an outage forgets nothing")
+        (dispatch "GUILD_DELETE" "{\"id\": \"g1\"}")
+        (is (not (involves "<@&456> oi")) "a guild the bot left")
+        (is (involves "<@999> oi") "and the user pill still does")))))
+
 (deftest channel-discord-speaking-policy-is-per-channel ()
   (let ((policy (ncd:discord-inbound-policy
                  :allowed-channels '("free" "gated" "off")

@@ -55,6 +55,7 @@
    #:interaction-autocomplete-plans #:discord-inbound-policy
    ;; what addresses the bot: its user id, and the roles it itself holds
    #:discord-self-role-ids #:note-self-roles #:*self-role-ids*
+   #:forget-self-roles #:note-self-dispatches
    ;; rest.lisp
    #:delete-message-plan #:discord-message-plan #:discord-file-message-plan
    #:edit-message-plan #:typing-plan #:reaction-plans #:read-back-path

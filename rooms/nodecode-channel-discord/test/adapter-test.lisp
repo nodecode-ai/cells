@@ -352,6 +352,27 @@ adapter and the fake gateway have stopped."
       (is-source routed :text "✅" "reaction" "add" "reply_to_message_id" "a1"))
     (is (zerop (nck:lane-count host.lanes)))))
 
+(deftest channel-discord-dispatch-keeps-the-bots-own-roles ()
+  ;; The wiring: the bot's own GUILD_MEMBER_UPDATE reaches the dispatch, and
+  ;; the host policy's mention rule reads the role it gave from the next
+  ;; message on -- the role-pinged ask no lane ever saw.
+  (let* ((ncd:*self-role-ids* (make-hash-table :test #'equal))
+         (host (nck:make-channel-host
+                :platform (ncd:discord-platform :bot-user-id "999")
+                :lanes (nck:make-lane-table "discord-self-roles-dispatch")
+                :policy (ncd:discord-inbound-policy :bot-user-id "999"
+                                                    :allowed-users '("42")
+                                                    :require-mention t)))
+         (adapter (ncd::%make-discord-adapter :host host :bot-user-id "999")))
+    (flet ((involves () (nck:mention-involves-p (nck:host-policy host) "<@&777> look into X")))
+      (is (not (involves)))
+      (ncd:discord-handle-dispatch
+       adapter (dgw-dispatch "GUILD_MEMBER_UPDATE"
+                             "{\"guild_id\": \"g1\", \"roles\": [\"777\"],
+                               \"user\": {\"id\": \"999\", \"bot\": true}}"))
+      (is (involves) "the role given while the lane runs addresses the bot")
+      (is (zerop (nck:lane-count host.lanes)) "and the update itself asks nothing"))))
+
 (deftest channel-discord-a-restated-ask-gets-its-thread-back ()
   ;; The wiring: Discord's stale copy of an ask reaches the dispatch, which
   ;; queues one read of the message and -- the platform still holding the

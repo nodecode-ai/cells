@@ -231,6 +231,9 @@ falls through."
   ;; The error boundary is the caller's, outside the seam, so advice that
   ;; signals costs that event and not the connection.
   (note-channel-dispatches payload)
+  ;; A role given to the bot, or taken, while the lane runs (gateway.lisp's
+  ;; self knowledge).
+  (note-self-dispatches payload adapter.bot-user-id)
   ;; Discord's stale copy of a message the bot opened a thread on gives the
   ;; thread back to every client (RESTATE-THREAD-LINK). It routes nothing:
   ;; the routes below still read the update.

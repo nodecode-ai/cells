@@ -289,25 +289,81 @@ CHANNEL_DELETE forget theirs."
 ;;; What addresses the bot. A Discord mention is an entity reference, and the
 ;;; bot is two entities: its user, and the managed role Discord made for it —
 ;;; same name, offered beside the user in every picker. A room that picks the
-;;; role has addressed the bot, so the role ids have to be known before the
-;;; mention gate can answer. HYDRATE-SELF-ROLES (rest.lisp) reads them off the
-;;; bot's own member object in each guild it is in, and the mention rule reads
-;;; them here at decision time, so learning them late still admits the next
-;;; ask. Hash writes only; safe on any thread.
+;;; role has addressed the bot, and so has one that picks any other role the
+;;; bot holds (a "bot" role every bot in the guild carries asks them all), so
+;;; the role ids have to be known before the mention gate can answer.
+;;; HYDRATE-SELF-ROLES (rest.lisp) reads them off the bot's own member object
+;;; in each guild it is in when the lane starts, and the gateway keeps them in
+;;; step after that (NOTE-SELF-DISPATCHES): a role given to the bot while the
+;;; lane runs addresses it from the next message on, and one taken away stops.
+;;; The mention rule reads them here at decision time, so learning them late
+;;; still admits the next ask. Hash writes only; safe on any thread.
 
-(defvar *self-role-ids* (make-hash-table :test #'equal)
-  "Role id -> T: the roles the connection's own user holds.")
+(defvar *self-role-ids* (make-hash-table :test #'equal :synchronized t)
+  "Role id -> the guild it is held in (T where no guild was said): the roles
+the connection's own user holds.")
 
 (defun discord-self-role-ids ()
   "The roles the bot itself holds, as a list — what makes <@&id> a mention."
   (loop for id being the hash-keys of *self-role-ids* collect id))
 
-(defun note-self-roles (role-ids)
-  "Remember ROLE-IDS as roles that address the bot. Answers the whole set."
+(defun note-self-roles (role-ids &optional guild-id)
+  "Remember ROLE-IDS as roles that address the bot. With GUILD-ID they are its
+whole set in that guild: a role it held there and is not in ROLE-IDS stops
+addressing it. Answers the whole set."
+  (when guild-id
+    (forget-self-roles :guild-id guild-id))
   (dolist (id role-ids)
     (when (and (stringp id) (plusp (length id)))
-      (setf (gethash id *self-role-ids*) t)))
+      (setf (gethash id *self-role-ids*) (or guild-id t))))
   (discord-self-role-ids))
+
+(defun forget-self-roles (&key guild-id role-id)
+  "Stop treating ROLE-ID, or every role held in GUILD-ID, as an address."
+  (let ((gone (loop for id being the hash-keys of *self-role-ids*
+                      using (hash-value guild)
+                    when (or (equal id role-id)
+                             (and guild-id (equal guild guild-id)))
+                      collect id)))
+    (dolist (id gone) (remhash id *self-role-ids*))
+    gone))
+
+(defun note-self-dispatches (payload bot-user-id)
+  "Keep *SELF-ROLE-IDS* in step with PAYLOAD, any gateway dispatch the
+connection delivers: GUILD_CREATE, whose members carry the bot's own on
+every identify and for a guild it just joined; GUILD_MEMBER_UPDATE of the
+bot's own user, its whole role list after a role was given or taken; a
+GUILD_ROLE_DELETE; a GUILD_DELETE for a guild the bot left."
+  ;; Answers T for an event it kept. Runs on the connection lap thread: hash
+  ;; writes, no I/O. Discord sends the bot its own GUILD_MEMBER_UPDATE
+  ;; without the privileged GUILD_MEMBERS intent, which the default intents
+  ;; leave out -- the update for every other member needs it.
+  (when (and (eql (payload-op payload) +op-dispatch+) bot-user-id)
+    (let ((name (gethash "t" payload))
+          (data (gethash "d" payload)))
+      (flet ((own-roles (member guild)
+               (when (and guild (hash-table-p member)
+                          (equal bot-user-id (nlk:json-value member :string "user" "id")))
+                 (note-self-roles (coerce (nlk:json-array member "roles") 'list) guild)
+                 t)))
+        (when (hash-table-p data)
+          (cond ((equal name "GUILD_MEMBER_UPDATE")
+                 (own-roles data (nlk:json-value data :string "guild_id")))
+                ((equal name "GUILD_CREATE")
+                 (let ((guild (nlk:json-value data :string "id")))
+                   (loop for member across (nlk:json-array data "members")
+                         thereis (own-roles member guild))))
+                ((equal name "GUILD_ROLE_DELETE")
+                 (nlk:when-let (role (nlk:json-value data :string "role_id"))
+                   (forget-self-roles :role-id role)
+                   t))
+                ;; An outage reads as unavailable and comes back with a
+                ;; GUILD_CREATE: only a guild the bot left forgets its roles.
+                ((and (equal name "GUILD_DELETE")
+                      (not (nlk:json-value data :boolean "unavailable")))
+                 (nlk:when-let (guild (nlk:json-value data :string "id"))
+                   (forget-self-roles :guild-id guild)
+                   t))))))))
 
 (defparameter +discord-file-hosts+ '("cdn.discordapp.com" "media.discordapp.net")
   "The hosts Discord serves a message's files from.")

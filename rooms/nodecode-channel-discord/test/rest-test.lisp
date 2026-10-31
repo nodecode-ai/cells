@@ -30,6 +30,19 @@
                  "/guilds/g2/members/999")
                (mapcar #'nck:request-plan-path
                        (nck:recording-executor-plans executor)))))
+  ;; A second read is each guild's set as it stands: a role the bot lost
+  ;; since stops addressing it, and a guild whose read fails keeps its own.
+  (let ((ncd:*self-role-ids* (make-hash-table :test #'equal)))
+    (ncd:note-self-roles '("456" "111") "g1")
+    (ncd:note-self-roles '("789") "g2")
+    (let ((executor (scripted-executor
+                     (nck:make-scripted-response 200 (vector (nlk:json-object "id" "g1")
+                                                             (nlk:json-object "id" "g2")))
+                     (reply 200 "roles" (vector "456"))
+                     (nck:make-scripted-response 500 "{}"))))
+      (is (equal '("456" "789")
+                 (sort (copy-list (ncd:hydrate-self-roles executor "999" :timeout-seconds 5))
+                       #'string<)))))
   (let ((ncd:*self-role-ids* (make-hash-table :test #'equal))
         (executor (scripted-executor (nck:make-scripted-response 500 "{}"))))
     (is (eq :failed (ncd:hydrate-self-roles executor "999" :timeout-seconds 5)))
