@@ -677,8 +677,11 @@ origin noted — ORIGIN the keys past the three that place it."
             (is-plan rename :method "PATCH" :path "/rooms/42"
                             "name" "Capital of Australia vs Sydney"))
           (is (await-plan executor :content "Canberra"))
-          ;; The call reads the ask, our mention stripped.
-          (is (equal '("what is the capital of Australia, is it Sydney") asked)))
+          ;; The call reads the ask, our mention stripped, in whatever words
+          ;; the kernel puts it to the namer in (it quotes it, TITLE-REQUEST).
+          (is (= 1 (length asked)) "one call")
+          (is (search "what is the capital of Australia, is it Sydney" (first asked)) "the ask")
+          (is (not (search "<@999>" (first asked))) "our mention stripped"))
         (setf asked '())
         (with-ask-host (host thread-ask-host :answers ("fixed") :responses (replies "42" "p1")
                         :threads t)
