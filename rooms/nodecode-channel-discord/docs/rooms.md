@@ -151,9 +151,13 @@ context, which the bot keeps for later without answering.
 - In direct messages and in threads the bot is part of, no mention is
   needed: every admitted message is an ask.
 
-A mention can be the bot's user (`@YourBot`) or the role Discord made for
-the bot, which the mention picker offers beside it. `mention_patterns` adds
-wake words: a message that contains one, in any case, counts as a mention.
+A mention can be the bot's user (`@YourBot`), the role Discord made for
+the bot, which the mention picker offers beside it, or any other role the
+bot holds, such as a `@bots` role you give all your bots. A role handed
+out or taken away a moment ago already counts. A role several bots hold
+calls them all in, exactly as naming each one would: they share the one
+thread. `mention_patterns` adds wake words: a message that contains
+one, in any case, counts as a mention.
 
 Per-channel lists override the default. When a channel is on several lists,
 `ignored_channels` wins, then `free_response_channels`, then

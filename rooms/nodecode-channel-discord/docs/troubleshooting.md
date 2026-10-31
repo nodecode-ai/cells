@@ -130,10 +130,16 @@ from Discord at start when `require_mention` is true or
 will be rejected until channels.discord.bot_user_id is set`. Set
 `bot_user_id` to the id the probe prints.
 
-A mention of the bot's role (the one Discord made for the bot) counts as a
-mention once the adapter has read which roles the bot holds. If that read
-fails, the log says `discord: could not read the bot's guilds (...); a
+A mention of a role the bot holds (the one Discord made for the bot, or any
+other) counts as a mention: the adapter reads the bot's roles at connect, and
+Discord tells it each time it is given a role or loses one. If the first
+read fails, the log says `discord: could not read the bot's guilds (...); a
 <@&role> mention of the bot will read as mention_required`.
+
+A role several bots hold calls them all into one thread. Which other bots
+hold it is read again before such a message is decided, one request per
+bot the adapter has seen in that server; a bot it has never seen post there
+(and that has no role Discord made for it) is not called in.
 
 ## Commands
 

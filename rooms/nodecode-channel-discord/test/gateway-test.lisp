@@ -711,6 +711,50 @@ whose d object is D-JSON. KEYS reach the router as they are."
         (is (not (involves "<@&456> oi")) "a guild the bot left")
         (is (involves "<@999> oi") "and the user pill still does")))))
 
+(deftest channel-discord-message-role-mentions ()
+  (is (equal '("1" "2" "3")
+             (ncd::message-role-mentions
+              (cell-json "{\"mention_roles\": [\"1\", \"2\"],
+                               \"content\": \"<@&2> <@&3> and <@&1>\"}")))
+      "what Discord lists, then what the text spells, once each")
+  (is (equal '("7") (ncd::message-role-mentions
+                     (cell-json "{\"content\": \"<@&7> <@9> <@!8> <#5>\"}")))
+      "users and channels are no roles")
+  (is (null (ncd::message-role-mentions (cell-json "{\"content\": \"plain\"}")))))
+
+(deftest channel-discord-a-role-ping-calls-in-every-bot-holding-it ()
+  ;; A ping of a role several bots hold calls them in together, as naming
+  ;; each would: the bots seen in the guild that hold a role the message
+  ;; names ride source.mentioned_bots, so they share the thread as peers. One
+  ;; named by its user rides once, the bot itself never, and a bot that
+  ;; holds no named role not at all.
+  (let ((ncd::*guild-bots* (make-hash-table :test #'equal))
+        (ncd::*member-roles* (make-hash-table :test #'equal))
+        (ncd::*discord-user-names* (make-hash-table :test #'equal)))
+    (ncd::note-guild-bot "g1" "777" "Elektra")
+    (ncd::note-guild-bot "g1" "555" "scrap")
+    (ncd::note-guild-bot "g1" "444" "other")
+    (ncd::note-guild-bot "g1" "999" "Hindsight")
+    ;; 700 the room's `bot' role, 701 scrap's own, 702 a role no bot here holds.
+    (ncd::note-member-roles "g1" "777" '("700"))
+    (ncd::note-member-roles "g1" "555" '("700" "701"))
+    (ncd::note-member-roles "g1" "444" '("702"))
+    (ncd::note-member-roles "g1" "999" '("700"))
+    (flet ((peers (content &rest keys)
+             (mapcar #'car (nck::candidate-mentioned-bots
+                            (apply #'dgw-said "m1" content :bot-user-id "999" keys)))))
+      (is (equal '("555" "777") (peers "<@&700> look into X")))
+      (is (equal '("555" "777") (peers "<@&700> <@&701> look")) "each once")
+      (is (equal '("555" "777")
+                 (peers "<@&700> <@555> look"
+                        :fields "\"mentions\": [{\"id\": \"555\", \"username\": \"scrap\", \"bot\": true}],"))
+          "named by its user and reached by the role: once")
+      (is (equal '("555") (peers "<@&701> look")))
+      (is (equal '("555" "777") (peers "look" :fields "\"mention_roles\": [\"700\"],"))
+          "the roles Discord lists count as the text's do")
+      (is (null (peers "<@&703> look")))
+      (is (null (peers "<@&700> look" :guild nil)) "a direct message reaches no role"))))
+
 (deftest channel-discord-speaking-policy-is-per-channel ()
   (let ((policy (ncd:discord-inbound-policy
                  :allowed-channels '("free" "gated" "off")

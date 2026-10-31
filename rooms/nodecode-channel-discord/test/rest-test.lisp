@@ -48,6 +48,39 @@
     (is (eq :failed (ncd:hydrate-self-roles executor "999" :timeout-seconds 5)))
     (is (null (ncd:discord-self-role-ids)))))
 
+(deftest channel-discord-refresh-peer-roles ()
+  ;; Before a message that mentions a role is decided, every other bot seen in
+  ;; the guild has its roles read again: Discord tells a bot about its own
+  ;; roles, about another member's only under the privileged intent. A bot
+  ;; Discord no longer counts as a member is forgotten; one that could not be
+  ;; read keeps what it had.
+  (let ((ncd::*guild-bots* (make-hash-table :test #'equal))
+        (ncd::*member-roles* (make-hash-table :test #'equal)))
+    (ncd::note-guild-bot "g1" "777" "Elektra")
+    (ncd::note-guild-bot "g1" "555" "scrap")
+    (ncd::note-guild-bot "g1" "999" "Hindsight")
+    (ncd::note-guild-bot "g2" "444" "elsewhere")
+    (ncd::note-member-roles "g1" "555" '("701"))
+    (let ((executor (scripted-executor (reply 200 "roles" (vector "700"))
+                                       (reply 200 "roles" (vector "700" "701")))))
+      (is (equal '("555" "777") (sort (ncd::refresh-peer-roles executor "g1" "999") #'string<)))
+      (is (equal '("/guilds/g1/members/555" "/guilds/g1/members/777")
+                 (sort (mapcar #'nck:request-plan-path (nck:recording-executor-plans executor))
+                       #'string<))
+          "one read per other bot, none of itself, none for another guild")
+      (is (= 1 (length (remove-if-not (lambda (id) (equal '("700") (ncd::member-roles "g1" id)))
+                                      '("555" "777"))))
+          "the first read noted")
+      (is (= 1 (length (remove-if-not (lambda (id) (equal '("700" "701") (ncd::member-roles "g1" id)))
+                                      '("555" "777"))))
+          "and the second"))
+    (let ((executor (scripted-executor (nck:make-scripted-response 404 "{}")
+                                       (nck:make-scripted-response 500 "{}"))))
+      (ncd::refresh-peer-roles executor "g1" "999")
+      (is (= 2 (length (ncd::guild-bots "g1"))) "the bot Discord says is gone is forgotten")
+      (is (= 1 (count-if (lambda (id) (ncd::member-roles "g1" id)) '("555" "777")))
+          "the unread one keeps its roles"))))
+
 (deftest channel-discord-message-plans-chunk-and-reply ()
   (let* ((target '(:channel-id "c1" :thread-id nil :message-id "m0"))
          (text (make-string 2500 :initial-element #\x))

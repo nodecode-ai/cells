@@ -863,6 +863,38 @@ carries."
                                           id))))
           (discord-self-role-ids)))))
 
+(defun read-member-roles (executor guild user &key (purpose "read_member_roles")
+                                                   (timeout-seconds 10))
+  "Read the roles USER holds in GUILD, fresh from Discord, and keep them
+(MEMBER-ROLES). => the role ids, :GONE when Discord says USER is no member
+there, or :FAILED when it could not be read. Blocks: never the lap thread."
+  ;; A member's own object needs no privileged intent, unlike a guild's list.
+  (let ((member (execute-plan executor
+                              (rest-plan "GET" (format nil "/guilds/~a/members/~a" guild user)
+                                         purpose nil timeout-seconds))))
+    (cond ((execution-ok-p member)
+           (note-member-roles guild user (nlk:json-array (execution-body member) "roles")))
+          ((eql 404 (nck:execution-status member)) :gone)
+          (t :failed))))
+
+(defun refresh-peer-roles (executor guild bot-user-id &key (timeout-seconds 10))
+  "Read again, before a message that mentions a role is decided, which roles
+every other bot seen in GUILD holds there, so the bots the ping reaches are
+the ones holding the role now. => the ids of the bots read."
+  ;; One GET per bot, off the lap thread (DEFER-ROLE-MENTION, adapter.lisp).
+  ;; The bot's own roles need no read: Discord tells it about itself
+  ;; (NOTE-SELF-DISPATCHES). About any other member it tells only a bot with
+  ;; the privileged GUILD_MEMBERS intent, which the defaults leave out. A bot
+  ;; Discord no longer counts as a member is forgotten; one that could not be
+  ;; read keeps the roles it last had.
+  (loop for (id) in (guild-bots guild)
+        unless (equal id bot-user-id)
+          do (when (eq :gone (read-member-roles executor guild id
+                                                :purpose "refresh_peer_roles"
+                                                :timeout-seconds timeout-seconds))
+               (forget-guild-bot guild id))
+          and collect id))
+
 ;;; --- what a write names -----------------------------------------------------
 
 (defun read-back-path (path)
