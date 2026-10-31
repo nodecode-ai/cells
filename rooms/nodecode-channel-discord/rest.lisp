@@ -843,20 +843,50 @@ carries."
                  mention of the bot will read as mention_required"
                 (execution-error guilds))
           :failed)
-        (note-self-roles
-         (loop for guild across (or (probe-array (execution-body guilds)) #())
-               for id = (nlk:json-value guild :string "id")
-               when id
-                 append (let ((member (execute-plan
-                                       executor
-                                       (rest-plan "GET"
-                                                  (format nil "/guilds/~a/members/~a"
-                                                          id bot-user-id)
-                                                  "hydrate_self_roles" nil
-                                                  timeout-seconds))))
-                          (when (execution-ok-p member)
-                            (coerce (nlk:json-array (execution-body member) "roles")
-                                    'list))))))))
+        (loop for guild across (or (probe-array (execution-body guilds)) #())
+              for id = (nlk:json-value guild :string "id")
+              for roles = (and id (read-member-roles executor id bot-user-id
+                                                     :purpose "hydrate_self_roles"
+                                                     :timeout-seconds timeout-seconds))
+              when (listp roles)
+                append (progn (note-self-roles roles :guild id) roles)))))
+
+(defun read-member-roles (executor guild user &key (purpose "read_member_roles")
+                                                   (timeout-seconds 10))
+  "Read the roles USER holds in GUILD, fresh from Discord, and keep them
+(MEMBER-ROLES). => the role ids, :GONE when Discord says USER is no member
+there, or :FAILED when it could not be read. Blocks: never the lap thread."
+  ;; A member's own object needs no privileged intent, unlike a guild's list.
+  (let ((member (execute-plan executor
+                              (rest-plan "GET" (format nil "/guilds/~a/members/~a" guild user)
+                                         purpose nil timeout-seconds))))
+    (cond ((execution-ok-p member)
+           (note-member-roles guild user (nlk:json-array (execution-body member) "roles")))
+          ((eql 404 (nck:execution-status member)) :gone)
+          (t :failed))))
+
+(defun refresh-role-holders (executor guild bot-user-id &key (timeout-seconds 10))
+  "Read again, before a message that mentions a role is decided, which roles
+the bot itself and every other bot seen in GUILD hold there: the roles read at
+connect are a start, and a role handed out or taken away since then is what
+the ping means. => the bot's own roles there, or :FAILED with what was noted
+before left standing."
+  ;; One GET per bot, off the lap thread (DEFER-ROLE-MENTION, adapter.lisp).
+  ;; A bot Discord no longer counts as a member is forgotten; one that could
+  ;; not be read keeps the roles it last had.
+  (loop for (id) in (guild-bots guild)
+        unless (equal id bot-user-id)
+          do (when (eq :gone (read-member-roles executor guild id
+                                                :purpose "refresh_role_holders"
+                                                :timeout-seconds timeout-seconds))
+               (forget-guild-bot guild id)))
+  (let ((roles (read-member-roles executor guild bot-user-id
+                                  :purpose "refresh_self_roles"
+                                  :timeout-seconds timeout-seconds)))
+    (cond ((listp roles) (note-self-roles roles :guild guild) roles)
+          (t (warn "discord: could not read the bot's roles in guild ~a; a <@&role> ~
+                    mention is decided on the roles read before" guild)
+             :failed))))
 
 ;;; --- what a write names -----------------------------------------------------
 

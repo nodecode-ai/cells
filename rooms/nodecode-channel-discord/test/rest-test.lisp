@@ -35,6 +35,36 @@
     (is (eq :failed (ncd:hydrate-self-roles executor "999" :timeout-seconds 5)))
     (is (null (ncd:discord-self-role-ids)))))
 
+(deftest channel-discord-refresh-role-holders ()
+  ;; Before a message that mentions a role is decided, the roles are read
+  ;; again: every other bot seen in the guild, then the bot itself. Its own
+  ;; reading replaces what was noted in that guild; a bot Discord no longer
+  ;; counts as a member is forgotten; one that could not be read keeps what it
+  ;; had.
+  (let ((ncd:*self-role-ids* (make-hash-table :test #'equal))
+        (ncd::*guild-bots* (make-hash-table :test #'equal))
+        (ncd::*member-roles* (make-hash-table :test #'equal)))
+    (ncd:note-self-roles '("own" "was") :guild "g1")
+    (ncd:note-self-roles '("there") :guild "g2")
+    (ncd::note-guild-bot "g1" "777" "Elektra")
+    (ncd::note-guild-bot "g1" "999" "Hindsight")
+    (let ((executor (scripted-executor (reply 200 "roles" (vector "bot"))
+                                       (reply 200 "roles" (vector "own" "bot")))))
+      (is (equal '("own" "bot") (ncd::refresh-role-holders executor "g1" "999")))
+      (is (equal '("/guilds/g1/members/777" "/guilds/g1/members/999")
+                 (mapcar #'nck:request-plan-path (nck:recording-executor-plans executor)))
+          "one read per bot, itself last, none for a guild not asked about")
+      (is (equal '("bot" "own" "there") (sort (ncd:discord-self-role-ids) #'string<))
+          "gained `bot', lost `was', g2 untouched")
+      (is (equal '("bot") (ncd::member-roles "g1" "777"))))
+    (let ((executor (scripted-executor (nck:make-scripted-response 404 "{}")
+                                       (nck:make-scripted-response 500 "{}"))))
+      (is (eq :failed (ncd::refresh-role-holders executor "g1" "999")))
+      (is (equal '("999") (mapcar #'car (ncd::guild-bots "g1"))) "the gone bot is forgotten")
+      (is (null (ncd::member-roles "g1" "777")))
+      (is (equal '("bot" "own" "there") (sort (ncd:discord-self-role-ids) #'string<))
+          "an unread reading leaves the last one standing"))))
+
 (deftest channel-discord-message-plans-chunk-and-reply ()
   (let* ((target '(:channel-id "c1" :thread-id nil :message-id "m0"))
          (text (make-string 2500 :initial-element #\x))

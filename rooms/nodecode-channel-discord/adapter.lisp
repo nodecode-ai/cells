@@ -239,8 +239,52 @@ falls through."
     (restate-thread-link adapter.host restated))
   (when (route-voice-dispatch adapter payload)
     (return-from discord-handle-dispatch :voice))
-  ;; The first route that reads PAYLOAD acts on it and is the answer. A
-  ;; Discord thread is one conversation: a line typed in one the bot takes
+  ;; A message that mentions a role is decided on who holds the role now,
+  ;; which takes a read the lap must not wait on (DEFER-ROLE-MENTION).
+  (when (defer-role-mention adapter payload)
+    (return-from discord-handle-dispatch :deferred))
+  (route-dispatch adapter payload))
+
+(defun role-mention-guild (adapter payload)
+  "The guild of PAYLOAD when it is a message somebody else typed -- created,
+or edited by hand -- that mentions a role there, else NIL."
+  (let* ((name (and (eql (payload-op payload) +op-dispatch+) (gethash "t" payload)))
+         (data (and (member name '("MESSAGE_CREATE" "MESSAGE_UPDATE") :test #'equal)
+                    (gethash "d" payload)))
+         (guild (and (hash-table-p data) (nlk:json-value data :string "guild_id"))))
+    (and guild
+         (or (equal name "MESSAGE_CREATE") (nlk:json-value data :string "edited_timestamp"))
+         (not (equal adapter.bot-user-id (nlk:json-value data :string "author" "id")))
+         (message-role-mentions data)
+         guild)))
+
+(defun run-off-lap (name thunk)
+  "Run THUNK on a thread of its own called NAME."
+  (nlk:spawn name (funcall thunk)))
+
+(defun defer-role-mention (adapter payload &aux (host adapter.host))
+  "Connection lap thread: when PAYLOAD is a message that mentions a role, read
+who holds the role now and route it after, on a thread of its own. => T when
+it took PAYLOAD."
+  ;; Operator report: a ping of a role all three bots held reached none of
+  ;; them -- each had read its roles once, at connect, and the role was handed
+  ;; out after. The read is one GET per bot seen in the guild; a failed one
+  ;; decides on the roles read before, as the lap would have.
+  (nlk:when-let (guild (and host (host-executor host) adapter.bot-user-id
+                            (role-mention-guild adapter payload)))
+    (run-off-lap "channel-discord-role-mention"
+                 (lambda ()
+                   (nlk:with-handlers ((error (condition)
+                                         (warn "discord: a message mentioning a role in guild ~a ~
+                                                was dropped: ~a" guild condition)))
+                     (refresh-role-holders (host-executor host) guild adapter.bot-user-id)
+                     (route-dispatch adapter payload))))
+    t))
+
+(defun route-dispatch (adapter payload)
+  "The routes a message, an interaction, a press or a reaction takes into the
+kit: the first that reads PAYLOAD acts on it and is the answer."
+  ;; A Discord thread is one conversation: a line typed in one the bot takes
   ;; part in needs no mention (NCK:MARK-JOINED-THREAD).
   (let ((host adapter.host) (bot adapter.bot-user-id))
     (flet ((route (routed act) (when routed (funcall act host routed) routed)))

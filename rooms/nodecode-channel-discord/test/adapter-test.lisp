@@ -352,6 +352,48 @@ adapter and the fake gateway have stopped."
       (is-source routed :text "✅" "reaction" "add" "reply_to_message_id" "a1"))
     (is (zerop (nck:lane-count host.lanes)))))
 
+(deftest channel-discord-a-role-handed-out-after-connect-reaches-the-bot ()
+  ;; Operator report, end to end through the dispatch: a `bot' role was made
+  ;; and given to all three bots after they connected, then pinged. The roles
+  ;; read at connect did not have it, so the ping read as no mention and no
+  ;; bot answered. Now the dispatch hands a message that mentions a role to a
+  ;; thread of its own, which reads who holds the role and routes it after:
+  ;; the ping is an ask, its peers the other bots holding the role. A message
+  ;; with no role mention is routed on the lap as before, reading nothing.
+  (let* ((ncd:*self-role-ids* (make-hash-table :test #'equal))
+         (ncd::*guild-bots* (make-hash-table :test #'equal))
+         (ncd::*member-roles* (make-hash-table :test #'equal))
+         (executor (nck:make-recording-executor
+                    :responses (list (reply 200 "roles" (vector "bot"))
+                                     (reply 200 "roles" (vector "own" "bot")))))
+         (policy (ncd:discord-inbound-policy :allowed-guilds '("g1") :require-mention t
+                                             :bot-user-id "999"))
+         (host (test-host :platform (ncd:discord-platform :bot-user-id "999")
+                          :executor executor :name "discord-role-ping"))
+         (adapter (ncd::%make-discord-adapter :host host :bot-user-id "999"))
+         (handed '()))
+    (ncd:note-self-roles '("own") :guild "g1")
+    (ncd::note-guild-bot "g1" "777" "Elektra")
+    (with-stubbed-fdefinition (ncd::run-off-lap (name thunk)
+                                (is (equal "channel-discord-role-mention" name))
+                                (funcall thunk))
+      (with-stubbed-fdefinition (nck:handle-candidate (to candidate)
+                                  (push candidate handed))
+        (is (eq :deferred (ncd:discord-handle-dispatch
+                           adapter (dgw-dispatch "MESSAGE_CREATE"
+                                                 (dgw-d "m1" "<@&bot> look into X" :author "42"
+                                                        :fields "\"mention_roles\": [\"bot\"],")))))
+        (is (= 2 (length (nck:recording-executor-plans executor))) "Elektra's roles, then its own")
+        (is (nck:mention-involves-p policy "<@&bot> look into X") "the ping now addresses the bot")
+        (is (= 1 (length handed)))
+        (is (equal '(("777" . "Elektra")) (nck::candidate-mentioned-bots (first handed)))
+            "called in beside Elektra")
+        (ncd:discord-handle-dispatch adapter (dgw-dispatch "MESSAGE_CREATE" (dgw-d "m2" "<@999> hi" :author "42")))
+        (is (= 2 (length handed)) "a plain mention is routed on the lap")
+        (is (= 2 (length (nck:recording-executor-plans executor))) "reading nothing")
+        (ncd:discord-handle-dispatch adapter (dgw-dispatch "MESSAGE_CREATE" (dgw-d "m3" "<@&bot> mine" :author "999")))
+        (is (= 2 (length (nck:recording-executor-plans executor))) "its own line reads nothing")))))
+
 (deftest channel-discord-a-restated-ask-gets-its-thread-back ()
   ;; The wiring: Discord's stale copy of an ask reaches the dispatch, which
   ;; queues one read of the message and -- the platform still holding the
@@ -533,7 +575,6 @@ adapter and the fake gateway have stopped."
                                    line))
            (plans () (nck:recording-executor-plans executor)))
       (with-stubbed-fdefinition (nle:notice (text &key level key)
-                                  (declare (ignore level key))
                                   (push text notices))
         (slash "7" "/model gpt")
         (slash "7" "/usage"))
@@ -578,7 +619,6 @@ adapter and the fake gateway have stopped."
                                 "content" "<@999> did the deploy finish?"
                                 "author" (nlk:json-object "id" author "username" "kim"))))
         (with-stubbed-fdefinition (nck:handle-candidate (host candidate)
-                                    (declare (ignore host))
                                     (push candidate handed))
           (is (ncd::catch-up-message adapter "g1" (message nil)))
           (is (not (ncd::catch-up-message adapter "g1" (message nil :author "999"))) "its own")
