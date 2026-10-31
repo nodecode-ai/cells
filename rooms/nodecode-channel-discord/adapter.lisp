@@ -231,6 +231,7 @@ falls through."
   ;; The error boundary is the caller's, outside the seam, so advice that
   ;; signals costs that event and not the connection.
   (note-channel-dispatches payload)
+  (note-self-dispatches payload adapter.bot-user-id)
   ;; Discord's stale copy of a message the bot opened a thread on gives the
   ;; thread back to every client (RESTATE-THREAD-LINK). It routes nothing:
   ;; the routes below still read the update.
@@ -239,6 +240,55 @@ falls through."
     (restate-thread-link adapter.host restated))
   (when (route-voice-dispatch adapter payload)
     (return-from discord-handle-dispatch :voice))
+  ;; A ping of a role reaches every bot holding it, and who holds it is
+  ;; Discord's to say now, not what this connection saw an hour ago: the
+  ;; guild's member list is read first, on a thread of its own, and the
+  ;; message routes after it (ROSTER-READ-DUE).
+  (nlk:when-let (guild (roster-read-due payload adapter.bot-user-id))
+    (nlk:spawn "channel-discord-roster"
+      (nlk:with-handlers ((error (condition)
+                            (warn "discord: guild ~a's roles could not be read before a role ping: ~a"
+                                  guild condition)))
+        (read-guild-roster (host-executor adapter.host) guild adapter.bot-user-id
+                           :timeout-seconds 10))
+      (nlk:with-handlers ((error (condition)
+                            (warn "discord: a role ping in guild ~a could not route: ~a"
+                                  guild condition)))
+        (route-discord-dispatch adapter payload)))
+    (return-from discord-handle-dispatch :roster))
+  (route-discord-dispatch adapter payload))
+
+(defparameter +roster-fresh-seconds+ 10
+  "How long one read of a guild's member list stands for the role pings that
+follow it.")
+
+(defvar *roster-read-at* (make-hash-table :test #'equal :synchronized t)
+  "Guild id -> the internal real time its member list was last read for a
+role ping.")
+
+(defun roster-read-due (payload bot-user-id)
+  "The guild whose member list PAYLOAD wants read before it routes, or NIL:
+PAYLOAD a MESSAGE_CREATE someone else typed in a guild that pings a role,
+and the list not read in the last +ROSTER-FRESH-SECONDS+."
+  (when (and (eql (payload-op payload) +op-dispatch+)
+             (equal "MESSAGE_CREATE" (gethash "t" payload)))
+    (let* ((data (gethash "d" payload))
+           (guild (and (hash-table-p data) (nlk:json-value data :string "guild_id"))))
+      (when (and guild
+                 (not (equal bot-user-id (nlk:json-value data :string "author" "id")))
+                 (discord-role-mentions data))
+        (let ((now (get-internal-real-time)))
+          (sb-ext:with-locked-hash-table (*roster-read-at*)
+            (let ((at (gethash guild *roster-read-at*)))
+              (when (or (null at)
+                        (> (- now at) (* +roster-fresh-seconds+
+                                         internal-time-units-per-second)))
+                (setf (gethash guild *roster-read-at*) now)
+                guild))))))))
+
+(defun route-discord-dispatch (adapter payload)
+  "Hand PAYLOAD to the first route that reads it, which acts on it. => what
+that route read, or NIL."
   ;; The first route that reads PAYLOAD acts on it and is the answer. A
   ;; Discord thread is one conversation: a line typed in one the bot takes
   ;; part in needs no mention (NCK:MARK-JOINED-THREAD).

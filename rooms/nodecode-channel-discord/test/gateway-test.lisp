@@ -625,6 +625,73 @@ whose d object is D-JSON. KEYS reach the router as they are."
     (is (null (dgw-said "m3" "compare notes" :author "999" :bot-user-id "999" :fields "\"type\": 4,")) "a thread renamed is no line")
     (is (dgw-said "m4" "and?" :author "u2" :bot-user-id "999" :fields "\"type\": 19,") "a reply is")))
 
+(deftest channel-discord-a-role-ping-names-the-bots-holding-it ()
+  ;; Operator report, 2026-10-31: a `bot' role given to three bots and pinged
+  ;; reached none of them -- each had read its roles once, at its start. A
+  ;; role the bot gains while the gateway runs addresses it from the next
+  ;; ask, one it loses stops, and a ping of a role other bots hold names them
+  ;; beside this one, oldest first: the order every bot reading the same
+  ;; message reaches alike.
+  (let ((ncd:*self-role-ids* (make-hash-table :test #'equal :synchronized t))
+        (ncd:*guild-bots* (make-hash-table :test #'equal :synchronized t))
+        (ncd::*discord-user-names* (make-hash-table :test #'equal :synchronized t))
+        (policy (ncd:discord-inbound-policy :allowed-guilds '("g1") :allowed-users '("42")
+                                            :require-mention t :bot-user-id "999")))
+    (flet ((involves (text) (nck:mention-involves-p policy text))
+           (event (type json) (ncd:note-self-dispatches (dgw-dispatch type json) "999"))
+           (named (text &optional (fields ""))
+             (nck::candidate-mentioned-bots
+              (dgw-said "m6" text :author "42" :bot-user-id "999" :fields fields))))
+      (is (not (involves "<@&500> look into X")) "a role made after the start is no address yet")
+      (is (event "GUILD_MEMBER_UPDATE" "{\"guild_id\": \"g1\", \"roles\": [\"500\", \"456\"],
+                                         \"user\": {\"id\": \"999\", \"username\": \"scrap\", \"bot\": true}}"))
+      (is (involves "<@&500> look into X") "the bot's own member update makes it one")
+      (is-inbound policy (dgw-said "m1" "<@&500> look into X" :author "42") :answer nil
+                  "and the ask answers")
+      (event "GUILD_MEMBER_UPDATE" "{\"guild_id\": \"g1\", \"roles\": [\"456\"],
+                                    \"user\": {\"id\": \"999\", \"bot\": true}}")
+      (is (not (involves "<@&500> oi")) "a role taken away stops addressing it")
+      (is (involves "<@&456> oi") "and the one kept still does")
+      ;; Two other bots' roles: one as its own message showed them, one as
+      ;; the guild did; a person holding the role is no bot.
+      (event "MESSAGE_CREATE" "{\"id\": \"m5\", \"channel_id\": \"c1\", \"guild_id\": \"g1\", \"content\": \"done\",
+                               \"author\": {\"id\": \"7770\", \"username\": \"Elektra\", \"bot\": true},
+                               \"member\": {\"roles\": [\"500\"]}}")
+      (event "GUILD_CREATE" "{\"id\": \"g1\", \"members\": [
+                               {\"user\": {\"id\": \"1542\", \"username\": \"Hindsight\", \"bot\": true}, \"roles\": [\"500\", \"600\"]},
+                               {\"user\": {\"id\": \"43\", \"username\": \"kim\"}, \"roles\": [\"500\"]},
+                               {\"user\": {\"id\": \"999\", \"username\": \"scrap\", \"bot\": true}, \"roles\": [\"500\"]}]}")
+      (is (involves "<@&500> oi") "GUILD_CREATE's own member object gives the role back")
+      (is (equal '(("1542" . "Hindsight") ("7770" . "Elektra")) (named "<@&500> look into X"))
+          "the bots holding the role, oldest first, never this one or a person")
+      (is (equal '(("1542" . "Hindsight") ("7770" . "Elektra"))
+                 (named "look into X" "\"mention_roles\": [\"500\"],"))
+          "mention_roles names the role as the pill does")
+      (is (equal '(("7770" . "Elektra") ("1542" . "Hindsight"))
+                 (named "<@7770> <@&500>"
+                        "\"mentions\": [{\"id\": \"7770\", \"username\": \"Elektra\", \"bot\": true}],"))
+          "a bot it @mentions keeps its place, and is named once")
+      (is (null (named "<@&600x> <@&456> hi")) "a role no other bot holds names none")
+      (event "GUILD_ROLE_DELETE" "{\"guild_id\": \"g1\", \"role_id\": \"500\"}")
+      (is (not (involves "<@&500> oi")) "a deleted role addresses nobody")
+      (is (null (named "<@&500> hi")) "and reaches no bot")
+      (is (null (event "TYPING_START" "{\"guild_id\": \"g1\"}")) "any other event is not read"))))
+
+(deftest channel-discord-a-role-ping-reads-the-roster-first ()
+  ;; Who holds a role is Discord's to say at the moment it is pinged: a
+  ;; person's role ping reads its guild's member list before it routes, once
+  ;; for the pings that follow it within a few seconds.
+  (let ((ncd::*roster-read-at* (make-hash-table :test #'equal :synchronized t)))
+    (flet ((due (author text)
+             (ncd::roster-read-due (dgw-dispatch "MESSAGE_CREATE" (dgw-d "m1" text :author author))
+                                   "999")))
+      (is (null (due "42" "plain words, <@999>")) "a line that pings no role routes at once")
+      (is (null (due "999" "<@&500> mine")) "and so does the bot's own")
+      (is (equal "g1" (due "42" "<@&500> look into X")) "a role ping reads its guild's list first")
+      (is (null (due "42" "<@&500> again")) "once for the pings that follow it")
+      (is (null (ncd::roster-read-due (dgw-dispatch "MESSAGE_CREATE" (dgw-d "m2" "<@&500> dm" :guild nil)) "999"))
+          "a direct message has no roles to read"))))
+
 (deftest channel-discord-reply-carries-the-answered-message ()
   ;; The reply gesture decides the lane; what was answered must ride with the
   ;; ask — the lane reads it without a fetch.

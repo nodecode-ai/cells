@@ -49,6 +49,11 @@ names; forget the thread after."
   ;; another bot adds it at the end; no bot ever moves from its place.
   (is (equal '("3" "1" "2") (nck::mention-order "<@3> then <@!1> and <@2>" '("1" "2" "3"))))
   (is (equal '("2" "1") (nck::mention-order "only <@2>" '("1" "2"))) "an id the text never names goes last")
+  ;; A role ping names none of them: each bot gives its own id first, and
+  ;; all must still reach one order.
+  (is (equal '("9" "30" "100") (nck::mention-order "<@&5> go" '("100" "9" "30")))
+      "ids the text never names go by id, whichever comes first")
+  (is (equal '("30" "9" "100") (nck::mention-order "<@30> <@&5> go" '("100" "9" "30"))))
   (let ((host (test-host :name "team-slots")))
     (setf (nck:host-policy host) (channel-policy :self-id "999"))
     (unwind-protect

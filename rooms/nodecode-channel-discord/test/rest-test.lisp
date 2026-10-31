@@ -8,17 +8,57 @@
             (edit nck::request-plan) (first-plan nck::request-plan) (result nck::execution)
             (tail-plan nck::request-plan))
 
+(defun roster-member (id name bot &rest roles)
+  "A guild member object as Discord's member list answers it: user ID named
+NAME, BOT its bot flag, holding ROLES."
+  (nlk:json-object "user" (if bot
+                              (nlk:json-object "id" id "username" name "bot" t)
+                              (nlk:json-object "id" id "username" name))
+                   "roles" (coerce roles 'vector)))
+
+(deftest channel-discord-roster-read-keeps-up-with-the-guild ()
+  ;; A whole read of the member list is the guild as it stands: a bot it no
+  ;; longer names has left, and the bot's own roles are what it holds now.
+  (let ((ncd:*self-role-ids* (make-hash-table :test #'equal :synchronized t))
+        (ncd:*guild-bots* (make-hash-table :test #'equal :synchronized t)))
+    (flet ((read-roster (&rest responses)
+             (ncd:read-guild-roster (apply #'scripted-executor responses) "g1" "999"
+                                    :timeout-seconds 5))
+           (role-bots ()
+             (ncd::discord-role-bots (cell-json "{\"guild_id\": \"g1\", \"content\": \"<@&500> go\"}")
+                                     "999")))
+      (is (eq :roster (read-roster (nck:make-scripted-response
+                                    200 (vector (roster-member "777" "Elektra" t "500")
+                                                (roster-member "999" "scrap" t "500"))))))
+      (is (equal '(("777" . "Elektra")) (role-bots)))
+      (is (equal '("500") (ncd:discord-self-role-ids)))
+      (is (eq :roster (read-roster (nck:make-scripted-response
+                                    200 (vector (roster-member "999" "scrap" t "501"))))))
+      (is (null (role-bots)) "a bot the whole list no longer names has left")
+      (is (equal '("501") (ncd:discord-self-role-ids)) "and the bot's own roles are the list's")
+      (is (eq :failed (read-roster (nck:make-scripted-response 403 "{}")
+                                   (nck:make-scripted-response 500 "{}")))
+          "neither the list nor the bot's own member read")
+      (is (equal '("501") (ncd:discord-self-role-ids)) "and a failed read forgets nothing"))))
+
 (deftest channel-discord-hydrate-self-roles ()
   ;; The roles the bot itself holds come from its own member object in each
   ;; guild it is in. With them the mention rule admits a role pill; without
   ;; them a mention-gated room turns the ask away as mention_required.
-  (let ((ncd:*self-role-ids* (make-hash-table :test #'equal))
+  (let ((ncd:*self-role-ids* (make-hash-table :test #'equal :synchronized t))
+        (ncd:*guild-bots* (make-hash-table :test #'equal :synchronized t))
         (executor (scripted-executor
                    ;; The executor hands a top-level array back decoded, a
                    ;; vector of objects (NCK PARSE-JSON-BODY).
                    (nck:make-scripted-response 200 (vector (nlk:json-object "id" "g1")
                                                            (nlk:json-object "id" "g2")))
-                   (reply 200 "roles" (vector "456" "111"))
+                   ;; g1's member list: a person, another bot, the bot itself.
+                   (nck:make-scripted-response
+                    200 (vector (roster-member "42" "kim" nil "456")
+                                (roster-member "777" "Elektra" t "456")
+                                (roster-member "999" "scrap" t "456" "111")))
+                   ;; g2 grants no member list (no Server Members intent).
+                   (nck:make-scripted-response 403 (nlk:json-object "code" 50001))
                    (reply 200 "roles" (vector "789")))))
     (is (equal '("111" "456" "789")
                (sort (copy-list (ncd:hydrate-self-roles executor "999"
@@ -26,10 +66,15 @@
                      #'string<)))
     (is (equal '("111" "456" "789")
                (sort (ncd:discord-self-role-ids) #'string<)))
-    (is (equal '("/users/@me/guilds" "/guilds/g1/members/999"
-                 "/guilds/g2/members/999")
+    (is (equal '(("777" . "Elektra"))
+               (ncd::discord-role-bots (cell-json "{\"guild_id\": \"g1\", \"content\": \"<@&456> go\"}")
+                                       "999"))
+        "the member list says which roles reach which other bots")
+    (is (equal '("/users/@me/guilds" "/guilds/g1/members?limit=1000&after=0"
+                 "/guilds/g2/members?limit=1000&after=0" "/guilds/g2/members/999")
                (mapcar #'nck:request-plan-path
-                       (nck:recording-executor-plans executor)))))
+                       (nck:recording-executor-plans executor)))
+        "a guild that grants no member list answers the bot's own member object"))
   (let ((ncd:*self-role-ids* (make-hash-table :test #'equal))
         (executor (scripted-executor (nck:make-scripted-response 500 "{}"))))
     (is (eq :failed (ncd:hydrate-self-roles executor "999" :timeout-seconds 5)))
