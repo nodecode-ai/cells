@@ -177,6 +177,12 @@
                                        '~a'. Remove it at chrome://extensions, then run ~
                                        /chrome onboard to load this one."
                              timeout bridge.foreign-name bridge.name))
+                    ((and (or (null age) (> age 60)) (unauthorized-polling-p bridge))
+                     (format nil "Timed out after ~as: an extension is polling without this ~
+                                       bridge's secret, most likely a build from before it. Reload ~
+                                       'Nodecode Chrome Connector' at chrome://extensions, or run ~
+                                       /chrome onboard and load the folder it names."
+                             timeout))
                     ((or (null age) (> age 60))
                      (format nil "Timed out after ~as: the Chrome extension is not polling ~
                                        (last seen ~a). Run /chrome onboard, then load the folder it ~

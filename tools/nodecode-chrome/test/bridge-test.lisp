@@ -248,6 +248,18 @@
                             :body (nlk:json-object "action" "tab.list")))
       "the secret counts only as a Bearer"))
 
+(deftest chrome-cell-bridge-a-secretless-extension-is-named-when-a-send-times-out
+    (with-chrome-bridge (port bridge))
+  ;; An install from before the secret that did not reload itself: the send's
+  ;; error says what to do, instead of "not polling".
+  (is (eql 200 (bridge-http port :get "/next?name=Nodecode%20Chrome%20Connector%20old"
+                            :origin +fake-origin+)))
+  (is-present (condition (signals-error chrome:chrome-timeout
+                           (chrome::bridge-send bridge "tab.list" nil :timeout 0.3)))
+    "only a secretless poll came: the timeout names it"
+    (is (search "without this bridge's secret" (princ-to-string condition)))
+    (is (search "chrome://extensions" (princ-to-string condition)))))
+
 (deftest chrome-cell-bridge-another-extension-is-refused-even-with-the-secret ()
   (let ((other "chrome-extension://ponmlkjihgfedcbaponmlkjihgfedcba"))
     ;; Pinned up front, as the cell pins the extension loaded from its folder.
