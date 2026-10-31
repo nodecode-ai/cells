@@ -802,6 +802,96 @@ message of ours."
     (sleep 0.3)
     (is (= 1 (length (plans))))))
 
+(defun hold-first-post (executor &aux (lock (bt2:make-lock :name "hold-first-post")) held
+                                      (gate (bt2:make-semaphore :name "held-post"))
+                                      (entered (bt2:make-semaphore :name "post-in-flight"))
+                                      (inner (nck::plan-executor-run executor)))
+  "Hold EXECUTOR's first send_message in flight. => (values RELEASE ENTERED):
+RELEASE lets it go on, ENTERED is signalled once it is in flight."
+  (setf (nck::plan-executor-run executor)
+        (lambda (plan)
+          (when (and (equal "send_message" (nck:request-plan-audit-label plan))
+                     (bt2:with-lock-held (lock) (unless held (setf held t))))
+            (bt2:signal-semaphore entered)
+            (bt2:wait-on-semaphore gate :timeout 10))
+          (funcall inner plan)))
+  (values (lambda () (bt2:signal-semaphore gate)) entered))
+
+(defmacro with-held-post-host ((host lane executor release entered name) &body body)
+  "A host with a pool of four drainers whose first card post HOLD-FIRST-POST
+holds, and one lane of it in room 123, torn down after BODY."
+  `(let ((,executor (nck:make-recording-executor :responses (replies "s1" "s2" "s3"))))
+     (multiple-value-bind (,release ,entered) (hold-first-post ,executor)
+       (let* ((,host (test-host :executor ,executor :name ,name :workers 4))
+              (,lane (nck:intern-lane (nck:host-lanes ,host) "chat-123-m1"
+                                      :target '(:channel-id "123") :trigger-message-id "m1")))
+         (nlk:with-cleanup ((funcall ,release)
+                            (nck:stop-delivery-worker (nck:host-worker ,host)))
+           ,@body)))))
+
+(defun card-posts (executor)
+  "The card posts EXECUTOR has recorded."
+  (plans-matching (nck:recording-executor-plans executor) :label "send_message"))
+
+(defun notice-posts (executor)
+  "The card posts EXECUTOR has recorded that carry the failure notice."
+  (remove-if-not (lambda (plan) (search "store is not open" (plan-content plan)))
+                 (card-posts executor)))
+
+(deftest channel-host-fast-failure-posts-one-card ()
+  ;; 2026-10-30, #general: an ask refused at admission ("store is not open")
+  ;; had no card yet. FAIL-LANE posted its notice, and the tick, planning the
+  ;; same digest while that post was in flight -- no status id back yet --
+  ;; posted it again: one failure, two cards.
+  (with-held-post-host (host lane executor release entered "fast-failure")
+    (let ((failing (bt2:make-thread (lambda () (nck::fail-lane host lane "store is not open"))
+                                    :name "fast-failure")))
+      (is (bt2:wait-on-semaphore entered :timeout 10) "the notice's post is in flight")
+      (dotimes (index 4) (nck:schedule-flush host lane))
+      (sleep 0.3)
+      (funcall release)
+      (bt2:join-thread failing)
+      (nck:schedule-flush host lane)
+      (sleep 0.3)
+      (is (= 1 (length (card-posts executor))) "one card for one failed ask")
+      (is (search "store is not open" (plan-content (first (card-posts executor))))))))
+
+(deftest channel-host-terminal-settle-owed-to-the-flush-in-flight ()
+  ;; The other order: the tick's post of the failed card is in flight when
+  ;; the terminal settle runs. The settle posts nothing beside it; it is owed
+  ;; to the flush in flight, which runs it as it lets go.
+  (with-held-post-host (host lane executor release entered "settle-owed")
+    (bt2:with-lock-held ((nck:lane-lock lane))
+      (nck:digest-note-terminal (nck:lane-open-digest lane (nck:now-ms))
+                                :failed "store is not open" (nck:now-ms)))
+    (nck:schedule-flush host lane)
+    (is (bt2:wait-on-semaphore entered :timeout 10) "the tick's post is in flight")
+    (nck:flush-now host lane)
+    (funcall release)
+    (sleep 0.5)
+    (nck:schedule-flush host lane)
+    (sleep 0.3)
+    (is (= 1 (length (card-posts executor))) "one card for one failed ask")))
+
+(deftest channel-host-owed-settle-outlives-a-stale-flush ()
+  ;; The flush in flight carried the card planned while the ask still queued:
+  ;; it lands, retires itself (its turn is over), and the owed settle posts
+  ;; the notice at once -- and the next tick finds nothing left to post.
+  (with-held-post-host (host lane executor release entered "settle-stale")
+    (bt2:with-lock-held ((nck:lane-lock lane))
+      (nck:digest-note-queued (nck:lane-open-digest lane (nck:now-ms)) 0))
+    (nck:schedule-flush host lane)
+    (is (bt2:wait-on-semaphore entered :timeout 10) "the queued card's post is in flight")
+    (bt2:with-lock-held ((nck:lane-lock lane))
+      (nck:digest-note-terminal (nck:lane-digest lane) :failed "store is not open" (nck:now-ms)))
+    (nck:flush-now host lane)
+    (funcall release)
+    (is (await (:timeout 10) (notice-posts executor)) "the notice lands with no later tick")
+    (sleep 0.3)
+    (nck:schedule-flush host lane)
+    (sleep 0.3)
+    (is (= 1 (length (notice-posts executor))) "one notice card")))
+
 (deftest channel-host-laneless-failure-notice (with-digest-host (host nil :name "laneless"))
   (fold-fact host "chat-999-t555-m4" "turn.failed"
              (nlk:json-object "detail" "turn was not resumed after 3 boots") "t9")
@@ -1954,6 +2044,7 @@ first waiting at QUEUED-AT."
         (is (search "/s1" (nck:request-plan-path paused))))
       ;; The queued line says it waits on.
       (is-present (held (plan-matching plans :method "PATCH" :content nck::+held-detail+))
+        "the queued line says it waits on"
         (is (search "/s2" (nck:request-plan-path held)))))
     (let ((held (nlk:decode-json (nlk:session-state-get "channel-test" nck::+queued-key+))))
       (is (= 1 (length held)))
@@ -2058,6 +2149,7 @@ it would have done on the way out (STOP-HOST's hand-off)."
          (progn
            (is (null (nck::with-room-book (book host) (nck::room-book-pending book))) "nothing waits")
            (is-present (dropped (await-plan executor :method "PATCH" :content nck::+stale-detail+))
+             "the stale line says it was dropped"
              (is (search "/s3" (nck:request-plan-path dropped))))
            (is (null (nlk:session-state-get "channel-test" nck::+queued-key+))))
       (nck:stop-host host))))

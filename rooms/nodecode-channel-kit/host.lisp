@@ -1293,6 +1293,17 @@ over."
              (null (getf (turn-digest-usage digest) :provider)))
     (digest-note-provider digest (ignore-errors (values (nle:gateway-target lane.session-id))))))
 
+(defvar *flush-owed* (make-hash-table :test #'eq :weakness :key :synchronized t)
+  "Lanes whose terminal settle (FLUSH-NOW) found another flush of theirs in
+flight: that flush runs the settle as it lets go (RELEASE-FLUSH).")
+
+(defun release-flush (host lane)
+  "Let go of LANE's one flush in flight; a settle owed meanwhile runs now."
+  (when (bt2:with-lock-held ((lane-lock lane))
+          (setf lane.flush-in-flight-p nil)
+          (remhash lane *flush-owed*))
+    (flush-now host lane)))
+
 (defun schedule-flush (host lane &aux kind card status-id terminal-p reply-to controls media)
   "Tick thread: plan LANE's card under the lane lock (pure), and enqueue the
 platform call it implies."
@@ -1320,8 +1331,7 @@ platform call it implies."
                                       '(:queued :running)))))))
   (when kind
     (on-worker host
-      (nlk:with-cleanup ((bt2:with-lock-held ((lane-lock lane))
-                           (setf (lane-flush-in-flight-p lane) nil)))
+      (nlk:with-cleanup ((release-flush host lane))
         (perform-flush host lane kind card status-id terminal-p
                        :reply-to reply-to :controls controls :media media)))))
 
@@ -1469,23 +1479,36 @@ title it is given is its ask's (WEAR-TITLE). Every other session is NEXT's."
             (digest-status-delivered digest card nil landed)))))))
 
 (defun flush-now (host lane &aux kind card status-id reply-to controls media)
-  "Plan and perform LANE's card on THIS thread."
+  "Plan and perform LANE's card on THIS thread -- or, while another flush of
+LANE is in flight, leave the settle owed to it (RELEASE-FLUSH)."
   ;; The terminal settle: a failed turn's notice must land before the finish
   ;; path moves on, and the tick's next pass is up to half a second away.
+  ;; It takes the lane's one flush claim, as the tick does (SCHEDULE-FLUSH):
+  ;; an ask refused before it had a card posted its notice here while the
+  ;; tick, planning the same digest with no status id back yet, posted it
+  ;; again (2026-10-30, #general: "store is not open" twice from each bot).
+  ;; It waits for no flush in flight -- that one may be queued behind this
+  ;; very job on a one-drainer pool -- and the reference is the tick's own
+  ;; (LANE-REFERENCE): in a thread the kit opened, the thread is the anchor.
   (with-lane-digest (digest lane)
-    (setf controls (or (line-controls lane digest) :clear))
-    (unless (or digest.task (zerop (length lane.said)))
-      (setf digest.task (first-words lane.said)))
-    (multiple-value-setq (kind card)
-      (digest-status-plan digest (now-ms) :min-update-ms host.status-update-ms :controls controls))
-    (cond ((eq kind :skip) (setf kind nil))
-          (t (digest-status-attempted digest (now-ms) :controls controls)
-             (setf status-id digest.status-id
-                   media digest.posted-media
-                   reply-to digest.ask-id))))
+    (if lane.flush-in-flight-p
+        (setf (gethash lane *flush-owed*) t)
+        (progn
+          (setf controls (or (line-controls lane digest) :clear))
+          (unless (or digest.task (zerop (length lane.said)))
+            (setf digest.task (first-words lane.said)))
+          (multiple-value-setq (kind card)
+            (digest-status-plan digest (now-ms) :min-update-ms host.status-update-ms :controls controls))
+          (cond ((eq kind :skip) (setf kind nil))
+                (t (digest-status-attempted digest (now-ms) :controls controls)
+                   (setf lane.flush-in-flight-p t
+                         status-id digest.status-id
+                         media digest.posted-media
+                         reply-to (lane-reference lane digest.ask-id)))))))
   (when kind
-    (perform-flush host lane kind card status-id t :reply-to reply-to
-                   :controls controls :media media)))
+    (nlk:with-cleanup ((release-flush host lane))
+      (perform-flush host lane kind card status-id t :reply-to reply-to
+                     :controls controls :media media))))
 
 (defun retire-thread (host lane &aux (origin (lane-empty-thread lane))
                                      (thread-id (getf origin :thread-id))
