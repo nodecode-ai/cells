@@ -1,8 +1,546 @@
 {
   "format": 1,
-  "updated": "2026-10-30T22:20:16Z",
-  "window": "2026-10-16 to 2026-10-30",
+  "updated": "2026-10-31T04:20:19Z",
+  "window": "2026-10-17 to 2026-10-31",
   "advisories": [
+    {
+      "id": "signalk-resources-traversal",
+      "title": "Signal K resources API path traversal discloses the JWT signing secret and enables remote code execution",
+      "date": "2026-10-31",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [],
+      "summary": "The Signal K marine server's resources API fails to contain paths: a traversal reads outside the resources tree - including the server's JWT signing secret, which then lets an attacker mint tokens as any user, and further write paths reach code execution. Fixed in signalk-server 2.34.0 and @signalk/resources-provider 1.5.3.",
+      "affected": "signalk-server 2.0.0 up to 2.33.x and @signalk/resources-provider 1.0.0 up to 1.5.2.",
+      "fixed": [
+        "2.34.0",
+        "1.5.3"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "signalk-server",
+          "package": "signalk-server",
+          "line": 1,
+          "fixed": [
+            "2.34.0"
+          ]
+        },
+        {
+          "kind": "npm",
+          "label": "@signalk/resources-provider",
+          "package": "@signalk/resources-provider",
+          "line": 1,
+          "fixed": [
+            "1.5.3"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install signalk-server@^2.34.0 and @signalk/resources-provider@^1.5.3, then restart the server",
+        "Rotate the JWT signing secret after upgrading - anything derived from the old one is forgeable"
+      ],
+      "mitigation": [
+        "Until upgraded: keep the Signal K server off untrusted networks and behind an authenticating proxy"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-4xm8-rg9h-jhq2"
+      ]
+    },
+    {
+      "id": "imgproxy-ico-2026-10",
+      "title": "imgproxy 3.3-4.0.x: ICO loader integer overflow (possible RCE), out-of-bounds heap read/write, and unbounded allocation",
+      "date": "2026-10-31",
+      "severity": "critical",
+      "exploited": false,
+      "cves": [],
+      "summary": "Three flaws in imgproxy's ICO loader, all reachable unauthenticated through image conversion requests. An integer overflow can corrupt memory and may permit remote code execution; a BMP header reconstruction bug gives out-of-bounds heap reads and writes that crash workers; and a crafted data_size field drives unbounded memory allocation. imgproxy sits in front of image pipelines by design, so untrusted image input is its normal workload.",
+      "affected": "imgproxy 3.3.0 up to 4.0.15 (allocation: up to 4.0.15), 4.0.16 for the overflow and heap bugs; all fixed by 4.0.17.",
+      "fixed": [
+        "4.0.17"
+      ],
+      "checks": [],
+      "patch": [
+        "Upgrade imgproxy to 4.0.17 and restart the service"
+      ],
+      "mitigation": [
+        "Until upgraded: reject ICO/TIFF-class inputs at the edge - convert only the formats your pipeline needs"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-hff9-5pqw-6w9f",
+        "https://github.com/advisories/GHSA-494m-4556-wf5p",
+        "https://github.com/advisories/GHSA-mmq5-xm89-9pfg"
+      ]
+    },
+    {
+      "id": "kubeflow-pipelines-2026-10",
+      "title": "Kubeflow Pipelines: pipeline archive upload is a decompression bomb, and the run-log endpoint leaks pod logs without authorization",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Two flaws in Kubeflow Pipelines. A pipeline archive upload decompresses without limits, so a crafted archive exhausts server memory (denial of service). And the run-log endpoint serves pod logs without checking who asked - any caller who can reach it reads other users' pipeline logs, which routinely carry tokens and data. The fixes land in master snapshots (20260831 and 20260904 builds); 1.7.0-alpha.3 has no patched release.",
+      "affected": "Kubeflow Pipelines releases up to the 2026-08-31 / 2026-09-04 master snapshots; no release-tagged fix is published.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Deploy a Kubeflow Pipelines build from the 2026-09-04 master snapshot or later (both fixes are in)",
+        "No tagged release carries the fix: if you cannot move to a master build, restrict the endpoints instead"
+      ],
+      "mitigation": [
+        "Until updated: cap the size of pipeline archive uploads at the ingress, and put the run-log endpoint behind an authorization check or an authenticating proxy"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-8fmv-6rg5-5924",
+        "https://github.com/advisories/GHSA-wg5q-x4j9-qm54"
+      ]
+    },
+    {
+      "id": "pypdf-6-21-4",
+      "title": "pypdf before 6.21.3 / 6.21.4: seven parser bugs give infinite loops and unbounded memory on crafted PDFs",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Seven fixes for pypdf's PDF parser - all denial of service through crafted documents: infinite loops on EOF in the xref table and while cloning dictionaries, large memory usage parsing page trees, cross-reference streams and strict-mode exceptions, long runtimes on encrypted PDFs and page labels. A service that parses untrusted PDFs (upload handlers, document pipelines) with an older pypdf can be stalled by one document.",
+      "affected": "pypdf below 6.21.3 (fixed 6.21.3) with the remaining loop/memory fixes in 6.21.4.",
+      "fixed": [
+        "6.21.4"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "pypdf",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('pypdf'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "6.21.4"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'pypdf>=6.21.4' and restart the services that parse PDFs"
+      ],
+      "mitigation": [
+        "Until upgraded: parse untrusted PDFs in a worker with memory and time limits"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-5849-834g-hvw5",
+        "https://github.com/advisories/GHSA-cggf-277g-3q54",
+        "https://github.com/advisories/GHSA-mfr5-77xh-9j7h",
+        "https://github.com/advisories/GHSA-42gh-23hr-vphw",
+        "https://github.com/advisories/GHSA-4vqv-7265-gm2w",
+        "https://github.com/advisories/GHSA-62m5-6wh8-28x7",
+        "https://github.com/advisories/GHSA-x3rh-gjgm-fmqc"
+      ]
+    },
+    {
+      "id": "joi-email-dos",
+      "title": "joi before 17.13.9 / 18.3.1: quadratic-time split in string().email({ multiple: true }) allows denial of service",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Validating a multi-address email string with joi's string().email({ multiple: true }) splits it in quadratic time, so one long crafted value pins a CPU - and joi validates request bodies on a huge share of Node services. Fixed in 17.13.9 (17 line) and 18.3.1; @hapi/joi 16.x/17.0-17.1.1 has no fix.",
+      "affected": "joi 17.1.1 up to 17.13.8 (fixed 17.13.9) and 18.0.0 up to 18.3.0 (fixed 18.3.1); @hapi/joi 16.0.0-17.1.1 unsupported.",
+      "fixed": [
+        "17.13.9",
+        "18.3.1"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "joi",
+          "package": "joi",
+          "line": 1,
+          "min": "17.1.1",
+          "fixed": [
+            "17.13.9",
+            "18.3.1"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install joi@^18.3.1 (or 17.13.9 on the 17 line) and restart the services"
+      ],
+      "mitigation": [
+        "Until upgraded: cap request body sizes and avoid email(multiple) on untrusted input"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-4528-x5fx-h6hg"
+      ]
+    },
+    {
+      "id": "hapi-content-disposition-dos",
+      "title": "@hapi/content before 6.0.3: quadratic-time parsing of Content-Disposition parameters allows denial of service",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "The Content-Disposition parser takes quadratic time on crafted parameter values, so one header stalls a worker on any service that reads it. Fixed in @hapi/content 6.0.3; the legacy content 3.x/4.x line has no fix.",
+      "affected": "@hapi/content 6.0.2 and earlier (fixed 6.0.3); content 3.0.6-4.x unsupported.",
+      "fixed": [
+        "6.0.3"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@hapi/content",
+          "package": "@hapi/content",
+          "line": 1,
+          "fixed": [
+            "6.0.3"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install @hapi/content@^6.0.3 and restart the services"
+      ],
+      "mitigation": [
+        "Until upgraded: cap header sizes at the proxy"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-8494-f6mr-cjpv"
+      ]
+    },
+    {
+      "id": "authlib-rfc7592-token-binding",
+      "title": "Authlib 0.15-1.9.0: RFC 7592 examples omit the registration-access-token client binding",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Authlib's RFC 7592 dynamic-client-registration examples do not bind the registration access token to the client it was issued for, so a copied or guessed token can manage another client's registration. Applications built on these examples inherit the gap. Fixed in 1.9.1 - the same release that closes the signature-validation trio in authlib-2026-10.",
+      "affected": "Authlib 0.15 up to 1.9.0 where dynamic client registration follows the bundled examples.",
+      "fixed": [
+        "1.9.1"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "authlib",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('authlib'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "1.9.1"
+          ],
+          "min": "0.15"
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'Authlib>=1.9.1' and re-check your registration implementation against the fixed examples"
+      ],
+      "mitigation": [
+        "Until upgraded: bind registration access tokens to the client record server-side and reject tokens presented for another client"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-c73q-w75p-j82v"
+      ]
+    },
+    {
+      "id": "pyasn1-2026-10",
+      "title": "pyasn1 before 0.6.5: quadratic CPU in BIT STRING, REAL and container decoding (four denial-of-service fixes)",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Four quadratic-time decodes in pyasn1 - constructed BIT STRING, binary REAL, constructed strings and indefinite-length ANY, and schemaless BER/CER/DER containers - each turns a crafted ASN.1 blob into pinned CPU. Anything that parses untrusted certificates, LDAP or Kerberos structures through pyasn1 can be stalled.",
+      "affected": "pyasn1 0.3.3 and later up to 0.6.4 (fixed 0.6.5).",
+      "fixed": [
+        "0.6.5"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "pyasn1",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('pyasn1'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "0.6.5"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'pyasn1>=0.6.5' and restart the services"
+      ],
+      "mitigation": [
+        "Until upgraded: cap the size of ASN.1 inputs before decoding"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-2qm8-x737-gmw5",
+        "https://github.com/advisories/GHSA-mm57-4v3p-rchx",
+        "https://github.com/advisories/GHSA-9m75-vc3g-4x39",
+        "https://github.com/advisories/GHSA-fm9c-5rcf-2q5p"
+      ]
+    },
+    {
+      "id": "node-forge-1-4-1",
+      "title": "node-forge before 1.4.1: X.509 basicConstraints bypass, PKCS#12 MAC forgery with zero-iteration PBE, and three denial-of-service fixes",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Five fixes in the node-forge crypto library. verifyCertificateChain() accepts deprecated extension OIDs (2.5.29.10, 2.5.29.13) as basicConstraints, so a chain can bypass the CA constraint check. PKCS#12 files with a zero iteration count get constant-key PBE and a forgeable MAC. And PEM decoding plus TLS record processing carry a regex denial of service, a call-stack exhaustion, and an interleaving crash. Fixed in 1.4.1.",
+      "affected": "node-forge 1.4.0 and earlier.",
+      "fixed": [
+        "1.4.1"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "node-forge",
+          "package": "node-forge",
+          "line": 1,
+          "fixed": [
+            "1.4.1"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install node-forge@^1.4.1 and rebuild the services that verify chains or read PKCS#12"
+      ],
+      "mitigation": [
+        "Until upgraded: do not accept client-supplied certificate chains or PKCS#12 files through node-forge"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-7wch-p9px-956x",
+        "https://github.com/advisories/GHSA-jc66-7q78-782g",
+        "https://github.com/advisories/GHSA-8hrf-8g6f-7xwp",
+        "https://github.com/advisories/GHSA-hqq3-7jhf-c5jx",
+        "https://github.com/advisories/GHSA-5x38-2vff-x55p"
+      ]
+    },
+    {
+      "id": "sigstore-oci-auth-header",
+      "title": "@sigstore/oci before 0.7.2: the registry Authorization header follows a cross-host blob-upload Location",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "When a registry answers a blob upload with a redirect, @sigstore/oci sends the registry's Authorization header to the cross-host Location - the registry credential lands on whatever host the redirect names. Supply-chain signing tooling holds registry tokens, so one redirect response leaks them.",
+      "affected": "@sigstore/oci 0.7.1 and earlier.",
+      "fixed": [
+        "0.7.2"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@sigstore/oci",
+          "package": "@sigstore/oci",
+          "line": 1,
+          "fixed": [
+            "0.7.2"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install @sigstore/oci@^0.7.2 and rebuild the signing/CI tooling"
+      ],
+      "mitigation": [
+        "Until upgraded: use short-lived registry tokens and pin registry hosts at the network layer"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-j63v-mwhm-56jx"
+      ]
+    },
+    {
+      "id": "follow-redirects-1-16-2",
+      "title": "follow-redirects 1.16.0-1.16.1: cross-realm sensitiveHeaders arrays are discarded and custom credentials follow redirects",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "The redirect guard that should stop sensitive headers from following a redirect silently discards a sensitiveHeaders array from another realm, and custom credentials can still follow redirects - a redirect chain can carry authorization headers where the caller did not intend them. Fixed in 1.16.2.",
+      "affected": "follow-redirects 1.16.0 and 1.16.1.",
+      "fixed": [
+        "1.16.2"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "follow-redirects",
+          "package": "follow-redirects",
+          "line": 1,
+          "min": "1.16.0",
+          "fixed": [
+            "1.16.2"
+          ]
+        }
+      ],
+      "patch": [
+        "npm install follow-redirects@^1.16.2 (or let axios pull it in) and restart the services"
+      ],
+      "mitigation": [
+        "Until upgraded: do not set sensitiveHeaders across realms; strip authorization at the proxy on redirects"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-mrwp-f3q8-3g9p"
+      ]
+    },
+    {
+      "id": "russh-agent-confirm",
+      "title": "russh before 0.65: the agent server never asks, so confirm-constrained keys (ssh-add -c) sign without confirmation",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "russh's SSH agent server never calls Agent::confirm: keys added with the confirmation constraint - ssh-add -c, the guard that makes an agent ask before each signature - sign silently. Any agent built on russh turns the confirm constraint into a no-op, so a stolen agent socket authorizes operations the user meant to gate.",
+      "affected": "russh below 0.65.",
+      "fixed": [
+        "0.65"
+      ],
+      "checks": [],
+      "patch": [
+        "cargo update russh (>=0.65) and rebuild the agent software"
+      ],
+      "mitigation": [
+        "Until rebuilt: do not load confirm-constrained keys into a russh-based agent - use a hardware key or an ssh-agent that prompts"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-vp5q-ff62-jwqv"
+      ]
+    },
+    {
+      "id": "graphql-core-aborted-validation-leak",
+      "title": "graphql-core before 3.3.1: memory leak in aborted validations is a denial of service",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Aborted GraphQL validations leak memory in graphql-core, so a stream of requests that start and abort validation grows the process until the server is unusable. Fixed in 3.3.1.",
+      "affected": "graphql-core 3.3.0-alpha3 up to 3.3.0.",
+      "fixed": [
+        "3.3.1"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "graphql-core",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('graphql-core'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "3.3.1"
+          ],
+          "min": "3.3.0a3"
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'graphql-core>=3.3.1' and restart the GraphQL services"
+      ],
+      "mitigation": [
+        "Until upgraded: limit request rates and query complexity at the gateway"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-mpqx-q82w-9x46"
+      ]
+    },
+    {
+      "id": "oauthlib-token-grant-client-confusion",
+      "title": "OAuthLib before 4.0.0: token grants can use an attacker-supplied client_id after authenticating a different client",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "In OAuthLib's token endpoint, the grant authenticates one client but then authorizes with a client_id the caller supplies - a client that proved its own identity can obtain a token scoped to another client. Fixed in 4.0.0, the same release that closes the device-flow flaw in oauthlib-device-flow-token.",
+      "affected": "oauthlib below 4.0.0 (token grant paths).",
+      "fixed": [
+        "4.0.0"
+      ],
+      "checks": [
+        {
+          "kind": "version",
+          "label": "oauthlib",
+          "command": [
+            "python3",
+            "-c",
+            "import importlib.metadata as m; print(m.version('oauthlib'))"
+          ],
+          "line": 1,
+          "fixed": [
+            "4.0.0"
+          ]
+        }
+      ],
+      "patch": [
+        "pip install --upgrade 'oauthlib>=4.0.0' and restart the OAuth services"
+      ],
+      "mitigation": [
+        "Until upgraded: bind the token request's client_id to the authenticated client in your own layer before it reaches the grant"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-7984-qgvg-3j9c"
+      ]
+    },
+    {
+      "id": "adminneo-5-5-1",
+      "title": "AdminNeo before 5.5.1: RCE via SQLite VACUUM INTO, arbitrary file deletion, cookie attribute injection, and XSS through a rogue MySQL server",
+      "date": "2026-10-31",
+      "severity": "high",
+      "exploited": false,
+      "cves": [],
+      "summary": "Four new fixes on top of the version-cache denial of service (adminneo-version-cache-dos): the SQLite ATTACH blocklist is bypassed through VACUUM INTO for remote code execution; the database-list drop flow deletes arbitrary files; X-Forwarded-Prefix is not sanitized and injects cookie attributes into Set-Cookie headers; and a rogue MySQL server's version string reaches the UI as XSS past the CSP nonce. The database admin tool holds database credentials and now has an RCE and file-deletion path - fixed in 5.5.1.",
+      "affected": "adminneo-org/adminneo below 5.5.1 (the cookie injection since 4.6.0).",
+      "fixed": [
+        "5.5.1"
+      ],
+      "checks": [
+        {
+          "kind": "composer",
+          "label": "adminneo-org/adminneo",
+          "packages": [
+            "adminneo-org/adminneo"
+          ],
+          "line": 1,
+          "fixed": [
+            "5.5.1"
+          ]
+        }
+      ],
+      "patch": [
+        "composer require adminneo-org/adminneo:^5.5.1 and redeploy"
+      ],
+      "mitigation": [
+        "Until upgraded: keep AdminNeo off untrusted networks and do not let it connect to untrusted MySQL servers",
+        "Treat any X-Forwarded-Prefix from outside as hostile"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://github.com/advisories/GHSA-6vfx-w7q3-42gq",
+        "https://github.com/advisories/GHSA-79wv-8rh2-9vp2",
+        "https://github.com/advisories/GHSA-rx7m-wxwq-vxr9",
+        "https://github.com/advisories/GHSA-q5mp-gfjf-cf2j"
+      ]
+    },
     {
       "id": "nx-maven-gradle-cmdi",
       "title": "@nx/maven and @nx/gradle before 22.7.9 / 23.1.2: OS command injection via nx.json plugin options (CVE-2026-119282)",
