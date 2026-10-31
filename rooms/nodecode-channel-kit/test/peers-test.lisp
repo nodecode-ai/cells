@@ -34,7 +34,9 @@ THREAD-IDS: their peers and their runs."
   `(unwind-protect (progn ,@body)
      (dolist (thread (list ,@thread-ids))
        (remhash (cons "test" thread) nck::*thread-peers*)
-       (remhash (cons "test" thread) nck::*peer-runs*))))
+       (remhash (cons "test" thread) nck::*peer-runs*)
+       (dolist (table (list nck::*thread-slots* nck::*team-posts* nck::*board-scores* nck::*thread-steers*))
+         (remhash (cons "test" thread) table)))))
 
 (deftest channel-peers-a-refused-thread-is-taken ()
   ;; Two bots one message names both open a thread off it, and the platform
@@ -95,8 +97,8 @@ THREAD-IDS: their peers and their runs."
                                                               :text "<@999> <@777> compare notes")
                                               '(("777" . "elektra"))))
       (is-present (lane (await-lane host "chat-100-t77-m5")) "the ask opened its thread"
-        (is (search "This thread is shared with @elektra: another bot" (nck::lane-where lane)) "its lane is told who else answers there")
-        (is (search "write @elektra in your answer" (nck::lane-where lane))))
+        (is (search "You are s1; @elektra is s2." (nck::lane-where lane)) "its lane is told who else answers there, and in which slot")
+        (is (search "(nck:board-post \"77\"" (nck::lane-where lane)) "and how to post on the board"))
       (is (equal '(("777" . "elektra")) (nck::thread-peers host "77")) "the bot the ask named beside this one is the thread's peer")
       (flet ((said (text &key (user "777") (bot t))
                (nck::mark-peer host (test-candidate :is-bot bot :user user :thread "77"
