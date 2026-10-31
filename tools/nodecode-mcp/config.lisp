@@ -87,7 +87,10 @@
 ;;; reference that reaches it.
 
 (nlk:define-error reference-unresolved (error) (detail)
-  (:report "~a" detail)
+  ;; A report function, not a format string: a string's DETAIL stands for the
+  ;; slot's reader, and an image of the release before this one, taking the
+  ;; release live, refuses a form that names a reader only the form defines.
+  (:report (lambda (condition stream) (format stream "~a" (slot-value condition 'detail))))
   (:documentation "A reference names a variable that is unset or empty, or a
 file that cannot be read: DETAIL names the reference, never a value."))
 
