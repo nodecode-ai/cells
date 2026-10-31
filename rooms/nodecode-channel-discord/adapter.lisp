@@ -147,7 +147,11 @@ the message already has one names that one."
   (setf (platform-plan-close-thread platform) #'thread-close-plan
         ;; Two bots one message names both open a thread off it: the second
         ;; hears 160004 and takes the first one's thread (NCK:START-THREADED-ASK).
-        (platform-thread-of-refusal platform) #'discord-thread-of-refusal)
+        ;; Two colons: the kit's export is new, and an image of the release
+        ;; before this one reads this file, to take it live, before the kit's
+        ;; new DEFPACKAGE has run; one colon would not read, and none would
+        ;; intern a symbol of this package that the export then clashes with.
+        (nck::platform-thread-of-refusal platform) #'discord-thread-of-refusal)
   platform)
 
 (defun discord-platform-record (bot-user-id application-id)
