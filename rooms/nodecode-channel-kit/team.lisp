@@ -304,8 +304,8 @@ your turn with your answer; if it does not, post FAIL with what you saw and keep
 work: a claim until your own verify reproduces it. Weigh it and keep working.]" kind who))
         ((candidate-bot-p candidate)
          (format nil "[Your peer ~a posted this in the thread while you work. Your answer goes up as ~
-a reply to it: build on it, with only what you add, correct or dispute and never a second copy ~
-of what it said, and answer exactly NO_REPLY when you have nothing to add.]" who))
+a reply to it, which wakes it: build on it, with only what you add, correct or dispute and never ~
+a second copy of what it said, and answer exactly NO_REPLY when you have nothing to add.]" who))
         (t
          (format nil "[Said in the thread while you work, to someone else: context, not an ask ~
 of you. Keep working unless it changes your task.]"))))))
@@ -419,9 +419,10 @@ a scored post carries your newest verify's score itself -- and read the board wi
 (nck:board-read ~s). An ask that is no single measurable task -- a question, a status, an ~
 opinion -- skips the board and is talked through here instead: whoever has an answer first ~
 posts it whole, a peer's post reaches your running turn, and your answer then goes up as a ~
-reply to it with only what you add, correct or dispute -- never a second copy of what it ~
-said -- or exactly NO_REPLY when you have nothing to add. To ask a peer something, ~
-@mention it: it answers you here."
+reply to it -- a reply wakes the peer it answers -- with only what you add, correct or ~
+dispute, never a second copy of what it said, or exactly NO_REPLY when you have nothing to ~
+add. To ask a peer something, @mention it or reply to its message: either wakes it, and it ~
+answers you here."
             (length slots) (or (slot-of host thread-id self room) 0) others
             thread-id thread-id thread-id thread-id)))
 

@@ -372,13 +372,16 @@ spelling, else the key's name underscored (:user-not-allowed is
                  (not (candidate-peer-p candidate))
                  (not (mention-involves-p policy (if (stringp text) text ""))))
         (reject :bot-not-mentioned))
-      ;; A peer talks to us by name and only by name: its line that mentions
-      ;; us is an ask, every other line it posts is the thread's context. A
-      ;; room that speaks freely, or a reply to one of our messages, makes no
-      ;; ask of a peer's line -- two bots that each answered whatever the other
+      ;; A peer talks to us by name or by a reply to one of our messages:
+      ;; either is an ask and wakes us -- the conversation bots a person named
+      ;; together hold in their thread -- and every other line it posts is the
+      ;; thread's context. A room that speaks freely makes no ask of a peer's
+      ;; line, and the run of peer asks between two lines a person types is
+      ;; capped (PEER-RUN): two bots that each answered whatever the other
       ;; posted would answer each other for as long as they run.
       (when (candidate-peer-p candidate)
-        (if (mention-involves-p policy (if (stringp text) text ""))
+        (if (or (mention-involves-p policy (if (stringp text) text ""))
+                (candidate-addressed-p candidate))
             (return-from decide-inbound (values :answer nil))
             (observe :peer-not-mentioned)))
       (when (and (not (room-speaks-freely-p policy candidate))
