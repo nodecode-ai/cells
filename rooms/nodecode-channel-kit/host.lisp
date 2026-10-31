@@ -1693,6 +1693,9 @@ chunk as an address for the lane, then settle the card above it."
        ;; removed whole, and the working line inside it goes with it.
        (unless (retire-thread host lane)
          (retire-chrome host lane status-id digest))
+       ;; Silence on a peer's wake would leave its talk without an end: the
+       ;; bot writes the final answer instead (ASK-FOR-FINAL-ANSWER).
+       (ask-for-final-answer host lane (or heard digest.ask-id))
        nil)
       ((null text)
        ;; A completion that spoke and left no words the room can show is a
@@ -3353,19 +3356,15 @@ HOST already takes part in; NIL stays NIL."
 ;;; (DECIDE-INBOUND): two bots in a thread talk by naming each other -- an
 ;;; answer's @name of a peer is spelled as the platform's mention of it
 ;;; (PEER-ADDRESSED-TEXT) -- never by answering every line the other posts.
-;;; Their talk ends in one final answer for the person (TALK-FINAL-P): a
-;;; bot's last of +PEER-TURNS+ peer asks between two lines a person typed
-;;; writes it, or any bot does sooner once they agree, and it closes the talk
-;;; in every kit -- nothing posted after it wakes or steers anyone until a
-;;; person types again. Without an end, every woken answer is a reply that
-;;; wakes its waker back, and two bots answer each other until their caps
-;;; run out.
+;;; Their talk ends in one final answer for the person (TALK-FINAL-P): they
+;;; answer each other for as long as a line needs an answer, and the bot a
+;;; wake finds with nothing left open writes it -- an answer that opens with
+;;; FINAL ANSWER, or the one a wake it met with silence asks it for
+;;; (ASK-FOR-FINAL-ANSWER) -- and it closes the talk in every kit: nothing
+;;; posted after it wakes or steers anyone until a person types again. No
+;;; count ends a talk: without an end every woken answer is a reply that
+;;; wakes its waker back, and a cap only cuts the talk off where it stands.
 ;;; A thread's peers live in its room's state, so they outlast the image.
-
-(defparameter +peer-turns+ 2
-  "Asks from a thread's peers this bot answers between two lines a person
-typed there, the last of them with the talk's final answer: past them, a
-peer's line is only the thread's context.")
 
 (defparameter +thread-peers-key+ "thread-peers"
   "The state key a thread's room keeps its peers under, [{id, name}].")
@@ -3374,9 +3373,11 @@ peer's line is only the thread's context.")
   "(platform id . thread id) -> the thread's peers, ((ID . NAME) ...), or
 :NONE for a thread read and found to have none.")
 
-(defvar *peer-runs* (make-hash-table :test #'equal :synchronized t)
-  "(platform id . thread id) -> the peer asks answered there since a person
-last typed a line in it.")
+(defvar *talk-wakes* (make-hash-table :test #'equal :synchronized t)
+  "(platform id . thread id) -> the peer lines that woke this bot there since
+a person last typed a line in it, newest first: ((MESSAGE-ID . CANDIDATE)
+...), a CANDIDATE given up once a silent answer to it asked for the talk's
+final answer (TAKE-WAKE).")
 
 (defvar *talk-finals* (make-hash-table :test #'equal :synchronized t)
   "(platform id . thread id) -> the final answer that closed the talk there
@@ -3415,11 +3416,14 @@ of the FINAL ANSWER line it opened with, if it did."
   "Whether a final answer closed THREAD-ID's talk since a person last typed there."
   (and thread-id (gethash (peer-key host thread-id) *talk-finals*) t))
 
-(defun talk-closing-p (host thread-id)
-  "Whether this bot's next answer in THREAD-ID's talk is its last there: it
-answered +PEER-TURNS+ peer asks since a person last typed."
-  (and thread-id
-       (>= (gethash (peer-key host thread-id) *peer-runs* 0) +peer-turns+)))
+(defun take-wake (host thread-id message-id)
+  "The candidate of MESSAGE-ID, a peer's line that woke this bot in
+THREAD-ID's talk, taken: once, then NIL, as for any line that did not wake it."
+  (when (and thread-id message-id)
+    (sb-ext:with-locked-hash-table (*talk-wakes*)
+      (nlk:when-let (wake (assoc message-id (gethash (peer-key host thread-id) *talk-wakes*)
+                                 :test #'equal))
+        (shiftf (cdr wake) nil)))))
 
 (defun close-talk (host thread-id final)
   "THREAD-ID's talk, closed by FINAL: a peer's final answer's message id, or T
@@ -3430,16 +3434,16 @@ for this bot's own."
 (defun talk-final-p (host lane text heard &aux (thread (getf (lane-target lane) :thread-id)))
   "Whether LANE's answer TEXT, built on HEARD -- the peer line it answers, or
 NIL -- is the final answer of its thread's talk: the thread has peers and its
-talk is open, and TEXT answers this bot's last peer turn there, or opens as a
-final answer once this bot has heard a peer in the talk."
+talk is open, and TEXT opens as a final answer once this bot has heard a peer
+in the talk."
   ;; A first answer that calls itself final would close the talk on peers
   ;; still working the ask: agreement needs a peer's answer to agree with.
   (and thread (stringp text) (not (silent-answer-p text))
        (thread-peers host thread)
        (not (talk-closed-p host thread))
-       (or (talk-closing-p host thread)
-           (and (final-answer-line-p text)
-                (or heard (plusp (gethash (peer-key host thread) *peer-runs* 0)))))))
+       (final-answer-line-p text)
+       (or heard (gethash (peer-key host thread) *talk-wakes*))
+       t))
 
 (defun talk-answer-text (host lane text final)
   "TEXT as LANE posts it: under the heading when it is its talk's FINAL
@@ -3451,14 +3455,28 @@ could not be, so no peer reads it as the final answer."
          (final-answer-body text))
         (t text)))
 
+(defun ask-for-final-answer (host lane woke &aux (thread (getf (lane-target lane) :thread-id)))
+  "When LANE's answer to WOKE -- a peer's line that woke it in its thread's
+open talk -- was silence, ask the lane once for the talk's final answer: it
+had nothing to add, so nothing between it and its peers is open, and a talk
+ends in its final answer, never in silence."
+  (nlk:when-let (candidate (and thread (not (talk-closed-p host thread))
+                                (take-wake host thread woke)))
+    ;; A job of its own, once this turn has settled and given its slot back;
+    ;; a final answer a peer posted meanwhile closed the talk and asks nothing.
+    (on-worker host
+      (unless (talk-closed-p host thread)
+        (continue-lane host lane (final-answer-ask host candidate lane))))))
+
 (defun talk-end-sentences ()
   "How a talk between bots in a thread ends, as each lane there is told."
-  (format nil "The talk ends in one final answer for the person: between two lines a person ~
-types here you answer your peers at most ~d times, and the last of those answers is the final ~
-answer; once a peer's answer has reached you and you agree with what the thread holds, ~
-nothing between you open, write it sooner, beginning with the line FINAL ANSWER. Once one of ~
-you posts it the talk is closed: ~
-nothing posted in it wakes anyone until the person types again." +peer-turns+))
+  (format nil "The talk ends in one final answer for the person. Answer a peer's line whenever ~
+it needs your answer -- a question put to you, a claim you dispute or can correct, a part of the ~
+work it hands you -- for as long as that takes, and only then: a reply that only agrees, thanks ~
+or repeats wakes your peer for nothing. When a peer's line wakes you and needs nothing more from ~
+you -- you agree, and nothing between you is open -- write the final answer instead: the ~
+thread's settled result whole, beginning with the line FINAL ANSWER. Once one of you posts it ~
+the talk is closed: nothing posted in it wakes anyone until the person types again."))
 
 (defun candidate-room (host candidate)
   "The room session CANDIDATE was said in."
@@ -3544,14 +3562,16 @@ this bot's peer. Never this bot's own line."
 (defun peer-run (host candidate action reason &aux (thread (source-field candidate "thread_id")))
   "(values ACTION REASON) once CANDIDATE is counted in its thread's talk: a
 person's line starts a new talk and a peer's final answer closes it; a peer's
-ask past +PEER-TURNS+, or after the final answer, is only the thread's
-context, and one that wakes this bot carries its number (source.peer_turn)."
+ask after the final answer is only the thread's context, and one that wakes
+this bot is kept as a wake of the talk (*TALK-WAKES*) and carries its number
+(source.peer_turn). No count of wakes runs out: a talk ends in its final
+answer."
   (let ((key (and thread (peer-key host thread))))
     (flet ((context (why)
              (if (eq action :answer) (values :observe why) (values action reason))))
       (cond ((or (null key) (eq action :reject)) (values action reason))
             ((not (candidate-bot-p candidate))
-             (remhash key *peer-runs*)
+             (remhash key *talk-wakes*)
              (remhash key *talk-finals*)
              (values action reason))
             ((not (candidate-peer-p candidate)) (values action reason))
@@ -3560,11 +3580,11 @@ context, and one that wakes this bot carries its number (source.peer_turn)."
              (context "talk_closed"))
             ((gethash key *talk-finals*) (context "talk_closed"))
             ((not (eq action :answer)) (values action reason))
-            (t (let ((turn (sb-ext:with-locked-hash-table (*peer-runs*)
-                             (incf (gethash key *peer-runs* 0)))))
-                 (cond ((> turn +peer-turns+) (values :observe "peer_turns_spent"))
-                       (t (setf (gethash "peer_turn" (candidate-source candidate)) turn)
-                          (values action reason)))))))))
+            (t (setf (gethash "peer_turn" (candidate-source candidate))
+                     (sb-ext:with-locked-hash-table (*talk-wakes*)
+                       (length (push (cons (source-field candidate "message_id") candidate)
+                                     (gethash key *talk-wakes*)))))
+               (values action reason))))))
 
 (defun peers-paragraph (peers &aux (names (loop for (nil . name) in peers
                                                 collect (format nil "@~a" name)))
@@ -3944,10 +3964,8 @@ an ask, or rejected with its reason on the status surface."
       ;; whether this line is an ask of its own or only chatter.
       (unless (eq action :reject)
         (note-thread-spoken (source-field candidate "thread_id"))
-        ;; A post on a team's board is kept whatever it asks (TEAM.LISP); a
-        ;; person's line starts the peers' steers there over.
-        (note-board-post host candidate)
-        (person-typed-in-thread host candidate))
+        ;; A post on a team's board is kept whatever it asks (TEAM.LISP).
+        (note-board-post host candidate))
       (ecase action
         (:reject (set-channel-status (host-id host) :last-rejection reason)
                  (cond
@@ -3963,8 +3981,8 @@ an ask, or rejected with its reason on the status surface."
         ;; running there as a note; a settled lane keeps it as context.
         (:observe (or (hear-in-running-turn host candidate)
                       (observe-candidate host candidate)))
-        ;; A peer's ask wakes the turn it starts knowing where the talk
-        ;; stands (WOKEN-ASK).
+        ;; A peer's ask wakes the turn it starts knowing how the talk ends
+        ;; (WOKEN-ASK).
         (:answer (note-asked-peers host candidate)
                  (answer-message host (woken-ask host candidate))))
       action)))

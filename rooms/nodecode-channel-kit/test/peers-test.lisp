@@ -6,9 +6,9 @@
 ;;;; thread off it wins, the second hears the platform refuse and takes that
 ;;;; thread, and the bots the message named beside this one are the thread's
 ;;;; peers -- their lines reach this bot as the thread's context, an ask when
-;;;; they name it, at most +PEER-TURNS+ in a run between two lines a person
-;;;; typed. The platform is the thread tests' one, refusing a second thread on
-;;;; a message the way Discord does.
+;;;; they name it, for as long as their talk needs, until its final answer.
+;;;; The platform is the thread tests' one, refusing a second thread on a
+;;;; message the way Discord does.
 
 (in-package #:nodecode.test)
 
@@ -34,8 +34,8 @@ THREAD-IDS: their peers and their runs."
   `(unwind-protect (progn ,@body)
      (dolist (thread (list ,@thread-ids))
        (remhash (cons "test" thread) nck::*thread-peers*)
-       (remhash (cons "test" thread) nck::*peer-runs*)
-       (dolist (table (list nck::*thread-slots* nck::*team-posts* nck::*board-scores* nck::*thread-steers*))
+       (remhash (cons "test" thread) nck::*talk-wakes*)
+       (dolist (table (list nck::*thread-slots* nck::*team-posts* nck::*board-scores* nck::*talk-finals*))
          (remhash (cons "test" thread) table)))))
 
 (deftest channel-peers-a-refused-thread-is-taken ()
@@ -85,8 +85,9 @@ THREAD-IDS: their peers and their runs."
 (deftest channel-peers-the-bots-an-ask-names-are-its-threads-peers ()
   ;; The bots the ask named beside this one are its thread's peers: its lane is
   ;; told who else answers there and how to hand them something, a peer's line
-  ;; that names this bot is an ask and one that does not is context, and a run
-  ;; of peer asks stops at +PEER-TURNS+ until a person types again.
+  ;; that names this bot is an ask and one that does not is context, and peer
+  ;; asks wake it for as long as the talk needs, each kept as a wake of the
+  ;; talk until a person types again.
   (with-thread-peers ("77")
     (with-ask-host (host thread-ask-host :answers ("on it") :responses (replies "77" "p1" "p2"))
       (setf (nck:host-policy host) (channel-policy :allowed-channels '("100") :self-id "999"
@@ -109,16 +110,18 @@ THREAD-IDS: their peers and their runs."
         (is (eq :answer (nck:decide-inbound (nck:host-policy host) (said "<@999> your turn"))))
         (is (eq :observe (nck:decide-inbound (nck:host-policy host) (said "noted, thanks"))))
         (let ((ask (said "<@999> again")))
-          (is (equal '(:answer :answer :observe :observe)
-                     (loop repeat 4 collect (nck::peer-run host ask :answer nil))) "a run of peer asks stops at +PEER-TURNS+")
+          (is (equal (make-list 6 :initial-element :answer)
+                     (loop repeat 6 collect (nck::peer-run host ask :answer nil))) "a peer's asks wake it for as long as the talk needs: no count runs out")
+          (is (= 6 (length (gethash (cons "test" "77") nck::*talk-wakes*))) "each kept as a wake of the talk")
           (nck::peer-run host (said "go on, you two" :user "u1" :bot nil) :answer nil)
-          (is (eq :answer (nck::peer-run host ask :answer nil)) "a person's line starts a new run"))))))
+          (is (null (gethash (cons "test" "77") nck::*talk-wakes*)) "a person's line starts a new talk")
+          (is (eq :answer (nck::peer-run host ask :answer nil))))))))
 
 (deftest channel-peers-a-talk-ends-in-one-final-answer ()
   ;; Two bots that each answer the other's reply wake each other for as long
-  ;; as they run. A peer's reply wakes this bot, framed with the wakes it has
-  ;; left, and the last of them closes the talk: that answer is the final
-  ;; answer. A final answer from any bot closes the talk in every kit --
+  ;; as their lines need answers, and no count of wakes runs out: each wake is
+  ;; framed with how the talk ends, in a final answer once nothing between
+  ;; them is open. A final answer from any bot closes the talk in every kit --
   ;; nothing posted after it wakes this bot -- until a person types again.
   (with-thread-peers ("82")
     (let ((host (test-host)))
@@ -134,19 +137,18 @@ THREAD-IDS: their peers and their runs."
                     (multiple-value-list
                      (multiple-value-call #'nck::peer-run host candidate
                        (nck:decide-inbound (nck:host-policy host) candidate)))))
-             (let ((first (said "you missed the cache" :addressed t)))
-               (is (equal '(:answer nil) (heard first)) "a peer's reply wakes this bot")
-               (is (search "(1 of 2 in this talk" (gethash "text" (nck::woken-ask host first))) "framed with the wakes it has left")
-               (is (search "beginning with the line FINAL ANSWER" (gethash "text" (nck::woken-ask host first))) "and that it may close the talk once they agree")
-               (is (search "you missed the cache" (gethash "text" (nck::woken-ask host first))))
-               (is (not (nck::talk-closing-p host "82"))))
-             (let ((second (said "the TTL too" :addressed t :message "10")))
-               (is (equal '(:answer nil) (heard second)))
-               (is (search "so your answer closes it" (gethash "text" (nck::woken-ask host second))) "its last wake writes the final answer")
-               (is (nck::talk-closing-p host "82")))
-             (is (equal '(:observe "peer_turns_spent") (heard (said "and the lock" :addressed t :message "11"))) "past its last, a reply is only the thread's context")
+             (let* ((first (said "you missed the cache" :addressed t))
+                    (woke (heard first))
+                    (woken (gethash "text" (nck::woken-ask host first))))
+               (is (equal '(:answer nil) woke) "a peer's reply wakes this bot")
+               (is (search "wakes you with the line below" woken))
+               (is (search "beginning with the line FINAL ANSWER" woken) "framed with how the talk ends: in its final answer, once nothing between them is open")
+               (is (search "never answered with NO_REPLY" woken) "which no wake skips")
+               (is (not (ppcre:scan "\\d+ of \\d+" woken)) "and with no count of wakes left")
+               (is (search "you missed the cache" woken)))
+             (is (every (lambda (message) (equal '(:answer nil) (heard (said "and the TTL" :addressed t :message message)))) '("30" "31" "32" "33" "34" "35")) "a talk goes on for as long as its lines need answers: no wake is spent")
              (heard (said "go on, you two" :user "u1" :bot nil :message "12"))
-             (is (not (nck::talk-closing-p host "82")) "a person's line starts a new talk")
+             (is (null (gethash (cons "test" "82") nck::*talk-wakes*)) "a person's line starts a new talk")
              (heard (said (format nil "<@u1> **Final answer**~%it was the cache") :message "13"))
              (is (nck::talk-closed-p host "82") "a peer's final answer closes it")
              (is (equal '(:observe "talk_closed") (heard (said "one more thing" :addressed t :message "14"))) "and nothing after it wakes this bot")
