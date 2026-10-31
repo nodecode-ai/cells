@@ -1672,7 +1672,7 @@ chunk as an address for the lane, then settle the card above it."
          ;; The answer that closes its thread's talk is the final answer: the
          ;; person's, under its heading, and a reply to no peer -- so it wakes
          ;; no one (TALK-FINAL-P).
-         (final (talk-final-p host lane text))
+         (final (talk-final-p host lane text heard))
          (reply-to (unless final
                      (or heard (lane-reference lane (or digest.ask-id lane.trigger-message-id)))))
          (target lane.target)
@@ -1727,7 +1727,7 @@ chunk as an address for the lane, then settle the card above it."
              (handler-case
                  (post-message host target
                                (peer-addressed-text host target
-                                                    (if final (final-answer-text text) text))
+                                                    (talk-answer-text host lane text final))
                                :reply-to reply-to :ping (and (null origin) (null heard))
                                :mentions (and (or origin final) lane.owner-id (list lane.owner-id))
                                :files files
@@ -3401,12 +3401,15 @@ the heading, bold or not, and the line break after it.")
   "Whether TEXT opens as a talk's final answer (+FINAL-ANSWER-SCANNER+)."
   (and (stringp text) (ppcre:scan +final-answer-scanner+ text) t))
 
+(defun final-answer-body (text)
+  "TEXT without the FINAL ANSWER line it opens with, if it does."
+  (let ((end (nth-value 1 (ppcre:scan +final-answer-scanner+ text))))
+    (string-left-trim '(#\Space #\Tab #\Return #\Newline) (subseq text (or end 0)))))
+
 (defun final-answer-text (text)
   "TEXT as its talk's final answer: under the heading, which takes the place
 of the FINAL ANSWER line it opened with, if it did."
-  (let ((end (nth-value 1 (ppcre:scan +final-answer-scanner+ text))))
-    (format nil "~a~%~a" +final-answer-heading+
-            (string-left-trim '(#\Space #\Tab #\Return #\Newline) (subseq text (or end 0))))))
+  (format nil "~a~%~a" +final-answer-heading+ (final-answer-body text)))
 
 (defun talk-closed-p (host thread-id)
   "Whether a final answer closed THREAD-ID's talk since a person last typed there."
@@ -3424,21 +3427,37 @@ for this bot's own."
   (when thread-id
     (setf (gethash (peer-key host thread-id) *talk-finals*) final)))
 
-(defun talk-final-p (host lane text &aux (thread (getf (lane-target lane) :thread-id)))
-  "Whether LANE's answer TEXT is the final answer of its thread's talk: the
-thread has peers and its talk is open, and TEXT opens as one or answers this
-bot's last peer turn there."
+(defun talk-final-p (host lane text heard &aux (thread (getf (lane-target lane) :thread-id)))
+  "Whether LANE's answer TEXT, built on HEARD -- the peer line it answers, or
+NIL -- is the final answer of its thread's talk: the thread has peers and its
+talk is open, and TEXT answers this bot's last peer turn there, or opens as a
+final answer once this bot has heard a peer in the talk."
+  ;; A first answer that calls itself final would close the talk on peers
+  ;; still working the ask: agreement needs a peer's answer to agree with.
   (and thread (stringp text) (not (silent-answer-p text))
        (thread-peers host thread)
        (not (talk-closed-p host thread))
-       (or (final-answer-line-p text) (talk-closing-p host thread))))
+       (or (talk-closing-p host thread)
+           (and (final-answer-line-p text)
+                (or heard (plusp (gethash (peer-key host thread) *peer-runs* 0)))))))
+
+(defun talk-answer-text (host lane text final)
+  "TEXT as LANE posts it: under the heading when it is its talk's FINAL
+answer; in a thread with peers, without the FINAL ANSWER line of one that
+could not be, so no peer reads it as the final answer."
+  (cond (final (final-answer-text text))
+        ((and (final-answer-line-p text)
+              (thread-peers host (getf (lane-target lane) :thread-id)))
+         (final-answer-body text))
+        (t text)))
 
 (defun talk-end-sentences ()
   "How a talk between bots in a thread ends, as each lane there is told."
   (format nil "The talk ends in one final answer for the person: between two lines a person ~
 types here you answer your peers at most ~d times, and the last of those answers is the final ~
-answer; when you agree with what the thread holds and nothing between you is open, write it ~
-sooner, beginning with the line FINAL ANSWER. Once one of you posts it the talk is closed: ~
+answer; once a peer's answer has reached you and you agree with what the thread holds, ~
+nothing between you open, write it sooner, beginning with the line FINAL ANSWER. Once one of ~
+you posts it the talk is closed: ~
 nothing posted in it wakes anyone until the person types again." +peer-turns+))
 
 (defun candidate-room (host candidate)

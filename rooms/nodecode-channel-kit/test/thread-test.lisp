@@ -566,9 +566,16 @@ origin noted — ORIGIN the keys past the three that place it."
              (is (not (search "Final answer" (plan-content late)))))
            (remhash (cons "test" "43") nck::*peer-runs*)
            (nck::forget-board host "43")
-           (answer (format nil "FINAL ANSWER~%we agree: the cache") "t5")
+           (answer (format nil "FINAL ANSWER~%my first take") "t5")
+           (is-present (first-take (await-plan executor :content "my first take"))
+             "a first answer that calls itself final closes nothing: no peer was heard to agree with"
+             (is (not (search "inal answer" (plan-content first-take))) "and loses the line, so no peer reads it as final")
+             (is (not (search "FINAL ANSWER" (plan-content first-take)))))
+           (is (not (nck::talk-closed-p host "43")))
+           (setf (gethash (cons "test" "43") nck::*peer-runs*) 1)
+           (answer (format nil "FINAL ANSWER~%we agree: the cache") "t6")
            (is-present (agreed (await-plan executor :content "we agree: the cache"))
-             "an answer that opens with FINAL ANSWER closes the talk sooner"
+             "once a peer has woken it, an answer that opens with FINAL ANSWER closes the talk sooner"
              (is (search (format nil "**Final answer**~%we agree: the cache") (plan-content agreed)))
              (is (not (search "FINAL ANSWER" (plan-content agreed))) "its own line gives way to the heading")
              (is-plan agreed "reply_to" nil))
