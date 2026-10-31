@@ -29,9 +29,20 @@ controls. `background` decides whether actions leave Chrome's focus alone.
 
 ## Threat model
 
-As pi-chrome states it: the bridge listens on loopback only and refuses
-browser origins other than the extension, but it does not authenticate local
-processes, since the extension carries no token. It is a speed bump, like the
-guard.
+The bridge listens on loopback only and refuses browser origins other than
+the extension. A request that moves a command (`GET /next`, `POST /result`,
+`POST /command`) must also carry the bridge secret as
+`Authorization: Bearer <secret>`. The cell writes the secret, 0600, as
+`bridge-secret.txt` into `~/.nodecode/chrome-extension/`, and the extension
+reads it from there. So another user on the machine, or a process that cannot
+read your home, can neither take a command, nor forge its result, nor drive
+Chrome. The bridge also refuses any extension Origin but the one Chrome gives
+the extension loaded from that folder. A process running as you can read the
+secret, as it can read the rest of your home, so the bridge still does not
+defend you against your own account.
+
+An extension loaded before the secret existed hears the newer version on its
+next poll and reloads itself. `/chrome status` names one that still polls
+without the secret; reload it at `chrome://extensions`.
 
 Tests: `just chrome-check` in nodecode.
