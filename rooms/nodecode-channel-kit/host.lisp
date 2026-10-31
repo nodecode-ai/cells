@@ -992,11 +992,21 @@ platform cannot close one: an answer in a thread then carries no Close.")
 in its own terms -- a Telegram topic stays locked until an admin reopens it --
 or NIL for the kit's words: open again once anyone writes in it.")
 
-(nlk:define-side-table platform-thread-of-refusal (:test #'eq :weakness :key :synchronized t)
+;; Written out rather than NLK:DEFINE-SIDE-TABLE: an image of the release
+;; before this one, taking the release live, refuses a form that names a
+;; variable only that same form defines, and the macro's DEFUNs name its DEFVAR.
+(defvar *platform-thread-of-refusal* (make-hash-table :test #'eq :weakness :key :synchronized t)
+  "Each PLATFORM -> its PLATFORM-THREAD-OF-REFUSAL.")
+
+(defun platform-thread-of-refusal (platform)
   "A PLATFORM's (result message-id) => the id of the thread that already hangs
 off MESSAGE-ID when RESULT is the platform refusing to open another one there,
 else NIL. NIL when the platform never says so: a refused open then runs the ask
-in the channel (START-THREADED-ASK).")
+in the channel (START-THREADED-ASK)."
+  (values (gethash platform *platform-thread-of-refusal*)))
+
+(defun (setf platform-thread-of-refusal) (reader platform)
+  (setf (gethash platform *platform-thread-of-refusal*) reader))
 ;; Two bots a person names in one message each open a thread off it, and the
 ;; platform lets the first: the second takes that thread for its own, so one
 ;; question has one thread and both answers in it.
