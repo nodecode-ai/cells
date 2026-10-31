@@ -31,8 +31,19 @@ settings and the registry restored on unwind."
   (:help :chrome)
   (:running (is chrome::*bridge* "the bridge is the one live bridge")
             (is-values (status body) (bridge-http port :get "/status")
-              (status eql 200) ((nlk:json-value body :text "version") "0.15.51.4"))
-            (is (equal "0.15.51.4" (chrome::vendored-extension-version)))
+              (status eql 200) ((nlk:json-value body :text "version") "0.15.51.5"))
+            (is (equal "0.15.51.5" (chrome::vendored-extension-version)))
+            ;; cells#14: the bridge holds this home's secret, kept 0600 in the folder
+            ;; Chrome loads, and pins the extension loaded from there.
+            (is (equal (chrome::bridge-token) (chrome::bridge-secret chrome::*bridge*)))
+            (is (equal (chrome::bridge-token) (chrome::bridge-token)) "minted once")
+            (is (eql 64 (length (chrome::bridge-token))))
+            #-win32 (is (zerop (logand #o077 (sb-posix:stat-mode
+                                              (sb-posix:stat (namestring (chrome::secret-file))))))
+                        "the secret file is the user's alone")
+            #-win32 (is (equal (chrome::unpacked-extension-origin (chrome::extension-directory))
+                               (chrome::bridge-extension-origin chrome::*bridge*)))
+            (is (eql 401 (bridge-http port :post "/command" :body (nlk:json-object "action" "tab.list"))))
             ;; No authorization step: every session reads the manual.
             (is (equal chrome::+primer+ (nle:help :chrome)))
             (is (null (chrome::session-background "s1")) "the section's background default"))
@@ -100,7 +111,7 @@ settings and the registry restored on unwind."
                                                                      "webdriver" :false))))))
           (let ((text (slash-chrome "doctor" sid)))
             (is (search "extension 0.15.40 ok, evaluate ok, probe ok (example.com)" text))
-            (is (search "differs from vendored 0.15.51.4" text))))
+            (is (search "differs from vendored 0.15.51.5" text))))
         (setf sent (reverse sent))
         (is (equal '("tab.version" "page.navigate" "page.evaluate" "page.probe" "automation.cleanup")
                    (mapcar #'first sent)))

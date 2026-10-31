@@ -22,13 +22,16 @@
 
 (defparameter +fake-origin+ "chrome-extension://abcdefghijklmnopabcdefghijklmnop")
 
-(defun bridge-http (port method path &key origin body headers (timeout 10))
+(defun bridge-http (port method path &key origin body headers secret (timeout 10))
   "(values STATUS BODY-OBJECT RESPONSE-HEADERS) against the bridge."
-  ;; ORIGIN rides as the Origin header; BODY (a JSON object) is encoded. A
+  ;; ORIGIN rides as the Origin header, SECRET as the Bearer credential;
+  ;; BODY (a JSON object) is encoded. A
   ;; 4xx/5xx arrives as values too, never as a signal.
   (multiple-value-bind (response status response-headers)
       (nlk:http method (format nil "http://127.0.0.1:~d~a" port path)
                 :headers (append (when origin (list (cons "origin" origin)))
+                                 (when secret (list (cons "authorization"
+                                                          (format nil "Bearer ~a" secret))))
                                  (when body (list (cons "content-type" "application/json")))
                                  headers)
                 :content (and body (nlk:encode-json-object body))
@@ -38,8 +41,12 @@
                                 (shasht:read-json response)))
             response-headers)))
 
-(defun start-fake-extension (port handler &key (origin +fake-origin+)
+(defun start-fake-extension (port handler &key (origin (or (and chrome::*bridge*
+                                                                (chrome::bridge-extension-origin chrome::*bridge*))
+                                                           +fake-origin+))
                                                (name "Nodecode Chrome Connector fake")
+                                               (secret (and chrome::*bridge*
+                                                            (chrome::bridge-secret chrome::*bridge*)))
                                                &aux (stop nil))
   "A thread playing the extension: poll /next, run (HANDLER COMMAND) =>
 (values OK RESULT-OR-ERROR), post /result."
@@ -49,13 +56,13 @@
           do (nlk:with-handlers ((error () (sleep 0.05)))
                (multiple-value-bind (status payload)
                    (bridge-http port :get (format nil "/next?name=~a" (quri:url-encode name))
-                                :origin origin :timeout 40)
+                                :origin origin :secret secret :timeout 40)
                  (when (and (eql status 200)
                             (equal (nlk:json-value payload :text "type") "command"))
                    (let ((command (nlk:json-value payload :object "command")))
                      (multiple-value-bind (ok value) (funcall handler command)
                        (bridge-http port :post "/result"
-                                    :origin origin
+                                    :origin origin :secret secret
                                     :body (nlk:json-object "id" (gethash "id" command)
                                                            "ok" (if ok t :false)
                                                            :when ok "result" value

@@ -19,13 +19,17 @@
 ;;;; session carries, and the formatters that make a page snapshot fit a tool
 ;;;; result.
 ;;;;
-;;;; Threat model, verbatim in spirit from pi-chrome's SECURITY.md: the bridge
-;;;; is loopback-only and refuses non-extension browser origins (so a web page
-;;;; cannot CORS-drive Chrome), but it cannot authenticate local processes —
-;;;; the extension carries no token. A hostile local process
-;;;; running as you already owns the image; this is a speed bump, as the guard
-;;;; cell is (tools/nodecode-guard/cell.lisp). Loading the cell and the
-;;;; extension is the grant: every session may drive Chrome.
+;;;; Threat model: the bridge is loopback-only and refuses non-extension
+;;;; browser origins (so a web page cannot CORS-drive Chrome), and every
+;;;; request that moves a command carries the per-home bridge secret, which
+;;;; the cell keeps 0600 in the extension's loadable copy and the extension
+;;;; reads from there; only the Origin of the extension loaded from that folder
+;;;; is accepted (cells#14). Another user, a process that cannot read the home,
+;;;; or another extension cannot drive Chrome. A hostile local process running
+;;;; as you can read the secret and already owns the image; against it this
+;;;; is a speed bump, as the guard cell is (tools/nodecode-guard/cell.lisp).
+;;;; Loading the cell and the extension is the grant: every session may drive
+;;;; Chrome.
 ;;;;
 ;;;; Every dependency named below is already in the serving image (a transitive
 ;;;; dependency of nodecode): LOAD-CELLS freezes the loaded systems

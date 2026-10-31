@@ -40,7 +40,8 @@
     ;; The poll response itself: header and body both carry the version.
     (with-saved-globals ((chrome::*long-poll-seconds* 0.2))
       (multiple-value-bind (status body headers)
-          (bridge-http port :get "/next?name=Nodecode%20Chrome%20Connector%20probe" :origin +fake-origin+)
+          (bridge-http port :get "/next?name=Nodecode%20Chrome%20Connector%20probe" :origin +fake-origin+
+                       :secret bridge.secret)
         (is (eql status 200))
         (is (equal (nlk:json-value body :text "type") "none"))
         (is (equal (nlk:json-value body :text "expectedExtensionVersion") "0.15.46"))
@@ -60,7 +61,7 @@
     (is (eql status 200))
     (is (nlk:json-value body :boolean "ok"))
     (is (equal (gethash "access-control-allow-methods" headers) "GET,POST,OPTIONS"))
-    (is (equal (gethash "access-control-allow-headers" headers) "content-type")))
+    (is (equal (gethash "access-control-allow-headers" headers) "content-type, authorization")))
   ;; A page's fetch with sec-fetch-site cross-site and no Origin is refused too.
   (is (eql 403 (bridge-http port :get "/next" :headers '(("sec-fetch-site" . "cross-site")))))
   ;; POST /command refuses anything that looks like a browser.
@@ -90,7 +91,7 @@
 
 (deftest chrome-cell-bridge-unknown-result-id-is-404 (with-chrome-bridge (port bridge))
   (multiple-value-bind (status body)
-      (bridge-http port :post "/result" :origin +fake-origin+
+      (bridge-http port :post "/result" :origin +fake-origin+ :secret bridge.secret
                    :body (nlk:json-object "id" "chrome-nope" "ok" t "result" 1))
     (is (eql status 404))
     (is (equal (nlk:json-value body :text "error") "unknown command id"))))
@@ -132,8 +133,9 @@
   (let* ((dead (usocket:socket-connect "127.0.0.1" port :element-type '(unsigned-byte 8)))
          (stream (usocket:socket-stream dead)))
     (write-sequence (sb-ext:string-to-octets
-                     (format nil "GET /next?name=Nodecode%20Chrome%20Connector%20dead HTTP/1.1~a~aHost: 127.0.0.1~a~a~a~a"
-                             #\Return #\Linefeed #\Return #\Linefeed #\Return #\Linefeed)
+                     (format nil "GET /next?name=Nodecode%20Chrome%20Connector%20dead HTTP/1.1~a~aHost: 127.0.0.1~a~aAuthorization: Bearer ~a~a~a~a~a"
+                             #\Return #\Linefeed #\Return #\Linefeed bridge.secret #\Return #\Linefeed
+                             #\Return #\Linefeed)
                      :external-format :latin-1)
                     stream)
     (finish-output stream)
@@ -180,7 +182,7 @@
       (let ((result (chrome::bridge-send bridge "page.snapshot" nil :timeout 10)))
         (is (equal (nlk:json-value result :text "label") label)))))
   (multiple-value-bind (status)
-      (bridge-http port :post "/result" :origin +fake-origin+
+      (bridge-http port :post "/result" :origin +fake-origin+ :secret bridge.secret
                    :headers (list (cons "content-length"
                                         (princ-to-string (+ chrome::+max-body-bytes+ 1))))
                    :body (nlk:json-object "id" "x"))
@@ -192,7 +194,7 @@
   (with-chrome-bridge (port bridge)
     (with-fake-extension (port #'echo-handler)
       (multiple-value-bind (status body)
-          (bridge-http port :post "/command"
+          (bridge-http port :post "/command" :secret bridge.secret
                        :body (nlk:json-object "action" "tab.list"
                                               "params" (nlk:json-object "k" "v")
                                               "timeoutMs" 5000))
@@ -200,10 +202,97 @@
         (is (nlk:json-value body :boolean "ok"))
         (is (equal (nlk:json-value body :text "result" "action") "tab.list"))
         (is (equal (nlk:json-value body :text "result" "params" "k") "v"))))
-    (multiple-value-bind (status body) (bridge-http port :post "/command"
+    (multiple-value-bind (status body) (bridge-http port :post "/command" :secret bridge.secret
                                                     :body (nlk:json-object "params" 1))
       (is (eql status 400))
       (is (equal (nlk:json-value body :text "error") "Missing command action")))))
+
+(deftest chrome-cell-bridge-a-command-moves-only-with-the-secret (with-chrome-bridge (port bridge))
+  ;; cells#14: without the secret no process on the machine takes a command
+  ;; off the queue, settles one, or posts one.
+  (let* ((result nil)
+         (sender (nlk:spawn "chrome-sender"
+                   (setf result (ignore-errors
+                                 (chrome::bridge-send bridge "tab.list" nil :timeout 10))))))
+    (is (await () bridge.queue) "the command waits for a poll")
+    ;; No secret, or a wrong one, from a local process or an extension's
+    ;; Origin: "none" at once, with the version an old build reloads on.
+    (dolist (args (list nil (list :origin +fake-origin+) (list :secret "0000")))
+      (multiple-value-bind (status body headers)
+          (apply #'bridge-http port :get "/next?name=Nodecode%20Chrome%20Connector%20thief" args)
+        (is (eql status 200))
+        (is (equal "none" (nlk:json-value body :text "type")))
+        (is (equal "unauthorized" (nlk:json-value body :text "reason")))
+        (is (equal (gethash "x-pi-chrome-version" headers) bridge.version))))
+    (is (= 1 (length bridge.queue)) "the command is still queued")
+    (is (null bridge.extension-origin) "a refused poll pins nothing")
+    (is (not (chrome::bridge-connected-p bridge)) "a secretless poll is not the extension")
+    (is (chrome::unauthorized-polling-p bridge))
+    ;; Delivered to the extension, the command settles only with the secret.
+    (let ((id (nlk:json-value (nth-value 1 (bridge-http port :get "/next?name=Nodecode%20Chrome%20Connector%20fake"
+                                                        :origin +fake-origin+ :secret bridge.secret))
+                              :text "command" "id")))
+      (is id)
+      (is (eql 401 (bridge-http port :post "/result"
+                                :body (nlk:json-object "id" id "ok" t "result" "forged"))))
+      (is (eql 401 (bridge-http port :post "/result" :origin +fake-origin+ :secret "0000"
+                                :body (nlk:json-object "id" id "ok" t "result" "forged"))))
+      (is (eql 200 (bridge-http port :post "/result" :origin +fake-origin+ :secret bridge.secret
+                                :body (nlk:json-object "id" id "ok" t "result" "real")))))
+    (bt2:join-thread sender)
+    (is (equal "real" result) "only the result carrying the secret settled it"))
+  (is (eql 401 (bridge-http port :post "/command" :body (nlk:json-object "action" "tab.list"))))
+  (is (eql 401 (bridge-http port :post "/command" :secret (reverse bridge.secret)
+                            :body (nlk:json-object "action" "tab.list"))))
+  (is (eql 401 (bridge-http port :post "/command" :headers (list (cons "authorization" bridge.secret))
+                            :body (nlk:json-object "action" "tab.list")))
+      "the secret counts only as a Bearer"))
+
+(deftest chrome-cell-bridge-a-secretless-extension-is-named-when-a-send-times-out
+    (with-chrome-bridge (port bridge))
+  ;; An install from before the secret that did not reload itself: the send's
+  ;; error says what to do, instead of "not polling".
+  (is (eql 200 (bridge-http port :get "/next?name=Nodecode%20Chrome%20Connector%20old"
+                            :origin +fake-origin+)))
+  (is-present (condition (signals-error chrome:chrome-timeout
+                           (chrome::bridge-send bridge "tab.list" nil :timeout 0.3)))
+    "only a secretless poll came: the timeout names it"
+    (is (search "without this bridge's secret" (princ-to-string condition)))
+    (is (search "chrome://extensions" (princ-to-string condition)))))
+
+(deftest chrome-cell-bridge-another-extension-is-refused-even-with-the-secret ()
+  (let ((other "chrome-extension://ponmlkjihgfedcbaponmlkjihgfedcba"))
+    ;; Pinned up front, as the cell pins the extension loaded from its folder.
+    (with-chrome-bridge (port bridge)
+      (chrome::stop-bridge bridge)
+      (setf bridge (chrome::start-bridge :port port :extension-origin +fake-origin+)
+            chrome::*bridge* bridge)
+      (with-saved-globals ((chrome::*long-poll-seconds* 0.2))
+        (is (eql 403 (bridge-http port :get "/next?name=Nodecode%20Chrome%20Connector%20fake"
+                                  :origin other :secret bridge.secret)))
+        (is (eql 403 (bridge-http port :post "/result" :origin other :secret bridge.secret
+                                  :body (nlk:json-object "id" "x" "ok" t))))
+        (is (eql 200 (bridge-http port :get "/next?name=Nodecode%20Chrome%20Connector%20fake"
+                                  :origin +fake-origin+ :secret bridge.secret)))))
+    ;; Not pinned: the first Origin to authenticate holds it.
+    (with-chrome-bridge (port bridge)
+      (with-saved-globals ((chrome::*long-poll-seconds* 0.2))
+        (is (eql 200 (bridge-http port :get "/next?name=Nodecode%20Chrome%20Connector%20fake"
+                                  :origin +fake-origin+ :secret bridge.secret)))
+        (is (equal +fake-origin+ bridge.extension-origin))
+        (is (eql 403 (bridge-http port :get "/next?name=Nodecode%20Chrome%20Connector%20fake"
+                                  :origin other :secret bridge.secret)))))))
+
+(deftest chrome-cell-unpacked-extension-origin-is-chromes-id-for-the-folder ()
+  ;; Chromium's own vector (components/crx_file/id_util_unittest.cc): "test".
+  (is (equal "jpignaibiiemhngfjkcpokkamffknabf" (chrome::extension-id-for-path "test")))
+  ;; GenerateIdForPath hashes the folder's absolute path, no trailing slash.
+  #-win32
+  (let ((folder (truename (uiop:temporary-directory))))
+    (is (equal (format nil "chrome-extension://~a"
+                       (chrome::extension-id-for-path
+                        (string-right-trim "/" (uiop:native-namestring folder))))
+               (chrome::unpacked-extension-origin folder)))))
 
 (deftest chrome-cell-bridge-stop-fails-pending-and-closes-port (let ((outcome nil)))
   (with-chrome-bridge (port bridge)

@@ -10,7 +10,7 @@
 ;;;; a route on the gateway's listener. The wire shapes, the CORS rules and
 ;;;; the timeout classification are pi-chrome's (index.ts), ported verbatim:
 ;;;; browser-extension/ is pi-chrome's extension with the changes its NOTICE
-;;;; lists, none of them on the wire.
+;;;; lists; the one on the wire is the bridge secret (below).
 ;;;;
 ;;;; One command in flight per send: BRIDGE-SEND enqueues a PENDING, wakes a
 ;;;; parked poller, and waits on the pending's own semaphore. The extension
@@ -23,6 +23,18 @@
 ;;;; Retention: everything here is live-only. A gateway restart forgets the
 ;;;; queue; the extension reconnects on its own 2 s backoff and a result it
 ;;;; posts for a command from a previous life 404s by id.
+;;;;
+;;;; The secret (cells#14): every request that moves a command -- GET /next,
+;;;; POST /result, POST /command -- carries `Authorization: Bearer <secret>'.
+;;;; The cell mints one per home (BRIDGE-TOKEN, cell.lisp) into the
+;;;; extension's loadable copy, 0600, so only this user and the extension
+;;;; loaded from there read it. pi-chrome has none, and without it any local
+;;;; process or other user on the machine could take commands off the queue,
+;;;; forge their results, or drive Chrome through /command. A /next without it
+;;;; takes nothing and hears "none" at once with the version header, so an
+;;;; extension built before the secret reloads itself onto the build that
+;;;; sends it. The first authenticated request carrying an Origin pins that
+;;;; Origin as the extension's: any other is refused for the bridge's life.
 ;;;;
 ;;;; Not implemented: pi-chrome's "client mode" (a second host process that
 ;;;; loses the port relays through the owner's POST /command). One gateway
@@ -91,6 +103,12 @@
   ;; still loaded from a release folder, or pi's own.
   (foreign-seen nil)
   (foreign-name nil)
+  ;; The per-home secret every command-moving request carries as a Bearer.
+  (secret "" :type string :read-only t)
+  ;; The Origin the first authenticated request carried; any other is refused.
+  (extension-origin nil)
+  ;; Universal time of the last /next refused for want of the secret.
+  (unauthorized-seen nil)
   (stopping-p nil))
 
 (defun bridge-url (bridge)
@@ -105,6 +123,10 @@
 
 (defun foreign-polling-p (bridge &aux (seen bridge.foreign-seen))
   "Whether another extension polled this port in the last minute."
+  (and seen (< (- (get-universal-time) seen) 60)))
+
+(defun unauthorized-polling-p (bridge &aux (seen bridge.unauthorized-seen))
+  "Whether a poll without the bridge secret came in the last minute."
   (and seen (< (- (get-universal-time) seen) 60)))
 
 ;;; --- sending --------------------------------------------------------------
@@ -155,6 +177,12 @@
                                        '~a'. Remove it at chrome://extensions, then run ~
                                        /chrome onboard to load this one."
                              timeout bridge.foreign-name bridge.name))
+                    ((and (or (null age) (> age 60)) (unauthorized-polling-p bridge))
+                     (format nil "Timed out after ~as: an extension is polling without this ~
+                                       bridge's secret, most likely a build from before it. Reload ~
+                                       'Nodecode Chrome Connector' at chrome://extensions, or run ~
+                                       /chrome onboard and load the folder it names."
+                             timeout))
                     ((or (null age) (> age 60))
                      (format nil "Timed out after ~as: the Chrome extension is not polling ~
                                        (last seen ~a). Run /chrome onboard, then load the folder it ~
@@ -184,6 +212,36 @@
   (apply #'json-response status
          (nlk:json-object "ok" :false "error" text)
          cors))
+
+(defun make-bridge-secret ()
+  "A fresh bridge secret: 32 bytes from the operating system, as hex."
+  (format nil "~(~{~2,'0x~}~)" (coerce (nlk:random-bytes 32) 'list)))
+
+(defun secret= (a b)
+  "Whether strings A and B are equal, in a time that does not depend on where
+they first differ."
+  (and (= (length a) (length b))
+       (zerop (loop with diff = 0
+                    for x across a
+                    for y across b
+                    do (setf diff (logior diff (logxor (char-code x) (char-code y))))
+                    finally (return diff)))))
+
+(defun authorized-p (bridge env &aux (header (or (request-header env "authorization") ""))
+                                     (scheme "Bearer "))
+  "Whether ENV carries BRIDGE's secret as its Bearer credential."
+  (and (plusp (length bridge.secret))
+       (> (length header) (length scheme))
+       (string-equal scheme header :end2 (length scheme))
+       (secret= bridge.secret (string-trim " " (subseq header (length scheme))))))
+
+(defun foreign-origin-p (bridge origin)
+  "Pin ORIGIN as BRIDGE's extension when none is pinned yet; => whether ORIGIN
+is another one. Asked only of an authenticated request."
+  (and (plusp (length origin))
+       (bt2:with-lock-held ((bridge-lock bridge))
+         (string/= origin (or bridge.extension-origin
+                              (setf bridge.extension-origin origin))))))
 
 (defun read-body-json (env &aux (length (or (getf env :content-length) 0))
                                 (stream (getf env :raw-body)))
@@ -255,7 +313,7 @@ naming the refusal."
            (cors (when (uiop:string-prefix-p "chrome-extension://" origin)
                    (list :access-control-allow-origin origin
                          :access-control-allow-methods "GET,POST,OPTIONS"
-                         :access-control-allow-headers "content-type"
+                         :access-control-allow-headers "content-type, authorization"
                          :access-control-expose-headers "x-pi-chrome-version"
                          :vary "origin")))
            (version bridge.version))
@@ -281,8 +339,25 @@ naming the refusal."
                                "lastSeenAt" (or bridge.last-seen :null)
                                "clientName" (or bridge.client-name :null)
                                "foreignClient" (or bridge.foreign-name :null)
+                               "unauthorizedPollAt" (or bridge.unauthorized-seen :null)
                                "queuedCommands" (length bridge.queue)
                                "pendingCommands" (hash-table-count bridge.pending)))))
+        ;; A poll without the secret takes nothing. It hears "none" at once,
+        ;; with the version, so an extension older than the secret reloads onto
+        ;; the build that sends it (it reads the header only on a 2xx).
+        ((and (eq method :get) (string= path "/next") (not (authorized-p bridge env)))
+         (bt2:with-lock-held ((bridge-lock bridge))
+           (setf bridge.unauthorized-seen (get-universal-time)))
+         (apply #'json-response 200 (nlk:json-object "type" "none"
+                                                     "reason" "unauthorized"
+                                                     "expectedExtensionVersion" version)
+                :x-pi-chrome-version version cors))
+        ((and (eq method :post) (string= path "/result") (not (authorized-p bridge env)))
+         (refusal 401 "the bridge secret is missing or wrong" cors))
+        ((and (or (and (eq method :get) (string= path "/next"))
+                  (and (eq method :post) (string= path "/result")))
+              (foreign-origin-p bridge origin))
+         (refusal 403 "another extension holds this bridge" cors))
         ((and (eq method :get) (string= path "/next"))
          ;; The long poll: the oldest queued command, else park on READY; "none" at the deadline.
          (let ((deadline (nlk:deadline-after *long-poll-seconds*))
@@ -349,6 +424,8 @@ naming the refusal."
         ((and (eq method :post) (string= path "/command")
               (or (request-header env "origin") (request-header env "sec-fetch-site")))
          (refusal 403 "Chrome commands are accepted only from local processes"))
+        ((and (eq method :post) (string= path "/command") (not (authorized-p bridge env)))
+         (refusal 401 "the bridge secret is missing or wrong"))
         ((and (eq method :post) (string= path "/command"))
          (multiple-value-bind (body status text) (read-body-json env)
            (let ((action (nlk:json-value body :text "action"))
@@ -371,16 +448,22 @@ naming the refusal."
 ;;; --- lifecycle ------------------------------------------------------------
 
 (defun start-bridge (&key (port *bridge-port*) (version "0.0.0")
-                          (name "Nodecode Chrome Connector"))
+                          (name "Nodecode Chrome Connector")
+                          (secret (make-bridge-secret))
+                          extension-origin)
   "Start the acceptor on 127.0.0.1:PORT advertising VERSION (the vendored
 manifest's — advertising a newer one makes the extension reload itself in a
 loop), handing commands only to a poll whose client name starts with NAME
-(the manifest's)."
+(the manifest's), and moving a command only for a request that carries
+SECRET as its Bearer (the cell passes BRIDGE-TOKEN; the default is a fresh
+one nobody else knows). EXTENSION-ORIGIN, when given, is the only Origin
+such a request may carry; without it the first one to authenticate is pinned."
   ;; Returns the live BRIDGE. NLE:SERVE-LOCAL signals rather than answering a
   ;; bridge nobody serves: a bound port, an acceptor that never answers. A
   ;; Ctrl-C during START-CELLS lands in its acceptance latch, before the
   ;; cell is recorded as started, and takes the acceptor with it.
-  (let ((bridge (%make-bridge :port port :version version :name name)))
+  (let ((bridge (%make-bridge :port port :version version :name name
+                               :secret secret :extension-origin extension-origin)))
     (setf bridge.handler
           (handler-case (nle:serve-local (make-bridge-app bridge) :port port)
             (usocket:address-in-use-error ()

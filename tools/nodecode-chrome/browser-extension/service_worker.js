@@ -9,6 +9,11 @@ const CDP_COMMAND_TIMEOUT_MS = 5_000;
 const SCRIPTING_TIMEOUT_MS = 8_000;
 const ATTACH_TIMEOUT_MS = 3_000;
 let polling = false;
+// The bridge secret (cells#14): the host writes it into this folder, 0600, and
+// moves a command only for a poll or result that carries it as a Bearer. Read
+// once, and again after the host refuses it.
+const SECRET_FILE = "bridge-secret.txt";
+let bridgeSecret = null;
 
 // =================== pi-chrome automation target ownership ===================
 // pi-chrome must never hijack the user's active tab. When a page/navigation action runs without
@@ -1258,6 +1263,18 @@ setInterval(() => {
   void pollLoop();
 }, 1000);
 
+async function bridgeHeaders(extra = {}) {
+  if (!bridgeSecret) {
+    try {
+      const response = await fetch(chrome.runtime.getURL(SECRET_FILE), { cache: "no-store" });
+      bridgeSecret = response.ok ? (await response.text()).trim() || null : null;
+    } catch {
+      bridgeSecret = null;
+    }
+  }
+  return bridgeSecret ? { ...extra, authorization: `Bearer ${bridgeSecret}` } : extra;
+}
+
 async function pollLoop() {
   if (polling) return;
   polling = true;
@@ -1265,6 +1282,7 @@ async function pollLoop() {
     while (true) {
       const response = await fetch(`${BRIDGE_URL}/next?name=${encodeURIComponent(CLIENT_NAME)}`, {
         cache: "no-store",
+        headers: await bridgeHeaders(),
       });
       if (!response.ok) throw new Error(`bridge /next HTTP ${response.status}`);
       const expected = response.headers.get("x-pi-chrome-version");
@@ -1275,6 +1293,11 @@ async function pollLoop() {
         return;
       }
       const payload = await response.json();
+      if (payload.reason === "unauthorized") {
+        bridgeSecret = null;
+        await sleep(POLL_ERROR_BACKOFF_MS);
+        continue;
+      }
       if (payload.type === "command") await handleCommand(payload.command);
     }
   } catch (error) {
@@ -1299,11 +1322,12 @@ async function handleCommand(command) {
 }
 
 async function postResult(result) {
-  await fetch(`${BRIDGE_URL}/result`, {
+  const response = await fetch(`${BRIDGE_URL}/result`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: await bridgeHeaders({ "content-type": "application/json" }),
     body: JSON.stringify(result),
   });
+  if (response.status === 401) bridgeSecret = null;
 }
 
 function isVersionOlder(a, b) {

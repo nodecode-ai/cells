@@ -121,6 +121,46 @@ advertises and reloads itself onto the new files."
       (uiop:copy-file file (merge-pathnames (file-namestring file) target))))
   target)
 
+(defun secret-file ()
+  "Where the bridge secret lives: inside the extension's loadable copy, so the
+extension reads it as one of its own files and no other extension can."
+  (merge-pathnames "bridge-secret.txt" (extension-directory)))
+
+(defun unpacked-extension-origin (directory)
+  "The Origin of the extension Chrome loads unpacked from DIRECTORY, or NIL
+where it is not computed. Chrome names such an extension (no manifest key)
+by the first 16 bytes of SHA-256 over its folder's absolute, symlink-free
+path, in hex spelled a-p: crx_file::id_util GenerateIdForPath over
+base::MakeAbsoluteFilePath."
+  ;; Windows hashes the UTF-16 path with its drive letter folded, through
+  ;; _wfullpath rather than a symlink-resolving realpath; unproved there, the
+  ;; bridge pins the first authenticated Origin instead.
+  #+win32 (declare (ignore directory))
+  #+win32 nil
+  #-win32
+  (nlk:when-let (truename (ignore-errors (truename directory)))
+    (format nil "chrome-extension://~a"
+            (extension-id-for-path (string-right-trim "/" (uiop:native-namestring truename))))))
+
+(defun extension-id-for-path (path)
+  "Chrome's extension ID for PATH's bytes (crx_file::id_util GenerateId): the
+first 32 hex digits of their SHA-256, each digit 0-f spelled a-p."
+  (map 'string (lambda (c) (code-char (+ (char-code #\a) (digit-char-p c 16))))
+       (subseq (nlk:sha256-text path) 7 39)))
+
+(defun bridge-token (&aux (file (secret-file)))
+  "This home's bridge secret, minted 0600 on first use and kept across
+restarts. The extension sends it on every poll and result; a local tool
+posting to /command sends it as `Authorization: Bearer <secret>'."
+  (let ((text (ignore-errors (string-trim '(#\Space #\Tab #\Newline #\Return)
+                                          (uiop:read-file-string file)))))
+    (if (and text (>= (length text) 32) (every (lambda (c) (digit-char-p c 16)) text))
+        text
+        (let ((secret (make-bridge-secret)))
+          (nlk:write-file-atomically file (format nil "~a~%" secret)
+                                     :mode #o600 :directory-mode #o700)
+          secret))))
+
 (defun open-extensions-page ()
   "Show chrome://extensions with the first *CHROME-OPENERS* command that
 works: one still running after a second is a browser it started, reaped
@@ -146,6 +186,8 @@ when that exits; one that exited 0 handed the page to a running browser."
         ((foreign-polling-p *bridge*)
          (format nil "'~a' is polling instead; remove it at chrome://extensions and run /chrome onboard"
                  (bridge-foreign-name *bridge*)))
+        ((unauthorized-polling-p *bridge*)
+         "an extension without this bridge's secret is polling; reload it at chrome://extensions or run /chrome onboard")
         ((poll-age-seconds *bridge*) "extension not polling")
         (t "extension never polled; run /chrome onboard")))
 
@@ -254,7 +296,12 @@ when that exits; one that exited 0 handed the page to a running browser."
             (close-bridge)
             (install-extension)
             (setf *bridge* (start-bridge :version (vendored-extension-version)
-                                         :name (manifest-field (shipped-extension-directory) "name")))
+                                         :name (manifest-field (shipped-extension-directory) "name")
+                                         :secret (bridge-token)
+                                         ;; The secret lives in that folder, so the extension loaded
+                                         ;; from it is the only one that holds it rightfully.
+                                         :extension-origin (unpacked-extension-origin
+                                                            (extension-directory))))
             (nle:on-stop #'close-bridge)))
   (:help :chrome "chrome: the operator's real, signed-in Chrome - snapshot, click, type, navigate" +primer+)
   (:command "chrome" (lambda (args session-id) (run-subcommand session-id args))
