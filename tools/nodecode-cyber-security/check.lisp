@@ -59,6 +59,19 @@ check; both optional, and a check that needs one is :SKIPPED without it.
         (format s "~%~d to patch~:[~;: (security:show \"ID\") gives each fix~]; READ lines have no machine check -- act if you use that service.~%"
                 hits (plusp hits))))))
 
+(defun commands (id &key dir host)
+  "What advisory ID's checks run, as this copy runs them, for a machine the
+report cannot reach (a server over ssh): one (:label L :run WORDS) per check
+this copy vouches for, or (:label L :not-run WHY). Checks that run no
+program (npm, composer, wp-plugin, files) read files: their fields say which."
+  (let ((a (advisory id)))
+    (loop for c in (and a (field a "checks"))
+          when (member (field c "kind") '("version" "command") :test #'equal)
+            collect (multiple-value-bind (words why) (runnable (field c "command") dir host)
+                      (if words
+                          (list :label (field c "label") :run words)
+                          (list :label (field c "label") :not-run why))))))
+
 (defun show (id)
   "One advisory in full, as text: what, who, the fix, the stopgap, the signs, the sources."
   (let ((a (advisory id)))

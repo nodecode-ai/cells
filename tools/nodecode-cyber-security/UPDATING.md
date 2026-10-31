@@ -79,6 +79,14 @@ from a guess: fixed versions, affected range, stopgap. A news story is a lead, t
 page is the source. Add a machine `check` only when the version can be read reliably
 (see the kinds in README.md); otherwise leave `checks` empty and the entry reads as READ.
 
+The job adds no new command. A check's `command` (and `backport`) is either one the
+feed already carries, word for word, or a Python package's version in exactly this
+form, only the name changed:
+`["python3", "-c", "import importlib.metadata as m; print(m.version('NAME'))"]`.
+Any other program is a person's call: the gate in section 5 refuses it, and installed
+copies would not run it before a release pins it anyway (README.md, "What runs on your
+machine"). Leave that check out and name it in the job's answer.
+
 ## 4. Edit `tools/nodecode-cyber-security/advisories.json`
 
 - New: an entry shaped like its neighbours (`id` a lowercase slug, `date` the
@@ -93,10 +101,21 @@ page is the source. Add a machine `check` only when the version can be read reli
 
 ## 5. The gate: nothing is pushed that fails it
 
+```sh
+cd "$FEED" && git show origin/main:tools/nodecode-cyber-security/advisories.json > ~/.nodecode/cyber-security-feed.before.json
+```
+
 ```lisp
-(security:feed-problems (uiop:read-file-string "~/.nodecode/cyber-security-feed/tools/nodecode-cyber-security/advisories.json"))
+(security:feed-problems (uiop:read-file-string "~/.nodecode/cyber-security-feed/tools/nodecode-cyber-security/advisories.json")
+                        :since (uiop:read-file-string "~/.nodecode/cyber-security-feed.before.json"))
 ;; => NIL, or every reason it must not be published
 ```
+
+`:since` is the feed being replaced: with it, a command that feed does not carry is a
+reason too (section 3). Copies installed before commands were pinned still run whatever
+`main` names, so this gate is what keeps a feed written from web news from adding a
+program for them. A person publishing a new command on purpose reads it first (it
+reads, never writes), then runs the gate without `:since`.
 
 ```sh
 cd "$FEED" && .github/test-cell.sh tools/nodecode-cyber-security cyber-feed
