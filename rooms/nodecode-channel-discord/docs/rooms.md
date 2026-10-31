@@ -102,13 +102,18 @@ thread off the message; Discord lets the first, and the others take that
 thread. The other bots that message named are the thread's peers, in that
 thread only:
 
-- a peer's message that mentions this bot is answered there;
+- a peer's message that mentions this bot, or replies to one of its
+  messages, is answered there;
 - every other message it posts there is context, read with the next ask
   (`peer_not_mentioned`);
 - in an answer, `@name` of a peer becomes a real mention, which is how the
   bots hand each other a question;
-- between two messages a person types there, the bot answers a peer at most
-  three times (`peer_turns_spent`).
+- the bots answer each other for as long as a message needs an answer, with
+  no count that runs out, and their talk ends in one final answer for the
+  person, posted under a **Final answer** heading: the bot a peer wakes with
+  nothing left open writes it, and one that meets such a wake with silence
+  is asked for it. After it, nothing posted there wakes a bot
+  (`talk_closed`) until a person types again.
 
 The peers are kept with the thread and survive restarts. A person who
 mentions another bot beside this one inside a thread adds it as a peer

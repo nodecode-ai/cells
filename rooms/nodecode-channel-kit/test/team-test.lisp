@@ -28,7 +28,7 @@ names; forget the thread after."
             ,@body)
        (nck::forget-board ,host ,thread)
        (remhash (cons "test" ,thread) nck::*thread-peers*)
-       (remhash (cons "test" ,thread) nck::*peer-runs*))))
+       (remhash (cons "test" ,thread) nck::*talk-wakes*))))
 
 (defun said-in-thread (host text &key (user "777") (bot t) (message "9") (name "elektra"))
   "A line USER said in thread 42 of channel 100, marked a peer's where it is one."
@@ -117,8 +117,8 @@ names; forget the thread after."
 (deftest channel-team-a-final-answer-closes-the-talk ()
   ;; A peer's final answer reaches the turn running in its thread once, as
   ;; what it is; after it a peer's line neither steers nor wakes this bot,
-  ;; until a person types again. A bot at its last peer turn hears a peer's
-  ;; line as the last word it writes: the final answer.
+  ;; until a person types again. Before it, every line of a peer's steers the
+  ;; running turn: no count of steers runs out.
   (with-team-thread (host "42" :peers '(("777" . "elektra")))
     (let ((lane (running-thread-lane host))
           (steered '()))
@@ -139,9 +139,11 @@ names; forget the thread after."
         (nck:handle-candidate host (said-in-thread host "elektra, one more" :user "u1" :bot nil
                                                    :message "23" :name "alice"))
         (is (not (nck::talk-closed-p host "42")) "a person's line opens a new talk")
-        (setf (gethash (cons "test" "42") nck::*peer-runs*) nck::+peer-turns+)
-        (nck:handle-candidate host (said-in-thread host "and the TTL" :message "24"))
-        (is (search "closes it: write the final answer" (nck::ask-prompt (second (first steered)))) "at its last peer turn, what it hears it answers with the final answer")
+        (let ((before (length steered)))
+          (loop for message from 24 below 38
+                do (nck:handle-candidate host (said-in-thread host "and the TTL" :message (princ-to-string message))))
+          (is (= 14 (- (length steered) before)) "past a dozen, a peer's line still steers the running turn"))
+        (is (search "which wakes it" (nck::ask-prompt (second (first steered)))) "as a line its answer replies to")
         (setf (nck::lane-heard-line lane) nil)))))
 
 (deftest channel-team-a-post-keeps-the-slot-its-poster-holds ()

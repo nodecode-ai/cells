@@ -529,10 +529,11 @@ origin noted — ORIGIN the keys past the three that place it."
       (is (null (nck::lane-heard-line lane)) "the line is spent"))))
 
 (deftest channel-thread-the-answer-that-closes-a-talk-is-its-final-answer ()
-  ;; Bots a person names together end their talk in one final answer: the
-  ;; answer of this bot's last peer turn, or one that opens with FINAL ANSWER,
-  ;; goes up under the heading, to the person who asked and as a reply to no
-  ;; peer, so it wakes no one -- and the talk is closed in this kit too.
+  ;; Bots a person names together end their talk in one final answer: an
+  ;; answer that opens with FINAL ANSWER once a peer has woken this bot goes
+  ;; up under the heading, to the person who asked and as a reply to no peer,
+  ;; so it wakes no one -- and the talk is closed in this kit too. Until then,
+  ;; however long the talk, an answer is a reply that wakes its peer.
   (with-digest-host (host lane :name "thread-final" :session "chat-100-t43-m5"
                      :host-keys (:platform (test-platform :threads t)))
     (unwind-protect
@@ -548,14 +549,22 @@ origin noted — ORIGIN the keys past the three that place it."
                  (nck::lane-heard-line lane) '("p9" . "t1"))
            (answer "I add the TTL" "t2")
            (is-present (reply (await-plan executor :content "I add the TTL"))
-             "an answer with wakes left replies to the peer's line"
+             "an answer that is no final answer replies to the peer's line"
              (is-plan reply "reply_to" "p9")
              (is (not (search "Final answer" (plan-content reply)))))
            (setf (nck::lane-heard-line lane) '("p10" . "t2")
-                 (gethash (cons "test" "43") nck::*peer-runs*) nck::+peer-turns+)
-           (answer "the cache, and its TTL" "t3")
+                 (gethash (cons "test" "43") nck::*talk-wakes*)
+                 (loop for id from 1 to 9 collect (cons (format nil "w~d" id) nil)))
+           (answer "and the lock" "t3")
+           (is-present (long (await-plan executor :content "and the lock"))
+             "however long the talk, no count of wakes makes an answer its final answer"
+             (is-plan long "reply_to" "p10")
+             (is (not (search "Final answer" (plan-content long)))))
+           (is (not (nck::talk-closed-p host "43")))
+           (setf (nck::lane-heard-line lane) '("p11" . "t3"))
+           (answer (format nil "FINAL ANSWER~%the cache, and its TTL") "t3b")
            (is-present (final (await-plan executor :content "the cache, and its TTL"))
-             "the answer of the last peer turn is the final answer"
+             "the answer that opens with FINAL ANSWER is the final answer"
              (is (search (format nil "**Final answer**~%the cache, and its TTL") (plan-content final)) "under its heading")
              (is-plan final "reply_to" nil)
              (is (equalp #("u1") (plan-field final "mentions")) "to the person who asked"))
@@ -564,7 +573,7 @@ origin noted — ORIGIN the keys past the three that place it."
            (is-present (late (await-plan executor :content "a late word"))
              "an answer after it is no second final answer"
              (is (not (search "Final answer" (plan-content late)))))
-           (remhash (cons "test" "43") nck::*peer-runs*)
+           (remhash (cons "test" "43") nck::*talk-wakes*)
            (nck::forget-board host "43")
            (answer (format nil "FINAL ANSWER~%my first take") "t5")
            (is-present (first-take (await-plan executor :content "my first take"))
@@ -572,7 +581,7 @@ origin noted — ORIGIN the keys past the three that place it."
              (is (not (search "inal answer" (plan-content first-take))) "and loses the line, so no peer reads it as final")
              (is (not (search "FINAL ANSWER" (plan-content first-take)))))
            (is (not (nck::talk-closed-p host "43")))
-           (setf (gethash (cons "test" "43") nck::*peer-runs*) 1)
+           (setf (gethash (cons "test" "43") nck::*talk-wakes*) (list (cons "p9" nil)))
            (answer (format nil "FINAL ANSWER~%we agree: the cache") "t6")
            (is-present (agreed (await-plan executor :content "we agree: the cache"))
              "once a peer has woken it, an answer that opens with FINAL ANSWER closes the talk sooner"
@@ -580,9 +589,71 @@ origin noted — ORIGIN the keys past the three that place it."
              (is (not (search "FINAL ANSWER" (plan-content agreed))) "its own line gives way to the heading")
              (is-plan agreed "reply_to" nil))
            (is (nck::talk-closed-p host "43")))
-      (remhash (cons "test" "43") nck::*peer-runs*)
+      (remhash (cons "test" "43") nck::*talk-wakes*)
       (nck::forget-board host "43")
       (remhash (cons "test" "43") nck::*thread-peers*))))
+
+(deftest channel-thread-a-wake-met-with-silence-asks-for-the-final-answer ()
+  ;; A talk ends in its final answer, never in silence: a turn a peer's wake
+  ;; started that answers NO_REPLY had nothing to add, so nothing between the
+  ;; bots is open -- the kit asks it, once, for the talk's final answer. A
+  ;; silent answer to a peer's line that woke no one asks nothing.
+  (with-digest-host (host lane :name "thread-silent" :session "chat-100-t44-m5"
+                     :host-keys (:platform (test-platform :threads t)))
+    (let ((asked '()))
+      (unwind-protect
+           (with-stubbed-fdefinition (nck::continue-lane (host lane ask)
+                                       (declare (ignore host lane))
+                                       (push ask asked))
+             (flet ((answer (text turn-id)
+                      (fact "turn.started" (nlk:json-object) turn-id)
+                      (said text turn-id)
+                      (fact "turn.completed" (nlk:json-object) turn-id))
+                    (woke (message)
+                      (push (cons message (test-candidate :is-bot t :user "777" :user-name "elektra"
+                                                          :thread "44" :parent "100" :message message
+                                                          :text "the TTL, then?"))
+                            (gethash (cons "test" "44") nck::*talk-wakes*)))
+                    (asks (n)
+                      ;; The ask is a job of its own on the delivery worker.
+                      (loop repeat 200 until (>= (length asked) n) do (sleep 0.05))
+                      (length asked)))
+               (nck::note-thread-peers host "44" '(("777" . "elektra")))
+               (setf (nck:lane-owner-id lane) "u1"
+                     (nck:lane-target lane) '(:channel-id "100" :thread-id "44")
+                     (nck:lane-origin lane) '(:channel-id "100" :message-id "5" :thread-id "44"
+                                              :room "chat-100" :landed t))
+               (woke "p30")
+               (setf (nck::lane-heard-line lane) '("p31" . "t1"))
+               (answer "NO_REPLY" "t2")
+               (setf (nck::lane-heard-line lane) '("p30" . "t2"))
+               (answer "NO_REPLY" "t3")
+               (is (= 1 (asks 1)) "silence on a wake asks for the final answer, and silence on a line that woke no one asks nothing")
+               (is-present (close (first asked)) "the ask writes the talk's final answer"
+                 (is (search "Write it for the person who asked" (nck::ask-prompt close)))
+                 (is (search "beginning with the line FINAL ANSWER" (nck::ask-prompt close)))
+                 (is (search "elektra" (nck::ask-prompt close)) "naming the peer whose wake it met with silence")
+                 (is (equal "final-p30" (nck::ask-key close)) "for the wake it met with silence")
+                 (is (null (nck::ask-message-id close)) "an ask no message carried"))
+               (answer "NO_REPLY" "t4")
+               (woke "p32")
+               (setf (nck::lane-heard-line lane) '("p32" . "t4"))
+               (answer "NO_REPLY" "t5")
+               (is (= 2 (asks 2)) "a wake asks once: silence on the final answer's own ask asks nothing")
+               (is (equal "final-p32" (nck::ask-key (first asked))))
+               (nck::close-talk host "44" "p40")
+               (woke "p33")
+               (setf (nck::lane-heard-line lane) '("p33" . "t5"))
+               (answer "NO_REPLY" "t6")
+               (woke "p34")
+               (remhash (cons "test" "44") nck::*talk-finals*)
+               (setf (nck::lane-heard-line lane) '("p34" . "t6"))
+               (answer "NO_REPLY" "t7")
+               (is (= 3 (asks 3)) "and a closed talk asks nothing: its final answer is posted")
+               (is (equal "final-p34" (nck::ask-key (first asked))))))
+        (remhash (cons "test" "44") nck::*talk-wakes*)
+        (nck::forget-board host "44")
+        (remhash (cons "test" "44") nck::*thread-peers*)))))
 
 ;;; --- a thread the bot takes part in is one conversation ------------------------------
 
