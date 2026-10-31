@@ -3054,6 +3054,14 @@ reply typed at the lane, or a reaction left on something it posted."
   ;; An ask no message carried leaves the lane's message anchors alone: the
   ;; eye, the reply reference and the address book all name messages, and a
   ;; gesture has none to give them.
+  ;;
+  ;; A line typed in the thread of a lane the kit opened one for is a message
+  ;; the thread holds: the answer it starts goes up as a reply to it
+  ;; (HEARD-REPLY), where the lane's own ask -- in the parent channel -- can
+  ;; take none. A peer's reply to us is talked back to the same way.
+  (nlk:when-let (origin (and message-id (lane-origin lane)))
+    (when (equal (getf ask.target :thread-id) (getf origin :thread-id))
+      (setf (lane-heard-line lane) (cons message-id active-turn))))
   (cond
     ((null active-turn) (gate-ask host ask))
     (t (when message-id
@@ -3458,12 +3466,13 @@ is only the thread's context."
   "What PEERS are to a lane in their thread, and how it talks to them."
   (format nil "This thread is shared with ~{~a~#[~; and ~:;, ~]~}: ~a, called in beside you ~
 by the person who asked. ~a what you post here, and what ~a reaches you as the thread's ~
-context. A line of ~a that mentions you is an ask, and yours to answer. To hand ~a a ~
+context. A line of ~a that mentions you, or replies to a message of yours, is an ask and ~
+wakes you: answer it with what moves the work on, or exactly NO_REPLY. To hand ~a a ~
 question or a part of the work, write ~a in your answer: ~a answers here. Between two ~
 lines a person types here, you answer ~a at most ~d times. What a peer posts while you work ~
-reaches your running turn, and your answer then goes up as a reply to it: say only what you ~
-add, correct or dispute, never a second copy of what it said, and answer exactly NO_REPLY ~
-when you have nothing to add."
+reaches your running turn, and your answer then goes up as a reply to it, which wakes it: ~
+say only what you add, correct or dispute, never a second copy of what it said, and answer ~
+exactly NO_REPLY when you have nothing to add."
           names
           (if one "another bot" "other bots")
           (if one "It reads" "They read")

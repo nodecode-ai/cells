@@ -165,7 +165,9 @@ names; forget the thread after."
       (is (search "no single measurable task" where))
       (is (search "is talked through here instead" where) "a question is a conversation, not three answers")
       (is (search "goes up as a reply to it" where))
-      (is (search "goes up as a reply to it" (nck::peers-paragraph '(("777" . "elektra")))) "peers without a board talk the same way"))))
+      (is (search "goes up as a reply to it" (nck::peers-paragraph '(("777" . "elektra")))) "peers without a board talk the same way")
+      (is (search "or reply to its message: either wakes it" where) "a reply wakes the peer it answers")
+      (is (search "replies to a message of yours, is an ask and" (nck::peers-paragraph '(("777" . "elektra"))))))))
 
 (deftest channel-team-verify-is-the-only-source-of-a-score ()
   ;; The scorer's last line is the score: kept as this bot's, put on its card,

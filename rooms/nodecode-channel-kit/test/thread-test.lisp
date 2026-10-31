@@ -481,6 +481,28 @@ origin noted — ORIGIN the keys past the three that place it."
         (is-plan second-answer :path "/rooms/42/messages" "mentions" nil))
       (is (null (plan-matching (plans) :path "/rooms/100/messages")) "the channel keeps no copy"))))
 
+(deftest channel-thread-a-line-typed-in-the-thread-is-the-one-its-answer-replies-to ()
+  ;; A reply typed in the thread of a lane the kit opened one for -- a peer's,
+  ;; which wakes it, or a person's -- is a message the thread holds: the answer
+  ;; it starts replies to it. One typed in the parent channel, where the lane's
+  ;; own ask lives, is no message the thread holds, and takes none.
+  (with-ask-host (host test-host :store nil :name "thread-line-reply")
+    (let ((lane (origin-lane host :landed t)))
+      (with-stubbed-fdefinitions ((nck::gate-ask (host ask) (declare (ignore host ask)) nil)
+                                  (nck::run-ask-ingress (host ask fn) (declare (ignore host ask fn)) nil))
+        (nck::continue-lane host lane (nck:make-ask :room "chat-100-t42" :lane "chat-100-t42-m5" :message-id "m7"
+                                                    :target '(:channel-id "100" :thread-id "42") :prompt "over to you"))
+        (is (equal '("m7") (nck::lane-heard-line lane)) "a settled lane answers the line as a reply")
+        (setf (nck::lane-heard-line lane) nil
+              (nck:lane-active-turn-id lane) "t3")
+        (nck::continue-lane host lane (nck:make-ask :room "chat-100-t42" :lane "chat-100-t42-m5" :message-id "m8"
+                                                    :target '(:channel-id "100" :thread-id "42") :prompt "and this"))
+        (is (equal '("m8" . "t3") (nck::lane-heard-line lane)) "a running one too, once the turn it cut has answered")
+        (setf (nck::lane-heard-line lane) nil)
+        (nck::continue-lane host lane (nck:make-ask :room "chat-100" :lane "chat-100-t42-m5" :message-id "m9"
+                                                    :target '(:channel-id "100") :prompt "from the channel"))
+        (is (null (nck::lane-heard-line lane)) "a line from the parent channel takes no reference")))))
+
 (deftest channel-thread-an-answer-built-on-a-peers-line-replies-to-it ()
   ;; Bots a person names together talk in their thread: the answer of the turn
   ;; a peer's line started goes up as a reply to that line and pings nobody,
