@@ -992,6 +992,15 @@ platform cannot close one: an answer in a thread then carries no Close.")
 in its own terms -- a Telegram topic stays locked until an admin reopens it --
 or NIL for the kit's words: open again once anyone writes in it.")
 
+(nlk:define-side-table platform-thread-of-refusal (:test #'eq :weakness :key :synchronized t)
+  "A PLATFORM's (result message-id) => the id of the thread that already hangs
+off MESSAGE-ID when RESULT is the platform refusing to open another one there,
+else NIL. NIL when the platform never says so: a refused open then runs the ask
+in the channel (START-THREADED-ASK).")
+;; Two bots a person names in one message each open a thread off it, and the
+;; platform lets the first: the second takes that thread for its own, so one
+;; question has one thread and both answers in it.
+
 (defun answer-controls (host lane choices &aux (thread (getf lane.target :thread-id)))
   "The rows of buttons LANE's answer carries: its CHOICES, one row of buttons
 each saying its label; then, in a thread the platform can close, Close
@@ -1402,7 +1411,11 @@ it, and the thread the kit opened for it is renamed to it."
                (setf (turn-digest-task digest) title)
                (not (member (turn-digest-phase digest) '(:queued :running)))))
     (retitle-card host lane digest title))
+  ;; A thread this lane TOOK -- another bot named in the same ask opened it
+  ;; (START-THREADED-ASK) -- wears its opener's name: two lanes renaming one
+  ;; thread would trade it back and forth.
   (let* ((plan (and thread-id
+                    (not (getf origin :taken))
                     (host-plan host #'platform-plan-thread
                                (list :channel-id (getf origin :channel-id) :thread-id thread-id)
                                title)))
@@ -1663,7 +1676,7 @@ chunk as an address for the lane, then settle the card above it."
              ;; died in the worker's log, and the room heard nothing: the card
              ;; read working, the ask kept its eye.
              (handler-case
-                 (post-message host target text
+                 (post-message host target (peer-addressed-text host target text)
                                :reply-to reply-to :ping (null origin)
                                :mentions (and origin lane.owner-id (list lane.owner-id))
                                :files files
@@ -2434,7 +2447,7 @@ answered and the line it said. NIL for a message, whose id is its own key."
                     :api-primer platform.api-primer
                     :seams-primer platform.seams-primer
                     :standing (agent-standing (agent-of host agent) platform.noun))
-         :where (funcall platform.where-text candidate)
+         :where (peers-where host candidate (funcall platform.where-text candidate))
          :prompt prompt
          :continue-p continue-p
          :voice (cond ((source-field candidate "voice_origin") :channel)
@@ -3260,6 +3273,184 @@ HOST already takes part in; NIL stays NIL."
       (setf (gethash "joined" source) t)))
   candidate)
 
+;;; --- bots called in together share the thread -------------------------------------
+;;; A person who names two bots in one message asks both: each opens a thread
+;;; off the message, the platform lets the first, and the second takes that
+;;; thread for its own (PLATFORM-THREAD-OF-REFUSAL) -- one question, one
+;;; thread, both answers in it. The bots the message named beside this one are
+;;; the thread's PEERS. What a peer posts there reaches this bot as the
+;;; thread's context, and a line of its that mentions this bot is an ask
+;;; (DECIDE-INBOUND): two bots in a thread talk by naming each other -- an
+;;; answer's @name of a peer is spelled as the platform's mention of it
+;;; (PEER-ADDRESSED-TEXT) -- never by answering every line the other posts.
+;;; +PEER-TURNS+ bounds a run of peer asks between two lines a person typed.
+;;; A thread's peers live in its room's state, so they outlast the image.
+
+(defparameter +peer-turns+ 3
+  "Asks from a thread's peers this bot answers between two lines a person
+typed there: past them, a peer's line is only the thread's context.")
+
+(defparameter +thread-peers-key+ "thread-peers"
+  "The state key a thread's room keeps its peers under, [{id, name}].")
+
+(defvar *thread-peers* (make-hash-table :test #'equal :synchronized t)
+  "(platform id . thread id) -> the thread's peers, ((ID . NAME) ...), or
+:NONE for a thread read and found to have none.")
+
+(defvar *peer-runs* (make-hash-table :test #'equal :synchronized t)
+  "(platform id . thread id) -> the peer asks answered there since a person
+last typed a line in it.")
+
+(defun peer-key (host thread-id)
+  (cons (platform-id host.platform) thread-id))
+
+(defun candidate-room (host candidate)
+  "The room session CANDIDATE was said in."
+  (room-session-id (platform-session-prefix host.platform) candidate))
+
+(defun read-thread-peers (room)
+  "The peers ROOM's state keeps, ((ID . NAME) ...), or NIL."
+  (when (and room (nlk:store-open-p) (nlk:session-exists-p room))
+    (handler-case
+        (nlk:when-let (json (nlk:session-state-get room +thread-peers-key+))
+          (loop for entry across (let ((peers (nlk:decode-json json)))
+                                   (if (vectorp peers) peers #()))
+                for id = (and (hash-table-p entry) (gethash "id" entry))
+                when (stringp id)
+                  collect (cons id (let ((name (gethash "name" entry)))
+                                     (if (stringp name) name id)))))
+      (error (condition)
+        (warn "thread peers of ~a could not be read: ~a" room condition)
+        nil))))
+
+(defun thread-peers (host thread-id &optional room)
+  "THREAD-ID's peers on HOST's platform, ((ID . NAME) ...): the table's, else
+what its room ROOM keeps, read once."
+  (when thread-id
+    (let* ((key (peer-key host thread-id))
+           (known (gethash key *thread-peers*)))
+      (cond ((eq known :none) nil)
+            (known known)
+            ((null room) nil)
+            (t (let ((read (read-thread-peers room)))
+                 (setf (gethash key *thread-peers*) (or read :none))
+                 read))))))
+
+(defun note-thread-peers (host thread-id peers &optional room)
+  "PEERS, ((ID . NAME) ...), are THREAD-ID's peers beside any it had -- the
+table's, or what its room ROOM keeps. => all of them, or NIL when it has none."
+  (when thread-id
+    (let ((had (thread-peers host thread-id room)))
+      (if (null peers)
+          had
+          (setf (gethash (peer-key host thread-id) *thread-peers*)
+                (remove-duplicates (append had peers) :key #'car :test #'equal
+                                                      :from-end t))))))
+
+(defun save-thread-peers (host thread-id room)
+  "Write THREAD-ID's peers into its room's state, ROOM, so a later image knows them."
+  (let ((peers (thread-peers host thread-id)))
+    (when (and peers room (nlk:store-open-p) (nlk:session-exists-p room))
+      (handler-case
+          (nlk:session-state-put room +thread-peers-key+
+                                 (nlk:encode-json-object
+                                  (coerce (loop for (id . name) in peers
+                                                collect (nlk:json-object "id" id "name" name))
+                                          'vector)))
+        (error (condition)
+          (warn "thread peers of ~a could not be kept: ~a" room condition))))))
+
+(defun note-asked-peers (host candidate)
+  "A person's ask typed inside a thread that names other bots beside this one
+makes them the thread's peers, as a thread opened for it would."
+  (let ((thread (source-field candidate "thread_id"))
+        (bots (candidate-mentioned-bots candidate)))
+    (when (and thread bots (not (candidate-bot-p candidate)))
+      (let ((room (candidate-room host candidate)))
+        (note-thread-peers host thread bots room)
+        (save-thread-peers host thread room)))))
+
+(defun mark-peer (host candidate &aux (policy host.policy))
+  "CANDIDATE, marked source.peer when a bot posted it in a thread where it is
+this bot's peer. Never this bot's own line."
+  (let ((thread (source-field candidate "thread_id"))
+        (user (source-field candidate "user_id")))
+    (when (and thread user (candidate-bot-p candidate)
+               (not (and (typep policy 'inbound-policy)
+                         (equal user (inbound-policy-self-id policy))))
+               (assoc user (thread-peers host thread (candidate-room host candidate))
+                      :test #'equal))
+      (setf (gethash "peer" (candidate-source candidate)) t)))
+  candidate)
+
+(defun peer-run (host candidate action reason &aux (thread (source-field candidate "thread_id")))
+  "(values ACTION REASON) once CANDIDATE is counted in its thread's run of peer
+asks: a person's line ends the run, and a peer's ask past +PEER-TURNS+ in one
+is only the thread's context."
+  (let ((key (and thread (peer-key host thread))))
+    (cond ((or (null key) (eq action :reject)) (values action reason))
+          ((not (candidate-bot-p candidate))
+           (remhash key *peer-runs*)
+           (values action reason))
+          ((and (eq action :answer) (candidate-peer-p candidate)
+                (> (sb-ext:with-locked-hash-table (*peer-runs*)
+                     (incf (gethash key *peer-runs* 0)))
+                   +peer-turns+))
+           (values :observe "peer_turns_spent"))
+          (t (values action reason)))))
+
+(defun peers-paragraph (peers &aux (names (loop for (nil . name) in peers
+                                                collect (format nil "@~a" name)))
+                                   (one (null (rest peers))))
+  "What PEERS are to a lane in their thread, and how it talks to them."
+  (format nil "This thread is shared with ~{~a~#[~; and ~:;, ~]~}: ~a, called in beside you ~
+by the person who asked. ~a what you post here, and what ~a reaches you as the thread's ~
+context. A line of ~a that mentions you is an ask, and yours to answer. To hand ~a a ~
+question or a part of the work, write ~a in your answer: ~a answers here. Between two ~
+lines a person types here, you answer ~a at most ~d times."
+          names
+          (if one "another bot" "other bots")
+          (if one "It reads" "They read")
+          (if one "it posts" "they post")
+          (if one "its" "theirs")
+          (if one "it" "one of them")
+          (first names)
+          (if one "it" "that one")
+          (if one "it" "them")
+          +peer-turns+))
+
+(defun peers-where (host candidate where)
+  "WHERE, and when CANDIDATE's thread has peers, what they are to the lane."
+  (let ((peers (thread-peers host (source-field candidate "thread_id")
+                             (candidate-room host candidate))))
+    (if peers
+        (format nil "~a ~a" where (peers-paragraph peers))
+        where)))
+
+(defun peer-mentions-in (host peers text)
+  "TEXT with each @NAME of PEERS spelled as the platform's mention of it."
+  (loop for (id . name) in peers
+        for spelling = (funcall (platform-mention host.platform) id)
+        when (and (stringp spelling) (plusp (length spelling)) (plusp (length name)))
+          do (setf text (ppcre:regex-replace-all
+                         (ppcre:create-scanner
+                          (format nil "(?<![\\w@<])@~a(?![\\w-])" (ppcre:quote-meta-chars name))
+                          :case-insensitive-mode t)
+                         text
+                         spelling)))
+  text)
+
+(defun peer-addressed-text (host target text)
+  "TEXT with each @NAME of a peer of TARGET's thread spelled as the platform's
+mention of it, outside code: an answer that names a peer asks it."
+  (let ((peers (and (stringp text) (thread-peers host (getf target :thread-id)))))
+    (if (null peers)
+        text
+        (format nil "~{~a~^`~}"
+                (loop for piece in (uiop:split-string text :separator "`")
+                      for code = nil then (not code)
+                      collect (if code piece (peer-mentions-in host peers piece)))))))
+
 (defun candidate-taken-p (host candidate &aux (prefix (platform-session-prefix host.platform))
                                                 (message (source-field candidate "message_id")))
   "Whether CANDIDATE's message already opened a lane — where it was typed,
@@ -3303,7 +3494,15 @@ named from its first words — and admit the ask inside it."
         (if (null plan)
             (gate-ask host (build-ask host candidate lane-id nil))
             (let* ((result (execute-plan host.executor plan))
-                   (thread-id (and result.ok-p (funcall platform.thread-id-of result.body))))
+                   (opened (and result.ok-p (funcall platform.thread-id-of result.body)))
+                   ;; Refused because the message already carries a thread:
+                   ;; another bot the same message named opened it first. That
+                   ;; thread is this ask's too -- one question, one thread --
+                   ;; and stays its opener's (:TAKEN in the origin).
+                   (taken (and (not result.ok-p)
+                               (nlk:when-let (reader (platform-thread-of-refusal platform))
+                                 (funcall reader result message-id))))
+                   (thread-id (or opened taken)))
               (cond
                 ((null thread-id)
                  (warn "~a: ask ~a runs in the channel, no thread opened: ~a"
@@ -3328,20 +3527,28 @@ named from its first words — and admit the ask inside it."
                  ;; (:ROOM), where the exchange settles beside the thread's
                  ;; once the answer lands there.
                  (let* ((inside (candidate-in-thread candidate thread-id typed))
+                        ;; The bots the ask named beside this one are the
+                        ;; thread's peers, known before the ask is built: its
+                        ;; lane is told who else answers here (PEERS-WHERE).
+                        (peers (note-thread-peers host thread-id
+                                                  (candidate-mentioned-bots candidate)))
                         (ask (build-ask
                               host inside
                               (lane-id (room-session-id platform.session-prefix inside) message-id)
                               nil :ambient-room parent-room))
                         (lane (intern-ask-lane host ask))
-                        (origin (list :channel-id typed :message-id message-id
-                                      :thread-id thread-id :room parent-room
-                                      :landed nil)))
+                        (origin (list* :channel-id typed :message-id message-id
+                                       :thread-id thread-id :room parent-room
+                                       :landed nil
+                                       (and taken (list :taken t)))))
                    (setf (lane-origin lane) origin)
                    ;; The thread's room composes the room the ask was TYPED
                    ;; in: the conversation goes on where the person typed.
                    ;; First ensure wins; the ask's own admission then finds
                    ;; the room already made.
                    (ensure-room host ask.room :parent parent-room)
+                   (when peers
+                     (save-thread-peers host thread-id ask.room))
                    (gate-ask host ask))))))))))
 
 (defun message-target (lane message-id &aux (origin (lane-origin lane)))
@@ -3550,7 +3757,10 @@ an ask, or rejected with its reason on the status surface."
     (set-channel-status (host-id host) :last-event-at-ms
                         (* 1000 (- (get-universal-time) nlk:+unix-epoch+)))
     (multiple-value-bind (action reason)
-        (decide-inbound host.policy candidate)
+        ;; A peer's line is marked before the policy reads it, and counted
+        ;; in its thread's run of peer asks after (PEER-RUN).
+        (multiple-value-call #'peer-run host candidate
+          (decide-inbound host.policy (mark-peer host candidate)))
       ;; Typed inside a thread the kit opened for an ask: that thread holds
       ;; a line of somebody's own now, and no silent answer may take it —
       ;; whether this line is an ask of its own or only chatter.
@@ -3568,7 +3778,8 @@ an ask, or rejected with its reason on the status surface."
                    ((pairing-candidate-p host candidate reason)
                     (on-worker host (offer-pairing host candidate)))))
         (:observe (observe-candidate host candidate))
-        (:answer (answer-message host candidate)))
+        (:answer (note-asked-peers host candidate)
+                 (answer-message host candidate)))
       action)))
 
 ;;; --- terminal reconciliation ------------------------------------------------------------

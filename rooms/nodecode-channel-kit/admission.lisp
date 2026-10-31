@@ -108,6 +108,21 @@ itself (source.addressed true): a slash interaction, a reply to the bot's
 own message. Such a message needs no mention to be an ask."
   (eq t (gethash "addressed" (candidate-source candidate))))
 
+(defun candidate-peer-p (candidate)
+  "Whether the kit marked CANDIDATE as a peer's (source.peer true): a bot a
+person called into this thread beside this one (MARK-PEER)."
+  (eq t (gethash "peer" (candidate-source candidate))))
+
+(defun candidate-mentioned-bots (candidate)
+  "The other bots CANDIDATE's message mentions, as the adapter read them off
+the platform (source.mentioned_bots, [{id, name}]): ((ID . NAME) ...) in the
+order mentioned, NIL when it names none."
+  (loop for entry across (or (nlk:json-value candidate :array "source" "mentioned_bots") #())
+        for id = (and (hash-table-p entry) (gethash "id" entry))
+        when (and (stringp id) (plusp (length id)))
+          collect (cons id (let ((name (gethash "name" entry)))
+                             (if (and (stringp name) (plusp (length name))) name id)))))
+
 (defun candidate-pressed-p (candidate)
   "Whether CANDIDATE is a press on a choice a message carries (source.pressed
 true): its answer, unless private, takes the place of the message pressed."
@@ -324,7 +339,11 @@ spelling, else the key's name underscored (:user-not-allowed is
              (observe (key) (decide :observe key)))
       (when (and self (equal self (source-field candidate "user_id")))
         (reject :self-author))
-      (when (and (candidate-bot-p candidate) (eq policy.allow-bots :none))
+      ;; A peer -- a bot a person called into this thread beside us -- is let
+      ;; in whatever ALLOW-BOTS says: the person who named us both asked for
+      ;; it, in this thread alone (MARK-PEER).
+      (when (and (candidate-bot-p candidate) (eq policy.allow-bots :none)
+                 (not (candidate-peer-p candidate)))
         (reject :bot-author))
       (unless (id-allowed-p policy.allowed-scopes (source-field candidate "workspace_id"))
         (reject :scope-not-allowed))
@@ -348,8 +367,18 @@ spelling, else the key's name underscored (:user-not-allowed is
       ;; A bot let in by mention only: two bots that each speak freely in a
       ;; thread would otherwise answer each other for as long as they run.
       (when (and (candidate-bot-p candidate) (eq policy.allow-bots :mentions)
+                 (not (candidate-peer-p candidate))
                  (not (mention-involves-p policy (if (stringp text) text ""))))
         (reject :bot-not-mentioned))
+      ;; A peer talks to us by name and only by name: its line that mentions
+      ;; us is an ask, every other line it posts is the thread's context. A
+      ;; room that speaks freely, or a reply to one of our messages, makes no
+      ;; ask of a peer's line -- two bots that each answered whatever the other
+      ;; posted would answer each other for as long as they run.
+      (when (candidate-peer-p candidate)
+        (if (mention-involves-p policy (if (stringp text) text ""))
+            (return-from decide-inbound (values :answer nil))
+            (observe :peer-not-mentioned)))
       (when (and (not (room-speaks-freely-p policy candidate))
                  (not (candidate-addressed-p candidate)))
         ;; A missing mention target is a configuration failure, not a quiet

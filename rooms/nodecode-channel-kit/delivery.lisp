@@ -367,9 +367,12 @@ chrome ever went into, or NIL."
   ;; A thread carrying a landed answer, a word the turn spoke or a line
   ;; somebody typed is not empty; neither is a lane the kit never opened a
   ;; thread for. What a silent answer retires (RETIRE-THREAD).
+  ;; A thread the lane took rather than opened (:TAKEN) is its opener's, and
+  ;; another bot's answer may already be in it: never this lane's to remove.
   (and origin
        (not (getf origin :landed))
        (not (getf origin :spoken))
+       (not (getf origin :taken))
        (getf origin :thread-id)
        origin))
 

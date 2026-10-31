@@ -349,6 +349,49 @@ to it, is one file — and the seconds a voice message declares."
                                   "seconds" (nlk:json-value attachment :number "duration_secs")))
                  'vector))))
 
+;;; --- who a message names ---------------------------------------------------------
+;;; A mention is <@id> on the wire; the line the model reads spells it @name
+;;; (DISCORD-STRIP-MENTION), and a message that names other bots beside this
+;;; one asks them all: the kit makes them the thread's peers. Discord ships
+;;; the username and the bot flag of everyone a message mentions, and of its
+;;; author, on the message itself -- hash reads, on the thread that heartbeats.
+
+(defparameter +discord-said-types+ '(0 19)
+  "The message types a member's words arrive as: DEFAULT and REPLY. Every
+other type is the platform's notice of a deed -- a thread renamed, a message
+pinned, a member joined -- whose content is no line anybody said.")
+
+(defvar *discord-user-names* (make-hash-table :test #'equal :synchronized t)
+  "Discord user id -> the username a mention of that user reads as.")
+
+(defun note-discord-users (data)
+  "Learn the usernames of DATA's author and of everyone it mentions."
+  (flet ((learn (user)
+           (let ((id (nlk:json-value user :string "id"))
+                 (name (nlk:json-value user :string "username")))
+             (when (and id name (plusp (length name)))
+               (setf (gethash id *discord-user-names*) name)))))
+    ;; A bound, never a ledger: a busy guild's names come back with the next
+    ;; message that carries them.
+    (when (> (hash-table-count *discord-user-names*) 10000)
+      (clrhash *discord-user-names*))
+    (nlk:when-let (author (nlk:json-value data :object "author"))
+      (learn author))
+    (loop for user across (or (nlk:json-array data "mentions") #())
+          when (hash-table-p user) do (learn user))))
+
+(defun discord-mentioned-bots (data bot-user-id)
+  "The bots DATA mentions other than BOT-USER-ID, as source.mentioned_bots
+carries them -- [{id, name}] -- or NIL when it names none."
+  (let ((bots (loop for user across (or (nlk:json-array data "mentions") #())
+                    for id = (and (hash-table-p user) (nlk:json-value user :string "id"))
+                    when (and id (not (equal id bot-user-id))
+                              (nlk:json-value user :boolean "bot"))
+                      collect (nlk:json-object
+                               "id" id
+                               "name" (or (nlk:json-value user :string "username") id)))))
+    (and bots (coerce bots 'vector))))
+
 (defun discord-message-candidate (data bot-user-id)
   "DATA — the d object of a MESSAGE_CREATE or a MESSAGE_UPDATE dispatch —
 as the one candidate shape admission reads: the words, the attachments, and the
@@ -370,9 +413,14 @@ source coordinates, the reply gesture included."
                          (let ((snapshots (nlk:json-array data "message_snapshots")))
                            (and (plusp (length snapshots))
                                 (nlk:json-value (aref snapshots 0) :object "message")))))
-         (own (or (nlk:json-value data :string "content") "")))
+         (own (or (nlk:json-value data :string "content") ""))
+         (type (nlk:json-value data :integer "type"))
+         (bots (discord-mentioned-bots data bot-user-id)))
     (note-thread-channel (nlk:json-value data :any "thread"))
-    (when channel-id
+    (note-discord-users data)
+    ;; A notice of a deed is no line: a thread a bot renamed would otherwise
+    ;; reach the room as that bot saying the thread's new name.
+    (when (and channel-id (or (null type) (member type +discord-said-types+)))
       (let* ((chat-kind (cond (thread "thread")
                               (guild "channel")
                               (t "direct_message")))
@@ -418,6 +466,9 @@ source coordinates, the reply gesture included."
                                                   "author" "id"))
                            t)
           "is_bot" (and (nlk:json-value data :any "author" "bot") t)
+          ;; The other bots the message names beside this one: a person's
+          ;; ask makes them the thread's peers (NCK:NOTE-ASKED-PEERS).
+          :when bots "mentioned_bots" bots
           ;; The roles the author holds in this guild, which allowed_roles
           ;; reads; a direct message carries none.
           "role_ids" (nlk:json-value data :array "member" "roles")))))))

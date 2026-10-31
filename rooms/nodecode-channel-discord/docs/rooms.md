@@ -11,8 +11,8 @@ the refusal records (see
 [troubleshooting](troubleshooting.md#the-bot-says-nothing)).
 
 1. The bot's own messages are always refused (`self_author`).
-2. Another bot's message is refused unless `allow_bots` lets it in
-   (`bot_author`).
+2. Another bot's message is refused unless `allow_bots` lets it in, or it
+   is a peer in its thread (`bot_author`; see [other bots](#other-bots)).
 3. `allowed_guilds`, when set, must name the server (`guild_not_allowed`).
    A direct message has no server, so a set `allowed_guilds` refuses every
    direct message.
@@ -96,6 +96,24 @@ allowed everywhere an allowed user is.
   are ignored. This keeps two bots from answering each other forever.
 - `"all"`: treated like a person's.
 
+Whatever `allow_bots` says, a person who mentions this bot and other bots in
+one message asks them all, and they answer in one thread. Each opens a
+thread off the message; Discord lets the first, and the others take that
+thread. The other bots that message named are the thread's peers, in that
+thread only:
+
+- a peer's message that mentions this bot is answered there;
+- every other message it posts there is context, read with the next ask
+  (`peer_not_mentioned`);
+- in an answer, `@name` of a peer becomes a real mention, which is how the
+  bots hand each other a question;
+- between two messages a person types there, the bot answers a peer at most
+  three times (`peer_turns_spent`).
+
+The peers are kept with the thread and survive restarts. A person who
+mentions another bot beside this one inside a thread adds it as a peer
+there.
+
 ## The operator
 
 `owner` lists the operators: the people whose word is standing policy. It
@@ -156,7 +174,9 @@ bots share a channel.
   when the ask is longer the auxiliary model renames it with a short title.
   The work and the answer happen in the thread. The bot needs Create Public
   Threads and Send Messages in Threads; if it cannot open the thread, it
-  answers in the channel instead.
+  answers in the channel instead. When another bot the same message named
+  opened the thread first, it answers in that thread and leaves its name
+  alone.
 - `"reply_in_place"`: the answer is a reply in the channel. Each message is
   its own conversation, and a reply to one of the bot's messages continues
   it.

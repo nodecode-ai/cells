@@ -72,6 +72,7 @@
                (:file "transcribe-test")
                (:file "host-test")
                (:file "thread-test")
+               (:file "peers-test")
                (:file "board-test")
                (:file "cell-test")
                (:file "operator-test")
