@@ -8,8 +8,10 @@
 ;;;; NIL for it: well-formed JSON, every field a reader uses present and of
 ;;;; its type, every check a kind this cell reads with the fields that kind
 ;;;; needs, every version one PARSE-VERSION reads. The six-hourly update (see
-;;;; UPDATING.md) runs it before every push; the tests run it on the copy
-;;;; shipped here.
+;;;; UPDATING.md) runs it before every push, with :SINCE the feed it replaces,
+;;;; so the job can add advisories but never a new command: copies installed
+;;;; before commands were pinned (detect.lisp) still run what main names. The
+;;;; tests run it on the copy shipped here.
 
 (in-package #:nodecode-cyber-security)
 
@@ -93,9 +95,28 @@
                    (bad "check ~d is not an object" n))))
     (nreverse out)))
 
-(defun feed-problems (text)
+(defun new-command-problems (entries since)
+  "A problem for every command ENTRIES run that SINCE (the feed text they
+replace) does not, the Python-package probe aside."
+  (let ((known (command-set (read-feed since))) (out '()))
+    (dolist (a entries (nreverse out))
+      (loop for c in (field a "checks") for n from 1
+            when (hash-table-p c)
+              do (dolist (key '("command" "backport"))
+                   (let ((words (field c key)))
+                     (when (and (consp words) (every #'stringp words)
+                                (not (python-probe words)) (not (gethash words known)))
+                       (push (format nil "~a: check ~d (~a): its ~a is new; only a person publishes a new command (UPDATING.md, section 5)"
+                                     (field a "id") n (field c "kind") key)
+                             out))))))))
+
+(defun feed-problems (text &key since)
   "Every reason the feed TEXT (advisories.json's contents) must not be
-published, one string each; NIL means it may."
+published, one string each; NIL means it may. SINCE, the feed TEXT
+replaces, is the unattended job's gate: a command SINCE does not carry is
+then a problem too, so a feed written from web news never adds a program to
+run -- a person publishes that, and an installed copy runs it only once a
+release pins it (detect.lisp)."
   (let ((obj (handler-case (shasht:read-json text) (error (e) (return-from feed-problems
                                                                   (list (format nil "not JSON: ~a" e)))))))
     (unless (hash-table-p obj) (return-from feed-problems (list "not a JSON object")))
@@ -114,5 +135,7 @@ published, one string each; NIL means it may."
                           (t (when (member (gethash "id" a) ids :test #'equal)
                                (push (format nil "~a: id is used twice" (gethash "id" a)) out))
                              (push (gethash "id" a) ids)
-                             (dolist (p (advisory-problems a)) (push p out))))))))
+                             (dolist (p (advisory-problems a)) (push p out))))))
+         (when since
+           (dolist (p (new-command-problems (coerce entries 'list) since)) (push p out)))))
       (nreverse out))))

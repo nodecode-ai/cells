@@ -9,7 +9,8 @@
 ;;;; users who reinstall. The bundled copy beside this file is the floor: a
 ;;;; machine with no network, or a fetch that fails, still answers, and
 ;;;; FEED-STATUS says which copy answered and how old it is, so a stale
-;;;; answer is never silent.
+;;;; answer is never silent. Data only: what a check runs comes from this
+;;;; installed copy, never from the fetch (detect.lisp, RUNNABLE).
 
 (in-package #:nodecode-cyber-security)
 

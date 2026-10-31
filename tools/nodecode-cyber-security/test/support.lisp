@@ -31,15 +31,34 @@ or, for sh -c, by a substring of the script.")
   "BODY with the feed fetch and the command runner stubbed, and the feed state fresh."
   `(with-saved-globals (nodecode-cyber-security::*fetch* nodecode-cyber-security::*run*
                         nodecode-cyber-security::*feed* nodecode-cyber-security::*feed-state*
-                        nodecode-cyber-security::*feed-url*)
+                        nodecode-cyber-security::*feed-url* nodecode-cyber-security::*pinned*)
      (setf *sp-fetch-answer* '(nil 599)
            *sp-outputs* '()
+           *sp-ran* '()
            nodecode-cyber-security::*feed* nil
            nodecode-cyber-security::*feed-state* (list :source :none)
            nodecode-cyber-security::*fetch* (lambda (url) (declare (ignore url))
                                                 (values-list *sp-fetch-answer*))
            nodecode-cyber-security::*run* 'sp-run)
      ,@body))
+
+(defvar *sp-ran* '() "Every argv the stubbed runner was handed, newest first.")
+
+(defun sp-run-logged (argv)
+  (push argv *sp-ran*)
+  (sp-run argv))
+
+(defun sp-pin (&rest checks)
+  "This copy vouches for CHECKS' commands too, as if a release had pinned
+them beside the cell: the fixtures stand in for the shipped feed, which
+changes every six hours."
+  (let ((set (make-hash-table :test #'equal)))
+    (maphash (lambda (k v) (setf (gethash k set) v)) (nodecode-cyber-security::pinned-commands))
+    (dolist (c checks)
+      (dolist (key '("command" "backport"))
+        (let ((words (nodecode-cyber-security:field c key)))
+          (when words (setf (gethash words set) t)))))
+    (setf nodecode-cyber-security::*pinned* (lambda () set))))
 
 (defun sp-check (json)
   "One check object from its JSON text."

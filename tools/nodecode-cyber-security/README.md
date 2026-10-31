@@ -31,7 +31,23 @@ Each advisory in [`advisories.json`](advisories.json) carries its own checks:
 | `files` | known signs of compromise on disk |
 
 Advisories with no machine check (a platform breach: rotate your keys) are listed as
-`READ`. Distro builds that backport a fix under the old version number are recognised
+`READ`.
+
+### What runs on your machine
+
+The feed is read live from `main`, and an unattended job writes it from web news, so it
+is data: it can add advisories and change which versions are vulnerable, never which
+program runs. A `version` or `command` check runs a program only when this installed
+copy vouches for it:
+
+- a Python package's version, its package name checked and handed to the cell's own
+  script as an argument, never as code;
+- a command the cell's own `advisories.json` carries word for word: the copy pinned with
+  the cell, which only a nodecode update moves.
+
+Any other command is listed as `SKIP` with the reason, and runs after the next update.
+A site folder or host name is checked before it goes into a command, so neither can
+close the quotes around it. Distro builds that backport a fix under the old version number are recognised
 from the package changelog where the advisory says how.
 
 ## Staying current
