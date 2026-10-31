@@ -109,10 +109,51 @@ THREAD-IDS: their peers and their runs."
         (is (eq :answer (nck:decide-inbound (nck:host-policy host) (said "<@999> your turn"))))
         (is (eq :observe (nck:decide-inbound (nck:host-policy host) (said "noted, thanks"))))
         (let ((ask (said "<@999> again")))
-          (is (equal '(:answer :answer :answer :observe)
+          (is (equal '(:answer :answer :observe :observe)
                      (loop repeat 4 collect (nck::peer-run host ask :answer nil))) "a run of peer asks stops at +PEER-TURNS+")
           (nck::peer-run host (said "go on, you two" :user "u1" :bot nil) :answer nil)
           (is (eq :answer (nck::peer-run host ask :answer nil)) "a person's line starts a new run"))))))
+
+(deftest channel-peers-a-talk-ends-in-one-final-answer ()
+  ;; Two bots that each answer the other's reply wake each other for as long
+  ;; as they run. A peer's reply wakes this bot, framed with the wakes it has
+  ;; left, and the last of them closes the talk: that answer is the final
+  ;; answer. A final answer from any bot closes the talk in every kit --
+  ;; nothing posted after it wakes this bot -- until a person types again.
+  (with-thread-peers ("82")
+    (let ((host (test-host)))
+      (setf (nck:host-policy host) (channel-policy :self-id "999" :mention-target "999"
+                                                   :mention-test #'nck:discord-mention-p))
+      (nck::note-thread-peers host "82" '(("777" . "elektra")))
+      (unwind-protect
+           (flet ((said (text &key (user "777") (bot t) (message "9") addressed)
+                    (nck::mark-peer host (test-candidate :is-bot bot :user user :user-name "elektra"
+                                                         :thread "82" :parent "100" :message message
+                                                         :text text :addressed addressed)))
+                  (heard (candidate)
+                    (multiple-value-list
+                     (multiple-value-call #'nck::peer-run host candidate
+                       (nck:decide-inbound (nck:host-policy host) candidate)))))
+             (let ((first (said "you missed the cache" :addressed t)))
+               (is (equal '(:answer nil) (heard first)) "a peer's reply wakes this bot")
+               (is (search "(1 of 2 in this talk" (gethash "text" (nck::woken-ask host first))) "framed with the wakes it has left")
+               (is (search "beginning with the line FINAL ANSWER" (gethash "text" (nck::woken-ask host first))) "and that it may close the talk once they agree")
+               (is (search "you missed the cache" (gethash "text" (nck::woken-ask host first))))
+               (is (not (nck::talk-closing-p host "82"))))
+             (let ((second (said "the TTL too" :addressed t :message "10")))
+               (is (equal '(:answer nil) (heard second)))
+               (is (search "so your answer closes it" (gethash "text" (nck::woken-ask host second))) "its last wake writes the final answer")
+               (is (nck::talk-closing-p host "82")))
+             (is (equal '(:observe "peer_turns_spent") (heard (said "and the lock" :addressed t :message "11"))) "past its last, a reply is only the thread's context")
+             (heard (said "go on, you two" :user "u1" :bot nil :message "12"))
+             (is (not (nck::talk-closing-p host "82")) "a person's line starts a new talk")
+             (heard (said (format nil "<@u1> **Final answer**~%it was the cache") :message "13"))
+             (is (nck::talk-closed-p host "82") "a peer's final answer closes it")
+             (is (equal '(:observe "talk_closed") (heard (said "one more thing" :addressed t :message "14"))) "and nothing after it wakes this bot")
+             (heard (said "thanks, both" :user "u1" :bot nil :message "15"))
+             (is (not (nck::talk-closed-p host "82")) "until a person types again")
+             (is (equal '(:answer nil) (heard (said "<@999> look" :message "16")))))
+        (nck::forget-board host "82")))))
 
 (deftest channel-peers-an-ask-in-the-thread-calls-more-in ()
   ;; A person who names another bot in a thread this one answers in makes it a

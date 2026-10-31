@@ -284,14 +284,20 @@ between two lines a person typed.")
   "(platform id . thread id) -> the peer lines that steered a turn there
 since a person last typed a line in it.")
 
+(defun peer-who (host candidate)
+  "Who said CANDIDATE, a line heard in a thread, as a lane there is told: a
+peer's slot, then its name."
+  (let* ((thread (source-field candidate "thread_id"))
+         (user (source-field candidate "user_id"))
+         (slot (and (candidate-bot-p candidate) (slot-of host thread user))))
+    (format nil "~@[s~d, ~]~a" slot (or (source-field candidate "user_name") user))))
+
 (defun heard-frame (host candidate)
   "What a line heard while a turn runs is to that turn: a post on the board,
 a peer's word, or a person's line said to someone else -- context to weigh
 while it keeps working, never an ask of its own."
-  (let* ((thread (source-field candidate "thread_id"))
-         (user (source-field candidate "user_id"))
-         (slot (and (candidate-bot-p candidate) (slot-of host thread user)))
-         (who (format nil "~@[s~d, ~]~a" slot (or (source-field candidate "user_name") user))))
+  (let ((thread (source-field candidate "thread_id"))
+        (who (peer-who host candidate)))
     (multiple-value-bind (kind) (and (candidate-bot-p candidate)
                                      (parse-board-line (gethash "text" candidate)))
       (cond
@@ -302,6 +308,15 @@ your turn with your answer; if it does not, post FAIL with what you saw and keep
         (kind
          (format nil "[A ~a post from your peer ~a reached you on the thread's board while you ~
 work: a claim until your own verify reproduces it. Weigh it and keep working.]" kind who))
+        ((peer-final-p candidate)
+         (format nil "[Your peer ~a posted the thread's final answer while you work: the talk is ~
+closed, and nothing posted in it now wakes anyone. End your turn with exactly NO_REPLY, unless ~
+the final answer is wrong or misses something you found: then say only that, in a few lines.]" who))
+        ((and (candidate-bot-p candidate) (talk-closing-p host thread))
+         (format nil "[Your peer ~a posted this in the thread while you work, and your answer is ~
+your last in this talk, so it closes it: write the final answer for the person who asked -- the ~
+thread's settled result whole: what holds, what was corrected, what is still open -- not a reply ~
+to it. It goes up as the thread's final answer and wakes no one.]" who))
         ((candidate-bot-p candidate)
          (format nil "[Your peer ~a posted this in the thread while you work. Your answer goes up as ~
 a reply to it, which wakes it: build on it, with only what you add, correct or dispute and never ~
@@ -322,6 +337,41 @@ peer's."
                                                   (nlk:short-digest text 8)))
           (ask-message-id ask) nil)
     ask))
+
+(defun peer-final-p (candidate)
+  "Whether CANDIDATE is a bot's line that opens as its talk's final answer."
+  (and (candidate-bot-p candidate) (final-answer-line-p (gethash "text" candidate))))
+
+(defun heard-after-final-p (host candidate)
+  "Whether CANDIDATE, a bot's line, came after the final answer that closed
+its thread's talk -- as the final answer itself did not."
+  (let* ((thread (source-field candidate "thread_id"))
+         (final (and thread (gethash (peer-key host thread) *talk-finals*))))
+    (and final (candidate-bot-p candidate)
+         (not (equal final (source-field candidate "message_id"))))))
+
+(defun woken-frame (host candidate turn &aux (who (peer-who host candidate)))
+  "What a peer's ask is to the turn it wakes: the TURN-th this bot answers in
+the thread's talk, the last of +PEER-TURNS+ answered with the final answer."
+  (if (>= turn +peer-turns+)
+      (format nil "[Your peer ~a wakes you with the line below for the last time in this talk, ~
+so your answer closes it: write the final answer for the person who asked -- the thread's ~
+settled result whole: what holds, what was corrected, what is still open -- not a reply to ~a. ~
+It goes up as the thread's final answer and wakes no one.]" who who)
+      (format nil "[Your peer ~a wakes you with the line below (~d of ~d in this talk; the last ~
+closes it). Answer with only what you add, correct or dispute: it goes up as a reply that ~
+wakes ~a. When you agree and nothing between you is open, close the talk instead: write the ~
+final answer for the person who asked -- the thread's settled result whole -- beginning with ~
+the line FINAL ANSWER.]" who turn +peer-turns+ who)))
+
+(defun woken-ask (host candidate &aux (turn (gethash "peer_turn" (candidate-source candidate))))
+  "CANDIDATE, a peer's ask PEER-RUN numbered, framed as the turn it wakes
+(WOKEN-FRAME); any other candidate as it is."
+  (if (integerp turn)
+      (nlk:copy-json-object candidate "text"
+                            (format nil "~a~%~a" (woken-frame host candidate turn)
+                                    (or (gethash "text" candidate) "")))
+      candidate))
 
 (defun steers-spent-p (host candidate &aux (thread (source-field candidate "thread_id")))
   "Whether CANDIDATE, a peer's line, is past +THREAD-STEERS+ since a person
@@ -359,9 +409,13 @@ it works. => T when it steered."
          (lane (and thread
                     (thread-peers host thread (candidate-room host candidate))
                     (thread-lane host candidate))))
+    ;; A talk its final answer closed steers nothing more; the final answer
+    ;; itself reaches the running turn once, whatever the steers spent.
     (when (and lane (lane-active-turn-id lane)
                (steering-line-p host candidate)
-               (not (steers-spent-p host candidate)))
+               (not (heard-after-final-p host candidate))
+               (or (peer-final-p candidate)
+                   (not (steers-spent-p host candidate))))
       ;; A peer's untagged line is what the next answer builds on: it goes up
       ;; as a reply to it (DELIVER-ANSWER). A board post is a status line, and
       ;; a person's line said to someone else is theirs.
@@ -422,9 +476,9 @@ posts it whole, a peer's post reaches your running turn, and your answer then go
 reply to it -- a reply wakes the peer it answers -- with only what you add, correct or ~
 dispute, never a second copy of what it said, or exactly NO_REPLY when you have nothing to ~
 add. To ask a peer something, @mention it or reply to its message: either wakes it, and it ~
-answers you here."
+answers you here. ~a"
             (length slots) (or (slot-of host thread-id self room) 0) others
-            thread-id thread-id thread-id thread-id)))
+            thread-id thread-id thread-id thread-id (talk-end-sentences))))
 
 ;;; --- the verbs a lane calls ---------------------------------------------------------
 
@@ -632,8 +686,9 @@ answers for itself."
              (first +silence-spellings+)))))
 
 (defun forget-board (host thread-id)
-  "Drop what HOST's kit holds of THREAD-ID's board: its slots, posts, scores
-and steers -- the room's state keeps the slots."
+  "Drop what HOST's kit holds of THREAD-ID's board: its slots, posts, scores,
+steers and final answer -- the room's state keeps the slots."
   (let ((key (board-key host thread-id)))
-    (dolist (table (list *thread-slots* *team-posts* *board-scores* *thread-steers*))
+    (dolist (table (list *thread-slots* *team-posts* *board-scores* *thread-steers*
+                         *talk-finals*))
       (remhash key table))))
