@@ -4,13 +4,15 @@
 # A private entry's repository carries a read-only deploy key whose private
 # half is this repository's secret DEPLOY_KEY_<NAME>: NAME is the
 # repository's name upper-cased, - as _ (nodecode-cline is
-# DEPLOY_KEY_NODECODE_CLINE). SECRETS is the workflow's secrets as JSON.
+# DEPLOY_KEY_NODECODE_CLINE). The workflow hands this step each such secret
+# by name, as an environment variable of that name; an empty one (a fork's
+# pull request gets no secrets) is skipped.
 # Each key gets an ssh host alias, and a git rewrite sends the entry's https
 # URL through it, so check.lisp clones a private entry exactly as it clones a
 # public one. check.sh gives the trial a scratch HOME, so the rewrites live in
 # a file GIT_CONFIG_GLOBAL names and ssh is handed its config and GitHub's
 # published host key; both variables go to $GITHUB_ENV for the steps after
-# this one, which never see SECRETS.
+# this one, which never see the keys.
 set -euo pipefail
 
 dir="$RUNNER_TEMP/deploy-keys"
@@ -18,12 +20,12 @@ mkdir -p "$dir"
 chmod 700 "$dir"
 
 python3 - "$dir" <<'PY'
-import json, os, pathlib, sys
+import os, pathlib, sys
 
 dir = pathlib.Path(sys.argv[1])
 ssh, git = [], []
-for name, key in sorted(json.loads(os.environ["SECRETS"]).items()):
-    if not name.startswith("DEPLOY_KEY_"):
+for name, key in sorted(os.environ.items()):
+    if not name.startswith("DEPLOY_KEY_") or not key.strip():
         continue
     repo = name[len("DEPLOY_KEY_"):].lower().replace("_", "-")
     path = dir / repo

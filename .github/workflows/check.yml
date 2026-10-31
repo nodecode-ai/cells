@@ -26,11 +26,12 @@ jobs:
           rm ~/.curlrc
       - name: Reach the private entries
         # Each private entry's repository carries a read-only deploy key, its
-        # private half the secret DEPLOY_KEY_<NAME>. Only this step sees the
-        # secrets; the check after it runs add-on code. Pull requests from
-        # forks get no secrets, so a private entry cannot be cloned there.
+        # private half the secret DEPLOY_KEY_<NAME>, named here one by one: a
+        # new private entry adds its line. Only this step sees the keys; the
+        # check after it runs add-on code. Pull requests from forks get no
+        # secrets, so a private entry cannot be cloned there.
         env:
-          SECRETS: ${{ toJSON(secrets) }}
-        run: tools/deploy-keys.sh
+          DEPLOY_KEY_ADDONS: ${{ secrets.DEPLOY_KEY_ADDONS }}
+        run: .github/deploy-keys.sh
       - name: Install and load every entry
-        run: tools/check.sh "$HOME/.local/bin/nodecode"
+        run: .github/check.sh "$HOME/.local/bin/nodecode"
