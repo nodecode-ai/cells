@@ -294,20 +294,148 @@ CHANNEL_DELETE forget theirs."
 ;;; bot's own member object in each guild it is in, and the mention rule reads
 ;;; them here at decision time, so learning them late still admits the next
 ;;; ask. Hash writes only; safe on any thread.
+;;;
+;;; A role is not only the bot's own managed one: a guild can make a role,
+;;; give it to several bots, and ping it to call them all. The roles a bot
+;;; holds change under a connection that is already running (operator
+;;; report, 2026-10-31: a `bot' role made an hour after the gateways started
+;;; reached none of the three bots that held it), so what the start read is
+;;; kept in step with the gateway: Discord sends the bot's own
+;;; GUILD_MEMBER_UPDATE whatever the intents, GUILD_CREATE carries its member
+;;; object, and the bot's own messages carry its roles (NOTE-SELF-DISPATCHES).
 
-(defvar *self-role-ids* (make-hash-table :test #'equal)
-  "Role id -> T: the roles the connection's own user holds.")
+(defvar *self-role-ids* (make-hash-table :test #'equal :synchronized t)
+  "Role id -> the guild id it belongs to, or T where that is not known: the
+roles the connection's own user holds.")
 
 (defun discord-self-role-ids ()
   "The roles the bot itself holds, as a list — what makes <@&id> a mention."
-  (loop for id being the hash-keys of *self-role-ids* collect id))
+  (sb-ext:with-locked-hash-table (*self-role-ids*)
+    (loop for id being the hash-keys of *self-role-ids* collect id)))
 
-(defun note-self-roles (role-ids)
-  "Remember ROLE-IDS as roles that address the bot. Answers the whole set."
-  (dolist (id role-ids)
-    (when (and (stringp id) (plusp (length id)))
-      (setf (gethash id *self-role-ids*) t)))
+(defun note-self-roles (role-ids &key guild)
+  "Remember ROLE-IDS as roles that address the bot; with GUILD, as the whole
+set it holds there now, so a role taken away there stops addressing it.
+Answers the whole set."
+  (sb-ext:with-locked-hash-table (*self-role-ids*)
+    (when guild
+      (dolist (id (loop for id being the hash-keys of *self-role-ids* using (hash-value in)
+                        when (equal in guild) collect id))
+        (remhash id *self-role-ids*)))
+    (dolist (id role-ids)
+      (when (and (stringp id) (plusp (length id)))
+        (setf (gethash id *self-role-ids*) (or guild t)))))
   (discord-self-role-ids))
+
+;;; Which bots a role reaches. A ping of a role that several bots hold names
+;;; them all, as a line that @mentions each would: the kit makes them the
+;;; thread's peers (DISCORD-MENTIONED-BOTS). Discord's message names the role,
+;;; never its holders, so the connection keeps, per guild, the bots it has
+;;; seen and the roles each carries -- from the member list (READ-GUILD-ROSTER,
+;;; rest.lisp, read again before a role ping routes), member updates, and the
+;;; member object on every message a bot posts.
+
+(defvar *guild-bots* (make-hash-table :test #'equal :synchronized t)
+  "Guild id -> a table of bot user id -> (USERNAME . ROLE-IDS): the bots the
+guild holds and the roles each carries, as this connection last saw them.")
+
+(defun guild-bots-table (guild)
+  "GUILD's table of bots in *GUILD-BOTS*, made the first time it is asked for."
+  (sb-ext:with-locked-hash-table (*guild-bots*)
+    (or (gethash guild *guild-bots*)
+        (setf (gethash guild *guild-bots*)
+              (make-hash-table :test #'equal :synchronized t)))))
+
+(defun note-guild-member (guild user roles bot-user-id)
+  "Learn what USER -- a user object -- holds in GUILD: ROLES, the role ids of
+its member object there. The bot's own are what addresses it there
+(NOTE-SELF-ROLES); a bot's are the roles a ping reaches it by. => USER's id."
+  (let ((id (and (hash-table-p user) (nlk:json-value user :string "id")))
+        (roles (remove-if-not #'stringp (coerce (or roles #()) 'list))))
+    (when (and guild id)
+      (when (equal id bot-user-id)
+        (note-self-roles roles :guild guild))
+      (when (or (equal id bot-user-id) (nlk:json-value user :boolean "bot"))
+        (setf (gethash id (guild-bots-table guild))
+              (cons (or (nlk:json-value user :string "username") id) roles)))
+      id)))
+
+(defun forget-role (guild role)
+  "ROLE, deleted from GUILD, no longer addresses the bot or reaches any bot."
+  (when role
+    (remhash role *self-role-ids*)
+    (nlk:when-let (bots (and guild (gethash guild *guild-bots*)))
+      (sb-ext:with-locked-hash-table (bots)
+        (loop for entry being the hash-values of bots
+              do (setf (cdr entry) (remove role (cdr entry) :test #'equal)))))))
+
+(defun note-self-dispatches (payload bot-user-id)
+  "Keep what addresses the bot, and which roles reach which bots, in step with
+PAYLOAD, any gateway dispatch: GUILD_CREATE's members, a GUILD_MEMBER_UPDATE
+-- Discord sends the bot's own whatever the intents --, the author of a guild
+MESSAGE_CREATE, and a GUILD_ROLE_DELETE forgetting its role."
+  ;; Answers T for an event it read. The connection lap thread: hash writes,
+  ;; no I/O.
+  (when (eql (payload-op payload) +op-dispatch+)
+    (let ((name (gethash "t" payload))
+          (data (gethash "d" payload)))
+      (when (hash-table-p data)
+        (flet ((one-of (&rest names) (member name names :test #'equal)))
+          (cond ((one-of "GUILD_CREATE")
+                 (let ((guild (nlk:json-value data :string "id")))
+                   (loop for member across (or (nlk:json-array data "members") #())
+                         when (hash-table-p member)
+                           do (note-guild-member guild (nlk:json-value member :object "user")
+                                                 (nlk:json-array member "roles") bot-user-id))))
+                ((one-of "GUILD_MEMBER_UPDATE")
+                 (note-guild-member (nlk:json-value data :string "guild_id")
+                                    (nlk:json-value data :object "user")
+                                    (nlk:json-array data "roles") bot-user-id))
+                ((one-of "MESSAGE_CREATE")
+                 ;; A guild message carries its author's member object, roles
+                 ;; and all, without the user, which is the author.
+                 (nlk:when-let (member (nlk:json-value data :object "member"))
+                   (note-guild-member (nlk:json-value data :string "guild_id")
+                                      (nlk:json-value data :object "author")
+                                      (nlk:json-array member "roles") bot-user-id)))
+                ((one-of "GUILD_ROLE_DELETE")
+                 (forget-role (nlk:json-value data :string "guild_id")
+                              (nlk:json-value data :string "role_id")))
+                (t (return-from note-self-dispatches nil)))
+          t)))))
+
+(defun snowflake< (a b)
+  "Whether snowflake A was made before snowflake B."
+  (if (= (length a) (length b)) (and (string< a b) t) (< (length a) (length b))))
+
+(defun discord-role-mentions (data)
+  "The role ids DATA's message pings: its mention_roles, and each <@&id> its
+content spells -- the spelling the mention rule reads."
+  (let ((ids (loop for id across (or (nlk:json-array data "mention_roles") #())
+                   when (stringp id) collect id))
+        (text (or (nlk:json-value data :string "content") "")))
+    (loop for at = (search "<@&" text) then (search "<@&" text :start2 (1+ end))
+          for end = (and at (position #\> text :start at))
+          while end
+          do (let ((id (subseq text (+ at 3) end)))
+               (when (and (plusp (length id)) (every #'digit-char-p id))
+                 (pushnew id ids :test #'equal))))
+    ids))
+
+(defun discord-role-bots (data bot-user-id)
+  "The bots other than BOT-USER-ID that hold a role DATA's message pings, in
+its guild: ((ID . NAME) ...), oldest account first -- the order every bot
+reading the same message agrees on."
+  (let* ((guild (nlk:json-value data :string "guild_id"))
+         (roles (and guild (discord-role-mentions data)))
+         (bots (and roles (gethash guild *guild-bots*))))
+    (when bots
+      (sort (sb-ext:with-locked-hash-table (bots)
+              (loop for id being the hash-keys of bots using (hash-value (name . held))
+                    when (and (not (equal id bot-user-id))
+                              (intersection roles held :test #'equal))
+                      collect (cons id name)))
+            #'snowflake< :key #'car))))
 
 (defparameter +discord-file-hosts+ '("cdn.discordapp.com" "media.discordapp.net")
   "The hosts Discord serves a message's files from.")
@@ -382,15 +510,20 @@ pinned, a member joined -- whose content is no line anybody said.")
 
 (defun discord-mentioned-bots (data bot-user-id)
   "The bots DATA mentions other than BOT-USER-ID, as source.mentioned_bots
-carries them -- [{id, name}] -- or NIL when it names none."
-  (let ((bots (loop for user across (or (nlk:json-array data "mentions") #())
-                    for id = (and (hash-table-p user) (nlk:json-value user :string "id"))
-                    when (and id (not (equal id bot-user-id))
-                              (nlk:json-value user :boolean "bot"))
-                      collect (nlk:json-object
-                               "id" id
-                               "name" (or (nlk:json-value user :string "username") id)))))
-    (and bots (coerce bots 'vector))))
+carries them -- [{id, name}] -- or NIL when it names none: each bot it
+@mentions, in the order mentioned, then each other bot holding a role it
+pings (DISCORD-ROLE-BOTS)."
+  (let* ((named (loop for user across (or (nlk:json-array data "mentions") #())
+                      for id = (and (hash-table-p user) (nlk:json-value user :string "id"))
+                      when (and id (not (equal id bot-user-id))
+                                (nlk:json-value user :boolean "bot"))
+                        collect (cons id (or (nlk:json-value user :string "username") id))))
+         (bots (append named
+                       (remove-if (lambda (bot) (assoc (car bot) named :test #'equal))
+                                  (discord-role-bots data bot-user-id)))))
+    (and bots (coerce (loop for (id . name) in bots
+                            collect (nlk:json-object "id" id "name" name))
+                      'vector))))
 
 (defun discord-message-candidate (data bot-user-id)
   "DATA — the d object of a MESSAGE_CREATE or a MESSAGE_UPDATE dispatch —

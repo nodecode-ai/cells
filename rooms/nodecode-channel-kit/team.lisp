@@ -46,13 +46,23 @@ first, or :NONE for a thread read and found to have none.")
         (nick (search (format nil "<@!~a>" id) text)))
     (if (and plain nick) (min plain nick) (or plain nick))))
 
+(defun id< (a b)
+  "Whether platform id A sorts before B: the shorter first, then by its
+characters -- a Discord snowflake by age."
+  (if (= (length a) (length b)) (and (string< a b) t) (< (length a) (length b))))
+
 (defun mention-order (text ids)
-  "IDS in the order TEXT first mentions each; the ones it never mentions
-last, in the order given."
+  "IDS in the order TEXT first mentions each; the ones it never mentions --
+reached by a role it pings -- last, by id (ID<)."
+  ;; By id, never in the order given: each bot gives its own id first, and the
+  ;; order is every bot's slot on the board, so all must reach the same one.
   (let ((placed (loop for id in ids collect (cons id (mention-position text id)))))
     (mapcar #'car (stable-sort placed
                                (lambda (a b)
-                                 (and (cdr a) (or (null (cdr b)) (< (cdr a) (cdr b)))))))))
+                                 (cond ((and (cdr a) (cdr b)) (< (cdr a) (cdr b)))
+                                       ((cdr a) t)
+                                       ((cdr b) nil)
+                                       (t (id< (car a) (car b)))))))))
 
 (defun read-thread-slots (room)
   "The slots ROOM's state keeps, (ID ...), or NIL."

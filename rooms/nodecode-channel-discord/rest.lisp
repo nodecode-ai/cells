@@ -827,8 +827,8 @@ to Discord's 100-character caps."
 
 (defun hydrate-self-roles (executor bot-user-id &key (timeout-seconds 30))
   "Ask Discord which roles the bot itself holds and note them as addresses:
-for every guild it is in, its own member object there, the role ids it
-carries."
+for every guild it is in, the roles its own member object there carries,
+and which of them reach which other bots (READ-GUILD-ROSTER)."
   ;; The mention rule reads what this notes — a room where the bot's pill was
   ;; the one picked has addressed it, and without the roles an ask that did
   ;; address the bot is turned away as mention_required. Answers the role ids,
@@ -843,20 +843,68 @@ carries."
                  mention of the bot will read as mention_required"
                 (execution-error guilds))
           :failed)
-        (note-self-roles
-         (loop for guild across (or (probe-array (execution-body guilds)) #())
-               for id = (nlk:json-value guild :string "id")
-               when id
-                 append (let ((member (execute-plan
-                                       executor
-                                       (rest-plan "GET"
-                                                  (format nil "/guilds/~a/members/~a"
-                                                          id bot-user-id)
-                                                  "hydrate_self_roles" nil
-                                                  timeout-seconds))))
-                          (when (execution-ok-p member)
-                            (coerce (nlk:json-array (execution-body member) "roles")
-                                    'list))))))))
+        (progn
+          (loop for guild across (or (probe-array (execution-body guilds)) #())
+                for id = (nlk:json-value guild :string "id")
+                when id
+                  do (read-guild-roster executor id bot-user-id
+                                        :timeout-seconds timeout-seconds))
+          (discord-self-role-ids)))))
+
+(defparameter +roster-page+ 1000
+  "The most members one read of a guild's member list answers: Discord's cap.")
+
+(defparameter +roster-pages+ 5
+  "The most pages one roster read takes. A guild past them is read in part,
+and a bot it did not reach is known by what it posts.")
+
+(defun read-guild-roster (executor guild bot-user-id &key (timeout-seconds 30))
+  "Read which roles GUILD's bots hold off Discord -- the bot's own among them --
+and note them (NOTE-GUILD-MEMBER). The member list needs the Server Members
+intent the developer portal grants; without it only the bot's own member
+object is read, and the other bots stay as their messages showed them.
+=> :ROSTER when the list was read, :SELF when only the bot's own member was,
+:FAILED when neither could be."
+  ;; Blocks: the caller's thread, never a ws callback.
+  (let ((seen '()) (after "0") (whole nil))
+    (loop repeat +roster-pages+
+          for page = (execute-plan executor
+                                   (rest-plan "GET"
+                                              (format nil "/guilds/~a/members?limit=~d&after=~a"
+                                                      guild +roster-page+ after)
+                                              "read_roster" nil timeout-seconds))
+          for members = (and (execution-ok-p page) (probe-array (execution-body page)))
+          while members
+          do (loop for member across members
+                   for user = (and (hash-table-p member) (nlk:json-value member :object "user"))
+                   for id = (and user (note-guild-member guild user (nlk:json-array member "roles")
+                                                         bot-user-id))
+                   when id do (push id seen) (setf after id))
+             (when (< (length members) +roster-page+)
+               (setf whole t)
+               (loop-finish)))
+    (cond (whole
+           ;; The whole list was read: a bot it no longer names left the guild.
+           (nlk:when-let (bots (gethash guild *guild-bots*))
+             (sb-ext:with-locked-hash-table (bots)
+               (dolist (id (loop for id being the hash-keys of bots
+                                 unless (member id seen :test #'equal) collect id))
+                 (remhash id bots))))
+           :roster)
+          (seen :roster)
+          (t (let ((member (execute-plan executor
+                                         (rest-plan "GET"
+                                                    (format nil "/guilds/~a/members/~a"
+                                                            guild bot-user-id)
+                                                    "hydrate_self_roles" nil
+                                                    timeout-seconds))))
+               (if (execution-ok-p member)
+                   (progn (note-self-roles (coerce (or (nlk:json-array (execution-body member) "roles")
+                                                       #())
+                                                   'list)
+                                           :guild guild)
+                          :self)
+                   :failed))))))
 
 ;;; --- what a write names -----------------------------------------------------
 

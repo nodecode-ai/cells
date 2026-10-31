@@ -115,6 +115,14 @@ thread only:
   is asked for it. After it, nothing posted there wakes a bot
   (`talk_closed`) until a person types again.
 
+Pinging a role that several bots hold asks every bot that holds it, the
+same as mentioning each one. Before such a message is answered, the bot
+reads the server's member list to see who holds the role. That read needs
+the Server Members intent, turned on in the Developer Portal. Without it,
+the bot knows another bot's roles only from the messages that bot has
+posted. On the thread's board, bots called by a role come after any bot
+the message mentions by name, in the order their accounts were made.
+
 The peers are kept with the thread and survive restarts. A person who
 mentions another bot beside this one inside a thread adds it as a peer
 there.
@@ -151,9 +159,12 @@ context, which the bot keeps for later without answering.
 - In direct messages and in threads the bot is part of, no mention is
   needed: every admitted message is an ask.
 
-A mention can be the bot's user (`@YourBot`) or the role Discord made for
-the bot, which the mention picker offers beside it. `mention_patterns` adds
-wake words: a message that contains one, in any case, counts as a mention.
+A mention can be the bot's user (`@YourBot`), the role Discord made for
+the bot, which the mention picker offers beside it, or any other role the
+bot holds, such as a `@bots` role you give several bots. A role given or
+taken away while the bot runs counts from the next message.
+`mention_patterns` adds wake words: a message that contains one, in any
+case, counts as a mention.
 
 Per-channel lists override the default. When a channel is on several lists,
 `ignored_channels` wins, then `free_response_channels`, then
