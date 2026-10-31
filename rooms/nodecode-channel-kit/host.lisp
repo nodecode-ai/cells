@@ -1656,9 +1656,13 @@ chunk as an address for the lane, then settle the card above it."
                                    (warn "~a completed answer lookup for ~a failed: ~a"
                                          (host-id host) turn-id condition)
                                    nil))))
-         (text (or (digest-final-text digest)
-                   ;; The event log is the durable answer; an unreadable store is reported.
-                   (some #'fact-message-content assistant-facts)))
+         ;; In a team's thread the best verified result writes the one
+         ;; answer: a bot a peer outscored answers silently (BOARD-ANSWER-TEXT).
+         (text (board-answer-text
+                host lane
+                (or (digest-final-text digest)
+                    ;; The event log is the durable answer; an unreadable store is reported.
+                    (some #'fact-message-content assistant-facts))))
          (wordless-completion-p (and assistant-facts (null text)))
          (status-id digest.status-id)
          (origin (lane-thread-origin lane))
@@ -3053,7 +3057,9 @@ reply typed at the lane, or a reaction left on something it posted."
          (setf lane.trigger-message-id message-id))
        (setf lane.target (lane-delivery-target lane ask.target) lane.last-active-ms (now-ms)
              lane.voice ask.voice)
-       (bind-addresses host lane ask.target (list message-id))
+       ;; A line heard while the turn runs carries no message of its own to
+       ;; bind (HEARD-ASK): a reply to a peer's message is the peer's.
+       (bind-addresses host lane ask.target (and message-id (list message-id)))
        (schedule-reaction host lane message-id +reaction-seen+)
        ;; The steered text opens the lane's next turn, whose TURN.STARTED sets
        ;; the lane prompt (NOTE-TURN-FACT): each exchange the room records
@@ -3087,17 +3093,26 @@ the one active there last."
   ;; surface whose lane was reaped has none, nor one whose lane was retired —
   ;; its room's head moved under it (RETIRE-ROOM-LANES): the ask forks the
   ;; surface's room as it stands.
+  ;; A peer's line that names this bot is the same conversation's: it
+  ;; steers the turn running in its thread, or is that lane's next turn --
+  ;; never a fork blind to the work the thread holds.
   (when (or (equal "direct_message" (source-field candidate "chat_kind"))
-            (candidate-joined-p candidate))
-    (let ((found '()))
-      (map-lanes host.lanes
-                 (lambda (lane &aux (at lane.target))
-                   (when (and (not (lane-retired lane))
-                              (equal (getf at :channel-id) (getf target :channel-id))
-                              (equal (getf at :thread-id) (getf target :thread-id)))
-                     (push lane found))))
-      (or (find-if #'lane-active-turn-id found)
-          (first (sort found #'> :key #'lane-last-active-ms))))))
+            (candidate-joined-p candidate)
+            (candidate-peer-p candidate))
+    (thread-lane host candidate target)))
+
+(defun thread-lane (host candidate &optional (target (channel-target candidate)))
+  "HOST's live lane on the surface CANDIDATE was said on, TARGET, or NIL: the
+lane running a turn there, else the one active there last."
+  (let ((found '()))
+    (map-lanes host.lanes
+               (lambda (lane &aux (at lane.target))
+                 (when (and (not (lane-retired lane))
+                            (equal (getf at :channel-id) (getf target :channel-id))
+                            (equal (getf at :thread-id) (getf target :thread-id)))
+                   (push lane found))))
+    (or (find-if #'lane-active-turn-id found)
+        (first (sort found #'> :key #'lane-last-active-ms)))))
 
 (defun answer-message (host candidate)
   "An ask."
@@ -3401,7 +3416,9 @@ makes them the thread's peers, as a thread opened for it would."
     (when (and thread bots (not (candidate-bot-p candidate)))
       (let ((room (candidate-room host candidate)))
         (note-thread-peers host thread bots room)
-        (save-thread-peers host thread room)))))
+        (note-thread-slots host thread candidate room)
+        (save-thread-peers host thread room)
+        (save-thread-slots host thread room)))))
 
 (defun mark-peer (host candidate &aux (policy host.policy))
   "CANDIDATE, marked source.peer when a bot posted it in a thread where it is
@@ -3454,11 +3471,15 @@ lines a person types here, you answer ~a at most ~d times."
 
 (defun peers-where (host candidate where)
   "WHERE, and when CANDIDATE's thread has peers, what they are to the lane."
-  (let ((peers (thread-peers host (source-field candidate "thread_id")
-                             (candidate-room host candidate))))
-    (if peers
-        (format nil "~a ~a" where (peers-paragraph peers))
-        where)))
+  ;; A thread whose bots hold slots is a team's board, and its lane is told
+  ;; the board's rules (BOARD-PARAGRAPH); peers without slots are only peers.
+  (let* ((thread (source-field candidate "thread_id"))
+         (room (candidate-room host candidate))
+         (peers (thread-peers host thread room)))
+    (cond ((null peers) where)
+          ((thread-slots host thread room)
+           (format nil "~a ~a" where (board-paragraph host thread peers room)))
+          (t (format nil "~a ~a" where (peers-paragraph peers))))))
 
 (defun peer-mentions-in (host peers text)
   "TEXT with each @NAME of PEERS spelled as the platform's mention of it."
@@ -3565,6 +3586,9 @@ named from its first words — and admit the ask inside it."
                         ;; lane is told who else answers here (PEERS-WHERE).
                         (peers (note-thread-peers host thread-id
                                                   (candidate-mentioned-bots candidate)))
+                        ;; ...and the place each holds on its board, in the
+                        ;; order the ask named them (TEAM.LISP).
+                        (slots (note-thread-slots host thread-id candidate))
                         (ask (build-ask
                               host inside
                               (lane-id (room-session-id platform.session-prefix inside) message-id)
@@ -3582,6 +3606,8 @@ named from its first words — and admit the ask inside it."
                    (ensure-room host ask.room :parent parent-room)
                    (when peers
                      (save-thread-peers host thread-id ask.room))
+                   (when slots
+                     (save-thread-slots host thread-id ask.room))
                    (gate-ask host ask))))))))))
 
 (defun message-target (lane message-id &aux (origin (lane-origin lane)))
@@ -3798,7 +3824,11 @@ an ask, or rejected with its reason on the status surface."
       ;; a line of somebody's own now, and no silent answer may take it —
       ;; whether this line is an ask of its own or only chatter.
       (unless (eq action :reject)
-        (note-thread-spoken (source-field candidate "thread_id")))
+        (note-thread-spoken (source-field candidate "thread_id"))
+        ;; A post on a team's board is kept whatever it asks (TEAM.LISP); a
+        ;; person's line starts the peers' steers there over.
+        (note-board-post host candidate)
+        (person-typed-in-thread host candidate))
       (ecase action
         (:reject (set-channel-status (host-id host) :last-rejection reason)
                  (cond
@@ -3810,7 +3840,10 @@ an ask, or rejected with its reason on the status surface."
                    ;; A stranger's direct message is answered with a way in.
                    ((pairing-candidate-p host candidate reason)
                     (on-worker host (offer-pairing host candidate)))))
-        (:observe (observe-candidate host candidate))
+        ;; A line said to someone else in a team's thread reaches the turn
+        ;; running there as a note; a settled lane keeps it as context.
+        (:observe (or (hear-in-running-turn host candidate)
+                      (observe-candidate host candidate)))
         (:answer (note-asked-peers host candidate)
                  (answer-message host candidate)))
       action)))

@@ -86,7 +86,8 @@
   ;; in whatever allow_bots says, and talks to it by name alone: a line of its
   ;; that mentions the bot is an ask, every other line is the thread's
   ;; context, in a room that speaks freely and as a reply to the bot's own
-  ;; message too. Every other gate still holds.
+  ;; message too. It answers to the person who called it in, so this bot's
+  ;; allowed_users do not hold it out of that thread; every other gate does.
   (flet ((peer (&rest keys)
            (let ((candidate (apply #'test-candidate (append keys (list :is-bot t :user "777"
                                                                        :thread "t1" :parent "100")))))
@@ -106,7 +107,11 @@
     (is-inbound (channel-policy :allowed-users '("42") :self-id "999" :mention-target "999"
                                 :mention-test #'nck:discord-mention-p)
                 (peer :text "<@999> your turn")
-                :reject "user_not_allowed" "a peer passes the user gate like anyone")))
+                :answer nil "a peer is not held to this bot's allowed_users in its thread")
+    (is-inbound (channel-policy :allowed-users '("42") :allowed-channels '("200") :self-id "999"
+                                :mention-target "999" :mention-test #'nck:discord-mention-p)
+                (peer :text "<@999> your turn")
+                :reject "channel_not_allowed" "and still to its channels")))
 
 (deftest channel-admission-roles-and-pairing ()
   ;; Who may talk is three grants in one gate: a listed user, one holding a
