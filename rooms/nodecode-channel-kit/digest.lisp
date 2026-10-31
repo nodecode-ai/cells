@@ -882,7 +882,8 @@ for a turn a steer cut short: the next turn raises its own."
                      (digest.thinking (flowing-headline "Thinking" digest now))
                      (t (flowing-headline "Working" digest now)))
                :thought (thought-headline digest.thinking)
-               :note digest.fallback-text
+               ;; On a team's board the card is the bot's score row (TEAM.LISP).
+               :note (or digest.fallback-text (board-card-line digest.session-id))
                :pending (pending-lines digest)
                :said (if (plusp (length writing))
                          (concatenate 'string (text-end writing +card-said-cap+) +digest-writing-cursor+)

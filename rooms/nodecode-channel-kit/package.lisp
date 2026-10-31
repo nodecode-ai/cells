@@ -109,6 +109,7 @@ it over any platform, and the /channels status surface.")
    #:make-host-from-section #:section-thread-behavior
    #:thread-title #:thread-ask-p #:message-target #:host-id
    #:post-message #:post-file #:answer-file #:answer-choices #:answer-waits #:answer-waiting #:choice #:menu-choice
+   #:board-post #:board-verify #:board-read #:board-promote
    #:said-line #:press-token #:press-action #:candidate-press #:fetch-image #:schedule-flush #:*command-source* #:set-voice-replies
    #:home-target #:offer-card #:room-voice-replies #:room-lane-model
    #:flush-now #:deliver-answer #:on-delta #:on-fact-with-turn #:operator-p

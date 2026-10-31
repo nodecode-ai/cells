@@ -349,7 +349,9 @@ spelling, else the key's name underscored (:user-not-allowed is
         (reject :scope-not-allowed))
       (unless (or (null channels) (channel-listed-p policy candidate channels))
         (reject :channel-not-allowed))
-      (unless (user-allowed-p policy candidate)
+      ;; A peer answers to the person who called it in, not to this bot's
+      ;; allowed_users: in that thread alone, it is let in as the peer it is.
+      (unless (or (user-allowed-p policy candidate) (candidate-peer-p candidate))
         (reject :user-not-allowed))
       (when (and (equal chat-kind "thread")
                  (eq policy.thread-policy :disabled))
