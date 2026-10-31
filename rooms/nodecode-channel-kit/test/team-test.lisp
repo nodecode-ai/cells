@@ -102,12 +102,17 @@ names; forget the thread after."
                                                    :user "u1" :bot nil :message "10" :name "alice"))
         (is (= 2 (length steered)) "a person's line said to someone else steered it too")
         (is (search "to someone else" (nck::ask-prompt (second (first steered)))))
+        (is (null (nck::lane-heard-line lane)) "a board post or a person's line is nothing to reply to")
         (nck:handle-candidate host (said-in-thread host "**ADOPT** s2 · score 1/2 · reran it" :message "12"))
+        (is (= 2 (length steered)) "an ADOPT waits for the next ask")
         (nck:handle-candidate host (said-in-thread host "my whole answer" :message "13"))
-        (is (= 2 (length steered)) "an ADOPT and a peer's untagged line wait for the next ask")
+        (is (= 3 (length steered)) "a peer's untagged line steers it: the turn builds on it")
+        (is (search "Your answer goes up as a reply to it" (nck::ask-prompt (second (first steered)))))
+        (is (equal '("13" . "turn-1") (nck::lane-heard-line lane)) "the line the next answer replies to")
         (setf (nck:lane-active-turn-id lane) nil)
         (nck:handle-candidate host (said-in-thread host "done here" :message "11"))
-        (is (= 2 (length steered)) "a settled lane is not steered")))))
+        (is (= 3 (length steered)) "a settled lane is not steered")
+        (setf (nck::lane-heard-line lane) nil)))))
 
 (deftest channel-team-a-post-keeps-the-slot-its-poster-holds ()
   ;; A post reads as its tag, slot, score and words; it is kept once, and
@@ -157,7 +162,10 @@ names; forget the thread after."
       (is (search "You are s1; @elektra is s2, @hindsight is s3." where))
       (is (search "(nck:board-verify \"42\"" where))
       (is (search "(nck:board-post \"42\" :claim" where))
-      (is (search "no single measurable task" where)))))
+      (is (search "no single measurable task" where))
+      (is (search "is talked through here instead" where) "a question is a conversation, not three answers")
+      (is (search "goes up as a reply to it" where))
+      (is (search "goes up as a reply to it" (nck::peers-paragraph '(("777" . "elektra")))) "peers without a board talk the same way"))))
 
 (deftest channel-team-verify-is-the-only-source-of-a-score ()
   ;; The scorer's last line is the score: kept as this bot's, put on its card,

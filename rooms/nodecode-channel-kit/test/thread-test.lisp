@@ -481,6 +481,31 @@ origin noted — ORIGIN the keys past the three that place it."
         (is-plan second-answer :path "/rooms/42/messages" "mentions" nil))
       (is (null (plan-matching (plans) :path "/rooms/100/messages")) "the channel keeps no copy"))))
 
+(deftest channel-thread-an-answer-built-on-a-peers-line-replies-to-it ()
+  ;; Bots a person names together talk in their thread: the answer of the turn
+  ;; a peer's line started goes up as a reply to that line and pings nobody,
+  ;; while the turn the line cut short answers as before.
+  (with-digest-host (host lane :name "thread-heard-reply" :session "chat-100-t42-m5"
+                     :host-keys (:platform (test-platform :threads t)))
+    (setf (nck:lane-owner-id lane) "u1"
+          (nck:lane-target lane) '(:channel-id "100" :thread-id "42")
+          (nck:lane-origin lane) '(:channel-id "100" :message-id "5" :thread-id "42"
+                                   :room "chat-100" :landed t)
+          (nck::lane-heard-line lane) '("p9" . "t1"))
+    (flet ((answer (text turn-id)
+             (fact "turn.started" (nlk:json-object) turn-id)
+             (said text turn-id)
+             (fact "turn.completed" (nlk:json-object) turn-id)))
+      (answer "the answer it was writing" "t1")
+      (is-present (cut (await-plan executor :content "the answer it was writing"))
+        "the turn the line cut short answers without a reference"
+        (is-plan cut :path "/rooms/42/messages" "reply_to" nil))
+      (answer "what I add to it" "t2")
+      (is-present (built (await-plan executor :content "what I add to it"))
+        "the next turn's answer replies to the peer's line"
+        (is-plan built :path "/rooms/42/messages" "reply_to" "p9" "ping" nil))
+      (is (null (nck::lane-heard-line lane)) "the line is spent"))))
+
 ;;; --- a thread the bot takes part in is one conversation ------------------------------
 
 (deftest channel-thread-joined-marks-a-thread-the-bot-is-in (with-temp-store ())

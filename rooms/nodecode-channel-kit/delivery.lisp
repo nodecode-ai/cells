@@ -333,6 +333,24 @@ holds."
   ;; the lane.
   (if (lane-origin lane) nil message-id))
 
+;;; Bots a person names together talk in their thread: a peer's line that
+;;; steers this bot's running turn (team.lisp HEAR-IN-RUNNING-TURN) is what
+;;; the answer of the turn it started builds on, so that answer goes up as a
+;;; reply to it. The line is in the thread by construction, so the reference
+;;; resolves where the lane's own ask would not.
+(nlk:define-side-table lane-heard-line (:test #'eq :synchronized t)
+  "Lane -> (MESSAGE-ID . TURN-ID): the newest peer line that steered the
+lane's running turn TURN-ID.")
+
+(defun heard-reply (lane turn-id)
+  "The message LANE's answer from TURN-ID replies to, taken: the peer line a
+turn before it heard, the one TURN-ID was started to weigh. NIL for the turn
+the line cut short, and for a lane that heard none."
+  (let ((entry (lane-heard-line lane)))
+    (when (and entry turn-id (not (equal (cdr entry) turn-id)))
+      (setf (lane-heard-line lane) nil)
+      (car entry))))
+
 (defun forget-thread-origin (lane)
   "The answer landed in the ask's room: the lane owes nothing more."
   ;; Everything the origin says stays, because a thread lane keeps answering
