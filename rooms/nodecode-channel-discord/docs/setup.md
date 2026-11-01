@@ -5,6 +5,14 @@ need a Discord account that can manage the server you add the bot to, and a
 Nodecode install with a working model (`/connect` and `/models` in the
 terminal).
 
+The short way: create the application and copy its token (steps 1 and 2),
+then run `nodecode gateway setup discord` and paste the token. Its check
+switches on Message Content when it is off (Discord lets an app in fewer
+than 100 servers set it itself), prints the invite link with the
+permissions in section 4, waits for the bot to join a server, then asks for
+channels, the owner (whoever made the app, on Enter), people and roles, all
+by name. The rest of this page is the same by hand.
+
 ## 1. Create the application
 
 1. Open the [developer portal](https://discord.com/developers/applications)
