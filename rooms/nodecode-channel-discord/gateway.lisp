@@ -218,22 +218,30 @@ NIL."
   "Thread channel id -> parent channel id, kept from the gateway's own thread
 dispatches.")
 
-(defvar *thread-owners* (make-hash-table :test #'equal)
+(defvar *thread-owners* (make-hash-table :test #'equal :synchronized t)
   "Thread channel id -> the id of the user who opened it, kept beside
-*KNOWN-THREADS* from the same dispatches.")
+*KNOWN-THREADS* from the same dispatches. Read off the lap, by a worker
+asking whether the bot may close a thread (MAY-CLOSE-THREAD-P).")
 
-(defun note-thread-channel (thread &aux (id (nlk:json-value thread :string "id")))
+(defvar *thread-guilds* (make-hash-table :test #'equal :synchronized t)
+  "Thread channel id -> the guild it is in, kept beside *THREAD-OWNERS*: whose
+roles say what the bot may do there.")
+
+(defun note-thread-channel (thread &key guild &aux (id (nlk:json-value thread :string "id")))
   "THREAD — a thread channel object (a GUILD_CREATE threads entry, the d of
 a THREAD_CREATE or THREAD_UPDATE, a starter message's thread) — into
-*KNOWN-THREADS* under its id, with its parent, and who opened it into
-*THREAD-OWNERS*."
+*KNOWN-THREADS* under its id, with its parent, who opened it into
+*THREAD-OWNERS*, and its guild -- its own guild_id, else GUILD, the guild
+whose GUILD_CREATE listed it -- into *THREAD-GUILDS*."
   ;; Answers the id, or NIL for anything that is not one.
   (when id
     (setf (gethash id *known-threads*)
           (or (nlk:json-value thread :string "parent_id")
               (gethash id *known-threads*)))
     (nlk:when-let (owner (nlk:json-value thread :string "owner_id"))
-      (setf (gethash id *thread-owners*) owner)))
+      (setf (gethash id *thread-owners*) owner))
+    (nlk:when-let (guild (or (nlk:json-value thread :string "guild_id") guild))
+      (setf (gethash id *thread-guilds*) guild)))
   id)
 
 (defun thread-channel-parent (id)
@@ -274,13 +282,15 @@ CHANNEL_DELETE forget theirs."
                (nlk:when-let (id (nlk:json-value data :string "id"))
                  (remhash id table))))
         (cond ((one-of "GUILD_CREATE")
-               (loop for thread across (nlk:json-array data "threads")
-                     do (note-thread-channel thread))
+               (loop with guild = (nlk:json-value data :string "id")
+                     for thread across (nlk:json-array data "threads")
+                     do (note-thread-channel thread :guild guild))
                (loop for channel across (nlk:json-array data "channels")
                      do (note-channel-topic channel)))
               ((one-of "THREAD_CREATE" "THREAD_UPDATE") (note-thread-channel data))
               ((one-of "CHANNEL_CREATE" "CHANNEL_UPDATE") (note-channel-topic data))
-              ((one-of "THREAD_DELETE") (forget *known-threads*) (forget *thread-owners*))
+              ((one-of "THREAD_DELETE")
+               (forget *known-threads*) (forget *thread-owners*) (forget *thread-guilds*))
               ((one-of "CHANNEL_DELETE") (forget *channel-topics*))
               (t (return-from note-channel-dispatches nil)))
         t))))
@@ -360,10 +370,67 @@ its member object there. The bot's own are what addresses it there
               (cons (or (nlk:json-value user :string "username") id) roles)))
       id)))
 
+;;; What the bot may do in a guild. A thread's Close archives it, and Discord
+;;; lets only the user who opened a thread, or a member holding Manage
+;;; Threads, do that: anyone else hears 403 Missing Access (operator report,
+;;; 2026-11-01: Peas pressed Close under Elektra's answer in a thread scrap
+;;; had opened, and the thread stayed open under "did not close"). So the
+;;; guild's roles are kept with what each grants, from the events that carry
+;;; them, and the bot's own roles read against them.
+
+(defparameter +discord-administrator+ (ash 1 3)
+  "The permission bit that grants every other one.")
+
+(defparameter +discord-manage-threads+ (ash 1 34)
+  "The permission bit that lets a member archive a thread someone else opened.")
+
+(defvar *guild-role-permissions* (make-hash-table :test #'equal :synchronized t)
+  "Guild id -> a table of role id -> the permissions integer the role grants,
+as the guild's own role events last gave it; the guild's @everyone role has
+the guild's id.")
+
+(defun note-guild-role (guild role)
+  "Learn what ROLE -- a role object of GUILD -- grants."
+  (let ((id (and (hash-table-p role) (nlk:json-value role :string "id")))
+        (bits (and (hash-table-p role) (nlk:json-value role :string "permissions"))))
+    (when (and guild id bits)
+      (nlk:when-let (grants (parse-integer bits :junk-allowed t))
+        (let ((roles (sb-ext:with-locked-hash-table (*guild-role-permissions*)
+                       (or (gethash guild *guild-role-permissions*)
+                           (setf (gethash guild *guild-role-permissions*)
+                                 (make-hash-table :test #'equal :synchronized t))))))
+          (setf (gethash id roles) grants))))))
+
+(defun self-guild-permissions (guild)
+  "The permissions the bot holds across GUILD -- its @everyone role and every
+role of its own there -- or NIL while the guild's roles are not known.
+Channel overwrites are not read: a guess they would change errs to trying."
+  (nlk:when-let (roles (and guild (gethash guild *guild-role-permissions*)))
+    (let ((held (discord-self-role-ids)))
+      (sb-ext:with-locked-hash-table (roles)
+        (loop with granted = 0
+              for id being the hash-keys of roles using (hash-value grants)
+              when (or (equal id guild) (member id held :test #'equal))
+                do (setf granted (logior granted grants))
+              finally (return granted))))))
+
+(defun may-close-thread-p (thread-id bot-user-id)
+  "Whether the bot BOT-USER-ID may archive THREAD-ID: it opened the thread, or
+holds Manage Threads (or Administrator) in the thread's guild. A thread whose
+opener, or a guild whose roles, the connection has not heard is given the
+benefit of the doubt, and the platform's answer decides."
+  (let ((owner (and thread-id (gethash thread-id *thread-owners*))))
+    (or (null owner) (null bot-user-id) (equal owner bot-user-id)
+        (let ((grants (self-guild-permissions (gethash thread-id *thread-guilds*))))
+          (or (null grants)
+              (logtest grants (logior +discord-administrator+ +discord-manage-threads+)))))))
+
 (defun forget-role (guild role)
   "ROLE, deleted from GUILD, no longer addresses the bot or reaches any bot."
   (when role
     (remhash role *self-role-ids*)
+    (nlk:when-let (roles (and guild (gethash guild *guild-role-permissions*)))
+      (remhash role roles))
     (nlk:when-let (bots (and guild (gethash guild *guild-bots*)))
       (sb-ext:with-locked-hash-table (bots)
         (loop for entry being the hash-values of bots
@@ -383,6 +450,8 @@ MESSAGE_CREATE, and a GUILD_ROLE_DELETE forgetting its role."
         (flet ((one-of (&rest names) (member name names :test #'equal)))
           (cond ((one-of "GUILD_CREATE")
                  (let ((guild (nlk:json-value data :string "id")))
+                   (loop for role across (or (nlk:json-array data "roles") #())
+                         do (note-guild-role guild role))
                    (loop for member across (or (nlk:json-array data "members") #())
                          when (hash-table-p member)
                            do (note-guild-member guild (nlk:json-value member :object "user")
@@ -398,6 +467,9 @@ MESSAGE_CREATE, and a GUILD_ROLE_DELETE forgetting its role."
                    (note-guild-member (nlk:json-value data :string "guild_id")
                                       (nlk:json-value data :object "author")
                                       (nlk:json-array member "roles") bot-user-id)))
+                ((one-of "GUILD_ROLE_CREATE" "GUILD_ROLE_UPDATE")
+                 (note-guild-role (nlk:json-value data :string "guild_id")
+                                  (nlk:json-value data :object "role")))
                 ((one-of "GUILD_ROLE_DELETE")
                  (forget-role (nlk:json-value data :string "guild_id")
                               (nlk:json-value data :string "role_id")))

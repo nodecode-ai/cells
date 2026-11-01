@@ -866,3 +866,65 @@ whose d object is D-JSON. KEYS reach the router as they are."
     ;; A plain reply keeps its gesture.
     (is (equal "o2" (nck:source-field (dgw-said "m21" "yes" :fields "\"message_reference\": {\"message_id\": \"o2\"},")
                                       "reply_to_message_id")))))
+
+(deftest channel-discord-close-only-where-the-bot-may ()
+  ;; Operator report, 2026-11-01: Peas pressed Close under Elektra's answer in
+  ;; a thread scrap had opened, and Discord answered 403 Missing Access --
+  ;; only a thread's opener, or a member holding Manage Threads, may archive
+  ;; it -- so the thread stayed open under "did not close". An answer carries
+  ;; Close only where its bot may close, as the guild's roles say now.
+  (let ((ncd::*thread-owners* (make-hash-table :test #'equal :synchronized t))
+        (ncd::*thread-guilds* (make-hash-table :test #'equal :synchronized t))
+        (ncd::*known-threads* (make-hash-table :test #'equal))
+        (ncd::*guild-role-permissions* (make-hash-table :test #'equal :synchronized t))
+        (ncd:*self-role-ids* (make-hash-table :test #'equal :synchronized t))
+        (ncd:*guild-bots* (make-hash-table :test #'equal :synchronized t)))
+    (flet ((event (type json &aux (payload (dgw-dispatch type json)))
+             (ncd::note-channel-dispatches payload)
+             (ncd:note-self-dispatches payload "999"))
+           (close-plan (thread)
+             (funcall (nck:platform-plan-close-thread (ncd:discord-platform :bot-user-id "999"))
+                      thread))
+           (controls (thread)
+             (let* ((host (test-host :platform (ncd:discord-platform :bot-user-id "999")
+                                     :name "discord-close-test" :owners '("42")))
+                    (lane (nck:intern-lane (nck:host-lanes host) (format nil "discord-c1-~a" thread)
+                                           :target (list :channel-id "c1" :thread-id thread))))
+               (setf (nck:lane-owner-id lane) "42")
+               (nck::answer-controls host lane nil))))
+      ;; The guild as Foresight Labs Private's: @everyone and the bots' shared
+      ;; role grant no Manage Threads; role 700 does.
+      (event "GUILD_CREATE" "{\"id\": \"g1\",
+          \"roles\": [{\"id\": \"g1\", \"permissions\": \"2248473465835073\"},
+                      {\"id\": \"500\", \"permissions\": \"0\"},
+                      {\"id\": \"700\", \"permissions\": \"17179869184\"}],
+          \"members\": [{\"user\": {\"id\": \"999\", \"username\": \"Elektra\", \"bot\": true},
+                         \"roles\": [\"500\"]}],
+          \"threads\": [{\"id\": \"t1\", \"parent_id\": \"c1\", \"owner_id\": \"999\"},
+                        {\"id\": \"t2\", \"parent_id\": \"c1\", \"owner_id\": \"1512\"}]}")
+      (is-plan (close-plan "t1") :method "PATCH" :path "/channels/t1" :label "close_thread"
+               (:boolean "archived") t)
+      (is (null (close-plan "t2")) "another bot's thread, and no Manage Threads: no close")
+      (is (close-plan "t3") "a thread it never heard of: Discord's answer decides")
+      (event "THREAD_CREATE" "{\"id\": \"t4\", \"guild_id\": \"g1\", \"parent_id\": \"c1\", \"owner_id\": \"42\"}")
+      (is (null (close-plan "t4")) "nor a person's thread")
+      ;; The kit reads the same answer: Close rides only an answer it can keep.
+      (is (equal '((("Close thread" "nck:close:42" :secondary))) (controls "t1"))
+          "an answer in its own thread carries Close")
+      (is (null (controls "t2")) "an answer in another bot's thread carries none")
+      ;; Roles move under a running gateway.
+      (event "GUILD_ROLE_UPDATE" "{\"guild_id\": \"g1\", \"role\": {\"id\": \"500\", \"permissions\": \"17179869184\"}}")
+      (is (close-plan "t2") "its role granted Manage Threads: it may")
+      (event "GUILD_ROLE_UPDATE" "{\"guild_id\": \"g1\", \"role\": {\"id\": \"500\", \"permissions\": \"0\"}}")
+      (is (null (close-plan "t2")) "and taken back: it may not")
+      (event "GUILD_MEMBER_UPDATE" "{\"guild_id\": \"g1\", \"roles\": [\"500\", \"700\"],
+                                     \"user\": {\"id\": \"999\", \"bot\": true}}")
+      (is (close-plan "t2") "a role holding it, given to the bot")
+      (event "GUILD_ROLE_DELETE" "{\"guild_id\": \"g1\", \"role_id\": \"700\"}")
+      (is (null (close-plan "t2")) "that role deleted")
+      (event "GUILD_ROLE_CREATE" "{\"guild_id\": \"g1\", \"role\": {\"id\": \"800\", \"permissions\": \"8\"}}")
+      (event "GUILD_MEMBER_UPDATE" "{\"guild_id\": \"g1\", \"roles\": [\"500\", \"800\"],
+                                     \"user\": {\"id\": \"999\", \"bot\": true}}")
+      (is (close-plan "t2") "Administrator grants it too")
+      (event "THREAD_DELETE" "{\"id\": \"t2\"}")
+      (is (null (gethash "t2" ncd::*thread-guilds*)) "a deleted thread is forgotten whole"))))
