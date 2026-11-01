@@ -404,7 +404,8 @@ the guild's id.")
 (defun self-guild-permissions (guild)
   "The permissions the bot holds across GUILD -- its @everyone role and every
 role of its own there -- or NIL while the guild's roles are not known.
-Channel overwrites are not read: a guess they would change errs to trying."
+Channel overwrites are not read yet: one granting Manage Threads in a channel
+goes unseen, and that channel's answers carry no Close they could have kept."
   (nlk:when-let (roles (and guild (gethash guild *guild-role-permissions*)))
     (let ((held (discord-self-role-ids)))
       (sb-ext:with-locked-hash-table (roles)
