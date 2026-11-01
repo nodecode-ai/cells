@@ -18,7 +18,7 @@ else
   linter="$(mktemp)"
   trap 'rm -f "$linter"' EXIT
   curl -fsSL -o "$linter" \
-    https://raw.githubusercontent.com/nodecode-ai/nodecode/main/src/tools/lint-structure.lisp
+    https://raw.githubusercontent.com/nodecode-ai/nodecode/main/src/tools/check/lint-structure.lisp
 fi
 
 cd "$here"
