@@ -2319,6 +2319,63 @@ it would have done on the way out (STOP-HOST's hand-off)."
           (is (equal "Closed. Write in it to open it again." (tap "i4" "mike")))
           (is (await (:timeout 10) (= 2 (closes))) "so does an operator's"))))))
 
+(deftest channel-close-press-says-what-the-platform-did ()
+  ;; Operator report, 2026-11-01: Close under Elektra's answer told the presser
+  ;; Closed, then Discord refused the archive and the thread stayed open. A
+  ;; press is told Closed only once the platform has closed the thread. Where
+  ;; the press's answer may follow the close, it says what happened, a refusal
+  ;; to the presser alone and nowhere else. Where it may not -- an answer in
+  ;; a thread Discord has archived reopens it or is refused -- the press is
+  ;; answered at once without words, the close follows, and only a refusal is
+  ;; said, after, to the presser alone. A thread this bot cannot close is never
+  ;; tried: the press says who can, in the platform's words or the kit's.
+  (handler-bind ((warning #'muffle-warning))
+    (flet ((press (platform &rest responses)
+             (let* ((executor (apply #'scripted-executor responses))
+                    (host (test-host :platform platform :executor executor :name "close-told")))
+               (nck::close-pressed host (list :id "p1" :data "nck:close:alice" :user-id "alice"
+                                              :message-id "a1" :channel-id "42")
+                                   "alice")
+               (mapcar (lambda (plan) (list (nck:request-plan-path plan) (plan-field plan "text")))
+                       (nck:recording-executor-plans executor))))
+           (refused () (reply 403 "message" "Missing Access" "code" 50001))
+           (followed (platform)
+             (setf (nck:platform-plan-control-followup platform)
+                   (lambda (payload &key text timeout-seconds)
+                     (list (nck:rest-plan "POST" (format nil "/presses/~a/followup" (getf payload :id))
+                                          "control_followup" nil timeout-seconds
+                                          (nlk:json-object "text" text)))))
+             platform)
+           (unable (platform)
+             (let ((close (nck:platform-plan-close-thread platform)))
+               (setf (nck:platform-plan-close-thread platform)
+                     (lambda (thread &rest options)
+                       (and (not (equal thread "42")) (apply close thread options)))))
+             platform)
+           (didnt-p (said) (and (stringp said) (uiop:string-prefix-p "This thread didn't close: " said))))
+      (is (equal '(("/rooms/42" nil) ("/presses/p1" "Closed. Write in it to open it again."))
+                 (press (test-platform :choices t :close t))) "the close first, then the press told it closed")
+      (destructuring-bind (close answer &rest more) (press (test-platform :choices t :close t) (refused))
+        (is (equal "/rooms/42" (first close)) "the close tried")
+        (is (equal "/presses/p1" (first answer)) "then the press answered")
+        (is (didnt-p (second answer)) "with the refusal, to the presser")
+        (is (null more) "and said nowhere else"))
+      (is (equal '(("/presses/p1" nil) ("/rooms/42" nil))
+                 (press (followed (test-platform :choices t :close t)))) "answered at once without words; a close that landed says nothing more")
+      (destructuring-bind (ack close followup &rest more)
+          (press (followed (test-platform :choices t :close t)) (reply 200 "ok" t) (refused))
+        (is (equal '("/presses/p1" nil) ack) "answered at once without words")
+        (is (equal "/rooms/42" (first close)) "the close tried after")
+        (is (equal "/presses/p1/followup" (first followup)) "its refusal follows")
+        (is (didnt-p (second followup)) "in words, to the presser alone")
+        (is (null more) "and nowhere else"))
+      (is (equal '(("/presses/p1" "I can't close this thread."))
+                 (press (unable (test-platform :choices t :close t)))) "a thread it cannot close is never tried")
+      (let ((platform (unable (test-platform :choices t :close t))))
+        (setf (nck:platform-close-refusal platform)
+              (lambda (thread) (format nil "<@9> opened ~a, and only it can close it." thread)))
+        (is (equal '(("/presses/p1" "<@9> opened 42, and only it can close it.")) (press platform)) "in the platform's words")))))
+
 (deftest channel-host-a-silent-wait-offers-switch-model
     (with-digest-host (host lane :host-keys (:platform (test-platform :choices t))))
   ;; Past the stall window, while the engine says the attempt still waits

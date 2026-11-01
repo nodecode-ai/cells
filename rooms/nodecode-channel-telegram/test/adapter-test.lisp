@@ -501,14 +501,13 @@ threads: the request, platform and seam tests drive it directly."
         (is-plan close "chat_id" "-100555" "message_thread_id" 7)))
     (remhash "7" nct::*topic-chats*)))
 
-(deftest channel-telegram-a-refused-close-is-said-in-its-topic ()
-  ;; A close Telegram refuses leaves the topic open and says so in it -- in
-  ;; the topic's chat, never in a chat named by the topic's id; a topic
-  ;; someone closed already is closed, no refusal.
+(deftest channel-telegram-a-refused-close-is-said-to-the-presser ()
+  ;; The press is answered once Telegram has answered the close: a close it
+  ;; refuses leaves the topic open and the presser is told so, alone, never
+  ;; Closed first and never in a chat named by the topic's id; a topic someone
+  ;; closed already is closed.
   (flet ((press (close-answer)
-           (let* ((executor (scripted-executor
-                             (nck:make-scripted-response 200 (cell-json "{\"ok\": true, \"result\": true}"))
-                             close-answer))
+           (let* ((executor (scripted-executor close-answer))
                   (host (test-host :platform (nct:telegram-platform :bot-username "orgbot" :bot-user-id "777")
                                    :executor (nct:wrap-telegram-executor executor) :name "tg-close-refused"))
                   (nct::*telegram-adapter* nil))
@@ -517,13 +516,19 @@ threads: the request, platform and seam tests drive it directly."
                   (progn (nck::close-pressed host (list :id "cb1" :data "nck:close:42" :user-id "42"
                                                         :message-id "90" :channel-id "-100555" :thread-id "7")
                                              "42")
-                         (find "/sendRichMessage" (nck:recording-executor-plans executor)
-                               :key #'nck:request-plan-path :test #'equal))
+                         (let ((plans (nck:recording-executor-plans executor)))
+                           (list (mapcar #'nck:request-plan-path plans)
+                                 (plan-field (find "/answerCallbackQuery" plans
+                                                   :key #'nck:request-plan-path :test #'equal)
+                                             "text"))))
                (remhash "7" nct::*topic-chats*)))))
-    (is-present (said (press (nck:make-scripted-response
-                              400 (cell-json "{\"ok\": false, \"error_code\": 400, \"description\": \"Bad Request: not enough rights to manage topics\"}"))))
-      "the refusal is said"
-      (is-plan said "chat_id" "-100555" "message_thread_id" 7)
-      (is (search "did not close" (gethash "markdown" (plan-field said "rich_message")))))
-    (is (null (press (nck:make-scripted-response
-                      400 (cell-json "{\"ok\": false, \"error_code\": 400, \"description\": \"Bad Request: TOPIC_NOT_MODIFIED\"}")))) "closed already is closed")))
+    (destructuring-bind (paths said)
+        (press (nck:make-scripted-response
+                400 (cell-json "{\"ok\": false, \"error_code\": 400, \"description\": \"Bad Request: not enough rights to manage topics\"}")))
+      (is (equal '("/closeForumTopic" "/answerCallbackQuery") paths) "the close first, then the press answered, nothing posted")
+      (is (search "didn't close" said) "the refusal said to the presser"))
+    (destructuring-bind (paths said)
+        (press (nck:make-scripted-response
+                400 (cell-json "{\"ok\": false, \"error_code\": 400, \"description\": \"Bad Request: TOPIC_NOT_MODIFIED\"}")))
+      (is (equal '("/closeForumTopic" "/answerCallbackQuery") paths) "closed already is closed")
+      (is (search "admin can reopen" said) "and the presser told so"))))

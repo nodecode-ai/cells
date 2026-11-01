@@ -982,7 +982,8 @@ alone -- a room operator's raises the limit (RAISE-LIMIT)."
   "A PLATFORM's (thread-id &key timeout-seconds) => the plan that CLOSES a
 thread: puts it away, out of the room's open threads, kept and searchable,
 and open again once anyone writes in it (Discord's archive). NIL when the
-platform cannot close one: an answer in a thread then carries no Close.")
+platform cannot close one, or this bot cannot close that one: an answer in
+that thread then carries no Close (PLATFORM-CLOSE-REFUSAL says who can).")
 ;; A table hung beside the platform rather than a slot of it: a running image
 ;; holds its platforms, and a slot added to the record would leave them
 ;; obsolete under it.
@@ -991,6 +992,17 @@ platform cannot close one: an answer in a thread then carries no Close.")
   "What a PLATFORM's Close press tells the presser once the thread is closed,
 in its own terms -- a Telegram topic stays locked until an admin reopens it --
 or NIL for the kit's words: open again once anyone writes in it.")
+
+(nlk:define-side-table platform-close-refusal (:test #'eq :weakness :key :synchronized t)
+  "A PLATFORM's (thread-id) => what a Close press tells the presser where
+this bot cannot close THREAD-ID (PLATFORM-PLAN-CLOSE-THREAD answers NIL
+there) -- who can, in its own terms -- or NIL for the kit's words.")
+
+(nlk:define-side-table platform-plan-control-followup (:test #'eq :weakness :key :synchronized t)
+  "A PLATFORM's (payload &key text timeout-seconds) => the plans that tell
+the presser of PAYLOAD, alone, TEXT after the press has been answered -- or
+NIL where it cannot. A platform that has it is one whose press is answered
+before the act it asks for, which then reports through this (CLOSE-PRESSED).")
 
 ;; Written out rather than NLK:DEFINE-SIDE-TABLE: an image of the release
 ;; before this one, taking the release live, refuses a form that names a
@@ -1040,27 +1052,47 @@ each saying its label; then, in a thread the platform can close, Close
 operator's closes the thread the press came from (PLATFORM-PLAN-CLOSE-THREAD):
 the payload's :THREAD-ID where the platform's threads live inside a chat
 (Telegram's topics), else its channel, which is the thread (Discord's)."
+  ;; The press is told Closed only once the platform has closed the thread
+  ;; (operator report, 2026-11-01: a press told Closed before Discord refused
+  ;; the archive, and the thread stayed open). A platform with a follow-up
+  ;; (PLATFORM-PLAN-CONTROL-FOLLOWUP) is one where no answer may follow the
+  ;; close -- Discord's, in a thread it has archived, reopens it or is refused
+  ;; -- and whose press must be answered within a few seconds: it is answered
+  ;; at once without words, and only a refusal is said, after, to the presser
+  ;; alone; the thread put away is what it sees. Anywhere else the close goes
+  ;; first and the answer says what happened.
   (let* ((allowed (or (operator-p host user-id)
                       (and (plusp (length owner-id)) (equal user-id owner-id))))
          (plan (and (stringp thread) (host-plan host #'platform-plan-close-thread thread)))
          (busy (and plan (thread-running-p host thread)))
-         (text (cond ((not allowed) "Only the person who asked or the room's operators can close this thread.")
-                     ((null plan) "This room can't be closed.")
-                     (busy "A turn still runs here: close the thread once it has answered, or stop it first.")
-                     (t (or (platform-closed-note host.platform)
-                            "Closed. Write in it to open it again.")))))
-    ;; The answer goes first: a press is answered within the platform's few
-    ;; seconds, and a closed thread takes no more words.
-    (deliver-or-warn host (host-plan host #'platform-plan-control-ack payload :text text)
-                     (format nil "control ack for ~a failed" (getf payload :id)))
-    (when (and allowed plan (not busy))
-      (nlk:bind (((closed _ error) (execute-delivery (list plan) host.executor)))
-        ;; A close the platform refused leaves the thread open, and says so
-        ;; where the press said it closed.
-        (unless closed
+         (refusal (cond ((not allowed) "Only the person who asked or the room's operators can close this thread.")
+                        ((null plan) (or (and (stringp thread)
+                                              (nlk:when-let (say (platform-close-refusal host.platform))
+                                                (funcall say thread)))
+                                         "I can't close this thread."))
+                        (busy "A turn still runs here: close the thread once it has answered, or stop it first.")))
+         (followup (and (not refusal) (platform-plan-control-followup host.platform))))
+    (flet ((answer (text)
+             (deliver-or-warn host (host-plan host #'platform-plan-control-ack payload :text text)
+                              (format nil "control ack for ~a failed" (getf payload :id)))))
+      (when refusal
+        (answer refusal)
+        (return-from close-pressed nil))
+      (when followup
+        (answer nil))
+      (nlk:bind (((closed _ error) (execute-delivery (list plan) host.executor))
+                 (said (if closed
+                           (or (platform-closed-note host.platform) "Closed. Write in it to open it again.")
+                           (format nil "This thread didn't close: ~a" error))))
+        ;; A refusal reaches someone: the presser, or failing that the thread
+        ;; itself, which the refusal left open.
+        (unless (cond (followup
+                       (or closed
+                           (deliver-or-warn host (host-plan host #'platform-plan-control-followup payload :text said)
+                                            (format nil "close refusal for ~a failed" (getf payload :id)))))
+                      (t (or (answer said) closed)))
           (post-message host (list :channel-id (or (getf payload :channel-id) thread) :thread-id thread)
-                        (format nil "This thread did not close: ~a" error)
-                        :what "close refusal"))
+                        said :what "close refusal"))
         closed))))
 
 ;;; --- Ask for access (an operator-only command's way past the gate) ------------------

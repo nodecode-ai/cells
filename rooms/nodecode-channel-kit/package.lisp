@@ -100,6 +100,7 @@ it over any platform, and the /channels status surface.")
    ;; host.lisp --- the lane interpreter over a platform
    #:platform-plan-control-ack #:platform-plan-autocomplete
    #:platform-plan-thread #:platform-plan-delete-thread #:platform-plan-close-thread #:platform-closed-note
+   #:platform-close-refusal #:platform-plan-control-followup
    #:platform-thread-of-refusal
    #:platform-tables
    #:platform-thread-id-of

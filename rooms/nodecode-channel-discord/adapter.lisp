@@ -142,16 +142,26 @@ instruction to follow: ~s.~]"
                          &aux (platform (discord-platform-record bot-user-id application-id)))
   "The Discord PLATFORM (DISCORD-PLATFORM-RECORD), and what it carries beside
 the record: a thread closes as an archived one -- out of the channel's list,
-kept, and open again once anyone writes in it -- and a thread refused because
-the message already has one names that one."
-  (setf (platform-plan-close-thread platform) #'thread-close-plan
+kept, and open again once anyone writes in it -- where the bot may close it
+(MAY-CLOSE-THREAD-P), so an answer in another bot's thread carries no Close
+it could not keep; and a thread refused because the message already has one
+names that one."
+  (setf (platform-plan-close-thread platform)
+        (lambda (thread-id &rest options)
+          (and (may-close-thread-p thread-id bot-user-id)
+               (apply #'thread-close-plan thread-id options)))
         ;; Two bots one message names both open a thread off it: the second
         ;; hears 160004 and takes the first one's thread (NCK:START-THREADED-ASK).
         ;; Two colons: the kit's export is new, and an image of the release
         ;; before this one reads this file, to take it live, before the kit's
         ;; new DEFPACKAGE has run; one colon would not read, and none would
         ;; intern a symbol of this package that the export then clashes with.
-        (nck::platform-thread-of-refusal platform) #'discord-thread-of-refusal)
+        (nck::platform-thread-of-refusal platform) #'discord-thread-of-refusal
+        ;; A Close press is answered at once without words -- an answer in a
+        ;; thread Discord has archived would reopen it -- and a refusal follows
+        ;; it privately; a Close the bot cannot keep says who can.
+        (nck::platform-plan-control-followup platform) #'interaction-followup-plans
+        (nck::platform-close-refusal platform) #'close-refusal-text)
   platform)
 
 (defun discord-platform-record (bot-user-id application-id)
