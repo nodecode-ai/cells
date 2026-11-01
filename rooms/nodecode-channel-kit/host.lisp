@@ -359,7 +359,18 @@ rides the first chunk, drawn where the platform draws one."
   ;; whole. Every chunk hands the ids on for the platform to let through: the
   ;; note that needs the operator reaches them. WHAT names the post in the one
   ;; warning a refused post is, when the caller has nothing else to do about it.
-  (nlk:bind ((spelled (loop for id in mentions
+  ;;
+  ;; Every post passes PEER-ADDRESSED-TEXT here, the one door: a board line
+  ;; or a notice that writes @NAME of a bot asks it as an answer does, and
+  ;; the bots it spells join the ids the platform lets through -- on Discord
+  ;; a mention allowed_mentions leaves out never reaches the message's
+  ;; mentions, so the bot named would not wake and this bot's own line would
+  ;; call no one in (NOTE-CALLED-PEERS). They reach, unspelled ahead.
+  (nlk:bind ((text (peer-addressed-text host target text))
+             (reach (append mentions
+                            (remove-if (lambda (id) (member id mentions :test #'equal))
+                                       (addressed-bot-ids host target text))))
+             (spelled (loop for id in mentions
                             for spelling = (funcall (platform-mention host.platform) id)
                             when spelling collect spelling))
              (chunks (split-text-chunks (format nil "~{~a ~}~a" spelled text) host.text-limit))
@@ -371,7 +382,7 @@ rides the first chunk, drawn where the platform draws one."
                                   (host-plan host #'platform-plan-message target chunk
                                              :reply-to reply-to :ping ping
                                              :controls (and (= chunk.index chunk.total) controls)
-                                             :mentions mentions
+                                             :mentions reach
                                              :files (and (= 1 chunk.index) files)
                                              :panel (and (= 1 chunk.index) panel)))))
              (id-of (platform-message-id-of host.platform))
@@ -406,8 +417,10 @@ rides the first chunk, drawn where the platform draws one."
     (error "post-file names no channel for ~a" platform))
   (let* ((host (or (find platform *hosts* :key #'host-id :test #'string-equal)
                    (error "no ~a channel is running" platform)))
-         (plan (host-plan host #'platform-plan-file (list :channel-id channel :thread-id thread)
-                          pathname :content content :reply-to reply-to)))
+         (target (list :channel-id channel :thread-id thread))
+         (plan (host-plan host #'platform-plan-file target
+                          pathname :content (peer-addressed-text host target content)
+                          :reply-to reply-to)))
     (if (null plan)
         (list :status 0 :error (format nil "~a carries no files" (platform-name host.platform)))
         (call-answer (execute-plan host.executor plan)))))
@@ -1760,9 +1773,7 @@ chunk as an address for the lane, then settle the card above it."
              ;; died in the worker's log, and the room heard nothing: the card
              ;; read working, the ask kept its eye.
              (handler-case
-                 (post-message host target
-                               (peer-addressed-text host target
-                                                    (talk-answer-text host lane text final))
+                 (post-message host target (talk-answer-text host lane text final)
                                :reply-to reply-to :ping (and (null origin) (null heard))
                                :mentions (and (or origin final) lane.owner-id (list lane.owner-id))
                                :files files
@@ -3615,6 +3626,7 @@ peers, or NIL when the line calls no one in."
   "CANDIDATE, marked source.peer when a bot posted it in a thread where it is
 this bot's peer: one a person named beside this bot, or one a bot's line
 called in (NOTE-CALLED-PEERS). Never this bot's own line."
+  (note-known-bots host candidate)
   (note-called-peers host candidate)
   (let ((thread (source-field candidate "thread_id"))
         (user (source-field candidate "user_id")))
@@ -3700,16 +3712,60 @@ NO_REPLY when you have nothing to add. ~a"
                          spelling)))
   text)
 
+(defvar *known-bots* (make-hash-table :test #'equal :synchronized t)
+  "Platform id -> ((ID . NAME) ...), newest first: the other bots this kit has
+seen post on that platform or be mentioned there -- what an @NAME of a bot no
+thread calls a peer yet is spelled from (ADDRESSABLE-BOTS).")
+
+(defparameter +known-bots-limit+ 64
+  "How many bots *KNOWN-BOTS* keeps per platform: a bound, never a ledger.")
+
+(defun note-known-bots (host candidate &aux (policy host.policy))
+  "Learn the bots CANDIDATE shows -- its author when a bot, and each bot it
+mentions -- never this bot itself."
+  (let ((self (and (typep policy 'inbound-policy) (inbound-policy-self-id policy)))
+        (user (source-field candidate "user_id"))
+        (name (source-field candidate "user_name")))
+    (loop for (id . bot-name) in (append (and (candidate-bot-p candidate) user name
+                                              (list (cons user name)))
+                                         (candidate-mentioned-bots candidate))
+          when (and (stringp id) (stringp bot-name) (plusp (length bot-name))
+                    (not (equal id self)))
+            do (sb-ext:with-locked-hash-table (*known-bots*)
+                 (let ((others (remove id (gethash (platform-id host.platform) *known-bots*)
+                                       :key #'car :test #'equal)))
+                   (setf (gethash (platform-id host.platform) *known-bots*)
+                         (cons (cons id bot-name)
+                               (subseq others 0 (min (1- +known-bots-limit+) (length others))))))))))
+
+(defun addressable-bots (host target)
+  "The bots an @NAME in a post to TARGET may mean, ((ID . NAME) ...): its
+thread's peers, then each other bot this kit has seen on its platform."
+  (let ((peers (thread-peers host (getf target :thread-id))))
+    (append peers
+            (remove-if (lambda (bot) (assoc (car bot) peers :test #'equal))
+                       (gethash (platform-id host.platform) *known-bots*)))))
+
 (defun peer-addressed-text (host target text)
-  "TEXT with each @NAME of a peer of TARGET's thread spelled as the platform's
-mention of it, outside code: an answer that names a peer asks it."
-  (let ((peers (and (stringp text) (thread-peers host (getf target :thread-id)))))
-    (if (null peers)
+  "TEXT with each @NAME of a bot a post to TARGET may mean (ADDRESSABLE-BOTS)
+spelled as the platform's mention of it, outside code: a post that names a
+bot asks it."
+  (let ((bots (and (stringp text) (addressable-bots host target))))
+    (if (null bots)
         text
         (format nil "~{~a~^`~}"
                 (loop for piece in (uiop:split-string text :separator "`")
                       for code = nil then (not code)
-                      collect (if code piece (peer-mentions-in host peers piece)))))))
+                      collect (if code piece (peer-mentions-in host bots piece)))))))
+
+(defun addressed-bot-ids (host target text)
+  "The ids of the bots TEXT spells the platform's mention of, among those a
+post to TARGET may mean: the ids the post must reach."
+  (and (stringp text)
+       (loop for (id . nil) in (addressable-bots host target)
+             for spelling = (funcall (platform-mention host.platform) id)
+             when (and (stringp spelling) (plusp (length spelling)) (search spelling text))
+               collect id)))
 
 (defun candidate-taken-p (host candidate &aux (prefix (platform-session-prefix host.platform))
                                                 (message (source-field candidate "message_id")))

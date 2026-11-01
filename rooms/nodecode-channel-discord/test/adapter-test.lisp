@@ -487,6 +487,52 @@ adapter and the fake gateway have stopped."
       (is (search "not running" (refusal-text error (ncd:request "GET" "/users/@me")))))
     (is (= 4 (length executor.plans)))))
 
+(deftest channel-discord-request-names-the-threads-peers ()
+  ;; A message the model posts or edits through the door names the thread's
+  ;; peers the way its answer there does: @Elektra goes out as Elektra's
+  ;; mention -- in a plist, a json object or a multipart payload -- while a
+  ;; room with no peers, a code span, an email, a longer name and a write that
+  ;; is no message go out as written, and the caller's body stays its own.
+  (let* ((executor (apply #'scripted-executor (loop repeat 9 collect (reply 200 "id" "42"))))
+         (host (test-host :platform (ncd:discord-platform :bot-user-id "999")
+                          :executor executor :name "request-peers-test"))
+         (ncd::*discord-adapter* (ncd::%make-discord-adapter :host host)))
+    (unwind-protect
+         (flet ((posted (method path body)
+                  (ncd:request method path :body body)
+                  (let ((sent (nck:request-plan-body (car (last executor.plans)))))
+                    (if (nck:multipart-body-p sent)
+                        (gethash "content" (nlk:decode-json (cdr (assoc "payload_json" sent :test #'equal))))
+                        (or (gethash "content" sent) (gethash "name" sent))))))
+           (nck::note-thread-peers host "77" '(("777" . "elektra") ("888" . "scrap")))
+           (let ((mine (list :content "@Elektra @scrap please don't start a branch" :flags 4)))
+             (is (equal "<@777> <@888> please don't start a branch" (posted "POST" "/channels/77/messages" mine))
+                 "a post names both peers")
+             (is (equal "@Elektra @scrap please don't start a branch" (getf mine :content))
+                 "and the caller's plist is never changed"))
+           (is (equal "edited: <@888>, yours" (posted "PATCH" "/channels/77/messages/42" '(:content "edited: @Scrap, yours")))
+               "an edit names a peer too")
+           (is (equal "<@777> ping" (posted "POST" "/channels/77/messages" (nlk:json-object "content" "@elektra ping"))))
+           (with-temp-file (file :contents "png" :type "png")
+             (is (equal "<@777> see the file"
+                        (posted "POST" "/channels/77/messages"
+                                (list (cons "payload_json" "{\"content\": \"@elektra see the file\"}")
+                                      (cons "files[0]" file))))
+                 "a file's caption names a peer"))
+           (is (equal "@elektra here" (posted "POST" "/channels/55/messages" '(:content "@elektra here")))
+               "a room with no peers stays as written")
+           (is (equal "`@elektra` a@elektra.io @elektrabot @elektra-x"
+                      (posted "POST" "/channels/77/messages" '(:content "`@elektra` a@elektra.io @elektrabot @elektra-x")))
+               "a code span, an email and a longer name stay")
+           (is (equal "@elektra notes" (posted "PATCH" "/channels/77" '(:name "@elektra notes")))
+               "a write that is no message stays")
+           (is (equal "<@777> again" (posted "POST" "/channels/77/messages" '(:content "<@777> again")))
+               "a mention already spelled stays one")
+           (is (null (ncd::message-write-room "POST" "/channels/77/messages/42/crosspost")))
+           (is (null (ncd::message-write-room "GET" "/channels/77/messages")))
+           (is (equal "77" (ncd::message-write-room "post" "/channels/77/messages?wait=true"))))
+      (remhash (nck::peer-key host "77") nck::*thread-peers*))))
+
 (deftest channel-discord-platform-carries-files ()
   ;; The kit's file seam over Discord's own plan: the platform answers a
   ;; plan for a file, and the plan is the multipart upload with the reply
