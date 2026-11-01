@@ -1790,6 +1790,11 @@ chunk as an address for the lane, then settle the card above it."
                                :controls (answer-controls host lane choices))
                (error (condition) (values nil nil (princ-to-string condition))))
            (bind-addresses host lane target message-ids)
+           ;; The whole answer rode along as a file and the post holds it now.
+           (when (and delivered (second cut))
+             (ignore-errors
+              (uiop:delete-directory-tree (uiop:pathname-directory-pathname (second cut))
+                                          :validate t :if-does-not-exist :ignore)))
            (note-delivery (host-id host) delivered error lane.session-id)
            (when (and delivered choices (not (first waits)))
              (mark-choices-waiting lane turn-id))

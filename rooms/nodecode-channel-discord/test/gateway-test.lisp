@@ -537,6 +537,33 @@ ROUTE-DISCORD-AUTOCOMPLETE."
 whose d object is D-JSON. KEYS reach the router as they are."
   (apply #'ncd:route-discord-reaction (dgw-dispatch event d-json) keys))
 
+(deftest channel-discord-a-bot-at-work-shows-in-what-no-route-reads ()
+  ;; Another bot's eye and its edits route no line, yet they are how an ask's
+  ;; owner shows it works; and every bot's post in a thread, this bot's too,
+  ;; says who answered there last.
+  (clrhash ncd::*known-threads*)
+  (dgw-thread-create! "t1" "c1")
+  (flet ((seen (event json) (ncd::discord-bot-presence (dgw-dispatch event json) "999"))
+         (eye (channel user bot)
+           (format nil "{\"user_id\": \"~a\", \"channel_id\": \"~a\", \"message_id\": \"m5\", \"guild_id\": \"g1\", \"emoji\": {\"id\": null, \"name\": \"E\"}, \"member\": {\"user\": {\"id\": \"~a\", \"bot\": ~a}}}"
+                   user channel user (if bot "true" "false")))
+         (said (channel user bot &optional (id "m7"))
+           (format nil "{\"id\": \"~a\", \"channel_id\": \"~a\", \"content\": \"done\", \"author\": {\"id\": \"~a\", \"username\": \"bot-~a\", \"bot\": ~a}}"
+                   id channel user user (if bot "true" "false"))))
+    (is (equal '(:seen "777" "t1") (seen "MESSAGE_REACTION_ADD" (eye "t1" "777" t))) "another bot's eye in a thread shows it at work there")
+    (is (equal '(:seen "777" "m5") (seen "MESSAGE_REACTION_ADD" (eye "c1" "777" t))) "and in a channel, on the message an ask's thread opens off")
+    (is (null (ncd:route-discord-reaction (dgw-dispatch "MESSAGE_REACTION_ADD" (eye "t1" "777" t)) :bot-user-id "999")) "while it still routes no line")
+    (is (null (seen "MESSAGE_REACTION_ADD" (eye "t1" "u1" nil))) "a person's eye is a line its route reads")
+    (is (null (seen "MESSAGE_REACTION_ADD" (eye "t1" "999" t))) "and this bot's own eye shows nothing")
+    (is (equal '(:seen "777" "t1") (seen "MESSAGE_UPDATE" (said "t1" "777" t))) "another bot editing its card in a thread shows it at work")
+    (is (null (seen "MESSAGE_UPDATE" (said "t1" "999" t))) "this bot's own edits show nothing")
+    (is (null (seen "MESSAGE_UPDATE" (said "t1" "u1" nil))) "nor does a person's edit")
+    (is (equal '(:post "999" "bot-999" "t1" "m7") (seen "MESSAGE_CREATE" (said "t1" "999" t))) "this bot's own post in a thread counts")
+    (is (equal '(:post "777" "bot-777" "t1" "m8") (seen "MESSAGE_CREATE" (said "t1" "777" t "m8"))) "and so does another bot's")
+    (is (null (seen "MESSAGE_CREATE" (said "t1" "u1" nil))) "a person's message is no bot's post")
+    (is (null (seen "MESSAGE_CREATE" (said "c1" "777" t))) "nor is a bot's post outside a thread")
+    (is (null (seen "GUILD_CREATE" "{\"id\": \"g1\"}")) "and any other dispatch shows no one")))
+
 (deftest channel-discord-reaction-routing ()
   ;; A reaction is a line the room said without typing one: the emoji is the
   ;; candidate's text, the message it sits on is its reply gesture, and it

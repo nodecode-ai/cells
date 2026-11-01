@@ -130,6 +130,68 @@ message id where SELF owns it (OWNER-P) or does not."
           (is (null (plan-matching (recorded-plans executor) :content "taken over")) "an owner seen at work keeps its ask")
           (is (null (nck:find-lane (nck:host-lanes host) "chat-100-t6-m6")) "and no lane opened here"))))))
 
+(deftest channel-owner-kits-that-know-different-peers-pick-one-owner ()
+  ;; Each kit keeps its own record of a thread's peers, and those differ -- a
+  ;; kit that restarted, a peer called in while another kit was away. Who
+  ;; posted in the thread is what every kit reads alike, so the bot that
+  ;; answered there last owns its next line that names no one, in every kit,
+  ;; and a post after the line never moves its owner.
+  (with-thread-peers ("50")
+    (let ((hosts (mapcar (lambda (bot) (owner-host (car bot))) *owner-bots*)))
+      (flet ((owners (message)
+               (loop for host in hosts
+                     for (self) in *owner-bots*
+                     collect (first (nck::ask-rank host (person-line self "and the Mac?" :bots :none :thread "50"
+                                                                              :parent "100" :message message))))))
+        (loop for host in hosts
+              for peers in (list (others-of "999") '(("999" . "scrap")) '(("777" . "elektra")))
+              do (setf (gethash (nck::peer-key host "50") nck::*thread-peers*) peers))
+        ;; The posts all three kits saw -- the tests' kits share one table.
+        (nck:note-bot-presence (first hosts) '(:post "777" "elektra" "50" "98"))
+        (nck:note-bot-presence (first hosts) '(:post "555" "hindsight" "50" "102"))
+        (is (equal '("555" "555" "555") (owners "103")) "the bot that answered last owns the next line, in every kit")
+        (nck:note-bot-presence (first hosts) '(:post "999" "scrap" "50" "104"))
+        (is (equal '("555" "555" "555") (owners "103")) "a post after the line never moves its owner")
+        (is (equal '("999" "999" "999") (owners "105")) "and the line after it goes to the bot that answered last")
+        (nck:note-bot-presence (first hosts) '(:post "999" "scrap" "50" "99"))
+        (is (equal "999" (first (first (list (owners "105"))))) "an older post never replaces a bot's latest")))))
+
+(defun steered-follow-up (thread message)
+  "A person's line in THREAD, naming no one, as the bot 999 reads it in a
+thread it takes part in."
+  (let ((line (person-line "999" "and the Mac?" :bots :none :thread thread :parent "100" :message message)))
+    (setf (gethash "joined" (gethash "source" line)) t)
+    line))
+
+(deftest channel-owner-an-owner-busy-with-a-follow-up-keeps-it ()
+  ;; A person's follow-up while the owner's turn runs is steered into that
+  ;; turn, and the eye the owner leaves on it is all the room sees: a bot's
+  ;; reaction routes no line. The adapter reads it all the same
+  ;; (NOTE-BOT-PRESENCE), so the bot ranked next never answers the line a
+  ;; second time -- and without that eye, it does take it over.
+  (let ((nck::+owner-grace-seconds+ 0.3)
+        (nck::+owner-activity-slack-ms+ 50))
+    (loop for (thread eye) in '(("50" t) ("51" nil))
+          do (with-thread-peers (thread)
+               (with-ask-host (host thread-ask-host :answers ("taken over") :responses (replies thread "p1" "p2"))
+                 (setf (nck:host-policy host) (owner-policy "999"))
+                 (setf (gethash (nck::peer-key host thread) nck::*thread-peers*) (others-of "999"))
+                 ;; The owner's card, posted when its turn began.
+                 (nck:note-bot-presence host (list :post "777" "elektra" thread "60"))
+                 (sleep 0.1)
+                 (let ((line (steered-follow-up thread "61")))
+                   (is (equal "777" (first (nck::ask-rank host line))) "the bot that answered last owns the follow-up")
+                   (is (eq :observe (nck:handle-candidate host line)) "so this bot only reads it")
+                   (when eye
+                     (sleep 0.05)
+                     (nck:note-bot-presence host (list :seen "777" thread)))
+                   (if eye
+                       (progn (sleep 1.0)
+                              (is (null (plan-matching (recorded-plans executor) :content "taken over"))
+                                  "the owner's eye on the line keeps it the owner's"))
+                       (is (await-plan executor :content "taken over")
+                           "and with no eye on it, the bot ranked next takes it over"))))))))
+
 (deftest channel-owner-answer-words-count-what-a-person-reads ()
   ;; Prose words count; code blocks, markup alone and the FINAL ANSWER line do not.
   (is (= 4 (nck::answer-word-count "Fixed: #39 is merged.")))

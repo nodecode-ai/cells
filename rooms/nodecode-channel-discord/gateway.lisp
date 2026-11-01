@@ -944,6 +944,49 @@ custom emoji — which is how Discord writes a custom emoji everywhere a bot
 cannot render the image. NIL when the payload names no emoji at all."
   (if id (format nil ":~a:" (or name id)) name))
 
+(defun discord-bot-presence (payload bot-user-id)
+  "What PAYLOAD shows of a bot at work that no route reads, or NIL:
+(:POST USER NAME THREAD MESSAGE) for a message a bot -- this one too --
+posted in a thread; (:SEEN USER KEY) for an eye another bot left, KEY the
+thread or else the message it sits on, or a message another bot edited in a
+thread."
+  ;; The routes drop all of these: a bot's reaction and a bot's edit are no
+  ;; line to answer. They are how an ask's owner shows the others it works
+  ;; (NCK::NOTE-AUTHOR-ACTIVITY) -- an owner whose turn took a person's
+  ;; follow-up in shows it by the eye on that line and nothing else -- and
+  ;; who posted in a thread last is who owns its next unnamed line
+  ;; (NCK::NOTE-THREAD-POST). Hash reads only: the connection lap thread.
+  (when (eql (payload-op payload) +op-dispatch+)
+    (let ((name (gethash "t" payload))
+          (data (gethash "d" payload)))
+      (when (hash-table-p data)
+        (flet ((thread-of (channel)
+                 (and channel
+                      (or (nlk:json-value data :string "parent_id")
+                          (thread-channel-parent channel))
+                      channel)))
+          (cond
+            ((equal name "MESSAGE_CREATE")
+             (let ((user (nlk:json-value data :string "author" "id"))
+                   (thread (thread-of (nlk:json-value data :string "channel_id")))
+                   (message (nlk:json-value data :string "id")))
+               (when (and user thread message
+                          (or (equal user bot-user-id) (nlk:json-value data :any "author" "bot")))
+                 (list :post user (nlk:json-value data :string "author" "username") thread message))))
+            ((equal name "MESSAGE_UPDATE")
+             (let ((user (nlk:json-value data :string "author" "id"))
+                   (thread (thread-of (nlk:json-value data :string "channel_id"))))
+               (when (and user thread (not (equal user bot-user-id))
+                          (nlk:json-value data :any "author" "bot"))
+                 (list :seen user thread))))
+            ((equal name "MESSAGE_REACTION_ADD")
+             (let ((user (nlk:json-value data :string "user_id"))
+                   (channel (nlk:json-value data :string "channel_id"))
+                   (message (nlk:json-value data :string "message_id")))
+               (when (and user channel message (not (equal user bot-user-id))
+                          (nlk:json-value data :any "member" "user" "bot"))
+                 (list :seen user (or (thread-of channel) message)))))))))))
+
 (defun route-discord-reaction (payload &key bot-user-id)
   "The normalized candidate for a MESSAGE_REACTION_ADD or a
 MESSAGE_REACTION_REMOVE dispatch — a line the room said without typing one —

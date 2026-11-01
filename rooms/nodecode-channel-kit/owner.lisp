@@ -14,10 +14,11 @@
 ;;;;     line on a team's board.
 ;;;;   - Otherwise the bots it reaches are ranked (ASK-RANK): the bot it points
 ;;;;     at -- the author of the message it answers, then each it names, in the
-;;;;     order named -- then the rest by a digest of the thread and the bot's
-;;;;     id. Every kit reads the same line and ranks the same way, so no two
-;;;;     race and none waits on another to agree; and every line of one thread
-;;;;     has the same owner.
+;;;;     order named -- then the bots that posted in its thread before it, the
+;;;;     latest first, then the rest by a digest of the thread and the bot's
+;;;;     id. Each of those is what every kit in the room reads alike -- the line,
+;;;;     and the thread's own messages -- so no two race and none waits on
+;;;;     another to agree; and a person goes on with the bot that answered last.
 ;;;;   - The first ranked answers. Each bot after it waits its place times
 ;;;;     +OWNER-GRACE-SECONDS+ and takes the ask over only when no bot ranked
 ;;;;     before it showed itself in the thread meanwhile -- a card, a reaction,
@@ -52,8 +53,15 @@
 
 (defun note-bot-activity (host candidate)
   "Keep that CANDIDATE's author showed itself where it was said (ACTIVITY-KEY)."
-  (let ((user (source-field candidate "user_id"))
-        (key (activity-key candidate)))
+  (note-author-activity host (source-field candidate "user_id") (activity-key candidate)))
+
+(defun note-author-activity (host user key)
+  "Keep that USER, another bot, showed itself at KEY now: a thread, or the
+ message an ask opens its thread off. An adapter calls it for what a bot does
+ that routes no line -- an eye it leaves on a person's follow-up, a card it
+ edits -- since those are how an owner whose turn took a follow-up in shows it
+ still works."
+  (progn
     (when (and user key (not (equal user (host-self-id host))))
       (let ((now (now-ms)))
         (sb-ext:with-locked-hash-table (*bot-activity*)
@@ -66,6 +74,17 @@
             (setf (gethash k *bot-activity*)
                   (acons user now (remove user (gethash k *bot-activity*)
                                           :key #'car :test #'equal)))))))))
+
+(defun note-bot-presence (host seen)
+  "Keep SEEN, what an adapter read of a bot at work that routes no line:
+(:POST USER NAME THREAD MESSAGE), a bot's message in a thread, this bot's
+own too; (:SEEN USER KEY), another bot's eye or edit at KEY. NIL notes nothing."
+  (destructuring-bind (&optional kind user &rest more) seen
+    (case kind
+      (:post (destructuring-bind (name thread message) more
+               (note-thread-post host thread user name message)
+               (note-author-activity host user thread)))
+      (:seen (note-author-activity host user (first more))))))
 
 (defun active-since-p (host key ids since)
   "Whether one of IDS showed itself at KEY at or after SINCE, in ms."
@@ -86,12 +105,71 @@
   "ID's draw for the ask at KEY: the same in every kit."
   (nlk:short-digest (format nil "~a/~a" key id) 16))
 
+;;; Who posted last in a thread is what every kit in it reads the same way:
+;;; each sees every bot's message there, and a message's id says its place.
+;;; A kit's own record of a thread's peers is its own -- one kit may know a
+;;; peer another never heard of -- so it never decides the owner while a
+;;; thread has posts to read it from.
+
+(defvar *thread-posters* (make-hash-table :test #'equal :synchronized t)
+  "(platform id . thread id) -> ((USER-ID NAME MESSAGE-ID) ...), newest
+ message first: each bot that posted in the thread, this one too, by its
+ latest message there.")
+
+(defun message-number (id)
+  "ID, a platform's message id -- a Discord snowflake, a Slack ts, a Telegram
+ number -- as the number its place in its thread reads as, or NIL."
+  (and (stringp id) (plusp (length id))
+       (every (lambda (c) (or (digit-char-p c) (char= c #\.))) id)
+       (let ((dot (position #\. id)))
+         (if (null dot)
+             (parse-integer id)
+             (+ (parse-integer id :end dot :junk-allowed t)
+                (if (< (1+ dot) (length id))
+                    (/ (parse-integer id :start (1+ dot))
+                       (expt 10 (- (length id) dot 1)))
+                    0))))))
+
+(defun message-id< (a b)
+  "Whether message A was posted before message B."
+  (let ((x (message-number a)) (y (message-number b)))
+    (if (and x y) (< x y) (string< a b))))
+
+(defun note-thread-post (host thread user name message-id)
+  "Keep that the bot USER, called NAME, posted MESSAGE-ID in THREAD: an
+ answer, a card, this bot's own posts too. An adapter calls it for every
+ bot's message in a thread, its own included."
+  (when (and thread user message-id)
+    (sb-ext:with-locked-hash-table (*thread-posters*)
+      (when (> (hash-table-count *thread-posters*) 2048)
+        (clrhash *thread-posters*))
+      (let* ((key (peer-key host thread))
+             (had (gethash key *thread-posters*))
+             (old (assoc user had :test #'equal)))
+        (unless (and old (not (message-id< (third old) message-id)))
+          (setf (gethash key *thread-posters*)
+                (sort (cons (list user (or name user) message-id)
+                            (remove user had :key #'car :test #'equal))
+                      (lambda (x y) (message-id< (third y) (third x))))))))))
+
+(defun thread-posters (host thread before)
+  "The bots that posted in THREAD before message BEFORE, ((ID . NAME) ...),
+ the latest first. Before the ask, never after it: a kit that reads the ask
+ late has seen the owner's card on it, and must rank it as one that read it
+ at once."
+  (when thread
+    (loop for (id name message) in (gethash (peer-key host thread) *thread-posters*)
+          when (or (null before) (message-id< message before))
+            collect (cons id name))))
+
 (defun ask-reach (host candidate)
   "The bots CANDIDATE's line reaches beside this one, ((ID . NAME) ...): the
- bots it mentions or pings by a role, and its thread's peers."
+ bots it mentions or pings by a role, those that posted in its thread before
+ it, and its thread's peers."
   (let ((thread (source-field candidate "thread_id")))
     (remove-duplicates
      (append (candidate-mentioned-bots candidate)
+             (thread-posters host thread (source-field candidate "message_id"))
              (and thread (thread-peers host thread (candidate-room host candidate))))
      :key #'car :test #'equal :from-end t)))
 
@@ -114,9 +192,13 @@
       (let* ((replied (let ((reply (candidate-reply candidate)))
                         (and (hash-table-p reply) (gethash "user_id" reply))))
              (named (remove-if-not (lambda (id) (mention-position text id)) ids))
+             ;; Then whoever answered in the thread last: the person goes on
+             ;; with the bot they were talking to.
+             (posted (mapcar #'car (thread-posters host thread (source-field candidate "message_id"))))
              (picked (remove-duplicates
                       (append (and (member replied ids :test #'equal) (list replied))
-                              (mention-order text named))
+                              (mention-order text named)
+                              posted)
                       :test #'equal :from-end t))
              (drawn (sort (set-difference (cons self ids) picked :test #'equal)
                           #'string> :key (lambda (id) (owner-digest key id)))))
@@ -205,9 +287,10 @@ verdict and what the person must do or decide; detail goes into a file, the PR o
   (format nil "You shorten a chat answer to at most ~d words, code blocks aside, for a busy ~
 reader. Keep the verdict first. Keep every number, id, name, link, command and path you keep ~
 exactly as written, and keep the question or choice the answer ends on. When its first line ~
-is FINAL ANSWER, keep that line first. Drop background, restated asks, repeated facts and ~
-hedges. Never add a fact, a number or a claim the answer does not make. Keep its markdown and ~
-its language. Reply with the shortened answer alone." cap))
+is FINAL ANSWER, keep that line first. Keep every caveat about what was not checked, proven or ~
+tested, every correction and every open item: they are findings, not hedges. Drop only filler: ~
+background, restated asks, repeated facts, thanks. Never add a fact, a number or a claim the ~
+answer does not make. Keep its markdown and its language. Reply with the shortened answer alone." cap))
 
 (defun shorten-answer (host lane text final)
   "(values TEXT FULL-FILE): TEXT as LANE posts it under its room's

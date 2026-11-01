@@ -242,6 +242,7 @@ falls through."
   ;; signals costs that event and not the connection.
   (note-channel-dispatches payload)
   (note-self-dispatches payload adapter.bot-user-id)
+  (note-bot-presence adapter.host (discord-bot-presence payload adapter.bot-user-id))
   ;; Discord's stale copy of a message the bot opened a thread on gives the
   ;; thread back to every client (RESTATE-THREAD-LINK). It routes nothing:
   ;; the routes below still read the update.
