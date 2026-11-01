@@ -9,16 +9,17 @@
 ;;;;
 ;;;;   - Each bot attacks the whole task with an approach it CLAIMs, one no
 ;;;;     peer has.
-;;;;   - One scorer every bot runs, and BOARD-VERIFY is the only source of a
-;;;;     score: it runs the scorer, keeps the score, and puts it on the bot's
-;;;;     card.
+;;;;   - One scorer per task, every bot on it runs it, and BOARD-VERIFY is the
+;;;;     only source of a score: it runs the scorer, keeps the score under the
+;;;;     scorer's key, and puts it on the bot's card.
 ;;;;   - A bot posts only measured progress -- FINDING, FAIL, ADOPT, SOLVED --
 ;;;;     and each post reaches every peer's running turn (HEAR-IN-RUNNING-TURN):
 ;;;;     a post that names no one is the board, a mention is an ask.
 ;;;;   - A peer's post is a claim until re-run: ADOPT carries the adopter's own
 ;;;;     score, never the peer's.
-;;;;   - The best verified result writes the one answer (BOARD-ANSWER-TEXT);
-;;;;     BOARD-PROMOTE moves the best commit with a compare-and-swap.
+;;;;   - Each scorer's best verified result writes its task's one answer
+;;;;     (BOARD-ANSWER-TEXT), a result ranking only against its own scorer's;
+;;;;     BOARD-PROMOTE moves each scorer's best commit with a compare-and-swap.
 ;;;;
 ;;;; A slot is a bot's place in the order the person named the bots in: the
 ;;;; message's own text, which every kit reads the same, so no two kits race
@@ -136,9 +137,12 @@ knows them."
 
 (defparameter +board-line-scanner+
   (ppcre:create-scanner
-   "^\\s*(?:-#\\s*)?\\*\\*(CLAIM|SCORER|FINDING|FAIL|ADOPT|SOLVED)\\*\\*\\s+s(\\d+)(?:\\s+·\\s+score\\s+(\\S+))?(?:\\s+·\\s*|\\s*$)(.*)$"
+   "^\\s*(?:-#\\s*)?\\*\\*(CLAIM|SCORER|FINDING|FAIL|ADOPT|SOLVED)\\*\\*\\s+s(\\d+)(?:\\s+·\\s+score\\s+(\\S+))?(?:\\s+·\\s+scorer\\s+([0-9a-f]{6}))?(?:\\s+·\\s*|\\s*$)(.*)$"
    :single-line-mode t)
-  "One board post: **KIND** sN [· score S] · words.")
+  "One board post: **KIND** sN [· score S] [· scorer K] · words.")
+
+(defparameter +scorer-key-digits+ 6
+  "Hex digits of a scorer's key: the name every kit gives one scorer command.")
 
 (defvar *team-posts* (make-hash-table :test #'equal :synchronized t)
   "(platform id . thread id) -> the posts on the thread's board, newest
@@ -158,20 +162,34 @@ no board carries."
     (or (find tag +board-kinds+ :test #'string=)
         (error "a board carries ~{~(~a~)~^, ~} posts, not ~s" +board-kinds+ kind))))
 
-(defun board-line (kind slot text &key score)
-  "The words one post shows: **KIND** sN, its score when it carries one, then TEXT."
-  (format nil "**~a** s~d~@[ · score ~a~] · ~a" kind slot score
+(defun board-line (kind slot text &key score scorer)
+  "The words one post shows: **KIND** sN, its score when it carries one, the
+key of the scorer that measured it or that it posts, then TEXT."
+  (format nil "**~a** s~d~@[ · score ~a~]~@[ · scorer ~a~] · ~a" kind slot score scorer
           (nlk:clip (nlk:trimmed text) +board-post-cap+ :ellipsis "…")))
 
 (defun parse-board-line (text)
-  "(values KIND SLOT SCORE WORDS) of TEXT when it is a board post, else NIL."
+  "(values KIND SLOT SCORE WORDS SCORER) of TEXT when it is a board post, else
+NIL; SCORER is the key of the scorer the post names, NIL when it names none."
   (when (stringp text)
     (multiple-value-bind (whole parts) (ppcre:scan-to-strings +board-line-scanner+ text)
       (when whole
         (values (aref parts 0)
                 (parse-integer (aref parts 1))
                 (aref parts 2)
-                (nlk:trimmed (or (aref parts 3) "")))))))
+                (nlk:trimmed (or (aref parts 4) ""))
+                (aref parts 3))))))
+
+(defun scorer-command (words)
+  "The command a SCORER post's WORDS name: their first span in backticks, the
+backticks off, else all of them."
+  (let ((code (nth-value 1 (ppcre:scan-to-strings "`([^`]+)`" words))))
+    (nlk:trimmed (if code (aref code 0) words))))
+
+(defun scorer-key (command)
+  "COMMAND's key on a board: the first hex digits of its SHA-256, the same in
+every kit, so a result names the scorer it was measured on."
+  (nlk:short-digest (nlk:trimmed command) +scorer-key-digits+))
 
 (defun read-decimal (text)
   "TEXT, digits with an optional sign and fraction, as the number it says."
@@ -221,22 +239,69 @@ or NIL."
         (user (source-field candidate "user_id"))
         (text (and (hash-table-p candidate) (gethash "text" candidate))))
     (when (and thread user (candidate-bot-p candidate) (stringp text))
-      (multiple-value-bind (kind slot score words) (parse-board-line text)
+      (multiple-value-bind (kind slot score words scorer) (parse-board-line text)
         (when (and kind (eql slot (slot-of host thread user (candidate-room host candidate))))
           (record-board-post host thread
                              (list :kind kind :slot slot :user user
                                    :score score :value (score-value score) :text words
+                                   :scorer scorer
                                    :message (source-field candidate "message_id")
                                    :at (now-ms))))))))
 
+(defun board-posts-in-order (host thread-id)
+  "THREAD-ID's board posts in the order they came in the thread, oldest first."
+  (stable-sort (reverse (board-posts host thread-id)) #'< :key #'post-order))
+
+(defun board-scorer-posts (host thread-id)
+  "THREAD-ID's SCORER posts, the first posted first."
+  (remove-if-not (lambda (post) (equal "SCORER" (getf post :kind)))
+                 (board-posts-in-order host thread-id)))
+
 (defun board-scorer (host thread-id)
   "The command THREAD-ID's first SCORER post names, its backticks off, or NIL."
-  (let ((post (find "SCORER" (reverse (board-posts host thread-id))
-                    :key (lambda (p) (getf p :kind)) :test #'string=)))
-    (when post
-      (let* ((text (getf post :text))
-             (code (nth-value 1 (ppcre:scan-to-strings "`([^`]+)`" text))))
-        (nlk:trimmed (if code (aref code 0) text))))))
+  (let ((post (first (board-scorer-posts host thread-id))))
+    (and post (scorer-command (getf post :text)))))
+
+(defun post-scorer-key (post)
+  "The key of the scorer POST is, when it is a SCORER post -- its command's
+-- else the key of the scorer it names, or NIL."
+  (if (equal "SCORER" (getf post :kind))
+      (scorer-key (scorer-command (getf post :text)))
+      (getf post :scorer)))
+
+(defun board-default-scorer (host thread-id)
+  "The key of THREAD-ID's first scorer: the first SCORER post's, else the
+first posted result's that names one, else NIL. A result that names no
+scorer -- a kit from before results named theirs posted it -- ranks under it."
+  (let* ((posts (board-posts-in-order host thread-id))
+         (opener (or (find "SCORER" posts :key (lambda (p) (getf p :kind)) :test #'equal)
+                     (find-if (lambda (p) (and (getf p :value) (getf p :scorer))) posts))))
+    (and opener (post-scorer-key opener))))
+
+(defun result-scorer (default entry)
+  "The key of the scorer ENTRY -- a posted result, or a verify of this bot's
+-- ranks under: the one it names, else DEFAULT, the board's first."
+  (or (getf entry :scorer) default))
+
+(defun verify-scorer (host thread-id command)
+  "The key of the scorer COMMAND runs on THREAD-ID's board: the SCORER post's
+whose command it is or wraps -- a cd or a variable around it -- the longest
+such, else COMMAND's own."
+  (let ((command (nlk:trimmed command))
+        (named nil))
+    (dolist (post (board-scorer-posts host thread-id))
+      (let ((said (scorer-command (getf post :text))))
+        (when (and (plusp (length said)) (search said command)
+                   (or (null named) (> (length said) (length (car named)))))
+          (setf named (cons said post)))))
+    (if named (post-scorer-key (cdr named)) (scorer-key command))))
+
+(defun board-scores-under (host thread-id scorer)
+  "This bot's verifies on THREAD-ID's board measured on SCORER, a scorer's
+key, newest first."
+  (let ((default (board-default-scorer host thread-id)))
+    (remove-if-not (lambda (entry) (equal scorer (result-scorer default entry)))
+                   (board-scores host thread-id))))
 
 (defun board-scores (host thread-id)
   "What this bot's verifies on THREAD-ID's board measured, newest first."
@@ -264,29 +329,51 @@ moment this kit kept it."
              (parse-integer message))
         (getf post :at))))
 
-(defun board-standing (host thread-id)
-  "Each slot's best posted result on THREAD-ID's board, best first:
-((:SLOT :USER :SCORE :VALUE :AT) ...). A result counts once it is posted --
-the scores the posts carry, this bot's own included -- so every kit ranks
-the same thread alike: by value, and equals by which post came first."
-  (let ((rows (loop for user in (thread-slots host thread-id)
-                    for best = (best-entry
-                                (loop for post in (board-posts host thread-id)
-                                      when (and (equal user (getf post :user)) (getf post :value))
-                                        collect (list* :at (post-order post) post)))
-                    when best
-                      collect (list :slot (getf best :slot) :user user
-                                    :score (getf best :score) :value (getf best :value)
-                                    :at (getf best :at)))))
+(defun board-races (host thread-id)
+  "The keys of the scorers THREAD-ID's posted results were measured on, the
+first result's first: one race each. NIL is the one race of results that
+name no scorer on a board that has none."
+  (let ((default (board-default-scorer host thread-id))
+        (races '()))
+    (dolist (post (board-posts-in-order host thread-id) (nreverse races))
+      (when (getf post :value)
+        (pushnew (result-scorer default post) races :test #'equal)))))
+
+(defun board-standing (host thread-id &optional (scorer (board-default-scorer host thread-id)))
+  "Each slot's best posted result on THREAD-ID's board measured on SCORER --
+a scorer's key, the board's first by default -- best first: ((:SLOT :USER
+:SCORE :VALUE :AT :SCORER) ...). A result counts once it is posted -- the
+scores the posts carry, this bot's own included -- and ranks only against
+results from its own scorer, so every kit ranks the same thread alike: by
+value, and equals by which post came first."
+  (let* ((default (board-default-scorer host thread-id))
+         (rows (loop for user in (thread-slots host thread-id)
+                     for best = (best-entry
+                                 (loop for post in (board-posts host thread-id)
+                                       when (and (equal user (getf post :user)) (getf post :value)
+                                                 (equal scorer (result-scorer default post)))
+                                         collect (list* :at (post-order post) post)))
+                     when best
+                       collect (list :slot (getf best :slot) :user user
+                                     :score (getf best :score) :value (getf best :value)
+                                     :at (getf best :at) :scorer scorer))))
     (sort rows (lambda (a b)
                  (or (> (getf a :value) (getf b :value))
                      (and (= (getf a :value) (getf b :value))
                           (< (getf a :at) (getf b :at))))))))
 
-(defun board-leader (host thread-id)
-  "The best posted result on THREAD-ID's board (BOARD-STANDING), or NIL
-while nobody posted a score."
-  (first (board-standing host thread-id)))
+(defun board-leader (host thread-id &optional (scorer (board-default-scorer host thread-id)))
+  "The best posted result on THREAD-ID's board measured on SCORER, the
+board's first scorer by default (BOARD-STANDING), or NIL while nobody posted
+a score there."
+  (first (board-standing host thread-id scorer)))
+
+(defun board-leaders (host thread-id)
+  "The best posted result under each scorer THREAD-ID's results were measured
+on, the first scorer's first: each task's leader."
+  (loop for scorer in (board-races host thread-id)
+        for leader = (board-leader host thread-id scorer)
+        when leader collect leader))
 
 ;;; --- hearing the thread while a turn runs -----------------------------------------
 
@@ -448,9 +535,10 @@ rules the team cell keeps, and the verbs that post, measure and read."
 talk only through tagged posts here: every post a peer makes reaches your running turn as a ~
 note. When the ask is one task with a measurable outcome, work it this way. ~
 1. Post a CLAIM naming your approach, one no peer has claimed. ~
-2. One scorer for all: the ask's, else the first failing repro any of you posts as SCORER, ~
-the command in backticks. A score comes only from (nck:board-verify ~s :command \"...\" ~
-:directory \"<your working copy>\"), which runs the scorer and puts your score on your card. ~
+2. One scorer per task: the ask's, else the first failing repro any of you posts as SCORER, ~
+the command in backticks; an ask of several tasks gets one SCORER each. A score comes only ~
+from (nck:board-verify ~s :command \"...\" :directory \"<your working copy>\"), which runs ~
+your task's scorer and puts your score on your card. ~
 The scorer prints the score on its last line, higher is better: N/M, or a number (negate a ~
 time or a size). ~
 3. Post only measured progress: FINDING when your score improved -- what changed and why it ~
@@ -465,8 +553,9 @@ peer is on, and CLAIM it. ~
 7. When your score reaches the target, commit, run (nck:board-promote ~s \"<repo>\" ~
 \"<commit>\") and post SOLVED naming the branch. When a peer posts SOLVED, re-run it once: ~
 ADOPT and end your turn if it reproduces, FAIL and keep going if not. ~
-8. Only the best verified result is posted as the answer -- the kit folds the rest -- so end ~
-your turn with your full answer either way. ~
+8. Each scorer's best verified result is posted as its task's answer -- a result ranks only ~
+against results from its own scorer, and the kit folds the rest -- so end your turn with ~
+your full answer either way. ~
 Post with (nck:board-post ~s :claim \"...\") -- or :scorer, :finding, :fail, :adopt, :solved; ~
 a scored post carries your newest verify's score itself -- and read the board with ~
 (nck:board-read ~s). An ask that is no single measurable task -- a question, a status, an ~
@@ -485,12 +574,12 @@ answers you here. ~a"
   (or (find platform *hosts* :key #'host-id :test #'string-equal)
       (error "no ~a channel is running" platform)))
 
-(defun post-on-board (host lane thread-id kind text &key score)
-  "Post one KIND line as this bot on THREAD-ID's board from LANE, and keep
-it there. => (:POSTED :MESSAGE :LINE)."
+(defun post-on-board (host lane thread-id kind text &key score scorer)
+  "Post one KIND line as this bot on THREAD-ID's board from LANE, naming the
+key SCORER when it carries one, and keep it there. => (:POSTED :MESSAGE :LINE)."
   (let* ((slot (or (slot-of host thread-id (host-self-id host))
                    (error "this bot holds no slot on the board of ~a" thread-id)))
-         (line (board-line kind slot text :score score)))
+         (line (board-line kind slot text :score score :scorer scorer)))
     (multiple-value-bind (posted ids failure)
         (post-message host (lane-target lane) line :ping nil
                       :what (format nil "~(~a~) post on ~a's board" kind thread-id))
@@ -500,6 +589,7 @@ it there. => (:POSTED :MESSAGE :LINE)."
                            (list :kind kind :slot slot :user (host-self-id host)
                                  :score score :value (score-value score)
                                  :text (nth-value 3 (parse-board-line line))
+                                 :scorer scorer
                                  :message (first ids) :at (now-ms))))
       (list :posted (and posted t) :message (first ids) :line line
             :error (and (not posted) (princ-to-string failure))))))
@@ -507,7 +597,8 @@ it there. => (:POSTED :MESSAGE :LINE)."
 (defun board-post (thread kind text &key (platform "discord"))
   "Post one KIND line -- :claim, :scorer, :finding, :fail, :adopt, :solved --
 as this bot on THREAD's board, from the turn running there. A FINDING, ADOPT
-or SOLVED carries this bot's newest verified score, never a typed one; SOLVED
+or SOLVED carries this bot's newest verified score, never a typed one, and the
+key of the scorer that measured it; a SCORER, its own command's key. SOLVED
 only after a verify reached the target."
   ;; Stamped an act first: it posts, so the snippet calling it is never
   ;; watched and run again (NLE:RECEIPT).
@@ -515,13 +606,17 @@ only after a verify reached the target."
   (multiple-value-bind (host lane) (running-answer "board-post" platform nil thread nil)
     (let* ((kind (board-kind kind))
            (newest (first (board-scores host thread)))
-           (score (when (member kind +scored-kinds+ :test #'string=)
+           (scored (member kind +scored-kinds+ :test #'string=))
+           (score (when scored
                     (or (getf newest :score)
                         (error "a ~a post carries a measured score: run (nck:board-verify ~s) first"
                                kind thread)))))
       (when (and (string= kind "SOLVED") (not (getf newest :solved)))
         (error "SOLVED takes a verify that reached the target; the newest measured ~a" score))
-      (post-on-board host lane thread kind text :score score))))
+      (post-on-board host lane thread kind text
+                     :score score
+                     :scorer (cond (scored (getf newest :scorer))
+                                   ((string= kind "SCORER") (scorer-key (scorer-command text))))))))
 
 (defparameter +scorer-timeout-seconds+ 900
   "How long one scorer run may take before BOARD-VERIFY calls it failed.")
@@ -553,12 +648,15 @@ or number on its last line that holds one; NIL when it prints none."
 
 (defun card-score-line (host thread-id)
   "The row a lane's card shows for this bot on THREAD-ID's board: its newest
-score, its best, and the board's leader when that is a peer."
-  (let* ((scores (board-scores host thread-id))
+score, its best on the same scorer, and that scorer's leader when that is a
+peer."
+  (let* ((newest (first (board-scores host thread-id)))
+         (scorer (result-scorer (board-default-scorer host thread-id) newest))
+         (scores (board-scores-under host thread-id scorer))
          (best (best-entry scores))
-         (leader (board-leader host thread-id)))
+         (leader (board-leader host thread-id scorer)))
     (format nil "score ~a~@[ · best ~a~]~@[ · board s~d ~a~]"
-            (getf (first scores) :score)
+            (getf newest :score)
             (and best (not (eq best (first scores))) (getf best :score))
             (and leader (not (equal (getf leader :user) (host-self-id host))) (getf leader :slot))
             (and leader (not (equal (getf leader :user) (host-self-id host))) (getf leader :score)))))
@@ -569,60 +667,75 @@ score, its best, and the board's leader when that is a peer."
 
 (defun board-verify (thread &key command directory target (timeout +scorer-timeout-seconds+)
                               (platform "discord"))
-  "Run THREAD's scorer -- COMMAND, else the board's SCORER post -- in
-DIRECTORY, keep the score it ends on as this bot's, and put it on the card:
-the only source of a score on the board. TARGET is the value that solves the
-task; N/M solves at M/M without one. => (:SCORE :IMPROVED :BEST :SOLVED
-:PLATEAU :LEADER :EXIT :OUTPUT)."
+  "Run THREAD's scorer -- COMMAND, else the board's first SCORER post -- in
+DIRECTORY, keep the score it ends on as this bot's under the key of the
+scorer it ran, and put it on the card: the only source of a score on the
+board. A score improves, plateaus and leads only among scores from its own
+scorer. TARGET is the value that solves the task; N/M solves at M/M without
+one. => (:SCORE :IMPROVED :BEST :SOLVED :PLATEAU :LEADER :SCORER :EXIT :OUTPUT)."
   ;; Stamped an act: it runs a command and changes what the card says.
   (nle:receipt "calls" (list :verb "board-verify"))
   (multiple-value-bind (host lane) (running-answer "board-verify" platform nil thread nil)
-    (let ((command (or command (board-scorer host thread)
-                       (error "no scorer: pass :command, or post the command as SCORER first"))))
+    (let* ((command (or command (board-scorer host thread)
+                        (error "no scorer: pass :command, or post the command as SCORER first")))
+           (scorer (verify-scorer host thread command)))
       (multiple-value-bind (output code) (run-scorer command directory timeout)
         (let* ((score (or (scorer-score output)
                           (error "the scorer printed no score (exit ~a):~%~a" code
                                  (text-end output 1200))))
                (value (score-value score))
-               (before (best-entry (board-scores host thread)))
+               (before (best-entry (board-scores-under host thread scorer)))
                (improved (or (null before) (> value (getf before :value))))
                (solved (if target (>= value target) (full-score-p score)))
                (entry (list :score score :value value :at (now-ms)
-                            :improved improved :solved solved)))
+                            :improved improved :solved solved :scorer scorer)))
           (sb-ext:with-locked-hash-table (*board-scores*)
             (push entry (gethash (board-key host thread) *board-scores*)))
           (setf (gethash (lane-session-id lane) *board-card-lines*)
                 (card-score-line host thread))
-          (let* ((history (board-scores host thread))
+          (let* ((history (board-scores-under host thread scorer))
                  (flat (and (>= (length history) 4)
                             (notany (lambda (e) (getf e :improved)) (subseq history 0 3))))
-                 (leader (board-leader host thread)))
+                 (leader (board-leader host thread scorer)))
             (list :score score :improved improved
                   :best (getf (best-entry history) :score)
                   :solved solved
                   :plateau (and flat "3 verifies without an improvement: switch to a structurally different approach no peer is on, and CLAIM it")
                   :leader (and leader (format nil "s~d ~a" (getf leader :slot) (getf leader :score)))
+                  :scorer scorer
                   :exit code
                   :output (text-end output 1500))))))))
 
 (defun board-read (thread &key (platform "discord"))
-  "THREAD's board as this bot's kit holds it: the slots, the scorer, every
-post oldest first, each slot's best measured result, and this bot's own
-scores."
+  "THREAD's board as this bot's kit holds it: the slots, the first scorer and
+every SCORER post with its key, every post oldest first, each slot's best
+measured result under each scorer, and this bot's own scores -- each named
+by its scorer's key once the board ranks more than one."
   (let* ((host (board-host platform))
          (self (host-self-id host))
-         (peers (thread-peers host thread)))
+         (peers (thread-peers host thread))
+         (default (board-default-scorer host thread))
+         (races (board-races host thread))
+         (several (rest races)))
     (list :you (slot-of host thread self)
           :slots (loop for id in (thread-slots host thread)
                        for n from 1
                        collect (list n (if (equal id self) "you" (or (cdr (assoc id peers :test #'equal)) id))))
           :scorer (board-scorer host thread)
+          :scorers (loop for post in (board-scorer-posts host thread)
+                         collect (format nil "~a s~d `~a`" (post-scorer-key post) (getf post :slot)
+                                         (scorer-command (getf post :text))))
           :posts (loop for post in (reverse (board-posts host thread))
-                       collect (format nil "~a s~d~@[ · score ~a~] · ~a" (getf post :kind) (getf post :slot)
-                                       (getf post :score) (getf post :text)))
-          :standing (loop for row in (board-standing host thread)
-                          collect (format nil "s~d ~a" (getf row :slot) (getf row :score)))
-          :yours (mapcar (lambda (e) (getf e :score)) (reverse (board-scores host thread))))))
+                       collect (format nil "~a s~d~@[ · score ~a~]~@[ · scorer ~a~] · ~a"
+                                       (getf post :kind) (getf post :slot) (getf post :score)
+                                       (and (getf post :value) (getf post :scorer)) (getf post :text)))
+          :standing (loop for scorer in races
+                          append (loop for row in (board-standing host thread scorer)
+                                       collect (format nil "s~d ~a~@[ · scorer ~a~]" (getf row :slot)
+                                                       (getf row :score) (and several scorer))))
+          :yours (mapcar (lambda (e) (format nil "~a~@[ · scorer ~a~]" (getf e :score)
+                                             (and several (result-scorer default e))))
+                         (reverse (board-scores host thread))))))
 
 (defparameter +board-promote-script+
   "set -eu
@@ -647,21 +760,24 @@ beats the value the board's best holds -- under a lock, the ref moved by
 compare-and-swap.")
 
 (defun board-promote (thread repository commit &key (platform "discord"))
-  "Move THREAD's best branch, board/THREAD in REPOSITORY, to COMMIT when
-this bot's newest verified score beats the score the branch holds: a
-compare-and-swap under a lock, so no bot overwrites a better result.
+  "Move the best branch of the scorer this bot's newest verify ran on THREAD
+-- board/THREAD-KEY in REPOSITORY, KEY that scorer's, board/THREAD for a
+verify that named none -- to COMMIT when that score beats the score the
+branch holds: a compare-and-swap under a lock, so no bot overwrites a better
+result, and a result never competes with another scorer's.
 => (:PROMOTED :BRANCH :SCORE :HELD)."
   (nle:receipt "calls" (list :verb "board-promote"))
   (multiple-value-bind (host) (running-answer "board-promote" platform nil thread nil)
     (let* ((newest (or (first (board-scores host thread))
                        (error "nothing to promote: run (nck:board-verify ~s) on the commit first" thread)))
-           (branch (format nil "board/~a" thread))
+           (board (format nil "~a~@[-~a~]" thread (getf newest :scorer)))
+           (branch (format nil "board/~a" board))
            (sha (nlk:trimmed (uiop:run-program (list "git" "-C" (namestring repository) "rev-parse" "--verify"
                                                      (format nil "~a^{commit}" commit))
                                                :output :string)))
            (said (nlk:trimmed
                   (uiop:run-program (list "bash" "-c" +board-promote-script+ "promote"
-                                          (namestring repository) thread
+                                          (namestring repository) board
                                           (format nil "refs/heads/~a" branch) sha
                                           (format nil "~f" (getf newest :value)) (getf newest :score))
                                     :output :string :error-output :output))))
@@ -672,15 +788,18 @@ compare-and-swap under a lock, so no bot overwrites a better result.
 
 (defun board-answer-text (host lane text)
   "TEXT, or the silent sentinel when LANE answers in a team's thread where a
-peer holds the best measured result: the best verified result writes the one
-answer. A board nobody measured anything on folds nothing -- each bot
-answers for itself."
+peer holds the best measured result under every scorer results were posted
+on: each scorer's best verified result writes its task's one answer, and a
+result ranks only against results from its own scorer. A board nobody
+measured anything on folds nothing -- each bot answers for itself."
   (let* ((thread (getf (lane-target lane) :thread-id))
          (self (host-self-id host))
-         (leader (and thread (stringp text) (not (silent-answer-p text))
-                      (thread-slots host thread)
-                      (board-leader host thread))))
-    (cond ((or (null leader) (equal (getf leader :user) self)) text)
+         (leaders (and thread (stringp text) (not (silent-answer-p text))
+                       (thread-slots host thread)
+                       (board-leaders host thread))))
+    (cond ((or (null leaders)
+               (find self leaders :key (lambda (row) (getf row :user)) :test #'equal))
+           text)
           (t (note-thread-spoken thread)
              (first +silence-spellings+)))))
 
