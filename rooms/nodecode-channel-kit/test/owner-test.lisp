@@ -235,7 +235,6 @@ thread it takes part in."
   (let ((long "The registry answers on port 80, and the cache warms in ten minutes after a deploy.")
         (asked '()))
     (with-stubbed-fdefinition (nle:complete (system user &key session-id max-tokens fallback-p)
-                                (declare (ignore max-tokens fallback-p))
                                 (push (list system user session-id) asked)
                                 "Registry: port 80.")
       (with-digest-host (host lane :name "short-answers" :host-keys (:platform (test-platform :files t)))

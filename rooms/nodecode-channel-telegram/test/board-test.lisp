@@ -161,7 +161,7 @@ executor records into."
         (is (search "Fix the build" (gethash "markdown" (gethash "rich_message" (nck:request-plan-body (first plans))))))
         (is (search "your chat with the bot" (gethash "text" (nck:request-plan-body (second plans))))))
       (let ((nck::*hosts* nil))
-        (with-stubbed-fdefinition (nck:operator-p (host user-id) (declare (ignore host)) (equal user-id "1"))
+        (with-stubbed-fdefinition (nck:operator-p (host user-id) (equal user-id "1"))
           (let ((plans (press "nct:board:done" 42)))
             (is (search "operators" (gethash "text" (nck:request-plan-body (first plans)))))
             (is (= 1 (length plans)) "refused, nothing closed"))

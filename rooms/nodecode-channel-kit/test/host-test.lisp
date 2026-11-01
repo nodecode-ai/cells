@@ -523,7 +523,6 @@ message of ours."
                      :responses (list (reply 200 "id" "s1") (reply 200))
                      :host-keys (:platform (test-platform :choices t)))
     (with-stubbed-fdefinition (nck::answer-controls (host lane choices)
-                                (declare (ignore host lane choices))
                                 (error "session state: session state quota exceeded"))
       (earn-line)
       (said "the final answer")
