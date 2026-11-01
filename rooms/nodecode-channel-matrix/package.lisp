@@ -31,4 +31,5 @@
    #:sync-plan #:join-plan #:matrix-event-id #:matrix-address #:matrix-retry-after-ms
    #:wrap-matrix-executor #:make-matrix-executor
    ;; commands.lisp --- the command menu as MSC4391 state
-   #:command-state-key #:command-content #:menu-plans #:note-menu-event #:note-room-state))
+   #:command-state-key #:command-content #:menu-plans #:note-menu-event #:note-room-state
+   #:offered-command-p #:note-speaker #:bare-command-p))

@@ -252,6 +252,8 @@ from and falls through."
        (book-note book.encrypted room-id t)
        nil)
       ((and sender (equal sender adapter.bot-user-id))
+       (when (equal type "m.room.message")
+         (note-speaker book room-id sender))
        (note-echo adapter room-id event)
        nil)
       ((equal type "m.room.encrypted")
@@ -270,7 +272,13 @@ from and falls through."
                                  event room-id
                                  :bot-user-id adapter.bot-user-id
                                  :direct-p (eq :direct (room-kind adapter room-id))
-                                 :bot-event-p (lambda (room target) (bot-event-p book room target))))
+                                 :bot-event-p (lambda (room target) (bot-event-p book room target))
+                                 :command-p (lambda (room name)
+                                              (bare-command-p book room name adapter.bot-user-id))))
+         ;; Another bot's word, read after the line was weighed: a bare
+         ;; command from here on is theirs until this bot speaks again.
+         (when (gethash "is_bot" (gethash "source" candidate))
+           (note-speaker book room-id sender))
          (setf (gethash "user_name" (gethash "source" candidate))
                (matrix-user-name adapter sender))
          (handle-candidate adapter.host (attach-matrix-file-fetchers adapter candidate))

@@ -79,8 +79,11 @@ The bot offers its slash commands in every room it is in as
 state: one `org.matrix.msc4391.command_description` event per command. A
 client that reads it ([gomuks](https://github.com/gomuks/gomuks), for one)
 completes `/` from it and sends the command with the bot mentioned. Clients
-that do not read it (Element, Cinny) show only their own commands; mention
-the bot instead: `@bot /models`.
+that do not read it (Element, Cinny) show only their own commands; type the
+command as a message instead, `/models`, and the bot runs it without a
+mention. In a room with several bots a bare command goes to the bot that
+spoke there last, Telegram's rule for a group, so one bot answers; mention
+any other to run it there: `@bot /models`.
 
 Setting room state takes a power level, `state_default` (50) unless the room
 says otherwise. Where the bot has less, the menu is left out and the log says

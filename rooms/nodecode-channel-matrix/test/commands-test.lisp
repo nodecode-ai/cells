@@ -25,6 +25,19 @@
   "The state PUTs into !room:fake so far."
   (matrix-state-puts fake :room "!room:fake"))
 
+(deftest channel-matrix-bare-command-goes-to-the-last-bot ()
+  (is (ncm:offered-command-p "N" '((:name "new" :aliases ("n")))) "an alias is offered, in any case")
+  (is (not (ncm:offered-command-p "old" '((:name "new" :aliases ("n"))))))
+  (let ((book (ncm::make-matrix-book)))
+    (is (ncm:bare-command-p book "!r:fake" "help" "@bot:fake")
+        "a room no bot has spoken in yet: the command is the bot's")
+    (is (not (ncm:bare-command-p book "!r:fake" "no-such-command" "@bot:fake")))
+    (ncm:note-speaker book "!r:fake" "@other:fake")
+    (is (not (ncm:bare-command-p book "!r:fake" "help" "@bot:fake")) "another bot spoke last: it is theirs")
+    (is (ncm:bare-command-p book "!s:fake" "help" "@bot:fake") "each room keeps its own")
+    (ncm:note-speaker book "!r:fake" "@bot:fake")
+    (is (ncm:bare-command-p book "!r:fake" "help" "@bot:fake") "the bot spoke again: it is the bot's")))
+
 (deftest channel-matrix-command-event ()
   (let ((key (ncm:command-state-key "models" "@bot:fake")))
     (is (equal "6LU5sYBdyib4jLFHi/8H4Lw8UCf5DnDXgCzV6hQKCpw=" key) "the state key is mautrix-go's"))

@@ -23,6 +23,26 @@
                                   "m.relates_to" (nlk:json-object "m.in_reply_to" (nlk:json-object "event_id" "$a")))))
     (is (equal "the reply" (ncm:matrix-plain-text content)) "an old client's reply fallback is dropped")))
 
+(deftest channel-matrix-a-bare-command-is-addressed ()
+  (flet ((addressed-p (event &rest keys)
+           (matrix-flag (apply #'ncm:matrix-message-candidate event "!room:fake" :bot-user-id "@bot:fake" keys)
+                        "addressed"))
+         (ours (room name) (and (equal room "!room:fake") (equal name "models"))))
+    (is (eq t (addressed-p (matrix-text "@kim:fake" "/models grok" :id "$1") :command-p #'ours))
+        "a bare slash line naming the bot's command is addressed to it")
+    (is (null (addressed-p (matrix-text "@kim:fake" "/models" :id "$2")))
+        "without the bot's word on whose it is, it is not")
+    (is (null (addressed-p (matrix-text "@kim:fake" "/shrug" :id "$3") :command-p #'ours))
+        "a command the bot lacks is words")
+    (is (null (addressed-p (matrix-text "@kim:fake" "/models" :id "$4" :mentions '("@other:fake"))
+                           :command-p #'ours))
+        "a line mentioning someone else is theirs")
+    (is (null (addressed-p (matrix-text "@kim:fake" "/models" :id "$5" :thread "$root")
+                           :command-p #'ours :bot-event-p (constantly nil)))
+        "a line in a thread the bot is not in is that thread's")
+    (is (null (addressed-p (matrix-text "@kim:fake" "see /models" :id "$6") :command-p #'ours))
+        "a line that only names a command is words")))
+
 (deftest channel-matrix-a-message-is-a-candidate ()
   (let ((candidate (ncm:matrix-message-candidate
                     (matrix-text "@kim:fake" "hi" :id "$1") "!dm:fake"

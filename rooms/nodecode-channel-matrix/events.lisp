@@ -137,7 +137,14 @@ body is a caption (spec v1.10), else none -- a bare body is the file's name."
         (body (nlk:json-value content :string "body")))
     (if (and filename body (string/= filename body)) (matrix-plain-text content) "")))
 
-(defun matrix-message-candidate (event room-id &key bot-user-id direct-p bot-event-p user-name)
+(defun bare-command (text content aimed)
+  "The command TEXT names when it is a bare slash line -- `/' then a letter,
+mentioning no one and answering no message -- else NIL."
+  (when (and (null aimed) (null (mentioned-ids content))
+             (> (length text) 1) (char= #\/ (char text 0)) (alpha-char-p (char text 1)))
+    (values (nle:parse-slash-input text))))
+
+(defun matrix-message-candidate (event room-id &key bot-user-id direct-p bot-event-p command-p user-name)
   "One timeline EVENT in ROOM-ID as the shared candidate, or NIL for an event
 that is not something said -- an edit, a redaction, a state change, a type
 no ask is made of."
@@ -145,7 +152,9 @@ no ask is made of."
   ;; (ROOM EVENT-ID) is one of the bot's own messages or the root of a thread
   ;; the bot speaks in: a reply to it, or a line in that thread, is addressed
   ;; the way a mention is, so a conversation the bot is in needs no mention to
-  ;; go on.
+  ;; go on. COMMAND-P answers whether (ROOM NAME), the command a bare slash
+  ;; line names (BARE-COMMAND), is the bot's to run: a client that reads no
+  ;; menu sends one mentioning no one, and it is addressed all the same.
   (let* ((content (nlk:json-value event :object "content"))
          (msgtype (and content (nlk:json-value content :string "msgtype")))
          (event-id (nlk:json-value event :string "event_id"))
@@ -157,11 +166,13 @@ no ask is made of."
                event-id content
                (member msgtype +said-msgtypes+ :test #'equal)
                (not (equal "m.replace" (nlk:json-value content :string "m.relates_to" "rel_type"))))
-      (let ((kind (if direct-p "direct_message" "channel")))
+      (let* ((kind (if direct-p "direct_message" "channel"))
+             (text (if (member msgtype +file-msgtypes+ :test #'equal)
+                       (file-caption content)
+                       (matrix-plain-text content)))
+             (command (and command-p (bare-command text content aimed))))
         (nlk:json-object
-         "text" (if (member msgtype +file-msgtypes+ :test #'equal)
-                    (file-caption content)
-                    (matrix-plain-text content))
+         "text" text
          "attachments" (matrix-attachments content)
          "source"
          (nlk:json-object
@@ -176,7 +187,8 @@ no ask is made of."
           "reply_to_message_id" aimed
           "addressed" (and (or (and bot-user-id (member bot-user-id (mentioned-ids content)
                                                          :test #'equal))
-                               (and aimed bot-event-p (funcall bot-event-p room-id aimed)))
+                               (and aimed bot-event-p (funcall bot-event-p room-id aimed))
+                               (and command (funcall command-p room-id command)))
                            t)
           ;; m.notice is the msgtype a bot speaks in (the spec's own advice).
           "is_bot" (and (equal msgtype "m.notice") t)))))))

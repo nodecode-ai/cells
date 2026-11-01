@@ -81,6 +81,32 @@ tail its usage describes, so a client asks for nothing it would not pass."
   (loop for entry in entries
         collect (cons (command-state-key (getf entry :name) bot-user-id) (command-content entry))))
 
+;;; --- a command typed bare -------------------------------------------------------------
+;;; A client that does not read the menu (Element, Cinny) sends a command as
+;;; the words typed: `/models', mentioning no one. Telegram's rule for a group
+;;; decides whose it is (https://core.telegram.org/bots/features#privacy-mode):
+;;; the bot that spoke there last, so a room with several bots gets one
+;;; answer, and a mention still names any other.
+
+(defun offered-command-p (name &optional (catalog (nle:slash-catalog)))
+  "Whether NAME is one of CATALOG's commands or one of their aliases."
+  (and (stringp name)
+       (some (lambda (entry)
+               (or (string-equal name (getf entry :name))
+                   (member name (getf entry :aliases) :test #'string-equal)))
+             catalog)
+       t))
+
+(defun note-speaker (book room-id speaker)
+  "Remember SPEAKER, a bot, as the last one that spoke in ROOM-ID."
+  (book-note book.speakers room-id speaker))
+
+(defun bare-command-p (book room-id name bot-user-id)
+  "Whether the command NAME, typed bare in ROOM-ID, is BOT-USER-ID's to run:
+one it offers, in a room where no other bot has spoken since it last did."
+  (and (offered-command-p name)
+       (equal bot-user-id (gethash room-id book.speakers bot-user-id))))
+
 ;;; --- who may set it -----------------------------------------------------------------
 
 (defun power-level (value default)
