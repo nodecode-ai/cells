@@ -98,8 +98,9 @@ moves a bot from the place it holds. => the slots, or NIL."
          (named (mention-order (or (gethash "text" candidate) "")
                                (remove-duplicates (remove nil (cons self others))
                                                   :test #'equal :from-end t))))
-    ;; An ask one bot owns -- a role's ping, a line naming no bot by name --
-    ;; is no team's: its thread is no board (OWNER.LISP).
+    ;; An ask one bot owns (OWNER.LISP) -- a line naming no bot by name in a
+    ;; thread several bots share -- is no team's: its thread is no board. A
+    ;; role's ping is a team's, as a line naming several bots by name is.
     (when (and thread-id self others (not (candidate-bot-p candidate))
                (not (ask-rank host candidate)))
       (let* ((had (thread-slots host thread-id room))

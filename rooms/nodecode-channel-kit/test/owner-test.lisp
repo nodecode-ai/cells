@@ -34,28 +34,30 @@ the message it answers."
     (naming-bots candidate (if (eq bots :none) nil (or bots (others-of self))))))
 
 (deftest channel-owner-one-bot-owns-an-ask-every-bot-reaches ()
-  ;; A role every bot holds reaches all three: each kit ranks them the same
-  ;; way, so one owns the ask, and every later line of its thread too. A line
-  ;; that names a bot, or answers its message, puts that bot first; one that
-  ;; names this bot is this bot's, and one that names several is a team's.
+  ;; A line naming no one in a thread all three bots take part in reaches
+  ;; all three: each kit ranks them the same way, so one owns it, and every
+  ;; later line of the thread too. A line that names a bot, or answers its
+  ;; message, puts that bot first; one that names this bot is this bot's,
+  ;; and one that names several, or pings their role, is a team's.
   (with-thread-peers ("5" "8")
     (let* ((hosts (mapcar (lambda (bot) (owner-host (car bot))) *owner-bots*))
-           (ranks (loop for host in hosts
-                        for (self) in *owner-bots*
-                        collect (nck::ask-rank host (person-line self "<@&r1> next priority"
-                                                                 :channel "100" :message "5"))))
+           (ranks (progn
+                    (loop for host in hosts
+                          for (self) in *owner-bots*
+                          do (nck::note-thread-peers host "5" (others-of self)))
+                    (loop for host in hosts
+                          for (self) in *owner-bots*
+                          collect (nck::ask-rank host (person-line self "next priority" :bots :none :thread "5"
+                                                                                   :parent "100" :message "5")))))
            (owner (first (first ranks))))
       (is (every (lambda (rank) (equal rank (first ranks))) ranks) "every kit ranks the ask the same way")
       (is (equal '("555" "777" "999") (sort (copy-list (first ranks)) #'string<)) "and ranks every bot it reached")
       (is (= 1 (count owner (mapcar #'nck::host-self-id hosts) :test #'equal)) "so exactly one bot owns it")
-      (loop for host in hosts
-            for (self) in *owner-bots*
-            do (nck::note-thread-peers host "5" (others-of self)))
       (is (every (lambda (host self)
                    (equal (first ranks)
                           (nck::ask-rank host (person-line self "and the Mac?" :bots :none :thread "5"
                                                                                 :parent "100" :message "6"))))
-                 hosts (mapcar #'car *owner-bots*)) "a later line of its thread, naming no one, has the same owner")
+                 hosts (mapcar #'car *owner-bots*)) "a later line of the thread, naming no one, has the same owner")
       (let ((host (first hosts)))
         (flet ((rank (text &rest keys)
                  (nck::ask-rank host (apply #'person-line "999" text
@@ -65,6 +67,7 @@ the message it answers."
                                                           :replied "555"))) "a line answering a bot's message is that bot's to own")
           (is (equal "777" (first (rank "<@777> take this" :bots '(("777" . "elektra"))))) "and so is one that names a bot")
           (is (null (rank "<@777> <@555> compare notes")) "one that names several bots is a team's")
+          (is (null (rank "<@&r1> all of you")) "and so is one that pings their role")
           (is (null (nck::ask-rank host (test-candidate :is-bot t :user "777" :thread "5" :parent "100"
                                                         :message "9" :text "<@&r1> hi"))) "a bot's line has no owner to rank")
           (nck::note-thread-peers host "8" (others-of "999"))
@@ -72,32 +75,57 @@ the message it answers."
           (is (null (nck::ask-rank host (person-line "999" "go on" :bots :none :thread "8" :parent "100"
                                                      :message "10"))) "and a team's board keeps its own rules"))))))
 
+(deftest channel-owner-a-role-ping-seats-the-team ()
+  ;; A role every bot holds calls them all in, as a line naming them all by
+  ;; name does: the ask is the team's. No bot owns it, each answers it, and
+  ;; the thread it opens is the team's board, every bot it reached on it.
+  (loop for (self) in *owner-bots*
+        do (is (null (nck::ask-rank (owner-host self)
+                                    (person-line self "<@&r1> next priority" :channel "100" :message "5")))
+               "no bot owns a role's ping"))
+  (with-thread-peers ("5")
+    (with-ask-host (host thread-ask-host :answers ("on it") :responses (replies "5" "p1" "p2"))
+      (setf (nck:host-policy host) (owner-policy "999"))
+      (is (eq :answer (nck:handle-candidate host (person-line "999" "<@&r1> next priority"
+                                                              :channel "100" :message "5")))
+          "each bot it reaches answers it")
+      (is-present (lane (await-lane host "chat-100-t5-m5")) "in the thread the ask opens"
+        (is (await-plan executor :content "on it"))
+        (is (equal '("555" "777" "999") (nck::thread-slots host "5")) "which is the team's board")
+        (is (null (search "it is yours" (nck::lane-where lane))) "and no bot is told the ask is its own")))))
+
 (defun owner-line-where (self owner-p)
-  "The role ping in channel 100, as the bot SELF reads it, on the first
-message id where SELF owns it (OWNER-P) or does not."
+  "A person's line naming no one in a thread the three bots share, as the
+bot SELF reads it, in the first thread where SELF owns it (OWNER-P) or does
+not. That thread's peers stay noted: the caller forgets them."
   (loop with host = (owner-host self)
         for n from 5 below 60
-        for line = (person-line self "<@&r1> next priority" :channel "100" :message (princ-to-string n))
+        for thread = (princ-to-string n)
+        for line = (person-line self "next priority" :bots :none :thread thread :parent "100"
+                                                     :message (princ-to-string (+ n 100)))
+        do (setf (gethash (nck::peer-key host thread) nck::*thread-peers*) (others-of self))
         when (eq owner-p (equal self (first (nck::ask-rank host line))))
-          return line))
+          return line
+        do (remhash (nck::peer-key host thread) nck::*thread-peers*)))
 
 (deftest channel-owner-the-owner-answers-and-is-told-so ()
   ;; The bot that owns an ask answers it at once, and its lane is told who
   ;; else read it and that the whole of it is this lane's.
-  ;; The thread the ask opens carries the ask's own id, as on Discord: every
-  ;; later line of it has the owner the ask had.
   (let* ((line (owner-line-where "999" t))
-         (id (nck::source-field line "message_id")))
-   (with-thread-peers (id)
-    (with-ask-host (host thread-ask-host :answers ("owned") :responses (replies id "p1" "p2"))
+         (thread (nck::source-field line "thread_id"))
+         (message (nck::source-field line "message_id")))
+   (setf (gethash "joined" (gethash "source" line)) t)
+   (with-thread-peers (thread)
+    (with-ask-host (host thread-ask-host :answers ("owned") :responses (replies thread "p1" "p2"))
       (setf (nck:host-policy host) (owner-policy "999"))
+      (setf (gethash (nck::peer-key host thread) nck::*thread-peers*) (others-of "999"))
       (progn
         (is (eq :answer (nck:handle-candidate host line)))
-        (is-present (lane (await-lane host (format nil "chat-100-t~a-m~a" id id)))
+        (is-present (lane (await-lane host (format nil "chat-100-t~a-m~a" thread message)))
             "the owner opened the ask's lane"
           (is (search "too, and it is yours: you own it. They read it and stay quiet" (nck::lane-where lane)) "and its lane is told the ask is its own")
           (is (search "@elektra" (nck::lane-where lane)) "and who else read it")
-          (is (null (nck::thread-slots host id)) "a role's ping opens no team's board"))
+          (is (null (nck::thread-slots host thread)) "an ask one bot owns opens no team's board"))
         (is (await-plan executor :content "owned") "the owner's answer posts"))))))
 
 (deftest channel-owner-a-bot-takes-over-an-ask-its-owner-left ()
@@ -108,7 +136,9 @@ message id where SELF owns it (OWNER-P) or does not."
     (with-thread-peers ("5")
       (with-ask-host (host thread-ask-host :answers ("taken over") :responses (replies "5" "p1" "p2"))
         (setf (nck:host-policy host) (owner-policy "999"))
-        (let ((line (person-line "999" "<@&r1> next priority" :channel "100" :message "5"
+        ;; A line answering another bot's message, in a channel every bot
+        ;; reads; the reply pings that bot.
+        (let ((line (person-line "999" "what about this" :channel "100" :message "5" :bots '(("777" . "elektra"))
                                  :reply "the plan" :reply-to "40" :replied "777")))
           (is (equal "777" (first (nck::ask-rank host line))) "the bot whose message it answers owns it")
           (is (eq :observe (nck:handle-candidate host line)) "so this bot only reads it")
@@ -118,10 +148,10 @@ message id where SELF owns it (OWNER-P) or does not."
     (with-thread-peers ("6")
       (with-ask-host (host thread-ask-host :answers ("taken over") :responses (replies "6" "p1" "p2"))
         (setf (nck:host-policy host) (owner-policy "999"))
-        (let ((line (person-line "999" "<@&r1> next priority" :channel "100" :message "6"
+        (let ((line (person-line "999" "what about this" :channel "100" :message "6" :bots '(("777" . "elektra"))
                                  :reply "the plan" :reply-to "40" :replied "777")))
           (is (eq :observe (nck:handle-candidate host line)))
-          (is (equal '("555" "777") (sort (mapcar #'car (nck::thread-peers host "6")) #'string<)) "the bots it reached are the thread's peers here too")
+          (is (equal '("777") (mapcar #'car (nck::thread-peers host "6"))) "the bots it reached are the thread's peers here too")
           (is (nck::ask-rank host (person-line "999" "and the Mac?" :bots :none :thread "6" :parent "100" :message "7")) "so a later line of the thread has an owner as well")
           ;; The owner's eye on the ask, left in the channel it was typed in.
           (nck::note-bot-activity host (test-candidate :channel "100" :message "41" :user "777" :is-bot t
