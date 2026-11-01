@@ -99,6 +99,35 @@ The sync token is kept in a scratch folder."
         (is (not (nlk:session-exists-p "matrix-!room:fake-m$more")) "no second lane")
         (is (not (nlk:session-exists-p "matrix-!room:fake-m$chat")) "chatter opened nothing")))))
 
+(deftest channel-matrix-bare-command-runs-for-the-last-bot ()
+  (with-fake-matrix (fake)
+    (fake-matrix-room fake "!room:fake" :members '("@kim:fake" "@other:fake"))
+    (with-matrix-lane (fake "allowed_rooms" (vector "!room:fake") "allowed_users" (vector "@kim:fake")
+                            "require_mention" t)
+      ;; A client that reads no menu (Element, Cinny) sends the command as
+      ;; typed, mentioning no one.
+      (fake-matrix-push fake "!room:fake" (matrix-text "@kim:fake" "/help" :id "$cmd1"))
+      (is (await (:timeout 15) (= 1 (length (matrix-answers fake "Show commands"))))
+          "the bare command ran")
+      (is (not (nlk:session-exists-p "matrix-!room:fake-m$cmd1")) "a command opens no lane")
+      ;; Another bot speaks: the next bare command is its, and a mention still
+      ;; runs one here.
+      (let ((notice (matrix-text "@other:fake" "beep" :id "$beep")))
+        (setf (gethash "msgtype" (gethash "content" notice)) "m.notice")
+        (fake-matrix-push fake "!room:fake" notice))
+      (fake-matrix-push fake "!room:fake" (matrix-text "@kim:fake" "/help" :id "$cmd2"))
+      (fake-matrix-push fake "!room:fake" (matrix-text "@kim:fake" "@bot:fake /help" :id "$cmd3"
+                                                    :mentions '("@bot:fake")))
+      (is (await (:timeout 15) (<= 2 (length (matrix-answers fake "Show commands"))))
+          "the mentioned command ran")
+      (sleep 1)
+      (is (= 2 (length (matrix-answers fake "Show commands")))
+          "the bare command after another bot spoke was left to it")
+      ;; The bot's own answer makes it the last to speak again.
+      (fake-matrix-push fake "!room:fake" (matrix-text "@kim:fake" "/help" :id "$cmd4"))
+      (is (await (:timeout 15) (= 3 (length (matrix-answers fake "Show commands"))))
+          "once the bot has spoken, a bare command is its again"))))
+
 (deftest channel-matrix-invites-and-encrypted-rooms ()
   (with-fake-matrix (fake)
     (fake-matrix-room fake "!secret:fake" :members '("@kim:fake" "@lee:fake") :encrypted t)

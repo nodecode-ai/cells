@@ -104,6 +104,9 @@ shape is made of, and nothing else.")
   ;; who outrank every level (version 12 rooms).
   (levels (make-hash-table :test #'equal :synchronized t))
   (creators (make-hash-table :test #'equal :synchronized t))
+  ;; room -> the bot that spoke there last: this one, or another whose
+  ;; m.notice the room carried. A bare command is that bot's (BARE-COMMAND-P).
+  (speakers (make-hash-table :test #'equal :synchronized t))
   ;; Bumped by the lap whenever the menu tables change; the generation the
   ;; last menu plan read; whether every joined room's state has been read.
   (menu-generation 0 :type fixnum)
