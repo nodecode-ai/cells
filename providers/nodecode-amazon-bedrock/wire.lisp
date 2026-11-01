@@ -427,8 +427,10 @@ already excludes the cache, as the Messages wire's does."
             (or (count-of "totalTokens")
                 (+ (or (nle::provider-usage-input-tokens usage) 0) (or (nle::provider-usage-output-tokens usage) 0)))))))
 
-(defun fold-frames (stream asm seconds sentinel-p)
-  "Read STREAM's frames into the assembly ASM, each read under SECONDS
+(defun fold-frames (stream asm signature seconds sentinel-p)
+  "Read STREAM's frames into the assembly ASM, each read under SECONDS, and
+the round's reasoning signature into the string stream SIGNATURE: the lane
+keeps it itself, the assembly only notes that one was seen
 => (values STOP-REASON STOPPED-P)."
   (let ((kinds (make-hash-table)) (ignored '()) (stop-reason nil) (stopped nil))
     (loop
@@ -492,8 +494,9 @@ already excludes the cache, as the Messages wire's does."
                                (setf (gethash index kinds) :reasoning)
                                (alexandria:when-let (text (nlk:json-value delta :string "reasoningContent" "text"))
                                  (nle::assembly-reasoning-delta asm (format nil "bedrock_reasoning_~d" index) text))
-                               (alexandria:when-let (signature (nlk:json-value delta :string "reasoningContent" "signature"))
-                                 (nle::assembly-signature-delta asm signature))))))
+                               (alexandria:when-let (fragment (nlk:json-value delta :string "reasoningContent" "signature"))
+                                 (write-string fragment signature)
+                                 (nle::assembly-signature-delta asm fragment))))))
                      ((equal type "contentBlockStop")
                       (case (gethash index kinds)
                         (:text (nle::lifecycle-close-text asm))
@@ -511,6 +514,7 @@ already excludes the cache, as the Messages wire's does."
          (region (bedrock-region model))
          (seconds (nle::effective-provider-config-request-timeout config))
          (asm (nle::make-lane-assembly :on-part on-part))
+         (signature (make-string-output-stream))
          (retried nil))
     (multiple-value-bind (body sentinel-p) (converse-request context)
       (multiple-value-bind (url host path query) (request-address model region)
@@ -539,11 +543,11 @@ already excludes the cache, as the Messages wire's does."
                         (unwind-protect
                              (handler-bind ((nle::provider-error
                                               (lambda (condition) (nle::attach-provider-evidence condition "" request-json))))
-                               (fold-frames stream asm seconds sentinel-p))
+                               (fold-frames stream asm signature seconds sentinel-p))
                           (nle::close-provider-stream-body stream))
                       (unless stopped
                         (error 'nle::provider-stream-incomplete :detail "the stream ended before the answer finished"))
-                      (return (finish-round asm on-part stop-reason sentinel-p request-json))))
+                      (return (finish-round asm signature on-part stop-reason sentinel-p request-json))))
                 (nle::provider-error (condition)
                   (when (and stream (open-stream-p stream)) (nle::close-provider-stream-body stream))
                   (when (and (null bearer) (member (nle::provider-error-status condition) '(401 403)))
@@ -554,9 +558,11 @@ already excludes the cache, as the Messages wire's does."
                             body (nlk:copy-json-object body "messages" (without-reasoning (gethash "messages" body))))
                       (error condition)))))))))))
 
-(defun finish-round (asm on-part stop-reason sentinel-p request-json)
-  "Close the assembly's spans, build the chat-shaped message, emit :finish,
-and answer the lane's four values; a round that stopped in error fails here."
+(defun finish-round (asm signature on-part stop-reason sentinel-p request-json)
+  "Close the assembly's spans, build the chat-shaped message, its
+reasoning_signature read from SIGNATURE, the string stream FOLD-FRAMES kept it
+in, emit :finish, and answer the lane's four values; a round that stopped in
+error fails here."
   (nle::assembly-close-spans asm :order '(:text :reasoning :tools))
   (nle::flush-thinking-tag asm)
   (let* ((content (get-output-stream-string (nle::lane-assembly-content asm)))
@@ -567,7 +573,7 @@ and answer the lane's four values; a round that stopped in error fails here."
                    :when (nle::lane-assembly-reasoning-seen-p asm) "reasoning_content"
                    (get-output-stream-string (nle::lane-assembly-reasoning asm))
                    :when (nle::lane-assembly-signature-seen-p asm) "reasoning_signature"
-                   (get-output-stream-string (nle::lane-assembly-signature asm))
+                   (get-output-stream-string signature)
                    :when buffers "tool_calls"
                    (map 'vector (lambda (pair &aux (buffer (cdr pair)))
                                   (nle::chat-tool-call-object (or (getf buffer :id) "") (getf buffer :name)
