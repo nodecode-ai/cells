@@ -717,6 +717,55 @@ those it does not hold yet. => the marks it holds."
 
 ;;; --- the door ----------------------------------------------------------------------------------
 
+(defun message-write-room (method path)
+  "The channel or thread a REST write of METHOD PATH posts or edits a message
+in -- POST /channels/ID/messages, PATCH /channels/ID/messages/MESSAGE -- else NIL."
+  (let ((groups (and (member method '("POST" "PATCH") :test #'string-equal)
+                     (nth-value 1 (ppcre:scan-to-strings
+                                   "^/channels/(\\d+)/messages(/\\d+)?/?(?:\\?.*)?$" path)))))
+    ;; A post names the room alone, an edit the message in it too.
+    (and groups
+         (if (string-equal method "POST") (null (aref groups 1)) (aref groups 1))
+         (aref groups 0))))
+
+(defun peer-addressed-body (host room body)
+  "BODY, a message REQUEST writes into ROOM, its content with each @NAME of
+ROOM's peers spelled as Discord's mention of it, outside code."
+  ;; The spelling a final answer gets (NCK::PEER-ADDRESSED-TEXT), given to
+  ;; what a lane posts itself mid-turn: 2026-11-01, scrap's "@Elektra
+  ;; @Hindsight please don't start a parallel branch" went up as plain text
+  ;; in a thread where both were its peers, linking and asking no one. BODY
+  ;; comes in any shape REQUEST takes -- a keyword plist, an NLK:JSON-OBJECT,
+  ;; a multipart alist whose payload_json carries the content -- and goes out
+  ;; in the same shape, the caller's own object never changed; a body whose
+  ;; words name no peer goes out as it came.
+  (flet ((spelled (text)
+           (let ((spelled (and (stringp text)
+                               (nck::peer-addressed-text host (list :thread-id room) text))))
+             (and spelled (string/= spelled text) spelled))))
+    (cond ((and (consp body) (keywordp (car body)))
+           (let ((text (spelled (getf body :content))))
+             (if text
+                 (let ((copy (copy-list body)))
+                   (setf (getf copy :content) text)
+                   copy)
+                 body)))
+          ((hash-table-p body)
+           (let ((text (spelled (gethash "content" body))))
+             (if text (nlk:copy-json-object body "content" text) body)))
+          ((multipart-body-p body)
+           (loop for part in body
+                 collect (let ((payload (and (equal "payload_json" (car part))
+                                             (stringp (cdr part))
+                                             (ignore-errors (nlk:decode-json (cdr part))))))
+                           (if (hash-table-p payload)
+                               (let ((spelled (peer-addressed-body host room payload)))
+                                 (if (eq spelled payload)
+                                     part
+                                     (cons (car part) (nlk:encode-json-object spelled))))
+                               part))))
+          (t body))))
+
 (defun request (method path &rest arguments &key body headers timeout retry
                 (read (read-back-path path))
                 &aux (host (and *discord-adapter* (discord-adapter-host *discord-adapter*))))
@@ -739,10 +788,17 @@ legibly, see NCK:CALL."
   ;; the reaction is there; the 204 above it only says Discord accepted the
   ;; request for whatever id the path carried. TIMEOUT and RETRY default as
   ;; NCK:CALL's do.
-  (declare (ignore body headers timeout retry))
+  ;;
+  ;; A post or an edit of a message in a thread names its peers the way the
+  ;; lane's answer there does (PEER-ADDRESSED-BODY): @Elektra goes out as
+  ;; Elektra's mention, which links it and asks it.
+  (declare (ignore headers timeout retry))
   (unless (and host (host-executor host))
     (error "the discord channel is not running"))
-  (apply #'call (host-executor host) method path :read read arguments))
+  (let ((room (message-write-room (string method) path)))
+    (apply #'call (host-executor host) method path :read read
+           :body (if room (peer-addressed-body host room body) body)
+           arguments)))
 
 ;;; --- the channel entry ---------------------------------------------------------------------
 
