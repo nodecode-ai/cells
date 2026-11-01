@@ -3550,10 +3550,9 @@ makes them the thread's peers, as a thread opened for it would."
   "A bot's line in a thread that mentions another bot calls it in: from then
 on the two are that thread's peers in both kits, as if a person had named
 them together. This bot's own line makes each bot it mentions a peer here;
-another bot's line that mentions this bot makes its author a peer, with
-every other bot the line mentions, when the author passes this bot's own
-user gate (USER-ALLOWED-P). => the thread's peers, or NIL when the line
-calls no one in."
+another bot's line that mentions this bot makes its author a peer when the
+author passes this bot's own user gate (USER-ALLOWED-P). => the thread's
+peers, or NIL when the line calls no one in."
   ;; A peer answers to whoever called it in, past this bot's allowed_users
   ;; (DECIDE-INBOUND). A bot calling this one in brings whoever asked it, so
   ;; it must be an author this bot would take an ask from itself: no bot
@@ -3569,8 +3568,7 @@ calls no one in."
                     ((and (candidate-bot-p candidate)
                           (mention-involves-p policy text)
                           (user-allowed-p policy candidate))
-                     (cons (cons user (or (source-field candidate "user_name") user))
-                           (candidate-mentioned-bots candidate))))))
+                     (list (cons user (or (source-field candidate "user_name") user)))))))
         (when peers
           (let ((room (candidate-room host candidate)))
             (prog1 (note-thread-peers host thread peers room)

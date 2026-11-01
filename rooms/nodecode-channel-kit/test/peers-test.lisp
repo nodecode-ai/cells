@@ -227,7 +227,7 @@ THREAD-IDS: their peers and their runs."
                     (multiple-value-list
                      (multiple-value-call #'nck::peer-run host candidate
                        (nck:decide-inbound (nck:host-policy host)
-                                           (nck::mark-peer host (nck::note-calling-peers host candidate)))))))
+                                           (nck::mark-peer host candidate))))))
              (heard (said "is the mac up" :user "u1" :name "peas" :bot nil :message "8"))
              (is (equal '(:answer nil) (heard (said "<@999> you know the password, write it" :message "10")))
                  "the bot answering the person calls this one in")
