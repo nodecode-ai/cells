@@ -982,7 +982,8 @@ alone -- a room operator's raises the limit (RAISE-LIMIT)."
   "A PLATFORM's (thread-id &key timeout-seconds) => the plan that CLOSES a
 thread: puts it away, out of the room's open threads, kept and searchable,
 and open again once anyone writes in it (Discord's archive). NIL when the
-platform cannot close one: an answer in a thread then carries no Close.")
+platform cannot close that one -- none at all, or not this one, a thread
+the bot may not put away: an answer in it then carries no Close.")
 ;; A table hung beside the platform rather than a slot of it: a running image
 ;; holds its platforms, and a slot added to the record would leave them
 ;; obsolete under it.
@@ -1045,7 +1046,7 @@ the payload's :THREAD-ID where the platform's threads live inside a chat
          (plan (and (stringp thread) (host-plan host #'platform-plan-close-thread thread)))
          (busy (and plan (thread-running-p host thread)))
          (text (cond ((not allowed) "Only the person who asked or the room's operators can close this thread.")
-                     ((null plan) "This room can't be closed.")
+                     ((null plan) "I can't close this thread.")
                      (busy "A turn still runs here: close the thread once it has answered, or stop it first.")
                      (t (or (platform-closed-note host.platform)
                             "Closed. Write in it to open it again.")))))

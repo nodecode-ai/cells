@@ -866,3 +866,66 @@ whose d object is D-JSON. KEYS reach the router as they are."
     ;; A plain reply keeps its gesture.
     (is (equal "o2" (nck:source-field (dgw-said "m21" "yes" :fields "\"message_reference\": {\"message_id\": \"o2\"},")
                                       "reply_to_message_id")))))
+
+(deftest channel-discord-thread-close-permission ()
+  ;; Discord archives a thread for the bot that opened it, and anyone else's
+  ;; only for a bot holding Manage Threads in the thread's channel: an answer
+  ;; in a thread the bot may not put away carries no Close (operator report,
+  ;; 2026-11-01: Close under Elektra's answer in scrap's thread came back 403
+  ;; Missing Access).
+  (flet ((reset ()
+           (clrhash ncd::*known-threads*) (clrhash ncd::*thread-owners*)
+           (clrhash ncd::*guild-permissions*) (clrhash ncd::*channel-overwrites*)
+           (clrhash ncd::*self-role-ids*)))
+    (reset)
+    (let ((close (nck:platform-plan-close-thread (ncd::discord-platform :bot-user-id "999")))
+          (manage (princ-to-string (ash 1 34))))
+      (flet ((may (thread) (ncd::discord-may-close-thread-p thread "999"))
+             (opened (id owner parent)
+               (ncd::note-channel-dispatches
+                (dgw-dispatch "THREAD_CREATE"
+                              (format nil "{\"id\": ~s, \"parent_id\": ~s, \"owner_id\": ~s}"
+                                      id parent owner)))))
+        ;; Nothing heard yet: the press still tries, and says what Discord said.
+        (is (may "t0") "a thread the connection has not heard of")
+        (opened "t-early" "u2" "c1")
+        (is (may "t-early") "someone else's, before the guild's roles are known")
+        (ncd::note-channel-dispatches
+         (cell-json (format nil "{\"op\": 0, \"t\": \"GUILD_CREATE\",
+  \"d\": {\"id\": \"g1\", \"owner_id\": \"u1\",
+         \"roles\": [{\"id\": \"g1\", \"permissions\": \"1024\"},
+                    {\"id\": \"r-bot\", \"permissions\": \"0\"},
+                    {\"id\": \"r-mod\", \"permissions\": ~s}],
+         \"channels\": [{\"id\": \"c1\", \"permission_overwrites\": []},
+                       {\"id\": \"c2\", \"permission_overwrites\":
+                          [{\"id\": \"r-bot\", \"type\": 0, \"allow\": ~s, \"deny\": \"0\"}]},
+                       {\"id\": \"c3\", \"permission_overwrites\":
+                          [{\"id\": \"999\", \"type\": 1, \"allow\": \"0\", \"deny\": ~s}]}]}}"
+                            manage manage manage)))
+        (ncd::note-self-roles '("r-bot") :guild "g1")
+        (opened "t-mine" "999" "c1")
+        (opened "t-theirs" "u2" "c1")
+        (opened "t-granted" "u2" "c2")
+        (opened "t-denied" "u2" "c3")
+        (is (may "t-mine") "the bot's own thread")
+        (is (not (may "t-theirs")) "someone else's, with no Manage Threads")
+        (is (may "t-granted") "the channel grants it to the bot's role")
+        ;; The answer's Close follows: no plan, no button.
+        (is (null (funcall close "t-theirs" :timeout-seconds 30)))
+        (is-plan (funcall close "t-mine" :timeout-seconds 30)
+                 :method "PATCH" :path "/channels/t-mine" :label "close_thread")
+        ;; A role that grants it, given under a running connection, holds at
+        ;; once; the bot's own overwrite still denies it in that one channel.
+        (ncd::note-self-roles '("r-bot" "r-mod") :guild "g1")
+        (is (may "t-theirs") "a role granting Manage Threads")
+        (is (not (may "t-denied")) "the bot's own overwrite denies it")
+        ;; A deleted role grants nothing; Administrator passes every overwrite.
+        (ncd::note-channel-dispatches
+         (dgw-dispatch "GUILD_ROLE_DELETE" "{\"guild_id\": \"g1\", \"role_id\": \"r-mod\"}"))
+        (is (not (may "t-theirs")) "the granting role deleted")
+        (ncd::note-channel-dispatches
+         (dgw-dispatch "GUILD_ROLE_UPDATE"
+                       "{\"guild_id\": \"g1\", \"role\": {\"id\": \"r-bot\", \"permissions\": \"8\"}}"))
+        (is (may "t-theirs") "Administrator")
+        (is (may "t-denied") "Administrator, past the bot's own overwrite")))
+    (reset)))

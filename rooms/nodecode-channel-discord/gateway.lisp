@@ -214,11 +214,13 @@ NIL."
 
 ;;; How a message inside a thread is told from one in a plain channel: the
 ;;; message names only the thread.
-(defvar *known-threads* (make-hash-table :test #'equal)
+(defvar *known-threads* (make-hash-table :test #'equal :synchronized t)
   "Thread channel id -> parent channel id, kept from the gateway's own thread
 dispatches.")
 
-(defvar *thread-owners* (make-hash-table :test #'equal)
+;; Synchronized: the lap writes it, and an answer's worker reads it
+;; (DISCORD-MAY-CLOSE-THREAD-P).
+(defvar *thread-owners* (make-hash-table :test #'equal :synchronized t)
   "Thread channel id -> the id of the user who opened it, kept beside
 *KNOWN-THREADS* from the same dispatches.")
 
@@ -244,6 +246,12 @@ heard of the thread."
 (defvar *channel-topics* (make-hash-table :test #'equal)
   "Channel id -> the topic its admins set, kept from the gateway's own
 channel dispatches.")
+
+(defvar *channel-overwrites* (make-hash-table :test #'equal :synchronized t)
+  "Channel id -> (GUILD-ID . its permission overwrites), each a list (ID TYPE
+ALLOW DENY): TYPE 0 a role's, 1 a member's, kept from the gateway's own
+channel dispatches (NOTE-CHANNEL-OVERWRITES). A thread has none of its own:
+what holds in it is what holds in its parent.")
 
 (defun note-channel-topic (channel &aux (id (nlk:json-value channel :string "id")))
   "CHANNEL — a GUILD_CREATE channels entry, the d of a CHANNEL_CREATE or
@@ -276,14 +284,146 @@ CHANNEL_DELETE forget theirs."
         (cond ((one-of "GUILD_CREATE")
                (loop for thread across (nlk:json-array data "threads")
                      do (note-thread-channel thread))
-               (loop for channel across (nlk:json-array data "channels")
-                     do (note-channel-topic channel)))
+               (loop with guild = (nlk:json-value data :string "id")
+                     for channel across (nlk:json-array data "channels")
+                     do (note-channel-topic channel)
+                        (note-channel-overwrites channel guild))
+               (note-guild-permissions data))
+              ((one-of "GUILD_UPDATE") (note-guild-permissions data))
+              ((one-of "GUILD_ROLE_CREATE" "GUILD_ROLE_UPDATE")
+               (note-guild-role (nlk:json-value data :string "guild_id")
+                                (nlk:json-value data :object "role")))
+              ((one-of "GUILD_ROLE_DELETE")
+               (forget-guild-role (nlk:json-value data :string "guild_id")
+                                  (nlk:json-value data :string "role_id")))
               ((one-of "THREAD_CREATE" "THREAD_UPDATE") (note-thread-channel data))
-              ((one-of "CHANNEL_CREATE" "CHANNEL_UPDATE") (note-channel-topic data))
+              ((one-of "CHANNEL_CREATE" "CHANNEL_UPDATE")
+               (note-channel-topic data)
+               (note-channel-overwrites data nil))
               ((one-of "THREAD_DELETE") (forget *known-threads*) (forget *thread-owners*))
-              ((one-of "CHANNEL_DELETE") (forget *channel-topics*))
+              ((one-of "CHANNEL_DELETE") (forget *channel-topics*) (forget *channel-overwrites*))
               (t (return-from note-channel-dispatches nil)))
         t))))
+
+;;; --- what the bot may do in a channel ----------------------------------------
+;;; An answer in a thread carries Close, and Discord archives a thread for the
+;;; bot that opened it and, in anyone else's, only for one holding Manage
+;;; Threads in the thread's channel (operator report, 2026-11-01: Elektra's
+;;; answer in a thread scrap had opened carried Close, and the press came back
+;;; 403 Missing Access). So the connection keeps what decides that: each
+;;; guild's owner and what each of its roles grants, from GUILD_CREATE and the
+;;; guild and role dispatches after it, and each channel's permission
+;;; overwrites, from GUILD_CREATE and the channel dispatches. Hash writes on
+;;; the connection lap; read from any thread.
+
+(defparameter +discord-administrator+ (ash 1 3)
+  "ADMINISTRATOR: every permission, past every overwrite.")
+
+(defparameter +discord-manage-threads+ (ash 1 34)
+  "MANAGE_THREADS: archive, lock and rename a thread someone else opened.")
+
+(defvar *guild-permissions* (make-hash-table :test #'equal :synchronized t)
+  "Guild id -> (OWNER-ID . a table of role id -> the permission bits it
+grants), as the gateway last said. A guild's @everyone role has the guild's
+own id.")
+
+(defun permission-bits (value)
+  "VALUE, a permission field -- Discord writes the bits as a decimal string --
+as an integer: 0 for none."
+  (cond ((integerp value) value)
+        ((stringp value) (or (parse-integer value :junk-allowed t) 0))
+        (t 0)))
+
+(defun guild-permissions-entry (guild)
+  "GUILD's (OWNER-ID . ROLE-GRANTS) in *GUILD-PERMISSIONS*, made the first time
+it is asked for."
+  (sb-ext:with-locked-hash-table (*guild-permissions*)
+    (or (gethash guild *guild-permissions*)
+        (setf (gethash guild *guild-permissions*)
+              (cons nil (make-hash-table :test #'equal :synchronized t))))))
+
+(defun note-guild-role (guild role)
+  "ROLE, a role object of GUILD, into *GUILD-PERMISSIONS*: what it grants."
+  (let ((id (and (hash-table-p role) (nlk:json-value role :string "id"))))
+    (when (and guild id)
+      (setf (gethash id (cdr (guild-permissions-entry guild)))
+            (permission-bits (nlk:json-value role :string "permissions"))))))
+
+(defun forget-guild-role (guild role)
+  "ROLE, deleted from GUILD, grants nothing there any more."
+  (nlk:when-let (entry (and guild role (gethash guild *guild-permissions*)))
+    (remhash role (cdr entry))))
+
+(defun note-guild-permissions (guild-object)
+  "GUILD-OBJECT -- a GUILD_CREATE's or GUILD_UPDATE's d -- into
+*GUILD-PERMISSIONS*: its owner, and what every role it names grants."
+  (nlk:when-let (guild (nlk:json-value guild-object :string "id"))
+    (let ((entry (guild-permissions-entry guild)))
+      (nlk:when-let (owner (nlk:json-value guild-object :string "owner_id"))
+        (setf (car entry) owner))
+      (loop for role across (or (nlk:json-array guild-object "roles") #())
+            do (note-guild-role guild role)))))
+
+(defun note-channel-overwrites (channel guild)
+  "CHANNEL -- a channel object, of GUILD where it names none itself -- into
+*CHANNEL-OVERWRITES*: its permission overwrites."
+  (let ((id (nlk:json-value channel :string "id"))
+        (guild (or (nlk:json-value channel :string "guild_id") guild)))
+    (when (and id guild)
+      (setf (gethash id *channel-overwrites*)
+            (cons guild
+                  (loop for overwrite across (or (nlk:json-array channel "permission_overwrites") #())
+                        when (hash-table-p overwrite)
+                          collect (list (nlk:json-value overwrite :string "id")
+                                        (nlk:json-value overwrite :integer "type")
+                                        (permission-bits (nlk:json-value overwrite :string "allow"))
+                                        (permission-bits (nlk:json-value overwrite :string "deny")))))))))
+
+(defun bot-channel-permissions (channel bot-user-id)
+  "The permission bits BOT-USER-ID holds in CHANNEL, reckoned the way Discord
+does: what its guild's @everyone and the bot's roles grant -- every bit for
+Administrator or the guild's owner -- then the channel's overwrites,
+@everyone's, the bot's roles' together, the bot's own. NIL while the
+connection has not heard the channel and its guild's roles."
+  (let* ((channel-entry (gethash channel *channel-overwrites*))
+         (guild (car channel-entry))
+         (guild-entry (and guild (gethash guild *guild-permissions*))))
+    (when (and guild-entry (plusp (hash-table-count (cdr guild-entry))))
+      (let* ((grants (cdr guild-entry))
+             (overwrites (cdr channel-entry))
+             (mine (remove guild (discord-self-role-ids) :test #'equal))
+             (base (reduce #'logior mine :key (lambda (role) (gethash role grants 0))
+                                         :initial-value (gethash guild grants 0))))
+        (flet ((overwrite (bits allow deny) (logior (logandc2 bits deny) allow))
+               (kind (type id) (lambda (o) (and (eql type (second o)) (equal id (first o))))))
+          (if (or (logtest base +discord-administrator+) (equal bot-user-id (car guild-entry)))
+              -1
+              (let ((everyone (find-if (kind 0 guild) overwrites))
+                    (roles (remove-if-not (lambda (o) (and (eql 0 (second o))
+                                                           (member (first o) mine :test #'equal)))
+                                          overwrites))
+                    (own (find-if (kind 1 bot-user-id) overwrites))
+                    (bits base))
+                (when everyone
+                  (setf bits (overwrite bits (third everyone) (fourth everyone))))
+                (setf bits (overwrite bits
+                                      (reduce #'logior roles :key #'third :initial-value 0)
+                                      (reduce #'logior roles :key #'fourth :initial-value 0)))
+                (when own
+                  (setf bits (overwrite bits (third own) (fourth own))))
+                bits)))))))
+
+(defun discord-may-close-thread-p (thread bot-user-id)
+  "Whether the bot BOT-USER-ID can archive THREAD: Discord lets the bot that
+opened a thread put it away, and anyone else only with Manage Threads in
+the thread's channel. T as well where the connection has not heard enough
+to tell -- who opened the thread, or what the bot may do in its channel --
+so a press it cannot honour still says so (NCK::CLOSE-PRESSED)."
+  (let ((owner (and thread (gethash thread *thread-owners*))))
+    (or (null owner) (null bot-user-id) (equal owner bot-user-id)
+        (let ((bits (nlk:when-let (parent (thread-channel-parent thread))
+                      (bot-channel-permissions parent bot-user-id))))
+          (or (null bits) (logtest bits +discord-manage-threads+))))))
 
 ;;; --- self knowledge ----------------------------------------------------------
 ;;; What addresses the bot. A Discord mention is an entity reference, and the

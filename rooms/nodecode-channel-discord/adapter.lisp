@@ -144,7 +144,13 @@ instruction to follow: ~s.~]"
 the record: a thread closes as an archived one -- out of the channel's list,
 kept, and open again once anyone writes in it -- and a thread refused because
 the message already has one names that one."
-  (setf (platform-plan-close-thread platform) #'thread-close-plan
+  (setf (platform-plan-close-thread platform)
+        ;; Only where Discord lets this bot: in a thread another opened, with no
+        ;; Manage Threads there, the archive comes back 403 and the answer
+        ;; carries no Close (DISCORD-MAY-CLOSE-THREAD-P).
+        (lambda (thread-id &rest options)
+          (and (discord-may-close-thread-p thread-id bot-user-id)
+               (apply #'thread-close-plan thread-id options)))
         ;; Two bots one message names both open a thread off it: the second
         ;; hears 160004 and takes the first one's thread (NCK:START-THREADED-ASK).
         ;; Two colons: the kit's export is new, and an image of the release
