@@ -152,6 +152,10 @@ own too; (:SEEN USER KEY), another bot's eye or edit at KEY. NIL notes nothing."
                             (remove user had :key #'car :test #'equal))
                       (lambda (x y) (message-id< (third y) (third x))))))))))
 
+(defun thread-posts-known-p (host thread)
+  "Whether this image keeps any bot's post in THREAD."
+  (and thread (gethash (peer-key host thread) *thread-posters*) t))
+
 (defun thread-posters (host thread before)
   "The bots that posted in THREAD before message BEFORE, ((ID . NAME) ...),
  the latest first. Before the ask, never after it: a kit that reads the ask

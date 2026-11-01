@@ -107,6 +107,7 @@ it over any platform, and the /channels status surface.")
    #:platform-thread-link #:platform-plan-file #:+reaction-seen+
    #:+reaction-done+ #:+reaction-failed+
    #:control-pressed #:completion-requested #:reaction-noticed #:note-bot-presence
+   #:note-thread-post #:thread-posts-known-p
    #:make-host-from-section #:section-thread-behavior
    #:thread-title #:thread-ask-p #:message-target #:host-id
    #:post-message #:post-file #:answer-file #:answer-choices #:answer-waits #:answer-waiting #:choice #:menu-choice
