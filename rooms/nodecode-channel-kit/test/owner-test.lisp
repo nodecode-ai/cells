@@ -95,7 +95,7 @@ message id where SELF owns it (OWNER-P) or does not."
         (is (eq :answer (nck:handle-candidate host line)))
         (is-present (lane (await-lane host (format nil "chat-100-t~a-m~a" id id)))
             "the owner opened the ask's lane"
-          (is (search "too, and it is yours: you own it." (nck::lane-where lane)) "and its lane is told the ask is its own")
+          (is (search "too, and it is yours: you own it. They read it and stay quiet" (nck::lane-where lane)) "and its lane is told the ask is its own")
           (is (search "@elektra" (nck::lane-where lane)) "and who else read it")
           (is (null (nck::thread-slots host id)) "a role's ping opens no team's board"))
         (is (await-plan executor :content "owned") "the owner's answer posts"))))))

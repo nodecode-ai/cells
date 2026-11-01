@@ -168,8 +168,8 @@
                          for id in rank
                          unless (equal id (host-self-id host))
                            collect (format nil "@~a" (or (cdr (assoc id known :test #'equal)) id)))))
-        (format nil "This ask reached ~{~a~#[~; and ~:;, ~]~} too, and it is yours: ~a They \
-read it and stay quiet unless you or the person name them, so do the whole of it, and name one \
+        (format nil "This ask reached ~{~a~#[~; and ~:;, ~]~} too, and it is yours: ~a They ~
+read it and stay quiet unless you or the person name them, so do the whole of it, and name one ~
 only to hand it a part."
                 names
                 (if (zerop at)
@@ -195,18 +195,18 @@ only to hand it a part."
   "What the room's answer_words asks of a lane, or NIL when it caps nothing."
   (let ((cap (host-answer-words host)))
     (when (plusp cap)
-      (format nil "Answers here post at most ~d words, code blocks aside: a longer one is cut \
-down before it posts, the whole one riding along as a file. So write it short yourself: the \
+      (format nil "Answers here post at most ~d words, code blocks aside: a longer one is cut ~
+down before it posts, the whole one riding along as a file. So write it short yourself: the ~
 verdict and what the person must do or decide; detail goes into a file, the PR or the ticket."
               cap))))
 
 (defun shortening-instruction (cap)
   "The side call's whole instruction for cutting an answer to CAP words."
-  (format nil "You shorten a chat answer to at most ~d words, code blocks aside, for a busy \
-reader. Keep the verdict first. Keep every number, id, name, link, command and path you keep \
-exactly as written, and keep the question or choice the answer ends on. When its first line \
-is FINAL ANSWER, keep that line first. Drop background, restated asks, repeated facts and \
-hedges. Never add a fact, a number or a claim the answer does not make. Keep its markdown and \
+  (format nil "You shorten a chat answer to at most ~d words, code blocks aside, for a busy ~
+reader. Keep the verdict first. Keep every number, id, name, link, command and path you keep ~
+exactly as written, and keep the question or choice the answer ends on. When its first line ~
+is FINAL ANSWER, keep that line first. Drop background, restated asks, repeated facts and ~
+hedges. Never add a fact, a number or a claim the answer does not make. Keep its markdown and ~
 its language. Reply with the shortened answer alone." cap))
 
 (defun shorten-answer (host lane text final)
