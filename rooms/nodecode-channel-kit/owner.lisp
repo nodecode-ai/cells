@@ -2,16 +2,16 @@
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
-;;;; A person's line can reach several bots at once: a role every bot holds, a
-;;;; thread a person shared with them, a line that names another bot or answers
-;;;; one of its messages. Every bot it reaches used to answer it, each with its
-;;;; own plan. Now one bot owns it and the others keep it as the thread's
-;;;; context:
+;;;; A person's line can reach several bots at once: a thread a person shared
+;;;; with them, a line that names another bot or answers one of its messages.
+;;;; Every bot it reaches used to answer it, each with its own plan. Now one
+;;;; bot owns it and the others keep it as the thread's context:
 ;;;;
 ;;;;   - A line that names this bot -- its mention, a reply to its message, a
 ;;;;     press, a slash command -- is this bot's, as before. One that names
-;;;;     several bots by name is a team's (TEAM.LISP), as before, and so is any
-;;;;     line on a team's board.
+;;;;     several bots by name is a team's (TEAM.LISP), as before; so is a
+;;;;     role's ping, which calls in every bot holding the role; and so is
+;;;;     any line on a team's board.
 ;;;;   - Otherwise the bots it reaches are ranked (ASK-RANK): the bot it points
 ;;;;     at -- the author of the message it answers, then each it names, in the
 ;;;;     order named -- then the bots that posted in its thread before it, the
@@ -94,12 +94,23 @@ own too; (:SEEN USER KEY), another bot's eye or edit at KEY. NIL notes nothing."
               (and at (>= at since))))
           ids)))
 
+(defun without-role-pings (text)
+  "TEXT with every role's ping taken out."
+  (ppcre:regex-replace-all "<@&[^>]+>" text ""))
+
 (defun self-named-p (policy candidate text)
   "Whether CANDIDATE asks this bot by name: addressed to it (a reply to its
  message, a press, a slash command), or mentioning it other than through a
  role it shares."
   (or (candidate-addressed-p candidate)
-      (mention-involves-p policy (ppcre:regex-replace-all "<@&[^>]+>" text ""))))
+      (mention-involves-p policy (without-role-pings text))))
+
+(defun role-pinged-p (policy text)
+  "Whether TEXT reaches this bot through a role it holds and not by its own
+ name: a role's ping calls in every bot holding the role, a team's ask
+ (TEAM.LISP) that no one bot owns."
+  (and (mention-involves-p policy text)
+       (not (mention-involves-p policy (without-role-pings text)))))
 
 (defun owner-digest (key id)
   "ID's draw for the ask at KEY: the same in every kit."
@@ -180,15 +191,16 @@ own too; (:SEEN USER KEY), another bot's eye or edit at KEY. NIL notes nothing."
 (defun ask-rank (host candidate &aux (policy (host-policy host)) (self (host-self-id host)))
   "The bots that may answer CANDIDATE, a person's line that reaches others
  beside this bot, in the order they own it: (ID ...), the owner first. NIL
- when the line is this bot's alone: a bot's line, one that names this bot, a
- team's (several bots named by name, or a board's thread), or one that
- reaches no other bot."
+ when no one bot owns it: a bot's line, one that names this bot, one that
+ reaches no other bot, or a team's -- several bots named by name, a role's
+ ping, a board's thread."
   (let* ((text (let ((text (gethash "text" candidate))) (if (stringp text) text "")))
          (thread (source-field candidate "thread_id"))
          (key (or thread (source-field candidate "message_id")))
          (reach (and self key (typep policy 'inbound-policy)
                      (not (candidate-bot-p candidate))
                      (not (self-named-p policy candidate text))
+                     (not (role-pinged-p policy text))
                      (not (and thread (thread-slots host thread (candidate-room host candidate))))
                      (ask-reach host candidate)))
          (ids (remove self (mapcar #'car reach) :test #'equal)))
