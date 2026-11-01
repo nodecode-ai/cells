@@ -50,7 +50,7 @@ voice message.
   [below](#configuration) only change where it talks,
   whom it hears, and where it sits on its own.
 - **Permissions**: Connect and Speak in the voice channel, on top of the
-  text set (the invite integer with voice is `309240908864`). Without them
+  text set (the invite integer with voice is `326420778048`). Without them
   Discord never seats the bot, and `/voice join` says so after ten seconds,
   with an invite link that grants them.
 - **DAVE**: Discord requires its end-to-end encryption for voice. The first

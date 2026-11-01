@@ -808,7 +808,7 @@ state carries the session. A lane it never seated is let go."
   (format nil "Discord did not seat me in <#~a>. The bot needs the Connect and Speak ~
                permissions there, and the channel needs room: a server admin can grant ~
                them to the bot's role~@[, or invite the bot again with ~
-               https://discord.com/oauth2/authorize?client_id=~a&scope=bot+applications.commands&permissions=309240908864~]."
+               https://discord.com/oauth2/authorize?client_id=~a&scope=bot+applications.commands&permissions=326420778048~]."
           lane.channel-id (and adapter adapter.application-id)))
 
 (defun voice-joining-line (lane &optional why)

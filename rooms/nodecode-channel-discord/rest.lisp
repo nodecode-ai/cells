@@ -995,10 +995,10 @@ changed nothing a read can show."
 
 (defun discord-failure-message (plan status detail)
   ;; A refused archive is said to the person who pressed Close, so it is said
-  ;; plainly: who may close (operator report, 2026-11-01).
+  ;; plainly: the permission the bot lacks and who grants it (operator
+  ;; reports, 2026-11-01).
   (when (and (eql status 403) (equal "close_thread" (request-plan-audit-label plan)))
-    (return-from discord-failure-message
-      "Discord lets a bot close only a thread it opened, unless it can manage threads in that channel, and this bot can't."))
+    (return-from discord-failure-message (close-permission-text)))
   (format nil "Discord REST ~a ~a ~?"
           (request-plan-method plan) (request-plan-audit-label plan)
           (case status
