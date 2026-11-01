@@ -616,7 +616,15 @@ origin noted — ORIGIN the keys past the three that place it."
                     (asks (n)
                       ;; The ask is a job of its own on the delivery worker.
                       (loop repeat 200 until (>= (length asked) n) do (sleep 0.05))
-                      (length asked)))
+                      (length asked))
+                    (settled ()
+                      ;; A turn's finish is a job on the one delivery worker, which runs
+                      ;; jobs in order: one queued behind it has run once the finish has,
+                      ;; so a test that reopens the talk next never races that finish.
+                      (let ((done nil))
+                        (nck::on-worker host (setf done t))
+                        (loop repeat 200 until done do (sleep 0.05))
+                        done)))
                (nck::note-thread-peers host "44" '(("777" . "elektra")))
                (setf (nck:lane-owner-id lane) "u1"
                      (nck:lane-target lane) '(:channel-id "100" :thread-id "44")
@@ -635,6 +643,7 @@ origin noted — ORIGIN the keys past the three that place it."
                  (is (equal "final-p30" (nck::ask-key close)) "for the wake it met with silence")
                  (is (null (nck::ask-message-id close)) "an ask no message carried"))
                (answer "NO_REPLY" "t4")
+               (is (settled))
                (woke "p32")
                (setf (nck::lane-heard-line lane) '("p32" . "t4"))
                (answer "NO_REPLY" "t5")
@@ -644,6 +653,7 @@ origin noted — ORIGIN the keys past the three that place it."
                (woke "p33")
                (setf (nck::lane-heard-line lane) '("p33" . "t5"))
                (answer "NO_REPLY" "t6")
+               (is (settled) "the closed talk's silence settled before the talk opens again")
                (woke "p34")
                (remhash (cons "test" "44") nck::*talk-finals*)
                (setf (nck::lane-heard-line lane) '("p34" . "t6"))
