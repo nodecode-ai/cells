@@ -98,12 +98,14 @@
     {
       "name": "nodecode-channel-matrix",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "ca1e7e33f880d6678c1573ca90c42d382580f5a7",
+      "commit": "5fc69d32d6302e93153294eda54a7b6b20ccafed",
       "path": "rooms/nodecode-channel-matrix",
       "description": "Talk to nodecode through a Matrix account",
       "license": "MIT",
       "depends_on": [
-        "nodecode-channel-kit"
+        "nodecode-channel-kit",
+        "cl-base64",
+        "ironclad/digest/sha256"
       ]
     },
     {
