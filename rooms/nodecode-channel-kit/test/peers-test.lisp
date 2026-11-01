@@ -35,7 +35,8 @@ THREAD-IDS: their peers and their runs."
      (dolist (thread (list ,@thread-ids))
        (remhash (cons "test" thread) nck::*thread-peers*)
        (remhash (cons "test" thread) nck::*talk-wakes*)
-       (dolist (table (list nck::*thread-slots* nck::*team-posts* nck::*board-scores* nck::*talk-finals*))
+       (dolist (table (list nck::*thread-slots* nck::*team-posts* nck::*board-scores* nck::*talk-finals*
+                            nck::*thread-posters* nck::*bot-activity*))
          (remhash (cons "test" thread) table)))))
 
 (deftest channel-peers-a-refused-thread-is-taken ()

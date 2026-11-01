@@ -382,6 +382,81 @@ adapter and the fake gateway have stopped."
       (is-source routed :text "✅" "reaction" "add" "reply_to_message_id" "a1"))
     (is (zerop (nck:lane-count host.lanes)))))
 
+(defun poster-message (id user name &optional bot)
+  "A thread message ID by USER, called NAME, as the messages read returns it."
+  (nlk:json-object "id" id "content" "hi"
+                   "author" (if bot
+                                (nlk:json-object "id" user "username" name "bot" t)
+                                (nlk:json-object "id" user "username" name))))
+
+(deftest channel-discord-a-thread-read-names-who-posted-there ()
+  ;; One read of a thread's latest messages notes each bot's post there, this
+  ;; bot's own too, and no person's: the latest first ranks its next line.
+  (let ((executor (nck:make-recording-executor
+                   :responses (list (nck:make-scripted-response
+                                     200 (vector (poster-message "60" "777" "elektra" t)
+                                                 (poster-message "59" "u2" "kim")
+                                                 (poster-message "58" "999" "scrap" t))))))
+        (host (test-host :platform (ncd:discord-platform :bot-user-id "999") :name "discord-thread-read")))
+    (unwind-protect
+         (progn
+           (is (= 2 (ncd::read-thread-posters executor host "t40" "999" :timeout-seconds 5)) "it notes the two bots' posts")
+           (is-plan (first (nck:recording-executor-plans executor)) :method "GET" :path "/channels/t40/messages?limit=50")
+           (is (equal '(("777" . "elektra") ("999" . "scrap")) (nck::thread-posters host "t40" "61")) "the latest poster first")
+           (is (nck:thread-posts-known-p host "t40")))
+      (remhash (nck::peer-key host "t40") nck::*thread-posters*))))
+
+(deftest channel-discord-a-line-in-a-thread-new-to-this-image-waits-for-its-posters ()
+  ;; An image that started since a thread last moved saw no bot post there,
+  ;; and who posted last owns the thread's next line that names no one. So a
+  ;; person's line there waits for one read of the thread, a line behind it
+  ;; waits too and routes after it, and later lines route at once. A thread
+  ;; whose posts the image saw is never read, and a bot's line is never held.
+  (clrhash ncd::*known-threads*)
+  (clrhash ncd::*poster-reads*)
+  (let* ((host (test-host :platform (ncd:discord-platform :bot-user-id "999") :name "discord-thread-posters"))
+         (adapter (ncd::%make-discord-adapter :host host :bot-user-id "999"))
+         (routed '()) (reads '()) (released nil))
+    (unwind-protect
+         (with-stubbed-fdefinition (ncd::read-thread-posters (executor host thread bot &key timeout-seconds)
+                                     (declare (ignore executor bot timeout-seconds))
+                                     (push thread reads)
+                                     (loop repeat 500 until released do (sleep 0.01))
+                                     (nck:note-thread-post host thread "777" "elektra" "60")
+                                     1)
+           (with-stubbed-fdefinition (ncd::route-discord-dispatch (adapter payload)
+                                       (declare (ignore adapter))
+                                       (push (nlk:json-value (gethash "d" payload) :string "id") routed)
+                                       nil)
+             (flet ((said (id channel &rest keys)
+                      (ncd:discord-handle-dispatch
+                       adapter (dgw-dispatch "MESSAGE_CREATE" (apply #'dgw-d id "and the Mac?" :channel channel keys)))))
+               (dgw-thread-create! "t50" "c1")
+               (dgw-thread-create! "t51" "c1")
+               (is (eq :posters (said "61" "t50" :author "u2")) "a person's line in a thread with no post seen waits")
+               (is (eq :posters (said "62" "t50" :author "u2")) "and so does the line behind it")
+               (is (null routed) "neither routes while the thread is read")
+               (setf released t)
+               (loop repeat 300 until (= 2 (length routed)) do (sleep 0.01))
+               (is (equal '("61" "62") (reverse routed)) "both route once it is read, in the order said")
+               (is (equal "777" (car (first (nck::thread-posters host "t50" "61")))) "with the thread's posters known")
+               (said "63" "t50" :author "u2")
+               (is (equal "63" (first routed)) "a later line routes at once")
+               (nck:note-thread-post host "t51" "555" "hindsight" "70")
+               (said "71" "t51" :author "u2")
+               (is (equal "71" (first routed)) "a line in a thread whose posts were seen routes at once")
+               (said "72" "t52" :author "u2")
+               (is (equal "72" (first routed)) "and so does one outside any thread the adapter knows")
+               (dgw-thread-create! "t53" "c1")
+               (said "73" "t53" :author "777" :bot "true")
+               (is (equal "73" (first routed)) "and a bot's line")
+               (is (equal '("t50") reads) "the one thread read is the one a person spoke in unseen"))))
+      (setf released t)
+      (dolist (thread '("t50" "t51" "t53"))
+        (remhash (nck::peer-key host thread) nck::*thread-posters*))
+      (clrhash ncd::*poster-reads*)
+      (clrhash ncd::*known-threads*))))
+
 (deftest channel-discord-a-restated-ask-gets-its-thread-back ()
   ;; The wiring: Discord's stale copy of an ask reaches the dispatch, which
   ;; queues one read of the message and -- the platform still holding the

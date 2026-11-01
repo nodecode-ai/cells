@@ -877,6 +877,27 @@ and which of them reach which other bots (READ-GUILD-ROSTER)."
   "The most pages one roster read takes. A guild past them is read in part,
 and a bot it did not reach is known by what it posts.")
 
+(defparameter +thread-posts-read+ 50
+  "How many of a thread's latest messages one read of who posted there takes.")
+
+(defun read-thread-posters (executor host thread bot-user-id &key (timeout-seconds 10))
+  "Read who posted in THREAD off its latest +THREAD-POSTS-READ+ messages, and
+note each bot's post there, this bot's own too (NCK:NOTE-THREAD-POST).
+=> how many bot posts it noted, or NIL when the read failed."
+  ;; Blocks: the caller's thread, never a ws callback.
+  (let ((page (execute-plan executor
+                            (rest-plan "GET" (format nil "/channels/~a/messages?limit=~d"
+                                                     thread +thread-posts-read+)
+                                       "read_thread_posters" nil timeout-seconds))))
+    (when (execution-ok-p page)
+      (loop for message across (or (probe-array (execution-body page)) #())
+            for user = (and (hash-table-p message) (nlk:json-value message :string "author" "id"))
+            for id = (and user (nlk:json-value message :string "id"))
+            when (and id (or (equal user bot-user-id) (nlk:json-value message :any "author" "bot")))
+              do (nck:note-thread-post host thread user
+                                       (nlk:json-value message :string "author" "username") id)
+              and count t))))
+
 (defun read-guild-roster (executor guild bot-user-id &key (timeout-seconds 30))
   "Read which roles GUILD's bots hold off Discord -- the bot's own among them --
 and note them (NOTE-GUILD-MEMBER). The member list needs the Server Members

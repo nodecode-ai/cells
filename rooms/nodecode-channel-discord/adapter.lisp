@@ -242,6 +242,7 @@ falls through."
   ;; signals costs that event and not the connection.
   (note-channel-dispatches payload)
   (note-self-dispatches payload adapter.bot-user-id)
+  (note-bot-presence adapter.host (discord-bot-presence payload adapter.bot-user-id))
   ;; Discord's stale copy of a message the bot opened a thread on gives the
   ;; thread back to every client (RESTATE-THREAD-LINK). It routes nothing:
   ;; the routes below still read the update.
@@ -250,6 +251,15 @@ falls through."
     (restate-thread-link adapter.host restated))
   (when (route-voice-dispatch adapter payload)
     (return-from discord-handle-dispatch :voice))
+  ;; A person's line in a thread this image saw no bot post in waits for one
+  ;; read of who posted there, which ranks its owner (HOLD-FOR-POSTERS).
+  (when (hold-for-posters adapter payload)
+    (return-from discord-handle-dispatch :posters))
+  (route-after-posters adapter payload))
+
+(defun route-after-posters (adapter payload)
+  "Route PAYLOAD, a dispatch whose thread's posters are known: a role's ping
+after one read of the guild's roster, any other at once."
   ;; A ping of a role reaches every bot holding it, and who holds it is
   ;; Discord's to say now, not what this connection saw an hour ago: the
   ;; guild's member list is read first, on a thread of its own, and the
@@ -265,8 +275,73 @@ falls through."
                             (warn "discord: a role ping in guild ~a could not route: ~a"
                                   guild condition)))
         (route-discord-dispatch adapter payload)))
-    (return-from discord-handle-dispatch :roster))
+    (return-from route-after-posters :roster))
   (route-discord-dispatch adapter payload))
+
+;;; Who posted in a thread last owns its next line that names no one
+;;; (NCK::ASK-RANK), and an image keeps that from the posts it sees. One that
+;;; started since a thread last moved has seen none there, and would rank
+;;; that thread's next line from its own peer record, which another kit's need
+;;; not match: so that line waits for one read of the thread's latest
+;;; messages, and any line after it in the same thread waits behind it, in
+;;; order.
+
+(defvar *poster-reads* (make-hash-table :test #'equal :synchronized t)
+  "Thread id -> :READ once its posters were read or seen, or the dispatches
+waiting on the read, oldest first, while it runs.")
+
+(defun person-thread-line (payload bot-user-id)
+  "The thread of PAYLOAD, a MESSAGE_CREATE a person typed in a thread the
+adapter knows, or NIL for any other dispatch."
+  (when (and (eql (payload-op payload) +op-dispatch+)
+             (equal "MESSAGE_CREATE" (gethash "t" payload)))
+    (let* ((data (gethash "d" payload))
+           (channel (and (hash-table-p data) (nlk:json-value data :string "channel_id"))))
+      (when (and channel (thread-channel-parent channel)
+                 (not (equal bot-user-id (nlk:json-value data :string "author" "id")))
+                 (not (nlk:json-value data :any "author" "bot")))
+        channel))))
+
+(defun hold-for-posters (adapter payload)
+  "Whether PAYLOAD waits for its thread's posters to be read: a person's line
+in a thread this image holds no bot post for, or one behind such a line.
+The first starts the read, on a thread of its own, and every line held
+routes after it, in order. => T when held."
+  (let ((thread (person-thread-line payload adapter.bot-user-id))
+        (start nil))
+    (when thread
+      (sb-ext:with-locked-hash-table (*poster-reads*)
+        (let ((entry (gethash thread *poster-reads*)))
+          (cond ((eq entry :read)
+                 (return-from hold-for-posters nil))
+                (entry
+                 (setf (gethash thread *poster-reads*) (append entry (list payload))))
+                ((nck:thread-posts-known-p adapter.host thread)
+                 (setf (gethash thread *poster-reads*) :read)
+                 (return-from hold-for-posters nil))
+                (t
+                 (when (> (hash-table-count *poster-reads*) 4096)
+                   (clrhash *poster-reads*))
+                 (setf (gethash thread *poster-reads*) (list payload)
+                       start t)))))
+      (when start
+        (nlk:spawn "channel-discord-posters"
+          (nlk:with-handlers ((error (condition)
+                                (warn "discord: who posted in thread ~a could not be read: ~a"
+                                      thread condition)))
+            (read-thread-posters (host-executor adapter.host) adapter.host thread
+                                 adapter.bot-user-id :timeout-seconds 10))
+          (loop for next = (sb-ext:with-locked-hash-table (*poster-reads*)
+                             (let ((entry (gethash thread *poster-reads*)))
+                               (when (consp entry)
+                                 (setf (gethash thread *poster-reads*) (or (rest entry) :read))
+                                 (first entry))))
+                while next
+                do (nlk:with-handlers ((error (condition)
+                                         (warn "discord: a line held for thread ~a's posters could not route: ~a"
+                                               thread condition)))
+                     (route-after-posters adapter next)))))
+      t)))
 
 (defparameter +roster-fresh-seconds+ 10
   "How long one read of a guild's member list stands for the role pings that
