@@ -333,7 +333,8 @@ adapter and the fake gateway have stopped."
            (followup (nck:platform-plan-control-followup platform)))
       (is (search "<@1512> opened it" (funcall refusal "t2")) "names who opened it")
       (is (search "Press Close under <@1512>'s answer" (funcall refusal "t2")) "a bot's thread closes by its own Close")
-      (is (search "<@42> can close it" (funcall refusal "t4")) "a person's thread is theirs to close")
+      (is (search "<@42> can close it, or anyone who can manage threads here." (funcall refusal "t4")) "an opener not known as a bot: words true for a bot or a person")
+      (is (not (search "menu" (funcall refusal "t4"))) "and no guess that it is a person")
       (is-present (plan (first (funcall followup (list :id "i1" :token "tok" :application-id "app") :text "didn't")))
         "the outcome follows the press"
         (is-plan plan :method "POST" :path "/webhooks/app/tok" "content" "didn't" (:integer "flags") 64))
