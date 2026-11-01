@@ -286,3 +286,56 @@ THREAD-IDS: their peers and their runs."
                                            "@elektra your take? `@elektra` is code, mail@elektra.dev and @elektrafan are not her")))
       (is (equal "@elektra hi" (nck::peer-addressed-text host '(:channel-id "100" :thread-id "80")
                                                          "@elektra hi")) "a thread without peers keeps its words"))))
+
+(defun posted-bodies (executor)
+  "The JSON bodies of the posts EXECUTOR recorded, oldest first."
+  (loop for plan in (nck:recording-executor-plans executor)
+        for body = (nck:request-plan-body plan)
+        when (hash-table-p body) collect body))
+
+(deftest channel-peers-every-post-names-its-peers ()
+  ;; A board line or a notice -- any post, not the answer alone -- spells a
+  ;; peer's @name as its mention, and the peers it spells are ids the post
+  ;; reaches beside the asker, never spelled ahead of the words: a mention the
+  ;; platform does not let through wakes no one and calls no one in.
+  (with-thread-peers ("84")
+    (let* ((executor (nck:make-recording-executor))
+           (platform (test-platform :threads t))
+           (host (test-host :platform platform :executor executor)))
+      (setf (nck::platform-mention platform) (lambda (id) (format nil "<@~a>" id)))
+      (nck::note-thread-peers host "84" '(("777" . "Elektra") ("888" . "Hindsight")))
+      (nck::post-message host '(:channel-id "100" :thread-id "84")
+                         "**CLAIM** s2 · @Elektra @Hindsight hold off, `@Elektra` is code"
+                         :mentions '("mike"))
+      (let ((body (first (posted-bodies executor))))
+        (is (equal "<@mike> **CLAIM** s2 · <@777> <@888> hold off, `@Elektra` is code"
+                   (gethash "content" body)) "the asker opens it, the peers are spelled where they are named")
+        (is (equal '("mike" "777" "888") (coerce (gethash "mentions" body) 'list)) "and every one of them is an id the post reaches")))))
+
+(deftest channel-peers-a-known-bot-is-named-before-it-is-a-peer ()
+  ;; A bot the kit has seen post is named by its mention in a thread that has
+  ;; no peers yet -- the line that calls it in -- and never this bot itself or
+  ;; a person: only a bot's @name is an ask.
+  (with-thread-peers ("85" "86")
+    (let* ((executor (nck:make-recording-executor))
+           (platform (test-platform :threads t))
+           (host (test-host :platform platform :executor executor)))
+      (setf (nck::platform-mention platform) (lambda (id) (format nil "<@~a>" id))
+            (nck:host-policy host) (channel-policy :self-id "999" :mention-target "999"
+                                                   :mention-test #'nck:discord-mention-p))
+      (unwind-protect
+           (progn
+             (dolist (line (list (test-candidate :text "ready" :user "777" :user-name "Elektra"
+                                                 :is-bot t :thread "86" :parent "100")
+                                 (test-candidate :text "hi" :user "999" :user-name "scrap"
+                                                 :is-bot t :thread "86" :parent "100")
+                                 (test-candidate :text "hi" :user "u1" :user-name "peas"
+                                                 :thread "86" :parent "100")))
+               (nck::mark-peer host line))
+             (nck::post-message host '(:channel-id "100" :thread-id "85")
+                                "@elektra can you look? @scrap and @peas stay words")
+             (let ((body (first (posted-bodies executor))))
+               (is (equal "<@777> can you look? @scrap and @peas stay words"
+                          (gethash "content" body)) "the bot seen elsewhere is called by its mention")
+               (is (equal '("777") (coerce (gethash "mentions" body) 'list)) "and reached")))
+        (remhash "test" nck::*known-bots*)))))
