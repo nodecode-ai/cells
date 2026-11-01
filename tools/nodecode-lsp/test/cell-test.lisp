@@ -86,15 +86,11 @@ holding PAIRS too."
                         (code-char #x1f980))))
       (multiple-value-bind (result state) (nodecode-lsp::call conn "fake/echo" (nlk:json-object "text" text "split" t))
         (is (eq :ok state))
-        (is (equal text (nlk:json-value result :string "text"))
-            "a multibyte body split across reads arrives whole"))
+        (is (equal text (nlk:json-value result :string "text")) "a multibyte body split across reads arrives whole"))
       (is (equal "x" (nlk:json-value (nodecode-lsp::call conn "fake/echo" (nlk:json-object "text" "x" "junk" t))
-                                     :string "text"))
-          "a block a wrapper printed before the header is skipped")
-      (is (equal (format nil "a~cb" (code-char #xfffd)) (nodecode-lsp::call conn "fake/badbytes" nil))
-          "a byte that is not UTF-8 costs one character, not the connection")
-      (is (equal "y" (nlk:json-value (nodecode-lsp::call conn "fake/echo" (nlk:json-object "text" "y")) :string "text"))
-          "and the connection reads on"))))
+                                     :string "text")) "a block a wrapper printed before the header is skipped")
+      (is (equal (format nil "a~cb" (code-char #xfffd)) (nodecode-lsp::call conn "fake/badbytes" nil)))
+      (is (equal "y" (nlk:json-value (nodecode-lsp::call conn "fake/echo" (nlk:json-object "text" "y")) :string "text"))))))
 
 (deftest lsp-cell-rpc-cancels-a-request-it-stops-waiting-for ()
   (with-fake-connection (conn)
@@ -151,11 +147,9 @@ holding PAIRS too."
 (deftest lsp-cell-text-applies-edits-as-if-at-once ()
   (let ((text (format nil "one two~%three")))
     (is (equal (format nil "ONE two~%3") (nodecode-lsp::apply-text-edits
-                                          text (vector (lsp-edit 1 0 5 "3") (lsp-edit 0 0 3 "ONE")) :utf-16))
-        "edits in any order apply against the original text")
+                                          text (vector (lsp-edit 1 0 5 "3") (lsp-edit 0 0 3 "ONE")) :utf-16)))
     (is (equal (format nil "abone two~%three")
-               (nodecode-lsp::apply-text-edits text (vector (lsp-edit 0 0 0 "a") (lsp-edit 0 0 0 "b")) :utf-16))
-        "inserts at one point keep the order they came in")
+               (nodecode-lsp::apply-text-edits text (vector (lsp-edit 0 0 0 "a") (lsp-edit 0 0 0 "b")) :utf-16)))
     (is (search "overlap" (refusal-text lsp:lsp-error
                             (nodecode-lsp::apply-text-edits text (vector (lsp-edit 0 0 5 "x") (lsp-edit 0 2 4 "y"))
                                                             :utf-16))))
@@ -189,27 +183,22 @@ holding PAIRS too."
     (is (= 56 (length specs)) "omp's 55 and one of the operator's")
     (is (nodecode-lsp::spec-disabled (find "pyright" specs :key #'nodecode-lsp::spec-name :test #'string=)))
     (is (equal '("--stdio") (nodecode-lsp::spec-args (find "pyright" specs :key #'nodecode-lsp::spec-name
-                                                                           :test #'string=)))
-        "an override keeps what it does not name")
+                                                                           :test #'string=))))
     (is (equal '("mine") (mapcar #'nodecode-lsp::spec-name (nodecode-lsp::candidate-specs "/p/a.xyz" specs))))
     (is (equal '("rust-analyzer") (mapcar #'nodecode-lsp::spec-name (nodecode-lsp::candidate-specs "/p/a.rs" specs))))
     (is (equal "ruff" (nodecode-lsp::spec-name
-                       (car (last (nodecode-lsp::candidate-specs "/p/a.py" specs)))))
-        "a linter comes after the type checkers")
+                       (car (last (nodecode-lsp::candidate-specs "/p/a.py" specs))))))
     (is (equal "dockerls" (nodecode-lsp::spec-name
-                           (first (nodecode-lsp::candidate-specs "/p/Dockerfile" specs))))
-        "a file type may be a whole name")
+                           (first (nodecode-lsp::candidate-specs "/p/Dockerfile" specs)))))
     (is (equal "python" (nodecode-lsp::language-id (first specs) "/p/a.py")))))
 
 (deftest lsp-cell-servers-root-at-the-outermost-marker-inside-the-repository ()
   (with-lsp-project (root ("pkg/fake.toml" "") ("pkg/src/a.fk" "") ("solo/x.sln" ""))
     (let ((file (lsp-file root "pkg/src/a.fk")))
       (is (equal root (nodecode-lsp::find-root file '("fake.toml") root)) "inside the repository: the outermost")
-      (is (equal (lsp-file root "pkg/") (nodecode-lsp::find-root file '("fake.toml") nil))
-          "outside one: the nearest")
+      (is (equal (lsp-file root "pkg/") (nodecode-lsp::find-root file '("fake.toml") nil)) "outside one: the nearest")
       (is (null (nodecode-lsp::find-root file '("absent.toml") root)))
-      (is (equal (lsp-file root "solo/") (nodecode-lsp::find-root (lsp-file root "solo/y.cs") '("*.sln") nil))
-          "a marker may be a pattern"))))
+      (is (equal (lsp-file root "solo/") (nodecode-lsp::find-root (lsp-file root "solo/y.cs") '("*.sln") nil))))))
 
 ;;; --- a running server ---------------------------------------------------------------------
 
@@ -218,8 +207,7 @@ holding PAIRS too."
     (with-lsp () ()
       (let ((text (lsp:diagnostics (lsp-file root "a.fk"))))
         (is (search "1 error, 1 warning:" text) text)
-        (is (search (format nil "~aa.fk:2:5 [error] [fake] found ERROR~%second line of the message (F1)" root) text)
-            "omp's line: path, line, column, severity, source, message, code")
+        (is (search (format nil "~aa.fk:2:5 [error] [fake] found ERROR~%second line of the message (F1)" root) text))
         (is (< (search "[error]" text) (search "[warning]" text)) "errors first"))
       (is (equal "OK" (lsp:diagnostics (lsp-file root "b.fk"))))
       (let ((text (lsp:diagnostics (list (lsp-file root "a.fk") (lsp-file root "b.fk")))))
@@ -234,8 +222,7 @@ holding PAIRS too."
     (with-lsp ("--stale") ()
       (is (search "1 error" (lsp:diagnostics (lsp-file root "a.fk"))))
       (write-temp-file (uiop:parse-native-namestring (lsp-file root "a.fk")) "fixed")
-      (is (equal "OK" (lsp:diagnostics (lsp-file root "a.fk")))
-          "a publish about the previous version is not the answer"))))
+      (is (equal "OK" (lsp:diagnostics (lsp-file root "a.fk")))))))
 
 (deftest lsp-cell-diagnostics-pull-and-unversioned ()
   (with-lsp-project (root ("a.fk" "ERROR"))
@@ -253,8 +240,7 @@ holding PAIRS too."
             (server (lsp-server "fake")))
         (is (lsp-alive-p pid) "a server starts on first use")
         (is (search (format nil "fake in ~a: ready, pid ~d, 1 open" root pid) (lsp:status)))
-        (is (search "fake server started" (nlk:read-text (nodecode-lsp::srv-log server)))
-            "its stderr goes to its log")
+        (is (search "fake server started" (nlk:read-text (nodecode-lsp::srv-log server))) "its stderr goes to its log")
         (setf (nodecode-lsp::srv-used server) (- (get-internal-real-time) (* 3600 internal-time-units-per-second)))
         (nodecode-lsp::reap-idle)
         (is (not (lsp-alive-p pid)) "an idle server is stopped and reaped")
@@ -305,8 +291,7 @@ holding PAIRS too."
         (is (search "renamed parse to parse_all: 3 edits in 2 files" (lsp:rename a "parse" "parse_all")))
         (is (equal (format nil "def parse_all(x)~%use = parse_all(1)~%") (nlk:read-text a)))
         (is (equal (format nil "other = parse_all(2)~%") (nlk:read-text b)))
-        (is (search (format nil "~a:1:5  def parse_all(x)" a) (lsp:definition b "parse_all"))
-            "the server was told the files changed")))))
+        (is (search (format nil "~a:1:5  def parse_all(x)" a) (lsp:definition b "parse_all")))))))
 
 (deftest lsp-cell-positions-cross-in-either-encoding ()
   (dolist (flags '(() ("--utf8")))
@@ -327,8 +312,7 @@ holding PAIRS too."
     (with-lsp () ()
       (let ((a (lsp-file root "a.fk")))
         (is (search "\"textDocument\"" (lsp:request "fake" "fake/echo" :path a
-                                                                       :params '(:text-document (:uri "x"))))
-            "a plist's kebab-case keys go out camelCase")
+                                                                       :params '(:text-document (:uri "x")))))
         (is (search "\"x\"" (lsp:request "fake" "fake/echo" :params "{\"y\": \"x\"}")) "a JSON string as it is")
         (let ((text (lsp:request "fake" "fake/collide")))
           (is (search "\"depth\"" text) "the server's own request, under an id of ours, was answered")
@@ -351,8 +335,7 @@ holding PAIRS too."
         (nodecode-lsp::*lsp* nil))
     (ignore-errors (lsp:rename "src/a.rs" "parse" "p"))
     (is (equal "edit" (nlk:json-value (aref (nlk:json-array nle::*tool-result-metadata* "calls") 0)
-                                      :string "family"))
-        "a rename is an edit")))
+                                      :string "family")) "a rename is an edit")))
 
 ;;; --- the write path ------------------------------------------------------------------------
 
@@ -394,12 +377,10 @@ holding PAIRS too."
   ;; for the answer, a cold first write read clean whatever it held.
   (with-lsp-project (root)
     (with-lsp ("--pull" "--empty-while-loading" "--progress" "800") ()
-      (is (search "LSP diagnostics (1 error):" (lsp-eval "s1" (lsp-write-form (lsp-file root "a.fk") "ERROR")))
-          "loaded when its progress run ends")))
+      (is (search "LSP diagnostics (1 error):" (lsp-eval "s1" (lsp-write-form (lsp-file root "a.fk") "ERROR"))))))
   (with-lsp-project (root)
     (with-lsp ("--pull" "--empty-while-loading" "--status" "2500") ("wait_ms" 5000)
-      (is (search "LSP diagnostics (1 error):" (lsp-eval "s1" (lsp-write-form (lsp-file root "a.fk") "ERROR")))
-          "or when its status says it is quiescent, however long it stayed quiet"))))
+      (is (search "LSP diagnostics (1 error):" (lsp-eval "s1" (lsp-write-form (lsp-file root "a.fk") "ERROR")))))))
 
 (deftest lsp-cell-a-slow-server-says-still-checking ()
   (with-lsp-project (root)

@@ -147,14 +147,12 @@ the list of what NLE::CALL-PROVIDER answered; the round streams FRAMES."
 (deftest amazon-bedrock-cell-derives-the-documented-signing-keys ()
   (is (equal "f4780e2d9f65fa895f9c67b32ce1baf0b0d8a43505a000a1a9e090d414db404d"
              (nodecode-amazon-bedrock::hex (nodecode-amazon-bedrock::signing-key
-                                             "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY" "20120215" "us-east-1" "iam")))
-      "AWS's documented signing key")
+                                             "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY" "20120215" "us-east-1" "iam"))))
   (is (equal "c4afb1cc5771d871763a393e44b703571b55cc28424d1a5e86da6ed3c154a4b9"
              (nodecode-amazon-bedrock::hex (nodecode-amazon-bedrock::signing-key
                                              "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY" "20150830" "us-east-1" "iam"))))
   (is (equal "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
-             (nodecode-amazon-bedrock::hex (nodecode-amazon-bedrock::hmac-sha256 "Jefe" "what do ya want for nothing?")))
-      "RFC 4231 test case 2")
+             (nodecode-amazon-bedrock::hex (nodecode-amazon-bedrock::hmac-sha256 "Jefe" "what do ya want for nothing?"))))
   (is (equal "a9993e364706816aba3e25717850c26c9cd0d89d" (nodecode-amazon-bedrock::sha1-hex "abc")) "FIPS 180 SHA-1 of abc"))
 
 (deftest amazon-bedrock-cell-signs-the-documented-s3-get-example ()
@@ -177,8 +175,7 @@ the list of what NLE::CALL-PROVIDER answered; the round streams FRAMES."
 (deftest amazon-bedrock-cell-escapes-the-path-once-more ()
   (is (equal "/model/us.anthropic.claude-sonnet-4-5-20250929-v1%253A0/converse-stream"
              (nodecode-amazon-bedrock::canonical-path "/model/us.anthropic.claude-sonnet-4-5-20250929-v1%3A0/converse-stream")))
-  (is (equal "%25e2%25b6=1&a=b&x=y%2Bz" (nodecode-amazon-bedrock::canonical-query "x=y+z&a=b&%25e2%25b6=1"))
-      "each pair decoded and encoded again (a + stays a plus), sorted by the encoded names")
+  (is (equal "%25e2%25b6=1&a=b&x=y%2Bz" (nodecode-amazon-bedrock::canonical-query "x=y+z&a=b&%25e2%25b6=1")))
   (is (equal "arn%3Aaws%3Abedrock%3Aus-west-2%3A1%3Ainference-profile%2Fp"
              (nodecode-amazon-bedrock::encode-uri-component "arn:aws:bedrock:us-west-2:1:inference-profile/p"))))
 
@@ -193,8 +190,7 @@ the list of what NLE::CALL-PROVIDER answered; the round streams FRAMES."
       (is (equal '((":event-type" . "contentBlockDelta") (":content-type" . "application/json") (":message-type" . "event"))
                  headers))
       (is (equal "Hi" (nlk:json-value (nlk:decode-json (sb-ext:octets-to-string payload)) :string "delta" "text"))))
-    (is (equalp frame (ab-event "contentBlockDelta" "{\"contentBlockIndex\":0,\"delta\":{\"text\":\"Hi\"},\"p\":\"abcd\"}"))
-        "the test's own encoder writes the same bytes")))
+    (is (equalp frame (ab-event "contentBlockDelta" "{\"contentBlockIndex\":0,\"delta\":{\"text\":\"Hi\"},\"p\":\"abcd\"}")))))
 
 (deftest amazon-bedrock-cell-reads-every-header-type ()
   (let ((frame (ab-frame `(("t" 0) ("f" 1) ("b" 2 #xff) ("s" 3 #x01 #x00) ("i" 4 #xff #xff #xff #xfe)
@@ -229,8 +225,7 @@ the list of what NLE::CALL-PROVIDER answered; the round streams FRAMES."
                 (princ-to-string (signals-error nle::provider-stream-incomplete
                                    (nodecode-amazon-bedrock::read-frame
                                     (flexi-streams:make-in-memory-input-stream (subseq frame 0 30)) 5)))))
-    (is (null (nodecode-amazon-bedrock::read-frame (flexi-streams:make-in-memory-input-stream #()) 5))
-        "a clean end is no frame")))
+    (is (null (nodecode-amazon-bedrock::read-frame (flexi-streams:make-in-memory-input-stream #()) 5)))))
 
 ;;; --- the region ----------------------------------------------------------------------------
 
@@ -241,19 +236,15 @@ the list of what NLE::CALL-PROVIDER answered; the round streams FRAMES."
                (nodecode-amazon-bedrock::bedrock-region model)))))
     (is (equal "us-east-1" (region "us.anthropic.claude-opus-5-5")) "the us geo's default")
     (is (equal "eu-west-1" (region "eu.anthropic.claude-opus-4-6-v1")) "the eu geo's default")
-    (is (equal "eu-central-1" (region "eu.anthropic.claude-opus-4-6-v1" :env '(("AWS_REGION" . "eu-central-1"))))
-        "an ambient region that serves the geo")
-    (is (equal "eu-west-1" (region "eu.anthropic.claude-opus-4-6-v1" :env '(("AWS_REGION" . "us-west-2"))))
-        "one that cannot is passed over")
+    (is (equal "eu-central-1" (region "eu.anthropic.claude-opus-4-6-v1" :env '(("AWS_REGION" . "eu-central-1")))))
+    (is (equal "eu-west-1" (region "eu.anthropic.claude-opus-4-6-v1" :env '(("AWS_REGION" . "us-west-2")))))
     (is (equal "ap-southeast-2" (region "au.anthropic.claude-sonnet-4-5" :env '(("AWS_REGION" . "ap-southeast-1")))))
     (is (equal "us-west-2" (region "global.anthropic.claude-opus-5-5" :env '(("AWS_DEFAULT_REGION" . "us-west-2")))))
     (is (equal "us-east-1" (region "global.anthropic.claude-opus-5-5")))
     (is (equal "ap-northeast-1" (region "arn:aws:bedrock:ap-northeast-1:123:inference-profile/x"
-                                        :env '(("AWS_REGION" . "us-west-2"))))
-        "an ARN names its own")
+                                        :env '(("AWS_REGION" . "us-west-2")))) "an ARN names its own")
     (is (equal "ca-central-1" (region "us.anthropic.claude-opus-5-5" :section '("region" "ca-central-1")
-                                                                     :env '(("AWS_REGION" . "us-west-2"))))
-        "the section outranks everything")))
+                                                                     :env '(("AWS_REGION" . "us-west-2")))))))
 
 (deftest amazon-bedrock-cell-reads-the-profiles-region ()
   (with-temp-file (config :contents (format nil "[default]~%region = us-west-1~%[profile work]~%region = eu-north-1~%")
@@ -283,13 +274,11 @@ the list of what NLE::CALL-PROVIDER answered; the round streams FRAMES."
             (is (equal "aws-sigv4" (nle:credential-key credential)) "else SigV4 over the chain")
             (is (eq :aws (nle:credential-source credential)))))
         (with-ab-env ('(("OPENAI_API_KEY" . "sk") ("ANTHROPIC_API_KEY" . "sk-ant")))
-          (is (eq :public (nle:credential-source (nle::resolve-provider-credential "amazon-bedrock" :auth-path auth :probe t)))
-              "no source configured: nothing, and no other family's variable"))))
+          (is (eq :public (nle:credential-source (nle::resolve-provider-credential "amazon-bedrock" :auth-path auth :probe t)))))))
     (with-temp-auth (auth "{\"api_keys\":{\"amazon-bedrock\":{\"provider\":\"amazon-bedrock\",\"key\":\"saved-key\"}}}")
       (let ((nle::*api-key* nil))
         (with-ab-env ('(("AWS_BEARER_TOKEN_BEDROCK" . "bedrock-key")))
-          (is (equal "saved-key" (nle:credential-key (nle::resolve-provider-credential "amazon-bedrock" :auth-path auth :probe t)))
-              "a key /connect saved outranks the variable"))))))
+          (is (equal "saved-key" (nle:credential-key (nle::resolve-provider-credential "amazon-bedrock" :auth-path auth :probe t)))))))))
 
 (deftest amazon-bedrock-cell-finds-a-profile-as-a-source ()
   (with-temp-file (credentials :contents (format nil "[default]~%aws_access_key_id = AKIDFILE~%aws_secret_access_key = file-secret~%")
@@ -303,8 +292,7 @@ the list of what NLE::CALL-PROVIDER answered; the round streams FRAMES."
     (with-ab-env (`(("AWS_SHARED_CREDENTIALS_FILE" . ,credentials) ("AWS_ACCESS_KEY_ID" . "AKIDENV")
                     ("AWS_SECRET_ACCESS_KEY" . "env-secret")))
       (with-cell-stop ((amazon-bedrock-start))
-        (is (equal "AKIDENV" (getf (nodecode-amazon-bedrock::aws-credentials "us-east-1") :access-key))
-            "the environment outranks the profile")))
+        (is (equal "AKIDENV" (getf (nodecode-amazon-bedrock::aws-credentials "us-east-1") :access-key)))))
     (with-ab-env (`(("AWS_SHARED_CREDENTIALS_FILE" . ,credentials) ("AWS_PROFILE" . "absent")))
       (with-cell-stop ((amazon-bedrock-start))
         (is (not (nodecode-amazon-bedrock::aws-source-p)) "a profile the files do not name is no source")))))
@@ -421,8 +409,7 @@ the list of what NLE::CALL-PROVIDER answered; the round streams FRAMES."
         (is (equal '((:put "http://169.254.169.254/latest/api/token")
                      (:get "http://169.254.169.254/latest/meta-data/iam/security-credentials/")
                      (:get "http://169.254.169.254/latest/meta-data/iam/security-credentials/ec2-role"))
-                   (reverse asked))
-            "IMDSv2: a token, the role, its credentials")))))
+                   (reverse asked)) "IMDSv2: a token, the role, its credentials")))))
 
 (deftest amazon-bedrock-cell-says-when-no-source-answers ()
   (with-ab-env ('(("AWS_EC2_METADATA_DISABLED" . "true")))
@@ -447,16 +434,14 @@ the list of what NLE::CALL-PROVIDER answered; the round streams FRAMES."
       (is (nlk:json-value (aref (nlk:json-value (aref messages 0) :array "content") 0) :string "text"))
       (is (nlk:json-value (let ((content (nlk:json-value (aref messages 0) :array "content")))
                             (aref content (1- (length content))))
-                          :object "cachePoint")
-          "the final user message carries a cache point"))
+                          :object "cachePoint") "the final user message carries a cache point"))
     (is (nlk:json-value (aref (nlk:json-value body :array "system") 1) :object "cachePoint") "and so does the system prompt")
     (is (nlk:json-value (aref (nlk:json-value body :array "toolConfig" "tools") 0) :object "toolSpec" "inputSchema" "json"))
     (is (equal "adaptive" (nlk:json-value body :string "additionalModelRequestFields" "thinking" "type")))
     (is (equal "summarized" (nlk:json-value body :string "additionalModelRequestFields" "thinking" "display")))
     (is (equal "high" (nlk:json-value body :string "additionalModelRequestFields" "output_config" "effort")))
     (is (equal "drop_block" (nlk:json-value body :string "additionalModelRequestFields" "thinking" "block_binding"
-                                            "prefix_mismatch_behavior"))
-        "a prefix-bound model's thinking drops a block whose prefix changed")
+                                            "prefix_mismatch_behavior")))
     (is (equal "thinking-binding-controls-2026-08-01"
                (aref (nlk:json-value body :array "additionalModelRequestFields" "anthropic_beta") 0)))
     (is (equal "/input_transformations" (aref (nlk:json-value body :array "additionalModelResponseFieldPaths") 0)))
@@ -485,8 +470,7 @@ the list of what NLE::CALL-PROVIDER answered; the round streams FRAMES."
                                                        "reasoning_signature" "sig-0")
                                       (nle::message "user" "second"))))
       "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
-    (is (equal "https://bedrock-runtime.us-east-1.amazonaws.com/model/us.anthropic.claude-sonnet-4-5-20250929-v1%3A0/converse-stream" url)
-        "the model id escaped in the path")
+    (is (equal "https://bedrock-runtime.us-east-1.amazonaws.com/model/us.anthropic.claude-sonnet-4-5-20250929-v1%3A0/converse-stream" url))
     (let ((assistant (aref (nlk:json-value body :array "messages") 1)))
       (is (equal "sig-0" (nlk:json-value (aref (nlk:json-value assistant :array "content") 0) :string
                                          "reasoningContent" "reasoningText" "signature")))
@@ -499,8 +483,7 @@ the list of what NLE::CALL-PROVIDER answered; the round streams FRAMES."
       "deepseek.v3-v1:0"
     (let ((assistant (aref (nlk:json-value body :array "messages") 1)))
       (is (equal (format nil "<think>~%thought~%</think>")
-                 (nlk:json-value (aref (nlk:json-value assistant :array "content") 0) :string "text"))
-          "an unsigned thought is replayed as text, never as reasoningContent"))))
+                 (nlk:json-value (aref (nlk:json-value assistant :array "content") 0) :string "text"))))))
 
 (deftest amazon-bedrock-cell-sends-a-bedrock-api-key-as-a-bearer ()
   (with-ab-round (url headers body result :env '(("AWS_BEARER_TOKEN_BEDROCK" . "bedrock-key") ("AWS_REGION" . "us-west-2")))
@@ -521,8 +504,7 @@ the list of what NLE::CALL-PROVIDER answered; the round streams FRAMES."
 (deftest amazon-bedrock-cell-follows-the-section-base ()
   (with-ab-round (url headers body result :section '("base_url" "https://vpce-1.bedrock-runtime.us-east-1.vpce.amazonaws.com/gw?key=1"))
       "us.anthropic.claude-opus-5-5"
-    (is (equal "https://vpce-1.bedrock-runtime.us-east-1.vpce.amazonaws.com/gw/model/us.anthropic.claude-opus-5-5/converse-stream?key=1" url)
-        "a base of its own is kept verbatim, its path and query too")))
+    (is (equal "https://vpce-1.bedrock-runtime.us-east-1.vpce.amazonaws.com/gw/model/us.anthropic.claude-opus-5-5/converse-stream?key=1" url))))
 
 (deftest amazon-bedrock-cell-fails-an-in-stream-exception-with-its-status ()
   (with-ab-env ('(("AWS_BEARER_TOKEN_BEDROCK" . "k")))

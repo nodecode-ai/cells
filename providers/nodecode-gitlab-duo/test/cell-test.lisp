@@ -78,8 +78,7 @@ every request pushed onto POSTS as (URL HEADERS BODY)."
       (is (equal "anthropic" (nle::resolve-model-lane "gitlab-duo" "claude-sonnet-4-5-20250929")))
       (is (equal "openai-responses" (nle::resolve-model-lane "gitlab-duo" "duo-chat-gpt-5-codex")))
       (is (equal "openai-completions" (nle::resolve-model-lane "gitlab-duo" "duo-chat-gpt-5-1")))
-      (is (equal "openai-completions" (nle::resolve-model-lane "gitlab-duo" "gpt-5.1-2025-11-13"))
-          "omp's route, not the row's api, decides the wire")
+      (is (equal "openai-completions" (nle::resolve-model-lane "gitlab-duo" "gpt-5.1-2025-11-13")))
       (is (equal "https://cloud.gitlab.com/ai/v1/proxy/anthropic/v1/messages"
                  (nle::lane-endpoint "gitlab-duo" "anthropic")))
       (is (equal "https://cloud.gitlab.com/ai/v1/proxy/openai/v1/responses"
@@ -93,8 +92,7 @@ every request pushed onto POSTS as (URL HEADERS BODY)."
 (deftest gitlab-duo-cell-maps-aliases-to-upstream-models ()
   (is (equal "claude-opus-4-6" (nodecode-gitlab-duo::upstream-id "duo-chat-opus-4-6")))
   (is (equal "gpt-5.2-2025-12-11" (nodecode-gitlab-duo::upstream-id "duo-chat-gpt-5-2")))
-  (is (equal "claude-haiku-4-5-20251001" (nodecode-gitlab-duo::upstream-id "claude-haiku-4-5-20251001"))
-      "an upstream id is asked for as it is")
+  (is (equal "claude-haiku-4-5-20251001" (nodecode-gitlab-duo::upstream-id "claude-haiku-4-5-20251001")))
   (is (null (nodecode-gitlab-duo::upstream-id "duo-chat-unknown"))))
 
 ;;; --- the credential ----------------------------------------------------------------------
@@ -113,8 +111,7 @@ every request pushed onto POSTS as (URL HEADERS BODY)."
                                 (nle::resolve-provider-credential "gitlab-duo" :auth-path auth :probe t)))))
       (with-stubbed-fdefinition (nle::credential-env (name) (and (equal name "ANTHROPIC_API_KEY") "sk-ant"))
         (let ((credential (nle::resolve-provider-credential "gitlab-duo" :auth-path auth :probe t)))
-          (is (not (equal "sk-ant" (nle:credential-key credential)))
-              "another provider's key never goes to GitLab")
+          (is (not (equal "sk-ant" (nle:credential-key credential))) "another provider's key never goes to GitLab")
           (is (eq :public (nle:credential-source credential))))))))
 
 (deftest gitlab-duo-cell-refreshes-a-token-about-to-expire ()
@@ -140,11 +137,9 @@ every request pushed onto POSTS as (URL HEADERS BODY)."
                  (entry (nlk:json-value stored :object "oauth_tokens" "gitlab-duo")))
             (is (equal "new" (nlk:json-value entry :string "access_token")))
             (is (equal "r2" (nlk:json-value entry :string "refresh_token")) "the rotated refresh token is kept")
-            (is (eql (+ now 7200 -300) (nlk:json-value entry :integer "expires_at"))
-                "created_at plus expires_in, five minutes inside")
+            (is (eql (+ now 7200 -300) (nlk:json-value entry :integer "expires_at")))
             (is (equal "k" (nlk:json-value stored :string "api_keys" "x" "key"))))
-          (is (equal "new" (nle:credential-key (nle::resolve-provider-credential "gitlab-duo" :auth-path auth)))
-              "and the fresh token is not refreshed again")
+          (is (equal "new" (nle:credential-key (nle::resolve-provider-credential "gitlab-duo" :auth-path auth))))
           (is (= 1 (length posts))))))))
 
 (deftest gitlab-duo-cell-a-failed-refresh-says-sign-in-again ()
@@ -159,8 +154,7 @@ every request pushed onto POSTS as (URL HEADERS BODY)."
           (is (and refusal (search "/gitlab-duo login" refusal)))
           (is (search "invalid_grant" refusal))
           (is (search "sign in again"
-                      (or (second (assoc "nodecode-gitlab-duo" (nodecode.kernel::standing-notices) :test #'string=)) ""))
-              "and it stands where the model reads it, until a sign-in"))))))
+                      (or (second (assoc "nodecode-gitlab-duo" (nodecode.kernel::standing-notices) :test #'string=)) ""))))))))
 
 (deftest gitlab-duo-cell-never-sends-another-familys-key ()
   (with-cell-stop ((gitlab-duo-start))
@@ -169,8 +163,7 @@ every request pushed onto POSTS as (URL HEADERS BODY)."
                                  (cond ((equal name "OPENAI_API_KEY") "sk-openai")
                                        ((equal name "ANTHROPIC_API_KEY") "sk-ant")))
         (let ((credential (nle::resolve-provider-credential "gitlab-duo" :auth-path auth :probe t)))
-          (is (not (member (nle:credential-key credential) '("sk-openai" "sk-ant") :test #'equal))
-              "no lane family's default variable reaches GitLab")
+          (is (not (member (nle:credential-key credential) '("sk-openai" "sk-ant") :test #'equal)))
           (is (eq :public (nle:credential-source credential))))))))
 
 (deftest gitlab-duo-cell-a-probe-refreshes-nothing ()
@@ -178,8 +171,7 @@ every request pushed onto POSTS as (URL HEADERS BODY)."
     (with-temp-auth (auth (format nil "{\"oauth_tokens\":{\"gitlab-duo\":{\"access_token\":\"old\",\"refresh_token\":\"r1\",\"expires_at\":~d}}}"
                                   (- (gitlab-duo-now) 10)))
       (with-stubbed-fdefinition (dex:post (url &rest args) (error "a probe touched the network"))
-        (is (equal "old" (nle:credential-key (nle::resolve-provider-credential "gitlab-duo" :auth-path auth :probe t)))
-            "where the credential comes from is answered from the store alone")))))
+        (is (equal "old" (nle:credential-key (nle::resolve-provider-credential "gitlab-duo" :auth-path auth :probe t))))))))
 
 ;;; --- one round per wire -------------------------------------------------------------------
 
@@ -189,12 +181,10 @@ every request pushed onto POSTS as (URL HEADERS BODY)."
       (nle::call-anthropic-streaming (user-context)))
     (destructuring-bind (round exchange) posts
       (is (equal "https://gitlab.com/api/v4/ai/third_party_agents/direct_access" (first exchange)))
-      (is (equal "Bearer glpat-test" (gitlab-duo-header (second exchange) "Authorization"))
-          "the GitLab token buys the grant")
+      (is (equal "Bearer glpat-test" (gitlab-duo-header (second exchange) "Authorization")))
       (is (eq t (nlk:json-value (third exchange) :any "feature_flags" "DuoAgentPlatformNext")))
       (is (equal "https://cloud.gitlab.com/ai/v1/proxy/anthropic/v1/messages" (first round)))
-      (is (equal "Bearer duo-grant" (gitlab-duo-header (second round) "authorization"))
-          "the round sends the grant, not the GitLab token")
+      (is (equal "Bearer duo-grant" (gitlab-duo-header (second round) "authorization")))
       (is (null (gitlab-duo-header (second round) "x-api-key")))
       (is (equal "saas" (gitlab-duo-header (second round) "x-gitlab-realm")) "with the gateway's headers")
       (is (equal "inst-1" (gitlab-duo-header (second round) "x-gitlab-instance-id")))
@@ -209,8 +199,7 @@ every request pushed onto POSTS as (URL HEADERS BODY)."
     (let ((nle::*model* "duo-chat-gpt-5-1") (nle::*reasoning-effort* "high") (nle::*temperature* 0.5))
       (nle::call-provider-streaming (user-context))
       (nle::call-provider-streaming (user-context)))
-    (is (= 1 (count-if (lambda (post) (search "direct_access" (first post))) posts))
-        "the grant is reused for the next round")
+    (is (= 1 (count-if (lambda (post) (search "direct_access" (first post))) posts)))
     (let ((round (first posts)))
       (is (equal "https://cloud.gitlab.com/ai/v1/proxy/openai/v1/chat/completions" (first round)))
       (is (equal "Bearer duo-grant" (gitlab-duo-header (second round) "authorization")))
@@ -289,10 +278,8 @@ every request pushed onto POSTS as (URL HEADERS BODY)."
             (is (equal (format nil "http://localhost:~d/callback" port) redirect))
             (is (equal (format nil "https://gitlab.com/oauth/authorize?client_id=da4edff2e6ebd2bc3208611e2768bc1c1dd7be791dc5ff26ca34ca9ee44f7d4b&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A~d%2Fcallback&scope=api&code_challenge=~a&code_challenge_method=S256&state=~a"
                                port (nodecode-gitlab-duo::flow-challenge flow) (nodecode-gitlab-duo::flow-state flow))
-                       (nodecode-gitlab-duo::flow-url flow))
-                "GitLab's standard authorize request with PKCE")
-            (is (uiop:string-prefix-p "HTTP/1.1 500" (gitlab-duo-local-get port "/callback?code=forged&state=other"))
-                "a callback with another state is refused")
+                       (nodecode-gitlab-duo::flow-url flow)) "GitLab's standard authorize request with PKCE")
+            (is (uiop:string-prefix-p "HTTP/1.1 500" (gitlab-duo-local-get port "/callback?code=forged&state=other")))
             (is (null posts) "and exchanges nothing")
             (is (uiop:string-prefix-p "HTTP/1.1 200"
                                       (gitlab-duo-local-get port (format nil "/callback?code=gl-code&state=~a"

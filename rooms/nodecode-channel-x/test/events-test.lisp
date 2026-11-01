@@ -14,8 +14,7 @@
 (deftest channel-x-mention-is-a-candidate ()
   (let ((candidate (ncx:x-mention-candidate (x-tweet "text" "@nodebot what &amp; why &lt;3")
                                             :bot-id "900" :bot-handle "NodeBot")))
-    (is (equal "what & why <3" (gethash "text" candidate))
-        "the handles ahead of the words go, the words come unescaped")
+    (is (equal "what & why <3" (gethash "text" candidate)))
     (is-source candidate "platform" "x" "chat_kind" "group" "channel_id" "200" "user_id" "501"
                "user_name" "@kim" "message_id" "200")
     (is (nck:candidate-addressed-p candidate) "X itself said it to the bot")))
@@ -28,18 +27,13 @@
     (is-source candidate "channel_id" "100" "reply_to_message_id" "150")))
 
 (deftest channel-x-what-is-not-said-to-the-bot ()
-  (is (null (ncx:x-mention-candidate (x-tweet "author_id" "900") :bot-id "900" :bot-handle "nodebot"))
-      "the bot's own post")
-  (is (null (ncx:x-mention-candidate (x-tweet "text" "@ann hi") :bot-id "900" :bot-handle "nodebot"))
-      "a tweet that names someone else")
-  (is (null (ncx:x-mention-candidate (x-tweet "text" "@nodebot") :bot-id "900" :bot-handle "nodebot"))
-      "a bare mention says nothing")
-  (is (null (ncx:x-mention-candidate (x-tweet "text" "@nodebotx hi") :bot-id "900" :bot-handle "nodebot"))
-      "a longer handle is someone else")
+  (is (null (ncx:x-mention-candidate (x-tweet "author_id" "900") :bot-id "900" :bot-handle "nodebot")))
+  (is (null (ncx:x-mention-candidate (x-tweet "text" "@ann hi") :bot-id "900" :bot-handle "nodebot")))
+  (is (null (ncx:x-mention-candidate (x-tweet "text" "@nodebot") :bot-id "900" :bot-handle "nodebot")))
+  (is (null (ncx:x-mention-candidate (x-tweet "text" "@nodebotx hi") :bot-id "900" :bot-handle "nodebot")))
   (is (ncx:x-mention-candidate (x-tweet "text" "@ann and then?" "in_reply_to" "777")
                                :bot-id "900" :bot-handle "nodebot"
-                               :bot-tweet-p (lambda (id) (equal id "777")))
-      "a reply under the bot's post is said to it, named or not"))
+                               :bot-tweet-p (lambda (id) (equal id "777")))))
 
 (deftest channel-x-policy-admits-allowed-people-only ()
   (let ((policy (ncx:x-inbound-policy :allowed-users '("501") :bot-handle "nodebot"))

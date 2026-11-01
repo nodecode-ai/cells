@@ -101,12 +101,10 @@ captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
                  (nle::lane-endpoint "github-copilot" "openai-responses")))
       (is (equal "https://api.githubcopilot.com/chat/completions"
                  (nle::lane-endpoint "github-copilot" "openai-completions")))
-      (is (equal "https://api.anthropic.com/v1/messages" (nle::lane-endpoint "anthropic" "anthropic"))
-          "another provider's Messages address is its own"))
+      (is (equal "https://api.anthropic.com/v1/messages" (nle::lane-endpoint "anthropic" "anthropic"))))
     (funcall stop)
     (setf stop nil)
-    (is (null (nlk:json-value (nle::models-catalog-table) :object "github-copilot"))
-        "a stopped cell leaves the catalog as models.dev made it")))
+    (is (null (nlk:json-value (nle::models-catalog-table) :object "github-copilot")))))
 
 (deftest github-copilot-cell-base-follows-the-section ()
   (with-cell-stop ((github-copilot-start "base_url" "https://relay.example"))
@@ -124,8 +122,7 @@ captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
           (is (equal "ghp_env" (nle:credential-key credential)))
           (is (eq :env (nle:credential-source credential))))
         (is (not (equal "ghp_env"
-                        (nle:credential-key (nle::resolve-provider-credential "anthropic" :auth-path auth :probe t))))
-            "another provider's ladder never reads COPILOT_GITHUB_TOKEN")))))
+                        (nle:credential-key (nle::resolve-provider-credential "anthropic" :auth-path auth :probe t)))))))))
 
 (deftest github-copilot-cell-asks-github-where-an-env-token-is-served ()
   (with-cell-stop ((github-copilot-start))
@@ -139,10 +136,9 @@ captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
               (values "{\"endpoints\":{\"api\":\"https://api.individual.githubcopilot.com/\"}}" 200)))
           (let ((credential (nle::resolve-provider-credential
                              "github-copilot" :auth-path auth
-                                              :endpoint "https://api.githubcopilot.com/chat/completions")))
+                             :endpoint "https://api.githubcopilot.com/chat/completions")))
             (is (equal "https://api.individual.githubcopilot.com/chat/completions"
-                       (getf (nle:credential-attributes credential) :endpoint))
-                "the plan's own host"))
+                       (getf (nle:credential-attributes credential) :endpoint)) "the plan's own host"))
           (nle::resolve-provider-credential "github-copilot" :auth-path auth
                                                              :endpoint "https://api.githubcopilot.com/responses")
           (nle::resolve-provider-credential "github-copilot" :auth-path auth :probe t))
@@ -165,20 +161,18 @@ captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
                                  (and (equal name "COPILOT_GITHUB_TOKEN") "ghp_env"))
         (let ((credential (nle::resolve-provider-credential
                            "github-copilot" :auth-path auth
-                                            :endpoint "https://api.githubcopilot.com/v1/messages")))
+                           :endpoint "https://api.githubcopilot.com/v1/messages")))
           (is (equal "gho_signed" (nle:credential-key credential)))
           (is (eq :oauth (nle:credential-source credential)))
           (is (equal "https://api.business.githubcopilot.com/v1/messages"
-                     (getf (nle:credential-attributes credential) :endpoint))
-              "the plan host the sign-in learned"))
+                     (getf (nle:credential-attributes credential) :endpoint)) "the plan host the sign-in learned"))
         (is (eq :oauth (nle::provider-auth-state "github-copilot" :auth-path auth)))))
     (with-temp-auth (auth (copilot-signed-in :enterprise "acme.ghe.com"))
       (let ((credential (nle::resolve-provider-credential
                          "github-copilot" :auth-path auth
-                                          :endpoint "https://api.githubcopilot.com/responses")))
+                         :endpoint "https://api.githubcopilot.com/responses")))
         (is (equal "https://copilot-api.acme.ghe.com/responses"
-                   (getf (nle:credential-attributes credential) :endpoint))
-            "an Enterprise sign-in is served at copilot-api.<domain>")))))
+                   (getf (nle:credential-attributes credential) :endpoint)))))))
 
 (deftest github-copilot-cell-never-sends-another-familys-key ()
   (with-cell-stop ((github-copilot-start))
@@ -186,8 +180,7 @@ captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
       (with-stubbed-fdefinition (nle::credential-env (name)
                                  (and (member name '("OPENAI_API_KEY" "ANTHROPIC_API_KEY") :test #'equal) "sk-other"))
         (let ((credential (nle::resolve-provider-credential "github-copilot" :auth-path auth :probe t)))
-          (is (not (equal "sk-other" (nle:credential-key credential)))
-              "the chat family's default variable never reaches Copilot")
+          (is (not (equal "sk-other" (nle:credential-key credential))))
           (is (eq :public (nle:credential-source credential))))
         (let ((credential (nle::resolve-provider-credential
                            "github-copilot" :auth-path auth :endpoint "https://api.githubcopilot.com/v1/messages")))
@@ -198,8 +191,7 @@ captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
     (with-temp-auth (auth "{}")
       (with-stubbed-fdefinition (nle::credential-env (name)
                                  (and (equal name "OPENAI_API_KEY") "sk-openai"))
-        (is (eq :none (nle::provider-auth-state "github-copilot" :auth-path auth))
-            "OPENAI_API_KEY is not a Copilot credential")))))
+        (is (eq :none (nle::provider-auth-state "github-copilot" :auth-path auth)))))))
 
 (deftest github-copilot-cell-refreshes-a-sign-in-that-is-due ()
   ;; omp stamps a Copilot sign-in ten years out; one that came due is
@@ -210,17 +202,15 @@ captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
         (with-stubbed-fdefinitions ((dex:get (url &rest args) (error "no network: ~a" url))
                                     (dex:post (url &rest args) (error "no network: ~a" url)))
           (nle::resolve-provider-credential "github-copilot" :auth-path auth :probe t)
-          (is (= soon (nlk:json-value (nle::read-auth-file auth) :integer "oauth_tokens" "github-copilot" "expires_at"))
-              "a probe writes nothing")
+          (is (= soon (nlk:json-value (nle::read-auth-file auth) :integer "oauth_tokens" "github-copilot" "expires_at")))
           (let ((credential (nle::resolve-provider-credential
                              "github-copilot" :auth-path auth
-                                              :endpoint "https://api.githubcopilot.com/responses")))
+                             :endpoint "https://api.githubcopilot.com/responses")))
             (is (equal "gho_signed" (nle:credential-key credential)) "the GitHub token stays the token")))
         (let ((entry (nlk:json-value (nle::read-auth-file auth) :object "oauth_tokens" "github-copilot")))
           (is (null (nth-value 1 (gethash "expires_at" entry))) "written back with no expiry")
           (is (equal "gho_signed" (nlk:json-value entry :string "access_token")))
-          (is (equal "https://api.individual.githubcopilot.com" (nlk:json-value entry :string "api_endpoint"))
-              "and the plan host kept"))))))
+          (is (equal "https://api.individual.githubcopilot.com" (nlk:json-value entry :string "api_endpoint"))))))))
 
 ;;; --- the sign-in ---------------------------------------------------------------------------
 
@@ -259,8 +249,7 @@ first token poll pending, the second granting TOKEN; POSTS and GETS collect
                         (cell-entry "nodecode-github-copilot" "github-copilot" "login"))))
           (is (search "https://github.com/login/device" answer) "the page to open")
           (is (search "ABCD-1234" answer) "and the code to type")
-          (is (await (:timeout 10) (copilot-said "github-copilot: signed in (served at"))
-              "the outcome is said once")
+          (is (await (:timeout 10) (copilot-said "github-copilot: signed in (served at")) "the outcome is said once")
           (is (null (cell-notice "nodecode-github-copilot")) "and does not stand")
           (let* ((auth-json (nle::read-auth-file auth))
                  (entry (nlk:json-value auth-json :object "oauth_tokens" "github-copilot")))
@@ -270,14 +259,12 @@ first token poll pending, the second granting TOKEN; POSTS and GETS collect
             (is (equal "https://api.individual.githubcopilot.com" (nlk:json-value entry :string "api_endpoint")))
             (is (null (nlk:json-value entry :string "enterprise_url")))
             (is (equal "k" (nlk:json-value auth-json :string "api_keys" "other" "key")) "every other field kept")
-            (is (equal "600" (format nil "~o" (logand #o777 (sb-posix:stat-mode (sb-posix:stat auth)))))
-                "written 0600"))
+            (is (equal "600" (format nil "~o" (logand #o777 (sb-posix:stat-mode (sb-posix:stat auth)))))))
           (let* ((ordered (reverse posts))
                  (device (first ordered))
                  (poll (second ordered)))
             (is (equal "https://github.com/login/device/code" (first device)))
-            (is (equal "Ov23li8tweQw6odWQebz" (cdr (assoc "client_id" (copilot-form (third device)) :test #'equal)))
-                "public GitHub signs in through the OpenCode app")
+            (is (equal "Ov23li8tweQw6odWQebz" (cdr (assoc "client_id" (copilot-form (third device)) :test #'equal))))
             (is (equal "read:user" (cdr (assoc "scope" (copilot-form (third device)) :test #'equal))))
             (is (equal "copilot-developer-action/0.0.1" (copilot-header (second device) "User-Agent")))
             (is (equal "https://github.com/login/oauth/access_token" (first poll)))
@@ -287,8 +274,7 @@ first token poll pending, the second granting TOKEN; POSTS and GETS collect
             (let ((policies (remove-if-not (lambda (post) (search "/policy" (first post))) ordered)))
               (is (= (length nodecode-github-copilot::+models+) (length policies)) "every bundled model's policy")
               (is (find "https://api.individual.githubcopilot.com/models/claude-sonnet-4.5/policy" policies
-                        :key #'first :test #'equal)
-                  "at the plan's host")
+                        :key #'first :test #'equal) "at the plan's host")
               (let ((headers (second (first policies))))
                 (is (equal "Bearer gho_new" (copilot-header headers "Authorization")))
                 (is (equal "copilot-chat" (copilot-header headers "Copilot-Integration-Id")))
@@ -310,8 +296,7 @@ first token poll pending, the second granting TOKEN; POSTS and GETS collect
                 (nlk:json-value (ignore-errors (nle::read-auth-file auth)) :string "oauth_tokens" "github-copilot" "access_token")))
           (let ((device (car (last posts))))
             (is (equal "https://acme.ghe.com/login/device/code" (first device)))
-            (is (equal "Ov23ctDVkRmgkPke0Mmm" (cdr (assoc "client_id" (copilot-form (third device)) :test #'equal)))
-                "an Enterprise instance keeps the Copilot CLI's app"))
+            (is (equal "Ov23ctDVkRmgkPke0Mmm" (cdr (assoc "client_id" (copilot-form (third device)) :test #'equal)))))
           (is (equal "acme.ghe.com" (nlk:json-value (nle::read-auth-file auth) :string
                                                     "oauth_tokens" "github-copilot" "enterprise_url")))
           (is (await (:timeout 10) (copilot-said "github-copilot: signed in to acme.ghe.com"))))))))
@@ -329,10 +314,8 @@ first token poll pending, the second granting TOKEN; POSTS and GETS collect
           (let ((nle::*auth-file-path* auth))
             (cell-entry "nodecode-github-copilot" "github-copilot" "login"))
           (is (await (:timeout 10)
-                (search "the user said no" (or (second (cell-notice "nodecode-github-copilot")) "")))
-              "the refusal in GitHub's words")
-          (is (null (nlk:json-value (ignore-errors (nle::read-auth-file auth)) :object "oauth_tokens"))
-              "and nothing kept"))))))
+                (search "the user said no" (or (second (cell-notice "nodecode-github-copilot")) ""))))
+          (is (null (nlk:json-value (ignore-errors (nle::read-auth-file auth)) :object "oauth_tokens"))))))))
 
 (deftest github-copilot-cell-logout-forgets-the-sign-in ()
   (with-cell-stop ((github-copilot-start))
@@ -369,8 +352,7 @@ first token poll pending, the second granting TOKEN; POSTS and GETS collect
 (deftest github-copilot-cell-sends-a-gpt-4-round-to-chat ()
   (with-copilot-round (url headers body :auth (copilot-signed-in :enterprise "acme.ghe.com")) "gpt-4.1"
     (is (equal "https://copilot-api.acme.ghe.com/chat/completions" url))
-    (is (equal "copilot-developer-cli" (copilot-header headers "Copilot-Integration-Id"))
-        "Enterprise keeps the CLI identity")
+    (is (equal "copilot-developer-cli" (copilot-header headers "Copilot-Integration-Id")))
     (is (equal "gpt-4.1" (nlk:json-value body :string "model")))))
 
 (deftest github-copilot-cell-marks-a-round-after-a-tool-as-the-agent-s ()
@@ -448,11 +430,9 @@ first token poll pending, the second granting TOKEN; POSTS and GETS collect
             (is (eql 400000 (getf (first rows) :context-window)))))
         (is (equal "https://api.individual.githubcopilot.com/models" (first asked)) "at the account's host")
         (is (equal "Bearer gho_signed" (copilot-header (second asked) "Authorization")))
-        (is (equal "copilot-developer-cli" (copilot-header (second asked) "Copilot-Integration-Id"))
-            "the CLI identity, which listing unlocks more with")
+        (is (equal "copilot-developer-cli" (copilot-header (second asked) "Copilot-Integration-Id")))
         (is (equal "user" (copilot-header (second asked) "X-Initiator")))))
     (with-temp-auth (auth "{}")
       (with-stubbed-fdefinition (nle::credential-env (name) nil)
         (let ((nle::*auth-file-path* auth) (nle::*api-key* nil))
-          (is (search "not signed in" (nth-value 1 (nle::list-provider-models "github-copilot")))
-              "nothing is asked without a sign-in"))))))
+          (is (search "not signed in" (nth-value 1 (nle::list-provider-models "github-copilot")))))))))

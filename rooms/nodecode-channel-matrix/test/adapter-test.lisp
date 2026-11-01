@@ -49,22 +49,19 @@ The sync token is kept in a scratch folder."
     (with-matrix-lane (fake "allowed_users" (vector "@kim:fake") "owner" (vector "@kim:fake"))
       (fake-matrix-push fake "!dm:fake" (matrix-text "@kim:fake" "hi bot" :id "$ask1"))
       (is-present (answer (await (:timeout 15) (first (matrix-answers fake "matrix reply"))))
-          "the answer was posted"
+        "the answer was posted"
         (is (equal "m.text" (gethash "msgtype" answer)) "the answer notifies")
-        (is (equal "$ask1" (nlk:json-value answer :string "m.relates_to" "m.in_reply_to" "event_id"))
-            "a direct message answers quoting the ask")
+        (is (equal "$ask1" (nlk:json-value answer :string "m.relates_to" "m.in_reply_to" "event_id")))
         (is (null (nlk:json-value answer :string "m.relates_to" "rel_type")) "and opens no thread"))
       (is-lane-carrying "matrix" "matrix-!dm:fake" "matrix-!dm:fake-m$ask1" "matrix-channel"
                         "(Matrix user id @kim:fake)" "(ncm:request")
-      (is (wire-row "kim (operator) [m$ask1 u@kim:fake]: hi bot" (first messages-seen) "content")
-          "the line names its speaker by the name the homeserver gives")
+      (is (wire-row "kim (operator) [m$ask1 u@kim:fake]: hi bot" (first messages-seen) "content"))
       (is (await (:timeout 15) (plusp (count-session-events "matrix-!dm:fake-m$ask1" "turn.completed"))))
       (is (= 1 (length (matrix-answers fake "matrix reply"))) "what was said before the first sync opened nothing")
       (is (not (nlk:session-exists-p "matrix-!dm:fake-m$old")))
       (is (matrix-calls fake "typing") "the bot typed while it worked")
       (is (await (:timeout 5) (let ((kept (probe-file (merge-pathnames "_bot_fake.since" ncm::*sync-state-directory*))))
-                                (and kept (uiop:string-prefix-p "b" (uiop:read-file-string kept)))))
-          "the sync token is kept for the next start"))))
+                                (and kept (uiop:string-prefix-p "b" (uiop:read-file-string kept)))))))))
 
 (deftest channel-matrix-room-ask-threads-and-goes-on ()
   (with-fake-matrix (fake)
@@ -76,24 +73,21 @@ The sync token is kept in a scratch folder."
                           (matrix-text "@kim:fake" "bot: what is up" :id "$root" :mentions '("@bot:fake")
                                        :html "<a href=\"https://matrix.to/#/@bot:fake\">bot</a>: what is up"))
         (is-present (answer (await (:timeout 15) (first (matrix-answers fake "matrix reply"))))
-            "the answer was posted"
+          "the answer was posted"
           (is (equal "m.thread" (nlk:json-value answer :string "m.relates_to" "rel_type")))
           (is (equal "$root" (nlk:json-value answer :string "m.relates_to" "event_id")) "in the ask's thread"))
         (is (await (:timeout 15) (plusp (count-session-events lane "turn.completed"))))
         (is (some (lambda (row) (search "[m$root u@kim:fake]: what is up"
                                         (or (ignore-errors (nlk:json-value row :string "content")) "")))
-                  (coerce (first messages-seen) 'list))
-            "the model reads the ask, not the mention that routed it")
+                  (coerce (first messages-seen) 'list)) "the model reads the ask, not the mention that routed it")
         ;; A room line that mentions nobody is context, not an ask.
         (fake-matrix-push fake "!room:fake" (matrix-text "@kim:fake" "just chatting" :id "$chat"))
         ;; In the thread the bot answers in, no mention is needed, and the
         ;; lane the ask opened takes the next turn.
         (fake-matrix-push fake "!room:fake" (matrix-text "@kim:fake" "and more" :id "$more" :thread "$root"))
-        (is (await (:timeout 15) (= 2 (length (matrix-answers fake "matrix reply"))))
-            "the follow-up was answered")
+        (is (await (:timeout 15) (= 2 (length (matrix-answers fake "matrix reply")))) "the follow-up was answered")
         (is (every (lambda (body) (equal "$root" (nlk:json-value body :string "m.relates_to" "event_id")))
-                   (matrix-answers fake "matrix reply"))
-            "both answers are in the one thread")
+                   (matrix-answers fake "matrix reply")) "both answers are in the one thread")
         (is (await (:timeout 15) (= 2 (count-session-events lane "turn.completed"))))
         (is (= 2 (count-session-events lane "turn.started")) "one lane, two turns")
         (is (not (nlk:session-exists-p "matrix-!room:fake-m$more")) "no second lane")
@@ -107,8 +101,7 @@ The sync token is kept in a scratch folder."
       ;; A client that reads no menu (Element, Cinny) sends the command as
       ;; typed, mentioning no one.
       (fake-matrix-push fake "!room:fake" (matrix-text "@kim:fake" "/help" :id "$cmd1"))
-      (is (await (:timeout 15) (= 1 (length (matrix-answers fake "Show commands"))))
-          "the bare command ran")
+      (is (await (:timeout 15) (= 1 (length (matrix-answers fake "Show commands")))) "the bare command ran")
       (is (not (nlk:session-exists-p "matrix-!room:fake-m$cmd1")) "a command opens no lane")
       ;; Another bot speaks: the next bare command is its, and a mention still
       ;; runs one here.
@@ -118,15 +111,12 @@ The sync token is kept in a scratch folder."
       (fake-matrix-push fake "!room:fake" (matrix-text "@kim:fake" "/help" :id "$cmd2"))
       (fake-matrix-push fake "!room:fake" (matrix-text "@kim:fake" "@bot:fake /help" :id "$cmd3"
                                                     :mentions '("@bot:fake")))
-      (is (await (:timeout 15) (<= 2 (length (matrix-answers fake "Show commands"))))
-          "the mentioned command ran")
+      (is (await (:timeout 15) (<= 2 (length (matrix-answers fake "Show commands")))) "the mentioned command ran")
       (sleep 1)
-      (is (= 2 (length (matrix-answers fake "Show commands")))
-          "the bare command after another bot spoke was left to it")
+      (is (= 2 (length (matrix-answers fake "Show commands"))))
       ;; The bot's own answer makes it the last to speak again.
       (fake-matrix-push fake "!room:fake" (matrix-text "@kim:fake" "/help" :id "$cmd4"))
-      (is (await (:timeout 15) (= 3 (length (matrix-answers fake "Show commands"))))
-          "once the bot has spoken, a bare command is its again"))))
+      (is (await (:timeout 15) (= 3 (length (matrix-answers fake "Show commands"))))))))
 
 (deftest channel-matrix-invites-and-encrypted-rooms ()
   (with-fake-matrix (fake)
@@ -160,8 +150,7 @@ The sync token is kept in a scratch folder."
                                                                    ("Details" "details:x")))))
              (card (ncm:matrix-event-id (nck:execution-body posted))))
         (is (search "stop" (gethash "body" (first (matrix-answers fake "working")))) "the hint says how to press")
-        (is (await (:timeout 10) (= 2 (length (matrix-calls fake "send" :type "m.reaction"))))
-            "one reaction per control, on the card")
+        (is (await (:timeout 10) (= 2 (length (matrix-calls fake "send" :type "m.reaction")))))
         (is (equal (list (ncm:control-glyph '("Stop") 0) (ncm:control-glyph '("Details") 1))
                    (mapcar (lambda (body) (nlk:json-value body :string "m.relates_to" "key"))
                            (matrix-calls fake "send" :type "m.reaction"))))
@@ -171,8 +160,7 @@ The sync token is kept in a scratch folder."
         (is (await (:timeout 10) (= 2 (hash-table-count (ncm::matrix-book-marks (ncm::matrix-adapter-book adapter))))))
         (nck:execute-plan (nck:host-executor host)
                           (ncm:edit-plan (ncm::matrix-adapter-book adapter) target card "done"))
-        (is (await (:timeout 10) (= 2 (length (matrix-calls fake "redact"))))
-            "a settled card's controls are taken off")))))
+        (is (await (:timeout 10) (= 2 (length (matrix-calls fake "redact")))))))))
 
 (deftest channel-matrix-probe-names-what-the-token-sees ()
   (with-fake-matrix (fake)

@@ -43,14 +43,12 @@ captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
       (is (equal "ClinePass" (nlk:json-value row :string "name")))
       (is (equal "https://api.cline.bot/api/v1" (nlk:json-value row :string "api")))
       (is (gethash "kimi-k3" (nlk:json-value row :object "models")) "the bundled models are listed")
-      (is (equal "openai-completions" (nle::configured-provider-lane "cline-pass"))
-          "the chat lane drives it")
+      (is (equal "openai-completions" (nle::configured-provider-lane "cline-pass")) "the chat lane drives it")
       (is (equal "https://api.cline.bot/api/v1/chat/completions"
                  (nle::lane-endpoint "cline-pass" "openai-completions"))))
     (funcall stop)
     (setf stop nil)
-    (is (null (nlk:json-value (nle::models-catalog-table) :object "cline-pass"))
-        "a stopped cell leaves the catalog as models.dev made it")))
+    (is (null (nlk:json-value (nle::models-catalog-table) :object "cline-pass")))))
 
 (deftest cline-pass-cell-base-follows-the-section ()
   (with-cell-stop ((cline-pass-start "base_url" "https://relay.example/v1"))
@@ -68,8 +66,7 @@ captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
       (with-stubbed-fdefinition (nle::credential-env (name)
                                  (and (equal name "CLINE_API_KEY") "sk-cline"))
         (is (not (equal "sk-cline"
-                        (nle:credential-key (nle::resolve-provider-credential "anthropic" :auth-path auth :probe t))))
-            "another provider's ladder never reads CLINE_API_KEY")))))
+                        (nle:credential-key (nle::resolve-provider-credential "anthropic" :auth-path auth :probe t)))))))))
 
 (deftest cline-pass-cell-never-sends-another-familys-key ()
   (with-cell-stop ((cline-pass-start))
@@ -77,8 +74,7 @@ captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
       (with-stubbed-fdefinition (nle::credential-env (name)
                                  (and (equal name "OPENAI_API_KEY") "sk-openai"))
         (let ((credential (nle::resolve-provider-credential "cline-pass" :auth-path auth :probe t)))
-          (is (not (equal "sk-openai" (nle:credential-key credential)))
-              "the chat family's default variable never reaches Cline")
+          (is (not (equal "sk-openai" (nle:credential-key credential))))
           (is (eq :public (nle:credential-source credential))))))))
 
 (deftest cline-pass-cell-saved-key-outranks-the-variable ()
@@ -92,8 +88,7 @@ captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
 (deftest cline-pass-cell-sends-the-wire-id-and-client-headers ()
   (with-cline-pass-round (url headers body) "kimi-k3"
     (is (equal "https://api.cline.bot/api/v1/chat/completions" url))
-    (is (equal "cline-pass/kimi-k3" (nlk:json-value body :string "model"))
-        "a subscription model goes out under its cline-pass/ id")
+    (is (equal "cline-pass/kimi-k3" (nlk:json-value body :string "model")))
     (is (equal "cline-sdk" (header headers "X-CLIENT-TYPE")))
     (is (equal "Cline/3.0.58" (header headers "User-Agent")))
     (is (equal "Bearer sk-test" (header headers "authorization")))))

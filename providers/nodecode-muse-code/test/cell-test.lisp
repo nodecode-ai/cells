@@ -76,8 +76,7 @@ configured key; NIL resolves the credential from AUTH, a temp auth.json."
         (with-stubbed-fdefinition (nle::credential-env (name)
                                    (and (equal name "OPENAI_API_KEY") "sk-openai"))
           (is (eq :public (nle:credential-source
-                           (nle::resolve-provider-credential "muse-code" :auth-path auth :probe t)))
-              "an OpenAI key is never sent to Meta"))))))
+                           (nle::resolve-provider-credential "muse-code" :auth-path auth :probe t)))))))))
 
 (deftest muse-code-cell-saved-key-outranks-the-sign-in ()
   (with-cell-stop ((muse-code-start))
@@ -165,8 +164,7 @@ flow would have slept."
       (is (equal "1.0.0" (muse-code-header (third device) "x-api-version")))
       (is (search "device_code=dc-m" (second pending)))
       (is (equal "application/json" (muse-code-header (third done) "Accept")))
-      (is (equal "Bearer acct-token" (muse-code-header (third mint) "Authorization"))
-          "the account token is spent on the key exchange")
+      (is (equal "Bearer acct-token" (muse-code-header (third mint) "Authorization")))
       (is (eq t (nlk:json-value (nlk:decode-json (second mint)) :boolean "onboard"))))
     (is (equal '(5) pauses))))
 

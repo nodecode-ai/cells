@@ -82,16 +82,14 @@ is AUTH, the environment ENV (an alist), the config tier's key KEY."
     (with-cell-stop ((snowflake-start))
       (let ((row (nlk:json-value (nle::models-catalog-table) :object "snowflake")))
         (is (equal "Snowflake Cortex" (nlk:json-value row :string "name")))
-        (is (equal "https://snowflake-account.invalid/api/v2/cortex/v1" (nlk:json-value row :string "api"))
-            "no account named: omp's placeholder, which never resolves")
+        (is (equal "https://snowflake-account.invalid/api/v2/cortex/v1" (nlk:json-value row :string "api")))
         (is (= 15 (hash-table-count (nlk:json-value row :object "models"))))
         (is (equal "anthropic" (nle::resolve-model-lane "snowflake" "claude-opus-5-5")))
         (is (equal "openai-completions" (nle::resolve-model-lane "snowflake" "openai-gpt-5.1")))
         (is (equal "https://snowflake-account.invalid/api/v2/cortex/v1/messages"
                    (nle::lane-endpoint "snowflake" "anthropic")))
         (is (find "openai-gpt-5" (nle::list-provider-models "snowflake")
-                  :key (lambda (row) (getf row :id)) :test #'equal)
-            "the listing is the roster, asked of no endpoint"))
+                  :key (lambda (row) (getf row :id)) :test #'equal) "the listing is the roster, asked of no endpoint"))
       (funcall stop)
       (setf stop nil)
       (is (null (nlk:json-value (nle::models-catalog-table) :object "snowflake"))))))
@@ -199,8 +197,7 @@ is AUTH, the environment ENV (an alist), the config tier's key KEY."
                       :key "{\"token\":\"tok-9\",\"enterpriseUrl\":\"https://other-acct.snowflakecomputing.com\"}"
                       :section '("account" "myorg-myaccount"))
       "claude-sonnet-5"
-    (is (equal "https://other-acct.snowflakecomputing.com/api/v2/cortex/v1/messages" url)
-        "the key's account outranks the section's")
+    (is (equal "https://other-acct.snowflakecomputing.com/api/v2/cortex/v1/messages" url))
     (is (equal "Bearer tok-9" (sf-header headers "Authorization")))))
 
 ;;; --- the sign-in ------------------------------------------------------------------------
@@ -209,8 +206,7 @@ is AUTH, the environment ENV (an alist), the config tier's key KEY."
   (with-sf-round (url headers body :auth (sf-store) :section '("account" "elsewhere")
                       :env '(("SNOWFLAKE_PAT" . "pat-1")))
       "claude-haiku-4-5"
-    (is (equal "https://myorg-myaccount.snowflakecomputing.com/api/v2/cortex/v1/messages" url)
-        "the sign-in's account, not the section's")
+    (is (equal "https://myorg-myaccount.snowflakecomputing.com/api/v2/cortex/v1/messages" url))
     (is (equal "Bearer sf-access" (sf-header headers "Authorization")) "the sign-in outranks SNOWFLAKE_PAT")))
 
 (defun sf-token-answer (&key (access "sf-new") (refresh "sf-refresh-2"))
@@ -224,8 +220,7 @@ is AUTH, the environment ENV (an alist), the config tier's key KEY."
         (with-stubbed-fdefinition (dex:request (asked &rest args)
                                    (push (list asked (sf-form (getf args :content)) (getf args :max-redirects)) posts)
                                    (values (sf-token-answer) 200))
-          (is (equal "sf-old" (nle:credential-key (nle::resolve-provider-credential "snowflake" :auth-path auth :probe t)))
-              "a probe reads the store as it is")
+          (is (equal "sf-old" (nle:credential-key (nle::resolve-provider-credential "snowflake" :auth-path auth :probe t))))
           (is (null posts) "and never dials")
           (is (equal "sf-new" (nle:credential-key (nle::resolve-provider-credential
                                                    "snowflake" :auth-path auth :endpoint "https://x/messages")))))
@@ -248,8 +243,7 @@ is AUTH, the environment ENV (an alist), the config tier's key KEY."
     (with-stubbed-fdefinition (dex:request (&rest args) (values (sf-token-answer) 200))
       (with-temp-auth (auth (sf-store :access "sf-live" :refresh "" :expires-in 30))
         (is (equal "sf-live" (nle:credential-key (nle::resolve-provider-credential
-                                                  "snowflake" :auth-path auth :endpoint "https://x/messages")))
-            "no refresh token: the token stands while it is good"))
+                                                  "snowflake" :auth-path auth :endpoint "https://x/messages")))))
       (with-temp-auth (auth (sf-store :access "sf-dead" :refresh "" :expires-in -10))
         (let ((condition (signals-error nle:credential-error
                            (nle::resolve-provider-credential "snowflake" :auth-path auth :endpoint "https://x/messages"))))
@@ -321,8 +315,7 @@ against a temp auth.json AUTH, URL its authorization address and POSTS the
         (is (equal redirect (sf-field form "redirect_uri")))
         (is (equal "LOCAL_APPLICATION" (sf-field form "client_id")))
         (is (equal (sf-query url "code_challenge")
-                   (nodecode-snowflake::base64url (nodecode-snowflake::sha256 (sf-field form "code_verifier"))))
-            "the verifier is the one the challenge was made of")))
+                   (nodecode-snowflake::base64url (nodecode-snowflake::sha256 (sf-field form "code_verifier")))))))
     (let ((entry (sf-entry auth)))
       (is (equal "sf-signed" (nlk:json-value entry :string "access_token")))
       (is (equal "sf-r" (nlk:json-value entry :string "refresh_token")))
@@ -353,8 +346,7 @@ against a temp auth.json AUTH, URL its authorization address and POSTS the
                    (nodecode-snowflake::*callback-port* (usocket:get-local-port held)))
                (let ((url (sf-login-url (cell-entry "nodecode-snowflake" "snowflake" "login myorg-myaccount"))))
                  (is url "the sign-in still starts")
-                 (is (not (search (format nil ":~d/" (usocket:get-local-port held)) (sf-query url "redirect_uri")))
-                     "on another port, as omp's callback falls back"))
+                 (is (not (search (format nil ":~d/" (usocket:get-local-port held)) (sf-query url "redirect_uri")))))
                (cell-entry "nodecode-snowflake" "snowflake" "logout"))))
       (usocket:socket-close held))))
 

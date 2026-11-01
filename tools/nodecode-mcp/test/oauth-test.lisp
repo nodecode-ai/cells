@@ -337,8 +337,7 @@ the answer /mcp login gave."
 
 (deftest mcp-cell-oauth-pkce-is-rfc-7636-s256 ()
   (is (equal "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
-             (mcp::base64url (mcp::sha256-octets "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")))
-      "RFC 7636 appendix B's verifier gives its challenge")
+             (mcp::base64url (mcp::sha256-octets "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"))))
   (multiple-value-bind (verifier challenge) (mcp::pkce-pair)
     (is (<= 43 (length verifier) 128) "a verifier is 43 to 128 characters")
     (is (equal challenge (mcp::base64url (mcp::sha256-octets verifier))))))
@@ -351,15 +350,13 @@ the answer /mcp login gave."
     (is (equal "invalid_token" (getf challenge :error))))
   (is (null (mcp::parse-www-authenticate "Basic realm=\"x\"")) "another scheme is no challenge")
   (is (null (getf (mcp::parse-www-authenticate "Bearer scope=\"\"") :scope)) "an empty value is absent")
-  (is (equal "insufficient_scope" (getf (mcp::parse-www-authenticate "Bearer error=insufficient_scope") :error))
-      "an unquoted value reads"))
+  (is (equal "insufficient_scope" (getf (mcp::parse-www-authenticate "Bearer error=insufficient_scope") :error))))
 
 (deftest mcp-cell-oauth-discovery-paths ()
   (is (equal '("https://as.example/.well-known/oauth-authorization-server/tenant1"
                "https://as.example/.well-known/openid-configuration/tenant1"
                "https://as.example/tenant1/.well-known/openid-configuration")
-             (mcp::authorization-server-candidates "https://as.example/tenant1"))
-      "an issuer with a path: RFC 8414's insertion, then OpenID's two")
+             (mcp::authorization-server-candidates "https://as.example/tenant1")))
   (is (equal '("https://as.example/.well-known/oauth-authorization-server"
                "https://as.example/.well-known/openid-configuration")
              (mcp::authorization-server-candidates "https://as.example/")))
@@ -368,18 +365,14 @@ the answer /mcp login gave."
              (mcp::resource-metadata-candidates "https://mcp.example/v1/mcp")))
   (is (equal "https://mcp.example/v1"
              (mcp::select-resource "https://mcp.example/v1/mcp"
-                                   (nlk:json-object "resource" "https://mcp.example/v1")))
-      "a resource covering the server's path is the one asked for")
+                                   (nlk:json-object "resource" "https://mcp.example/v1"))))
   (is (search "does not cover"
               (refusal-text mcp::oauth-failure
                 (mcp::select-resource "https://mcp.example/mcp"
-                                      (nlk:json-object "resource" "https://evil.example/mcp"))))
-      "a resource on another origin is refused")
+                                      (nlk:json-object "resource" "https://evil.example/mcp")))))
   (is (search "is not https" (refusal-text mcp::oauth-failure
-                               (mcp::secure-endpoint "http://as.example/token" "token endpoint")))
-      "a token endpoint over plain http to another machine is refused")
-  (is (equal "http://127.0.0.1:9/token" (mcp::secure-endpoint "http://127.0.0.1:9/token" "token endpoint"))
-      "loopback http is fine"))
+                               (mcp::secure-endpoint "http://as.example/token" "token endpoint"))))
+  (is (equal "http://127.0.0.1:9/token" (mcp::secure-endpoint "http://127.0.0.1:9/token" "token endpoint"))))
 
 (deftest mcp-cell-oauth-entry-settings ()
   (flet ((spec (&rest pairs) (mcp::parse-server-entry "r" (apply #'mcp-entry "url" "https://h/mcp" pairs))))
@@ -387,8 +380,7 @@ the answer /mcp login gave."
     (is (mcp::oauth-enabled-p (spec)))
     (is (eq :off (mcp::server-spec-oauth (spec "oauth" nil))) "oauth: false turns it off")
     (is (not (mcp::oauth-enabled-p (spec "oauth" nil))))
-    (is (not (mcp::oauth-enabled-p (spec "headers" (mcp-entry "Authorization" "Bearer x"))))
-        "its own Authorization header turns it off")
+    (is (not (mcp::oauth-enabled-p (spec "headers" (mcp-entry "Authorization" "Bearer x")))))
     (let ((settings (mcp::server-spec-oauth (spec "oauth" (mcp-entry "client_id" "abc" "scope" "read"
                                                                        "callback_port" 33418
                                                                        "client_registration" "dcr")))))
@@ -396,8 +388,7 @@ the answer /mcp login gave."
       (is (equal "read" (getf settings :scope)))
       (is (eql 33418 (getf settings :callback-port)))
       (is (eq :dcr (getf settings :client-registration))))
-    (is (search "client_registration" (mcp::server-spec-refusal (spec "oauth" (mcp-entry "client_registration" "magic"))))
-        "an unknown registration mode refuses the entry")
+    (is (search "client_registration" (mcp::server-spec-refusal (spec "oauth" (mcp-entry "client_registration" "magic")))))
     (is (search "oauth must be" (mcp::server-spec-refusal (spec "oauth" "yes"))))))
 
 ;;; --- the sign-in, end to end --------------------------------------------------
@@ -407,8 +398,7 @@ the answer /mcp login gave."
     (with-mcp-oauth-fixture (fixture)
       (with-mcp-cell ("remote" (mcp-oauth-entry fixture))
         (is (eq :error (mcp-wait-ready "remote")) "a 401 fails the connect")
-        (is (search "remote needs a sign-in: /mcp login remote" (mcp::server-error-text (mcp-server "remote")))
-            "the error names the command that signs in")
+        (is (search "remote needs a sign-in: /mcp login remote" (mcp::server-error-text (mcp-server "remote"))))
         (is (search "/mcp login NAME" (mcp-slash "status")) "/mcp status offers login")
         (is (null (mcp-oauth-events fixture :prm)) "a connect never starts a sign-in on its own")))))
 
@@ -451,8 +441,7 @@ the answer /mcp login gave."
         (is (eq :ready (mcp-await-state "remote" :ready)))
         (is (null (mcp-oauth-events fixture :register)) "offered both, it does not register")
         (is (equal "https://nodecode.ai/oauth/client.json"
-                   (getf (first (mcp-oauth-events fixture :authorize)) :client-id))
-            "the client_id is the metadata document's URL")))))
+                   (getf (first (mcp-oauth-events fixture :authorize)) :client-id)))))))
 
 (deftest mcp-cell-oauth-refreshes-a-token-about-to-expire ()
   (with-mcp-oauth-store
@@ -464,8 +453,7 @@ the answer /mcp login gave."
         (sleep 2.5)
         (is (equal "echo: later" (mcp:call "remote" "echo" :message "later")) "an expired token is refreshed")
         (is (plusp (mcp-oauth-grants fixture "refresh_token")) "by the refresh grant")
-        (is (notany (lambda (event) (eq :expired (getf event :auth))) (mcp-oauth-events fixture :mcp))
-            "before it is sent: the server never sees it expired")
+        (is (notany (lambda (event) (eq :expired (getf event :auth))) (mcp-oauth-events fixture :mcp)))
         (is (= 1 (length (mcp-oauth-events fixture :authorize))) "and never a second browser")))))
 
 (deftest mcp-cell-oauth-refreshes-a-refused-token-and-sends-again ()
@@ -478,11 +466,9 @@ the answer /mcp login gave."
         ;; The server forgets every access token while the client still holds its own as good.
         (bt2:with-lock-held ((mcp-oauth-fixture-lock fixture)) (clrhash (mcp-oauth-fixture-access fixture)))
         (let ((before (mcp-oauth-grants fixture "refresh_token")))
-          (is (equal "echo: retried" (mcp:call "remote" "echo" :message "retried"))
-              "a refused token is refreshed and the call sent again")
+          (is (equal "echo: retried" (mcp:call "remote" "echo" :message "retried")))
           (is (= (1+ before) (mcp-oauth-grants fixture "refresh_token")) "with one refresh")
-          (is (find :invalid (mcp-oauth-events fixture :mcp) :key (lambda (event) (getf event :auth)))
-              "after the server refused the old one"))
+          (is (find :invalid (mcp-oauth-events fixture :mcp) :key (lambda (event) (getf event :auth)))))
         (is (= 1 (length (mcp-oauth-events fixture :authorize))) "and never a second browser")))))
 
 (deftest mcp-cell-oauth-a-dead-grant-asks-for-a-sign-in ()
@@ -496,10 +482,8 @@ the answer /mcp login gave."
           (clrhash (mcp-oauth-fixture-access fixture))
           (clrhash (mcp-oauth-fixture-refresh fixture)))
         (is (search "needs a sign-in: /mcp login remote"
-                    (refusal-text mcp:mcp-offline (mcp:call "remote" "echo" :message "x")))
-            "a refresh the server refuses ends in the sign-in it needs")
-        (is (null (gethash "tokens" (mcp::stored-state (mcp::state-key "remote" (mcp-oauth-resource fixture)))))
-            "and the dead tokens are forgotten")))))
+                    (refusal-text mcp:mcp-offline (mcp:call "remote" "echo" :message "x"))))
+        (is (null (gethash "tokens" (mcp::stored-state (mcp::state-key "remote" (mcp-oauth-resource fixture))))))))))
 
 (deftest mcp-cell-oauth-refuses-an-answer-of-another-state ()
   (with-mcp-oauth-store
@@ -520,10 +504,8 @@ the answer /mcp login gave."
         (mcp-slash "login remote")
         (let ((landed (mcp-browse (mcp-sign-in-address "remote") :follow nil)))
           (is (search "/callback?code=" landed) "the browser lands on the loopback address")
-          (is (search "another sign-in" (mcp:login "remote" (ppcre:regex-replace "state=[^&]+" landed "state=forged")))
-              "an address of another sign-in is refused")
-          (is (equal "signed in to remote; connecting" (mcp:login "remote" landed))
-              "the address pasted back signs in"))
+          (is (search "another sign-in" (mcp:login "remote" (ppcre:regex-replace "state=[^&]+" landed "state=forged"))))
+          (is (equal "signed in to remote; connecting" (mcp:login "remote" landed)) "the address pasted back signs in"))
         (is (eq :ready (mcp-await-state "remote" :ready)))
         (is (equal "echo: pasted" (mcp:call "remote" "echo" :message "pasted")))))))
 
@@ -536,8 +518,7 @@ the answer /mcp login gave."
         (is (eq :ready (mcp-await-state "remote" :ready)) "a registration that issues a secret signs in")
         (is (equal "basic" (getf (find "authorization_code" (mcp-oauth-events fixture :token)
                                        :key (lambda (event) (getf event :grant)) :test #'equal)
-                                 :client-auth))
-            "the token request authenticates with the issued secret")))))
+                                 :client-auth)) "the token request authenticates with the issued secret")))))
 
 (deftest mcp-cell-oauth-an-issuer-with-a-path-and-no-resource-metadata ()
   (with-mcp-oauth-store
@@ -550,10 +531,8 @@ the answer /mcp login gave."
       (with-mcp-cell ("remote" (mcp-oauth-entry fixture))
         (mcp-wait-ready "remote")
         (mcp-oauth-sign-in "remote")
-        (is (eq :ready (mcp-await-state "remote" :ready))
-            "a server with no resource metadata is its own authorization server")
-        (is (null (getf (first (mcp-oauth-events fixture :authorize)) :resource))
-            "and no resource is asked for")))))
+        (is (eq :ready (mcp-await-state "remote" :ready)))
+        (is (null (getf (first (mcp-oauth-events fixture :authorize)) :resource)) "and no resource is asked for")))))
 
 (deftest mcp-cell-oauth-a-fresh-start-reconnects-from-the-store ()
   (with-mcp-oauth-store

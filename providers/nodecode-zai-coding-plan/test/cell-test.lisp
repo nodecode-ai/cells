@@ -64,18 +64,15 @@
       (is (equal "https://api.z.ai/api/coding/paas/v4" (nlk:json-value row :string "api")))
       (is (gethash "glm-5.3" (nlk:json-value row :object "models")) "omp's zai rows are listed")
       (is (gethash "glm-5.3-flash" (nlk:json-value row :object "models")))
-      (is (equal "anthropic" (nle::resolve-model-lane "zai-coding-plan" "glm-5.3"))
-          "a Messages row rides the anthropic lane")
-      (is (equal "openai-completions" (nle::resolve-model-lane "zai-coding-plan" "glm-5.3-flash"))
-          "GLM-5.3-Flash rides the chat lane")
+      (is (equal "anthropic" (nle::resolve-model-lane "zai-coding-plan" "glm-5.3")))
+      (is (equal "openai-completions" (nle::resolve-model-lane "zai-coding-plan" "glm-5.3-flash")))
       (is (equal "https://api.z.ai/api/anthropic/v1/messages"
                  (nle::lane-endpoint "zai-coding-plan" "anthropic")))
       (is (equal "https://api.z.ai/api/coding/paas/v4/chat/completions"
                  (nle::lane-endpoint "zai-coding-plan" "openai-completions"))))
     (funcall stop)
     (setf stop nil)
-    (is (null (nlk:json-value (nle::models-catalog-table) :object "zai-coding-plan"))
-        "a stopped cell leaves the catalog as models.dev made it")))
+    (is (null (nlk:json-value (nle::models-catalog-table) :object "zai-coding-plan")))))
 
 (deftest zai-coding-plan-cell-addresses-follow-the-section ()
   (with-cell-stop ((zai-coding-plan-start "base_url" "https://relay.example/chat"
@@ -91,8 +88,7 @@
   (with-catalog-fixture (catalog "{\"zai-coding-plan\":{\"id\":\"zai-coding-plan\",\"name\":\"Z.AI Coding Plan\",\"npm\":\"@ai-sdk/openai-compatible\",\"api\":\"https://api.z.ai/api/coding/paas/v4\",\"env\":[\"ZHIPU_API_KEY\"],\"models\":{\"glm-5.3-highspeed\":{\"id\":\"glm-5.3-highspeed\",\"name\":\"GLM-5.3 Highspeed\",\"tool_call\":true,\"limit\":{\"context\":200000,\"output\":131072}}}}}")
     (with-temp-auth (auth "{\"api_keys\":{\"zai-coding-plan\":{\"provider\":\"zai-coding-plan\",\"key\":\"sk-saved\"}}}")
       (with-cell-stop ((zai-coding-plan-start))
-        (is (gethash "glm-5.3-highspeed" (nlk:json-value (nle::models-catalog-table) :object "zai-coding-plan" "models"))
-            "models.dev's own models are kept under omp's")
+        (is (gethash "glm-5.3-highspeed" (nlk:json-value (nle::models-catalog-table) :object "zai-coding-plan" "models")))
         (is (equal "openai-completions" (nle::resolve-model-lane "zai-coding-plan" "glm-5.3-highspeed")))
         (let ((nle::*provider* "zai-coding-plan") (nle::*model* "glm-5.3-highspeed") (nle::*api-key* nil)
               (nle::*endpoint* nil) (nle::*auth-file-path* auth) (seen-url nil) (seen-headers nil))
@@ -121,8 +117,7 @@
           (is (equal "sk-env" (nle:credential-key credential)))
           (is (eq :env (nle:credential-source credential))))
         (is (not (equal "sk-env" (nle:credential-key
-                                  (nle::resolve-provider-credential "anthropic" :auth-path auth :probe t))))
-            "another provider's ladder never reads ZAI_API_KEY")))))
+                                  (nle::resolve-provider-credential "anthropic" :auth-path auth :probe t)))))))))
 
 (deftest zai-coding-plan-cell-never-sends-another-familys-key ()
   (with-cell-stop ((zai-coding-plan-start))
@@ -131,8 +126,7 @@
                                  (cond ((equal name "OPENAI_API_KEY") "sk-openai")
                                        ((equal name "ANTHROPIC_API_KEY") "sk-ant")))
         (let ((credential (nle::resolve-provider-credential "zai-coding-plan" :auth-path auth :probe t)))
-          (is (not (member (nle:credential-key credential) '("sk-openai" "sk-ant") :test #'equal))
-              "neither lane family's default variable reaches Z.AI")
+          (is (not (member (nle:credential-key credential) '("sk-openai" "sk-ant") :test #'equal)))
           (is (eq :public (nle:credential-source credential))))))))
 
 (deftest zai-coding-plan-cell-saved-key-outranks-the-sign-in ()
@@ -152,8 +146,7 @@
     (is (equal "enabled" (nlk:json-value body :string "thinking" "type")) "budget thinking, not adaptive")
     (is (eql 32768 (nlk:json-value body :integer "thinking" "budget_tokens")) "omp's max budget")
     (is (equal "summarized" (nlk:json-value body :string "thinking" "display")))
-    (is (equal "max" (nlk:json-value body :string "output_config" "effort"))
-        "GLM-5.3 names its effort beside the budget")))
+    (is (equal "max" (nlk:json-value body :string "output_config" "effort")))))
 
 (deftest zai-coding-plan-cell-a-budget-model-sends-no-effort ()
   (with-zai-round (url headers body) ("zai-coding-plan" "glm-4.7" :effort "xhigh" :lane :anthropic)
@@ -214,11 +207,9 @@
                  (state (nodecode-zai-coding-plan::param
                          (nodecode-zai-coding-plan::query-params (nodecode-zai-coding-plan::url-query address))
                          "state")))
-            (is (uiop:string-prefix-p "https://chat.z.ai/api/oauth/authorize?client_id=client_P8X5CMWmlaRO9gyO-KSqtg&response_type=code&redirect_uri=zcode%3A%2F%2Fzai-auth%2Fcallback&state=" address)
-                "the command answers ZCode's authorize request at once")
+            (is (uiop:string-prefix-p "https://chat.z.ai/api/oauth/authorize?client_id=client_P8X5CMWmlaRO9gyO-KSqtg&response_type=code&redirect_uri=zcode%3A%2F%2Fzai-auth%2Fcallback&state=" address))
             (is (= 32 (length state)))
-            (is (search "another sign-in" (nodecode-zai-coding-plan::run-command "code zcode://zai-auth/callback?code=c&state=other" "s1"))
-                "a paste from another sign-in is refused")
+            (is (search "another sign-in" (nodecode-zai-coding-plan::run-command "code zcode://zai-auth/callback?code=c&state=other" "s1")))
             (is (search "received" (nodecode-zai-coding-plan::run-command
                                     (format nil "code zcode://zai-auth/callback?code=the-code&state=~a" state) "s1")))
             (is (await (:timeout 10) (search "signed in" (or (zai-notice) ""))) "the outcome is a notice")
@@ -231,8 +222,7 @@
             (let ((login (find-if (lambda (post) (search "/auth/z/login" (first post))) posts))
                   (create (find-if (lambda (post) (search "/api_keys" (first post))) posts)))
               (is (equal "oauth-tok" (nlk:json-value (third login) :string "token")))
-              (is (equal "https://api.z.ai/api/biz/v1/organization/o1/projects/p1/api_keys" (first create))
-                  "the default organization's default project")
+              (is (equal "https://api.z.ai/api/biz/v1/organization/o1/projects/p1/api_keys" (first create)))
               (is (equal "nodecode" (nlk:json-value (third create) :string "name")) "a key of Nodecode's own")
               (is (equal "Bearer biz-tok" (zai-header (second create) "Authorization"))))
             (is (find-if (lambda (get) (search "/api_keys/copy/key-id" (first get))) gets) "the secret is copied out")
@@ -245,8 +235,7 @@
               (is (equal "k" (nlk:json-value stored :string "api_keys" "other" "key")) "every other field is kept")
               (is (= #o600 (logand #o777 (sb-posix:stat-mode (sb-posix:stat auth))))))
             (is (equal "key-id.sec" (nle:credential-key
-                                     (nle::resolve-provider-credential "zai-coding-plan" :auth-path auth :probe t)))
-                "the next round sends the minted key")
+                                     (nle::resolve-provider-credential "zai-coding-plan" :auth-path auth :probe t))))
             (is (search "Signed out" (nodecode-zai-coding-plan::run-command "logout" "s1")))
             (is (null (nlk:json-value (nlk:decode-json (uiop:read-file-string auth))
                                       :object "oauth_tokens" "zai-coding-plan")))))))))
@@ -264,5 +253,4 @@
             (nodecode-zai-coding-plan::run-command (format nil "code c#~a" state) "s1")
             (is (await (:timeout 10) (search "failed" (or (zai-notice) ""))))
             (is (search "missing access token" (zai-notice)))
-            (is (null (nlk:json-value (nlk:decode-json (uiop:read-file-string auth)) :object "oauth_tokens"))
-                "nothing is kept")))))))
+            (is (null (nlk:json-value (nlk:decode-json (uiop:read-file-string auth)) :object "oauth_tokens")))))))))

@@ -90,8 +90,7 @@ reader's default format."
       (is (equal "noul" (nlk:json-value questions :string "risky" "type")) "bool is the wire's noul")
       (is (equal "internal only" (nlk:json-value questions :string "risky" "criteria" "false")))
       (is (equal "choice" (nlk:json-value questions :string "kind" "type")) "a keyword type reads lowercase")
-      (is (eq :null (gethash "fix" (nlk:json-value questions :object "kind" "criteria")))
-          "a label with no rubric is null, not false")
+      (is (eq :null (gethash "fix" (nlk:json-value questions :object "kind" "criteria"))))
       (is (equalp #("trivial" "small" "medium" "large") (nlk:json-value questions :array "size" "criteria")))
       (is (search "\"state\":" (fourth (first requests))) "the body leads with the state"))))
 
@@ -117,10 +116,8 @@ reader's default format."
     (let ((body (ts-body (first requests))))
       (is (equal "rename foo to bar" (nlk:json-value body :string "state" "diff")) "a plist state is an object")
       (is (= 3 (nlk:json-value body :integer "state" "tests")))
-      (is (nth-value 1 (gethash "Fix" (nlk:json-value body :object "questions" "kind" "criteria")))
-          "a JSON object keeps its labels as written")
-      (is (null (nth-value 1 (gethash "criteria" (nlk:json-value body :object "questions" "risky"))))
-          "a bool with no criteria sends none"))))
+      (is (nth-value 1 (gethash "Fix" (nlk:json-value body :object "questions" "kind" "criteria"))))
+      (is (null (nth-value 1 (gethash "criteria" (nlk:json-value body :object "questions" "risky"))))))))
 
 (deftest typesafe-cell-refuses-questions-that-make-no-judgment ()
   (with-typesafe (requests)
@@ -163,8 +160,7 @@ reader's default format."
                            :answers (list "{\"model\":\"dgemma\",\"answers\":{\"up\":{\"type\":\"noul\",\"noul\":0.9}},\"usage\":{}}"))
     (let ((text (nodecode-typesafe::check-answer)))
       (is (search "answered a judgment as typesafe/dgemma" text) text))
-    (is (equal '("http://127.0.0.1:8011/v1/systemone") (mapcar #'second requests))
-        "an own base is checked with one judgment, never /v1/models")))
+    (is (equal '("http://127.0.0.1:8011/v1/systemone") (mapcar #'second requests)))))
 
 (deftest typesafe-cell-base-and-model-follow-the-section-then-the-environment ()
   (with-typesafe (requests :config ("base_url" "https://gateway.example/" "model" "jev-next")

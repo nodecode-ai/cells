@@ -65,13 +65,11 @@ auth.json."
       (is (equal "xAI Grok OAuth (SuperGrok or X Premium+)" (nlk:json-value row :string "name")))
       (is (equal "https://api.x.ai/v1" (nlk:json-value row :string "api")))
       (is (gethash "grok-4.6" (nlk:json-value row :object "models")) "the bundled models are listed")
-      (is (equal "openai-responses" (nle::configured-provider-lane "xai-oauth"))
-          "the Responses lane drives it")
+      (is (equal "openai-responses" (nle::configured-provider-lane "xai-oauth")) "the Responses lane drives it")
       (is (equal "https://api.x.ai/v1/responses" (nle::lane-endpoint "xai-oauth" "openai-responses"))))
     (funcall stop)
     (setf stop nil)
-    (is (null (nlk:json-value (nle::models-catalog-table) :object "xai-oauth"))
-        "a stopped cell leaves the catalog as models.dev made it")))
+    (is (null (nlk:json-value (nle::models-catalog-table) :object "xai-oauth")))))
 
 (deftest xai-oauth-cell-base-follows-the-section ()
   (with-cell-stop ((xai-oauth-start "base_url" "https://relay.example/v1"))
@@ -92,8 +90,7 @@ auth.json."
                                                       ("XAI_API_KEY" . "xai-key"))
                                                :test #'equal)))
           (is (eq :public (nle:credential-source
-                           (nle::resolve-provider-credential "xai-oauth" :auth-path auth :probe t)))
-              "neither an OpenAI key nor an xAI API key stands in for the sign-in"))))))
+                           (nle::resolve-provider-credential "xai-oauth" :auth-path auth :probe t)))))))))
 
 (deftest xai-oauth-cell-saved-key-outranks-the-sign-in ()
   (with-cell-stop ((xai-oauth-start))
@@ -125,8 +122,7 @@ auth.json."
 (deftest xai-oauth-cell-a-self-reasoning-model-is-asked-no-effort ()
   (with-xai-oauth-round (url headers body) ("grok-build" :effort "high")
     (is (null (nlk:json-value body :any "reasoning")) "grok-build refuses reasoning.effort")
-    (is (equalp #("reasoning.encrypted_content") (nlk:json-value body :array "include"))
-        "but its reasoning is still kept for the next round"))
+    (is (equalp #("reasoning.encrypted_content") (nlk:json-value body :array "include"))))
   (with-xai-oauth-round (url headers body) ("grok-4.20-0309-non-reasoning" :effort "high")
     (is (null (nlk:json-value body :any "reasoning")))
     (is (null (nlk:json-value body :any "include")) "a model that does not reason is asked nothing")))
@@ -216,8 +212,7 @@ each poll interval the flow would have slept."
              "{\"user_code\":\"C\",\"device_code\":\"d\",\"verification_uri\":\"https://accounts.x.ai/device\"}" 200))
       ((list "https://auth.x.ai/.well-known/openid-configuration"
              "{\"token_endpoint\":\"https://evil.example/token\"}" 200))
-    (is (search "Invalid xAI token_endpoint" (cell-entry "nodecode-xai-oauth" "xai-oauth" "login"))
-        "no refresh token is ever sent off x.ai")
+    (is (search "Invalid xAI token_endpoint" (cell-entry "nodecode-xai-oauth" "xai-oauth" "login")))
     (is (null nodecode-xai-oauth::*flow*) "and nothing polls")))
 
 (deftest xai-oauth-cell-refreshes-at-the-discovered-endpoint ()
@@ -243,8 +238,7 @@ each poll interval the flow would have slept."
     (let ((entry (nlk:json-value (nle::read-auth-file nle::*auth-file-path*) :object "oauth_tokens" "xai-oauth")))
       (is (equal "tok-2" (nlk:json-value entry :string "access_token")))
       (is (equal "r-2" (nlk:json-value entry :string "refresh_token")) "a rotated refresh token is kept")
-      (is (equal "grok@example.com" (nlk:json-value entry :string "email"))
-          "a failed userinfo keeps the identity the store had"))))
+      (is (equal "grok@example.com" (nlk:json-value entry :string "email"))))))
 
 (deftest xai-oauth-cell-status-and-logout ()
   (with-xai-oauth-sign-in (requests pauses) () ()

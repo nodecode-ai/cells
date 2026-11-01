@@ -80,20 +80,17 @@ the request as dex:post saw it (BODY decoded)."
       (is (equal "https://ollama.com" (nlk:json-value row :string "api")) "the bare host, not /v1")
       (is (equalp #("OLLAMA_CLOUD_API_KEY") (nlk:json-value row :array "env")))
       (is (gethash "gpt-oss:120b" models) "omp's default model is listed")
-      (is (equal '("high" "max") (nle::catalog-model-efforts (gethash "deepseek-v3.2" models)))
-          "a DeepSeek ladder reaches max")
+      (is (equal '("high" "max") (nle::catalog-model-efforts (gethash "deepseek-v3.2" models))))
       (is (equal "ollama-cloud" (nle::configured-provider-lane "ollama-cloud")) "the cell's own lane drives it")
       (is (equal "https://ollama.com" (nle::lane-endpoint "ollama-cloud" "ollama-cloud"))))
     (funcall stop)
     (setf stop nil)
-    (is (null (nlk:json-value (nle::models-catalog-table) :object "ollama-cloud"))
-        "a stopped cell leaves the catalog as models.dev made it")))
+    (is (null (nlk:json-value (nle::models-catalog-table) :object "ollama-cloud")))))
 
 (deftest ollama-cloud-cell-base-follows-the-section ()
   (with-cell-stop ((ollama-cloud-start "base_url" "https://relay.example/api/"))
     (is (equal "https://relay.example"
-               (nlk:json-value (nle::models-catalog-table) :string "ollama-cloud" "api"))
-        "a trailing /api and slash are dropped, as omp normalizes the base")))
+               (nlk:json-value (nle::models-catalog-table) :string "ollama-cloud" "api")))))
 
 ;;; --- the credential --------------------------------------------------------------------
 
@@ -106,8 +103,7 @@ the request as dex:post saw it (BODY decoded)."
           (is (equal "ok-env" (nle:credential-key credential)))
           (is (eq :env (nle:credential-source credential))))
         (is (not (equal "ok-env"
-                        (nle:credential-key (nle::resolve-provider-credential "anthropic" :auth-path auth :probe t))))
-            "another provider's ladder never reads OLLAMA_CLOUD_API_KEY")))))
+                        (nle:credential-key (nle::resolve-provider-credential "anthropic" :auth-path auth :probe t)))))))))
 
 (deftest ollama-cloud-cell-never-sends-another-familys-key ()
   (with-cell-stop ((ollama-cloud-start))
@@ -115,8 +111,7 @@ the request as dex:post saw it (BODY decoded)."
       (with-stubbed-fdefinition (nle::credential-env (name)
                                  (and (equal name "OPENAI_API_KEY") "sk-openai"))
         (let ((credential (nle::resolve-provider-credential "ollama-cloud" :auth-path auth :probe t)))
-          (is (not (equal "sk-openai" (nle:credential-key credential)))
-              "the chat family's default variable never reaches Ollama")
+          (is (not (equal "sk-openai" (nle:credential-key credential))))
           (is (eq :public (nle:credential-source credential))))))))
 
 (deftest ollama-cloud-cell-saved-key-outranks-the-variable ()
@@ -156,8 +151,7 @@ the request as dex:post saw it (BODY decoded)."
       (is (equal '("user" "add one and two")
                  (let ((last (car (last messages))))
                    (list (nlk:json-value last :string "role") (nlk:json-value last :string "content"))))))
-    (is (null (nlk:json-value body :any "options" "num_predict"))
-        "no output ceiling: every Ollama Cloud model omits it")))
+    (is (null (nlk:json-value body :any "options" "num_predict")))))
 
 (deftest ollama-cloud-cell-maps-the-effort-to-think ()
   (flet ((think (effort model)
@@ -204,8 +198,7 @@ inside a round, so its frozen config is that round's."
       (is (search "what is this?" (nlk:json-value user :string "content")))
       (is (null (nth-value 1 (gethash "thinking" assistant))) "Ollama Cloud refuses thinking in history")
       (is (equal "eval" (nlk:json-value call :string "function" "name")))
-      (is (equal "(+ 1 2)" (nlk:json-value call :string "function" "arguments" "form"))
-          "arguments go back as an object")
+      (is (equal "(+ 1 2)" (nlk:json-value call :string "function" "arguments" "form")))
       (is (equal "eval" (nlk:json-value tool :string "tool_name")) "a result names its tool")
       (is (search "3" (nlk:json-value tool :string "content")))))
   (with-oc-round (values url headers body) (:model "gpt-oss:120b" :context (oc-history-context))
@@ -219,8 +212,7 @@ inside a round, so its frozen config is that round's."
     (let ((messages (oc-messages body)))
       (is (equal "system" (gethash "role" (first messages))) "the prompt stays system")
       (is (null (oc-role "user" (butlast messages))) "no user turn was sent but the one made")
-      (is (equal "user" (gethash "role" (car (last messages))))
-          "the last system turn past it becomes the user turn Ollama needs"))))
+      (is (equal "user" (gethash "role" (car (last messages))))))))
 
 (deftest ollama-cloud-cell-sanitizes-tool-schemas ()
   (let* ((schema (nlk:decode-json "{\"type\":\"object\",\"additionalProperties\":false,\"properties\":{\"any\":true,\"maybe\":{\"type\":[\"string\",\"null\"]},\"either\":{\"type\":[\"string\",\"number\"]},\"list\":{\"type\":\"array\",\"items\":true}}}"))
@@ -229,8 +221,7 @@ inside a round, so its frozen config is that round's."
     (is (null (nth-value 1 (gethash "additionalProperties" clean))) "a boolean additionalProperties is dropped")
     (is (= 6 (length (nlk:json-value properties :array "any" "anyOf"))) "true widens to every primitive")
     (is (equal "string" (nlk:json-value properties :string "maybe" "type")) "a nullable type is its one type")
-    (is (= 2 (length (nlk:json-value (aref (nlk:json-value properties :array "either" "allOf") 0) :array "anyOf")))
-        "two types are a union under allOf")
+    (is (= 2 (length (nlk:json-value (aref (nlk:json-value properties :array "either" "allOf") 0) :array "anyOf"))))
     (is (= 6 (length (nlk:json-value properties :array "list" "items" "anyOf"))))
     (let ((tools (nodecode-ollama-cloud::wire-tools
                   (vector (nlk:json-object "type" "function"
@@ -298,8 +289,7 @@ inside a round, so its frozen config is that round's."
         (multiple-value-bind (rows error) (nle::list-provider-models "ollama-cloud" :key "ok-list")
           (is (null error))
           (is (equal '("brand-new:1t" "gpt-oss:120b" "mystery:7b") (mapcar (lambda (row) (getf row :id)) rows)))
-          (is (= 131072 (getf (find "gpt-oss:120b" rows :key (lambda (row) (getf row :id)) :test #'equal) :context-window))
-              "a bundled model keeps its row's window")
+          (is (= 131072 (getf (find "gpt-oss:120b" rows :key (lambda (row) (getf row :id)) :test #'equal) :context-window)))
           (is (= 262144 (getf (first rows) :context-window)) "a new one asks /api/show")
           (is (= 128000 (getf (third rows) :context-window)) "and one /api/show cannot place gets omp's default")))
       (let ((tags (find-if (lambda (entry) (search "/api/tags" (first entry))) asked)))
@@ -319,22 +309,19 @@ inside a round, so its frozen config is that round's."
           (is (null rows))
           (is (and (stringp reason) (uiop:string-prefix-p "HTTP 401" reason)) reason)
           (is (ppcre:register-groups-bind ((#'parse-integer status) code) ("^HTTP (\\d+)(?: (\\S+))?" reason)
-                (nle::refused-key-answer-p status code))
-              "a reason the key check reads as a refused key")))
+                (nle::refused-key-answer-p status code)) "a reason the key check reads as a refused key")))
       (is (equal "https://ollama.com/api/tags" (first asked)))
       (is (equal "Bearer ok-typed" (oc-header (second asked) "authorization")) "the key typed, not a stored one"))
     (with-stubbed-fdefinition (dex:request (url &rest args)
                                (values "{\"models\":[]}" 200 (make-hash-table :test 'equal)))
-      (is (null (nth-value 1 (nle::list-provider-models "ollama-cloud" :key "ok-good")))
-          "an answer to the key is the key working"))))
+      (is (null (nth-value 1 (nle::list-provider-models "ollama-cloud" :key "ok-good")))))))
 
 ;;; --- the core's own path ------------------------------------------------------------------
 
 (deftest ollama-cloud-cell-keeps-the-core-chat-lane-when-pinned ()
   (with-temp-shared-config ("{\"providers\": {\"ollama-cloud\": {\"sdk\": \"openai-completions\", \"base_url\": \"https://ollama.com/v1\"}}}")
     (with-cell-stop ((ollama-cloud-start))
-      (is (equal "openai-completions" (nle::configured-provider-lane "ollama-cloud"))
-          "an sdk pin outranks the catalog's package")
+      (is (equal "openai-completions" (nle::configured-provider-lane "ollama-cloud")))
       (let ((nle::*provider* "ollama-cloud") (nle::*model* "gpt-oss:120b") (nle::*api-key* nil) (nle::*endpoint* nil)
             (url nil) (headers nil))
         (with-temp-auth (auth "{}")

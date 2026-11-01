@@ -70,16 +70,14 @@ answers the statuses POLLS in turn, a 200 with the status APPROVED and a token."
     (let ((row (nlk:json-value (nle::models-catalog-table) :object "kilo")))
       (is (equal "Kilo Gateway" (nlk:json-value row :string "name")))
       (is (equal "https://api.kilo.ai/api/gateway" (nlk:json-value row :string "api")))
-      (is (gethash "anthropic/claude-opus-4.7" (nlk:json-value row :object "models"))
-          "the bundled models are listed")
+      (is (gethash "anthropic/claude-opus-4.7" (nlk:json-value row :object "models")) "the bundled models are listed")
       (is (< 500 (hash-table-count (nlk:json-value row :object "models"))) "all six hundred of them")
       (is (equal "openai-completions" (nle::configured-provider-lane "kilo")) "the chat lane drives it")
       (is (equal "https://api.kilo.ai/api/gateway/chat/completions"
                  (nle::lane-endpoint "kilo" "openai-completions"))))
     (funcall stop)
     (setf stop nil)
-    (is (null (nlk:json-value (nle::models-catalog-table) :object "kilo"))
-        "a stopped cell leaves the catalog as models.dev made it")))
+    (is (null (nlk:json-value (nle::models-catalog-table) :object "kilo")))))
 
 (deftest kilo-cell-base-follows-the-section ()
   (with-cell-stop ((kilo-start "base_url" "https://relay.example/gateway"))
@@ -126,13 +124,11 @@ answers the statuses POLLS in turn, a 200 with the status APPROVED and a token."
     (let ((entry (nlk:json-value (nle::read-auth-file auth) :object "oauth_tokens" "kilo")))
       (is (equal "kilo-access-token" (nlk:json-value entry :string "access_token")))
       (is (equal "" (nlk:json-value entry :string "refresh_token")) "no refresh token, as omp keeps it")
-      (is (<= (abs (- (nlk:json-value entry :integer "expires_at") (+ (kilo-now) (* 365 86400)))) 5)
-          "good for a year"))
+      (is (<= (abs (- (nlk:json-value entry :integer "expires_at") (+ (kilo-now) (* 365 86400)))) 5) "good for a year"))
     (is (= #o600 (logand #o777 (sb-posix:stat-mode (sb-posix:stat (namestring auth))))))
     (is (find-if (lambda (notice) (and (search "kilo: signed in" (or (first notice) ""))
                                        (null (third notice))))
-                 notices)
-        "success is said once, under no key")
+                 notices) "success is said once, under no key")
     (is (search "signed in" (cell-entry "nodecode-kilo" "kilo" "status")))))
 
 (deftest kilo-cell-says-a-denied-sign-in ()
@@ -184,16 +180,14 @@ answers the statuses POLLS in turn, a 200 with the status APPROVED and a token."
           (is (equal "sk-kilo" (nle:credential-key credential)))
           (is (eq :env (nle:credential-source credential))))
         (is (not (equal "sk-kilo"
-                        (nle:credential-key (nle::resolve-provider-credential "anthropic" :auth-path auth :probe t))))
-            "another provider's ladder never reads KILO_API_KEY")))))
+                        (nle:credential-key (nle::resolve-provider-credential "anthropic" :auth-path auth :probe t)))))))))
 
 (deftest kilo-cell-never-sends-another-familys-key ()
   (with-cell-stop ((kilo-start))
     (with-temp-auth (auth "{}")
       (with-stubbed-fdefinition (nle::credential-env (name) (and (equal name "OPENAI_API_KEY") "sk-openai"))
         (let ((credential (nle::resolve-provider-credential "kilo" :auth-path auth :probe t)))
-          (is (not (equal "sk-openai" (nle:credential-key credential)))
-              "the chat family's default variable never reaches Kilo")
+          (is (not (equal "sk-openai" (nle:credential-key credential))))
           (is (eq :public (nle:credential-source credential))))))))
 
 (deftest kilo-cell-saved-key-outranks-the-sign-in ()
@@ -209,8 +203,7 @@ answers the statuses POLLS in turn, a 200 with the status APPROVED and a token."
       (let ((notices '()))
         (with-stubbed-fdefinition (nle:notice (text &key level key) (push (list text level key) notices))
           (is (equal "kilo-token"
-                     (nle:credential-key (nle::resolve-provider-credential "kilo" :auth-path auth :probe t)))
-              "a probe reads the store as it is")
+                     (nle:credential-key (nle::resolve-provider-credential "kilo" :auth-path auth :probe t))))
           (is (signals-error nle:credential-error
                 (nle::resolve-provider-credential "kilo" :auth-path auth
                                                          :endpoint "https://api.kilo.ai/api/gateway/chat/completions")))
@@ -219,8 +212,7 @@ answers the statuses POLLS in turn, a 200 with the status APPROVED and a token."
             (is (equal "sk-env"
                        (nle:credential-key
                         (nle::resolve-provider-credential "kilo" :auth-path auth
-                                                                 :endpoint "https://api.kilo.ai/api/gateway/chat/completions")))
-                "a key beside an expired sign-in answers")))))))
+                                                                 :endpoint "https://api.kilo.ai/api/gateway/chat/completions"))))))))))
 
 ;;; --- one round -------------------------------------------------------------------
 
@@ -250,8 +242,7 @@ at EFFORT captured: URL, HEADERS and BODY (the decoded request) as dex:post saw 
     (is (equal "https://api.kilo.ai/api/gateway/chat/completions" url))
     (is (equal "Bearer kilo-token" (kilo-header headers "authorization")))
     (is (equal "anthropic/claude-opus-4.7" (nlk:json-value body :string "model")))
-    (is (equal "high" (nlk:json-value body :string "reasoning_effort"))
-        "a model outside the Qwen class keeps the chat lane's reasoning_effort")
+    (is (equal "high" (nlk:json-value body :string "reasoning_effort")))
     (is (null (nth-value 1 (gethash "enable_thinking" body))))))
 
 (deftest kilo-cell-asks-a-qwen-model-to-think-the-qwen-way ()

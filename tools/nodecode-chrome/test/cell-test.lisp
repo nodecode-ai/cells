@@ -39,8 +39,7 @@ settings and the registry restored on unwind."
             (is (equal (chrome::bridge-token) (chrome::bridge-token)) "minted once")
             (is (eql 64 (length (chrome::bridge-token))))
             #-win32 (is (zerop (logand #o077 (sb-posix:stat-mode
-                                              (sb-posix:stat (namestring (chrome::secret-file))))))
-                        "the secret file is the user's alone")
+                                              (sb-posix:stat (namestring (chrome::secret-file)))))))
             #-win32 (is (equal (chrome::unpacked-extension-origin (chrome::extension-directory))
                                (chrome::bridge-extension-origin chrome::*bridge*)))
             (is (eql 401 (bridge-http port :post "/command" :body (nlk:json-object "action" "tab.list"))))

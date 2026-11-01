@@ -47,28 +47,23 @@ decoded request) as dex:post saw them."
     (let ((row (nlk:json-value (nle::models-catalog-table) :object "alibaba-token-plan")))
       (is (equal "QwenCloud Token Plan" (nlk:json-value row :string "name")))
       (is (equal "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
-                 (nlk:json-value row :string "api"))
-          "the international region unless the section says otherwise")
+                 (nlk:json-value row :string "api")) "the international region unless the section says otherwise")
       (is (gethash "qwen3.8-max" (nlk:json-value row :object "models")) "the seed models are listed")
-      (is (equal "openai-completions" (nle::configured-provider-lane "alibaba-token-plan"))
-          "the chat lane drives it")
+      (is (equal "openai-completions" (nle::configured-provider-lane "alibaba-token-plan")) "the chat lane drives it")
       (is (equal "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/chat/completions"
                  (nle::lane-endpoint "alibaba-token-plan" "openai-completions"))))
     (funcall stop)
     (setf stop nil)
-    (is (null (nlk:json-value (nle::models-catalog-table) :object "alibaba-token-plan"))
-        "a stopped cell leaves the catalog as models.dev made it")))
+    (is (null (nlk:json-value (nle::models-catalog-table) :object "alibaba-token-plan")))))
 
 (deftest alibaba-token-plan-cell-serves-the-region-the-section-names ()
   (with-cell-stop ((alibaba-token-plan-start "region" "china"))
     (is (equal "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
-               (nlk:json-value (nle::models-catalog-table) :string "alibaba-token-plan" "api"))
-        "omp's option 2, China (Beijing)"))
+               (nlk:json-value (nle::models-catalog-table) :string "alibaba-token-plan" "api"))))
   (with-cell-stop ((alibaba-token-plan-start "base_url"
                                              "https://token-plan.us-east-1.maas.aliyuncs.com/compatible-mode/v1"))
     (is (equal "https://token-plan.us-east-1.maas.aliyuncs.com/compatible-mode/v1"
-               (nlk:json-value (nle::models-catalog-table) :string "alibaba-token-plan" "api"))
-        "omp's option 3, a custom base, wins over the region")))
+               (nlk:json-value (nle::models-catalog-table) :string "alibaba-token-plan" "api")))))
 
 ;;; --- the key ------------------------------------------------------------------------
 
@@ -85,8 +80,7 @@ decoded request) as dex:post saw them."
                                        ((equal name "BAILIAN_TOKEN_PLAN_API_KEY") "sk-sp-bailian")))
         (is (equal "sk-sp-first"
                    (nle:credential-key (nle::resolve-provider-credential "alibaba-token-plan"
-                                                                         :auth-path auth :probe t)))
-            "the first name wins")))))
+                                                                         :auth-path auth :probe t))))))))
 
 (deftest alibaba-token-plan-cell-never-sends-another-familys-key ()
   (with-cell-stop ((alibaba-token-plan-start))
@@ -94,8 +88,7 @@ decoded request) as dex:post saw them."
       (with-stubbed-fdefinition (nle::credential-env (name)
                                  (and (equal name "OPENAI_API_KEY") "sk-openai"))
         (let ((credential (nle::resolve-provider-credential "alibaba-token-plan" :auth-path auth :probe t)))
-          (is (not (equal "sk-openai" (nle:credential-key credential)))
-              "OPENAI_API_KEY never reaches QwenCloud, as omp refuses it")
+          (is (not (equal "sk-openai" (nle:credential-key credential))))
           (is (eq :public (nle:credential-source credential))))))))
 
 (deftest alibaba-token-plan-cell-saved-key-outranks-the-variable ()

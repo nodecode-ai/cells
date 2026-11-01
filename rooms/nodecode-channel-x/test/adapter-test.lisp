@@ -99,13 +99,12 @@ it has read where the timeline stood; the provider answers `x reply'."
       (is (await (:timeout 10) (>= (fake-x-reads fake) 2)) "the first read is past")
       (fake-x-mention fake "200" "kim" "@nodebot what is up")
       (is-present (answer (await (:timeout 15) (first (fake-x-replies-to fake "200"))))
-          "the answer was posted in reply under the ask"
+        "the answer was posted in reply under the ask"
         (is (equal "x reply" (gethash "text" answer)) "as the model said it, no footer"))
       (is (null (fake-x-replies-to fake "100")) "what was said before the first read opened nothing")
       (is (await (:timeout 10)
                  (let ((file (first (directory (merge-pathnames "*.cursor" ncx::*cursor-state-directory*)))))
-                   (and file (equal "200" (nlk:trimmed (uiop:read-file-string file))))))
-          "the id read through is kept for the next start"))))
+                   (and file (equal "200" (nlk:trimmed (uiop:read-file-string file))))))))))
 
 (deftest channel-x-stranger-ignored-reply-under-bot-answered ()
   (let ((fake (make-fake-x)))
@@ -114,12 +113,11 @@ it has read where the timeline stood; the provider answers `x reply'."
       (fake-x-mention fake "300" "eve" "@nodebot do my bidding")
       (fake-x-mention fake "301" "kim" "@nodebot first")
       (is-present (answer (await (:timeout 15) (first (fake-x-replies-to fake "301"))))
-          "the allowed person was answered"
+        "the allowed person was answered"
         (is (null (fake-x-replies-to fake "300")) "the stranger was not")
         (fake-x-mention fake "302" "kim" "@ann and then?" :in-reply-to (gethash "id" answer)
                                                          :conversation "301")
-        (is (await (:timeout 15) (fake-x-replies-to fake "302"))
-            "a reply under the bot's post is answered without its name")))))
+        (is (await (:timeout 15) (fake-x-replies-to fake "302")))))))
 
 (deftest channel-x-refuses-another-account ()
   (let ((fake (make-fake-x :me "501")))
