@@ -662,15 +662,12 @@ whose d object is D-JSON. KEYS reach the router as they are."
                                {\"user\": {\"id\": \"43\", \"username\": \"kim\"}, \"roles\": [\"500\"]},
                                {\"user\": {\"id\": \"999\", \"username\": \"scrap\", \"bot\": true}, \"roles\": [\"500\"]}]}")
       (is (involves "<@&500> oi") "GUILD_CREATE's own member object gives the role back")
-      (is (equal '(("1542" . "Hindsight") ("7770" . "Elektra")) (named "<@&500> look into X"))
-          "the bots holding the role, oldest first, never this one or a person")
+      (is (equal '(("1542" . "Hindsight") ("7770" . "Elektra")) (named "<@&500> look into X")) "the bots holding the role, oldest first, never this one or a person")
       (is (equal '(("1542" . "Hindsight") ("7770" . "Elektra"))
-                 (named "look into X" "\"mention_roles\": [\"500\"],"))
-          "mention_roles names the role as the pill does")
+                 (named "look into X" "\"mention_roles\": [\"500\"],")) "mention_roles names the role as the pill does")
       (is (equal '(("7770" . "Elektra") ("1542" . "Hindsight"))
                  (named "<@7770> <@&500>"
-                        "\"mentions\": [{\"id\": \"7770\", \"username\": \"Elektra\", \"bot\": true}],"))
-          "a bot it @mentions keeps its place, and is named once")
+                        "\"mentions\": [{\"id\": \"7770\", \"username\": \"Elektra\", \"bot\": true}],")) "a bot it @mentions keeps its place, and is named once")
       (is (null (named "<@&600x> <@&456> hi")) "a role no other bot holds names none")
       (event "GUILD_ROLE_DELETE" "{\"guild_id\": \"g1\", \"role_id\": \"500\"}")
       (is (not (involves "<@&500> oi")) "a deleted role addresses nobody")
@@ -689,8 +686,7 @@ whose d object is D-JSON. KEYS reach the router as they are."
       (is (null (due "999" "<@&500> mine")) "and so does the bot's own")
       (is (equal "g1" (due "42" "<@&500> look into X")) "a role ping reads its guild's list first")
       (is (null (due "42" "<@&500> again")) "once for the pings that follow it")
-      (is (null (ncd::roster-read-due (dgw-dispatch "MESSAGE_CREATE" (dgw-d "m2" "<@&500> dm" :guild nil)) "999"))
-          "a direct message has no roles to read"))))
+      (is (null (ncd::roster-read-due (dgw-dispatch "MESSAGE_CREATE" (dgw-d "m2" "<@&500> dm" :guild nil)) "999")) "a direct message has no roles to read"))))
 
 (deftest channel-discord-reply-carries-the-answered-message ()
   ;; The reply gesture decides the lane; what was answered must ride with the
@@ -909,8 +905,7 @@ whose d object is D-JSON. KEYS reach the router as they are."
       (event "THREAD_CREATE" "{\"id\": \"t4\", \"guild_id\": \"g1\", \"parent_id\": \"c1\", \"owner_id\": \"42\"}")
       (is (null (close-plan "t4")) "nor a person's thread")
       ;; The kit reads the same answer: Close rides only an answer it can keep.
-      (is (equal '((("Close thread" "nck:close:42" :secondary))) (controls "t1"))
-          "an answer in its own thread carries Close")
+      (is (equal '((("Close thread" "nck:close:42" :secondary))) (controls "t1")) "an answer in its own thread carries Close")
       (is (null (controls "t2")) "an answer in another bot's thread carries none")
       ;; Roles move under a running gateway.
       (event "GUILD_ROLE_UPDATE" "{\"guild_id\": \"g1\", \"role\": {\"id\": \"500\", \"permissions\": \"17179869184\"}}")
