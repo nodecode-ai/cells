@@ -29,7 +29,7 @@ start until you name who may talk to it.
 3. Invite the bot with this URL, your application id in place:
 
    ```
-   https://discord.com/oauth2/authorize?client_id=APPLICATION_ID&scope=bot+applications.commands&permissions=309237763136
+   https://discord.com/oauth2/authorize?client_id=APPLICATION_ID&scope=bot+applications.commands&permissions=326417632320
    ```
 
 4. Install the cell: `nodecode add channel-discord`, or `/setup` in the

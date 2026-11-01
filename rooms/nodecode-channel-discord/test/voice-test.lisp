@@ -398,7 +398,7 @@ voice channels the bot knows."
         ((:string "d" "guild_id") "g1") ((:any "d" "channel_id") null))
       (is-carrying (said (ncd::voice-unseated-text lane))
         "Discord did not seat me in <#vc-1>" "Connect and Speak"
-        "client_id=app-1&scope=bot+applications.commands&permissions=309240908864")
+        "client_id=app-1&scope=bot+applications.commands&permissions=326420778048")
       (let ((seated (ncd:join-voice (voice-section) :channel "vc-1" :room "t-1" :speakers '("u1"))))
         (ncd:route-voice-dispatch
          adapter (cell-json "{\"t\": \"VOICE_STATE_UPDATE\", \"d\": {\"guild_id\": \"g1\",

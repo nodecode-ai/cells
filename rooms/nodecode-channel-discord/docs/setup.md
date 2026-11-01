@@ -90,15 +90,16 @@ The bot needs these permissions in the channels it works in:
 | Read Message History | 1 << 16 | replies, reactions, catch-up after downtime |
 | Create Public Threads | 1 << 35 | a thread per ask (the default) |
 | Send Messages in Threads | 1 << 38 | answer in that thread |
+| Manage Threads | 1 << 34 | close a thread another bot or a person opened, so the **Close thread** under any bot's answer works |
 | Connect | 1 << 20 | voice only |
 | Speak | 1 << 21 | voice only |
 
-The sum for text is `309237763136`; with voice it is `309240908864`. Embed
+The sum for text is `326417632320`; with voice it is `326420778048`. Embed
 Links draws each turn's card; every other message the bot sends has its link
 previews suppressed.
 
-Optional: Manage Messages (`1 << 13`, so `309237771328` for text and
-`309240917056` with voice). Discord resolves a message's link preview after
+Optional: Manage Messages (`1 << 13`, so `326417640512` for text and
+`326420786240` with voice). Discord resolves a message's link preview after
 the message lands, and when the thread for an ask opened first, it sends
 every reader the ask as it was before the thread: the link to the thread
 drops from under the ask until their client reloads. With Manage Messages
@@ -110,10 +111,10 @@ Open this URL with your application id in place of `APPLICATION_ID`, pick
 the server, and authorize:
 
 ```
-https://discord.com/oauth2/authorize?client_id=APPLICATION_ID&scope=bot+applications.commands&permissions=309237763136
+https://discord.com/oauth2/authorize?client_id=APPLICATION_ID&scope=bot+applications.commands&permissions=326417632320
 ```
 
-With voice, use `permissions=309240908864`. The `applications.commands`
+With voice, use `permissions=326420778048`. The `applications.commands`
 scope is what lets the bot's slash commands appear in the server. If you
 invited the bot without it, open the URL again.
 

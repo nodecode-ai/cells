@@ -387,7 +387,11 @@ its member object there. The bot's own are what addresses it there
 ;;; 2026-11-01: Peas pressed Close under Elektra's answer in a thread scrap
 ;;; had opened, and the thread stayed open under "did not close"). So the
 ;;; guild's roles are kept with what each grants, from the events that carry
-;;; them, and the bot's own roles read against them.
+;;; them, and the bot's own roles read against them. A Close the bot cannot
+;;; keep names the permission and who grants it, never another bot's Close to
+;;; go find: any bot holding Manage Threads closes any thread, so the fix is
+;;; the bots' role, and the invite asks for it (operator, 2026-11-01: "any
+;;; bots should be able to close it, do not make it specific to a bot").
 
 (defparameter +discord-administrator+ (ash 1 3)
   "The permission bit that grants every other one.")
@@ -493,21 +497,18 @@ platform's answer decides."
           (or (null grants)
               (logtest grants (logior +discord-administrator+ +discord-manage-threads+)))))))
 
+(defun close-permission-text ()
+  "Why this bot may not close a thread, and the one grant that lets every bot
+close every thread: said where the bot knows it may not (CLOSE-REFUSAL-TEXT)
+and where Discord refused the archive (DISCORD-FAILURE-MESSAGE)."
+  "Discord lets a bot close only a thread it opened, unless the bot holds Manage Threads, and I don't here. A server admin can give the bots' role Manage Threads, and then every bot's Close works.")
+
 (defun close-refusal-text (thread-id)
   "What a Close press says where this bot may not close THREAD-ID
-(NCK:PLATFORM-CLOSE-REFUSAL): who opened it, and who can close it -- a bot
-opener by its own Close. An opener the connection does not know as a bot
-may be a bot it has not seen yet, so its words hold either way."
-  (let* ((owner (gethash thread-id *thread-owners*))
-         (bots (nlk:when-let (guild (gethash thread-id *thread-guilds*))
-                 (gethash guild *guild-bots*)))
-         (bot-p (and owner bots (gethash owner bots) t)))
-    (format nil "I can't close this thread: ~@[<@~a> opened it, and ~]Discord lets a bot close ~
-                 only a thread it opened, unless it can manage threads in that channel.~@[ ~a~]"
-            owner
-            (and owner (if bot-p
-                           (format nil "Press Close under <@~a>'s answer." owner)
-                           (format nil "<@~a> can close it, or anyone who can manage threads here." owner))))))
+(NCK:PLATFORM-CLOSE-REFUSAL): the permission it lacks and who grants it --
+the same words whoever opened the thread."
+  (declare (ignore thread-id))
+  (format nil "I can't close this thread: ~a" (close-permission-text)))
 
 (defun forget-role (guild role)
   "ROLE, deleted from GUILD, no longer addresses the bot or reaches any bot."

@@ -228,6 +228,13 @@ threads, stays searchable, and opens again as soon as anyone writes in it.
 While a turn still runs in the thread, Close waits for it to answer. The
 answer to every press is private.
 
+Discord lets a bot close a thread someone else opened, another bot's
+included, only when it holds Manage Threads. The invite in
+[setup](setup.md#4-permissions-and-the-invite) asks for it, so with several
+bots in a room the Close under any bot's answer works. A bot without it
+shows Close only in threads it opened, and a stale Close says which
+permission to grant.
+
 ### The thread board
 
 `board_channel` names a channel the bot keeps one message in, edited in

@@ -318,8 +318,8 @@ adapter and the fake gateway have stopped."
   ;; Operator report, 2026-11-01: a Close press Discord refused posted "This
   ;; thread did not close: Discord REST PATCH close_thread forbidden; verify
   ;; the bot's guild membership, channel permissions, and privileged intents".
-  ;; A press on a Close the bot cannot keep says, in plain words, who opened
-  ;; the thread and who may close it; a refused archive says why; and the
+  ;; A press on a Close the bot cannot keep says, in plain words, the
+  ;; permission it lacks and who grants it; a refused archive says why; and the
   ;; outcome of a press follows it privately, an answer in an archived thread
   ;; being one that reopens it.
   (let ((ncd::*thread-owners* (make-hash-table :test #'equal :synchronized t))
@@ -331,10 +331,13 @@ adapter and the fake gateway have stopped."
     (let* ((platform (ncd:discord-platform :bot-user-id "999"))
            (refusal (nck:platform-close-refusal platform))
            (followup (nck:platform-plan-control-followup platform)))
-      (is (search "<@1512> opened it" (funcall refusal "t2")) "names who opened it")
-      (is (search "Press Close under <@1512>'s answer" (funcall refusal "t2")) "a bot's thread closes by its own Close")
-      (is (search "<@42> can close it, or anyone who can manage threads here." (funcall refusal "t4")) "an opener not known as a bot: words true for a bot or a person")
-      (is (not (search "menu" (funcall refusal "t4"))) "and no guess that it is a person")
+      ;; Operator, 2026-11-01: "any bots should be able to close it, do not
+      ;; make it specific to a bot" -- a bot's opener (t2) or a person (t4),
+      ;; the words name the grant that lets every bot close, and no bot.
+      (dolist (thread '("t2" "t4"))
+        (is (search "Manage Threads" (funcall refusal thread)) "names the permission a bot needs")
+        (is (search "every bot's Close works" (funcall refusal thread)) "and that granting it makes every bot's Close work")
+        (is (not (search "<@" (funcall refusal thread))) "names no bot to go find, the opener included"))
       (is-present (plan (first (funcall followup (list :id "i1" :token "tok" :application-id "app") :text "didn't")))
         "the outcome follows the press"
         (is-plan plan :method "POST" :path "/webhooks/app/tok" "content" "didn't" (:integer "flags") 64))
@@ -342,6 +345,7 @@ adapter and the fake gateway have stopped."
       (let ((said (ncd::discord-failure-message (ncd:thread-close-plan "t2") 403
                                                 "{\"message\": \"Missing Access\", \"code\": 50001}")))
         (is (search "only a thread it opened" said) "a refused archive says who may close")
+        (is (search "every bot's Close works" said) "and the grant that lets every bot close")
         (is (not (search "privileged intents" said)) "and nothing about intents")))))
 
 (deftest channel-discord-mentions-read-as-names ()
