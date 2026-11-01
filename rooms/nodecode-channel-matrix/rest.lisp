@@ -25,6 +25,14 @@
 ;;; twice (body and formatted_body): a chunk this long stays under it.
 (defparameter +matrix-text-limit+ 10000)
 
+(defparameter +command-event-type+ "org.matrix.msc4391.command_description"
+  "The state event one command of a bot's menu is (commands.lisp).")
+
+(defparameter +menu-event-types+
+  (list +command-event-type+ "m.room.power_levels" "m.room.create")
+  "The state a room's command menu is planned from: the commands it holds,
+and who may set them.")
+
 (defparameter +sync-filter+
   (nlk:encode-json-object
    (nlk:json-object
@@ -33,12 +41,15 @@
     "room" (nlk:json-object
             "account_data" (nlk:json-object "not_types" (vector "*"))
             "ephemeral" (nlk:json-object "not_types" (vector "*"))
-            "state" (nlk:json-object "types" (vector "m.room.encryption" "m.room.member" "m.room.name")
+            "state" (nlk:json-object "types" (coerce (list* "m.room.encryption" "m.room.member" "m.room.name"
+                                                             +menu-event-types+)
+                                                      'vector)
                                      "lazy_load_members" t)
             "timeline" (nlk:json-object "limit" 50
-                                        "types" (vector "m.room.message" "m.room.encrypted"
-                                                        "m.room.encryption" "m.room.member"
-                                                        "m.reaction")))))
+                                        "types" (coerce (list* "m.room.message" "m.room.encrypted"
+                                                               "m.room.encryption" "m.room.member"
+                                                               "m.reaction" +menu-event-types+)
+                                                        'vector)))))
   "What the lap asks /sync for: the room events an ask, a press or a room's
 shape is made of, and nothing else.")
 
@@ -85,7 +96,19 @@ shape is made of, and nothing else.")
   ;; "<room>|<event>" -> the controls the message carries.
   (controls (make-hash-table :test #'equal :synchronized t))
   ;; "<room>|<event>|<key>" -> the bot's reaction event drawing KEY on it.
-  (marks (make-hash-table :test #'equal :synchronized t)))
+  (marks (make-hash-table :test #'equal :synchronized t))
+  ;; room -> (state key -> what the room holds there: the JSON-SHAPE of the
+  ;; bot's command, or :FOREIGN), once the room's state has been read.
+  (menus (make-hash-table :test #'equal :synchronized t))
+  ;; room -> the JSON-SHAPE of its m.room.power_levels; room -> the creators
+  ;; who outrank every level (version 12 rooms).
+  (levels (make-hash-table :test #'equal :synchronized t))
+  (creators (make-hash-table :test #'equal :synchronized t))
+  ;; Bumped by the lap whenever the menu tables change; the generation the
+  ;; last menu plan read; whether every joined room's state has been read.
+  (menu-generation 0 :type fixnum)
+  (menu-planned -1 :type fixnum)
+  (menus-listed-p nil))
 
 (nlk:access (book matrix-book))
 

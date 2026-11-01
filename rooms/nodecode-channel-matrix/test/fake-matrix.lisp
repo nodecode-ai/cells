@@ -29,6 +29,9 @@
   (backlog '())
   ;; (ROOM . EVENT) the next /sync delivers, and invites as (:invite ROOM SENDER).
   (queue '())
+  ;; room -> ("<type>|<state key>" -> the state event the room holds there):
+  ;; what /rooms/{room}/state answers and a state PUT sets.
+  (room-state (make-hash-table :test #'equal))
   ;; How many /sync calls named a since token.
   (polls 0 :type integer)
   (counter 0 :type integer))
@@ -59,6 +62,18 @@
           (reply-to (setf (gethash "m.relates_to" content)
                           (nlk:json-object "m.in_reply_to" (nlk:json-object "event_id" reply-to)))))
     (matrix-event sender "m.room.message" content :id id)))
+
+(defun fake-matrix-state (fake room type state-key content &key (sender "@kim:fake"))
+  "Set ROOM's state at TYPE and STATE-KEY to CONTENT as SENDER sent it.
+=> the event."
+  (let ((event (nlk:json-object "type" type "state_key" state-key "sender" sender "content" content
+                                "event_id" (fake-matrix-next fake "$state"))))
+    (bt2:with-lock-held (fake.lock)
+      (setf (gethash (format nil "~a|~a" type state-key)
+                     (or (gethash room fake.room-state)
+                         (setf (gethash room fake.room-state) (make-hash-table :test #'equal))))
+            event))
+    event))
 
 (defun fake-matrix-push (fake room event)
   (bt2:with-lock-held (fake.lock) (setf fake.queue (append fake.queue (list (cons room event))))))
@@ -150,6 +165,18 @@ one -- after waiting a little for something to say -- the queue."
                                                            "unsigned" (nlk:json-object "transaction_id" (at 6))))
               (values 200 (nlk:json-object "event_id" id))))
            ((equal verb "redact") (values 200 (nlk:json-object "event_id" (fake-matrix-next fake "$red"))))
+           ((and (equal verb "state") (equal method "PUT"))
+            ;; Set, and echoed in the next /sync's timeline as the homeserver does.
+            (let ((event (fake-matrix-state fake room (at 5) (fake-matrix-state-key segments)
+                                            (if (hash-table-p body) body (nlk:json-object))
+                                            :sender +fake-bot+)))
+              (fake-matrix-push fake room event)
+              (values 200 (nlk:json-object "event_id" (gethash "event_id" event)))))
+           ((and (equal verb "state") (null (at 5)))
+            (values 200 (coerce (bt2:with-lock-held (fake.lock)
+                                  (let ((held (gethash room fake.room-state)))
+                                    (and held (alexandria:hash-table-values held))))
+                                'vector)))
            ((equal verb "typing") (values 200 (nlk:json-object)))
            ((equal verb "joined_members")
             (let ((joined (make-hash-table :test #'equal)))
@@ -171,8 +198,13 @@ one -- after waiting a little for something to say -- the queue."
 (defun fake-matrix-app (fake)
   (lambda (env &aux (path (getf env :path-info)))
     (if (uiop:string-prefix-p "/_matrix/" path)
-        (let* ((segments (mapcar #'quri:url-decode
-                                 (rest (rest (uiop:split-string path :separator "/")))))
+        ;; Split the path as it came over the wire and decode each segment once,
+        ;; as a homeserver does: the decoded PATH-INFO has lost which slash
+        ;; and plus were a segment's own (a state key's base64 has both).
+        (let* ((raw (let ((uri (or (getf env :request-uri) path)))
+                      (subseq uri 0 (position #\? uri))))
+               (segments (mapcar #'quri:url-decode
+                                 (rest (rest (uiop:split-string raw :separator "/")))))
                (method (string-upcase (string (getf env :request-method))))
                (query (getf env :query-string))
                (body (fake-matrix-body env)))
@@ -201,6 +233,20 @@ one -- after waiting a little for something to say -- the queue."
 
 (defun fake-matrix-url (fake)
   (format nil "http://127.0.0.1:~d" fake.port))
+
+(defun fake-matrix-state-key (segments)
+  "The state key a state path's SEGMENTS end in, empty when it names none."
+  (or (nth 6 segments) ""))
+
+(defun matrix-state-puts (fake &key room type)
+  "(ROOM TYPE STATE-KEY BODY) of every state PUT so far, oldest first."
+  (bt2:with-lock-held (fake.lock)
+    (reverse (loop for (method segments body) in fake.calls
+                   when (and (equal method "PUT") (equal (nth 2 segments) "rooms")
+                             (equal (nth 4 segments) "state")
+                             (or (null room) (equal (nth 3 segments) room))
+                             (or (null type) (equal (nth 5 segments) type)))
+                     collect (list (nth 3 segments) (nth 5 segments) (fake-matrix-state-key segments) body)))))
 
 (defun matrix-calls (fake verb &key type room)
   "The bodies of every call whose path's room VERB (send, redact, typing) or

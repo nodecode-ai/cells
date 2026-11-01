@@ -72,6 +72,28 @@ people.
 At least one of `allowed_rooms` / `allowed_users` must be set: a message runs
 with full access to your machine, so the bot never starts open to everyone.
 
+## Command menu
+
+The bot offers its slash commands in every room it is in as
+[MSC4391](https://github.com/matrix-org/matrix-spec-proposals/pull/4391)
+state: one `org.matrix.msc4391.command_description` event per command. A
+client that reads it ([gomuks](https://github.com/gomuks/gomuks), for one)
+completes `/` from it and sends the command with the bot mentioned. Clients
+that do not read it (Element, Cinny) show only their own commands; mention
+the bot instead: `@bot /models`.
+
+Setting room state takes a power level, `state_default` (50) unless the room
+says otherwise. Where the bot has less, the menu is left out and the log says
+which level it needs; give the bot that level, or keep it below moderator by
+letting a lower level set just this event:
+
+```json
+"users": { "@bot:example.org": 10 },
+"events": { "org.matrix.msc4391.command_description": 10 }
+```
+
+The menu follows the change on the next sync.
+
 ## Tested
 
 The tests run the lane against a fake homeserver with the real Nodecode

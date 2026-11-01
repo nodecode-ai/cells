@@ -29,4 +29,6 @@
    #:make-matrix-book #:note-room-event #:bot-thread-p #:reply-thread
    #:message-plan #:edit-plan #:delete-plan #:typing-plan #:reaction-plans #:file-plan
    #:sync-plan #:join-plan #:matrix-event-id #:matrix-address #:matrix-retry-after-ms
-   #:wrap-matrix-executor #:make-matrix-executor))
+   #:wrap-matrix-executor #:make-matrix-executor
+   ;; commands.lisp --- the command menu as MSC4391 state
+   #:command-state-key #:command-content #:menu-plans #:note-menu-event #:note-room-state))
