@@ -803,6 +803,15 @@ under it, CURRENT shown as the one picked; VIEW as CHOICE's."
   (list label (apply #'press-token line (alexandria:remove-from-plist view :description :current))
         description current))
 
+(defun picker (kind placeholder line &key current (max 25))
+  "A native picker of KIND -- :CHANNEL, :USER or :ROLE, where the platform
+draws its own -- whose picks say LINE followed by the picked ids, a word
+each, and a pick of none LINE alone; PLACEHOLDER shown while none is
+picked, CURRENT the ids it opens on, at most MAX picks."
+  ;; Only a platform that draws one is handed a picker (*SETUP-CARDS*): the
+  ;; ids it says are the platform's own.
+  (list :pick kind placeholder (press-token line) current max))
+
 (defun said-line (data)
   "The line a press carrying DATA says, or NIL when DATA is no choice's."
   (nlk:when-let (action (press-action data))
@@ -2853,6 +2862,29 @@ channel room hangs in nothing and forks nothing."
        (char= #\/ (char text 0))
        (alpha-char-p (char text 1))))
 
+(defvar *setup-cards* (make-hash-table :test #'equal :synchronized t)
+  "Platform id -> (:CARD FN :OWNER-P FN): the card /channels setup draws
+there -- FN of (HOST TARGET WORDS SOURCE) answering its words, the card
+beside them through OFFER-CARD -- and, for a room that declares no
+operators, who owns the bot, a function of (HOST USER-ID).")
+
+(defun setup-line-p (text &aux (words (nlk:split-words text)))
+  "Whether TEXT is a /channels setup line: typed, or said by a press on its card."
+  (and (string-equal (first words) "/channels") (string-equal (second words) "setup")))
+
+(defun setup-owner-p (host user-id)
+  "Whether USER-ID may open HOST's setup card: one of its operators, or, in
+a room that declares none, whom the platform names the bot's owner."
+  ;; The platform's answer may read the platform (Discord's application
+  ;; owner): a worker thread's call, never the transport's.
+  (and (stringp user-id)
+       (or (operator-p host user-id)
+           (and (null host.owners)
+                (nlk:when-let (owner-p (getf (gethash (platform-id host.platform) *setup-cards*)
+                                             :owner-p))
+                  (funcall owner-p host user-id))))
+       t))
+
 (defvar *command-source* nil
   "While a room's slash command runs, the source of the message that ran it
 — who and where, as the adapter normalized it (SOURCE-FIELD's hash); NIL for
@@ -2872,6 +2904,20 @@ which stay the answer everywhere else. A command run anywhere else answers
 in its words alone. => CONTROLS."
   (when *command-source* (setf *command-card* (list :controls controls :panel panel)))
   controls)
+
+(defun setup-command (words session-id)
+  "/channels setup WORDS in the room SESSION-ID is: the card its platform
+draws (*SETUP-CARDS*), for whom may open it (SETUP-OWNER-P)."
+  (multiple-value-bind (host target) (and session-id (room-host session-id))
+    (let ((card (and host (getf (gethash (platform-id (host-platform host)) *setup-cards*) :card)))
+          (user (and (hash-table-p *command-source*) (gethash "user_id" *command-source*))))
+      (cond ((null host)
+             "/channels setup runs in a room of the channel it sets up; `nodecode gateway setup' sets one up from a terminal")
+            ((null card)
+             (format nil "~a has no setup card: `nodecode gateway setup ~a' sets it up from a terminal"
+                     (platform-name (host-platform host)) (platform-id (host-platform host))))
+            ((not (setup-owner-p host user)) "Only this bot's owner can set it up.")
+            (t (funcall card host target words *command-source*))))))
 
 (defun run-command (host candidate line)
   "Worker thread: the answer to one slash LINE from CANDIDATE, who may run
@@ -4099,6 +4145,16 @@ an ask, or rejected with its reason on the status surface."
   ;; Whoever posts it -- a card's empty line too -- showed itself in its
   ;; thread: what an ask's owner is watched for (DEFER-TO-OWNER).
   (note-bot-activity host candidate)
+  ;; The setup card is where an operator picks the channels the bot answers
+  ;; in, so it opens in a channel the allowlist does not name yet: an
+  ;; operator's /channels setup -- the command, or a press on its card, each
+  ;; an interaction with its own way back -- passes the room's gate, which
+  ;; holds for everyone else.
+  (when (and (source-field candidate "interaction_id")
+             (setup-line-p text)
+             (candidate-operator-p host candidate))
+    (answer-message host candidate)
+    (return-from handle-candidate :answer))
   (when (or (plusp (length text)) attachments)
     (set-channel-status (host-id host) :last-event-at-ms
                         (* 1000 (- (get-universal-time) nlk:+unix-epoch+)))
