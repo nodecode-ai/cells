@@ -73,9 +73,10 @@ messages drawn as HTML, the user id as the mention, room-scoped event ids (so
 an address carries the room), replies threaded under their ask, a typing
 beat, reactions as events, and files uploaded to the media repository. BOOK
 is the matrix book the plans and the lap share."
-  ;; Matrix draws no buttons and keeps no command menu a bot may write, and a
-  ;; thread is opened by its first reply: those slots stay empty, and the
-  ;; kit's controls are drawn as reactions (the lap's NOTE-ECHO).
+  ;; Matrix draws no buttons, and a thread is opened by its first reply:
+  ;; those slots stay empty, and the kit's controls are drawn as reactions
+  ;; (the lap's NOTE-ECHO). The command menu is MSC4391 state in each room
+  ;; the book knows (commands.lisp).
   (make-platform
    :id "matrix"
    :name "Matrix"
@@ -91,6 +92,8 @@ is the matrix book the plans and the lap share."
    :plan-typing (lambda (target &rest keys) (apply #'typing-plan bot-user-id target keys))
    :plan-reaction (lambda (target id emoji &rest keys) (apply #'reaction-plans book target id emoji keys))
    :plan-file (lambda (target path &rest keys) (apply #'file-plan book target path keys))
+   :plan-commands (lambda (entries &key timeout-seconds)
+                    (menu-plans book bot-user-id entries :timeout-seconds (or timeout-seconds 30)))
    :message-id-of #'matrix-event-id
    :address-of #'matrix-address
    :mention #'identity
@@ -237,6 +240,9 @@ from and falls through."
         (sender (nlk:json-value event :string "sender")))
     (note-room-event book room-id event)
     (cond
+      ((member type +menu-event-types+ :test #'equal)
+       (note-menu-event book room-id event adapter.bot-user-id)
+       nil)
       ((equal type "m.room.member")
        (nlk:when-let (user (nlk:json-value event :string "state_key"))
          (nlk:when-let (name (nlk:json-value event :text "content" "displayname"))
@@ -278,6 +284,10 @@ its members' names, whether it is encrypted."
   (let ((count (nlk:json-value room :integer "summary" "m.joined_member_count")))
     (when count
       (book-note (matrix-book-kinds adapter.book) room-id (if (<= count 2) :direct :group))))
+  ;; A room first seen -- the first lap's, or one just joined -- has its
+  ;; menu read whole before its events add to it.
+  (unless (gethash room-id (matrix-book-menus adapter.book))
+    (read-room-menu adapter room-id))
   (loop for event across (nlk:json-array room "state" "events")
         do (matrix-handle-event adapter room-id event)))
 
@@ -352,7 +362,45 @@ and every invite an allowed person sent joined."
          (when next
            (setf adapter.since next)
            (keep-since adapter)))
+       (unless (matrix-book-menus-listed-p adapter.book)
+         (list-room-menus adapter))
+       (menu-rearm adapter)
        0.05))))
+
+;;; --- the command menu ------------------------------------------------------------------
+
+(defun read-room-menu (adapter room-id)
+  "Read ROOM-ID's state into the book's menu tables: one call. A room whose
+state will not come is known as holding no menu, so the plan sets it whole
+once rather than the lap asking again every lap."
+  (let ((result (lap-call adapter (rest-plan "GET" (room-path room-id "state") "room_state" nil 15))))
+    (unless result.ok-p
+      (warn "matrix: the state of ~a was not read for its command menu: ~a" room-id result.error))
+    (note-room-state adapter.book room-id
+                     (if (and result.ok-p (vectorp result.body)) result.body #())
+                     adapter.bot-user-id)))
+
+(defun list-room-menus (adapter)
+  "Read the menu of every room the bot is joined to that the laps have not
+shown yet: the quiet rooms a kept sync token skips."
+  ;; Asked once: a refusal is one warning, and the rooms it would have named
+  ;; are read when they next show activity.
+  (setf (matrix-book-menus-listed-p adapter.book) t)
+  (let ((result (lap-call adapter (read-plan "/joined_rooms" "joined_rooms"))))
+    (if result.ok-p
+        (loop for room across (or (nlk:json-value result.body :array "joined_rooms") #())
+              unless (gethash room (matrix-book-menus adapter.book))
+                do (read-room-menu adapter room))
+        (warn "matrix: the joined rooms were not listed for the command menu: ~a" result.error))))
+
+(defun menu-rearm (adapter &aux (book adapter.book))
+  "Have the kit plan the command menu again when the book has learned
+something since the last plan read it."
+  ;; Cleared on every lap until a plan reads the current generation: one
+  ;; cleared while a publish is in flight is overwritten when it lands, and
+  ;; cleared again on the next lap.
+  (unless (= book.menu-generation book.menu-planned)
+    (setf (host-commands-published adapter.host) nil)))
 
 ;;; --- the door ----------------------------------------------------------------------
 

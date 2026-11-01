@@ -9,7 +9,9 @@
 ;;;; cloned into ~/.nodecode/addons/.
 ;;;;
 ;;;; Matrix is reached over the Client-Server API's /sync long poll, so the
-;;;; organism needs no public address and holds no socket. Rooms with
+;;;; organism needs no public address and holds no socket. The command menu
+;;;; is MSC4391 state in each room (commands.lisp); cl-base64 and ironclad
+;;;; ride in with the kit and are named for its state keys. Rooms with
 ;;;; end-to-end encryption are refused in words: this version carries no
 ;;;; crypto.
 
@@ -20,12 +22,13 @@
   ;; The kit brings what a request is made of (dexador, quri) and the
   ;; organism the rest; naming only the kit keeps the hub's depends_on the one
   ;; folder a person installs with it.
-  :depends-on ("nodecode-channel-kit")
+  :depends-on ("nodecode-channel-kit" "cl-base64" "ironclad/digest/sha256")
   :serial t
   :components ((:file "package")
                (:file "markdown")
                (:file "events")
                (:file "rest")
+               (:file "commands")
                (:file "probe")
                (:file "adapter"))
   :in-order-to ((test-op (test-op "nodecode-channel-matrix/test"))))
@@ -40,6 +43,7 @@
                (:file "markdown-test")
                (:file "events-test")
                (:file "rest-test")
-               (:file "adapter-test"))
+               (:file "adapter-test")
+               (:file "commands-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-matrix-tests)))
