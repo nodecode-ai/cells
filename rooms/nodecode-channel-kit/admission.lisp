@@ -255,19 +255,26 @@ not words to hear, whatever its container holds."
   "The role ids the adapter says CANDIDATE's author holds where it spoke."
   (and (or (listp roles) (vectorp roles)) (remove-if-not #'stringp (coerce roles 'list))))
 
-(defun user-allowed-p (policy candidate &aux (user (source-field candidate "user_id"))
-                                             (users policy.allowed-users)
-                                             (roles policy.allowed-roles))
+(defun user-allowed-p (policy candidate)
   "Whether CANDIDATE's author may drive the bot under POLICY: anyone when
 neither allowed_users nor allowed_roles restricts, else a listed user, one
 holding a listed role, or one the operator paired."
+  (id-passes-user-gate-p policy (source-field candidate "user_id")
+                         (candidate-role-ids candidate)
+                         (source-field candidate "platform")))
+
+(defun id-passes-user-gate-p (policy user role-ids platform
+                              &aux (users policy.allowed-users)
+                                   (roles policy.allowed-roles))
+  "Whether USER, holding ROLE-IDS on PLATFORM, passes POLICY's user gate
+(USER-ALLOWED-P). A user known only by id passes ROLE-IDS NIL: one let in
+only by a role it holds is then kept out."
   (or (and (null users) (null roles))
       (and (member "*" users :test #'equal) t)
       (and user (member user users :test #'equal) t)
-      (and (intersection roles (candidate-role-ids candidate) :test #'equal) t)
+      (and (intersection roles role-ids :test #'equal) t)
       (and user
-           (member user (gethash (source-field candidate "platform") *paired-users*)
-                   :test #'equal)
+           (member user (gethash platform *paired-users*) :test #'equal)
            t)))
 
 (defun id-allowed-p (allowed value)

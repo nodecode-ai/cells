@@ -3549,9 +3549,11 @@ makes them the thread's peers, as a thread opened for it would."
 (defun note-called-peers (host candidate &aux (policy host.policy))
   "A bot's line in a thread that mentions another bot calls it in: from then
 on the two are that thread's peers in both kits, as if a person had named
-them together. This bot's own line makes each bot it mentions a peer here;
-another bot's line that mentions this bot makes its author a peer when the
-author passes this bot's own user gate (USER-ALLOWED-P). => the thread's
+them together. Either half passes this bot's own user gate first: this
+bot's own line makes each bot it mentions that passes it a peer here (by id
+alone, its roles unread: ID-PASSES-USER-GATE-P), and another bot's line that
+mentions this bot makes its author a peer when the author passes it
+(USER-ALLOWED-P), never the other bots that line names. => the thread's
 peers, or NIL when the line calls no one in."
   ;; A peer answers to whoever called it in, past this bot's allowed_users
   ;; (DECIDE-INBOUND). A bot calling this one in brings whoever asked it, so
@@ -3564,7 +3566,10 @@ peers, or NIL when the line calls no one in."
     (when (and thread user (stringp text) (typep policy 'inbound-policy))
       (let ((peers
               (cond ((equal user (inbound-policy-self-id policy))
-                     (candidate-mentioned-bots candidate))
+                     (remove-if-not (lambda (bot)
+                                      (id-passes-user-gate-p policy (car bot) nil
+                                                             (source-field candidate "platform")))
+                                    (candidate-mentioned-bots candidate)))
                     ((and (candidate-bot-p candidate)
                           (mention-involves-p policy text)
                           (user-allowed-p policy candidate))

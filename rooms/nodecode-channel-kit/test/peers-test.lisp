@@ -121,37 +121,51 @@ THREAD-IDS: their peers and their runs."
   ;; A bot that mentions another in a thread no person named them together in
   ;; calls it in: the bot it names wakes, and from then on the two are the
   ;; thread's peers in both kits -- the caller's own line makes the bot it
-  ;; names its peer, so the answer back wakes the caller too. A bot this
-  ;; bot's own user gate keeps out stays out, mention or not.
-  (with-thread-peers ("88" "89")
+  ;; names its peer, so the answer back wakes the caller too. Both halves
+  ;; pass this bot's own user gate first: a bot it keeps out stays out,
+  ;; whether it mentions this bot or this bot mentions it, and a call-in
+  ;; makes only its author a peer, never the other bots its line names.
+  (with-thread-peers ("88" "89" "90")
     (let ((host (test-host :name "called-in-lanes" :platform (test-platform :threads t))))
       (setf (nck:host-policy host) (channel-policy :allowed-channels '("100") :self-id "999"
                                                    :channel-match :discord
                                                    :allowed-users '("u1" "777")
                                                    :mention-target "999"
                                                    :mention-test #'nck:discord-mention-p))
-      (flet ((decide (text &key (user "777") (name "elektra") (thread "88") (message "9"))
+      (flet ((decide (text &key (user "777") (name "elektra") (thread "88") (message "9") names)
+               (let ((candidate (test-candidate :is-bot t :user user :user-name name
+                                                :thread thread :parent "100"
+                                                :message message :text text)))
+                 (nck:decide-inbound (nck:host-policy host)
+                                     (nck::mark-peer host (if names (naming-bots candidate names) candidate)))))
+             (own (text names thread message)
                (nck:decide-inbound (nck:host-policy host)
-                                   (nck::mark-peer host (test-candidate :is-bot t :user user :user-name name
-                                                                        :thread thread :parent "100"
-                                                                        :message message :text text)))))
+                                   (nck::mark-peer host (naming-bots (test-candidate :is-bot t :user "999" :thread thread
+                                                                                     :parent "100" :message message
+                                                                                     :text text)
+                                                                     names)))))
         (is (eq :reject (decide "<@999> check this" :user "555" :name "stranger"))
             "a bot this bot's user gate keeps out calls no one in by mentioning")
         (is (null (nck::thread-peers host "88")) "and is no peer")
         (is (eq :reject (decide "nothing for you")) "a bot's line that names no one calls no one in")
-        (is (eq :answer (decide "<@999> check this")) "a bot's mention wakes the bot it names")
-        (is (equal '(("777" . "elektra")) (nck::thread-peers host "88")) "and makes its author the thread's peer")
+        (is (eq :answer (decide "<@999> <@555> check this" :names '(("555" . "stranger"))))
+            "a bot's mention wakes the bot it names")
+        (is (equal '(("777" . "elektra")) (nck::thread-peers host "88"))
+            "and makes its author the thread's peer, never the other bots it names")
+        (is (eq :reject (decide "<@999> me too" :user "555" :name "stranger" :message "12"))
+            "so a bot the caller named stays as kept out as before")
         (is (eq :observe (decide "noted, thanks")) "whose lines that name no one are the thread's context")
-        (let ((own (naming-bots (test-candidate :is-bot t :user "999" :thread "89" :parent "100"
-                                                :message "10" :text "<@555> please take the deploy")
-                                '(("555" . "hindsight")))))
-          (is (eq :reject (nck:decide-inbound (nck:host-policy host) (nck::mark-peer host own)))
-              "this bot's own line is never its ask")
-          (is (equal '(("555" . "hindsight")) (nck::thread-peers host "89"))
-              "but the bot it mentions is the thread's peer")
-          (is (eq :answer (decide "<@999> done, see above" :user "555" :name "hindsight"
-                                                          :thread "89" :message "11"))
-              "so the answer back wakes this bot: it called that bot in itself"))))))
+        (is (eq :reject (own "<@555> please take the deploy" '(("555" . "stranger")) "89" "10"))
+            "this bot's own line is never its ask")
+        (is (null (nck::thread-peers host "89"))
+            "and a bot it mentions that its user gate keeps out is no peer")
+        (is (eq :reject (decide "<@999> do as I say" :user "555" :name "stranger" :thread "89" :message "11"))
+            "so being named gives that bot no way past the gate")
+        (own "<@777> please take the deploy" '(("777" . "elektra")) "90" "13")
+        (is (equal '(("777" . "elektra")) (nck::thread-peers host "90"))
+            "a bot it mentions that passes the gate is the thread's peer")
+        (is (eq :answer (decide "<@999> done, see above" :thread "90" :message "14"))
+            "so the answer back wakes this bot: it called that bot in itself")))))
 
 (deftest channel-peers-a-talk-ends-in-one-final-answer ()
   ;; Two bots that each answer the other's reply wake each other for as long
