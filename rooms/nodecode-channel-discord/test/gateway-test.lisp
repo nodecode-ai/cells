@@ -923,3 +923,65 @@ whose d object is D-JSON. KEYS reach the router as they are."
       (is (close-plan "t2") "Administrator grants it too")
       (event "THREAD_DELETE" "{\"id\": \"t2\"}")
       (is (null (gethash "t2" ncd::*thread-guilds*)) "a deleted thread is forgotten whole"))))
+
+(deftest channel-discord-close-reads-the-channel-overwrites ()
+  ;; What the bot may do in a thread is what it may do in the thread's channel:
+  ;; the guild's roles, then that channel's overwrites -- @everyone's, the
+  ;; bot's roles' together, the bot's own -- past all of which Administrator
+  ;; and the guild's owner may do anything (Elektra's review of the close fix,
+  ;; 2026-11-01: a channel that grants Manage Threads keeps its Close).
+  (let ((ncd::*thread-owners* (make-hash-table :test #'equal :synchronized t))
+        (ncd::*thread-guilds* (make-hash-table :test #'equal :synchronized t))
+        (ncd::*known-threads* (make-hash-table :test #'equal))
+        (ncd::*guild-role-permissions* (make-hash-table :test #'equal :synchronized t))
+        (ncd::*channel-overwrites* (make-hash-table :test #'equal :synchronized t))
+        (ncd::*guild-owners* (make-hash-table :test #'equal :synchronized t))
+        (ncd:*self-role-ids* (make-hash-table :test #'equal :synchronized t))
+        (ncd:*guild-bots* (make-hash-table :test #'equal :synchronized t)))
+    (flet ((event (type json &aux (payload (dgw-dispatch type json)))
+             (ncd::note-channel-dispatches payload)
+             (ncd:note-self-dispatches payload "999"))
+           (may (thread) (ncd::may-close-thread-p thread "999")))
+      (flet ((holds (&rest roles)
+               (event "GUILD_MEMBER_UPDATE"
+                      (format nil "{\"guild_id\": \"g1\", \"roles\": [~{~s~^, ~}], \"user\": {\"id\": \"999\", \"bot\": true}}" roles))))
+        ;; 17179869184 is Manage Threads; role 700 grants it guild-wide.
+        (event "GUILD_CREATE" "{\"id\": \"g1\", \"owner_id\": \"1\",
+          \"roles\": [{\"id\": \"g1\", \"permissions\": \"1024\"},
+                      {\"id\": \"500\", \"permissions\": \"0\"},
+                      {\"id\": \"700\", \"permissions\": \"17179869184\"}],
+          \"members\": [{\"user\": {\"id\": \"999\", \"bot\": true}, \"roles\": [\"500\"]}],
+          \"channels\": [
+            {\"id\": \"c1\", \"permission_overwrites\": []},
+            {\"id\": \"c2\", \"permission_overwrites\": [{\"id\": \"500\", \"type\": 0, \"allow\": \"17179869184\", \"deny\": \"0\"}]},
+            {\"id\": \"c3\", \"permission_overwrites\": [{\"id\": \"g1\", \"type\": 0, \"allow\": \"17179869184\", \"deny\": \"0\"}]},
+            {\"id\": \"c4\", \"permission_overwrites\": [{\"id\": \"500\", \"type\": 0, \"allow\": \"0\", \"deny\": \"17179869184\"},
+                                                     {\"id\": \"999\", \"type\": 1, \"allow\": \"17179869184\", \"deny\": \"0\"}]},
+            {\"id\": \"c5\", \"permission_overwrites\": [{\"id\": \"500\", \"type\": 0, \"allow\": \"0\", \"deny\": \"17179869184\"}]},
+            {\"id\": \"c6\", \"permission_overwrites\": [{\"id\": \"g1\", \"type\": 0, \"allow\": \"17179869184\", \"deny\": \"0\"},
+                                                     {\"id\": \"500\", \"type\": 0, \"allow\": \"0\", \"deny\": \"17179869184\"}]}],
+          \"threads\": [{\"id\": \"t1\", \"parent_id\": \"c1\", \"owner_id\": \"1512\"},
+                        {\"id\": \"t2\", \"parent_id\": \"c2\", \"owner_id\": \"1512\"},
+                        {\"id\": \"t3\", \"parent_id\": \"c3\", \"owner_id\": \"1512\"},
+                        {\"id\": \"t4\", \"parent_id\": \"c4\", \"owner_id\": \"1512\"},
+                        {\"id\": \"t5\", \"parent_id\": \"c5\", \"owner_id\": \"1512\"},
+                        {\"id\": \"t6\", \"parent_id\": \"c6\", \"owner_id\": \"1512\"}]}")
+        (is (not (may "t1")) "no grant anywhere")
+        (is (may "t2") "the channel grants it to the bot's role")
+        (is (may "t3") "the channel grants it to everyone")
+        (is (may "t4") "the bot's own overwrite beats its role's deny")
+        (is (not (may "t6")) "its role's deny beats everyone's allow")
+        (holds "500" "700")
+        (is (may "t1") "a guild role grants it")
+        (is (not (may "t5")) "the channel's deny on its role takes the guild's grant back")
+        (event "CHANNEL_UPDATE" "{\"id\": \"c5\", \"guild_id\": \"g1\", \"permission_overwrites\": []}")
+        (is (may "t5") "the deny lifted under a running gateway")
+        (event "CHANNEL_DELETE" "{\"id\": \"c5\", \"guild_id\": \"g1\"}")
+        (is (null (gethash "c5" ncd::*channel-overwrites*)) "a deleted channel is forgotten")
+        (holds "500")
+        (event "GUILD_ROLE_UPDATE" "{\"guild_id\": \"g1\", \"role\": {\"id\": \"500\", \"permissions\": \"8\"}}")
+        (is (may "t6") "Administrator passes every overwrite")
+        (event "GUILD_ROLE_UPDATE" "{\"guild_id\": \"g1\", \"role\": {\"id\": \"500\", \"permissions\": \"0\"}}")
+        (is (not (may "t6")) "and taken back, the deny holds again")
+        (event "GUILD_UPDATE" "{\"id\": \"g1\", \"owner_id\": \"999\", \"roles\": [{\"id\": \"500\", \"permissions\": \"0\"}]}")
+        (is (may "t6") "the guild's owner may do anything")))))

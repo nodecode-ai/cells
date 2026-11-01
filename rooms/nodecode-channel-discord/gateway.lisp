@@ -227,6 +227,15 @@ asking whether the bot may close a thread (MAY-CLOSE-THREAD-P).")
   "Thread channel id -> the guild it is in, kept beside *THREAD-OWNERS*: whose
 roles say what the bot may do there.")
 
+(defvar *guild-owners* (make-hash-table :test #'equal :synchronized t)
+  "Guild id -> the id of the user who owns it, from GUILD_CREATE and
+GUILD_UPDATE: the owner may do anything there.")
+
+(defvar *channel-overwrites* (make-hash-table :test #'equal :synchronized t)
+  "Channel id -> its permission overwrites, each (ID TYPE ALLOW DENY) -- TYPE
+0 a role's, the guild's own id its @everyone, 1 a member's -- kept from the
+gateway's own channel dispatches.")
+
 (defun note-thread-channel (thread &key guild &aux (id (nlk:json-value thread :string "id")))
   "THREAD — a thread channel object (a GUILD_CREATE threads entry, the d of
 a THREAD_CREATE or THREAD_UPDATE, a starter message's thread) — into
@@ -286,12 +295,14 @@ CHANNEL_DELETE forget theirs."
                      for thread across (nlk:json-array data "threads")
                      do (note-thread-channel thread :guild guild))
                (loop for channel across (nlk:json-array data "channels")
-                     do (note-channel-topic channel)))
+                     do (note-channel-topic channel)
+                        (note-channel-overwrites channel)))
               ((one-of "THREAD_CREATE" "THREAD_UPDATE") (note-thread-channel data))
-              ((one-of "CHANNEL_CREATE" "CHANNEL_UPDATE") (note-channel-topic data))
+              ((one-of "CHANNEL_CREATE" "CHANNEL_UPDATE")
+               (note-channel-topic data) (note-channel-overwrites data))
               ((one-of "THREAD_DELETE")
                (forget *known-threads*) (forget *thread-owners*) (forget *thread-guilds*))
-              ((one-of "CHANNEL_DELETE") (forget *channel-topics*))
+              ((one-of "CHANNEL_DELETE") (forget *channel-topics*) (forget *channel-overwrites*))
               (t (return-from note-channel-dispatches nil)))
         t))))
 
@@ -403,9 +414,8 @@ the guild's id.")
 
 (defun self-guild-permissions (guild)
   "The permissions the bot holds across GUILD -- its @everyone role and every
-role of its own there -- or NIL while the guild's roles are not known.
-Channel overwrites are not read yet: one granting Manage Threads in a channel
-goes unseen, and that channel's answers carry no Close they could have kept."
+role of its own there -- or NIL while the guild's roles are not known. A
+channel's overwrites come after (SELF-CHANNEL-PERMISSIONS)."
   (nlk:when-let (roles (and guild (gethash guild *guild-role-permissions*)))
     (let ((held (discord-self-role-ids)))
       (sb-ext:with-locked-hash-table (roles)
@@ -415,14 +425,71 @@ goes unseen, and that channel's answers carry no Close they could have kept."
                 do (setf granted (logior granted grants))
               finally (return granted))))))
 
+;;; What the bot may do in a channel: its guild-wide permissions, then the
+;;; channel's overwrites, as Discord reckons them (Elektra's review of the
+;;; close fix, 2026-11-01: a channel granting Manage Threads keeps its Close,
+;;; one denying it takes it away). A thread has no overwrites of its own:
+;;; what holds in it is what holds in its parent.
+
+(defun note-guild-owner (guild-object)
+  "GUILD-OBJECT's owner -- a GUILD_CREATE's or GUILD_UPDATE's d -- into
+*GUILD-OWNERS*."
+  (let ((guild (nlk:json-value guild-object :string "id"))
+        (owner (nlk:json-value guild-object :string "owner_id")))
+    (when (and guild owner)
+      (setf (gethash guild *guild-owners*) owner))))
+
+(defun permission-bits (value)
+  "VALUE, a permission field Discord writes as a decimal string, as an
+integer: 0 for none."
+  (cond ((integerp value) value)
+        ((stringp value) (or (parse-integer value :junk-allowed t) 0))
+        (t 0)))
+
+(defun note-channel-overwrites (channel &aux (id (nlk:json-value channel :string "id")))
+  "CHANNEL -- a GUILD_CREATE channels entry, the d of a CHANNEL_CREATE or
+CHANNEL_UPDATE -- into *CHANNEL-OVERWRITES*: its permission overwrites."
+  (when id
+    (setf (gethash id *channel-overwrites*)
+          (loop for overwrite across (or (nlk:json-array channel "permission_overwrites") #())
+                when (hash-table-p overwrite)
+                  collect (list (nlk:json-value overwrite :string "id")
+                                (nlk:json-value overwrite :integer "type")
+                                (permission-bits (nlk:json-value overwrite :string "allow"))
+                                (permission-bits (nlk:json-value overwrite :string "deny")))))))
+
+(defun self-channel-permissions (guild channel bot-user-id)
+  "The permissions the bot BOT-USER-ID holds in CHANNEL of GUILD: what it holds
+guild-wide (SELF-GUILD-PERMISSIONS), then CHANNEL's overwrites -- @everyone's,
+its roles' together, its own -- each denying, then allowing; every one (-1)
+for Administrator or the guild's owner. NIL while the guild's roles are not
+known; a channel whose overwrites are not known reads as having none."
+  (if (and guild bot-user-id (equal bot-user-id (gethash guild *guild-owners*)))
+      -1
+      (nlk:when-let (base (self-guild-permissions guild))
+        (if (logtest base +discord-administrator+)
+            -1
+            (let ((overwrites (and channel (gethash channel *channel-overwrites*)))
+                  (held (discord-self-role-ids)))
+              (flet ((over (bits pick)
+                       (let ((chosen (remove-if-not pick overwrites)))
+                         (logior (logandc2 bits (reduce #'logior chosen :key #'fourth :initial-value 0))
+                                 (reduce #'logior chosen :key #'third :initial-value 0)))))
+                (over (over (over base (lambda (o) (and (eql 0 (second o)) (equal guild (first o)))))
+                            (lambda (o) (and (eql 0 (second o)) (not (equal guild (first o)))
+                                             (member (first o) held :test #'equal))))
+                      (lambda (o) (and (eql 1 (second o)) (equal bot-user-id (first o)))))))))))
+
 (defun may-close-thread-p (thread-id bot-user-id)
   "Whether the bot BOT-USER-ID may archive THREAD-ID: it opened the thread, or
-holds Manage Threads (or Administrator) in the thread's guild. A thread whose
-opener, or a guild whose roles, the connection has not heard is given the
-benefit of the doubt, and the platform's answer decides."
+holds Manage Threads (or Administrator) in the thread's channel
+(SELF-CHANNEL-PERMISSIONS). A thread whose opener, or a guild whose roles,
+the connection has not heard is given the benefit of the doubt, and the
+platform's answer decides."
   (let ((owner (and thread-id (gethash thread-id *thread-owners*))))
     (or (null owner) (null bot-user-id) (equal owner bot-user-id)
-        (let ((grants (self-guild-permissions (gethash thread-id *thread-guilds*))))
+        (let ((grants (self-channel-permissions (gethash thread-id *thread-guilds*)
+                                                (thread-channel-parent thread-id) bot-user-id)))
           (or (null grants)
               (logtest grants (logior +discord-administrator+ +discord-manage-threads+)))))))
 
@@ -451,12 +518,18 @@ MESSAGE_CREATE, and a GUILD_ROLE_DELETE forgetting its role."
         (flet ((one-of (&rest names) (member name names :test #'equal)))
           (cond ((one-of "GUILD_CREATE")
                  (let ((guild (nlk:json-value data :string "id")))
+                   (note-guild-owner data)
                    (loop for role across (or (nlk:json-array data "roles") #())
                          do (note-guild-role guild role))
                    (loop for member across (or (nlk:json-array data "members") #())
                          when (hash-table-p member)
                            do (note-guild-member guild (nlk:json-value member :object "user")
                                                  (nlk:json-array member "roles") bot-user-id))))
+                ((one-of "GUILD_UPDATE")
+                 (note-guild-owner data)
+                 (loop with guild = (nlk:json-value data :string "id")
+                       for role across (or (nlk:json-array data "roles") #())
+                       do (note-guild-role guild role)))
                 ((one-of "GUILD_MEMBER_UPDATE")
                  (note-guild-member (nlk:json-value data :string "guild_id")
                                     (nlk:json-value data :object "user")
