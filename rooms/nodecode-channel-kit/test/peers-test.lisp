@@ -47,7 +47,6 @@ THREAD-IDS: their peers and their runs."
   ;; this lane renames nothing.
   (with-saved-globals ((nle::*session-naming* :inline))
     (with-stubbed-fdefinition (nle:complete (system user &key session-id max-tokens fallback-p)
-                                (declare (ignore system user session-id max-tokens fallback-p))
                                 "Title: \"Auth bug in the login flow.\"")
       (with-ask-host (host thread-ask-host
                       :answers ("taken and answered")

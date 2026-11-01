@@ -95,7 +95,6 @@ names; forget the thread after."
       ;; A room that takes a mention, as #general does for most bots.
       (setf (nck::inbound-policy-require-mention (nck:host-policy host)) t)
       (with-stubbed-fdefinition (nck::continue-lane (host lane ask)
-                                  (declare (ignore host))
                                   (push (list lane ask) steered))
         (is (eq :observe (nck:handle-candidate host (said-in-thread host "**CLAIM** s2 · bisect the config loader"))))
         (is-present (heard (first steered)) "a peer's post steered the running turn"
@@ -129,7 +128,6 @@ names; forget the thread after."
           (steered '()))
       (setf (nck::inbound-policy-require-mention (nck:host-policy host)) t)
       (with-stubbed-fdefinition (nck::continue-lane (host lane ask)
-                                  (declare (ignore host))
                                   (push (list lane ask) steered))
         (is (eq :observe (nck:handle-candidate
                           host (said-in-thread host (format nil "<@u1> **Final answer**~%the cache it is")

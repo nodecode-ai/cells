@@ -488,8 +488,8 @@ origin noted — ORIGIN the keys past the three that place it."
   ;; own ask lives, is no message the thread holds, and takes none.
   (with-ask-host (host test-host :store nil :name "thread-line-reply")
     (let ((lane (origin-lane host :landed t)))
-      (with-stubbed-fdefinitions ((nck::gate-ask (host ask) (declare (ignore host ask)) nil)
-                                  (nck::run-ask-ingress (host ask fn) (declare (ignore host ask fn)) nil))
+      (with-stubbed-fdefinitions ((nck::gate-ask (host ask) nil)
+                                  (nck::run-ask-ingress (host ask fn) nil))
         (nck::continue-lane host lane (nck:make-ask :room "chat-100-t42" :lane "chat-100-t42-m5" :message-id "m7"
                                                     :target '(:channel-id "100" :thread-id "42") :prompt "over to you"))
         (is (equal '("m7") (nck::lane-heard-line lane)) "a settled lane answers the line as a reply")
@@ -603,7 +603,6 @@ origin noted — ORIGIN the keys past the three that place it."
     (let ((asked '()))
       (unwind-protect
            (with-stubbed-fdefinition (nck::continue-lane (host lane ask)
-                                       (declare (ignore host lane))
                                        (push ask asked))
              (flet ((answer (text turn-id)
                       (fact "turn.started" (nlk:json-object) turn-id)
@@ -840,7 +839,6 @@ origin noted — ORIGIN the keys past the three that place it."
   (let ((asked '()))
     (with-saved-globals ((nle::*session-naming* :inline))
       (with-stubbed-fdefinition (nle:complete (system user &key session-id max-tokens fallback-p)
-                                  (declare (ignore system session-id max-tokens fallback-p))
                                   (push user asked)
                                   "Title: \"Capital of Australia vs Sydney.\"")
         (with-ask-host (host thread-ask-host :answers ("Canberra") :responses (replies "42" "p1")
