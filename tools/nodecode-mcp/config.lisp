@@ -16,11 +16,19 @@
 ;;;;
 ;;;; A url without a command is streamable HTTP, anything else is stdio; an
 ;;;; explicit "transport" ("stdio" | "http" | "streamable-http", or an object
-;;;; with that "type") wins. No cwd, no per-tool allow/deny, no OAuth — as
-;;;; the Zig client had none. Header values are secrets: nothing in this cell
-;;;; ever prints one; surfaces show a count. A header or env value may name
-;;;; its secret rather than hold it (references, below), so the config need
-;;;; carry none.
+;;;; with that "type") wins. No cwd, no per-tool allow/deny. Header values
+;;;; are secrets: nothing in this cell ever prints one; surfaces show a
+;;;; count. A header or env value may name its secret rather than hold it
+;;;; (references, below), so the config need carry none.
+;;;;
+;;;; An http server signs in with OAuth (oauth.lisp) unless it sends its own
+;;;; Authorization header or says "oauth": false. "oauth" may instead be an
+;;;; object of the settings a server needs, every member optional:
+;;;;
+;;;;   "oauth": {"client_id": "...", "client_secret": "${file:~/.secrets/x}",
+;;;;             "scope": "read write", "callback_port": 33418,
+;;;;             "client_registration": "auto" | "dcr" | "cimd",
+;;;;             "auth_server_metadata_url": "https://as/.well-known/..."}
 ;;;;
 ;;;; Each entry validates on its own: a refused entry becomes a spec carrying
 ;;;; the refusal text (the server shows as `refused` in every status) and its
@@ -53,6 +61,7 @@
   (env '() :type list)                ; ((name . value) ...), stdio
   (url nil)                           ; string, http
   (headers '() :type list)            ; ((name . value) ...), http
+  (oauth '())                         ; :off, or a plist of the oauth settings, http
   (timeout-ms +default-timeout-ms+ :type integer)
   (enabled-p t)
   (refusal nil))                      ; config-refusal text, or NIL
@@ -182,6 +191,38 @@ refusal; ONE-LINE, a header's rule, refuses a value holding a line break."
                   (resolve-references (cdr pair) (format nil "~a.~a" key (car pair)) :one-line one-line)))
           alist))
 
+(defun parse-oauth (entry)
+  "The `oauth' member of ENTRY: :OFF for false, else the plist of its
+settings (:CLIENT-ID :CLIENT-SECRET :SCOPE :CALLBACK-PORT
+:CLIENT-REGISTRATION :AUTH-SERVER-METADATA-URL), '() when absent."
+  (multiple-value-bind (value present) (nlk::section-value entry "oauth")
+    (cond ((or (not present) (eq value :null) (eq value t)) '())
+          ((null value) :off)
+          ((not (hash-table-p value))
+           (nlk:config-error "oauth must be false or an object, got ~s" value))
+          (t
+           (let ((port (nlk:config-integer value "callback_port" 0))
+                 (registration (or (nlk:config-string value "client_registration") "auto"))
+                 (metadata-url (nlk:config-string value "auth_server_metadata_url"))
+                 (secret (nlk:config-string value "client_secret")))
+             (unless (<= 0 port 65535)
+               (nlk:config-error "oauth.callback_port must be a port, got ~a" port))
+             (unless (member registration '("auto" "dcr" "cimd") :test #'string-equal)
+               (nlk:config-error "oauth.client_registration must be auto, dcr or cimd, got ~s"
+                                 registration))
+             (unless (or (null metadata-url) (uiop:string-prefix-p "https://" metadata-url)
+                         (uiop:string-prefix-p "http://127.0.0.1" metadata-url)
+                         (uiop:string-prefix-p "http://localhost" metadata-url))
+               (nlk:config-error "oauth.auth_server_metadata_url must be https"))
+             ;; A secret may be a reference, checked here and resolved at use.
+             (when secret (reference-pieces secret "oauth.client_secret"))
+             (list :client-id (nlk:config-string value "client_id")
+                   :client-secret secret
+                   :scope (nlk:config-string value "scope")
+                   :callback-port (and (plusp port) port)
+                   :client-registration (intern (string-upcase registration) :keyword)
+                   :auth-server-metadata-url metadata-url))))))
+
 (defun parse-server-entry (name entry)
   "A SERVER-SPEC for ENTRY, or one carrying the refusal text."
   (nlk:with-handlers ((nlk:config-refusal (condition)
@@ -228,6 +269,7 @@ refusal; ONE-LINE, a header's rule, refuses a value holding a line break."
        :env (checked-references (string-alist entry "env") "env")
        :url url
        :headers (checked-references (string-alist entry "headers") "headers")
+       :oauth (if (eq transport :http) (parse-oauth entry) '())
        :timeout-ms (let ((value (nlk:config-integer entry "timeout_ms" 0)))
                      (cond ((zerop value) +default-timeout-ms+)
                            ((minusp value)
@@ -282,3 +324,10 @@ and never a header value."
                     spec.command spec.args))
     (:http (let ((count (length spec.headers)))
              (format nil "http ~a~@[ (~d header~:p)~]" spec.url (and (plusp count) count))))))
+
+(defun oauth-enabled-p (spec)
+  "Whether SPEC signs in with OAuth: an http server that sends no
+Authorization header of its own and does not say oauth: false."
+  (and (eq spec.transport :http)
+       (not (eq spec.oauth :off))
+       (not (assoc "authorization" spec.headers :test #'string-equal))))

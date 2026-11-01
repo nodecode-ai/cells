@@ -23,7 +23,7 @@
    ;; the cell entry
    #:start-cell
    ;; model-facing vocabulary (see the primer in primer.lisp)
-   #:call #:tools #:schema #:status #:restart
+   #:call #:tools #:schema #:status #:restart #:login #:logout
    ;; conditions
    #:mcp-error #:mcp-unknown-server #:mcp-unknown-tool #:mcp-offline
    #:mcp-timeout #:mcp-tool-error))

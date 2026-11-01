@@ -276,6 +276,51 @@ count, never a value), the last error and the stderr log of a process."
                                   (getf snapshot :log-path))))
     "no MCP servers configured (mcp.servers in ~/.nodecode/config.jsonc)"))
 
+(defun sign-in-server (server-name &aux (server (find-server server-name)) (spec server.spec))
+  "SERVER-NAME's server, once it signs in with OAuth; else the refusal
+saying why it does not."
+  (cond ((not (eq spec.transport :http))
+         (fail "~a is a stdio server: it signs in through its own command" server-name))
+        ((eq spec.oauth :off)
+         (fail "~a says oauth: false in config.jsonc" server-name))
+        ((not (oauth-enabled-p spec))
+         (fail "~a sends its own Authorization header, so it never signs in with OAuth" server-name))
+        (t server)))
+
+(defun server-oauth-settings (server &aux (settings (server-spec-oauth server.spec)))
+  (if (listp settings) settings '()))
+
+(defun login (server-name &optional address)
+  "Sign in to SERVER-NAME, an http MCP server that asks for OAuth: the
+address to open in a browser (handed to a browser here when there is one),
+the sign-in finishing on its own once the browser comes back and the server
+then connecting. With ADDRESS -- the address the browser landed on, pasted
+back from another machine -- finish the sign-in in progress."
+  (check-type server-name string)
+  (let ((server (sign-in-server server-name)))
+    (handler-case
+        (if address
+            (format nil "~a" (paste-sign-in server-name address))
+            (multiple-value-bind (outcome redirect-uri opened)
+                (start-sign-in server-name (server-spec-url server.spec) (server-oauth-settings server)
+                               :on-done (lambda () (spawn-connect server)))
+              (if (eq outcome :refreshed)
+                  (format nil "~a: signed in again with the kept refresh token; connecting" server-name)
+                  (format nil "Sign in to ~a in a browser~:[~;; one here was handed the address~]: ~a~%~
+Nodecode waits at ~a for the answer, then connects ~a. If the browser runs on another machine, ~
+paste the address it lands on: /mcp login ~a ADDRESS"
+                          server-name opened outcome redirect-uri server-name server-name))))
+      (error (condition)
+        (format nil "~a: the sign-in could not start: ~a" server-name condition)))))
+
+(defun logout (server-name &aux (server (sign-in-server server-name)))
+  "Forget SERVER-NAME's sign-in -- its tokens, revoked where the server
+offers that, and its client registration -- and reconnect it."
+  (if (forget-sign-in server-name (server-spec-url server.spec) (server-oauth-settings server))
+      (progn (spawn-connect server)
+             (format nil "~a: signed out; its tokens are forgotten" server-name))
+      (format nil "~a: no sign-in is kept" server-name)))
+
 (defun restart (server-name &aux (server (find-server server-name)))
   "Reconnect SERVER-NAME on its own thread; (mcp:status) shows the outcome."
   (when (member server.state '(:disabled :refused))

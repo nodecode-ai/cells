@@ -16,7 +16,8 @@
 
 (in-package #:nodecode-mcp)
 
-(defparameter +usage+ "/mcp [status | on NAME | off NAME | restart NAME | tools NAME]")
+(defparameter +usage+
+  "/mcp [status | on NAME | off NAME | restart NAME | tools NAME | login NAME [ADDRESS] | logout NAME]")
 
 ;;; --- subcommands: each answers its text -----------------------------------
 
@@ -31,6 +32,10 @@
         ;; 120 columns.
         (format nil "MCP: ~@[/mcp ~{~a NAME~^ | ~} -- ~]~{~a~^; ~}"
                         (remove nil (list (and (member :disabled states) "on")
+                                          (and (some (lambda (snapshot)
+                                                       (search "/mcp login" (or (getf snapshot :error) "")))
+                                                     snapshots)
+                                               "login")
                                           (and (intersection '(:error :connecting :disconnected) states)
                                                "restart")
                                           (and (plusp ready) "tools")))
@@ -67,7 +72,7 @@
      (cond
        ((null *registry*) "MCP: cell is not running")
        ((member head '("" "status") :test #'string=) (do-status))
-       ((not (member head '("on" "off" "restart" "tools") :test #'string=))
+       ((not (member head '("on" "off" "restart" "tools" "login" "logout") :test #'string=))
         (format nil "MCP: unknown subcommand ~a; usage ~a" head +usage+))
        ((zerop (length rest))
         (format nil "MCP: usage ~a" +usage+))
@@ -81,11 +86,16 @@
           (cond ((string= head "restart")
                  (restart rest)
                  (format nil "MCP: restarting ~a; /mcp status to follow" rest))
+                ;; login NAME [ADDRESS]: the address pasted back is one word.
+                ((string= head "login")
+                 (format nil "MCP: ~a" (login (second tokens) (third tokens))))
+                ((string= head "logout")
+                 (format nil "MCP: ~a" (logout (second tokens))))
                 ((string= head "tools") (do-tools rest))
                 (t (format nil "MCP: ~a" (switch-server rest (string= head "on")))))))))
    :label "MCP"
-   :description "MCP servers: status, on NAME, off NAME, restart NAME, tools NAME"
-   :argument-hint "status | on NAME | off NAME | restart NAME | tools NAME"))
+   :description "MCP servers: status, on NAME, off NAME, restart NAME, tools NAME, login NAME, logout NAME"
+   :argument-hint "status | on NAME | off NAME | restart NAME | tools NAME | login NAME [ADDRESS] | logout NAME"))
 
 ;;; --- the page ---------------------------------------------------------------
 ;;; The web page's Control pane reads and moves the servers through this
@@ -250,6 +260,8 @@ functions, the manual. Idempotent."
   (nle:route +route+ nil)
   (nle:unregister-commands "nodecode-mcp")
   (nle:route +catalog-route+ nil)
+  ;; A sign-in waiting on its browser closes its listener.
+  (cancel-all-sign-ins)
   (when registry
     (setf *registry* nil)
     ;; Every server at once, each on a thread of its own and with a quarter
