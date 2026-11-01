@@ -845,6 +845,21 @@ the picked option's value for a select, the custom_id for a button."
         (and (plusp (length values)) (nlk:json-value (aref values 0) :text)))
       (nlk:json-value data :text "data" "custom_id")))
 
+(defparameter +native-select-types+ '(5 6 7 8)
+  "USER_SELECT, ROLE_SELECT, MENTIONABLE_SELECT and CHANNEL_SELECT: Discord's
+own pickers, whose picks are ids.")
+
+(defun picked-line (data)
+  "The line a press in the INTERACTION_CREATE object DATA says (SAID-LINE),
+or NIL for no choice's: after it, a native picker's picked ids, a word each."
+  (nlk:when-let (line (said-line (press-data data)))
+    (if (member (nlk:json-value data :integer "data" "component_type") +native-select-types+)
+        (format nil "~a~{ ~a~}" line
+                (loop for value across (or (nlk:json-value data :array "data" "values") #())
+                      for id = (nlk:json-value value :text)
+                      when (and id (every #'digit-char-p id)) collect id))
+        line)))
+
 (defun interaction-thread-parent (data &aux (channel-id (nlk:json-value data :string "channel_id")))
   "The parent channel of the thread an interaction's DATA comes from, or NIL
 outside a thread: a thread the adapter has heard of says so, and so does the
@@ -873,7 +888,7 @@ plus the `args' option, so it runs through the host exactly as a typed
   ;; thread (types 10 to 12) and names the parent; a thread the adapter has
   ;; heard of already says so too. NIL for every other payload.
   (let* ((kind (nlk:json-value data :integer "type"))
-         (pressed (and (eql kind 3) (said-line (press-data data)))) ; MESSAGE_COMPONENT
+         (pressed (and (eql kind 3) (picked-line data))) ; MESSAGE_COMPONENT
          (name (and (eql kind 2) (nlk:json-value data :text "data" "name"))) ; APPLICATION_COMMAND
          (args (loop for option across (nlk:json-array data "data" "options")
                      when (equal "args" (nlk:json-value option :string "name"))

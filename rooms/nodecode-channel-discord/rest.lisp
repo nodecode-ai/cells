@@ -335,6 +335,32 @@ NIL for a menu with no option Discord would take."
        "placeholder" (nlk:clip (second menu) 149 :ellipsis "…")
        "options" (coerce (subseq options 0 (min 25 (length options))) 'vector)))))
 
+(defparameter +picker-component-types+ '((:user . 5) (:role . 6) (:channel . 8))
+  "A kit picker's kind as Discord's own select: USER_SELECT, ROLE_SELECT,
+CHANNEL_SELECT.")
+
+(defun control-picker (picker)
+  "One kit picker -- (:PICK KIND PLACEHOLDER DATA CURRENT MAX) -- as Discord's
+own select of KIND, DATA its custom_id: a channel select lists the text and
+announcement channels, a user select the server's people, a role select its
+roles; CURRENT its default values, and a pick of none allowed."
+  ;; https://discord.com/developers/docs/components/reference#user-select and
+  ;; the role and channel selects beside it: max_values is at most 25, and a
+  ;; default value is an {id, type} the select's own kind names.
+  (destructuring-bind (kind placeholder data current max) (rest picker)
+    (let ((max (max 1 (min 25 (or max 25)))))
+      (nlk:json-object
+       "type" (cdr (assoc kind +picker-component-types+))
+       "custom_id" data
+       "placeholder" (nlk:clip placeholder 149 :ellipsis "…")
+       "min_values" 0
+       "max_values" max
+       :when (eq kind :channel) "channel_types" (vector 0 5)
+       :when current "default_values" (map 'vector
+                                           (lambda (id)
+                                             (nlk:json-object "id" id "type" (string-downcase kind)))
+                                           (subseq current 0 (min max (length current))))))))
+
 (defun control-line (line v2)
   "One kit line (NCK:LINE-CHOICE), (:ROW MARK LABEL DETAIL BUTTON): in a
 Components V2 message (V2) a section, its words beside its button, or its
@@ -376,6 +402,8 @@ array that takes a message's components away; no rows for none."
                            (control-line control v2)
                            (let ((inner (cond ((eq (first control) :menu)
                                                (nlk:when-let (menu (control-menu control index)) (list menu)))
+                                              ((eq (first control) :pick)
+                                               (list (control-picker control)))
                                               ((consp (first control))
                                                (mapcar #'control-button (subseq control 0 (min 5 (length control)))))
                                               (t (list (control-button control))))))

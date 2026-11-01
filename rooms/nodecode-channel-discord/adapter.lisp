@@ -877,6 +877,18 @@ legibly, see NCK:CALL."
 
 ;;; --- the channel entry ---------------------------------------------------------------------
 
+(defun section-policy (section settings owners bot-user-id)
+  "The admission policy channels.discord SECTION's SETTINGS make for the bot
+BOT-USER-ID, whose OWNERS may always talk: they join allowed_users when that
+list is the gate."
+  ;; START-CHANNEL's, and the setup card's when Save takes the section live.
+  (let ((configured (getf settings :allowed-users)))
+    (apply #'discord-inbound-policy
+           :allowed-users (and configured (union configured owners :test #'string=))
+           :thread-behavior (nck:section-thread-behavior section)
+           :bot-user-id bot-user-id
+           settings)))
+
 (defun start-channel (section &key executor)
   "Start the Discord lane from its channels.discord config SECTION."
   ;; Returns a stop thunk. EXECUTOR overrides the live REST executor — the
@@ -956,11 +968,7 @@ legibly, see NCK:CALL."
                         :request-timeout 30
                         ;; The declared members (the section below, probe.lisp) name the
                         ;; policy's own keys; the rest are read here.
-                        :policy (apply #'discord-inbound-policy
-                                       :allowed-users allowed-users
-                                       :thread-behavior (nck:section-thread-behavior section)
-                                       :bot-user-id bot-user-id
-                                       settings)))
+                        :policy (section-policy section settings owners bot-user-id)))
                  (adapter
                    (%make-discord-adapter
                     :host host
