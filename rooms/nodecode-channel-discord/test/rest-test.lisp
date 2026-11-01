@@ -467,8 +467,10 @@ Manage Threads, the bot's own managed role holding nothing."
                                                (reply 200 "flags" (logior (ash 1 23) (ash 1 19)))
                                                (reply 200 "roles" (vector "55"))
                                                (discord-probe-roles)))
-             (text (ncd:probe-channel section :executor executor))
+             (answer (multiple-value-list (ncd:probe-channel section :executor executor)))
+             (text (first answer))
              (plans (nck:recording-executor-plans executor)))
+        (is (equal "nodecode, made by peas · message content switched on · in peas · can close threads" (second answer)))
         (is (search "token: ok — bot nodecode#4821 (id 1408), made by peas" text) "the identity line, and who made it")
         (is (search "intents: message content switched on (it was off)" text))
         (let ((invite (format nil "invite: https://discord.com/oauth2/authorize?client_id=1408&scope=bot%20applications.commands&permissions=~d"
@@ -491,6 +493,10 @@ Manage Threads, the bot's own managed role holding nothing."
              (text (ncd:probe-channel section :executor executor)))
         (is (search "intents: message content granted" text))
         (is (search "threads: cannot close them in \"peas\"" text))
+        (is (search "cannot close threads in peas"
+                    (nth-value 1 (ncd:probe-channel section :executor (discord-probe-executor (discord-probe-app "flags" (ash 1 19))
+                                                                                             (reply 200 "roles" (vector "56"))
+                                                                                             (discord-probe-roles))))))
         (let ((methods (mapcar #'nck:request-plan-method (nck:recording-executor-plans executor))))
           (is (every (lambda (method) (equal "GET" method)) methods) "a granted intent is never written")))
       ;; Discord refuses the switch: the line says so, and what to do instead.
@@ -499,6 +505,8 @@ Manage Threads, the bot's own managed role holding nothing."
                                                         (reply 403 "message" "Missing Access")))))
         (is (search "intents: message content not granted, and Discord would not switch it on" text))
         (is (search "enable Message Content Intent on the Bot page" text)))
+      ;; A wrong token: no summary, the walk folds the step into the 401 line.
+      (is (null (nth-value 1 (ncd:probe-channel section :executor (scripted-executor (reply 401 "message" "401: Unauthorized"))))))
       (let* ((executor (scripted-executor (reply 401 "message" "401: Unauthorized")))
              (text (ncd:probe-channel section :executor executor)))
         (is (search "token: unauthorized (401)" text) "a wrong token is one line")
@@ -562,6 +570,9 @@ Manage Threads, the bot's own managed role holding nothing."
         (is-carrying (text (getf offer :wait))
           "nodecode is in no server yet"
           "https://discord.com/oauth2/authorize?client_id=1408&scope=bot%20applications.commands"))
+      ;; In a server: its channels, and one line saying where the bot is.
+      (let ((offer (nth-value 1 (ncd:probe-channel-choices section :executor (discord-probe-executor)))))
+        (is (equal "nodecode is in peas" (getf offer :found))))
       ;; People by name: who made the app first, then who wrote lately, never a bot, each once.
       (let ((people '(("77" . "peas  made the app") ("88" . "ada  peas") ("66" . "lin  peas"))))
         (flet ((executor ()

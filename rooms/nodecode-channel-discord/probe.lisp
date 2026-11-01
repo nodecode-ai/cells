@@ -133,23 +133,25 @@ limited flag only), and the line says which way that went."
   ;; otherwise hunt for on the Bot page. Discord lets an app set its limited
   ;; intent flags itself; one in 100 servers or more needs review instead,
   ;; and Discord's refusal says so.
+  ;; => (values LINE WORDS), WORDS the few the check's summary carries.
   (let ((flags (or (nlk:json-value application :integer "flags") 0)))
     (if (logtest flags +message-content-flags+)
-        "intents: message content granted"
+        (values "intents: message content granted" "message content on")
         (let* ((patch (funcall fetch "/applications/@me" "PATCH"
                                (nlk:json-object "flags" (logior (logand flags +limited-intent-flags+)
                                                                 +message-content-limited+))))
                (now (and (execution-ok-p patch)
                          (nlk:json-value (execution-body patch) :integer "flags"))))
           (if (and now (logtest now +message-content-flags+))
-              "intents: message content switched on (it was off)"
-              (format nil "intents: message content not granted, and Discord would not switch it on (~a) - enable Message Content Intent on the Bot page, or keep require_mention true"
-                      (if (execution-ok-p patch) "it answered without it" (probe-failure patch))))))))
+              (values "intents: message content switched on (it was off)" "message content switched on")
+              (values (format nil "intents: message content not granted, and Discord would not switch it on (~a) - enable Message Content Intent on the Bot page, or keep require_mention true"
+                              (if (execution-ok-p patch) "it answered without it" (probe-failure patch)))
+                      "message content off"))))))
 
 (defun guild-threads-line (guild-id guild-name bot-id fetch)
-  "Whether the bot may close threads in GUILD-ID, as a line, or NIL when
-its roles could not be read: its server-wide permissions (@everyone's and
-its roles') holding Manage Threads or Administrator."
+  "Whether the bot may close threads in GUILD-ID, as (values LINE CAN), or
+NIL when its roles could not be read: its server-wide permissions
+(@everyone's and its roles') holding Manage Threads or Administrator."
   (let ((member (funcall fetch (format nil "/guilds/~a/members/~a" guild-id bot-id)))
         (roles (funcall fetch (format nil "/guilds/~a/roles" guild-id))))
     (when (and (execution-ok-p member) (execution-ok-p roles))
@@ -162,19 +164,22 @@ its roles') holding Manage Threads or Administrator."
                                                0))
                            :initial-value 0)))
         (if (logtest bits (logior +administrator+ +manage-threads+))
-            (format nil "threads: can close them in ~s" guild-name)
-            (format nil "threads: cannot close them in ~s - give its role Manage Threads, or invite it again with the link above"
-                    guild-name))))))
+            (values (format nil "threads: can close them in ~s" guild-name) t)
+            (values (format nil "threads: cannot close them in ~s - give its role Manage Threads, or invite it again with the link above"
+                            guild-name)
+                    nil))))))
 
 (defun probe-channel (section &key executor (timeout 15))
   "What the token in SECTION can see, as lines: the bot's identity and who
 made it, whether it reads message content (switched on when it was off),
 its invite link, each guild with its text channels and whether it may
-close threads there."
+close threads there. The second value is all that on one line, what a
+setup walk folds the step into; NIL for a token that does not answer."
   ;; EXECUTOR overrides the live one (the scripted test seam). The answer
   ;; never carries the token (the executor redacts every failure text). A
   ;; wrong token is one line naming the 401.
-  (nlk:bind (((problem guilds me fetch) (probe-guilds section executor timeout)) (lines '()))
+  (nlk:bind (((problem guilds me fetch lonely) (probe-guilds section executor timeout))
+             (lines '()) (who nil) (content nil) (closes '()) (stuck '()))
     (flet ((say (control &rest args)
              (push (apply #'format nil control args) lines)))
       (let ((application (and (execution-ok-p me) (probe-application fetch)))
@@ -188,8 +193,14 @@ close threads there."
                  (and (not (equal discriminator "0")) discriminator)
                  bot-id
                  (and application (mapcar #'cdr (application-makers application))))))
+        (when (execution-ok-p me)
+          (setf who (format nil "~a~@[, made by ~{~a~^, ~}~]"
+                            (nlk:json-value (execution-body me) :string "username")
+                            (and application (mapcar #'cdr (application-makers application))))))
         (when application
-          (say "~a" (message-content-line application fetch))
+          (multiple-value-bind (line words) (message-content-line application fetch)
+            (say "~a" line)
+            (setf content words))
           (say "invite: ~a" (invite-url (or (nlk:json-value application :string "id") bot-id))))
         (when problem (say "~a" problem))
         ;; A guild's text channels read as `#name id' entries, capped at 30.
@@ -207,9 +218,18 @@ close threads there."
                                                          (nlk:json-value channel :string "id")))
                                                shown)
                                        (and (> (length text) 30) (- (length text) 30))))))
-                 (nlk:when-let (line (and bot-id (guild-threads-line id name bot-id fetch)))
-                   (say "~a" line)))))
-    (format nil "~{~a~^~%~}" (nreverse lines))))
+                 (multiple-value-bind (line can) (and bot-id (guild-threads-line id name bot-id fetch))
+                   (when line
+                     (say "~a" line)
+                     (if can (push name closes) (push name stuck)))))))
+    (values (format nil "~{~a~^~%~}" (nreverse lines))
+            (and who
+                 (format nil "~a~@[ · ~a~]~:[ · in ~{~a~^, ~}~@[ +~d more~]~; · in no server yet~*~*~]~@[ · ~a~]"
+                         who content lonely
+                         (let ((names (mapcar #'second guilds))) (subseq names 0 (min 3 (length names))))
+                         (and (> (length guilds) 3) (- (length guilds) 3))
+                         (cond (stuck (format nil "cannot close threads in ~{~a~^, ~}" (reverse stuck)))
+                               (closes "can close threads")))))))
 
 (defun probe-lonely-wait (me fetch)
   "What the operator does while the bot of ME (its /users/@me execution) is
@@ -230,13 +250,16 @@ none, and says to wait for it there (:WAIT, the invite link)."
   (multiple-value-bind (problem guilds me fetch lonely) (probe-guilds section executor timeout)
     (cond (lonely (values '() (list :wait (probe-lonely-wait me fetch))))
           (problem (config-error "~a" problem))
-          (t (loop for (nil name channels) in guilds
-                   append (mapcar (lambda (channel)
-                                    (cons (nlk:json-value channel :string "id")
-                                          (format nil "#~a  ~a"
-                                                  (nlk:json-value channel :string "name")
-                                                  name)))
-                                  (probe-text-channels channels)))))))
+          (t (values (loop for (nil name channels) in guilds
+                           append (mapcar (lambda (channel)
+                                            (cons (nlk:json-value channel :string "id")
+                                                  (format nil "#~a  ~a"
+                                                          (nlk:json-value channel :string "name")
+                                                          name)))
+                                          (probe-text-channels channels)))
+                     (list :found (format nil "~a is in ~{~a~^, ~}"
+                                          (nlk:json-value (execution-body me) :string "username")
+                                          (mapcar #'second guilds))))))))
 
 (defun probe-people (guilds fetch application)
   "The people to offer by name, as ((id . label) ...): whoever made
