@@ -279,6 +279,44 @@ p2 serving m2 and shared."
                            (mapcar #'first (third (first next-controls)))) "choosing the current provider opens its models")
                 (is (null (nth-value 1 (nck::room-model host "chat-100"))) "navigation does not change the room model")))))))))
 
+(deftest channel-operator-the-current-model-and-effort-stay-pickable ()
+  ;; A model pick goes on to its effort, so the models menu navigates like
+  ;; the providers' one, and so does the effort menu it leads to. A Discord
+  ;; select never re-sends the option it shows picked: a current model or
+  ;; effort drawn that way could not be picked again, and the person could
+  ;; neither go on with the model the room runs nor confirm its effort. The
+  ;; effort card also has the way back to its provider's models.
+  (with-temp-store ()
+    (with-catalog
+      (with-stubbed-fdefinition (nle:gateway-target (session-id)
+                                  (values "p1" "m1"))
+        (with-stubbed-fdefinition (nle::effort-ladder (provider model)
+                                    '("off" "low" "high"))
+          (let ((host (test-host :name "current-stays-pickable"
+                                 :platform (test-platform :choices t)))
+                (candidate (test-candidate :channel "100")))
+            (flet ((run (line) (multiple-value-list (nck::run-command host candidate line))))
+              (destructuring-bind (text controls) (run "/models p1")
+                (let ((m1 (first (third (first controls)))))
+                  (is (search "Current model: p1/m1" text))
+                  (is (equal "m1" (first m1)))
+                  (is (null (fourth m1)) "the current model is not preselected")
+                  (is (equal "current" (third m1)) "and is still named current")
+                  (destructuring-bind (next-text next-controls) (run (nck:said-line (second m1)))
+                    (is (search "## Reasoning Effort" next-text) "picking the current model goes on to its effort")
+                    (is (search "Target: p1/m1" next-text))
+                    (let ((back (first (second next-controls))))
+                      (is (equal "Models" (first back)))
+                      (let ((models-text (first (run (nck:said-line (second back))))))
+                        (is (search "Select a p1 model" models-text) "the effort card goes back to the provider's models"))))))
+              (is (search "at high from its next ask" (first (run "/think high"))))
+              (destructuring-bind (text controls) (run "/think")
+                (let ((high (third (third (first controls)))))
+                  (is (search "Current: high" text))
+                  (is (equal "high" (first high)))
+                  (is (null (fourth high)) "the current effort is not preselected")
+                  (is (equal "current" (third high)) "and is still named current"))))))))))
+
 (deftest channel-operator-backups-card-writes-the-failover-chain ()
   ;; The Model Picker's Backups card is the failover chain's own view: a menu
   ;; per backup, the triggers as toggles, Test and the way back -- Discord's
@@ -352,7 +390,8 @@ p2 serving m2 and shared."
             (is (search "this channel runs p2/m2 from its next ask" (first (models "p2 m2"))))
             (destructuring-bind (text controls) (models "p2")
               (is (search "Current model: p2/m2" text))
-              (is (fourth (first (third (first controls)))) "the room's pick is shown picked")
+              (is (null (fourth (first (third (first controls))))) "the room's pick is not preselected, so it can be picked again")
+              (is (equal "current" (third (first (third (first controls))))) "and is named current")
               (is (null (fourth (second (second controls)))) "and the default is open"))
             ;; A thread running its channel's pick has none of its own to
             ;; reset; once it picks, it does, and the reset goes back to the
@@ -403,8 +442,9 @@ p2 serving m2 and shared."
                             (("off" "/think off" "Answer without reasoning." nil)
                              ("low" "/think low" "" nil)
                              ("high" "/think high" "" nil)))
-                           ("Provider default" "/think default" :secondary t))
-                         (press-lines controls)) "the same card /think opens"))
+                           (("Models" "/models p2" :secondary nil)
+                            ("Provider default" "/think default" :secondary t)))
+                         (press-lines controls)) "the same card /think opens, with the way back to p2's models"))
             ;; A model the catalog says does not reason: the words alone.
             (is (equal (list (format nil "this channel runs p2/shared from its next ask; the organism's default is unchanged"))
                        (models "p2 shared")))
@@ -434,14 +474,16 @@ p2 serving m2 and shared."
                             (("off" "/think off" "Answer without reasoning." nil)
                              ("low" "/think low" "" nil)
                              ("high" "/think high" "" nil)))
-                           ("Provider default" "/think default" :secondary t))
+                           (("Models" "/models p1" :secondary nil)
+                            ("Provider default" "/think default" :secondary t)))
                          (press-lines controls))))
             (is (search "uses p1/m1 at high from its next ask"
                         (first (think channel "high" "chat-100"))))
             (destructuring-bind (text controls) (think channel "" "chat-100")
               (is (search "Current: high" text))
-              (is (fourth (third (third (first controls)))) "the selected effort is marked current")
-              (is (null (fourth (second controls))) "provider default is not disabled after a pick"))
+              (is (null (fourth (third (third (first controls))))) "the selected effort is not preselected, so it can be picked again")
+              (is (equal "current" (third (third (third (first controls))))) "and is named current")
+              (is (null (fourth (second (second controls)))) "provider default is not disabled after a pick"))
             (is (search "Current: high" (first (think thread "" "chat-100-t42"))))
             (is (search "follows p1/m1's provider default"
                         (first (think thread "default" "chat-100-t42"))))
