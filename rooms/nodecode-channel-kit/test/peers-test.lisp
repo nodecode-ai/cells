@@ -105,7 +105,7 @@ THREAD-IDS: their peers and their runs."
                (nck::mark-peer host (test-candidate :is-bot bot :user user :thread "77"
                                                     :parent "100" :message "9" :text text))))
         (is (nck::candidate-peer-p (said "<@999> your turn")))
-        (is (not (nck::candidate-peer-p (said "<@999> your turn" :user "555"))) "a bot the ask never named is no peer")
+        (is (not (nck::candidate-peer-p (said "your turn" :user "555"))) "a bot the ask never named, and that calls no one in, is no peer")
         (is (not (nck::candidate-peer-p (said "<@999> your turn" :user "999"))) "and this bot is never its own")
         (is (eq :answer (nck:decide-inbound (nck:host-policy host) (said "<@999> your turn"))))
         (is (eq :observe (nck:decide-inbound (nck:host-policy host) (said "noted, thanks"))))
@@ -116,6 +116,42 @@ THREAD-IDS: their peers and their runs."
           (nck::peer-run host (said "go on, you two" :user "u1" :bot nil) :answer nil)
           (is (null (gethash (cons "test" "77") nck::*talk-wakes*)) "a person's line starts a new talk")
           (is (eq :answer (nck::peer-run host ask :answer nil))))))))
+
+(deftest channel-peers-a-bots-mention-calls-the-bot-in ()
+  ;; A bot that mentions another in a thread no person named them together in
+  ;; calls it in: the bot it names wakes, and from then on the two are the
+  ;; thread's peers in both kits -- the caller's own line makes the bot it
+  ;; names its peer, so the answer back wakes the caller too. A bot this
+  ;; bot's own user gate keeps out stays out, mention or not.
+  (with-thread-peers ("88" "89")
+    (let ((host (test-host :name "called-in-lanes" :platform (test-platform :threads t))))
+      (setf (nck:host-policy host) (channel-policy :allowed-channels '("100") :self-id "999"
+                                                   :channel-match :discord
+                                                   :allowed-users '("u1" "777")
+                                                   :mention-target "999"
+                                                   :mention-test #'nck:discord-mention-p))
+      (flet ((decide (text &key (user "777") (name "elektra") (thread "88") (message "9"))
+               (nck:decide-inbound (nck:host-policy host)
+                                   (nck::mark-peer host (test-candidate :is-bot t :user user :user-name name
+                                                                        :thread thread :parent "100"
+                                                                        :message message :text text)))))
+        (is (eq :reject (decide "<@999> check this" :user "555" :name "stranger"))
+            "a bot this bot's user gate keeps out calls no one in by mentioning")
+        (is (null (nck::thread-peers host "88")) "and is no peer")
+        (is (eq :reject (decide "nothing for you")) "a bot's line that names no one calls no one in")
+        (is (eq :answer (decide "<@999> check this")) "a bot's mention wakes the bot it names")
+        (is (equal '(("777" . "elektra")) (nck::thread-peers host "88")) "and makes its author the thread's peer")
+        (is (eq :observe (decide "noted, thanks")) "whose lines that name no one are the thread's context")
+        (let ((own (naming-bots (test-candidate :is-bot t :user "999" :thread "89" :parent "100"
+                                                :message "10" :text "<@555> please take the deploy")
+                                '(("555" . "hindsight")))))
+          (is (eq :reject (nck:decide-inbound (nck:host-policy host) (nck::mark-peer host own)))
+              "this bot's own line is never its ask")
+          (is (equal '(("555" . "hindsight")) (nck::thread-peers host "89"))
+              "but the bot it mentions is the thread's peer")
+          (is (eq :answer (decide "<@999> done, see above" :user "555" :name "hindsight"
+                                                          :thread "89" :message "11"))
+              "so the answer back wakes this bot: it called that bot in itself"))))))
 
 (deftest channel-peers-a-talk-ends-in-one-final-answer ()
   ;; Two bots that each answer the other's reply wake each other for as long

@@ -3546,9 +3546,41 @@ makes them the thread's peers, as a thread opened for it would."
         (save-thread-peers host thread room)
         (save-thread-slots host thread room)))))
 
+(defun note-called-peers (host candidate &aux (policy host.policy))
+  "A bot's line in a thread that mentions another bot calls it in: from then
+on the two are that thread's peers in both kits, as if a person had named
+them together. This bot's own line makes each bot it mentions a peer here;
+another bot's line that mentions this bot makes its author a peer, with
+every other bot the line mentions, when the author passes this bot's own
+user gate (USER-ALLOWED-P). => the thread's peers, or NIL when the line
+calls no one in."
+  ;; A peer answers to whoever called it in, past this bot's allowed_users
+  ;; (DECIDE-INBOUND). A bot calling this one in brings whoever asked it, so
+  ;; it must be an author this bot would take an ask from itself: no bot
+  ;; reaches past allowed_users by mentioning. A talk a call-in starts ends
+  ;; the way every peer talk does, in its one final answer (PEER-RUN).
+  (let ((thread (source-field candidate "thread_id"))
+        (user (source-field candidate "user_id"))
+        (text (gethash "text" candidate)))
+    (when (and thread user (stringp text) (typep policy 'inbound-policy))
+      (let ((peers
+              (cond ((equal user (inbound-policy-self-id policy))
+                     (candidate-mentioned-bots candidate))
+                    ((and (candidate-bot-p candidate)
+                          (mention-involves-p policy text)
+                          (user-allowed-p policy candidate))
+                     (cons (cons user (or (source-field candidate "user_name") user))
+                           (candidate-mentioned-bots candidate))))))
+        (when peers
+          (let ((room (candidate-room host candidate)))
+            (prog1 (note-thread-peers host thread peers room)
+              (save-thread-peers host thread room))))))))
+
 (defun mark-peer (host candidate &aux (policy host.policy))
   "CANDIDATE, marked source.peer when a bot posted it in a thread where it is
-this bot's peer. Never this bot's own line."
+this bot's peer: one a person named beside this bot, or one a bot's line
+called in (NOTE-CALLED-PEERS). Never this bot's own line."
+  (note-called-peers host candidate)
   (let ((thread (source-field candidate "thread_id"))
         (user (source-field candidate "user_id")))
     (when (and thread user (candidate-bot-p candidate)
