@@ -1,0 +1,240 @@
+;;;; owner.lisp --- an ask that reaches several bots has one owner; answers stay short.
+;;;;
+;;;; SPDX-License-Identifier: MIT
+;;;;
+;;;; A person's line can reach several bots at once: a role every bot holds, a
+;;;; thread a person shared with them, a line that names another bot or answers
+;;;; one of its messages. Every bot it reaches used to answer it, each with its
+;;;; own plan. Now one bot owns it and the others keep it as the thread's
+;;;; context:
+;;;;
+;;;;   - A line that names this bot -- its mention, a reply to its message, a
+;;;;     press, a slash command -- is this bot's, as before. One that names
+;;;;     several bots by name is a team's (TEAM.LISP), as before, and so is any
+;;;;     line on a team's board.
+;;;;   - Otherwise the bots it reaches are ranked (ASK-RANK): the bot it points
+;;;;     at -- the author of the message it answers, then each it names, in the
+;;;;     order named -- then the rest by a digest of the thread and the bot's
+;;;;     id. Every kit reads the same line and ranks the same way, so no two
+;;;;     race and none waits on another to agree; and every line of one thread
+;;;;     has the same owner.
+;;;;   - The first ranked answers. Each bot after it waits its place times
+;;;;     +OWNER-GRACE-SECONDS+ and takes the ask over only when no bot ranked
+;;;;     before it showed itself in the thread meanwhile -- a card, a reaction,
+;;;;     an answer (NOTE-BOT-ACTIVITY): a bot that is down never leaves an ask
+;;;;     unanswered.
+;;;;
+;;;; A room's answer_words caps what one answer says: the lane is told the cap
+;;;; up front, and an answer that still runs past it is cut down by its own
+;;;; model before it posts, the whole answer riding along as a file.
+
+(in-package #:nodecode-channel-kit)
+
+;;; --- one owner per ask ---------------------------------------------------------
+
+(defparameter +owner-grace-seconds+ 90
+  "How long each bot ranked after an ask's owner waits, per place, before it
+ takes the ask over from the bots ranked before it.")
+
+(defparameter +owner-activity-slack-ms+ 5000
+  "How long before this kit read an ask a ranked bot's sign of life still
+ counts for it: the owner may react before this kit has read the line.")
+
+(defvar *bot-activity* (make-hash-table :test #'equal :synchronized t)
+  "(platform id . thread or message id) -> ((USER-ID . MS) ...): when each
+ author last showed itself there -- a line, a card, a reaction.")
+
+(defun activity-key (candidate)
+  "Where CANDIDATE shows its author at work: its thread, else the message a
+ reaction was left on, which is the thread an ask opens off it."
+  (or (source-field candidate "thread_id")
+      (and (source-field candidate "reaction") (source-field candidate "reply_to_message_id"))))
+
+(defun note-bot-activity (host candidate)
+  "Keep that CANDIDATE's author showed itself where it was said (ACTIVITY-KEY)."
+  (let ((user (source-field candidate "user_id"))
+        (key (activity-key candidate)))
+    (when (and user key (not (equal user (host-self-id host))))
+      (let ((now (now-ms)))
+        (sb-ext:with-locked-hash-table (*bot-activity*)
+          ;; Only an ask's grace reads it: an entry an hour old answers nothing.
+          (when (> (hash-table-count *bot-activity*) 512)
+            (loop for k being the hash-keys of *bot-activity* using (hash-value seen)
+                  when (< (reduce #'max seen :key #'cdr :initial-value 0) (- now 3600000))
+                    do (remhash k *bot-activity*)))
+          (let ((k (peer-key host key)))
+            (setf (gethash k *bot-activity*)
+                  (acons user now (remove user (gethash k *bot-activity*)
+                                          :key #'car :test #'equal)))))))))
+
+(defun active-since-p (host key ids since)
+  "Whether one of IDS showed itself at KEY at or after SINCE, in ms."
+  (let ((seen (gethash (peer-key host key) *bot-activity*)))
+    (some (lambda (id)
+            (let ((at (cdr (assoc id seen :test #'equal))))
+              (and at (>= at since))))
+          ids)))
+
+(defun self-named-p (policy candidate text)
+  "Whether CANDIDATE asks this bot by name: addressed to it (a reply to its
+ message, a press, a slash command), or mentioning it other than through a
+ role it shares."
+  (or (candidate-addressed-p candidate)
+      (mention-involves-p policy (ppcre:regex-replace-all "<@&[^>]+>" text ""))))
+
+(defun owner-digest (key id)
+  "ID's draw for the ask at KEY: the same in every kit."
+  (nlk:short-digest (format nil "~a/~a" key id) 16))
+
+(defun ask-reach (host candidate)
+  "The bots CANDIDATE's line reaches beside this one, ((ID . NAME) ...): the
+ bots it mentions or pings by a role, and its thread's peers."
+  (let ((thread (source-field candidate "thread_id")))
+    (remove-duplicates
+     (append (candidate-mentioned-bots candidate)
+             (and thread (thread-peers host thread (candidate-room host candidate))))
+     :key #'car :test #'equal :from-end t)))
+
+(defun ask-rank (host candidate &aux (policy (host-policy host)) (self (host-self-id host)))
+  "The bots that may answer CANDIDATE, a person's line that reaches others
+ beside this bot, in the order they own it: (ID ...), the owner first. NIL
+ when the line is this bot's alone: a bot's line, one that names this bot, a
+ team's (several bots named by name, or a board's thread), or one that
+ reaches no other bot."
+  (let* ((text (let ((text (gethash "text" candidate))) (if (stringp text) text "")))
+         (thread (source-field candidate "thread_id"))
+         (key (or thread (source-field candidate "message_id")))
+         (reach (and self key (typep policy 'inbound-policy)
+                     (not (candidate-bot-p candidate))
+                     (not (self-named-p policy candidate text))
+                     (not (and thread (thread-slots host thread (candidate-room host candidate))))
+                     (ask-reach host candidate)))
+         (ids (remove self (mapcar #'car reach) :test #'equal)))
+    (when ids
+      (let* ((replied (let ((reply (candidate-reply candidate)))
+                        (and (hash-table-p reply) (gethash "user_id" reply))))
+             (named (remove-if-not (lambda (id) (mention-position text id)) ids))
+             (picked (remove-duplicates
+                      (append (and (member replied ids :test #'equal) (list replied))
+                              (mention-order text named))
+                      :test #'equal :from-end t))
+             (drawn (sort (set-difference (cons self ids) picked :test #'equal)
+                          #'string> :key (lambda (id) (owner-digest key id)))))
+        (unless (rest named)          ; several bots named by name: a team
+          (append picked drawn))))))
+
+(defun take-over-ask (host candidate)
+  "Answer CANDIDATE, an ask the bots ranked before this one left alone."
+  (note-asked-peers host candidate)
+  (answer-message host (woken-ask host candidate)))
+
+(defun defer-to-owner (host candidate)
+  "When another bot owns CANDIDATE's ask (ASK-RANK), leave it to that bot and
+ watch: take it over once this bot's grace ends with no bot ranked before it
+ seen in the thread. => T when deferred."
+  (let* ((rank (ask-rank host candidate))
+         (at (position (host-self-id host) rank :test #'equal)))
+    (when (and at (plusp at))
+      (let ((before (subseq rank 0 at))
+            (key (or (source-field candidate "thread_id") (source-field candidate "message_id")))
+            (since (- (now-ms) +owner-activity-slack-ms+)))
+        ;; The bots it reached are the thread's peers here too -- the thread
+        ;; an ask opens carries the ask's own id, as on Discord -- so the
+        ;; owner's lines are its context and its later lines have an owner.
+        (note-thread-peers host key (ask-reach host candidate))
+        (when (source-field candidate "thread_id")
+          (save-thread-peers host key (candidate-room host candidate)))
+        (sb-ext:schedule-timer
+         (sb-ext:make-timer
+          (lambda ()
+            (on-worker host
+              (nlk:with-handlers ((error (condition)
+                                    (warn "~a could not take over ~a: ~a" (host-id host)
+                                          (source-field candidate "message_id") condition)))
+                (unless (active-since-p host key before since)
+                  (take-over-ask host candidate)))))
+          :name "ask owner grace" :thread t)
+         (* at +owner-grace-seconds+))
+        t))))
+
+(defun owner-paragraph (host candidate)
+  "What CANDIDATE's ask is to the lane that answers it when it reached other
+ bots too: theirs to read, this lane's to do. NIL for a line this bot alone
+ was asked."
+  (let* ((rank (ask-rank host candidate))
+         (at (position (host-self-id host) rank :test #'equal)))
+    (when at
+      (let ((names (loop with known = (ask-reach host candidate)
+                         for id in rank
+                         unless (equal id (host-self-id host))
+                           collect (format nil "@~a" (or (cdr (assoc id known :test #'equal)) id)))))
+        (format nil "This ask reached ~{~a~#[~; and ~:;, ~]~} too, and it is yours: ~a They \
+read it and stay quiet unless you or the person name them, so do the whole of it, and name one \
+only to hand it a part."
+                names
+                (if (zerop at)
+                    "you own it."
+                    (format nil "the bots ranked to own it before you stayed silent for ~d s."
+                            (* at +owner-grace-seconds+))))))))
+
+;;; --- short answers ------------------------------------------------------------
+
+(defun answer-word-count (text)
+  "The words TEXT says to a person: outside fenced code, each run of
+ non-space holding a letter or a digit. A FINAL ANSWER line is no word."
+  (let ((code nil) (count 0))
+    (dolist (line (uiop:split-string (or text "") :separator '(#\Newline)) count)
+      (let ((line (string-trim '(#\Space #\Tab #\Return) line)))
+        (cond ((uiop:string-prefix-p "```" line) (setf code (not code)))
+              (code)
+              ((string-equal (string-trim "*_: " line) "final answer"))
+              (t (incf count (count-if (lambda (word) (some #'alphanumericp word))
+                                       (uiop:split-string line :separator '(#\Space #\Tab))))))))))
+
+(defun answer-cap-paragraph (host)
+  "What the room's answer_words asks of a lane, or NIL when it caps nothing."
+  (let ((cap (host-answer-words host)))
+    (when (plusp cap)
+      (format nil "Answers here post at most ~d words, code blocks aside: a longer one is cut \
+down before it posts, the whole one riding along as a file. So write it short yourself: the \
+verdict and what the person must do or decide; detail goes into a file, the PR or the ticket."
+              cap))))
+
+(defun shortening-instruction (cap)
+  "The side call's whole instruction for cutting an answer to CAP words."
+  (format nil "You shorten a chat answer to at most ~d words, code blocks aside, for a busy \
+reader. Keep the verdict first. Keep every number, id, name, link, command and path you keep \
+exactly as written, and keep the question or choice the answer ends on. When its first line \
+is FINAL ANSWER, keep that line first. Drop background, restated asks, repeated facts and \
+hedges. Never add a fact, a number or a claim the answer does not make. Keep its markdown and \
+its language. Reply with the shortened answer alone." cap))
+
+(defun shorten-answer (host lane text final)
+  "(values TEXT FULL-FILE): TEXT as LANE posts it under its room's
+ answer_words, and the file holding the whole answer when it was cut down.
+ An answer within the cap, or one its model could not shorten, posts whole."
+  (let ((cap (host-answer-words host))
+        (words (answer-word-count text)))
+    (if (or (not (plusp cap)) (<= words cap))
+        text
+        (let ((short (nlk:with-handlers ((error (condition)
+                                           (warn "~a could not shorten an answer of ~d words: ~a"
+                                                 (host-id host) words condition)
+                                           nil))
+                       (nlk:trimmed (nle:complete (shortening-instruction cap) text
+                                                  :session-id (lane-session-id lane)
+                                                  :max-tokens 1200)))))
+          (if (or (null short) (zerop (length short))
+                  (>= (answer-word-count short) words))
+              text
+              (let ((file (merge-pathnames (format nil "nodecode-answer-~a/full-answer.md"
+                                                   (nlk:short-digest text 12))
+                                           (uiop:temporary-directory))))
+                (ensure-directories-exist file)
+                (with-open-file (out file :direction :output :if-exists :supersede
+                                          :external-format :utf-8)
+                  (write-string text out))
+                (values (if (and final (not (final-answer-line-p short)))
+                            (format nil "FINAL ANSWER~%~a" short)
+                            short)
+                        file)))))))

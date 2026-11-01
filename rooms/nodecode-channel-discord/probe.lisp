@@ -175,6 +175,8 @@ allowed_channels, so ids are picked by name."
                    :doc "an answer comes as a voice message too, below its words: on, to an ask said in a voice message; tts, to every ask; off, never; /voice on, tts or off sets it for one room")
   ("turn_budget_minutes" :integer :default 0
                         :doc "minutes an ask's turn may run: past them its tool calls are refused and it answers with what it has; 0, the default, caps nothing")
+  ("answer_words" :integer :default 0
+                 :doc "the most words one answer posts, code blocks aside: the lane is told so, and a longer answer is cut down by its own model before it posts, the whole one attached as a file; 0, the default, caps nothing")
   ("room_tokens" :integer :default 40000
                 :doc "the most history the room keeps, in estimated tokens (the provider counts about a quarter more); past it the older half is evicted, so every ask opens on at most this much; 0 keeps everything")
   ("catch_up_minutes" :integer :default 60

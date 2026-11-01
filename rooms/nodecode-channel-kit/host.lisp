@@ -228,6 +228,9 @@
   ;; are refused and it answers with what it has. 0, the default, caps
   ;; nothing: the turn sees its clock on every result instead.
   (turn-budget-minutes 0 :type integer)
+  ;; channels.<id>.answer_words: the most words one answer posts, code
+  ;; blocks aside (SHORTEN-ANSWER, OWNER.LISP); 0, the default, caps nothing.
+  (answer-words 0 :type integer)
   ;; channels.<id>.room_tokens: the most estimated history tokens a room
   ;; keeps; past it the room drops its older half (BOUND-ROOM), so every
   ;; lane forked from it opens on at most this much history. 0 bounds
@@ -313,6 +316,7 @@ the chunk limit are the same keys for every channel."
                                          :min 1)
    :turn-budget-minutes (config-integer section "turn_budget_minutes" 0
                                         :min 0)
+   :answer-words (config-integer section "answer_words" 0 :min 0)
    :room-tokens (config-integer section "room_tokens" +room-tokens+ :min 0)
    :reactions-p (config-boolean section "reactions" nil)
    :delivery-workers (config-integer section "delivery_workers" 4 :min 1)
@@ -1748,7 +1752,13 @@ chunk as an address for the lane, then settle the card above it."
       (t
        ;; The answer is the one message a turn posts: what it said on its way
        ;; stayed on its card, so nothing sits between the two to set it apart.
-       (let ((landed nil))
+       ;; Past the room's answer_words the answer posts cut down by its own
+       ;; model, the whole one riding along as a file (SHORTEN-ANSWER); the
+       ;; record keeps it whole.
+       (let* ((landed nil)
+              (cut (multiple-value-list (shorten-answer host lane text final)))
+              (posted (first cut))
+              (files (if (second cut) (append files (list (second cut))) files)))
          ;; A final answer closes the talk here before it posts: a peer's
          ;; reply to it is only the thread's context.
          (when final
@@ -1762,7 +1772,7 @@ chunk as an address for the lane, then settle the card above it."
              (handler-case
                  (post-message host target
                                (peer-addressed-text host target
-                                                    (talk-answer-text host lane text final))
+                                                    (talk-answer-text host lane posted final))
                                :reply-to reply-to :ping (and (null origin) (null heard))
                                :mentions (and (or origin final) lane.owner-id (list lane.owner-id))
                                :files files
@@ -3682,10 +3692,15 @@ NO_REPLY when you have nothing to add. ~a"
   (let* ((thread (source-field candidate "thread_id"))
          (room (candidate-room host candidate))
          (peers (thread-peers host thread room)))
-    (cond ((null peers) where)
-          ((thread-slots host thread room)
-           (format nil "~a ~a" where (board-paragraph host thread peers room)))
-          (t (format nil "~a ~a" where (peers-paragraph peers))))))
+    ;; An ask that reached other bots says whose it is (OWNER-PARAGRAPH), and
+    ;; a room that caps answers says so before the lane writes one.
+    (format nil "~a~@[ ~a~]~@[ ~a~]"
+            (cond ((null peers) where)
+                  ((thread-slots host thread room)
+                   (format nil "~a ~a" where (board-paragraph host thread peers room)))
+                  (t (format nil "~a ~a" where (peers-paragraph peers))))
+            (owner-paragraph host candidate)
+            (answer-cap-paragraph host))))
 
 (defun peer-mentions-in (host peers text)
   "TEXT with each @NAME of PEERS spelled as the platform's mention of it."
@@ -3983,6 +3998,7 @@ whether it was added or taken back."
   ;; The lane is found by the reacted message's own address, which is what
   ;; makes that message ours. The read gates are the room's (DECIDE-INBOUND:
   ;; scope, channel, user, chat kind, bot authors).
+  (note-bot-activity host candidate)
   (let* ((emoji (string-trim '(#\Space) (or (gethash "text" candidate) "")))
          (added-p (equal "add" (source-field candidate "reaction")))
          (message-id (source-field candidate "reply_to_message_id"))
@@ -4018,6 +4034,10 @@ admitted through the policy, then observed as room chatter, answered as
 an ask, or rejected with its reason on the status surface."
   ;; Returns the action taken, or NIL for a message carrying neither words nor
   ;; an attachment.
+  ;;
+  ;; Whoever posts it -- a card's empty line too -- showed itself in its
+  ;; thread: what an ask's owner is watched for (DEFER-TO-OWNER).
+  (note-bot-activity host candidate)
   (when (or (plusp (length text)) attachments)
     (set-channel-status (host-id host) :last-event-at-ms
                         (* 1000 (- (get-universal-time) nlk:+unix-epoch+)))
@@ -4050,8 +4070,14 @@ an ask, or rejected with its reason on the status surface."
                       (observe-candidate host candidate)))
         ;; A peer's ask wakes the turn it starts knowing how the talk ends
         ;; (WOKEN-ASK).
-        (:answer (note-asked-peers host candidate)
-                 (answer-message host (woken-ask host candidate))))
+        ;; An ask another bot owns is the thread's context here, and this
+        ;; bot takes it over only if that bot stays silent (DEFER-TO-OWNER).
+        (:answer (if (defer-to-owner host candidate)
+                     (progn (setf action :observe)
+                            (or (hear-in-running-turn host candidate)
+                                (observe-candidate host candidate)))
+                     (progn (note-asked-peers host candidate)
+                            (answer-message host (woken-ask host candidate))))))
       action)))
 
 ;;; --- terminal reconciliation ------------------------------------------------------------
