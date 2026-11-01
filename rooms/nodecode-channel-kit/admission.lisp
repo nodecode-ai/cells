@@ -264,8 +264,7 @@ holding a listed role, or one the operator paired."
                          (source-field candidate "platform")))
 
 (defun id-passes-user-gate-p (policy user role-ids platform
-                              &aux (users policy.allowed-users)
-                                   (roles policy.allowed-roles))
+                              &aux (users policy.allowed-users) (roles policy.allowed-roles))
   "Whether USER, holding ROLE-IDS on PLATFORM, passes POLICY's user gate
 (USER-ALLOWED-P). A user known only by id passes ROLE-IDS NIL: one let in
 only by a role it holds is then kept out."

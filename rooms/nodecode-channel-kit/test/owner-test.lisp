@@ -81,14 +81,12 @@ the message it answers."
   ;; the thread it opens is the team's board, every bot it reached on it.
   (loop for (self) in *owner-bots*
         do (is (null (nck::ask-rank (owner-host self)
-                                    (person-line self "<@&r1> next priority" :channel "100" :message "5")))
-               "no bot owns a role's ping"))
+                                    (person-line self "<@&r1> next priority" :channel "100" :message "5"))) "no bot owns a role's ping"))
   (with-thread-peers ("5")
     (with-ask-host (host thread-ask-host :answers ("on it") :responses (replies "5" "p1" "p2"))
       (setf (nck:host-policy host) (owner-policy "999"))
       (is (eq :answer (nck:handle-candidate host (person-line "999" "<@&r1> next priority"
-                                                              :channel "100" :message "5")))
-          "each bot it reaches answers it")
+                                                              :channel "100" :message "5"))) "each bot it reaches answers it")
       (is-present (lane (await-lane host "chat-100-t5-m5")) "in the thread the ask opens"
         (is (await-plan executor :content "on it"))
         (is (equal '("555" "777" "999") (nck::thread-slots host "5")) "which is the team's board")
@@ -121,8 +119,7 @@ not. That thread's peers stay noted: the caller forgets them."
       (setf (gethash (nck::peer-key host thread) nck::*thread-peers*) (others-of "999"))
       (progn
         (is (eq :answer (nck:handle-candidate host line)))
-        (is-present (lane (await-lane host (format nil "chat-100-t~a-m~a" thread message)))
-            "the owner opened the ask's lane"
+        (is-present (lane (await-lane host (format nil "chat-100-t~a-m~a" thread message))) "the owner opened the ask's lane"
           (is (search "too, and it is yours: you own it. They read it and stay quiet" (nck::lane-where lane)) "and its lane is told the ask is its own")
           (is (search "@elektra" (nck::lane-where lane)) "and who else read it")
           (is (null (nck::thread-slots host thread)) "an ask one bot owns opens no team's board"))
@@ -217,10 +214,8 @@ thread it takes part in."
                      (nck:note-bot-presence host (list :seen "777" thread)))
                    (if eye
                        (progn (sleep 1.0)
-                              (is (null (plan-matching (recorded-plans executor) :content "taken over"))
-                                  "the owner's eye on the line keeps it the owner's"))
-                       (is (await-plan executor :content "taken over")
-                           "and with no eye on it, the bot ranked next takes it over"))))))))
+                              (is (null (plan-matching (recorded-plans executor) :content "taken over")) "the owner's eye on the line keeps it the owner's"))
+                       (is (await-plan executor :content "taken over") "and with no eye on it, the bot ranked next takes it over"))))))))
 
 (deftest channel-owner-answer-words-count-what-a-person-reads ()
   ;; Prose words count; code blocks, markup alone and the FINAL ANSWER line do not.
