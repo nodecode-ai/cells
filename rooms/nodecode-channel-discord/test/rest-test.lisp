@@ -447,20 +447,58 @@ then TAIL."
                                   (nlk:json-object "id" "993199" "name" "voice" "type" 2)))
                      tail)))
 
+(defun discord-probe-app (&rest more)
+  "A scripted /applications/@me: app 1408, made by peas (user 77), then MORE pairs."
+  (apply #'reply 200 "id" "1408" "owner" (nlk:json-object "id" "77" "username" "peas") more))
+
+(defun discord-probe-roles ()
+  "A scripted role listing of guild 9931: @everyone, a mods role holding
+Manage Threads, the bot's own managed role holding nothing."
+  (nck:make-scripted-response
+   200 (vector (nlk:json-object "id" "9931" "name" "@everyone" "permissions" "1024")
+               (nlk:json-object "id" "55" "name" "mods" "permissions" (princ-to-string (ash 1 34)))
+               (nlk:json-object "id" "56" "name" "nodecode" "permissions" "0" "managed" t))))
+
 (deftest channel-discord-probe-lists-what-the-token-sees ()
   (with-temp-file (token-path :contents "tok-secret-value" :type "txt")
     (let ((section (nlk:json-object "bot_token_file" token-path)))
-      (let* ((executor (discord-probe-executor (reply 200 "flags" 0)))
-             (text (ncd:probe-channel section :executor executor)))
-        (is (search "token: ok — bot nodecode#4821 (id 1408)" text) "the identity line")
+      ;; Message Content off: the check switches it on, the limited flag only.
+      (let* ((executor (discord-probe-executor (discord-probe-app "flags" (ash 1 23))
+                                               (reply 200 "flags" (logior (ash 1 23) (ash 1 19)))
+                                               (reply 200 "roles" (vector "55"))
+                                               (discord-probe-roles)))
+             (text (ncd:probe-channel section :executor executor))
+             (plans (nck:recording-executor-plans executor)))
+        (is (search "token: ok — bot nodecode#4821 (id 1408), made by peas" text) "the identity line, and who made it")
+        (is (search "intents: message content switched on (it was off)" text))
+        (let ((invite (format nil "invite: https://discord.com/oauth2/authorize?client_id=1408&scope=bot%20applications.commands&permissions=~d"
+                              ncd::+invite-permissions+)))
+          (is (search invite text) "the invite link"))
         (is (search "guild \"peas\" (id 9931): #general 993101, #bots 993107" text))
+        (is (search "threads: can close them in \"peas\"" text) "its mods role holds Manage Threads")
         (is (not (search "voice" text)) "a voice channel is not a place for a message")
-        (is (search "intents: message content not granted" text))
         (is (not (search "tok-secret-value" text)) "the token is never in the answer")
-        (is (equal '("/users/@me" "/users/@me/guilds" "/guilds/9931/channels" "/applications/@me")
-                   (mapcar #'nck:request-plan-path (nck:recording-executor-plans executor))))
-        (is (every (lambda (plan) (equal "GET" (nck:request-plan-method plan)))
-                   (nck:recording-executor-plans executor))))
+        (is (equal '(("GET" "/users/@me") ("GET" "/users/@me/guilds") ("GET" "/guilds/9931/channels")
+                     ("GET" "/applications/@me") ("PATCH" "/applications/@me")
+                     ("GET" "/guilds/9931/members/1408") ("GET" "/guilds/9931/roles"))
+                   (mapcar (lambda (plan) (list (nck:request-plan-method plan) (nck:request-plan-path plan))) plans)))
+        (let ((written (nlk:json-value (nck:request-plan-body (fifth plans)) :integer "flags")))
+          (is (eql (ash 1 19) written) "only the limited flags are written, Message Content's among them")))
+      ;; Granted already: nothing is written; a role without Manage Threads says so.
+      (let* ((executor (discord-probe-executor (discord-probe-app "flags" (ash 1 19))
+                                               (reply 200 "roles" (vector "56"))
+                                               (discord-probe-roles)))
+             (text (ncd:probe-channel section :executor executor)))
+        (is (search "intents: message content granted" text))
+        (is (search "threads: cannot close them in \"peas\"" text))
+        (let ((methods (mapcar #'nck:request-plan-method (nck:recording-executor-plans executor))))
+          (is (every (lambda (method) (equal "GET" method)) methods) "a granted intent is never written")))
+      ;; Discord refuses the switch: the line says so, and what to do instead.
+      (let ((text (ncd:probe-channel section :executor (discord-probe-executor
+                                                        (discord-probe-app "flags" 0)
+                                                        (reply 403 "message" "Missing Access")))))
+        (is (search "intents: message content not granted, and Discord would not switch it on" text))
+        (is (search "enable Message Content Intent on the Bot page" text)))
       (let* ((executor (scripted-executor (reply 401 "message" "401: Unauthorized")))
              (text (ncd:probe-channel section :executor executor)))
         (is (search "token: unauthorized (401)" text) "a wrong token is one line")
@@ -485,8 +523,8 @@ then TAIL."
         (is (functionp (nlk:section-field-choices
                         (nlk:section-find-field section field-name)))))
       (is (functionp (nlk:section-check section)) "the probe is the check")
-      (is (functionp (nlk:section-field-choices
-                      (nlk:section-find-field section "allowed_channels"))))
+      (dolist (field-name '("allowed_channels" "owner" "allowed_users" "allowed_roles"))
+        (is (functionp (nlk:section-field-choices (nlk:section-find-field section field-name))) "offered by name"))
       (is (search "discord.com/developers/applications" (nlk:section-text section)))
       (is (equal "channels.discord: still needed: bot token · allowed_channels or allowed_users or allowed_roles"
                  (nlk:section-summary section nil)))))
@@ -502,6 +540,43 @@ then TAIL."
                         (ncd:probe-channel-choices section :executor executor))))
         (is (and refusal (search "unauthorized (401)" (princ-to-string refusal))))
         (is (and refusal (not (search "tok-secret-value" (princ-to-string refusal)))))))))
+
+(defun discord-probe-messages (&rest authors)
+  "A scripted message listing, one message by each of AUTHORS, (ID NAME &optional BOT)."
+  (nck:make-scripted-response
+   200 (coerce (loop for (id name bot) in authors
+                     collect (nlk:json-object "id" (format nil "m~a" id) "content" "hi"
+                                              "author" (nlk:json-object "id" id "username" name :when bot "bot" t)))
+               'vector)))
+
+(deftest channel-discord-offers-people-and-roles-by-name-and-waits-for-a-server ()
+  (with-temp-file (token-path :contents "tok-secret-value" :type "txt")
+    (let ((section (nlk:json-object "bot_token_file" token-path)))
+      ;; In no server yet: nothing to pick from, and the wait says where to add it.
+      (multiple-value-bind (choices offer)
+          (ncd:probe-channel-choices section :executor (scripted-executor
+                                                        (reply 200 "id" "1408" "username" "nodecode")
+                                                        (nck:make-scripted-response 200 (vector))
+                                                        (discord-probe-app)))
+        (is (null choices) "nothing to pick from")
+        (is-carrying (text (getf offer :wait))
+          "nodecode is in no server yet"
+          "https://discord.com/oauth2/authorize?client_id=1408&scope=bot%20applications.commands"))
+      ;; People by name: who made the app first, then who wrote lately, never a bot, each once.
+      (let ((people '(("77" . "peas  made the app") ("88" . "ada  peas") ("66" . "lin  peas"))))
+        (flet ((executor ()
+                 (discord-probe-executor (discord-probe-app)
+                                         (discord-probe-messages '("77" "peas") '("88" "ada") '("99" "hook" t))
+                                         (discord-probe-messages '("88" "ada") '("66" "lin")))))
+          (multiple-value-bind (choices offer) (ncd::probe-owner-choices section :executor (executor))
+            (is (equal people choices))
+            (is (equal '("77") (getf offer :default)) "an unset owner takes whoever made the app"))
+          (multiple-value-bind (choices offer) (ncd::probe-user-choices section :executor (executor))
+            (is (equal people choices))
+            (is (null (getf offer :default)) "nobody else is let in by an Enter"))))
+      ;; Roles by name: never @everyone, never one an integration manages.
+      (is (equal '(("55" . "@mods  peas"))
+                 (ncd::probe-role-choices section :executor (discord-probe-executor (discord-probe-roles))))))))
 
 (deftest channel-discord-commands-plan ()
   ;; The catalog as the application's global commands: one bulk overwrite,
