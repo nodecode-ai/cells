@@ -40,7 +40,7 @@
     {
       "name": "nodecode-amazon-bedrock",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
+      "commit": "25af67383f79ce626f0ad31a68d9441fd5cf8400",
       "path": "providers/nodecode-amazon-bedrock",
       "description": "Amazon Bedrock: the Converse Stream wire, SigV4 signing and the AWS event stream, on a lane of its own",
       "license": "MIT",
