@@ -74,6 +74,23 @@ none."
                                                #-win32 name))
                     (nlk::executable-on-path name))))
 
+(defun cli-entry (command)
+  "Where on PATH COMMAND's executable sits: the first PATH directory holding
+a name PROGRAM-NAMES gives, joined with that name and left unresolved, so a link
+stays the link and a reinstall behind it keeps its entry. NIL for a COMMAND that
+is a path, or when no PATH directory holds it."
+  (let ((names (program-names command)))
+    (unless (some (lambda (name) (find-if (lambda (char) (find char "/\\")) name)) names)
+      (loop for name in names
+            thereis (loop for directory in (uiop:split-string (or (uiop:getenv "PATH") "")
+                                                              :separator #+win32 ";" #-win32 ":")
+                          for entry = (and (plusp (length directory))
+                                           (ignore-errors
+                                            (merge-pathnames name (uiop:parse-native-namestring
+                                                                   directory :ensure-directory t))))
+                          thereis (and entry (ignore-errors (probe-file entry))
+                                       (uiop:native-namestring entry)))))))
+
 (defun cli-environment (relay max-tokens)
   "The run's environment: this process's, without +WITHHELD-PREFIXES+, with
 the settled switches, the relay as the API and MAX-TOKENS as the output
@@ -247,15 +264,33 @@ otherwise fail on a CLI that is about to be there again.")
   "The internal real time *SETTLE-SECONDS* from now."
   (+ (get-internal-real-time) (* *settle-seconds* internal-time-units-per-second)))
 
+(defvar *cli-entries* (make-hash-table :test 'equal :synchronized t)
+  "COMMAND -> the PATH entry (CLI-ENTRY) its CLI was last settled from.")
+
 (defun settled-program (command &optional (deadline (settle-deadline)))
   "COMMAND's executable (CLI-PROGRAM) once it may be run, looked for again
-every quarter second until DEADLINE; past it, whatever CLI-PROGRAM last found,
-NIL when nothing."
-  (loop for program = (cli-program command)
-        when (runnable-p program) return program
-        while (< (get-internal-real-time) deadline)
-        do (sleep 1/4)
-        finally (return program)))
+every quarter second until DEADLINE; past it, whatever was last found, NIL when
+nothing. A bare name is held to the PATH entry its CLI last ran from while that
+entry is gone: a reinstall moves it aside for seconds, and the PATH look in that
+gap finds whatever older copy sits further down PATH -- a Claude Code the API
+refuses the model for (\"2.1.238 does not support this model\") ends a
+round the reinstalled CLI would have served. A copy that wins PATH while the
+last entry still stands is taken at once; past DEADLINE, whatever PATH gives."
+  (let ((last (gethash command *cli-entries*)))
+    (flet ((settled (program entry)
+             (when (and entry (runnable-p program))
+               (setf (gethash command *cli-entries*) entry))
+             program))
+      (loop for entry = (cli-entry command)
+            ;; one PATH look names both, so a reinstall cannot land between them
+            for program = (if entry (ignore-errors (probe-file entry)) (cli-program command))
+            when (and (runnable-p program)
+                      (or (null last) (equal entry last)
+                          (runnable-p (ignore-errors (probe-file last)))))
+              return (settled program entry)
+            while (< (get-internal-real-time) deadline)
+            do (sleep 1/4)
+            finally (return (settled program entry))))))
 
 (defun start-cli (command start)
   "Call START with COMMAND's executable and return its values. While the CLI is
