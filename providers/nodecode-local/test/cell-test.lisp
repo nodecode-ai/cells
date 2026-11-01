@@ -130,12 +130,10 @@ the lane's answer, or the provider error it ended in."
       (is (null (gethash "kokoro" models)) "nor is speech")
       (is (not (nle::catalog-model-tool-call-p (gethash "lfm2.5-230m" models))) "no tool calls, as omp seeds them")
       (is (equal "local" (nle::configured-provider-lane "local")))
-      (is (equal "local://inference" (nle::provider-endpoint "local"))
-          "so /models aux local lfm2.5-230m resolves"))
+      (is (equal "local://inference" (nle::provider-endpoint "local")) "so /models aux local lfm2.5-230m resolves"))
     (with-temp-auth (auth "{}")
       (with-stubbed-fdefinition (nle::credential-env (name) (and (equal name "OPENAI_API_KEY") "sk-openai"))
-        (is (eq :public (nle:credential-source (nle::resolve-provider-credential "local" :auth-path auth :probe t)))
-            "no key, and never another family's")))))
+        (is (eq :public (nle:credential-source (nle::resolve-provider-credential "local" :auth-path auth :probe t))))))))
 
 ;;; --- the request ------------------------------------------------------------------------
 
@@ -151,8 +149,7 @@ the lane's answer, or the provider error it ended in."
            (messages (coerce (nlk:json-array request "messages") 'list)))
       (is (equal "chat" (gethash "type" request)))
       (is (= 256 (gethash "maxNewTokens" request)) "omp's default completion length")
-      (is (equal '("system" "user" "user" "user") (mapcar (lambda (m) (gethash "role" m)) messages))
-          "system then user turns only: the worker's templates alternate nothing else")
+      (is (equal '("system" "user" "user" "user") (mapcar (lambda (m) (gethash "role" m)) messages)))
       (is (equal "fix the parser" (gethash "content" (second messages))))
       (is (search "Reading it." (gethash "content" (third messages))) "the assistant's text joins the next turn")
       (is (search "(defun parse" (gethash "content" (third messages))) "beside the tool result")
@@ -166,8 +163,7 @@ the lane's answer, or the provider error it ended in."
       (is (equal "stop" finish))
       (is (equal "chat" (nlk:json-value (nlk:decode-json request-json) :string "type"))))
     (is (= 1024 (gethash "maxNewTokens" (local-chat-request worker))) "a ceiling past 1024 is held to it")
-    (is (find "ping" (local-worker-requests worker) :key (lambda (r) (gethash "type" r)) :test #'equal)
-        "the worker was pinged before it was asked")))
+    (is (find "ping" (local-worker-requests worker) :key (lambda (r) (gethash "type" r)) :test #'equal))))
 
 (deftest local-cell-says-what-a-worker-refused ()
   (with-local-round (values worker) (:replies '("{\"type\":\"error\",\"id\":\"~a\",\"error\":\"model download failed\"}"))
@@ -232,6 +228,5 @@ the lane's answer, or the provider error it ended in."
              (with-stubbed-fdefinition (nle::credential-env (name)
                                         (and (equal name "XDG_STATE_HOME")
                                              (uiop:native-namestring (merge-pathnames "state/" home))))
-               (is (equal (merge-pathnames "state/omp/run/tiny/" home) (nodecode-local::default-runtime-dir))
-                   "an existing $XDG_STATE_HOME/omp wins, as omp's dirs.ts reads it")))
+               (is (equal (merge-pathnames "state/omp/run/tiny/" home) (nodecode-local::default-runtime-dir)))))
         (uiop:delete-directory-tree home :validate t :if-does-not-exist :ignore)))))

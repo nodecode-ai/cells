@@ -13,8 +13,7 @@
                   "msgtype" "m.text" "body" "bot: what &amp; why"
                   "format" "org.matrix.custom.html"
                   "formatted_body" "<mx-reply><blockquote>old words</blockquote></mx-reply><a href=\"https://matrix.to/#/%40bot%3Afake\">bot</a>: what &amp; <b>why</b><br>next")))
-    (is (equal (format nil "@bot:fake: what & why~%next") (ncm:matrix-plain-text content))
-        "the quoted reply is dropped, the pill is the id, the tags and entities read plain")
+    (is (equal (format nil "@bot:fake: what & why~%next") (ncm:matrix-plain-text content)))
     (is (ncm:matrix-mention-p (ncm:matrix-plain-text content) "@bot:fake"))
     (is (equal (format nil "what & why~%next")
                (ncm:matrix-strip-mention (ncm:matrix-plain-text content) "@bot:fake"))))
@@ -28,20 +27,14 @@
            (matrix-flag (apply #'ncm:matrix-message-candidate event "!room:fake" :bot-user-id "@bot:fake" keys)
                         "addressed"))
          (ours (room name) (and (equal room "!room:fake") (equal name "models"))))
-    (is (eq t (addressed-p (matrix-text "@kim:fake" "/models grok" :id "$1") :command-p #'ours))
-        "a bare slash line naming the bot's command is addressed to it")
-    (is (null (addressed-p (matrix-text "@kim:fake" "/models" :id "$2")))
-        "without the bot's word on whose it is, it is not")
-    (is (null (addressed-p (matrix-text "@kim:fake" "/shrug" :id "$3") :command-p #'ours))
-        "a command the bot lacks is words")
+    (is (eq t (addressed-p (matrix-text "@kim:fake" "/models grok" :id "$1") :command-p #'ours)))
+    (is (null (addressed-p (matrix-text "@kim:fake" "/models" :id "$2"))))
+    (is (null (addressed-p (matrix-text "@kim:fake" "/shrug" :id "$3") :command-p #'ours)))
     (is (null (addressed-p (matrix-text "@kim:fake" "/models" :id "$4" :mentions '("@other:fake"))
-                           :command-p #'ours))
-        "a line mentioning someone else is theirs")
+                           :command-p #'ours)) "a line mentioning someone else is theirs")
     (is (null (addressed-p (matrix-text "@kim:fake" "/models" :id "$5" :thread "$root")
-                           :command-p #'ours :bot-event-p (constantly nil)))
-        "a line in a thread the bot is not in is that thread's")
-    (is (null (addressed-p (matrix-text "@kim:fake" "see /models" :id "$6") :command-p #'ours))
-        "a line that only names a command is words")))
+                           :command-p #'ours :bot-event-p (constantly nil))))
+    (is (null (addressed-p (matrix-text "@kim:fake" "see /models" :id "$6") :command-p #'ours)))))
 
 (deftest channel-matrix-a-message-is-a-candidate ()
   (let ((candidate (ncm:matrix-message-candidate
@@ -69,8 +62,7 @@
     (is (null (ncm:matrix-message-candidate edit "!room:fake")) "an edit is no ask"))
   (let ((notice (matrix-text "@other:fake" "beep" :id "$6")))
     (setf (gethash "msgtype" (gethash "content" notice)) "m.notice")
-    (is (eq t (matrix-flag (ncm:matrix-message-candidate notice "!room:fake") "is_bot"))
-        "m.notice is how a bot speaks"))
+    (is (eq t (matrix-flag (ncm:matrix-message-candidate notice "!room:fake") "is_bot"))))
   (let ((picture (matrix-event "@kim:fake" "m.room.message"
                                (nlk:json-object "msgtype" "m.image" "body" "cat.png" "url" "mxc://fake/c1"
                                                 "info" (nlk:json-object "mimetype" "image/png" "size" 42))
@@ -88,16 +80,14 @@
                                                                             "event_id" target "key" key))
                            :id "$react")))
       (is (equal '(:id "$react" :data "stop:lane" :user-id "@kim:fake" :message-id "$card" :channel-id "!r:fake")
-                 (ncm:matrix-control-press (reaction (string (code-char #x23F9)) "$card") "!r:fake" controls-of))
-          "a glyph without its variation selector still presses")
+                 (ncm:matrix-control-press (reaction (string (code-char #x23F9)) "$card") "!r:fake" controls-of)))
       (is (equal "details:lane"
                  (getf (ncm:matrix-control-press (reaction (ncm:control-glyph (second controls) 1) "$card")
                                                  "!r:fake" controls-of)
                        :data)))
       (is (null (ncm:matrix-control-press (reaction "👍" "$card") "!r:fake" controls-of)) "any other reaction is no press")
       (is (null (ncm:matrix-control-press (reaction (ncm:control-glyph (first controls) 0) "$other")
-                                          "!r:fake" controls-of))
-          "a message without controls takes no press"))))
+                                          "!r:fake" controls-of)) "a message without controls takes no press"))))
 
 (deftest channel-matrix-an-invite-names-its-sender ()
   (let ((invite (nlk:json-object "invite_state"

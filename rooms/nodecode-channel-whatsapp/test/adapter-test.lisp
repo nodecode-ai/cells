@@ -20,17 +20,15 @@
     (with-whatsapp-lane (fake "allowed_users" (vector "+1 555 111 0000") "owner" (vector +wa-kim+))
       (fake-wa-push fake (wa-message +wa-kim+ "hi bot" :id "ASK1"))
       (is-present (answer (await (:timeout 15) (first (wa-answers fake "whatsapp reply"))))
-          "the answer was sent"
+        "the answer was sent"
         (is (equal (wa-jid +wa-kim+) (gethash "chat" answer)) "in the chat it was asked in")
         (is (equal "ASK1" (gethash "quote" answer)) "quoting the ask"))
       (is (fake-wa-calls fake "typing") "the bot typed while it worked")
-      (is (some (lambda (args) (equalp #("ASK1") (gethash "ids" args))) (fake-wa-calls fake "read"))
-          "the ask was marked read")
+      (is (some (lambda (args) (equalp #("ASK1") (gethash "ids" args))) (fake-wa-calls fake "read")))
       (let ((room (format nil "whatsapp-~a" (wa-jid +wa-kim+))))
         (is-lane-carrying "whatsapp" room (format nil "~a-mASK1" room) "whatsapp-chat"
                           "(WhatsApp number 15551110000)" "(ncw:request"))
-      (is (wire-row "kim (operator) [mASK1 u15551110000]: hi bot" (first messages-seen) "content")
-          "the line names its speaker by their WhatsApp name")
+      (is (wire-row "kim (operator) [mASK1 u15551110000]: hi bot" (first messages-seen) "content"))
       ;; The account's own words from its phone, and a stranger's, ask nothing.
       (fake-wa-push fake (wa-message +wa-kim+ "note to self" :id "MINE" :from-me t))
       (fake-wa-push fake (wa-message +wa-lee+ "let me in" :id "STRANGER" :push-name "lee"))
@@ -46,18 +44,16 @@
       (fake-wa-push fake (wa-message +wa-kim+ "@15550000000 what is up" :id "M1" :group +wa-group+
                                                                           :mentions-me t))
       (is-present (answer (await (:timeout 15) (first (wa-answers fake "whatsapp reply"))))
-          "the mention was answered"
+        "the mention was answered"
         (is (equal +wa-group+ (gethash "chat" answer)))
         (is (equal "M1" (gethash "quote" answer))))
       (is (some (lambda (row) (search "[mM1 u15551110000]: what is up"
                                       (or (ignore-errors (nlk:json-value row :string "content")) "")))
-                (coerce (first messages-seen) 'list))
-          "the model reads the ask, not the mention that routed it")
+                (coerce (first messages-seen) 'list)) "the model reads the ask, not the mention that routed it")
       (let ((candidate (ncw:whatsapp-message-candidate (wa-message +wa-kim+ "x" :group +wa-group+))))
         (ncw::note-chat ncw::*whatsapp-adapter* candidate)
         (is (search "WhatsApp group 120363000000000001@g.us (Team)"
-                    (ncw:whatsapp-where-text candidate ncw::*whatsapp-adapter*))
-            "the lane knows the group by name"))
+                    (ncw:whatsapp-where-text candidate ncw::*whatsapp-adapter*)) "the lane knows the group by name"))
       (is (not (nlk:session-exists-p (format nil "whatsapp-~a-mCHAT" +wa-group+))) "chatter opened nothing")
       ;; Quoting the bot's answer goes on with that lane, no mention needed.
       (is (await (:timeout 15) (plusp (count-session-events (format nil "whatsapp-~a-mM1" +wa-group+)
@@ -68,8 +64,7 @@
                                                             :quote (list answer-id t "whatsapp reply")))
         (is (await (:timeout 15) (= 2 (length (wa-answers fake "whatsapp reply")))) "the follow-up was answered")
         (is (await (:timeout 15) (= 2 (count-session-events (format nil "whatsapp-~a-mM1" +wa-group+)
-                                                            "turn.completed")))
-            "in the lane it continues")))))
+                                                            "turn.completed"))) "in the lane it continues")))))
 
 (deftest channel-whatsapp-reactions-votes-and-calls ()
   (let ((fake (make-fake-wa)))
@@ -106,8 +101,7 @@
             (is (await (:timeout 15) (= 2 (length (wa-answers fake "whatsapp reply")))) "the vote was answered as its line")
             (is (some (lambda (rows) (some (lambda (row) (search "ship it now" (or (ignore-errors (nlk:json-value row :string "content")) "")))
                                            (coerce rows 'list)))
-                      messages-seen)
-                "the model read the choice's line")))
+                      messages-seen) "the model read the choice's line")))
         ;; A call is declined, and the caller told to send a voice message.
         (fake-wa-push fake (nlk:json-object "event" "call" "from" (wa-person +wa-kim+) "call_id" "CALL1"))
         (is (await (:timeout 10) (fake-wa-calls fake "reject_call")) "the call was declined")
@@ -126,14 +120,12 @@
       (is (equal "LATE" (gethash "quote" (first (wa-answers fake "whatsapp reply")))) "the late one answered")
       (is (some (lambda (rows) (some (lambda (row) (search "while you were offline" (or (ignore-errors (nlk:json-value row :string "content")) "")))
                                      (coerce rows 'list)))
-                messages-seen)
-          "and the model read how late it was"))))
+                messages-seen) "and the model read how late it was"))))
 
 (deftest channel-whatsapp-linking-and-the-probe ()
   (let ((fake (make-fake-wa :linked nil)))
     (with-whatsapp-lane (fake "allowed_users" (vector +wa-kim+))
-      (is (await (:timeout 10) (search "not linked yet" (or (getf (nck:channel-status "whatsapp") :detail) "")))
-          "an unlinked device says how to link it")
+      (is (await (:timeout 10) (search "not linked yet" (or (getf (nck:channel-status "whatsapp") :detail) ""))))
       (is (search "ncw:link :phone" (ncw:probe-channel nil)) "and so does the probe")
       (is (equal "ABCD-EFGH" (getf (ncw:link :phone "+1 555 000 0000") :code)) "a code to type on the phone")
       (is (equal "+1 555 000 0000" (gethash "phone" (first (fake-wa-calls fake "pair_phone")))))))

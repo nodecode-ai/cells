@@ -182,8 +182,7 @@ reply'."
                          :after ((is (adapter-threads-stopped-p "channel-whatsapp"))))
        (is (await (:timeout 10) (plusp (fake-wa-opened ,fake))) "the lap opened the driver")
        (when (fake-wa-linked ,fake)
-         (is (await (:timeout 10) (equal +wa-bot+ (ncw::own ncw::*whatsapp-adapter* "phone")))
-             "the lap read who the account is"))
+         (is (await (:timeout 10) (equal +wa-bot+ (ncw::own ncw::*whatsapp-adapter* "phone")))))
        ,@body)))
 
 (defun wa-answers (fake needle)

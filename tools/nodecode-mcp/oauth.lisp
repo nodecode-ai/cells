@@ -957,36 +957,36 @@ thread of its own, which runs ON-DONE once the tokens are kept."
     (let ((listener nil) (handed-off nil))
       (unwind-protect
            (handler-case
-           (sb-sys:with-deadline (:seconds *sign-in-prepare-seconds*)
-             (let* ((discovery (discover url :resource-metadata-url (getf challenge :resource-metadata)
-                                             :auth-server-metadata-url (getf settings :auth-server-metadata-url)))
-                    (scope (or (merge-scopes (getf settings :scope)
-                                             (if step-up
-                                                 (merge-scopes (json-text tokens "scope") (getf challenge :scope))
-                                                 (getf challenge :scope)))
-                               (merge-scopes (format nil "~{~a~^ ~}" (json-strings discovery "scopes_supported")))))
-                    (fixed-port (getf settings :callback-port))
-                    (port nil))
-               (setf (values listener port)
-                     (open-callback-listener (or fixed-port
-                                                 (registered-port (and state (gethash "client" state))))
-                                             fixed-port))
-               (let* ((redirect-uri (format nil "http://~a:~d~a" +callback-host+ port +callback-path+))
-                      (client (choose-client key settings discovery redirect-uri scope)))
-                 (multiple-value-bind (verifier challenge-text) (pkce-pair)
-                   (let* ((oauth-state (fresh-nonce))
-                          (address (authorization-address discovery client redirect-uri challenge-text
-                                                          oauth-state scope))
-                          (flow (make-sign-in :name name :url url :key key :settings settings
-                                              :listener listener :port port :redirect-uri redirect-uri
-                                              :state oauth-state :verifier verifier :client client
-                                              :discovery discovery :scope scope :address address
-                                              :on-done on-done)))
-                     (bt2:with-lock-held (*sign-ins-lock*) (setf (gethash name *sign-ins*) flow))
-                     (setf (sign-in-thread flow)
-                           (nlk:spawn (format nil "mcp-sign-in-~a" name) (finish-sign-in flow))
-                           handed-off t)
-                     (values address redirect-uri (open-in-browser address)))))))
+               (sb-sys:with-deadline (:seconds *sign-in-prepare-seconds*)
+                 (let* ((discovery (discover url :resource-metadata-url (getf challenge :resource-metadata)
+                                                 :auth-server-metadata-url (getf settings :auth-server-metadata-url)))
+                        (scope (or (merge-scopes (getf settings :scope)
+                                                 (if step-up
+                                                     (merge-scopes (json-text tokens "scope") (getf challenge :scope))
+                                                     (getf challenge :scope)))
+                                   (merge-scopes (format nil "~{~a~^ ~}" (json-strings discovery "scopes_supported")))))
+                        (fixed-port (getf settings :callback-port))
+                        (port nil))
+                   (setf (values listener port)
+                         (open-callback-listener (or fixed-port
+                                                     (registered-port (and state (gethash "client" state))))
+                                                 fixed-port))
+                   (let* ((redirect-uri (format nil "http://~a:~d~a" +callback-host+ port +callback-path+))
+                          (client (choose-client key settings discovery redirect-uri scope)))
+                     (multiple-value-bind (verifier challenge-text) (pkce-pair)
+                       (let* ((oauth-state (fresh-nonce))
+                              (address (authorization-address discovery client redirect-uri challenge-text
+                                                              oauth-state scope))
+                              (flow (make-sign-in :name name :url url :key key :settings settings
+                                                  :listener listener :port port :redirect-uri redirect-uri
+                                                  :state oauth-state :verifier verifier :client client
+                                                  :discovery discovery :scope scope :address address
+                                                  :on-done on-done)))
+                         (bt2:with-lock-held (*sign-ins-lock*) (setf (gethash name *sign-ins*) flow))
+                         (setf (sign-in-thread flow)
+                               (nlk:spawn (format nil "mcp-sign-in-~a" name) (finish-sign-in flow))
+                               handed-off t)
+                         (values address redirect-uri (open-in-browser address)))))))
              (sb-sys:deadline-timeout ()
                (oauth-fail "the sign-in could not be prepared within ~d s" *sign-in-prepare-seconds*)))
         (unless handed-off

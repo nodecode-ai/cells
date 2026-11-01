@@ -245,8 +245,7 @@
   (is (eql 401 (bridge-http port :post "/command" :secret (reverse bridge.secret)
                             :body (nlk:json-object "action" "tab.list"))))
   (is (eql 401 (bridge-http port :post "/command" :headers (list (cons "authorization" bridge.secret))
-                            :body (nlk:json-object "action" "tab.list")))
-      "the secret counts only as a Bearer"))
+                            :body (nlk:json-object "action" "tab.list"))) "the secret counts only as a Bearer"))
 
 (deftest chrome-cell-bridge-a-secretless-extension-is-named-when-a-send-times-out
     (with-chrome-bridge (port bridge))

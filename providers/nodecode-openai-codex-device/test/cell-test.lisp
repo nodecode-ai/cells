@@ -90,8 +90,7 @@ the body of a poll still waiting."
       (is (equal "nodecode-openai-codex-device" (nlk:json-value row :string "npm")))
       (is (equal "https://chatgpt.com/backend-api/codex" (nlk:json-value row :string "api")))
       (is (gethash "gpt-6.1-sol" models))
-      (is (equal "openai-codex-device" (nle::configured-provider-lane "openai-codex"))
-          "alone, the provider rides this cell's lane")
+      (is (equal "openai-codex-device" (nle::configured-provider-lane "openai-codex")))
       (is (equal "https://chatgpt.com/backend-api/codex/responses"
                  (nle::lane-endpoint "openai-codex" "openai-codex-device"))))))
 
@@ -164,8 +163,7 @@ the body of a poll still waiting."
                                                                              :endpoint "https://chatgpt.com/backend-api/codex/responses")))
             (is (equal "new-token" (nle:credential-key credential)))
             (is (eq :oauth (nle:credential-source credential)))
-            (is (equal "acct-7" (ocd-header (getf (nle:credential-attributes credential) :headers) "chatgpt-account-id"))
-                "the saved account, when the token's claims name none")))
+            (is (equal "acct-7" (ocd-header (getf (nle:credential-attributes credential) :headers) "chatgpt-account-id")))))
         (destructuring-bind (asked . form) (first posts)
           (is (equal "https://auth.openai.com/oauth/token" asked))
           (is (equal "refresh_token" (cdr (assoc "grant_type" form :test #'equal))))

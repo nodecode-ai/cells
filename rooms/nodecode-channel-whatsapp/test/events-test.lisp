@@ -17,8 +17,7 @@
   (is (ncw:whatsapp-mention-p "hey @15550000000 look" "15550000000"))
   (is (not (ncw:whatsapp-mention-p "hey @155500000001" "15550000000")) "no mention by a prefix")
   (is (equal "what is up" (ncw:whatsapp-strip-mention "@15550000000: what is up" '("15550000000" "9999@lid"))))
-  (is (equal "and you" (ncw:whatsapp-strip-mention "@9999 and you" '("15550000000" "9999@lid")))
-      "the LID mention goes too"))
+  (is (equal "and you" (ncw:whatsapp-strip-mention "@9999 and you" '("15550000000" "9999@lid")))))
 
 (deftest channel-whatsapp-a-message-is-a-candidate ()
   (let ((candidate (ncw:whatsapp-message-candidate (wa-message +wa-kim+ "hi" :id "A1"))))
@@ -36,11 +35,9 @@
     (is (equal +wa-bot+ (nlk:json-value candidate :string "reply" "user_id"))))
   (is (eq t (wa-flag (ncw:whatsapp-message-candidate
                       (wa-message +wa-kim+ "@15550000000 hi" :group +wa-group+ :mentions-me t))
-                     "addressed"))
-      "an @mention of the bot addresses it")
+                     "addressed")) "an @mention of the bot addresses it")
   (is (null (wa-flag (ncw:whatsapp-message-candidate (wa-message +wa-kim+ "chatter" :group +wa-group+))
-                     "addressed"))
-      "group chatter does not")
+                     "addressed")) "group chatter does not")
   (let* ((candidate (ncw:whatsapp-message-candidate
                      (wa-message +wa-kim+ "" :id "V1" :kind "voice"
                                              :media (wa-media "audio" :mime "audio/ogg; codecs=opus" :filename "voice.ogg"
@@ -49,13 +46,11 @@
     (is (equal "audio/ogg" (gethash "media_type" attachment)) "the declared type, its parameters dropped")
     (is (equal "voice.ogg" (gethash "filename" attachment)))
     (is (eql 4 (gethash "seconds" attachment)) "a recording's length rides along")
-    (is (equal "/v/t62/fake" (nlk:json-value attachment :string "media" "direct_path"))
-        "and the driver's reference to download it by"))
+    (is (equal "/v/t62/fake" (nlk:json-value attachment :string "media" "direct_path"))))
   (let ((candidate (ncw:whatsapp-message-candidate
                     (wa-message +wa-kim+ "what does this say" :quote (list "Q1" nil "" (wa-media "audio"))))))
     (is (= 1 (length (nlk:json-array candidate "reply" "attachments"))) "a quoted file comes along"))
-  (is (null (ncw:whatsapp-message-candidate (nlk:json-object "event" "message" "chat" "x")))
-      "no sender, no candidate"))
+  (is (null (ncw:whatsapp-message-candidate (nlk:json-object "event" "message" "chat" "x"))) "no sender, no candidate"))
 
 (deftest channel-whatsapp-reactions-and-votes ()
   (let ((reaction (nlk:json-object "event" "reaction" "chat" (wa-jid +wa-kim+) "group" nil

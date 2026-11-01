@@ -153,3 +153,11 @@ One cell's own tests run against a Nodecode source tree (the commit
 ```sh
 .github/test-cell.sh tools/nodecode-guard
 ```
+
+Every `.lisp` and `.asd` file here passes the structural lint Nodecode's own
+sources pass (`src/tools/lint-structure.lisp`, read from Nodecode main). CI
+runs it on every pull request; locally it needs `sbcl`:
+
+```sh
+.github/lint.sh
+```

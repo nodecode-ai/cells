@@ -105,8 +105,7 @@ the credential is the sign-in AUTH (auth.json text) holds."
     (is (equal '("kimi-k3" "Kimi K3" 196608)
                (let ((row (find "kimi-k3" (nle::list-provider-models "factory-droid")
                                 :key (lambda (row) (getf row :id)) :test #'equal)))
-                 (list (getf row :id) (getf row :display) (getf row :context-window))))
-        "the listing is the roster, asked of no endpoint")
+                 (list (getf row :id) (getf row :display) (getf row :context-window)))))
     (funcall stop)
     (setf stop nil)
     (is (null (nlk:json-value (nle::models-catalog-table) :object "factory-droid")))))
@@ -139,8 +138,7 @@ the credential is the sign-in AUTH (auth.json text) holds."
                                                       ("FACTORY_API_KEY" . "fk"))
                                                :test #'equal)))
           (is (eq :public (nle:credential-source
-                           (nle::resolve-provider-credential "factory-droid" :auth-path auth :probe t)))
-              "no key variable stands in for the sign-in")))))
+                           (nle::resolve-provider-credential "factory-droid" :auth-path auth :probe t))))))))
   (with-cell-stop ((factory-droid-start))
     (with-temp-auth (auth "{}")
       (let ((nle::*provider* "factory-droid") (nle::*model* "kimi-k3") (nle::*api-key* nil)
@@ -166,8 +164,7 @@ the credential is the sign-in AUTH (auth.json text) holds."
     (let ((first (aref (nlk:json-value body :array "messages") 0)))
       (is (equal "system" (nlk:json-value first :string "role")))
       (is (equal "You are Droid, an AI software engineering agent built by Factory."
-                 (nlk:json-value first :string "content"))
-          "Droid's identity opens the system prompt"))
+                 (nlk:json-value first :string "content")) "Droid's identity opens the system prompt"))
     (is (= 65536 (nlk:json-value body :integer "max_tokens")) "the model's own ceiling")
     (is (= 1 (nlk:json-value body :number "temperature")))
     (is (equal "high" (nlk:json-value body :string "reasoning_effort")) "the model's default level")
@@ -181,8 +178,7 @@ the credential is the sign-in AUTH (auth.json text) holds."
   (with-stubbed-fdefinition (nodecode-factory-droid::session-id () "s-1")
     (with-factory-droid-round (url headers body) ("kimi-k3")
       (is (equal (nodecode-factory-droid::deterministic-uuid "s-1")
-                 (factory-droid-header headers "x-session-id"))
-          "the same session is the same id at every round")
+                 (factory-droid-header headers "x-session-id")) "the same session is the same id at every round")
       (is (not (equal (factory-droid-header headers "x-session-id")
                       (factory-droid-header headers "x-assistant-message-id")))))))
 
@@ -234,16 +230,14 @@ the credential is the sign-in AUTH (auth.json text) holds."
     (is-present (tools (nlk:json-value body :array "tools")) "the round carries the core's tools"
       (is (every (lambda (tool) (multiple-value-bind (strict present) (gethash "strict" tool)
                                   (and present (null strict))))
-                 tools)
-          "every tool non-strict")
+                 tools) "every tool non-strict")
       (is (eq t (nlk:json-value body :boolean "parallel_tool_calls")))
       (is (equal "auto" (nlk:json-value body :string "tool_choice"))))))
 
 (deftest factory-droid-cell-responses-round-for-grok ()
   (with-factory-droid-round (url headers body) ("grok-4.6" :effort "xhigh")
     (is (equal "xai" (factory-droid-header headers "x-api-provider")))
-    (is (equal "session_lock" (factory-droid-header headers "x-provider-routing-source"))
-        "an xAI route locks the session")
+    (is (equal "session_lock" (factory-droid-header headers "x-provider-routing-source")))
     (is (null (factory-droid-header headers "OpenAI-Platform")))
     (is (equal "xhigh" (nlk:json-value body :string "reasoning" "effort")))
     (is (null (nlk:json-value body :any "reasoning" "summary")) "no summary for Grok")
@@ -257,8 +251,7 @@ the credential is the sign-in AUTH (auth.json text) holds."
         (facts (list :model "gpt-5.2" :upstream "openai" :session "s" :effort nil)))
     (nodecode-factory-droid::responses-body body facts)
     (let ((tool (aref (nlk:json-value (nlk:decode-json (nlk:encode-json-object body)) :array "tools") 0)))
-      (is (multiple-value-bind (strict present) (gethash "strict" tool) (and present (null strict)))
-          "strict is stated on the wire, as false"))
+      (is (multiple-value-bind (strict present) (gethash "strict" tool) (and present (null strict)))))
     (is (eq t (gethash "parallel_tool_calls" body)))
     (is (equal "auto" (gethash "tool_choice" body)))
     (is (null (gethash "reasoning" body)) "off is no reasoning field")
@@ -339,11 +332,10 @@ the credential is the sign-in AUTH (auth.json text) holds."
     (is (null (nlk:json-value body :any "toolConfig")))
     (is-present (declarations (nlk:json-value (aref (nlk:json-value body :array "tools") 0)
                                               :array "functionDeclarations"))
-        "the round carries the core's tools"
+      "the round carries the core's tools"
       (is (nlk:json-value (aref declarations 0) :object "parameters") "under parameters, projected")
       (is (null (nlk:json-value (aref declarations 0) :any "parametersJsonSchema")))))
-  (is (equal "HIGH" (nodecode-factory-droid::thinking-level "gemini-3.5-flash" "medium"))
-      "a model without a medium level hears high")
+  (is (equal "HIGH" (nodecode-factory-droid::thinking-level "gemini-3.5-flash" "medium")))
   (is (equal "LOW" (nodecode-factory-droid::thinking-level "gemini-3.5-flash" "minimal"))))
 
 (deftest factory-droid-cell-gemini-contents-and-names ()
@@ -362,8 +354,7 @@ the credential is the sign-in AUTH (auth.json text) holds."
       (is (equal "done" (nlk:json-value (aref results 0) :string "functionResponse" "response" "result")))
       (is (equal "Tool execution succeeded."
                  (nlk:json-value (aref results 1) :string "functionResponse" "response" "result")))))
-  (is (= 73 (length (nodecode-factory-droid::wire-tool-name (make-string 70 :initial-element #\a))))
-      "a long name is cut at 64 and tagged")
+  (is (= 73 (length (nodecode-factory-droid::wire-tool-name (make-string 70 :initial-element #\a)))))
   (let* ((names (let ((table (make-hash-table :test 'equal))) (setf (gethash "my_tool" table) "my.tool") table))
          (seen nil)
          (fold (nodecode-factory-droid::named-back-fold (lambda (frame finish record)
@@ -375,8 +366,7 @@ the credential is the sign-in AUTH (auth.json text) holds."
     (is (equal "my.tool" (nlk:json-value (aref (nlk:json-value (aref (nlk:json-value seen :array "candidates") 0)
                                                                :array "content" "parts")
                                                0)
-                                         :string "functionCall" "name"))
-        "a returned call dispatches to the tool that was advertised")))
+                                         :string "functionCall" "name")))))
 
 (deftest factory-droid-cell-gemini-schema-projection ()
   (let ((schema (nodecode-factory-droid::gemini-schema

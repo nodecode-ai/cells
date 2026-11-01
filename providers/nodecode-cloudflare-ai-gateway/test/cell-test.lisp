@@ -55,8 +55,7 @@ KEY captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
     (let ((row (nlk:json-value (nle::models-catalog-table) :object "cloudflare-ai-gateway")))
       (is (equal "Cloudflare AI Gateway" (nlk:json-value row :string "name")))
       (is (equal "https://gateway.ai.cloudflare.com/v1/<account>/<gateway>/anthropic/v1"
-                 (nlk:json-value row :string "api"))
-          "with no account or gateway named, the base keeps omp's placeholders")
+                 (nlk:json-value row :string "api")))
       (is (gethash "anthropic/claude-opus-5" (nlk:json-value row :object "models")) "the bundled models are listed")
       (loop for (model lane) in '(("anthropic/claude-opus-5" "anthropic")
                                   ("openai/gpt-5.1" "openai-completions")
@@ -64,12 +63,10 @@ KEY captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
                                   ("xai/grok-4.7" "anthropic"))
             do (is (equal lane (nle::resolve-model-lane "cloudflare-ai-gateway" model)) model))
       (is (find "openai/gpt-5.1" (nle::list-provider-models "cloudflare-ai-gateway")
-                :key (lambda (row) (getf row :id)) :test #'equal)
-          "the listing is the roster, asked of no endpoint"))
+                :key (lambda (row) (getf row :id)) :test #'equal) "the listing is the roster, asked of no endpoint"))
     (funcall stop)
     (setf stop nil)
-    (is (null (nlk:json-value (nle::models-catalog-table) :object "cloudflare-ai-gateway"))
-        "a stopped cell leaves the catalog as models.dev made it")))
+    (is (null (nlk:json-value (nle::models-catalog-table) :object "cloudflare-ai-gateway")))))
 
 (deftest cloudflare-ai-gateway-cell-says-a-connect-token-was-not-checked ()
   ;; The roster answered /connect's key check with no reason, which the core
@@ -117,8 +114,7 @@ KEY captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
                                                       ("OPENAI_API_KEY" . "sk-openai"))
                                                :test #'equal)))
           (let ((credential (nle::resolve-provider-credential "cloudflare-ai-gateway" :auth-path auth :probe t)))
-            (is (eq :public (nle:credential-source credential))
-                "neither the Messages family's variable nor the chat family's reaches the gateway")))))))
+            (is (eq :public (nle:credential-source credential)))))))))
 
 (deftest cloudflare-ai-gateway-cell-saved-token-outranks-the-variable ()
   (with-cell-stop ((cloudflare-ai-gateway-start))
@@ -133,8 +129,7 @@ KEY captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
 (deftest cloudflare-ai-gateway-cell-sends-an-anthropic-model-to-the-messages-route ()
   (with-cloudflare-round (url headers body) "anthropic/claude-sonnet-4.5"
     (is (equal "https://gateway.ai.cloudflare.com/v1/acct/gw/anthropic/v1/messages" url))
-    (is (equal "claude-sonnet-4-5" (nlk:json-value body :string "model"))
-        "the namespace goes, and the dots become dashes")
+    (is (equal "claude-sonnet-4-5" (nlk:json-value body :string "model")))
     (is (equal "Bearer cfut-test" (cloudflare-header headers "cf-aig-authorization")))
     (is (null (cloudflare-header headers "x-api-key")) "no key leaves for Anthropic")
     (is (null (cloudflare-header headers "authorization")))
@@ -163,8 +158,7 @@ KEY captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
   (with-cloudflare-round (url headers body
                               :key "{\"token\":\"cfut-json\",\"accountId\":\"a2\",\"gatewayId\":\"g2\"}")
       "anthropic/claude-opus-5"
-    (is (equal "https://gateway.ai.cloudflare.com/v1/a2/g2/anthropic/v1/messages" url)
-        "the credential's ids outrank the section's")
+    (is (equal "https://gateway.ai.cloudflare.com/v1/a2/g2/anthropic/v1/messages" url))
     (is (equal "Bearer cfut-json" (cloudflare-header headers "cf-aig-authorization")))))
 
 (deftest cloudflare-ai-gateway-cell-falls-back-to-the-id-variables ()

@@ -35,3 +35,14 @@ jobs:
         run: .github/deploy-keys.sh
       - name: Install and load every entry
         run: .github/check.sh "$HOME/.local/bin/nodecode"
+
+  lint:
+    # Nodecode's own structural lint over every Lisp file here, read from
+    # Nodecode main, so a cell is held to the rules the core is held to.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SBCL
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends sbcl
+      - name: Lint every Lisp file
+        run: .github/lint.sh

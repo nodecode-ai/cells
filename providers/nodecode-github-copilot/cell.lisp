@@ -120,9 +120,9 @@ lent to Copilot)."
                   (enterprise (nlk:json-value entry :text "enterprise_url")))
              (nle:make-credential
               (nlk:json-value entry :text "access_token") :oauth
-              (append (alexandria:when-let
-                          (moved (rebased endpoint :enterprise enterprise
-                                                   :api-endpoint (nlk:json-value entry :text "api_endpoint")))
+              (append (alexandria:when-let (moved (rebased endpoint
+                                                           :enterprise enterprise
+                                                           :api-endpoint (nlk:json-value entry :text "api_endpoint")))
                         (list :endpoint moved))
                       (and enterprise (list :copilot-enterprise enterprise))))))
           ((env-key)

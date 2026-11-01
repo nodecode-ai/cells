@@ -120,14 +120,12 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
                  (nle::lane-endpoint "openai-codex" "openai-codex"))))
     (funcall stop)
     (setf stop nil)
-    (is (null (nlk:json-value (nle::models-catalog-table) :object "openai-codex"))
-        "a stopped cell leaves the catalog as models.dev made it")))
+    (is (null (nlk:json-value (nle::models-catalog-table) :object "openai-codex")))))
 
 (deftest openai-codex-cell-base-follows-the-section ()
   (with-cell-stop ((openai-codex-start "base_url" "https://relay.example/backend-api/codex/responses/"))
     (is (equal "https://relay.example/backend-api/codex"
-               (nlk:json-value (nle::models-catalog-table) :string "openai-codex" "api"))
-        "omp's three spellings of the base end at one /codex")))
+               (nlk:json-value (nle::models-catalog-table) :string "openai-codex" "api")))))
 
 ;;; --- the token's claims and the authorization address ---------------------------
 
@@ -139,8 +137,7 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
   (is (equal "eu" (nodecode-openai-codex::token-residency +oc-access+)))
   (is (equal "acct-9" (nodecode-openai-codex::token-profile
                        "not-a-jwt"
-                       (oc-jwt "{\"https://api.openai.com/auth\":{\"chatgpt_account_id\":\"acct-9\"}}")))
-      "the id token answers when the access token does not")
+                       (oc-jwt "{\"https://api.openai.com/auth\":{\"chatgpt_account_id\":\"acct-9\"}}"))))
   (is (null (nodecode-openai-codex::token-profile "a.b")) "a malformed token names nobody"))
 
 (deftest openai-codex-cell-builds-omps-authorization-address ()
@@ -158,8 +155,7 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
         (is (equal "st-1" (oc-query url "state")))
         (is (equal "true" (oc-query url "codex_cli_simplified_flow")))
         (is (equal "codex_cli_rs" (oc-query url "originator")))))
-    (is (equal "http://localhost:1455/auth/callback" (nodecode-openai-codex::redirect-uri 1455))
-        "the one redirect OpenAI allowlists")))
+    (is (equal "http://localhost:1455/auth/callback" (nodecode-openai-codex::redirect-uri 1455)))))
 
 (deftest openai-codex-cell-pkce-challenge-is-rfc-7636 ()
   ;; RFC 7636 appendix B's verifier and challenge
@@ -187,13 +183,11 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
         (is (equal redirect (cdr (assoc "redirect_uri" form :test #'equal))))
         (is (equal (oc-query url "code_challenge")
                    (nodecode-openai-codex::base64url
-                    (nodecode-openai-codex::sha256 (cdr (assoc "code_verifier" form :test #'equal)))))
-            "the verifier is the one the challenge was made of"))
+                    (nodecode-openai-codex::sha256 (cdr (assoc "code_verifier" form :test #'equal)))))))
       (let ((entry (oc-entry auth)))
         (is (equal +oc-access+ (nlk:json-value entry :string "access_token")))
         (is (equal "rt-2" (nlk:json-value entry :string "refresh_token")))
-        (is (<= (abs (- (nlk:json-value entry :integer "expires_at") (+ (oc-now) 3600))) 5)
-            "expires_at is epoch seconds")
+        (is (<= (abs (- (nlk:json-value entry :integer "expires_at") (+ (oc-now) 3600))) 5))
         (is (equal "acct-7" (nlk:json-value entry :string "account_id")))
         (is (equal "op@example.com" (nlk:json-value entry :string "email")))
         (is (equal "acct-7" (nlk:json-value entry :string "org_id")))
@@ -241,8 +235,7 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
     (unwind-protect
          (with-cell-stop ((openai-codex-start))
            (let ((nodecode-openai-codex::*callback-port* (usocket:get-local-port held)))
-             (is (search "is in use" (cell-entry "nodecode-openai-codex" "openai-codex" "login"))
-                 "no other port: OpenAI allowlists exactly one")
+             (is (search "is in use" (cell-entry "nodecode-openai-codex" "openai-codex" "login")))
              (is (null nodecode-openai-codex::*login*))))
       (usocket:socket-close held))))
 
@@ -279,13 +272,11 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
         (with-stubbed-fdefinition (dex:post (asked &rest args)
                                    (push (cons asked (oc-form (getf args :content))) posts)
                                    (values (oc-token-answer :access fresh :refresh "rt-3") 200))
-          (is (equal "old-token" (nle:credential-key (nle::resolve-provider-credential "openai-codex" :auth-path auth :probe t)))
-              "a probe reads the store as it is")
+          (is (equal "old-token" (nle:credential-key (nle::resolve-provider-credential "openai-codex" :auth-path auth :probe t))))
           (is (null posts) "and never dials")
           (is (equal fresh (nle:credential-key (nle::resolve-provider-credential
                                                 "openai-codex" :auth-path auth
-                                                               :endpoint "https://chatgpt.com/backend-api/codex/responses")))
-              "a round's resolution refreshes first"))
+                                                :endpoint "https://chatgpt.com/backend-api/codex/responses")))))
         (is (= 1 (length posts)))
         (destructuring-bind (asked . form) (first posts)
           (is (equal "https://auth.openai.com/oauth/token" asked))
@@ -319,13 +310,11 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
           (is (equal +oc-access+ (nle:credential-key credential)))
           (is (eq :env (nle:credential-source credential)))))
       (with-stubbed-fdefinition (nle::credential-env (name) nil)
-        (is (eq :none (nle::provider-auth-state "openai-codex" :auth-path auth))
-            "no sign-in, no variable: nothing, and no fall into a ladder that knows no such family")
+        (is (eq :none (nle::provider-auth-state "openai-codex" :auth-path auth)))
         (is (search "/openai-codex login"
                     (princ-to-string (signals-error nle:credential-error
                                        (nle::resolve-provider-credential "openai-codex" :auth-path auth
-                                                                                        :endpoint "https://chatgpt.com/x"))))
-            "and a round is told what to do")))))
+                                                                                        :endpoint "https://chatgpt.com/x")))))))))
 
 (deftest openai-codex-cell-is-not-an-openai-family-lane ()
   ;; nodecode-codex-auth's rule, registered first so it runs outermost: it
@@ -344,7 +333,7 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
                                       (values (oc-token-answer :access "new-token") 200))
              (is (equal "new-token" (nle:credential-key (nle::resolve-provider-credential
                                                          "openai-codex" :auth-path auth
-                                                                        :endpoint "https://chatgpt.com/x")))))))
+                                                         :endpoint "https://chatgpt.com/x")))))))
     (nle:unhook :credential "codex-auth-stand-in")))
 
 ;;; --- one round -------------------------------------------------------------------
@@ -399,8 +388,7 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
       (is (equalp #("reasoning.encrypted_content") (gethash "include" body)))
       (let ((metadata (nlk:json-value body :object "client_metadata")))
         (is (equal "inst-1" (nlk:json-value metadata :string "x-codex-installation-id")))
-        (is (equal (oc-header headers "thread-id") (nlk:json-value metadata :string "thread_id"))
-            "the body's identity is the headers'")
+        (is (equal (oc-header headers "thread-id") (nlk:json-value metadata :string "thread_id")))
         (is (equal (oc-header headers "x-codex-turn-metadata")
                    (nlk:json-value metadata :string "x-codex-turn-metadata")))
         (is (equal "turn" (nlk:json-value (nlk:decode-json (nlk:json-value metadata :string "x-codex-turn-metadata"))
@@ -423,14 +411,12 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
         (let ((nle::*provider* "openai-responses") (nle::*model* "gpt-6.1-sol"))
           (is (equal "rs_1" (nlk:json-value (reasoning (nth-value 3 (oc-round (compiled-context messages)
                                                                               :stream +oc-completed+)))
-                                            :string "id"))
-              "another lane still sends the item as the core built it"))))))
+                                            :string "id"))))))))
 
 (deftest openai-codex-cell-says-off-and-fails-a-failed-response ()
   (with-oc-round ()
     (let ((nle::*reasoning-effort* "off"))
-      (is (equal "none" (nlk:json-value (nth-value 3 (oc-round (user-context))) :string "reasoning" "effort"))
-          "an effort turned off is sent as none")))
+      (is (equal "none" (nlk:json-value (nth-value 3 (oc-round (user-context))) :string "reasoning" "effort")))))
   (with-oc-round ()
     (let ((nle::*max-stream-retries* 0) (nle::*max-request-retries* 0))
       (let ((condition (signals-error nle::provider-error

@@ -46,27 +46,22 @@ decoded request) as dex:post saw them."
   (with-cell-stop ((alibaba-coding-plan-start))
     (let ((row (nlk:json-value (nle::models-catalog-table) :object "alibaba-coding-plan")))
       (is (equal "Alibaba Coding Plan" (nlk:json-value row :string "name")))
-      (is (equal "https://coding-intl.dashscope.aliyuncs.com/v1" (nlk:json-value row :string "api"))
-          "the international region unless the section says otherwise")
+      (is (equal "https://coding-intl.dashscope.aliyuncs.com/v1" (nlk:json-value row :string "api")))
       (is (gethash "qwen3.7-plus" (nlk:json-value row :object "models")) "the bundled models are listed")
-      (is (equal "openai-completions" (nle::configured-provider-lane "alibaba-coding-plan"))
-          "the chat lane drives it")
+      (is (equal "openai-completions" (nle::configured-provider-lane "alibaba-coding-plan")) "the chat lane drives it")
       (is (equal "https://coding-intl.dashscope.aliyuncs.com/v1/chat/completions"
                  (nle::lane-endpoint "alibaba-coding-plan" "openai-completions"))))
     (funcall stop)
     (setf stop nil)
-    (is (null (nlk:json-value (nle::models-catalog-table) :object "alibaba-coding-plan"))
-        "a stopped cell leaves the catalog as models.dev made it")))
+    (is (null (nlk:json-value (nle::models-catalog-table) :object "alibaba-coding-plan")))))
 
 (deftest alibaba-coding-plan-cell-serves-the-region-the-section-names ()
   (with-cell-stop ((alibaba-coding-plan-start "region" "china"))
     (is (equal "https://coding.dashscope.aliyuncs.com/v1"
-               (nlk:json-value (nle::models-catalog-table) :string "alibaba-coding-plan" "api"))
-        "omp's option 2, the China endpoint"))
+               (nlk:json-value (nle::models-catalog-table) :string "alibaba-coding-plan" "api"))))
   (with-cell-stop ((alibaba-coding-plan-start "region" "china" "base_url" "https://proxy.example/v1"))
     (is (equal "https://proxy.example/v1"
-               (nlk:json-value (nle::models-catalog-table) :string "alibaba-coding-plan" "api"))
-        "omp's option 3, a custom base, wins over the region")))
+               (nlk:json-value (nle::models-catalog-table) :string "alibaba-coding-plan" "api")))))
 
 ;;; --- the key ------------------------------------------------------------------------
 
@@ -85,8 +80,7 @@ decoded request) as dex:post saw them."
       (with-stubbed-fdefinition (nle::credential-env (name)
                                  (and (equal name "OPENAI_API_KEY") "sk-openai"))
         (let ((credential (nle::resolve-provider-credential "alibaba-coding-plan" :auth-path auth :probe t)))
-          (is (not (equal "sk-openai" (nle:credential-key credential)))
-              "the chat family's default variable never reaches Alibaba")
+          (is (not (equal "sk-openai" (nle:credential-key credential))))
           (is (eq :public (nle:credential-source credential))))))))
 
 (deftest alibaba-coding-plan-cell-saved-key-outranks-the-variable ()

@@ -142,8 +142,7 @@ and socket event, newest first."
       (is (equal "nodecode-gitlab-duo-agent" (nlk:json-value row :string "npm")))
       (is (equal "https://gitlab.com" (nlk:json-value row :string "api")))
       (is (gethash "claude_sonnet_4_6_vertex" (nlk:json-value row :object "models")) "omp's fallback row")
-      (is (equal "gitlab-duo-agent" (nle::configured-provider-lane "gitlab-duo-agent"))
-          "the row's package resolves to the cell's lane")
+      (is (equal "gitlab-duo-agent" (nle::configured-provider-lane "gitlab-duo-agent")))
       (is (equal "https://gitlab.com" (nle::lane-endpoint "gitlab-duo-agent" "gitlab-duo-agent"))))
     (let ((nodecode-gitlab-duo-agent::*discovered* '(("claude_opus_4_8" . "Claude Opus 4.8") ("gpt_5_codex" . "GPT-5 Codex"))))
       (nodecode-gitlab-duo-agent::forget-catalog)
@@ -167,8 +166,7 @@ and socket event, newest first."
                                 (nle::resolve-provider-credential "gitlab-duo-agent" :auth-path auth :probe t)))))
       (with-stubbed-fdefinition (nle::credential-env (name) (and (equal name "OPENAI_API_KEY") "sk-openai"))
         (is (eq :public (nle:credential-source
-                         (nle::resolve-provider-credential "gitlab-duo-agent" :auth-path auth :probe t)))
-            "another provider's key never goes to GitLab")))))
+                         (nle::resolve-provider-credential "gitlab-duo-agent" :auth-path auth :probe t))))))))
 
 (deftest gitlab-duo-agent-cell-never-sends-another-familys-key ()
   (with-cell-stop ((gitlab-duo-agent-start))
@@ -177,8 +175,7 @@ and socket event, newest first."
                                  (cond ((equal name "OPENAI_API_KEY") "sk-openai")
                                        ((equal name "ANTHROPIC_API_KEY") "sk-ant")))
         (let ((credential (nle::resolve-provider-credential "gitlab-duo-agent" :auth-path auth :probe t)))
-          (is (not (member (nle:credential-key credential) '("sk-openai" "sk-ant") :test #'equal))
-              "no lane family's default variable reaches GitLab")
+          (is (not (member (nle:credential-key credential) '("sk-openai" "sk-ant") :test #'equal)))
           (is (eq :public (nle:credential-source credential))))))))
 
 (deftest gitlab-duo-agent-cell-refreshes-with-the-redirect ()
@@ -194,8 +191,7 @@ and socket event, newest first."
           (is (equal "new" (nle:credential-key (nle::resolve-provider-credential "gitlab-duo-agent" :auth-path auth))))
           (is (equal "https://gitlab.com/oauth/token" (first (first posts))))
           (is (equal "grant_type=refresh_token&client_id=36f2a70cddeb5a0889d4fd8295c241b7e9848e89cf9e599d0eed2d8e5350fbf5&refresh_token=r1&redirect_uri=vscode%3A%2F%2Fgitlab.gitlab-workflow%2Fauthentication"
-                     (second (first posts)))
-              "this application's refresh sends the redirect again")
+                     (second (first posts))) "this application's refresh sends the redirect again")
           (let ((entry (nlk:json-value (nlk:decode-json (uiop:read-file-string auth)) :object "oauth_tokens" "gitlab-duo-agent")))
             (is (equal "r2" (nlk:json-value entry :string "refresh_token")))
             (is (eql (+ now 7200 -300) (nlk:json-value entry :integer "expires_at")))))))))
@@ -212,11 +208,9 @@ and socket event, newest first."
     (is (equal "what is 1+2?" (nodecode-gitlab-duo-agent::goal (vector user))) "a lone turn is its bare text")
     (is (equal "base" (nodecode-gitlab-duo-agent::system-prompt "base" (vector user))) "and needs no note")
     (is (equal (format nil "<|im_start|>user~%what is 1+2?~%<|im_end|>~%<|im_start|>assistant~%I will evaluate it.~%<ran eval>{\"form\":\"(+ 1 2)\"}</ran>~%<|im_end|>~%<|im_start|>tool~%<ran:result>~%3~%<|im_end|>~%<|im_start|>tool~%<ran:result status=error>~%ERROR: no such form~%<|im_end|>~%<|im_start|>user~%and 2+2?~%<|im_end|>")
-               (nodecode-gitlab-duo-agent::goal (vector user call result failed next)))
-        "a conversation is a flat ChatML transcript, calls as past-tense records, the intent key dropped")
+               (nodecode-gitlab-duo-agent::goal (vector user call result failed next))))
     (let ((system (nodecode-gitlab-duo-agent::system-prompt "base" (vector user call result next))))
-      (is (uiop:string-prefix-p (format nil "base~%~%The task below is a transcript") system)
-          "a transcript goal brings the note that its markers are a record"))))
+      (is (uiop:string-prefix-p (format nil "base~%~%The task below is a transcript") system)))))
 
 (deftest gitlab-duo-agent-cell-reads-ids-and-addresses ()
   (is (equal "gid://gitlab/Group/9" (nodecode-gitlab-duo-agent::graphql-namespace-id "9")))
@@ -224,14 +218,12 @@ and socket event, newest first."
   (is (equal "9" (nodecode-gitlab-duo-agent::rest-namespace-id "gid://gitlab/Group/9")))
   (is (equal "wss://dws.example/?project_id=7&root_namespace_id=9&user_selected_model_identifier=m&workflow_definition=ambient"
              (nodecode-gitlab-duo-agent::socket-url "https://dws.example" :project-id "7" :namespace-id "9"
-                                                                            :model-ref "m" :service-p t))
-      "the service host's root, no namespace_id")
+                                                                            :model-ref "m" :service-p t)))
   (is (equal "ws://gitlab.local:8080/sub/api/v4/ai/duo_workflows/ws?workflow_definition=ambient"
              (nodecode-gitlab-duo-agent::socket-url "http://gitlab.local:8080/sub/")))
   (is (equal "acme/app" (nodecode-gitlab-duo-agent::remote-project-path "git@gitlab.com:acme/app.git" "https://gitlab.com")))
   (is (equal "acme/app" (nodecode-gitlab-duo-agent::remote-project-path "https://gitlab.com/acme/app.git" "https://gitlab.com")))
-  (is (equal "acme/app" (nodecode-gitlab-duo-agent::remote-project-path "https://host/gitlab/acme/app" "https://host/gitlab"))
-      "a relative install path is not part of the project")
+  (is (equal "acme/app" (nodecode-gitlab-duo-agent::remote-project-path "https://host/gitlab/acme/app" "https://host/gitlab")))
   (is (null (nodecode-gitlab-duo-agent::remote-project-path "git@github.com:acme/app.git" "https://gitlab.com"))))
 
 ;;; --- one workflow, as a lane round ----------------------------------------------------------
@@ -259,8 +251,7 @@ call; the tool's result with the answer and FINISHED."
       (destructuring-bind (message finish parts) first-round
         (is (equal "tool_calls" finish) "the round ends on the tool call")
         (is (equal "I will evaluate it." (nlk:json-value message :string "content")))
-        (is (equal "Let me compute." (nlk:json-value message :string "reasoning_content"))
-            "reasoning commentary is reasoning")
+        (is (equal "Let me compute." (nlk:json-value message :string "reasoning_content")))
         (let ((call (aref (nlk:json-value message :array "tool_calls") 0)))
           (is (equal "req-1" (nlk:json-value call :string "id")) "the call id is the service's requestID")
           (is (equal "eval" (nlk:json-value call :string "function" "name")))
@@ -303,8 +294,7 @@ call; the tool's result with the answer and FINISHED."
           (is (plusp (length tools)) "the round's tools ride as MCP tools")
           (is (every (lambda (tool) (stringp (nlk:json-value tool :string "inputSchema"))) tools))
           (is (equalp (map 'vector (lambda (tool) (nlk:json-value tool :string "name")) tools)
-                      (nlk:json-value start :array "preapproved_tools"))
-              "every one pre-approved")))
+                      (nlk:json-value start :array "preapproved_tools")) "every one pre-approved")))
       ;; the second round: the tool's result goes back on the same socket
       (let* ((call (nle::message "assistant" "I will evaluate it."
                                  :tool-calls (vector (nle::chat-tool-call-object "req-1" "eval" "{\"form\":\"(+ 1 2)\"}"))))
@@ -312,14 +302,12 @@ call; the tool's result with the answer and FINISHED."
         (destructuring-bind (message finish parts) (duo-round (vector user call result))
           (declare (ignore parts))
           (is (equal "stop" finish))
-          (is (equal "The answer is 3." (nlk:json-value message :string "content"))
-              "only what is new streams: the earlier text is not said again")
+          (is (equal "The answer is 3." (nlk:json-value message :string "content")))
           (is (null (nlk:json-value message :string "reasoning_content")))))
       (let ((response (second (duo-sent log 1))))
         (is (equal "req-1" (nlk:json-value response :string "actionResponse" "requestID")))
         (is (equal "3" (nlk:json-value response :string "actionResponse" "plainTextResponse" "response"))))
-      (is (null (find :open (remove (find :open (car log) :key #'first :from-end t) (car log)) :key #'first))
-          "one socket for both rounds")
+      (is (null (find :open (remove (find :open (car log) :key #'first :from-end t) (car log)) :key #'first)))
       (is (= 1 (length (duo-requests log :post "/duo_workflows/workflows"))) "one workflow")
       (is (null (duo-requests log :patch "/duo_workflows/workflows")) "a finished workflow is not stopped")
       (is (zerop (hash-table-count nodecode-gitlab-duo-agent::*sessions*)) "and nothing waits"))))
@@ -409,8 +397,7 @@ call; the tool's result with the answer and FINISHED."
   (let ((log (list nil)))
     (with-stubbed-fdefinition (dex:request (url &rest args) (duo-agent-answer log url args))
       (is (equal '(("claude_sonnet_4_6_vertex" . "Claude Sonnet 4.6 - Vertex") ("claude_opus_4_8" . "Claude Opus 4.8"))
-                 (nodecode-gitlab-duo-agent::discover-models "https://gitlab.com" "glpat-test" :namespace-id "9"))
-              "the selectable models, the pinned one alone when there is one"))))
+                 (nodecode-gitlab-duo-agent::discover-models "https://gitlab.com" "glpat-test" :namespace-id "9"))))))
 
 ;;; --- the sign-in ---------------------------------------------------------------------------
 
@@ -435,8 +422,7 @@ call; the tool's result with the answer and FINISHED."
                    (flow nodecode-gitlab-duo-agent::*flow*))
               (is (search (format nil "https://gitlab.com/oauth/authorize?client_id=36f2a70cddeb5a0889d4fd8295c241b7e9848e89cf9e599d0eed2d8e5350fbf5&response_type=code&redirect_uri=vscode%3A%2F%2Fgitlab.gitlab-workflow%2Fauthentication&scope=api&code_challenge=~a&code_challenge_method=S256&state=~a"
                                   (nodecode-gitlab-duo-agent::flow-challenge flow) (nodecode-gitlab-duo-agent::flow-state flow))
-                          answer)
-                  "GitLab's authorize request for the VS Code application, with PKCE")
+                          answer) "GitLab's authorize request for the VS Code application, with PKCE")
               (is (search "received"
                           (nodecode-gitlab-duo-agent::run-command
                            (format nil "code vscode://gitlab.gitlab-workflow/authentication?code=gl-code&state=~a"
@@ -452,6 +438,5 @@ call; the tool's result with the answer and FINISHED."
                 (is (equal "gl-at" (nlk:json-value entry :string "access_token")))
                 (is (equal "gl-rt" (nlk:json-value entry :string "refresh_token")))
                 (is (eql (+ now 7200 -300) (nlk:json-value entry :integer "expires_at"))))
-              (is (await (:timeout 10) (assoc "claude_opus_4_8" nodecode-gitlab-duo-agent::*discovered* :test #'equal))
-                  "a sign-in finds the models the account offers")
+              (is (await (:timeout 10) (assoc "claude_opus_4_8" nodecode-gitlab-duo-agent::*discovered* :test #'equal)))
               (is (search "Signed out" (nodecode-gitlab-duo-agent::run-command "logout" "s1"))))))))))

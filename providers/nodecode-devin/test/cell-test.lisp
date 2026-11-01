@@ -104,13 +104,11 @@ reason and usage, and the end-of-stream trailer."
                           #x22 2 "en"                 ; 4 locale
                           #x2a 5 "linux"              ; 5 os
                           #xaa #x01 1 "j")            ; 21 user_jwt
-                (nodecode-devin::cli-metadata "tok" "j"))
-        "the descriptor's order, not field-number order, and the session-token scheme in front")
+                (nodecode-devin::cli-metadata "tok" "j")))
     (is (equalp (dv-bytes #x0a 6 "chisel" #x3a 9 "0.0.0-dev" #x62 6 "chisel" #x12 9 "0.0.0-dev"
                           #x1a 21 "devin-session-token$k" #x22 2 "en" #x2a 5 "linux"
                           #xf2 #x01 5 3 4 6 7 8)     ; 30 supported_model_displays, packed
-                (nodecode-devin::discovery-metadata "k"))
-        "discovery asks with the dev-channel identity and the display slots packed")))
+                (nodecode-devin::discovery-metadata "k")))))
 
 (deftest devin-cell-encodes-scalars-as-protobuf-does ()
   (is (equalp (dv-bytes #x08 1                         ; 1 num_completions
@@ -130,16 +128,13 @@ reason and usage, and the end-of-stream trailer."
                         #x5a 1 "t" #x62 1 "s")
               (nodecode-devin::encode-chat-prompt
                :message-id "b" :source 2 :thinking "t" :signature "s"
-               :tool-calls (list (nodecode-devin::encode-tool-call "c1" "eval" "{}"))))
-      "an assistant prompt: its tool call nested, thinking 11 and signature 12")
+               :tool-calls (list (nodecode-devin::encode-tool-call "c1" "eval" "{}")))))
   (is (equalp (dv-bytes #x0a 1 "m" #x10 4 #x1a 2 "ok" #x3a 2 "c1")
               (nodecode-devin::encode-chat-prompt :message-id "m" :source 4 :prompt "ok" :tool-call-id "c1"
-                                                  :tool-result-is-error nil))
-      "false and empty fields are left out")
+                                                  :tool-result-is-error nil)) "false and empty fields are left out")
   (let ((out (nodecode-devin::make-writer)))
     (nodecode-devin::put-varint out -1)
-    (is (equalp (dv-bytes #xff #xff #xff #xff #xff #xff #xff #xff #xff #x01) out)
-        "a negative int32 is its 64-bit two's complement, ten bytes")))
+    (is (equalp (dv-bytes #xff #xff #xff #xff #xff #xff #xff #xff #xff #x01) out))))
 
 (deftest devin-cell-decodes-a-scripted-stream ()
   (let ((frames (nodecode-devin::decode-connect-frames (dv-response-frames))))
@@ -150,8 +145,7 @@ reason and usage, and the end-of-stream trailer."
       (is (equal "sig" (getf first :delta-signature))))
     (is (equal "Hello" (getf (nodecode-devin::decode-chat-response
                               (nodecode-devin::gunzip (cdr (second frames))))
-                             :delta-text))
-        "a zlib-compressed frame inflates")
+                             :delta-text)) "a zlib-compressed frame inflates")
     (is (equal '((:id "call_1" :name "eval" :arguments "{\"form\":"))
                (getf (nodecode-devin::decode-chat-response (cdr (third frames))) :tool-calls)))
     (let ((last (nodecode-devin::decode-chat-response (cdr (fifth frames)))))
@@ -161,18 +155,14 @@ reason and usage, and the end-of-stream trailer."
 (deftest devin-cell-refuses-a-broken-envelope ()
   (is (equalp (dv-bytes 1 0 0 0 3 1 2 3) (nodecode-devin::connect-frame (dv-bytes 1 2 3) 1)))
   (is (signals-error nodecode-devin::proto-error
-        (nodecode-devin::decode-connect-frames (dv-bytes 0 1 0 0 1)))
-      "a length past the 16 MiB cap fails before anything is buffered")
+        (nodecode-devin::decode-connect-frames (dv-bytes 0 1 0 0 1))))
   (is (signals-error nodecode-devin::proto-error
-        (nodecode-devin::decode-connect-frames (dv-bytes 0 0 0 0 5 1 2)))
-      "a stream that ends inside a frame is no frame")
+        (nodecode-devin::decode-connect-frames (dv-bytes 0 0 0 0 5 1 2))))
   (is (signals-error nodecode-devin::proto-error
-        (nodecode-devin::decode-fields (dv-bytes #x0b 1)))
-      "a group wire type is refused")
+        (nodecode-devin::decode-fields (dv-bytes #x0b 1))) "a group wire type is refused")
   (let ((big (make-array 70000 :element-type '(unsigned-byte 8))))
     (dotimes (index 70000) (setf (aref big index) (mod (* index 7) 251)))
-    (is (equalp big (nodecode-devin::gunzip (nodecode-devin::gzip big)))
-        "the stored-block gzip member is one any inflater reads, past one block")
+    (is (equalp big (nodecode-devin::gunzip (nodecode-devin::gzip big))))
     (is (equalp (dv-bytes) (nodecode-devin::gunzip (nodecode-devin::gzip (dv-bytes)))))))
 
 (deftest devin-cell-reads-the-connect-trailer ()
@@ -231,8 +221,7 @@ reason and usage, and the end-of-stream trailer."
           (is (eq :env (nle:credential-source credential))))))
     (with-temp-auth (auth "{\"api_keys\":{\"devin\":{\"provider\":\"devin\",\"key\":\"dk-saved\"}}}")
       (with-stubbed-fdefinition (nle::credential-env (name) (and (equal name "DEVIN_API_KEY") "dk-env"))
-        (is (equal "dk-saved" (nle:credential-key (nle::resolve-provider-credential "devin" :auth-path auth :probe t)))
-            "a key /connect saved outranks the variable")))))
+        (is (equal "dk-saved" (nle:credential-key (nle::resolve-provider-credential "devin" :auth-path auth :probe t))))))))
 
 (deftest devin-cell-never-sends-another-familys-key ()
   (with-cell-stop ((devin-start))
@@ -245,25 +234,20 @@ reason and usage, and the end-of-stream trailer."
           (is (not (equal "sk-other" (nle:credential-key credential))))
           (is (eq :public (nle:credential-source credential))))
         (is (eq :public (nle:credential-source
-                         (nle::resolve-provider-credential "devin" :auth-path auth :endpoint "https://server.codeium.com")))
-            "nor on a round")))))
+                         (nle::resolve-provider-credential "devin" :auth-path auth :endpoint "https://server.codeium.com"))))))))
 
 (deftest devin-cell-asks-again-for-an-expired-sign-in ()
   (with-cell-stop ((devin-start))
     (with-temp-auth (auth (dv-signed-in :expires (- (nodecode-devin::unix-now) 10)))
       (with-stubbed-fdefinition (dex:post (url &rest args) (error "no exchange may happen: ~a" url))
-        (is (eq :public (nle:credential-source (nle::resolve-provider-credential "devin" :auth-path auth :probe t)))
-            "a probe sets the expired token aside, and says nothing")
+        (is (eq :public (nle:credential-source (nle::resolve-provider-credential "devin" :auth-path auth :probe t))))
         (is (null (cell-notice "nodecode-devin")))
         (is (signals-error nle::credential-error
-              (nle::resolve-provider-credential "devin" :auth-path auth :endpoint "https://server.codeium.com"))
-            "a round refuses it: omp has no refresh for Devin")
-        (is (search "/devin login" (or (second (cell-notice "nodecode-devin")) ""))
-            "and the notice asking for a sign-in stands"))
+              (nle::resolve-provider-credential "devin" :auth-path auth :endpoint "https://server.codeium.com")))
+        (is (search "/devin login" (or (second (cell-notice "nodecode-devin")) ""))))
       (with-stubbed-fdefinition (nle::credential-env (name) (and (equal name "DEVIN_API_KEY") "dk-env"))
         (is (equal "dk-env" (nle:credential-key (nle::resolve-provider-credential
-                                                 "devin" :auth-path auth :endpoint "https://server.codeium.com")))
-            "DEVIN_API_KEY still answers")))))
+                                                 "devin" :auth-path auth :endpoint "https://server.codeium.com"))))))))
 
 ;;; --- the sign-in ------------------------------------------------------------------------
 
@@ -309,8 +293,7 @@ reason and usage, and the end-of-stream trailer."
             (is (search "&prompt=select_account" answer) "the rule's own parameter, last")
             (is (null (search "client_id" answer)) "the rule names no client")
             (is (ppcre:scan "^http://127\\.0\\.0\\.1:\\d+/callback$" (or redirect "")) redirect)
-            (is (ppcre:scan "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" (or state ""))
-                "the state is a UUID")
+            (is (ppcre:scan "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" (or state "")))
             (multiple-value-bind (page status) (dex:get (format nil "~a?code=dv-code&state=~a" redirect state))
               (is (eql 200 status))
               (is (search "Signed in" page)))
@@ -318,12 +301,10 @@ reason and usage, and the end-of-stream trailer."
             (let ((exchange (find "https://api.devin.ai/auth/cli/token" posts :key #'first :test #'equal)))
               (is-present exchange "the code was exchanged"
                 (let ((body (nlk:decode-json (third exchange))))
-                  (is (uiop:string-prefix-p "{\"code\":\"dv-code\",\"code_verifier\":\"" (third exchange))
-                      "the rule's two params, as JSON, in its order")
+                  (is (uiop:string-prefix-p "{\"code\":\"dv-code\",\"code_verifier\":\"" (third exchange)))
                   (is (equal "dv-code" (nlk:json-value body :string "code")))
                   (is (equal challenge (nodecode-devin::base64url
-                                        (nodecode-devin::sha256 (nlk:json-value body :string "code_verifier"))))
-                      "the verifier is the one the challenge was made from (S256)"))
+                                        (nodecode-devin::sha256 (nlk:json-value body :string "code_verifier"))))))
                 (is (equal "application/json" (cdr (assoc "Accept" (second exchange) :test #'string-equal))))
                 (is (equal "application/json" (cdr (assoc "Content-Type" (second exchange) :test #'string-equal))))))
             (let ((entry (dv-entry auth)))
@@ -332,8 +313,7 @@ reason and usage, and the end-of-stream trailer."
               (is (= (- 4102444800 300) (nlk:json-value entry :integer "expires_at")) "its exp less five minutes")
               (is (equal "https://api.devin.ai" (nlk:json-value entry :string "api_endpoint")))
               (is (equal "https://app.devin.ai" (nlk:json-value entry :string "enterprise_url"))))
-            (is (equal "kept" (nlk:json-value (nle::read-auth-file auth) :string "api_keys" "other" "key"))
-                "every other field of auth.json is kept")
+            (is (equal "kept" (nlk:json-value (nle::read-auth-file auth) :string "api_keys" "other" "key")))
             (is (await (:timeout 10) (dv-said "devin: signed in")) "the outcome is said once")
             (is (null (cell-notice "nodecode-devin")) "and does not stand")))))))
 
@@ -347,16 +327,13 @@ reason and usage, and the end-of-stream trailer."
                       (cell-entry "nodecode-devin" "devin" "code http://127.0.0.1:1/callback?code=x&state=other")))
           (is (search "code received" (cell-entry "nodecode-devin" "devin" (format nil "code dv-pasted#~a" state))))
           (is (await (:timeout 10) (dv-entry auth)))
-          (is (equal "dv-pasted" (nlk:json-value (nlk:decode-json (third (first posts))) :string "code"))
-              "the code without its #state")
+          (is (equal "dv-pasted" (nlk:json-value (nlk:decode-json (third (first posts))) :string "code")))
           (let ((expires (nlk:json-value (dv-entry auth) :integer "expires_at")))
-            (is (< (abs (- expires (+ (nodecode-devin::unix-now) (* 365 24 60 60)))) 60)
-                "a token naming no exp is kept for a year")))))))
+            (is (< (abs (- expires (+ (nodecode-devin::unix-now) (* 365 24 60 60)))) 60))))))))
 
 (deftest devin-cell-reads-a-callback-address ()
   (is (equal '("c" "s" nil) (multiple-value-list (nodecode-devin::callback-answer "/callback?code=c&state=s"))))
-  (is (equal '("a" "s" nil) (multiple-value-list (nodecode-devin::callback-answer "/callback?authCode=a&state=s")))
-      "authCode is a code too")
+  (is (equal '("a" "s" nil) (multiple-value-list (nodecode-devin::callback-answer "/callback?authCode=a&state=s"))))
   (is (equal '(nil nil "denied by user")
              (multiple-value-list (nodecode-devin::callback-answer "/callback?error=access_denied&error_description=denied%20by%20user")))))
 
@@ -426,11 +403,9 @@ answer (values BODY STATUS) instead."
         (is (equal "https://server.codeium.com/exa.auth_pb.AuthService/GetUserJwt" (first auth-post)))
         (is (equal "application/proto" (cdr (assoc "content-type" (second auth-post) :test #'string-equal))))
         (is (equal "devin-session-token$tok-devin"
-                   (nodecode-devin::pb-text (nodecode-devin::pb-sub (nodecode-devin::decode-fields (third auth-post)) 1) 3))
-            "the session token rides inside the Metadata"))
+                   (nodecode-devin::pb-text (nodecode-devin::pb-sub (nodecode-devin::decode-fields (third auth-post)) 1) 3))))
       (let ((chat (dv-post posts "GetChatMessage")))
-        (is (equal "https://chat.example/exa.api_server_pb.ApiServerService/GetChatMessage" (first chat))
-            "the account's own chat host GetUserJwt named")
+        (is (equal "https://chat.example/exa.api_server_pb.ApiServerService/GetChatMessage" (first chat)))
         (is (equal "application/connect+proto" (cdr (assoc "content-type" (second chat) :test #'string-equal))))
         (is (equal "gzip" (cdr (assoc "connect-content-encoding" (second chat) :test #'string-equal))))
         (is (equal "connect-go/1.18.1 (go1.26.3)" (cdr (assoc "user-agent" (second chat) :test #'string-equal)))))
@@ -459,16 +434,13 @@ answer (values BODY STATUS) instead."
       (is (equal "Hello" (nlk:json-value message :string "content")))
       (is (equal "think" (nlk:json-value message :string "reasoning_content")))
       (is (equal "sig" (nlk:json-value message :string "reasoning_signature")))
-      (is (equal '("swe-1-6" "m1") (multiple-value-list (nodecode-devin::message-author message)))
-          "the model that wrote it and the id Cascade gave it are kept beside the message")
+      (is (equal '("swe-1-6" "m1") (multiple-value-list (nodecode-devin::message-author message))))
       (is (subsetp (alexandria:hash-table-keys message)
-                   '("role" "content" "reasoning_content" "reasoning_signature" "tool_calls") :test #'equal)
-          "and no field of the cell's own rides it")
+                   '("role" "content" "reasoning_content" "reasoning_signature" "tool_calls") :test #'equal))
       (let ((call (aref (nlk:json-value message :array "tool_calls") 0)))
         (is (equal "call_1" (nlk:json-value call :string "id")))
         (is (equal "eval" (nlk:json-value call :string "function" "name")))
-        (is (equal "{\"form\":\"(+ 1 2)\"}" (nlk:json-value call :string "function" "arguments"))
-            "the second delta, which named no id, continued the call"))
+        (is (equal "{\"form\":\"(+ 1 2)\"}" (nlk:json-value call :string "function" "arguments"))))
       (is (equal "tool_calls" finish))
       (is (= 12 (nle::provider-usage-input-tokens usage)))
       (is (= 7 (nle::provider-usage-output-tokens usage)))
@@ -540,10 +512,8 @@ answer (values BODY STATUS) instead."
                                              (values (dv-bytes "{\"code\":\"unauthenticated\"}") 401))))
       (let ((auths (reverse (remove-if-not (lambda (post) (search "GetUserJwt" (first post))) posts))))
         (is (= 2 (length auths)))
-        (is (equal "tok-devin" (nodecode-devin::pb-text (nodecode-devin::pb-sub (nodecode-devin::decode-fields (third (second auths))) 1) 3))
-            "the second ask carries the key as it was saved")
-        (is (equal "tok-devin" (nodecode-devin::pb-text (nodecode-devin::pb-sub (dv-chat-request posts) 1) 3))
-            "and the chat request rides the key that worked")
+        (is (equal "tok-devin" (nodecode-devin::pb-text (nodecode-devin::pb-sub (nodecode-devin::decode-fields (third (second auths))) 1) 3)))
+        (is (equal "tok-devin" (nodecode-devin::pb-text (nodecode-devin::pb-sub (dv-chat-request posts) 1) 3)))
         (is (equal "Hello" (nlk:json-value (first values) :string "content")))))))
 
 (deftest devin-cell-says-a-trailer-error ()
@@ -627,8 +597,7 @@ model, a router, an internal slot and a disabled model."
                                      (values body (or status 404) (make-hash-table :test #'equal))))
           (multiple-value-bind (rows error) (nle::list-provider-models "devin")
             (is (null error))
-            (is (equal '("adaptive" "claude-opus-5" "swe-1-7") (mapcar (lambda (row) (getf row :id)) rows))
-                "the effort family is one model; internal and disabled configs are not listed")
+            (is (equal '("adaptive" "claude-opus-5" "swe-1-7") (mapcar (lambda (row) (getf row :id)) rows)))
             (is (equal "Claude Opus 5" (getf (second rows) :display)))))
         (let ((request (nodecode-devin::decode-fields (second (first posts)))))
           (is (equal "https://server.codeium.com/exa.api_server_pb.ApiServerService/GetCliModelConfigs" (first (first posts))))
@@ -644,10 +613,8 @@ model, a router, an internal slot and a disabled model."
             (is (equal '(0.5d0 2.5d0 0 0) (nle::catalog-model-price swe)) "per million, from its dimensions")))
         (let ((opus (nodecode-devin::model-spec "claude-opus-5")))
           (is (equal "claude-opus-5-high" (nodecode-devin::wire-uid opus "claude-opus-5" "high")))
-          (is (equal "claude-opus-5-low" (nodecode-devin::wire-uid opus "claude-opus-5" "medium"))
-              "an effort the family lacks is the strongest below it")
-          (is (equal "claude-opus-5-high" (nodecode-devin::wire-uid opus "claude-opus-5" nil))
-              "no effort is the family's default uid"))
+          (is (equal "claude-opus-5-low" (nodecode-devin::wire-uid opus "claude-opus-5" "medium")))
+          (is (equal "claude-opus-5-high" (nodecode-devin::wire-uid opus "claude-opus-5" nil))))
         (is (getf (nodecode-devin::model-spec "adaptive") :router) "the router is marked")))))
 
 (deftest devin-cell-checks-the-key-connect-would-save ()
@@ -684,16 +651,14 @@ model, a router, an internal slot and a disabled model."
     (is (equal "gpt-5-5-xhigh" (nodecode-devin::wire-uid spec "gpt-5-5" "xhigh")))
     (is (equal "gpt-5-5-none" (nodecode-devin::wire-uid spec "gpt-5-5" nil)) "off routes to the none uid")
     (is (equal "MODEL_PRIVATE_11" (nodecode-devin::wire-uid (nodecode-devin::model-spec "claude-haiku-4-5")
-                                                            "claude-haiku-4-5" nil))
-        "a rename family sends its one uid")))
+                                                            "claude-haiku-4-5" nil)))))
 
 (deftest devin-cell-assigns-a-router-model ()
   (with-saved-globals ((nodecode-devin::*discovered* nil) (nodecode-devin::*discovery-tried* nil))
     (with-dv-round (values posts :model "adaptive" :answer #'dv-roster-answer)
       (let ((assign (nodecode-devin::decode-fields (third (dv-post posts "AssignModel")))))
         (is (equal "adaptive" (nodecode-devin::pb-text assign 2)) "the router uid")
-        (is (equal (nodecode-devin::pb-text (dv-chat-request posts) 16) (nodecode-devin::pb-text assign 3))
-            "assignment and chat share the cascade id"))
+        (is (equal (nodecode-devin::pb-text (dv-chat-request posts) 16) (nodecode-devin::pb-text assign 3))))
       (let ((request (dv-chat-request posts)))
         (is (equal "claude-opus-5-high" (nodecode-devin::pb-text request 21)) "the assigned uid, never the router's")
         (is (equal "assign-jwt" (nodecode-devin::pb-text request 26)) "with the assignment JWT"))

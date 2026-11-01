@@ -68,8 +68,7 @@ PROBES collects the (URL BEARER) asked, oldest last."
                  (nle::lane-endpoint "xiaomi" "openai-completions"))))
     (funcall stop)
     (setf stop nil)
-    (is (null (nlk:json-value (nle::models-catalog-table) :object "xiaomi"))
-        "a stopped cell leaves the catalog as models.dev made it")))
+    (is (null (nlk:json-value (nle::models-catalog-table) :object "xiaomi")))))
 
 ;;; --- the key ------------------------------------------------------------------------
 
@@ -86,8 +85,7 @@ PROBES collects the (URL BEARER) asked, oldest last."
     (with-temp-auth (auth "{}")
       (with-stubbed-fdefinition (nle::credential-env (name) (and (equal name "OPENAI_API_KEY") "sk-openai"))
         (let ((credential (nle::resolve-provider-credential "xiaomi" :auth-path auth :probe t)))
-          (is (not (equal "sk-openai" (nle:credential-key credential)))
-              "the chat family's default variable never reaches Xiaomi")
+          (is (not (equal "sk-openai" (nle:credential-key credential))))
           (is (eq :public (nle:credential-source credential))))))))
 
 (deftest xiaomi-cell-saved-key-outranks-the-variable ()
@@ -121,12 +119,10 @@ PROBES collects the (URL BEARER) asked, oldest last."
   (with-cell-stop ((xiaomi-start))
     (with-xiaomi-clusters (probes "token-plan-ams" 200)
       (let ((url (xiaomi-round "mimo-v2.5" :key "tp-abc")))
-        (is (equal "https://token-plan-ams.xiaomimimo.com/v1/chat/completions" url)
-            "Singapore refused the key, Amsterdam took it")
+        (is (equal "https://token-plan-ams.xiaomimimo.com/v1/chat/completions" url))
         (is (equal '("https://token-plan-sgp.xiaomimimo.com/v1/models"
                      "https://token-plan-ams.xiaomimimo.com/v1/models")
-                   (mapcar #'first (reverse probes)))
-            "in omp's order, stopping at the first that answers")
+                   (mapcar #'first (reverse probes))) "in omp's order, stopping at the first that answers")
         (is (equal "Bearer tp-abc" (second (first probes)))))
       (setf probes '())
       (is (equal "https://token-plan-ams.xiaomimimo.com/v1/chat/completions"
@@ -156,12 +152,10 @@ PROBES collects the (URL BEARER) asked, oldest last."
           (is (equal "Bearer tp-xyz" (cdr (first asked)))))
         (setf asked '())
         (nle::list-provider-models "xiaomi" :key "sk-plain")
-        (is (equal '("https://api.xiaomimimo.com/v1/models") (mapcar #'car asked))
-            "a pay-as-you-go key lists from the section's base, once"))
+        (is (equal '("https://api.xiaomimimo.com/v1/models") (mapcar #'car asked))))
       (with-xiaomi-clusters (probes)
         (is (equal "https://token-plan-ams.xiaomimimo.com/v1/chat/completions"
-                   (xiaomi-round "mimo-v2.5" :key "tp-xyz"))
-            "a round goes where the listing found the key")
+                   (xiaomi-round "mimo-v2.5" :key "tp-xyz")) "a round goes where the listing found the key")
         (is (null probes))))))
 
 (deftest xiaomi-cell-leaves-other-providers-alone ()
