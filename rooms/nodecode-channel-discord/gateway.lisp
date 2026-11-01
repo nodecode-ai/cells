@@ -493,6 +493,21 @@ platform's answer decides."
           (or (null grants)
               (logtest grants (logior +discord-administrator+ +discord-manage-threads+)))))))
 
+(defun close-refusal-text (thread-id)
+  "What a Close press says where this bot may not close THREAD-ID
+(NCK:PLATFORM-CLOSE-REFUSAL): who opened it, and how it closes -- by that
+bot's own Close, or from the thread's menu by the person who opened it."
+  (let* ((owner (gethash thread-id *thread-owners*))
+         (bots (nlk:when-let (guild (gethash thread-id *thread-guilds*))
+                 (gethash guild *guild-bots*)))
+         (bot-p (and owner bots (gethash owner bots) t)))
+    (format nil "I can't close this thread: ~@[<@~a> opened it, and ~]Discord lets a bot close ~
+                 only a thread it opened, unless it can manage threads in that channel.~@[ ~a~]"
+            owner
+            (and owner (if bot-p
+                           (format nil "Press Close under <@~a>'s answer." owner)
+                           (format nil "<@~a> can close it from the thread's menu." owner))))))
+
 (defun forget-role (guild role)
   "ROLE, deleted from GUILD, no longer addresses the bot or reaches any bot."
   (when role

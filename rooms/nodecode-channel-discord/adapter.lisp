@@ -156,7 +156,12 @@ names that one."
         ;; before this one reads this file, to take it live, before the kit's
         ;; new DEFPACKAGE has run; one colon would not read, and none would
         ;; intern a symbol of this package that the export then clashes with.
-        (nck::platform-thread-of-refusal platform) #'discord-thread-of-refusal)
+        (nck::platform-thread-of-refusal platform) #'discord-thread-of-refusal
+        ;; A Close press is answered at once without words -- an answer in a
+        ;; thread Discord has archived would reopen it -- and a refusal follows
+        ;; it privately; a Close the bot cannot keep says who can.
+        (nck::platform-plan-control-followup platform) #'interaction-followup-plans
+        (nck::platform-close-refusal platform) #'close-refusal-text)
   platform)
 
 (defun discord-platform-record (bot-user-id application-id)

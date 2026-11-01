@@ -790,20 +790,39 @@ message's worth and each further one is a follow-up, POST
          (application (getf payload :application-id)))
     (when (and (rest messages) (null application))
       (error "discord: a press's answer past one message needs its interaction's application id"))
-    (flet ((private (content)
-             (nlk:json-object "content" content
-                              "flags" 64
-                              "allowed_mentions" (nlk:json-object "parse" #()))))
-      (cons (interaction-callback-plan (getf payload :id) (getf payload :token)
-                                       (if messages
-                                           (nlk:json-object "type" 4 "data" (private (first messages)))
-                                           (nlk:json-object "type" 6))
-                                       (if text "interaction_private_answer" "interaction_ack")
-                                       timeout-seconds)
-            (loop for content in (rest messages)
-                  collect (rest-plan "POST" (format nil "/webhooks/~a/~a" application (getf payload :token))
-                                     "interaction_private_followup" nil timeout-seconds
-                                     (private content)))))))
+    (cons (interaction-callback-plan (getf payload :id) (getf payload :token)
+                                     (if messages
+                                         (nlk:json-object "type" 4 "data" (private-message (first messages)))
+                                         (nlk:json-object "type" 6))
+                                     (if text "interaction_private_answer" "interaction_ack")
+                                     timeout-seconds)
+          (private-followup-plans payload (rest messages) timeout-seconds))))
+
+(defun private-message (content)
+  "CONTENT as a message the presser alone sees, mentioning nobody."
+  (nlk:json-object "content" content
+                   "flags" 64
+                   "allowed_mentions" (nlk:json-object "parse" #())))
+
+(defun private-followup-plans (payload messages timeout-seconds)
+  "POST /webhooks/<application>/<token>, ephemeral, once for each of MESSAGES:
+words to the presser of PAYLOAD after its press has been answered."
+  ;; Not retried: a follow-up tried again could say its words twice.
+  (loop for content in messages
+        collect (rest-plan "POST" (format nil "/webhooks/~a/~a" (getf payload :application-id)
+                                          (getf payload :token))
+                           "interaction_private_followup" nil timeout-seconds
+                           (private-message content))))
+
+(defun interaction-followup-plans (payload &key text (timeout-seconds 30))
+  "TEXT told to the presser of PAYLOAD alone after the press has been answered
+(NCK:PLATFORM-PLAN-CONTROL-FOLLOWUP): ephemeral follow-ups, every word of it
+-- or NIL where the press names no application to post them under."
+  (when (and text (getf payload :application-id) (getf payload :token))
+    (private-followup-plans payload
+                            (mapcar #'text-chunk-text
+                                    (split-text-chunks text (1- +discord-message-content-limit+)))
+                            timeout-seconds)))
 
 (defun interaction-autocomplete-plans (payload choices &key (timeout-seconds 3))
   "POST /interactions/<id>/<token>/callback — the one answer the autocomplete
@@ -954,6 +973,11 @@ changed nothing a read can show."
             return (format nil "~{/~a~}" (subseq segments 0 keep)))))
 
 (defun discord-failure-message (plan status detail)
+  ;; A refused archive is said to the person who pressed Close, so it is said
+  ;; plainly: who may close (operator report, 2026-11-01).
+  (when (and (eql status 403) (equal "close_thread" (request-plan-audit-label plan)))
+    (return-from discord-failure-message
+      "Discord lets a bot close only a thread it opened, unless it can manage threads in that channel, and this bot can't."))
   (format nil "Discord REST ~a ~a ~?"
           (request-plan-method plan) (request-plan-audit-label plan)
           (case status
