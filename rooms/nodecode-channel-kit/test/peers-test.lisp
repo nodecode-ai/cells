@@ -105,7 +105,7 @@ THREAD-IDS: their peers and their runs."
                (nck::mark-peer host (test-candidate :is-bot bot :user user :thread "77"
                                                     :parent "100" :message "9" :text text))))
         (is (nck::candidate-peer-p (said "<@999> your turn")))
-        (is (not (nck::candidate-peer-p (said "<@999> your turn" :user "555"))) "a bot the ask never named is no peer")
+        (is (not (nck::candidate-peer-p (said "your turn" :user "555"))) "a bot the ask never named, and that calls no one in, is no peer")
         (is (not (nck::candidate-peer-p (said "<@999> your turn" :user "999"))) "and this bot is never its own")
         (is (eq :answer (nck:decide-inbound (nck:host-policy host) (said "<@999> your turn"))))
         (is (eq :observe (nck:decide-inbound (nck:host-policy host) (said "noted, thanks"))))
@@ -116,6 +116,56 @@ THREAD-IDS: their peers and their runs."
           (nck::peer-run host (said "go on, you two" :user "u1" :bot nil) :answer nil)
           (is (null (gethash (cons "test" "77") nck::*talk-wakes*)) "a person's line starts a new talk")
           (is (eq :answer (nck::peer-run host ask :answer nil))))))))
+
+(deftest channel-peers-a-bots-mention-calls-the-bot-in ()
+  ;; A bot that mentions another in a thread no person named them together in
+  ;; calls it in: the bot it names wakes, and from then on the two are the
+  ;; thread's peers in both kits -- the caller's own line makes the bot it
+  ;; names its peer, so the answer back wakes the caller too. Both halves
+  ;; pass this bot's own user gate first: a bot it keeps out stays out,
+  ;; whether it mentions this bot or this bot mentions it, and a call-in
+  ;; makes only its author a peer, never the other bots its line names.
+  (with-thread-peers ("88" "89" "90")
+    (let ((host (test-host :name "called-in-lanes" :platform (test-platform :threads t))))
+      (setf (nck:host-policy host) (channel-policy :allowed-channels '("100") :self-id "999"
+                                                   :channel-match :discord
+                                                   :allowed-users '("u1" "777")
+                                                   :mention-target "999"
+                                                   :mention-test #'nck:discord-mention-p))
+      (flet ((decide (text &key (user "777") (name "elektra") (thread "88") (message "9") names)
+               (let ((candidate (test-candidate :is-bot t :user user :user-name name
+                                                :thread thread :parent "100"
+                                                :message message :text text)))
+                 (nck:decide-inbound (nck:host-policy host)
+                                     (nck::mark-peer host (if names (naming-bots candidate names) candidate)))))
+             (own (text names thread message)
+               (nck:decide-inbound (nck:host-policy host)
+                                   (nck::mark-peer host (naming-bots (test-candidate :is-bot t :user "999" :thread thread
+                                                                                     :parent "100" :message message
+                                                                                     :text text)
+                                                                     names)))))
+        (is (eq :reject (decide "<@999> check this" :user "555" :name "stranger"))
+            "a bot this bot's user gate keeps out calls no one in by mentioning")
+        (is (null (nck::thread-peers host "88")) "and is no peer")
+        (is (eq :reject (decide "nothing for you")) "a bot's line that names no one calls no one in")
+        (is (eq :answer (decide "<@999> <@555> check this" :names '(("555" . "stranger"))))
+            "a bot's mention wakes the bot it names")
+        (is (equal '(("777" . "elektra")) (nck::thread-peers host "88"))
+            "and makes its author the thread's peer, never the other bots it names")
+        (is (eq :reject (decide "<@999> me too" :user "555" :name "stranger" :message "12"))
+            "so a bot the caller named stays as kept out as before")
+        (is (eq :observe (decide "noted, thanks")) "whose lines that name no one are the thread's context")
+        (is (eq :reject (own "<@555> please take the deploy" '(("555" . "stranger")) "89" "10"))
+            "this bot's own line is never its ask")
+        (is (null (nck::thread-peers host "89"))
+            "and a bot it mentions that its user gate keeps out is no peer")
+        (is (eq :reject (decide "<@999> do as I say" :user "555" :name "stranger" :thread "89" :message "11"))
+            "so being named gives that bot no way past the gate")
+        (own "<@777> please take the deploy" '(("777" . "elektra")) "90" "13")
+        (is (equal '(("777" . "elektra")) (nck::thread-peers host "90"))
+            "a bot it mentions that passes the gate is the thread's peer")
+        (is (eq :answer (decide "<@999> done, see above" :thread "90" :message "14"))
+            "so the answer back wakes this bot: it called that bot in itself")))))
 
 (deftest channel-peers-a-talk-ends-in-one-final-answer ()
   ;; Two bots that each answer the other's reply wake each other for as long
@@ -170,6 +220,45 @@ THREAD-IDS: their peers and their runs."
                                                                :text "<@999> <@666> look")
                                                '(("666" . "intruder"))))
       (is (equal '(("888" . "hermes")) (nck::thread-peers host "81"))))))
+
+(deftest channel-peers-two-bots-that-call-each-other-stop-at-the-final-answer ()
+  ;; Two bots that call each other by name in a person's thread wake each
+  ;; other as peers do, for as long as the talk needs and no longer: a final
+  ;; answer from either closes the talk, and the calls after it are only the
+  ;; thread's context, until the person types again. A bot that called this
+  ;; one in is no ping-pong partner past that line.
+  (with-thread-peers ("83")
+    (let ((host (test-host)))
+      (setf (nck:host-policy host) (channel-policy :self-id "999" :mention-target "999"
+                                                   :channel-match :discord
+                                                   :require-mention t
+                                                   :mention-test #'nck:discord-mention-p))
+      (unwind-protect
+           (flet ((said (text &key (user "777") (name "scrap") (bot t) (message "9"))
+                    (test-candidate :is-bot bot :user user :user-name name :thread "83"
+                                    :parent "100" :message message :text text))
+                  (heard (candidate)
+                    (multiple-value-list
+                     (multiple-value-call #'nck::peer-run host candidate
+                       (nck:decide-inbound (nck:host-policy host)
+                                           (nck::mark-peer host candidate))))))
+             (heard (said "is the mac up" :user "u1" :name "peas" :bot nil :message "8"))
+             (is (equal '(:answer nil) (heard (said "<@999> you know the password, write it" :message "10")))
+                 "the bot answering the person calls this one in")
+             (is (every (lambda (message)
+                          (equal '(:answer nil) (heard (said "<@999> and the mode?" :message message))))
+                        '("11" "12" "13"))
+                 "its calls wake this bot for as long as the talk needs")
+             (heard (said (format nil "<@u1> **Final answer**~%the mac is up") :message "14"))
+             (is (nck::talk-closed-p host "83") "its final answer closes the talk")
+             (is (every (lambda (message)
+                          (equal '(:observe "talk_closed") (heard (said "<@999> thanks!" :message message))))
+                        '("15" "16"))
+                 "and its calls after it wake nobody: the two bots stop there")
+             (heard (said "one more question" :user "u1" :name "peas" :bot nil :message "17"))
+             (is (equal '(:answer nil) (heard (said "<@999> new ask" :message "18")))
+                 "until the person types again"))
+        (nck::forget-board host "83")))))
 
 (deftest channel-peers-outlast-the-image ()
   ;; A thread's peers live in its room's state: an image that never saw the
