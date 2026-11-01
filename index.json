@@ -103,7 +103,9 @@
       "description": "Talk to nodecode through a Matrix account",
       "license": "MIT",
       "depends_on": [
-        "nodecode-channel-kit"
+        "nodecode-channel-kit",
+        "cl-base64",
+        "ironclad/digest/sha256"
       ]
     },
     {
