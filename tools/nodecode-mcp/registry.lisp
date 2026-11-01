@@ -119,7 +119,8 @@ named -- with nothing said on it yet."
                             (:stdio (start-stdio spec allowlist))
                             (:http (make-http-transport
                                     :url spec.url
-                                    :headers (resolved-alist spec.headers "headers"))))))
+                                    :headers (resolved-alist spec.headers "headers")
+                                    :oauth (spec-binding spec))))))
 
 (defun elapsed-ms (from to)
   "The whole milliseconds between two NOW-SECONDS readings."

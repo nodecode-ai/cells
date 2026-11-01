@@ -26,6 +26,13 @@
 ;;;;
 ;;;; Header values are secrets and never appear in a condition: a failed
 ;;;; status reports the code only.
+;;;;
+;;;; A transport with an OAUTH-BINDING (oauth.lisp) sends the kept access
+;;;; token as Authorization: Bearer, refreshed when it is about to expire.
+;;;; A 401 -- or a 403 asking for more scope -- is read before anything else
+;;;; the answer carries, since its body is an OAuth error object, not a
+;;;; JSON-RPC reply: the binding refreshes the token and the frame is posted
+;;;; once more, or the send fails with SIGN-IN-REQUIRED naming /mcp login.
 
 (in-package #:nodecode-mcp)
 
@@ -34,6 +41,7 @@
 (defstruct (http-transport (:copier nil))
   url
   (headers '() :type list)              ; configured, ((name . value) ...)
+  (oauth nil)                           ; an OAUTH-BINDING, or NIL
   session-id
   protocol-version
   (pending '() :type list)              ; decoded messages not yet received
@@ -47,13 +55,23 @@
     (format stream "~a (~d header~:p)" (http-transport-url transport)
             (length (http-transport-headers transport)))))
 
-(defun request-headers (transport)
+(defun request-headers (transport &optional token)
+  "The headers of a request on TRANSPORT, TOKEN, when given, as its bearer."
   (append `(("content-type" . "application/json")
             ("accept" . "application/json, text/event-stream")
             ("mcp-protocol-version" . ,(or (http-transport-protocol-version transport)
                                            +protocol-version+)))
           (nlk:when-let (session transport.session-id) `(("mcp-session-id" . ,session)))
+          (and token `(("authorization" . ,(format nil "Bearer ~a" token))))
           transport.headers))
+
+(defun rpc-error-message-p (message)
+  "Whether MESSAGE is a JSON-RPC error answer -- jsonrpc 2.0, an id, an error
+object -- and not an OAuth error body such as {\"error\": \"invalid_token\"}."
+  (and message
+       (equal (gethash "jsonrpc" message) "2.0")
+       (nth-value 1 (gethash "id" message))
+       (hash-table-p (gethash "error" message))))
 
 (defun header-value (headers name)
   "NAME's value from a dexador header table: both its backends lowercase every name."
@@ -118,15 +136,25 @@ response carries its answer; a notification's or a reply's gets 202 and no body.
   (when (http-transport-closed-p transport)
     (error 'transport-closed :detail "transport closed"))
   (check-frame text)
-  (let ((timeout (max 1 (ceiling (seconds-remaining deadline))))
-        (awaited (answer-awaited-p text))
-        (stream nil))
+  ;; Once more after a 401 that a refreshed token repaired, and only once.
+  (when (eq :retry (post-frame transport text deadline t))
+    (post-frame transport text deadline nil))
+  nil)
+
+(defun post-frame (transport text deadline may-retry)
+  "POST TEXT on TRANSPORT and queue what the answer carries. => :SENT, or
+:RETRY when MAY-RETRY and the transport's binding repaired a 401."
+  (let* ((timeout (max 1 (ceiling (seconds-remaining deadline))))
+         (awaited (answer-awaited-p text))
+         (binding (http-transport-oauth transport))
+         (token (and binding (binding-token binding)))
+         (stream nil))
     (nlk:with-cleanup ((when (and stream (streamp stream))
                          (ignore-errors (close stream :abort t))))
       (handler-case
           (multiple-value-bind (body status headers)
               (dex:post transport.url
-                        :headers (request-headers transport)
+                        :headers (request-headers transport token)
                         :content text
                         :want-stream awaited
                         :use-connection-pool nil
@@ -136,8 +164,20 @@ response carries its answer; a notification's or a reply's gets 202 and no body.
             (setf stream body)
             (if awaited
                 (consume-response transport status headers body)
-                (note-session-id transport headers)))
+                (note-session-id transport headers))
+            :sent)
         (dex:http-request-failed (condition)
+          ;; OAuth first: a 401's body is an OAuth error object, never a reply.
+          (let ((status (dex:response-status condition)))
+            (when (and binding (member status '(401 403)))
+              (when (binding-unauthorized binding token
+                                          (header-value (ignore-errors (dex:response-headers condition))
+                                                        "www-authenticate")
+                                          status)
+                (if may-retry
+                    (return-from post-frame :retry)
+                    (sign-in-required (oauth-binding-name binding)
+                                      :why "the server refused the refreshed token too")))))
           ;; A JSON-RPC error body is a per-call answer; else a failure named by status only.
           (let* ((status (dex:response-status condition))
                  (body (ignore-errors (dex:response-body condition)))
@@ -149,8 +189,9 @@ response carries its answer; a notification's or a reply's gets 202 and no body.
                  (message (and text (decode-message text))))
             (note-session-id transport (ignore-errors (dex:response-headers condition)))
             (cond
-              ((and message (nth-value 1 (gethash "error" message)))
-               (queue-message transport message))
+              ((rpc-error-message-p message)
+               (queue-message transport message)
+               :sent)
               ((and (eql status 404) (http-transport-session-id transport))
                (setf transport.session-id nil)
                (error 'transport-closed :detail "HTTP 404: the session expired"))
@@ -175,7 +216,8 @@ response carries its answer; a notification's or a reply's gets 202 and no body.
     (nlk:when-let (session transport.session-id)
       (ignore-errors
        (dex:delete transport.url
-                   :headers (request-headers transport)
+                   :headers (request-headers transport (nlk:when-let (binding (http-transport-oauth transport))
+                                                         (binding-kept-token binding)))
                    :use-connection-pool nil
                    :keep-alive nil
                    :connect-timeout *close-timeout-seconds*

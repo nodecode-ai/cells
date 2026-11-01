@@ -83,7 +83,7 @@
     (let ((line (mcp-slash "tools nope")))
       (is (equal "MCP: no server named nope; configured: bad, dead, off, probe" line)))
     (let ((line (mcp-slash "restart")))
-      (is (equal "MCP: usage /mcp [status | on NAME | off NAME | restart NAME | tools NAME]" line)))
+      (is (equal "MCP: usage /mcp [status | on NAME | off NAME | restart NAME | tools NAME | login NAME [ADDRESS] | logout NAME]" line)))
     (let ((line (mcp-slash "restart off")))
       (is (search "disabled in config" line) "a disabled server cannot be restarted"))
     (let ((line (mcp-slash "frobnicate")))

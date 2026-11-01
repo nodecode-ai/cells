@@ -40,6 +40,9 @@ tool is a Lisp function in the mcp: package, called through eval; every function
   (mcp:schema \"files\" \"read_file\")            the tool's full JSON input schema
   (mcp:status)                                 every server: state, tool count, transport, last error, stderr log
   (mcp:restart \"files\")                        reconnect one server
+  (mcp:login \"docs\")                           sign in to an http server that needs one: an address for the user to open
+  (mcp:login \"docs\" ADDRESS)                   finish it with the address the user's browser landed on
+  (mcp:logout \"docs\")                          forget its sign-in
 
 Rules:
 1. Keyword arguments fold to the schema's names (:per-page is per_page, :include-snapshot is
@@ -53,6 +56,8 @@ Rules:
    not backgrounded; if you ever see status running, (eval-await ID) - never re-send the call.
 4. ERROR: MCP-TOOL-ERROR is the tool's own refusal: read it, fix the arguments. MCP-OFFLINE means the
    server is down after one reconnect: run (mcp:status), tell the user what it says, do not loop on it.
+   One that \"needs a sign-in\" waits for the user: with their go, (mcp:login NAME) answers the address
+   they open; never open it or sign in for them.
    MCP-TIMEOUT keeps the connection; retry once with a larger :timeout only if the tool is known to be slow.
 5. Inside a definition you keep (a defun), write (mcp:call \"server\" \"tool\" ...) rather than the
    generated name: the generated function exists only while its server is connected.

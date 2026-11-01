@@ -35,12 +35,14 @@
   :description "Tools from MCP servers you list in the config"
   :license "MIT"
   :version "0.1.0"
-  :depends-on ("nodecode" "shasht" "dexador" "flexi-streams" "bordeaux-threads")
+  :depends-on ("nodecode" "shasht" "dexador" "flexi-streams" "bordeaux-threads"
+               "quri" "cl-base64" "usocket" "cl-ppcre")
   :serial t
   :components ((:file "package")
                (:file "config")
                (:file "rpc")
                (:file "stdio")
+               (:file "oauth")
                (:file "http")
                (:file "registry")
                (:file "surface")
@@ -60,6 +62,7 @@
                (:file "rpc-test")
                (:file "stdio-test")
                (:file "http-test")
+               (:file "oauth-test")
                (:file "reference-test")
                (:file "surface-test")
                (:file "wrappers-test")
