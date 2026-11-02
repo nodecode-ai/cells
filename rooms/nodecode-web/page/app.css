@@ -2829,6 +2829,7 @@ button.p-row:active { background: var(--field-lit); }
   #new-session { width: 56px; height: 56px; background: var(--primary); color: var(--void); }
   .railed > .row { font: 500 var(--fs-micro)/1 var(--sans); letter-spacing: 0; }
   .railed > .row .badge { font-family: var(--sans); }
+  .railed > .row .reading { font-family: var(--sans); }
 
   /* A session's page: the bar's state line in the UI face, the back mark's dot
      clear of its chevron. */

@@ -3411,9 +3411,12 @@ function renderSessions() {
 // 2026-11-02: the phone opened on an empty message box).
 let phoneFirstSeen = false;
 function phoneFirstPage() {
-  if (phoneFirstSeen || !PHONE.matches || !state.sessions?.length) return;
+  // Decided once, by the first list the page draws: a page that opened wide
+  // and narrows later (a desktop window dragged narrow) is already on its
+  // way, and a session being opened is never sent back to the list.
+  if (phoneFirstSeen || !state.sessions?.length) return;
   phoneFirstSeen = true;
-  if (!new URLSearchParams(location.hash.slice(1)).get("s")) app.classList.add("column-open");
+  if (PHONE.matches && !state.current && !new URLSearchParams(location.hash.slice(1)).get("s")) app.classList.add("column-open");
 }
 
 // --- what the sessions are doing: the column's state choice ----------------------------
