@@ -2505,11 +2505,30 @@ button.p-row:active { background: var(--field-lit); }
 @media (hover: hover) {
   .ctl-row:not(:hover):not(:focus-within) .ctl-acts > .icon:not([aria-busy="true"]) { opacity: 0; }
 }
-/* A head's info mark sits by its title and opens what the section is for. */
+/* A head's info mark sits by its title; what the section is for comes up in a
+   card under it while the hand or the focus is on it (control.js about), the
+   look of the MCP tools' card. The card may sit in a micro heading: it takes
+   none of the heading's type. */
 .obs-head .icon { margin: -7px 0; }
 .obs-head .icon.info { margin-left: -12px; }
-.ctl-about { display: flex; flex-direction: column; gap: 8px; }
-.ctl-about > * { margin: 0; }
+.ctl-info { position: relative; display: inline-flex; vertical-align: middle; }
+.ctl-info[data-open] > .icon { color: var(--primary); }
+.ctl-about {
+  position: absolute; z-index: 6; top: calc(100% + 6px); left: -6px; translate: var(--nudge, 0px) 0;
+  display: none; flex-direction: column; gap: 6px; width: max-content; max-width: min(400px, calc(100vw - 24px));
+  padding: 10px 12px; border: 1px solid var(--seam-lit); border-radius: var(--r-control); background: var(--raised); box-shadow: var(--shadow);
+  font: 400 var(--fs-detail)/1.5 var(--sans); color: var(--secondary);
+  text-transform: none; letter-spacing: normal; text-align: left; white-space: normal; cursor: auto;
+}
+.ctl-about > span { display: block; }
+/* The gap between the mark and the card is the card's, so the hand crosses into it. */
+.ctl-about::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 8px; }
+.ctl-info[data-over] > .ctl-about { top: auto; bottom: calc(100% + 6px); }
+.ctl-info[data-over] > .ctl-about::before { top: 100%; bottom: auto; }
+.ctl-info[data-open] > .ctl-about { display: flex; }
+.ctl-info[data-open][data-fresh] > .ctl-about { animation: about-in 140ms ease-out 80ms both; }
+@keyframes about-in { from { opacity: 0; translate: var(--nudge, 0px) 3px; } }
+@media (prefers-reduced-motion: reduce) { .ctl-info[data-open][data-fresh] > .ctl-about { animation: none; } }
 /* A copy mark beside a command or an address. */
 .ctl-link-address .icon { align-self: center; margin: -4px 0; }
 

@@ -206,9 +206,8 @@ export function makeSettings({ c, api, act, toast, redraw, refuse }) {
   // --- the tab's blocks ---------------------------------------------------------------
 
   function blocks() {
-    const [infoMark, words] = about(c, "all-settings", t("Every part of config.jsonc that something here declares: open one to change it. A secret is never shown here; paste a new one to replace it."));
+    const infoMark = about("all-settings", t("Every part of config.jsonc that something here declares: open one to change it. A secret is never shown here; paste a new one to replace it."));
     const all = block(t("All settings"), infoMark);
-    all.append(words);
     const list = cfg.list;
     if (!list || list.error && !list.sections) { all.append(el("p", "obs-note", list?.error || t("Looking…"))); return [all, rawBlock()]; }
     if (list.error) all.append(el("p", "ctl-said refused", t("config.jsonc does not read: {error}. Fix it in the editor below.", { error: list.error })));
@@ -231,9 +230,8 @@ export function makeSettings({ c, api, act, toast, redraw, refuse }) {
   }
 
   function rawBlock() {
-    const [infoMark, words] = about(c, "config", t("The file itself, for the engineer: comments and all. Each secret reads [set], and saving puts it back from the file. A document that does not read, or that a setting above would refuse, is not saved, and why is said here."));
+    const infoMark = about("config", t("The file itself, for the engineer: comments and all. Each secret reads [set], and saving puts it back from the file. A document that does not read, or that a setting above would refuse, is not saved, and why is said here."));
     const raw = block("config.jsonc", infoMark, button("word", cfg.raw ? t("Close") : t("Open the file"), { act: cfg.raw ? "cfg-raw-close" : "cfg-raw" }));
-    raw.append(words);
     const r = cfg.raw;
     if (!r) return raw;
     if (!r.text && r.error) { raw.append(el("p", "ctl-said refused", r.error)); return raw; }
