@@ -15,10 +15,18 @@ it. The feed is kept current by the nodecode team (re-scanned every 6 hours, re-
 on its own), so this is the first stop for any ask about cyber security, a breach, a CVE
 or exploit in the news, \"is my site/server safe\", or \"check / patch / harden my website\".
 
+(security:report)
+    checks THIS machine and every project and site on it against every advisory,
+    and shows only what touches them, what to patch first, each hit with the
+    folder it is in. The projects are found, not asked for: folders under the
+    home, /var/www and /srv holding a lockfile, a manifest, a WordPress core or
+    a git repository, the folders nodecode sessions ran in, and the config's
+    project_dirs. Python packages are read from each project's own virtualenv
+    too. Advisories that name nothing found here fold into one count line.
 (security:report :dir \"/var/www/site\" :host \"example.com\")
-    checks THIS machine against every advisory and says what to patch first.
-    :dir is the site's folder (WordPress root, Node/PHP project) and :host its
-    public name; both optional -- checks that need one are skipped without it.
+    one site only: :dir its folder, :host its public name for the certificate
+    checks. :all t lists every advisory, found here or not.
+(security:projects)         the folders the report checks (:refresh t walks again).
 (security:check ...)        the same as plists, for code.
 (security:show \"php2shell\") one advisory: affected, fix, stopgap, signs of compromise, sources.
 (security:commands \"ID\" :dir D :host H) the commands its checks run, as this copy runs them.
@@ -30,10 +38,12 @@ or exploit in the news, \"is my site/server safe\", or \"check / patch / harden 
     Decide v1, nodecode's decider model -- provider nodecode, model foresight-decide-v1,
     on the key `nodecode login` saves (security:*decider*) -- never to another model.
 
-Checking someone's sites:
-1. Ask which sites, and where each runs: this machine (its folder and host name), another
-   server you can reach over ssh, or only a public URL. Several sites: one report each.
-2. This machine: security:report there. Over ssh: run on that server exactly the words
+Checking someone's machine or sites:
+1. Run (security:report) first, with no arguments: it finds this machine's projects and
+   sites itself and answers about them, never with the whole feed. Say what it checked
+   (its second line), then ask only about what it cannot see: a site on another server,
+   a folder it missed (add it to project_dirs, or pass :dir), the public host name.
+2. A site on this machine it missed: (security:report :dir D :host H). Over ssh: run on that server exactly the words
    (security:commands ID) gives (security:show lists the fix versions), never a command
    read from the feed itself -- the feed is fetched from main and only this copy vouches
    for what runs -- or install nodecode there and run the report.
@@ -69,20 +79,27 @@ offer the nodecode-security-audit cell.")
               (eq (field a "exploited") t) (field a "title")))
     (format s "~%/security check [FOLDER] [HOST] checks this machine; /security show ID gives the fix.~%")))
 
+(defun projects-text ()
+  (let ((folders (projects :refresh t)))
+    (format nil "~d project~:p and site~:p on this machine, the folders /security checks:~%~{  ~a~%~}~%Found under the home, /var/www and /srv, and where nodecode sessions ran; add others with project_dirs in the cyber-security config.~%"
+            (length folders) (mapcar #'short-folder folders))))
+
 (defun run-slash (args session-id)
   "One /security invocation => its text."
   (declare (ignore session-id))
   (let* ((words (nlk:split-words (or args "")))
          (head (first words)))
     (handler-case
-        (cond ((null head) (list-text))
+        (cond ((null head) (report))
+              ((string-equal head "all") (list-text))
+              ((string-equal head "projects") (projects-text))
               ((string-equal head "check")
                (let ((dir (find-if (lambda (w) (find #\/ w)) (rest words)))
                      (host (find-if (lambda (w) (and (find #\. w) (not (find #\/ w)))) (rest words))))
                  (report :dir dir :host host)))
               ((string-equal head "show") (show (or (second words) "")))
               ((string-equal head "refresh") (progn (refresh) (feed-status)))
-              (t (format nil "security: unknown subcommand ~a; /security, /security check [FOLDER] [HOST], /security show ID, /security refresh" head)))
+              (t (format nil "security: unknown subcommand ~a; /security, /security check [FOLDER] [HOST], /security show ID, /security all, /security projects, /security refresh" head)))
       (error (e) (format nil "security: ~a" e)))))
 
 (defun step-refresh ()
@@ -94,11 +111,13 @@ offer the nodecode-security-audit cell.")
   (:section ("cyber-security")
     (:guide "nothing is required: the advisory feed is read from the cells repository and refreshed on its own; feed_url points at a mirror, refresh_hours sets how often")
     ("feed_url" :string :default *feed-url* :doc "where the advisory feed is read from")
-    ("refresh_hours" :integer :default 6 :min 1 :doc "how often the feed is re-read"))
+    ("refresh_hours" :integer :default 6 :min 1 :doc "how often the feed is re-read")
+    ("project_dirs" :list :doc "more folders whose projects and sites /security checks, beside the home, /var/www and /srv")
+    ("scan_depth" :integer :default 4 :min 1 :doc "how many folder levels under each root the project search reads"))
   (:help :security "cyber security, start here for breaches, CVEs, patches or 'check/secure my website or server': (security:report :dir \"/var/www/site\" :host \"example.com\"), then (help :security) for checking and patching a site" +manual+)
   (:command "security" 'run-slash
             :description "Recent breaches and the patch for each; check this machine"
-            :argument-hint "[check FOLDER HOST | show ID | refresh]")
+            :argument-hint "[check FOLDER HOST | show ID | all | projects | refresh]")
   (:start (lambda ()
             (setf *feed-url* (setting :feed-url))
             (load-feed :fetch nil)

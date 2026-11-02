@@ -10,7 +10,7 @@
    #:advisories #:advisory #:field #:feed-status #:refresh #:*feed-url*
    #:packaged-entries #:load-feed
    ;; the checks
-   #:check #:report #:show #:commands #:run-slash
+   #:check #:report #:show #:commands #:run-slash #:projects
    ;; publishing the feed
    #:feed-problems #:scan #:scan-report #:*decider*
    ;; start (defined by NLE:DEFINE-CELL)

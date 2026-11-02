@@ -298,7 +298,7 @@ hash set of word lists. Tests stub it; nothing else should.")
            (if hits
                (list :status :vulnerable :found (namestring (first hits)) :why "found")
                (list :status :ok :why "nothing found"))))
-        (t (list :status :error :why (format nil "unknown check kind ~a" kind)))))))
+        (t (list :status :skipped :why (format nil "a ~a check, which a newer copy of this cell reads" kind)))))))
 
 (defun first-line (text)
   (let ((nl (position #\Newline text)))

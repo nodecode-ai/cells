@@ -17,6 +17,7 @@
   :components ((:file "package")
                (:file "feed")
                (:file "detect")
+               (:file "inventory")
                (:file "validate")
                (:file "check")
                (:file "scan")
