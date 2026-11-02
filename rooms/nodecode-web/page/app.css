@@ -1611,6 +1611,8 @@ button.p-row:active { background: var(--field-lit); }
 .ctl-line .quiet { flex: none; min-width: 96px; justify-content: center; }
 .ctl-what { font-size: var(--fs-body); line-height: 1.5; color: var(--secondary); }
 .ctl-what.refused { color: var(--muted); }
+/* New cell stands over the list, whose own rule parts them. */
+.ctl-line.ctl-new-cell { border-bottom: 0; }
 
 .ctl-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
 .ctl-toolbar .control { flex: 1 1 220px; width: auto; }
