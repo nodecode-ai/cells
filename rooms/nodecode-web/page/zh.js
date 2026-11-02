@@ -111,6 +111,7 @@ export const ZH = {
   "checks pending": "检查进行中",
   "checks passing": "检查已通过",
   "Pull request #{n}": "拉取请求 #{n}",
+  "Open it on GitHub": "在 GitHub 上打开",
   "Show the code": "显示二维码",
   "Show {n} earlier": "显示更早的 {n} 行",
   "Show {n} more": "再显示 {n} 条",
