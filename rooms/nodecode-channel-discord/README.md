@@ -22,10 +22,11 @@ start until you name who may talk to it.
 
 The short way: in the [developer portal](https://discord.com/developers/applications),
 create an application and copy its bot token (Bot page, Reset Token), then
-run `nodecode gateway setup discord` and paste it. The walk switches on
-Message Content, prints the invite link, waits for the bot to join a server,
-and asks for channels, people and roles by name (`all`, a range like `2-5`,
-or names). The steps below do the same by hand.
+in the shell (`nodecode`) type `/gateway setup discord` and paste it. The
+sheet switches on Message Content, gives the invite link (`c` copies it),
+waits for the bot to join a server, and has you pick channels, people and
+roles from a checklist. `/settings` > Channels > Discord > Set up opens the
+same sheet. The steps below do the same by hand.
 
 1. In the [developer portal](https://discord.com/developers/applications),
    create an application, reset the bot token on its Bot page, and save the
