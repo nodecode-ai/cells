@@ -47,7 +47,9 @@ Only what was found is kept: absent everywhere is one :absent result."
          (let* ((package (python-package check))
                 (machine (and package (run-check check :host host)))
                 (found (append
-                        (and machine (not (eq (getf machine :status) :absent)) (list (at nil machine)))
+                        (and machine (not (eq (getf machine :status) :absent))
+                             (list (list* :label (format nil "~a (system python)" (field check "label"))
+                                          (cddr (at nil machine)))))
                         (loop for d in dirs
                               for result = (if package
                                                (let ((v (venv-package-version d package)))
