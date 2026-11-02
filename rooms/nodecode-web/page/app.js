@@ -606,6 +606,9 @@ function receive(message) {
     // A pick in another tab or shell, or the default moved in Control: the
     // chip names what the next turn here runs on, so it reads that again.
     case "model_changed": if (!payload.session_id || payload.session_id === state.current) loadTarget(); break;
+    // A cell started or stopped -- a boot starts them after this tab attached
+    // -- so the commands this tab read at connect are stale.
+    case "commands_changed": loadSlash(); break;
     case "sync_protocol_error": toast(t("The gateway refused what this tab sent: {why}", { why: payload.message || payload.code }), { error: true }); break;
   }
 }
@@ -4143,7 +4146,7 @@ async function submit(steer) {
   const text = promptEl.value;
   const { images, files } = state;
   if ((!text.trim() && !images.length && !files.length) || !state.open || !attachedReady()) return;
-  if (!images.length && !files.length && slashCommand(text)) { runSlash(text.trim()); return; }
+  if (!images.length && !files.length && (await knownSlash(text))) { runSlash(text.trim()); return; }
   const opening = !state.current;
   const session = state.current || (await newSession(state.folder));
   if (!session || (opening && !(await landAim(session)))) return;
@@ -4437,6 +4440,18 @@ async function loadSlash() {
 function slashCommand(text) {
   const name = /^\/([A-Za-z]\S*)/.exec(text.trim())?.[1].toLowerCase();
   return name && slash.commands?.find((command) => command.name.toLowerCase() === name);
+}
+
+// Whether TEXT names a command the gateway has. A line shaped like one that
+// the list this tab holds lacks is asked of a fresh list before it goes to
+// the model as a prompt: the list may predate a command (one registered with
+// no catalog notice), or its read at connect failed while the gateway came
+// back, and `/link retry' must run, not be sent as words.
+async function knownSlash(text) {
+  if (slashCommand(text)) return true;
+  if (!/^\/[A-Za-z]/.test(text.trim())) return false;
+  await loadSlash();
+  return Boolean(slashCommand(text));
 }
 
 // A command's arguments as its usage spells them, without its own name.

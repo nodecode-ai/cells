@@ -231,6 +231,19 @@ the pointer and a field lit by typing lay over the ones they stand on."
     (is (search "ledger.hidden" place) "the way back shows only with the transcript")
     (is (search "following" place) "and only to a reader away from the end")))
 
+;; A line naming a command runs at the gateway, never as a prompt, however the
+;; page's copy of the list fell behind: a cell started after the tab attached
+;; (a boot starts them after the listener) says so with commands_changed, and a
+;; line shaped like a command the copy lacks is asked of a fresh list before
+;; it is sent. `/link retry' typed in the page reached the model (2026-11-01).
+(deftest web-cell-a-command-line-runs-on-the-gateways-own-list ()
+  (let* ((js (web-page-text "app.js"))
+         (receive (web-js-function js "receive"))
+         (known (web-js-function js "knownSlash")))
+    (is (search "case \"commands_changed\": loadSlash();" receive) "the frame re-reads the list")
+    (is (search "(await knownSlash(text))" (web-js-function js "submit")) "Enter asks before it sends")
+    (is (search "await loadSlash();" known) "a line the copy lacks is asked of a fresh list")))
+
 ;; The transcript reads down one edge, as the terminal draws it. The operator's
 ;; line starts where the answer starts; the work's one line marks each call; a
 ;; turn that ended well keeps its footnote under the pointer -- always on a
