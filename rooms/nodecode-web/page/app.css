@@ -2815,6 +2815,17 @@ button.p-row:active { background: var(--field-lit); }
   .sessions .row[aria-current="page"], .sessions li:has(> .ses-del) > .row[aria-current="page"] { background: var(--selected); }
   .sessions .row[aria-current="page"]::before { display: none; }
   .sessions .row:not([role="checkbox"]), .sessions li:has(> .ses-del) > .row.asks { width: 100%; margin-right: 0; padding-right: 12px; }
+  /* Orca's three lines on a phone, where the gateway names who answers: the
+     title; its folder, branch and pull request; the provider's mark with what
+     holds the session or the start of what it said last, its age closing the
+     line. The glyph keeps its column down all three. */
+  .sessions .row.three:not([role="checkbox"]) {
+    grid-template-areas: "glyph name name name name" "glyph meta meta meta meta" "glyph said kids dot when";
+    row-gap: 1px; padding-block: 7px;
+  }
+  .sessions .row.three:not([role="checkbox"]):not(.found) .name { line-height: 1.25; }
+  .sessions .row.three:not([role="checkbox"]) .meta { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .sessions .row.three:not([role="checkbox"]) .said { grid-area: said; margin-left: 12px; }
   #new-session { width: 56px; height: 56px; background: var(--primary); color: var(--void); }
   .railed > .row { font: 500 var(--fs-micro)/1 var(--sans); letter-spacing: 0; }
   .railed > .row .badge { font-family: var(--sans); }
