@@ -402,13 +402,13 @@ tok/s', the rate once a second has passed -- or NIL before anything streamed."
 ;;; --- a turn that ended with its own work still in flight ---------------------
 ;;; A turn can end on the model's word while a backgrounded evaluation it
 ;;; spawned is still running: the engine says so on the completion fact
-;;; (turn.lisp hands the count to COMPLETE-TURN), and the word was spoken
-;;; standing on a handoff it has no result for yet — status, not the ask's
-;;; answer. The ask stays OPEN: the line the ask is watching keeps saying what
-;;; the wait is, its working mark stays, no answer and no write-back land, and
-;;; the exit wake's turn takes the same line over and answers for real. The
-;;; count a turn left in flight: the ask is unanswered while it is positive,
-;;; and forgotten once a later turn on the lane carries the work.
+;;; (turn.lisp hands the count to COMPLETE-TURN). The word posts at once, a
+;;; message of its own -- it may be the answer, and the wake may be an hour
+;;; off or never come -- but the ask stays OPEN: the line the ask is watching
+;;; keeps saying what the wait is, its working mark stays, no write-back
+;;; lands, and the exit wake's turn takes the same line over and answers for
+;;; real. The count a turn left in flight: the ask is unanswered while it is
+;;; positive, and forgotten once a later turn on the lane carries the work.
 
 (defun digest-note-background-pending (digest count)
   "The turn ended with COUNT of its own background evaluations in flight."

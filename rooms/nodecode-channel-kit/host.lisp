@@ -1677,10 +1677,12 @@ trimmed and case-insensitive."
        (member (nlk:trimmed text)
                +silence-spellings+ :test #'string-equal)))
 
-(defun deliver-answer (host lane digest)
+(defun deliver-answer (host lane digest &key (text nil text-p) (settle t))
   "Worker thread: post one turn's answer as a reply that pings its asker —
 in a thread the kit opened, as a post naming the asker once — bind every
-chunk as an address for the lane, then settle the card above it."
+chunk as an address for the lane, then settle the card above it. TEXT, when
+given, is what posts; SETTLE NIL posts it the same way and leaves the card,
+the thread and the ask as they stand."
   ;; The reply goes to the ask THIS turn answered — a steer has already moved
   ;; the lane's trigger on to the next message by the time the cut turn's
   ;; answer lands.
@@ -1700,12 +1702,20 @@ chunk as an address for the lane, then settle the card above it."
   ;; choices, is written down as waiting beside the messages it posted as
   ;; (NOTE-ANSWER-WAITING), before its card settles.
   ;;
+  ;; SETTLE NIL is the word a turn ended on while its own background work runs
+  ;; (FINISH-TURN): the ask is still open, so nothing settles, nothing is
+  ;; retired, and the thread's origin stays for the answer that closes it.
+  ;;
+  ;; A completion with no words of its own, or a silent one, after such a
+  ;; word posted is no failure and no silence: the word is what the room was
+  ;; told, and the card settles over it.
+  ;;
   ;; => the answer text; for a thread lane's first answer, the session id of
   ;; the room its ask was typed in: the second record the exchange settles
   ;; into (FINISH-TURN), so the next ask typed there forks above it; and
   ;; whether the room took the answer.
   (let* ((turn-id digest.turn-id)
-         (assistant-facts (and turn-id (nlk:store-open-p)
+         (assistant-facts (and turn-id (not text-p) (nlk:store-open-p)
                                (handler-case
                                    (reverse (nlk:events :turn-id turn-id
                                                         :kind "turn.assistant_message_completed"
@@ -1718,9 +1728,11 @@ chunk as an address for the lane, then settle the card above it."
          ;; answer: a bot a peer outscored answers silently (BOARD-ANSWER-TEXT).
          (text (board-answer-text
                 host lane
-                (or (digest-final-text digest)
-                    ;; The event log is the durable answer; an unreadable store is reported.
-                    (some #'fact-message-content assistant-facts))))
+                (if text-p
+                    text
+                    (or (digest-final-text digest)
+                        ;; The event log is the durable answer; an unreadable store is reported.
+                        (some #'fact-message-content assistant-facts)))))
          (wordless-completion-p (and assistant-facts (null text)))
          (status-id digest.status-id)
          (origin (lane-thread-origin lane))
@@ -1743,6 +1755,12 @@ chunk as an address for the lane, then settle the card above it."
       ;; the same answer the worker posted.
       (setf digest.answer text))
     (cond
+      ((not (or settle (and text (not (silent-answer-p text)))))
+       nil)
+      ((and digest.waiting-words (or (null text) (silent-answer-p text)))
+       (setf digest.answer nil)
+       (settle-card host lane digest)
+       (values "" nil t))
       ((silent-answer-p text)
        ;; SILENT is a control value: do not post it, write it back, or leave
        ;; the temporary working line behind.
@@ -1810,13 +1828,13 @@ chunk as an address for the lane, then settle the card above it."
            (when (and delivered (or (first waits) choices))
              (note-answer-waiting host (or (getf target :thread-id) (getf target :channel-id))
                                   message-ids (second waits)))
-           (if delivered
-               (progn
-                 (settle-card host lane digest)
-                 (when origin
-                   (forget-thread-origin lane)
-                   (setf landed (getf origin :room))))
-               (settle-unposted-answer host lane status-id digest reply-to error))
+           (cond ((not settle))
+                 (delivered
+                  (settle-card host lane digest)
+                  (when origin
+                    (forget-thread-origin lane)
+                    (setf landed (getf origin :room))))
+                 (t (settle-unposted-answer host lane status-id digest reply-to error)))
            (values text landed delivered)))))))
 
 (defun voice-reply-due-p (mode voice)
@@ -1879,7 +1897,11 @@ no card, one line says so."
 while the turn waited on its own background work, then the answer."
   ;; The turn that ends the work would otherwise record an exchange missing
   ;; everything spoken before the result arrived.
-  (prog1 (format nil "~{~a~%~%~}~a" digest.waiting-words answer)
+  (prog1 (format nil "~{~a~^~%~%~}"
+                 (append digest.waiting-words
+                         (and (stringp answer) (plusp (length answer))
+                              (not (silent-answer-p answer))
+                              (list answer))))
     (setf digest.waiting-words nil)))
 
 (defun write-back-rooms (host lane text typed-room)
@@ -1894,20 +1916,40 @@ TYPED-ROOM too — the room the ask was typed in — when that is another room."
       (error (condition)
         (warn "channel: room write-back to ~a failed: ~a" typed-room condition)))))
 
-(defun finish-turn (host lane digest &aux (reactions (terminal-reactions digest))
-                                          (outcome nil))
+(defun post-waiting-word (host lane digest waiting &aux (said (turn-digest-answer waiting)))
+  "Worker thread: the word a turn ended on while its own background work
+still runs, posted now as a message of its own; WAITING is that turn's
+answer, ask and id as its terminal fold read them. The room's record keeps
+the word on DIGEST, and DIGEST no longer holds it as its answer."
+  ;; Once posted, the word is not the answer of the turn that takes DIGEST
+  ;; over: the wake says its own, or none, and never this word again.
+  (when (and (stringp said) (plusp (length said)) (not (silent-answer-p said)))
+    (answer-tables-into-files lane waiting host.platform)
+    (when (nth-value 2 (deliver-answer host lane waiting :text (turn-digest-answer waiting) :settle nil))
+      (bt2:with-lock-held ((lane-lock lane))
+        (digest-note-waiting-words digest said)
+        (when (eq digest.answer said)
+          (setf digest.answer nil))))))
+
+(defun finish-turn (host lane digest
+                    &key waiting
+                    &aux (reactions (terminal-reactions digest)) (outcome nil))
   "Worker thread: one turn's terminal delivery, then its reactions, room
-write-back, and concurrency slot."
+write-back, and concurrency slot. WAITING, a turn that ended with its own
+background work in flight, is what it ended on (POST-WAITING-WORD)."
   ;; DIGEST is the object folded at terminal time, not a re-read of the lane:
   ;; a reply admitted in the window between the fold and this job replaces
   ;; LANE-DIGEST, and re-reading would deliver the wrong turn's answer or
   ;; none. It also carries the terminal phase and detail, so nothing has to be
   ;; threaded alongside it.
   ;;
-  ;; A turn whose own background work is still in flight delivers no answer
-  ;; and clears nothing: its last word is spoken as its own message, the line
-  ;; the ask is watching stays up saying it is waiting, the working mark stays
-  ;; on the ask, and the exit wake's turn answers for real.
+  ;; A turn whose own background work is still in flight clears nothing: its
+  ;; last word is spoken as its own message, the line the ask is watching
+  ;; stays up saying it is waiting, the working mark stays on the ask, and the
+  ;; exit wake's turn answers for real. The word may well be the answer -- a
+  ;; turn can end on it with a job still going -- so it never waits for the
+  ;; wake: 2026-11-01, an answer held behind a 100-question run was lost when
+  ;; the next ask took the lane over before the run ended.
   ;;
   ;; A turn a steer cut short keeps the lane's slot: the turn the steer opens
   ;; runs on it, and gives it back when it settles.
@@ -1917,14 +1959,7 @@ write-back, and concurrency slot."
                      (unless (eq digest.phase :steered)
                        (promote-next host lane.owner-id)))
     (cond
-      (digest.background-pending
-       ;; Its word shows on the card the ask watches, the room's record keeps it.
-       (let ((text digest.answer))
-         (when (and (stringp text)
-                    (plusp (length text))
-                    (not (silent-answer-p text)))
-           (bt2:with-lock-held ((lane-lock lane))
-             (digest-note-waiting-words digest text)))))
+      (waiting (post-waiting-word host lane digest waiting))
       ((eq (turn-digest-phase digest) :completed)
        ;; A table in the answer rides it as a picture (TABLES.LISP);
        ;; a draw that cannot happen leaves the fence the transform
@@ -1978,7 +2013,7 @@ write-back, and concurrency slot."
     ;; takes its place. A turn waiting on its own background work keeps the
     ;; ask's mark: what the reaction says — this is being worked on — is
     ;; still true.
-    (unless digest.background-pending
+    (unless waiting
       (settle-terminal-reactions host lane reactions outcome))))
 
 ;;; --- recorded exchanges (a lane's notes to itself) ------------------------------------------
@@ -2291,8 +2326,17 @@ digest into, and the detail its PAYLOAD carries — NIL for any other kind."
                             (if (eq phase :steered)
                                 (disown-reactions lane turn-id)
                                 (terminal-reaction-snapshot lane turn-id)))
-                      digest)))
-             (on-worker host (finish-turn host lane digest)))))))))
+                      digest))
+                  ;; What a waiting turn ended on, read now: the lane's next
+                  ;; turn takes DIGEST over at its own start, which can fold
+                  ;; before the worker reaches this one's finish.
+                  (waiting (and background-pending
+                                (make-turn-digest :turn-id turn-id :phase :completed
+                                                  :answer (turn-digest-answer digest)
+                                                  :ask-id (turn-digest-ask-id digest)
+                                                  :session-id lane.session-id
+                                                  :started-at-ms now))))
+             (on-worker host (finish-turn host lane digest :waiting waiting)))))))))
 
 (defun observe-frame (host op &aux (session-id (frame-session-id op)))
   "The host's :FRAME hook body."
