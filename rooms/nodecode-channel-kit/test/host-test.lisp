@@ -107,11 +107,11 @@ live delivery pool, torn down after BODY."
     (is (eq lane (nck:lane-for-address (nck:host-lanes host) "a1")))))
 
 (deftest channel-host-a-waiting-turn-keeps-the-ask-open ()
-  ;; The turn ended with its own background evaluation still in flight: the
-  ;; model's word was status, not the ask's answer. The card the ask watches
-  ;; stays up saying what the wait is, the word on it, nothing is delivered
-  ;; as the answer — and the exit wake's turn takes the same card over and
-  ;; answers for real.
+  ;; The turn ended with its own background evaluation still in flight: its
+  ;; word posts at once, a message of its own (it may be the answer, and the
+  ;; wake may be an hour off), while the card the ask watches stays up saying
+  ;; what the wait is, nothing settles — and the exit wake's turn takes the
+  ;; same card over and answers for real.
   (with-digest-host (host lane :responses (replies "s1" "a1" "a2"))
     (fact "turn.started" (nlk:json-object "input" "link me the report"))
     (called "c1")
@@ -120,10 +120,14 @@ live delivery pool, torn down after BODY."
       (is (equal "send_message" (nck:request-plan-audit-label line))))
     (said "On it — digging through it.")
     (fact "turn.completed" (nlk:json-object "background-pending" 1))
-    ;; Its word rides the card it watches, never a message of its own.
+    ;; Its word posts as a reply to the ask, and stays on the card it watches.
+    (is-present (word (await-plan executor :content "On it — digging through it."))
+      "the word posts, a message of its own"
+      (is-plan word "reply_to" "m1"))
     (is (await (:timeout 10) (equal "On it — digging through it."
                                     (getf (nck:digest-card (nck:lane-digest lane) 9999999999) :said))))
-    (is (= 1 (length (labelled "send_message"))))
+    (is (= 2 (length (labelled "send_message"))) "the card and the word")
+    (is (null (plan-matching (plans) :label "edit_message" :content "Done in")) "nothing settles")
     (is (null (plan-matching (plans) :label "delete_message")))
     (is (eql 1 (nck:turn-digest-background-pending (nck:lane-digest lane))))
     (is (search "Waiting on a background evaluation"
@@ -137,10 +141,47 @@ live delivery pool, torn down after BODY."
     (is (equal "link me the report" (nck:lane-prompt lane)))
     (said "Here it is — the report." "t2")
     (fact "turn.completed" (nlk:json-object) "t2")
-    (is-present (answer (await-plan executor :ping t)) "the answer posts, alone"
+    (is-present (answer (await-plan executor :content "Here it is")) "the answer posts after it"
       (is-plan answer "reply_to" "m1" "content" "Here it is — the report."))
     ;; The card the ask watched settles as the turn's record.
     (is (await-plan executor :label "edit_message" :content "Done in"))))
+
+(defmacro with-waiting-turn ((host lane &key (responses '(replies "s1" "a1" "a2" "a3")))
+                             &body body)
+  "BODY after a turn on LANE put up its card, said its word and ended with
+one background evaluation of its own still in flight."
+  `(with-digest-host (,host ,lane :responses ,responses)
+     (fact "turn.started" (nlk:json-object "input" "launch the run"))
+     (called "c1")
+     (nck:flush-now ,host ,lane)
+     (said "Launched: 100 questions on GPU0.")
+     (fact "turn.completed" (nlk:json-object "background-pending" 1))
+     ,@body))
+
+(deftest channel-host-an-ask-before-the-wake-finds-the-word-posted ()
+  ;; 2026-11-01: the operator typed "resume" over a turn that waited on its
+  ;; own 100-question run, and the word it had ended on never reached the
+  ;; thread. The next turn may take the digest over before the worker reaches
+  ;; the waiting turn's finish: the word was read at its terminal fold.
+  (with-waiting-turn (host lane)
+    (fact "turn.started" (nlk:json-object "input" "resume") "t2")
+    (said "Still running: 40 of 100." "t2")
+    (fact "turn.completed" (nlk:json-object) "t2")
+    (is (await-plan executor :content "Still running") "the new ask is answered")
+    ;; And the word the earlier turn ended on posted, once.
+    (is (= 1 (length (plans-matching (plans) :content "Launched: 100 questions"))))))
+
+(deftest channel-host-a-wordless-wake-repeats-nothing ()
+  ;; The word is the room's already: a wake that ends without words of its
+  ;; own settles the card, never reposts the word, never says the ask went
+  ;; unanswered.
+  (with-waiting-turn (host lane)
+    (is (await-plan executor :content "Launched: 100 questions") "the word posts")
+    (fact "turn.started" (nlk:json-object "input" "[background eval 7 exited 0]") "t2")
+    (fact "turn.completed" (nlk:json-object) "t2")
+    (is (await-plan executor :label "edit_message" :content "Done in") "the card settles")
+    (is (= 1 (length (plans-matching (plans) :content "Launched: 100 questions"))) "the word once")
+    (is (null (plan-matching (plans) :content "ended without an answer")) "no notice")))
 
 (deftest channel-host-an-exchange-records-what-was-said-while-it-waited ()
   ;; The room's record of an ask names what the model said while the turn
@@ -1377,6 +1418,19 @@ LANE, as the one running channel."
       (let ((plan (first (nck:recording-executor-plans executor))))
         (is (search "the answer" (plan-content plan)))
         (is (equalp #("pea.png") (plan-field plan "files")))))))
+
+(deftest channel-host-a-waiting-word-carries-its-files ()
+  ;; A file the waiting turn handed to its answer rides the word it ended on:
+  ;; the wake's turn has its own id, and would never collect it.
+  (with-file-host (host "waiting-files" :responses (replies "s1" "a1" "a2"))
+    (fact "turn.started" (nlk:json-object "input" "chart it"))
+    (called "c1")
+    (nck:flush-now host lane)
+    (nck:answer-file *pea-path* :platform "test" :channel "123")
+    (said "The chart so far.")
+    (fact "turn.completed" (nlk:json-object "background-pending" 1))
+    (is-present (word (await-plan executor :content "The chart so far.")) "the word posts"
+      (is (equalp #("pea.png") (plan-field word "files")) "with its file"))))
 
 ;;; --- choices: a clarifying question's answers on it ---------------------------------
 
