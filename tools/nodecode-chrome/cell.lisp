@@ -180,16 +180,28 @@ when that exits; one that exited 0 handed the page to a running browser."
 
 ;;; --- subcommands: each answers its text -----------------------------------
 
-(defun connection-line ()
-  (cond ((null *bridge*) "bridge not running")
-        ((bridge-connected-p *bridge*) "extension connected")
-        ((foreign-polling-p *bridge*)
+(defun connection-line (&aux (bridge (live-bridge)))
+  (cond ((null bridge) "bridge not running")
+        ((relay-p bridge) (relay-line bridge))
+        ((bridge-connected-p bridge) "extension connected")
+        ((foreign-polling-p bridge)
          (format nil "'~a' is polling instead; remove it at chrome://extensions and run /chrome onboard"
-                 (bridge-foreign-name *bridge*)))
-        ((unauthorized-polling-p *bridge*)
+                 (bridge-foreign-name bridge)))
+        ((unauthorized-polling-p bridge)
          "an extension without this bridge's secret is polling; reload it at chrome://extensions or run /chrome onboard")
-        ((poll-age-seconds *bridge*) "extension not polling")
+        ((poll-age-seconds bridge) "extension not polling")
         (t "extension never polled; run /chrome onboard")))
+
+(defun relay-line (relay)
+  "CONNECTION-LINE for a process that relays through the port's owner."
+  (multiple-value-bind (owner accepted) (relay-owner relay)
+    (cond (accepted
+           (format nil "relayed through the process serving 127.0.0.1:~d; ~:[extension not polling there~;extension connected~]"
+                   (relay-port relay) (and owner (nlk:json-value owner :boolean "connected"))))
+          (owner (refused-secret-text relay))
+          (t (format nil "127.0.0.1:~d is held by a process that is not a Chrome bridge; ~
+                          this one takes it over once it is free"
+                     (relay-port relay))))))
 
 (defun do-status (session-id)
   (format nil "~a; background ~:[off~;on~] for this session"
@@ -211,7 +223,7 @@ when that exits; one that exited 0 handed the page to a running browser."
   ;; after.
   (nlk:with-handlers ((chrome-error (condition)
                         (format nil "Chrome doctor: ~a" condition)))
-    (let ((bridge (or *bridge* (error 'chrome-offline))))
+    (let ((bridge (or (live-bridge) (error 'chrome-offline))))
       (flet ((ask (action &rest params)
                (let ((object (nlk:json-object "sessionKey" "doctor" "foreground" :false)))
                  (loop for (key value) on params by #'cddr
@@ -227,9 +239,9 @@ when that exits; one that exited 0 handed the page to a running browser."
   "The doctor's line from its three answers."
   (let ((extension-version (jv version :text "extensionVersion"))
         (warnings '()))
-    (unless (equal extension-version bridge.version)
+    (unless (equal extension-version (advertised-version bridge))
       (push (format nil "extension ~a differs from vendored ~a: reload it at chrome://extensions"
-                    extension-version bridge.version)
+                    extension-version (advertised-version bridge))
             warnings))
     (unless (eql value 2)
       (push "evaluate did not answer 2" warnings))
@@ -237,9 +249,9 @@ when that exits; one that exited 0 handed the page to a running browser."
       (push "page probe failed" warnings))
     (when (jv probe :boolean "webdriver")
       (push "Chrome reports navigator.webdriver to sites" warnings))
-    (when (foreign-polling-p bridge)
+    (when (and (bridge-p bridge) (foreign-polling-p bridge))
       (push (format nil "'~a' also polls this port: remove it at chrome://extensions"
-                    bridge.foreign-name)
+                    (bridge-foreign-name bridge))
             warnings))
     (format nil "Chrome doctor: extension ~a ok, evaluate ok, probe ok (~a)~@[; ~{~a~^; ~}~]"
             extension-version
@@ -276,11 +288,6 @@ when that exits; one that exited 0 handed the page to a running browser."
 
 ;;; --- the entry ------------------------------------------------------------
 
-(defun close-bridge ()
-  "Stop the one live bridge, if there is one."
-  (nlk:when-let (bridge (shiftf *bridge* nil))
-    (stop-bridge bridge)))
-
 (nle:define-cell chrome
   (:section ("chrome")
     (:guide "background decides whether actions keep Chrome's focus")
@@ -288,14 +295,15 @@ when that exits; one that exited 0 handed the page to a running browser."
                   :doc "whether actions keep Chrome's focus by default; /chrome background sets a session's own")
     ("screenshot_dir" :directory :default "chrome-screenshots/"
                       :doc "where a screenshot lands; a leading ~/ expands"))
-  ;; A refused section signals NLK:CONFIG-REFUSAL and a bound port a plain
-  ;; error — either is the loader's one loud warning.
+  ;; A refused section signals NLK:CONFIG-REFUSAL, the loader's one loud
+  ;; warning. A port another process serves is no refusal: this process
+  ;; relays through it (OPEN-BRIDGE, nodecode#169).
   (:start (lambda ()
             (setf *screenshot-dir* (setting :screenshot-dir)
                   *background* (setting :background))
             (close-bridge)
             (install-extension)
-            (setf *bridge* (start-bridge :version (vendored-extension-version)
+            (setf *bridge* (open-bridge :version (vendored-extension-version)
                                          :name (manifest-field (shipped-extension-directory) "name")
                                          :secret (bridge-token)
                                          ;; The secret lives in that folder, so the extension loaded

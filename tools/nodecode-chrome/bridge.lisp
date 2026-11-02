@@ -36,11 +36,18 @@
 ;;;; sends it. The first authenticated request carrying an Origin pins that
 ;;;; Origin as the extension's: any other is refused for the bridge's life.
 ;;;;
-;;;; Not implemented: pi-chrome's "client mode" (a second host process that
-;;;; loses the port relays through the owner's POST /command). One gateway
-;;;; image serves every session in-process; a second image on the machine is
-;;;; a boot-time warning, not a relay. POST /command IS served, so a real pi
-;;;; session that loses the port to us keeps working, and curl has a probe.
+;;;; A second process (nodecode#169). The port is the extension's, so one
+;;;; process on the machine serves it. Any other that starts the cell -- a
+;;;; headless `nodecode rpc', a bench, a second gateway -- is pi-chrome's
+;;;; "client mode", a RELAY: each command goes to the owner as a POST
+;;;; /command carrying this home's secret, and the owner queues it beside its
+;;;; own. A relay tries the port every *RECLAIM-SECONDS*, and the first try
+;;;; that binds it (the owner exited) makes it the bridge, so the extension
+;;;; has a process to poll while any of the home's runs. An owner that refuses
+;;;; the secret -- another home's nodecode, a pi-chrome host -- leaves this
+;;;; process without Chrome: the command that tries says so, never the boot.
+;;;; POST /command is also what a real pi session that lost the port to us
+;;;; sends, and curl's probe.
 
 (in-package #:nodecode-chrome)
 
@@ -111,8 +118,35 @@
   (unauthorized-seen nil)
   (stopping-p nil))
 
+(nlk:define-record (relay (:constructor %make-relay))
+  "A process that found the port served: its commands go through the owner."
+  (port 0 :type integer :read-only t)
+  (secret "" :type string :read-only t)
+  ;; START-BRIDGE's arguments: the takeover starts the bridge with them.
+  (start-arguments '() :type list :read-only t)
+  ;; Signalled to end the watcher's wait early, on stop.
+  (wake (bt2:make-semaphore :name "chrome-relay") :read-only t)
+  (stopping-p nil))
+
+(define-condition bridge-port-taken (error)
+  ((port :initarg :port :reader bridge-port-taken-port))
+  (:report (lambda (condition stream)
+             (format stream "chrome bridge: 127.0.0.1:~d is already bound"
+                     (bridge-port-taken-port condition))))
+  (:documentation "START-BRIDGE found its port served by another process."))
+
+;;; DEFVAR, as *BRIDGE*'s own: a reload must not forget a takeover in flight.
+(defvar *bridge-lock* (bt2:make-lock :name "chrome-bridge-hands")
+  "Held while *BRIDGE* changes hands: a takeover against a close.")
+
 (defun bridge-url (bridge)
-  (format nil "http://127.0.0.1:~d" bridge.port))
+  (format nil "http://127.0.0.1:~d" (if (relay-p bridge) (relay-port bridge) bridge.port)))
+
+(defun advertised-version (bridge)
+  "The extension version BRIDGE advertises, or a relay would on takeover."
+  (if (relay-p bridge)
+      (getf (relay-start-arguments bridge) :version "0.0.0")
+      (bridge-version bridge)))
 
 (defun poll-age-seconds (bridge &aux (seen bridge.last-seen))
   "Seconds since the extension last spoke, or NIL when it never has."
@@ -133,6 +167,8 @@
 
 (defun bridge-send (bridge action params &key (timeout *send-timeout-seconds*))
   "Hand ACTION/PARAMS to the extension and return its decoded result."
+  (when (relay-p bridge)
+    (return-from bridge-send (relay-send bridge action params :timeout timeout)))
   ;; PARAMS is a JSON object (EQUAL hash table). Signals CHROME-OFFLINE with
   ;; no bridge, CHROME-COMMAND-FAILED on an ok:false reply, CHROME-TIMEOUT
   ;; when no result lands within TIMEOUT seconds. The UNWIND-PROTECT is what
@@ -437,7 +473,13 @@ naming the refusal."
                ((null action) (refusal 400 "Missing command action"))
                (t
                 (nlk:with-handlers ((chrome-error (condition)
-                                      (refusal 504 (princ-to-string condition))))
+                                      ;; KIND and DETAIL: a relay signals what this send did.
+                                      (json-response 504 (nlk:json-object
+                                                          "ok" :false
+                                                          "error" (princ-to-string condition)
+                                                          "kind" (error-kind condition)
+                                                          "detail" (or (chrome-error-detail condition)
+                                                                       :null)))))
                   (json-response
                    200 (nlk:json-object
                         "ok" t
@@ -467,16 +509,15 @@ such a request may carry; without it the first one to authenticate is pinned."
     (setf bridge.handler
           (handler-case (nle:serve-local (make-bridge-app bridge) :port port)
             (usocket:address-in-use-error ()
-              (error "chrome bridge: 127.0.0.1:~d is already bound ~
-                      (another nodecode gateway or a pi-chrome ~
-                      host owns it); cell not started"
-                     port))))
+              (error 'bridge-port-taken :port port))))
     bridge))
 
 (defun stop-bridge (bridge)
   "Fail every pending send, wake parked pollers so they answer \"none\" now
 instead of at their deadline, stop the acceptor, and wait for the port to
-close. Idempotent."
+close. A relay stops relaying and watching. Idempotent."
+  (when (relay-p bridge)
+    (return-from stop-bridge (stop-relay bridge)))
   (bt2:with-lock-held ((bridge-lock bridge))
     (setf bridge.stopping-p t)
     (loop for pending being the hash-values of bridge.pending
@@ -488,3 +529,135 @@ close. Idempotent."
   (nlk:when-let (handler (shiftf bridge.handler nil))
     (nle:stop-clack-handler handler))
   t)
+
+;;; --- a second process: the relay -----------------------------------------
+
+(defparameter *reclaim-seconds* 5
+  "How often a relay tries to take the port over. Tests shorten it.")
+
+(defun open-bridge (&rest arguments &key (port *bridge-port*) (secret (make-bridge-secret))
+                    &allow-other-keys)
+  "Serve PORT with START-BRIDGE's ARGUMENTS => the BRIDGE; when another
+process serves it, => a RELAY through that one, watching the port."
+  (let ((arguments (list* :port port :secret secret arguments)))
+    (handler-case (apply #'start-bridge arguments)
+      (bridge-port-taken ()
+        (let ((relay (%make-relay :port port :secret secret :start-arguments arguments)))
+          (nlk:spawn "chrome-bridge-reclaim" (watch-port relay))
+          relay)))))
+
+(defun watch-port (relay)
+  "Until RELAY stops or stands down, try its port every *RECLAIM-SECONDS*."
+  ;; An error starting the bridge leaves the relay as it was, for the next try.
+  (loop until (or relay.stopping-p
+                  (bt2:wait-on-semaphore relay.wake :timeout *reclaim-seconds*)
+                  relay.stopping-p)
+        do (nlk:with-handlers ((error () nil))
+             (take-over relay))))
+
+(defun take-over (relay)
+  "When RELAY's port binds now, the bridge started on it replaces RELAY as
+*BRIDGE* and RELAY stands down. => what *BRIDGE* holds after."
+  (bt2:with-lock-held (*bridge-lock*)
+    (when (and (eq *bridge* relay) (not relay.stopping-p))
+      ;; Any refusal leaves the relay relaying, for the next try.
+      (handler-case (setf *bridge* (apply #'start-bridge relay.start-arguments)
+                          relay.stopping-p t)
+        (error () nil)))
+    *bridge*))
+
+(defun live-bridge (&aux (bridge *bridge*))
+  "*BRIDGE*, once a relay whose port is free now has taken it over."
+  (if (relay-p bridge) (take-over bridge) bridge))
+
+(defun stop-relay (relay)
+  (setf relay.stopping-p t)
+  (bt2:signal-semaphore relay.wake)
+  t)
+
+(defun close-bridge ()
+  "Stop the one live bridge or relay, if there is one."
+  (nlk:when-let (bridge (bt2:with-lock-held (*bridge-lock*) (shiftf *bridge* nil)))
+    (stop-bridge bridge)))
+
+(defun relay-url (relay path)
+  (format nil "http://127.0.0.1:~d~a" relay.port path))
+
+(defun error-kind (condition)
+  "CONDITION's class as POST /command names it, for a relay to signal again."
+  (typecase condition
+    (chrome-timeout "timeout")
+    (chrome-command-failed "command-failed")
+    (chrome-offline "offline")
+    (t "error")))
+
+(defun refused-secret-text (relay)
+  (format nil "127.0.0.1:~d is served by a Chrome bridge in another process that refuses ~
+               this home's secret: a nodecode of another home, or a pi-chrome host. Chrome ~
+               works from the process that serves it."
+          relay.port))
+
+(defun relay-send (relay action params &key (timeout *send-timeout-seconds*))
+  "Send ACTION/PARAMS through the owner's POST /command => the decoded result,
+signalling what the owner's own send signalled. An owner gone, the port is
+taken over and the command sent from here."
+  (when relay.stopping-p
+    (error 'chrome-offline))
+  (multiple-value-bind (text status)
+      (handler-case
+          (nlk:http :post (relay-url relay "/command")
+                    :headers (list (cons "authorization" (format nil "Bearer ~a" relay.secret))
+                                   (cons "content-type" "application/json"))
+                    :content (nlk:encode-json-object
+                              (nlk:json-object "action" action
+                                               "params" (or params (nlk:make-json-object))
+                                               "timeoutMs" (round (* timeout 1000))))
+                    ;; The owner holds the exchange for the whole send.
+                    :timeout (+ timeout 10) :connect-timeout 5)
+        (usocket:connection-refused-error ()
+          (let ((now (take-over relay)))
+            (return-from relay-send
+              (if (and now (not (relay-p now)))
+                  (bridge-send now action params :timeout timeout)
+                  (error 'chrome-offline
+                         :detail (format nil "The process serving 127.0.0.1:~d is gone and ~
+                                              another took the port; retry."
+                                         relay.port))))))
+        (sb-sys:deadline-timeout ()
+          (error 'chrome-timeout
+                 :detail (format nil "Timed out after ~as: the process serving 127.0.0.1:~d ~
+                                      did not answer." timeout relay.port))))
+    (let ((body (ignore-errors (nlk:decode-json text))))
+      (flet ((field (key) (and (hash-table-p body) (nlk:json-value body :text key))))
+        (cond
+          ((and (eql status 200) (hash-table-p body))
+           (nlk:json-value body :any "result"))
+          ((eql status 401) (error 'chrome-offline :detail (refused-secret-text relay)))
+          (t
+           (let ((detail (or (field "detail") (field "error")
+                             (format nil "the bridge on 127.0.0.1:~d answered HTTP ~d"
+                                     relay.port status))))
+             (nlk:dispatch (field "kind") equal
+               ("timeout" (error 'chrome-timeout :detail detail))
+               ("offline" (error 'chrome-offline :detail detail))
+               (t (error 'chrome-command-failed :action action :detail detail))))))))))
+
+(defun relay-owner (relay)
+  "What the process serving RELAY's port says => (values STATUS ACCEPTED):
+its /status object or NIL when it answers none, and whether it takes this
+home's secret."
+  ;; A POST /command without an action is refused after the secret is
+  ;; checked: 400 says the secret holds, 401 that it does not.
+  (flet ((ask (method path &rest keys)
+           (ignore-errors
+            (multiple-value-list (apply #'nlk:http method (relay-url relay path)
+                                        :timeout 3 :connect-timeout 2 keys)))))
+    (let ((status (ask :get "/status"))
+          (probe (ask :post "/command"
+                      :headers (list (cons "authorization" (format nil "Bearer ~a" relay.secret))
+                                     (cons "content-type" "application/json"))
+                      :content "{}")))
+      (values (and (eql (second status) 200)
+                   (let ((object (ignore-errors (nlk:decode-json (first status)))))
+                     (and (hash-table-p object) object)))
+              (eql (second probe) 400)))))

@@ -260,18 +260,37 @@ real input layer. :snapshot t returns a fresh snapshot after the click."
       (t (error 'chrome-command-failed :action "page.screenshot"
                                        :detail "screenshot returned no dataUrl")))))
 
-(defun status (&key (session-id nlk:*scribe-session-id*))
+(defun status (&key (session-id nlk:*scribe-session-id*) &aux (bridge (live-bridge)))
   "Bridge, extension and this session's background default, as text."
   (with-output-to-string (out)
-    (if (null *bridge*)
-        (format out "bridge: not running (cell not started)~%")
-        (let ((age (poll-age-seconds *bridge*)))
-          (format out "bridge: ~a (advertising extension ~a)~%extension: ~a~%"
-                  (bridge-url *bridge*) (bridge-version *bridge*)
-                  (cond ((null age) "never polled")
-                        ((bridge-connected-p *bridge*)
-                         (format nil "connected (~a, last poll ~ds ago)"
-                                 (or (bridge-client-name *bridge*) "unnamed") age))
-                        (t (format nil "not polling (last seen ~ds ago)" age))))))
+    (cond
+      ((null bridge)
+       (format out "bridge: not running (cell not started)~%"))
+      ((relay-p bridge)
+       (multiple-value-bind (owner accepted) (relay-owner bridge)
+         (cond
+           (accepted
+            (let* ((seen (and owner (nlk:json-value owner :number "lastSeenAt")))
+                   (age (and seen (- (get-universal-time) seen))))
+              (format out "bridge: ~a, served by another process; this one relays to it ~
+                           (advertising extension ~a)~%extension: ~a~%"
+                      (bridge-url bridge) (or (and owner (nlk:json-value owner :text "version")) "?")
+                      (cond ((null age) "never polled")
+                            ((nlk:json-value owner :boolean "connected")
+                             (format nil "connected (~a, last poll ~ds ago)"
+                                     (or (nlk:json-value owner :text "clientName") "unnamed") age))
+                            (t (format nil "not polling (last seen ~ds ago)" age))))))
+           (owner (format out "bridge: ~a~%" (refused-secret-text bridge)))
+           (t (format out "bridge: ~a is held by a process that is not a Chrome bridge~%"
+                      (bridge-url bridge))))))
+      (t
+       (let ((age (poll-age-seconds bridge)))
+         (format out "bridge: ~a (advertising extension ~a)~%extension: ~a~%"
+                 (bridge-url bridge) (bridge-version bridge)
+                 (cond ((null age) "never polled")
+                       ((bridge-connected-p bridge)
+                        (format nil "connected (~a, last poll ~ds ago)"
+                                (or (bridge-client-name bridge) "unnamed") age))
+                       (t (format nil "not polling (last seen ~ds ago)" age)))))))
     (format out "session ~a: background ~:[off~;on~]"
             (or session-id "none bound") (session-background session-id))))
