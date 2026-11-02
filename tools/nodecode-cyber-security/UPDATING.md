@@ -76,8 +76,27 @@ desktop apps and anything a site operator cannot act on.
 
 Every fact comes from the vendor's own advisory (`mcp:exa/web-fetch-exa` it), never
 from a guess: fixed versions, affected range, stopgap. A news story is a lead, the vendor
-page is the source. Add a machine `check` only when the version can be read reliably
-(see the kinds in README.md); otherwise leave `checks` empty and the entry reads as READ.
+page is the source. Every entry says how a machine shows it is affected, so the report
+reaches the people it touches and no one else:
+
+- a version a program prints, a package in `package-lock.json` / `composer.lock`, a
+  WordPress plugin, a sign of compromise on disk: a `check` (the kinds in README.md);
+- a package of another ecosystem: a `file_checks` entry of kind `lockfile`
+  (`ecosystem` in OSV's names: `crates.io`, `Go`, `Maven` as `group:artifact`,
+  `RubyGems`, `PyPI`, `npm`, `Packagist`) with `fixed` / `min` / `bad` as for `version`;
+- a GitHub Action: kind `gh-action`, `action` as `owner/repo`;
+- a hosted platform, a self-hosted app, a vendor's CLI: kind `uses` with `service` and
+  the signs of using it, taken from the vendor's own docs: the CLI's login file under
+  `~/`, the project file it reads (`{dir}/railway.json`), the platform's host names in
+  `{dir}/.env*` and `{dir}/.env.*` (`match` a regex), the image name in
+  `{dir}/docker-compose*.y*ml`, the program on PATH. One `uses` check names a folder's
+  signs (`{dir}/...`) or the machine's (`~/`, `/`, `env`, `programs`), never both: a
+  folder's check runs in every project.
+
+The kinds `lockfile`, `gh-action` and `uses` go under `file_checks`, never `checks`:
+copies installed before them read `checks` only and would call a new kind an error.
+Only what no file on a machine can show (a network appliance, a provider's customer
+data) keeps both lists empty; it folds into the report's `READ` count.
 
 The job adds no new command. A check's `command` (and `backport`) is either one the
 feed already carries, word for word, or a Python package's version in exactly this
@@ -91,7 +110,8 @@ machine"). Leave that check out and name it in the job's answer.
 
 - New: an entry shaped like its neighbours (`id` a lowercase slug, `date` the
   disclosure day, `severity`, `exploited` true/false, `cves`, `summary`, `affected`,
-  `fixed`, `checks`, `patch`, `mitigation`, `iocs`, `sources`), newest first.
+  `fixed`, `checks`, `file_checks` when it has any, `patch`, `mitigation`, `iocs`,
+  `sources`), newest first.
 - Changed: new fixed versions, exploitation confirmed, new signs of compromise: edit the
   entry in place and add the source.
 - Dropped: an entry whose `date` is more than 14 days old, unless a source dated inside

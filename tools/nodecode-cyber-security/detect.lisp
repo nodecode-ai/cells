@@ -192,7 +192,7 @@ hash set of word lists. Tests stub it; nothing else should.")
         (kind (field check "kind")))
     (cond ((equal n "dir") :dir)
           ((equal n "host") :host)
-          ((member kind '("npm" "composer" "wp-plugin") :test #'equal) :dir))))
+          ((member kind '("npm" "composer" "wp-plugin" "lockfile" "gh-action") :test #'equal) :dir))))
 
 ;;; --- the kinds ----------------------------------------------------------------
 
@@ -298,6 +298,8 @@ hash set of word lists. Tests stub it; nothing else should.")
            (if hits
                (list :status :vulnerable :found (namestring (first hits)) :why "found")
                (list :status :ok :why "nothing found"))))
+        ((member kind '("lockfile" "gh-action" "uses") :test #'equal)
+         (run-file-check check :dir dir :host host))
         (t (list :status :skipped :why (format nil "a ~a check, which a newer copy of this cell reads" kind)))))))
 
 (defun first-line (text)

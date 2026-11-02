@@ -72,6 +72,32 @@
         "https://github.com/advisories/GHSA-hff9-5pqw-6w9f",
         "https://github.com/advisories/GHSA-494m-4556-wf5p",
         "https://github.com/advisories/GHSA-mmq5-xm89-9pfg"
+      ],
+      "file_checks": [
+        {
+          "label": "imgproxy",
+          "kind": "uses",
+          "service": "imgproxy",
+          "paths": [
+            "{dir}/docker-compose*.y*ml",
+            "{dir}/compose*.y*ml",
+            "{dir}/Chart.yaml",
+            "{dir}/*/Chart.yaml",
+            "{dir}/helmfile.y*ml",
+            "{dir}/kustomization.y*ml",
+            "{dir}/*/kustomization.y*ml",
+            "{dir}/values*.y*ml"
+          ],
+          "match": "(?i)imgproxy"
+        },
+        {
+          "label": "imgproxy",
+          "kind": "uses",
+          "service": "imgproxy",
+          "programs": [
+            "imgproxy"
+          ]
+        }
       ]
     },
     {
@@ -96,6 +122,24 @@
       "sources": [
         "https://github.com/advisories/GHSA-8fmv-6rg5-5924",
         "https://github.com/advisories/GHSA-wg5q-x4j9-qm54"
+      ],
+      "file_checks": [
+        {
+          "label": "Kubeflow Pipelines",
+          "kind": "uses",
+          "service": "Kubeflow Pipelines",
+          "paths": [
+            "{dir}/Chart.yaml",
+            "{dir}/*/Chart.yaml",
+            "{dir}/helmfile.y*ml",
+            "{dir}/kustomization.y*ml",
+            "{dir}/*/kustomization.y*ml",
+            "{dir}/values*.y*ml",
+            "{dir}/requirements*.txt",
+            "{dir}/pyproject.toml"
+          ],
+          "match": "(?im)kubeflow/pipelines|ml-pipeline|^\\s*kfp\\b|[\"']kfp[<>=\"' ]"
+        }
       ]
     },
     {
@@ -422,6 +466,17 @@
       "iocs": [],
       "sources": [
         "https://github.com/advisories/GHSA-vp5q-ff62-jwqv"
+      ],
+      "file_checks": [
+        {
+          "label": "russh",
+          "kind": "lockfile",
+          "ecosystem": "crates.io",
+          "package": "russh",
+          "fixed": [
+            "0.65"
+          ]
+        }
       ]
     },
     {
@@ -654,6 +709,16 @@
       "sources": [
         "https://github.com/advisories/GHSA-5xjx-3w67-w9x9",
         "https://github.com/pypa/gh-action-pypi-publish/releases"
+      ],
+      "file_checks": [
+        {
+          "label": "pypa/gh-action-pypi-publish",
+          "kind": "gh-action",
+          "action": "pypa/gh-action-pypi-publish",
+          "fixed": [
+            "1.14.3"
+          ]
+        }
       ]
     },
     {
@@ -806,6 +871,26 @@
         "https://www.bleepingcomputer.com/news/security/northflank-security-breach-leads-to-abuse-of-customers-ai-api-keys/",
         "https://status.northflank.com/cmvv0rn5a092f14rutwccodpp",
         "https://mallory.ai/stories/01a193a0-200c-7393-87b6-1d76ea1465d0"
+      ],
+      "file_checks": [
+        {
+          "label": "Northflank",
+          "kind": "uses",
+          "service": "Northflank",
+          "paths": [
+            "{dir}/.env*",
+            "{dir}/.env.*"
+          ],
+          "match": "(?i)northflank|\\.code\\.run\\b"
+        },
+        {
+          "label": "Northflank",
+          "kind": "uses",
+          "service": "Northflank",
+          "programs": [
+            "northflank"
+          ]
+        }
       ]
     },
     {
@@ -832,6 +917,18 @@
       "iocs": [],
       "sources": [
         "https://github.com/advisories/GHSA-6j52-38f8-qhxr"
+      ],
+      "file_checks": [
+        {
+          "label": "shopify_app",
+          "kind": "lockfile",
+          "ecosystem": "RubyGems",
+          "package": "shopify_app",
+          "min": "22.1.0",
+          "fixed": [
+            "23.0.3"
+          ]
+        }
       ]
     },
     {
@@ -859,6 +956,35 @@
       "iocs": [],
       "sources": [
         "https://github.com/advisories/GHSA-8rvj-mm4h-c258"
+      ],
+      "file_checks": [
+        {
+          "label": "github.com/cert-manager/cert-manager",
+          "kind": "lockfile",
+          "ecosystem": "Go",
+          "package": "github.com/cert-manager/cert-manager",
+          "min": "1.18.0",
+          "fixed": [
+            "1.19.6",
+            "1.20.3"
+          ]
+        },
+        {
+          "label": "cert-manager",
+          "kind": "uses",
+          "service": "cert-manager",
+          "paths": [
+            "{dir}/Chart.yaml",
+            "{dir}/*/Chart.yaml",
+            "{dir}/helmfile.y*ml",
+            "{dir}/kustomization.y*ml",
+            "{dir}/*/kustomization.y*ml",
+            "{dir}/values*.y*ml",
+            "{dir}/docker-compose*.y*ml",
+            "{dir}/compose*.y*ml"
+          ],
+          "match": "(?i)cert-manager"
+        }
       ]
     },
     {
@@ -888,6 +1014,42 @@
       "sources": [
         "https://github.com/advisories/GHSA-v3f7-2p4r-mwfw",
         "https://github.com/advisories/GHSA-f5p5-6xmx-p252"
+      ],
+      "file_checks": [
+        {
+          "label": "org.keycloak:keycloak-services",
+          "kind": "lockfile",
+          "ecosystem": "Maven",
+          "package": "org.keycloak:keycloak-services",
+          "fixed": [
+            "26.6.4"
+          ]
+        },
+        {
+          "label": "org.keycloak:keycloak-policy-enforcer",
+          "kind": "lockfile",
+          "ecosystem": "Maven",
+          "package": "org.keycloak:keycloak-policy-enforcer",
+          "fixed": [
+            "26.0.10"
+          ]
+        },
+        {
+          "label": "Keycloak",
+          "kind": "uses",
+          "service": "Keycloak",
+          "paths": [
+            "{dir}/docker-compose*.y*ml",
+            "{dir}/compose*.y*ml",
+            "{dir}/Chart.yaml",
+            "{dir}/*/Chart.yaml",
+            "{dir}/helmfile.y*ml",
+            "{dir}/kustomization.y*ml",
+            "{dir}/*/kustomization.y*ml",
+            "{dir}/values*.y*ml"
+          ],
+          "match": "(?i)keycloak/keycloak|bitnami/keycloak"
+        }
       ]
     },
     {
@@ -1051,6 +1213,17 @@
       "iocs": [],
       "sources": [
         "https://github.com/advisories/GHSA-m665-v7pm-7grj"
+      ],
+      "file_checks": [
+        {
+          "label": "zip",
+          "kind": "lockfile",
+          "ecosystem": "crates.io",
+          "package": "zip",
+          "fixed": [
+            "9.0.5"
+          ]
+        }
       ]
     },
     {
@@ -1284,6 +1457,26 @@
       "iocs": [],
       "sources": [
         "https://github.com/advisories/GHSA-375p-5qhx-8wq4"
+      ],
+      "file_checks": [
+        {
+          "label": "github.com/labstack/echo/v4",
+          "kind": "lockfile",
+          "ecosystem": "Go",
+          "package": "github.com/labstack/echo/v4",
+          "fixed": [
+            "4.16.0"
+          ]
+        },
+        {
+          "label": "github.com/labstack/echo/v5",
+          "kind": "lockfile",
+          "ecosystem": "Go",
+          "package": "github.com/labstack/echo/v5",
+          "fixed": [
+            "5.4.0"
+          ]
+        }
       ]
     },
     {
@@ -1440,6 +1633,20 @@
       "sources": [
         "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/38017",
         "https://nvd.nist.gov/vuln/detail/CVE-2026-41709"
+      ],
+      "file_checks": [
+        {
+          "label": "VMware ESX",
+          "kind": "uses",
+          "service": "VMware ESX",
+          "paths": [
+            "/etc/vmware/esx.conf"
+          ],
+          "programs": [
+            "esxcli",
+            "govc"
+          ]
+        }
       ]
     },
     {
@@ -1530,6 +1737,27 @@
         "https://thehackernews.com/2026/10/26400-valid-cloud-and-ai-credentials.html",
         "https://securityonline.info/gitee-exposed-credentials-scan/",
         "https://aiweekly.my/items/40765/26-400-valid-cloud-and-ai-credentials-found-exposed-in-public-gitee-repositories"
+      ],
+      "file_checks": [
+        {
+          "label": "Gitee",
+          "kind": "uses",
+          "service": "Gitee",
+          "paths": [
+            "{dir}/.git/config"
+          ],
+          "match": "(?i)gitee\\.com"
+        },
+        {
+          "label": "Gitee",
+          "kind": "uses",
+          "service": "Gitee",
+          "paths": [
+            "~/.gitconfig",
+            "~/.ssh/config"
+          ],
+          "match": "(?i)gitee\\.com"
+        }
       ]
     },
     {
@@ -1822,6 +2050,17 @@
       "sources": [
         "https://github.com/advisories/GHSA-gwq9-9ffj-mvrv",
         "https://github.com/advisories/GHSA-q233-g92q-qxp6"
+      ],
+      "file_checks": [
+        {
+          "label": "org.xerial.snappy:snappy-java",
+          "kind": "lockfile",
+          "ecosystem": "Maven",
+          "package": "org.xerial.snappy:snappy-java",
+          "fixed": [
+            "1.1.10.9"
+          ]
+        }
       ]
     },
     {
@@ -2054,6 +2293,27 @@
       "sources": [
         "https://github.com/Dolibarr/dolibarr/security/advisories/GHSA-v5fq-cf5m-vwv7",
         "https://github.com/advisories/GHSA-v5fq-cf5m-vwv7"
+      ],
+      "file_checks": [
+        {
+          "label": "Dolibarr",
+          "kind": "uses",
+          "service": "Dolibarr",
+          "paths": [
+            "{dir}/htdocs/filefunc.inc.php",
+            "{dir}/filefunc.inc.php"
+          ],
+          "match": "DOL_VERSION"
+        },
+        {
+          "label": "Dolibarr",
+          "kind": "uses",
+          "service": "Dolibarr",
+          "paths": [
+            "{dir}/composer.lock"
+          ],
+          "match": "\"dolibarr/dolibarr\""
+        }
       ]
     },
     {
@@ -2254,6 +2514,51 @@
       "sources": [
         "https://github.com/runatlantis/atlantis/security/advisories/GHSA-rjh2-4xgw-p2hj",
         "https://github.com/advisories/GHSA-rjh2-4xgw-p2hj"
+      ],
+      "file_checks": [
+        {
+          "label": "github.com/runatlantis/atlantis",
+          "kind": "lockfile",
+          "ecosystem": "Go",
+          "package": "github.com/runatlantis/atlantis",
+          "min": "0.4.0",
+          "fixed": [
+            "0.47.1"
+          ]
+        },
+        {
+          "label": "Atlantis",
+          "kind": "uses",
+          "service": "Atlantis",
+          "paths": [
+            "{dir}/docker-compose*.y*ml",
+            "{dir}/compose*.y*ml",
+            "{dir}/Chart.yaml",
+            "{dir}/*/Chart.yaml",
+            "{dir}/helmfile.y*ml",
+            "{dir}/kustomization.y*ml",
+            "{dir}/*/kustomization.y*ml",
+            "{dir}/values*.y*ml"
+          ],
+          "match": "(?i)runatlantis"
+        },
+        {
+          "label": "Atlantis",
+          "kind": "uses",
+          "service": "Atlantis",
+          "paths": [
+            "{dir}/atlantis.yaml",
+            "{dir}/atlantis.yml"
+          ]
+        },
+        {
+          "label": "Atlantis",
+          "kind": "uses",
+          "service": "Atlantis",
+          "programs": [
+            "atlantis"
+          ]
+        }
       ]
     },
     {
@@ -2282,6 +2587,32 @@
       "sources": [
         "https://github.com/advisories/GHSA-mgqf-5mf5-prfj",
         "https://github.com/gtsteffaniak/filebrowser/releases"
+      ],
+      "file_checks": [
+        {
+          "label": "FileBrowser",
+          "kind": "uses",
+          "service": "FileBrowser",
+          "paths": [
+            "{dir}/docker-compose*.y*ml",
+            "{dir}/compose*.y*ml",
+            "{dir}/Chart.yaml",
+            "{dir}/*/Chart.yaml",
+            "{dir}/helmfile.y*ml",
+            "{dir}/kustomization.y*ml",
+            "{dir}/*/kustomization.y*ml",
+            "{dir}/values*.y*ml"
+          ],
+          "match": "(?i)filebrowser/filebrowser"
+        },
+        {
+          "label": "FileBrowser",
+          "kind": "uses",
+          "service": "FileBrowser",
+          "programs": [
+            "filebrowser"
+          ]
+        }
       ]
     },
     {
@@ -2354,6 +2685,18 @@
       "iocs": [],
       "sources": [
         "https://github.com/advisories/GHSA-vg84-c5mg-76xh"
+      ],
+      "file_checks": [
+        {
+          "label": "the CTFd Terraform provider",
+          "kind": "uses",
+          "service": "the CTFd Terraform provider",
+          "paths": [
+            "{dir}/.terraform.lock.hcl",
+            "{dir}/*.tf"
+          ],
+          "match": "ctfer-io/ctfd"
+        }
       ]
     },
     {
@@ -2420,6 +2763,26 @@
       "sources": [
         "https://www.adobe.com/trust/security/products/commerce/apsb26-73.html",
         "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+      ],
+      "file_checks": [
+        {
+          "label": "Adobe Commerce / Magento",
+          "kind": "uses",
+          "service": "Adobe Commerce / Magento",
+          "paths": [
+            "{dir}/composer.lock"
+          ],
+          "match": "\"magento/(magento2-base|product-community-edition|product-enterprise-edition)\""
+        },
+        {
+          "label": "Adobe Commerce / Magento",
+          "kind": "uses",
+          "service": "Adobe Commerce / Magento",
+          "paths": [
+            "{dir}/app/etc/env.php",
+            "{dir}/bin/magento"
+          ]
+        }
       ]
     },
     {
@@ -2757,6 +3120,26 @@
         "https://github.com/labstack/echo/security/advisories/GHSA-h7wr-284f-5qvc",
         "https://github.com/labstack/echo/security/advisories/GHSA-f48p-c9v4-h7xv",
         "https://github.com/labstack/echo/releases/tag/v4.16.1"
+      ],
+      "file_checks": [
+        {
+          "label": "github.com/labstack/echo/v4",
+          "kind": "lockfile",
+          "ecosystem": "Go",
+          "package": "github.com/labstack/echo/v4",
+          "fixed": [
+            "4.16.1"
+          ]
+        },
+        {
+          "label": "github.com/labstack/echo/v5",
+          "kind": "lockfile",
+          "ecosystem": "Go",
+          "package": "github.com/labstack/echo/v5",
+          "fixed": [
+            "5.4.1"
+          ]
+        }
       ]
     },
     {
@@ -2958,6 +3341,33 @@
       "sources": [
         "https://github.com/siyuan-note/siyuan/security/advisories/GHSA-c8w8-3pqp-wr83",
         "https://github.com/siyuan-note/siyuan/releases/tag/v3.8.0"
+      ],
+      "file_checks": [
+        {
+          "label": "SiYuan",
+          "kind": "uses",
+          "service": "SiYuan",
+          "paths": [
+            "{dir}/docker-compose*.y*ml",
+            "{dir}/compose*.y*ml",
+            "{dir}/Chart.yaml",
+            "{dir}/*/Chart.yaml",
+            "{dir}/helmfile.y*ml",
+            "{dir}/kustomization.y*ml",
+            "{dir}/*/kustomization.y*ml",
+            "{dir}/values*.y*ml"
+          ],
+          "match": "(?i)b3log/siyuan"
+        },
+        {
+          "label": "SiYuan",
+          "kind": "uses",
+          "service": "SiYuan",
+          "paths": [
+            "~/SiYuan/conf/conf.json",
+            "~/.config/SiYuan/*.json"
+          ]
+        }
       ]
     },
     {
@@ -3928,6 +4338,22 @@
       "sources": [
         "https://github.com/openchoreo/openchoreo/security/advisories/GHSA-46r4-q7wv-32fc",
         "https://github.com/openchoreo/openchoreo/releases/tag/v1.2.5"
+      ],
+      "file_checks": [
+        {
+          "label": "OpenChoreo",
+          "kind": "uses",
+          "service": "OpenChoreo",
+          "paths": [
+            "{dir}/Chart.yaml",
+            "{dir}/*/Chart.yaml",
+            "{dir}/helmfile.y*ml",
+            "{dir}/kustomization.y*ml",
+            "{dir}/*/kustomization.y*ml",
+            "{dir}/values*.y*ml"
+          ],
+          "match": "(?i)openchoreo"
+        }
       ]
     },
     {
@@ -4344,6 +4770,31 @@
         "https://www.pingcap.com/trust-hub/security/security-update-october-2026/",
         "https://www.infoq.com/news/2026/10/pingcap-cloud-data-breach/",
         "https://imasters.com/news/pingcap-confirms-tidb-cloud-data-and-source-code-breach"
+      ],
+      "file_checks": [
+        {
+          "label": "TiDB Cloud",
+          "kind": "uses",
+          "service": "TiDB Cloud",
+          "paths": [
+            "{dir}/.env*",
+            "{dir}/.env.*",
+            "{dir}/config/*.y*ml",
+            "{dir}/*.toml"
+          ],
+          "match": "(?i)tidbcloud\\.com"
+        },
+        {
+          "label": "TiDB Cloud",
+          "kind": "uses",
+          "service": "TiDB Cloud",
+          "paths": [
+            "~/.ticloud/config.toml"
+          ],
+          "programs": [
+            "ticloud"
+          ]
+        }
       ]
     },
     {
@@ -4371,6 +4822,19 @@
         "https://studio.design/ja/security/notice/2026-10-incident",
         "https://studio.design/ja/whats-new/unauthorized-access-2026-10",
         "https://scan.netsecurity.ne.jp/article/2026/10/28/56606.html"
+      ],
+      "file_checks": [
+        {
+          "label": "Studio (studio.design)",
+          "kind": "uses",
+          "service": "Studio (studio.design)",
+          "paths": [
+            "{dir}/.env*",
+            "{dir}/.env.*",
+            "{dir}/package.json"
+          ],
+          "match": "(?i)studio\\.design"
+        }
       ]
     },
     {
@@ -5144,6 +5608,42 @@
       "sources": [
         "https://blog.railway.com/p/security-disclosure-wednesday-october-21st",
         "https://status.railway.com/incident/QH8L8B3E"
+      ],
+      "file_checks": [
+        {
+          "label": "Railway",
+          "kind": "uses",
+          "service": "Railway",
+          "paths": [
+            "{dir}/railway.json",
+            "{dir}/railway.toml"
+          ]
+        },
+        {
+          "label": "Railway",
+          "kind": "uses",
+          "service": "Railway",
+          "paths": [
+            "~/.railway/config.json"
+          ],
+          "env": [
+            "RAILWAY_TOKEN",
+            "RAILWAY_API_TOKEN"
+          ],
+          "programs": [
+            "railway"
+          ]
+        },
+        {
+          "label": "Railway",
+          "kind": "uses",
+          "service": "Railway",
+          "paths": [
+            "{dir}/.env*",
+            "{dir}/.env.*"
+          ],
+          "match": "(?i)\\.(up\\.railway\\.app|railway\\.app|rlwy\\.net|railway\\.internal)\\b"
+        }
       ]
     },
     {
@@ -5165,6 +5665,17 @@
       "sources": [
         "http://x.com/opencode/status/2111519637049319818",
         "https://www.bleepingcomputer.com/news/security/opencode-hack-exposes-api-keys-amid-ai-distillation-attacks/"
+      ],
+      "file_checks": [
+        {
+          "label": "OpenCode Console",
+          "kind": "uses",
+          "service": "OpenCode Console",
+          "paths": [
+            "~/.local/share/opencode/auth.json"
+          ],
+          "match": "\"opencode\"\\s*:"
+        }
       ]
     },
     {
@@ -5185,6 +5696,35 @@
       "iocs": [],
       "sources": [
         "https://zeabur.com/blogs/october-2026-security-incident"
+      ],
+      "file_checks": [
+        {
+          "label": "Zeabur",
+          "kind": "uses",
+          "service": "Zeabur",
+          "paths": [
+            "{dir}/zbpack.json",
+            "{dir}/zeabur.json"
+          ]
+        },
+        {
+          "label": "Zeabur",
+          "kind": "uses",
+          "service": "Zeabur",
+          "programs": [
+            "zeabur"
+          ]
+        },
+        {
+          "label": "Zeabur",
+          "kind": "uses",
+          "service": "Zeabur",
+          "paths": [
+            "{dir}/.env*",
+            "{dir}/.env.*"
+          ],
+          "match": "(?i)\\.zeabur\\.(app|internal)\\b"
+        }
       ]
     },
     {
@@ -5236,6 +5776,17 @@
       "sources": [
         "https://jvn.jp/en/jp/JVN88474777/",
         "https://www.eg-secure.co.jp/siteguard/news/alert-202610-1"
+      ],
+      "file_checks": [
+        {
+          "label": "SiteGuard Server Edition",
+          "kind": "uses",
+          "service": "SiteGuard Server Edition",
+          "paths": [
+            "/opt/jp-secure/siteguard/*",
+            "/opt/jp-secure/siteguardlite/*"
+          ]
+        }
       ]
     }
   ]

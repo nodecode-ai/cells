@@ -32,7 +32,8 @@ or, for sh -c, by a substring of the script.")
   `(with-saved-globals (nodecode-cyber-security::*fetch* nodecode-cyber-security::*run*
                         nodecode-cyber-security::*feed* nodecode-cyber-security::*feed-state*
                         nodecode-cyber-security::*feed-url* nodecode-cyber-security::*pinned*
-                        nodecode-cyber-security::*find-projects* nodecode-cyber-security::*inventory-cache*)
+                        nodecode-cyber-security::*find-projects* nodecode-cyber-security::*inventory-cache*
+                        nodecode-cyber-security::*home* nodecode-cyber-security::*root*)
      (setf *sp-fetch-answer* '(nil 599)
            *sp-outputs* '()
            *sp-ran* '()
@@ -43,7 +44,10 @@ or, for sh -c, by a substring of the script.")
            nodecode-cyber-security::*run* 'sp-run
            ;; No test walks the machine's home: a test names its projects.
            nodecode-cyber-security::*inventory-cache* nil
-           nodecode-cyber-security::*find-projects* (lambda () '()))
+           nodecode-cyber-security::*find-projects* (lambda () '())
+           ;; Signs of use read ~/ and / under empty folders: never this machine's.
+           nodecode-cyber-security::*home* (namestring (sp-scratch-dir "home"))
+           nodecode-cyber-security::*root* (namestring (sp-scratch-dir "root")))
      ,@body))
 
 (defvar *sp-ran* '() "Every argv the stubbed runner was handed, newest first.")

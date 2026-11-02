@@ -79,7 +79,7 @@ check that needs a missing one is :SKIPPED.
 result names :where it was found (a folder, or NIL for the machine)."
   (let* ((dirs (cond (dir nil) (dirs-p dirs) (t (projects))))
          (rows (loop for a in (advisories :fetch fetch)
-                     for results = (loop for c in (field a "checks")
+                     for results = (loop for c in (append (field a "checks") (field a "file_checks"))
                                          append (run-check-everywhere c :dir dir :host host :dirs dirs))
                      collect (list :id (field a "id") :title (field a "title")
                                    :severity (field a "severity")
