@@ -1201,13 +1201,40 @@ corner or letter-spacing instead of naming the kit's scale."
       (is (search "headline(" (web-js-function control each)) (format nil "~a opens with the head" each)))
     (loop for (file name) in '(("index.js" "draw") ("mcp.js" "head") ("profiles.js" "draw") ("files.js" "head") ("access.js" "draw"))
           do (is (search "headline(" (web-js-function (web-page-text file) name)) (format nil "~a's ~a opens with the head" file name)))
-    (is (search "root.append(...head(l), servers(l)" (web-page-text "mcp.js")) "MCP's head stands over its servers")
+    (is (search "root.append(head(l), servers(l)" (web-page-text "mcp.js")) "MCP's head stands over its servers")
     (is (not (search "el(\"span\", \"reading\"" (web-js-function control "drawCells"))) "the count moved into the head")
     (is (search "root.append(list, access.pairing(ch), foot);" channels) "Restart channels stands at the foot")
     (is (not (search "block(\"\", infoMark, button(" channels)) "and not over the list")
     (is (search "document.getElementById(\"control-log-state\")" (web-js-function control "drawLog")) "the log's head follows its lines")
     (is (search "root.append(dashHeadline(data, activity, range), ...(phone ? [] : [top])" dash) "the range follows the dashboard's head")
     (is (search "glance(parts, data, activity, phone ? top : null)" dash) "a phone's under its glance's hero")))
+
+;; What a section is for comes up in a card while the hand or the focus is on
+;; its info mark, and goes with them (the operator, 2026-11-02: "it should be a
+;; hover popup, not something that toggles"). Measured before it: the mark was a
+;; toggle (data-act about, aria-expanded) whose paragraph opened under the head
+;; and stayed there. The card's behaviour under a real hand is the experiment's
+;; e2e (2026-11-02-about-hover/score.cjs); this holds the shape.
+(deftest web-cell-an-info-mark-shows-its-card-under-the-hand ()
+  (let* ((control (web-page-text "control.js"))
+         (about (web-js-function control "about"))
+         (css (web-css-declarations (web-page-text "app.css")))
+         (value (lambda (selector property) (web-css-value css selector property)))
+         (pages (mapcar #'web-page-text '("control.js" "mcp.js" "access.js" "settings.js" "index.js" "profiles.js"))))
+    (is (search "role\", \"tooltip\"" about) "the card is the mark's tooltip")
+    (is (search "aria-describedby" about) "and describes it")
+    (is (search "removeAttribute(\"title\")" about) "with no second tooltip from the browser")
+    (is (search "\"pointerenter\"" about) "the hand on the mark shows it")
+    (is (search ":focus-visible" about) "so does the keys' focus")
+    (is (not (search "aria-expanded" about)) "the mark is no toggle")
+    (is (notany (lambda (page) (or (search "act: \"about\"" page) (search "case \"about\"" page) (search "c.about" page)))
+                pages) "no page keeps an about toggle's state or act")
+    (is (notany (lambda (page) (cl-ppcre:scan "const \\[\\w+, \\w+\\] = about\\(" page))
+                pages) "no caller lays the words under its head")
+    (is (equal "none" (funcall value ".ctl-about" "display")) "at rest the card is not drawn")
+    (is (equal "flex" (funcall value ".ctl-info[data-open] > .ctl-about" "display")) "open, it is")
+    (is (equal "absolute" (funcall value ".ctl-about" "position")) "over the page, never in its flow")
+    (is (equal "none" (funcall value ".ctl-about" "text-transform")) "in plain type inside a micro heading")))
 
 ;; One button, one filter, one field, one banner (step 3 of the standard).
 ;; Measured before it: 23 button looks on a phone, the desktop's capitalised

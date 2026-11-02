@@ -162,7 +162,7 @@ export function makeMcp({ c, api, act, toast, redraw, reload }) {
 
   // The page's head: how many servers, the tools the ready ones give, any failing.
   function head(l) {
-    const [infoMark, words] = about(c, "mcp", t("Tools from servers that speak the Model Context Protocol (MCP), each set under mcp.servers in config.jsonc; the agent calls them from its eval tool. Test lists what a server offers on the connection the agent uses, and reconnects one that is down. Adding or removing a server starts the MCP cell again, which reconnects every server."));
+    const infoMark = about("mcp", t("Tools from servers that speak the Model Context Protocol (MCP), each set under mcp.servers in config.jsonc; the agent calls them from its eval tool. Test lists what a server offers on the connection the agent uses, and reconnects one that is down. Adding or removing a server starts the MCP cell again, which reconnects every server."));
     const ready = l.servers.filter((s) => s.state === "ready");
     const failing = l.servers.filter((s) => ["error", "refused"].includes(s.state)).length;
     const node = headline(plural(l.servers.length, t("{n} server"), t("{n} servers")),
@@ -171,7 +171,7 @@ export function makeMcp({ c, api, act, toast, redraw, reload }) {
           servers: plural(ready.length, t("{n} ready server"), t("{n} ready servers")) }),
       failing ? plural(failing, t("{n} is failing."), t("{n} are failing.")) : "");
     (node.querySelector(".micro") || node).append(" ", infoMark);
-    return [node, words];
+    return node;
   }
 
   // --- the ledger: a line a server ---------------------------------------------------
@@ -353,9 +353,8 @@ export function makeMcp({ c, api, act, toast, redraw, reload }) {
       box.append(waiting(k?.error ? t("The catalog could not be read: {error}", { error: k.error }) : t("Reading the catalog…")));
       return box;
     }
-    const [infoMark, words] = about(c, "catalog", t("Well-known servers, each checked against its own project's documentation. Add fills the form above with how it runs and asks only for the keys it needs; a server is someone else's code, so read its page first."));
+    const infoMark = about("catalog", t("Well-known servers, each checked against its own project's documentation. Add fills the form above with how it runs and asks only for the keys it needs; a server is someone else's code, so read its page first."));
     const box = block(t("Catalog"), infoMark);
-    box.append(words);
     const rows = el("ol", "ctl-list");
     for (const entry of k.servers) {
       const li = el("li", "ctl-row");
@@ -397,7 +396,7 @@ export function makeMcp({ c, api, act, toast, redraw, reload }) {
       root.append(line);
       return root;
     }
-    root.append(...head(l), servers(l), addForm(), catalog());
+    root.append(head(l), servers(l), addForm(), catalog());
     return root;
   }
 
