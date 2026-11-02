@@ -458,7 +458,7 @@ code, pre, kbd { font-family: var(--mono); }
    from, as the terminal draws it -- the eye goes down one edge, never across. */
 .ask { display: flex; flex-direction: column; align-items: flex-start; }
 .bubble {
-  max-width: 78%; padding: 12px 16px; border: 1px solid var(--seam); border-radius: var(--r-control); background: var(--subtle);
+  max-width: 78%; padding: 10px 16px; border: 1px solid transparent; border-radius: var(--r-card); background: var(--duo-chip);
   font-size: var(--fs-body); line-height: 1.5; color: var(--primary); white-space: pre-wrap;
 }
 .bubble.long { padding: 0; }
@@ -483,8 +483,11 @@ code, pre, kbd { font-family: var(--mono); }
 .fold > summary { list-style: none; cursor: pointer; }
 .fold > summary::-webkit-details-marker { display: none; }
 .work > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
-.work > summary .count { font: var(--fs-micro) var(--mono); color: var(--tertiary); font-variant-numeric: tabular-nums; }
-.work > summary .failed { font: var(--fs-micro) var(--mono); color: var(--danger-lit); }
+.work > summary { color: var(--muted); }
+.work > summary .micro { font: 500 var(--fs-detail)/1.4 var(--sans); letter-spacing: 0; text-transform: none; color: var(--muted); }
+.work > summary .count { font: var(--fs-detail)/1.4 var(--sans); color: var(--tertiary); font-variant-numeric: tabular-nums; }
+.work > summary .failed { font: var(--fs-detail)/1.4 var(--sans); color: var(--danger-lit); }
+.work > summary:hover .micro { color: var(--secondary); }
 /* Under a running turn's bar, the newest finished thinking: one paragraph, no
    label, a step quieter than the work, faded in -- the TUI's live thought. */
 .prose.live-thought { display: block; margin-top: 8px; max-height: calc(4 * 1.6em); overflow: hidden; font-size: 14px; line-height: 1.6; font-style: italic; font-synthesis: style; color: var(--tertiary); animation: thought-in 420ms ease-out both; animation-delay: var(--faded, 0ms); }
@@ -493,7 +496,7 @@ code, pre, kbd { font-family: var(--mono); }
 @keyframes thought-in { from { opacity: 0; } to { opacity: 1; } }
 /* One mark per call, in the order they ran; a long turn's marks narrow to fit. */
 .work > summary .ticks { display: inline-flex; gap: 2px; align-self: center; min-width: 0; max-width: 240px; overflow: hidden; }
-.ticks i { flex: 0 1 auto; width: 12px; min-width: 2px; height: 3px; border-radius: var(--r-chip); background: var(--diff-add); opacity: 0.55; }
+.ticks i { flex: 0 1 auto; width: 10px; min-width: 2px; height: 2px; border-radius: var(--r-chip); background: var(--faint); }
 .ticks i.failed { background: var(--danger-lit); opacity: 1; }
 .ticks i.running { background: var(--accent-fill); opacity: 1; animation: led 1.4s ease-in-out infinite; }
 /* A fold's end: a chevron, turned down while the fold is open. */
@@ -515,7 +518,7 @@ code, pre, kbd { font-family: var(--mono); }
 .act > summary, .act-line { display: flex; align-items: center; gap: 14px; padding: 4px 0; }
 .gut { display: flex; flex-direction: column; align-items: center; align-self: stretch; width: 16px; flex: none; color: var(--tertiary); }
 .gut i { width: 1px; flex: 1; background: var(--seam); }
-.act .title { font-size: var(--fs-body); line-height: 1.35; color: var(--foreground); min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.act .title { font-size: var(--fs-body); line-height: 1.35; color: var(--secondary); min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .act .title.tool-name { font: var(--fs-body)/1.35 var(--mono); }
 .act .title.said { color: var(--secondary); }
 .act .title.thought { color: var(--muted); }
@@ -549,7 +552,7 @@ code, pre, kbd { font-family: var(--mono); }
    under 2:1 from the text around it. Code reads as brightly as the text, never
    in the dimmest tone. */
 .answer { margin-top: 20px; }
-.prose { display: flex; flex-direction: column; gap: 14px; font-size: 15px; line-height: 1.75; color: var(--secondary); }
+.prose { display: flex; flex-direction: column; gap: 14px; font-size: 15px; line-height: 1.7; color: var(--secondary); }
 .prose > * { margin: 0; }
 .prose > :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6) { max-width: 520px; }
 .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 { font-weight: 600; line-height: 1.4; color: var(--primary); }
@@ -567,9 +570,9 @@ code, pre, kbd { font-family: var(--mono); }
 .prose em { font-style: italic; font-synthesis: style; color: var(--primary); }
 .prose a { color: var(--primary); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent-fill) 50%, transparent); text-underline-offset: 0.18em; }
 .prose code { background: var(--subtle); padding: 2px 6px; font-size: 0.9em; color: var(--foreground); }
-.prose pre { background: var(--inset); padding: 12px 14px; font: 13.5px/1.7 var(--mono); color: var(--foreground); overflow-x: auto; white-space: pre; }
+.prose pre { position: relative; background: var(--inset); padding: 12px 16px; border: 1px solid var(--seam); font: 13px/1.65 var(--mono); color: var(--foreground); overflow-x: auto; white-space: pre; }
 .prose pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
-.prose pre[data-lang]::before { content: attr(data-lang); display: block; margin-bottom: 6px; font: 500 11px var(--micro); text-transform: uppercase; color: var(--tertiary); }
+.prose pre[data-lang]::before { content: attr(data-lang); display: block; margin-bottom: 8px; font: 12px/1.4 var(--mono); text-transform: lowercase; color: var(--tertiary); }
 /* A list keeps the browser's own markers -- a number that starts where the
    list does, a disc, then a circle and a square as lists nest -- in a grey that
    reads. An item's blocks (a second paragraph, a fence, a nested list) stack
@@ -585,7 +588,7 @@ code, pre, kbd { font-family: var(--mono); }
 .prose blockquote { padding-left: 14px; border-left: 1px solid var(--seam-lit); color: var(--muted); }
 .prose hr { border: 0; height: 1px; background: var(--seam); }
 .prose table { border-collapse: collapse; }
-.prose th { padding: 0 20px 8px 0; border-bottom: 1px solid var(--seam-lit); text-align: left; font: 500 11px/1.2 var(--micro); text-transform: uppercase; color: var(--tertiary); white-space: nowrap; }
+.prose th { padding: 0 20px 8px 0; border-bottom: 1px solid var(--seam-lit); text-align: left; font: 500 13px/1.4 var(--sans); color: var(--muted); white-space: nowrap; }
 .prose td { padding: 10px 20px 10px 0; border-bottom: 1px solid var(--seam); font-size: 14.5px; line-height: 1.65; vertical-align: top; }
 .prose th, .prose td { overflow-wrap: normal; }
 .live-answer > :last-child::after { content: "\258D"; color: var(--accent); animation: caret 1s steps(2, start) infinite; margin-left: 2px; }
@@ -611,12 +614,12 @@ code, pre, kbd { font-family: var(--mono); }
 .answer.prose .duo-band {
   --tail: calc(var(--fade, 12) * 1ch + 0.6em);
   margin: 0 calc(0px - var(--tail)) 0 -12px; padding: 2px var(--tail) 2px 12px;
-  background: linear-gradient(var(--duo-subheading), var(--duo-subheading)) 0 0 / 3px 100% no-repeat,
+  background: linear-gradient(var(--duo-bar), var(--duo-bar)) 0 0 / 2px 100% no-repeat,
     linear-gradient(90deg, var(--band-ground) calc(100% - var(--tail) + 0.6em), transparent);
 }
 .answer.prose > h1 > .duo-band { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.24em; text-decoration-color: color-mix(in srgb, var(--duo-heading) 55%, transparent); }
 .answer.prose .duo-band strong { font-weight: 650; color: var(--duo-heading); background: none; padding: 0; }
-.answer.prose :where(strong) { color: var(--duo-strong); background-color: var(--duo-chip); padding: 1px 0.3em; border-radius: var(--r-chip); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.answer.prose :where(strong) { color: var(--duo-strong); background-color: transparent; padding: 0; border-radius: var(--r-chip); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .answer.prose :where(.inline-color strong) { background: none; padding: 0; }
 .answer.prose :where(strong.glint) {
   background-image: linear-gradient(100deg, transparent 35%, var(--duo-glint) 50%, transparent 65%);
@@ -626,11 +629,12 @@ code, pre, kbd { font-family: var(--mono); }
 @keyframes glint { from { background-position: 100% 0; } to { background-position: 0% 0; } }
 @media (prefers-reduced-motion: reduce) { .answer.prose strong.glint { animation: none; background-image: none; } }
 .answer.prose :where(em) { color: var(--foreground); }
-.answer.prose :where(:not(pre) > code) { background: none; padding: 0; color: var(--duo-code); }
+.answer.prose :where(:not(pre) > code) { background: var(--slab-subtle); padding: 0.1em 0.4em; border-radius: var(--r-chip); font-size: 0.87em; color: var(--duo-code); }
+.prose code .quiet { all: unset; color: var(--duo-quiet); }
 .answer.prose :where(code.path) { color: var(--duo-path); }
 .answer.prose :where(code .quiet) { color: var(--duo-quiet); }
 .answer.prose :where(li)::marker { color: var(--duo-mark); }
-.answer.prose :where(pre) { background: var(--duo-slab); border-radius: var(--r-chip); }
+.answer.prose :where(pre) { background: var(--duo-slab); border-radius: var(--r-control); }
 .answer.prose :where(pre[data-lang])::before { color: var(--duo-quiet); }
 .answer.prose pre .copy { background: var(--duo-slab); }
 .answer.prose :where(blockquote) { border-left: 3px solid var(--duo-bar); padding-left: 12px; }
