@@ -933,8 +933,11 @@ the gateway's thread — a join loads libdave — one seat change at a time."
       (bt2:with-lock-held (*voice-seat-lock*)
         (nlk:with-handlers ((error (condition) (voice-note "~a" condition)))
           (let ((lane *voice-lane*))
-            (multiple-value-call #'voice-act section
-              (voice-reaction section (and lane lane.channel-id) user was))))))))
+            ;; A move no rule covers answers a single NIL: nothing to do.
+            (multiple-value-bind (action channel why)
+                (voice-reaction section (and lane lane.channel-id) user was)
+              (when action
+                (voice-act section action channel why)))))))))
 
 (defun voice-idle-p (lane section now)
   "Whether LANE has sat past voice_idle_minutes with nobody speaking to it,

@@ -730,6 +730,26 @@ thinks with aside."
         (ncd:route-voice-dispatch adapter g1)
         (is (equal '(("ana" "vc-1" . nil) ("helper" "vc-1" . t) ("kim" "vc-9" . nil)) (seats)))))))
 
+(defun await-voice-seat-change (&optional (seconds 10))
+  "Wait, up to SECONDS, until no seat change VOICE-APPLY-RULES started is running."
+  (loop repeat (* 20 seconds)
+        while (find "channel-discord-voice-seat" (bt2:all-threads) :key #'bt2:thread-name :test #'equal)
+        do (sleep 0.05)))
+
+(deftest channel-discord-voice-a-move-no-rule-covers-is-nothing-to-report ()
+  ;; A person moving where no rule seats the bot leaves it where it is, and
+  ;; there is nothing to say. VOICE-REACTION answers a single NIL then, which
+  ;; once reached VOICE-ACT as two arguments, and the channel status read
+  ;; `invalid number of arguments: 2' after every harmless move.
+  (with-voice-seats ()
+    (let ((ncd::*voice-section* (voice-section)))
+      (nck:set-channel-status "discord" :voice nil)
+      (is (ncd:route-voice-dispatch
+           (voice-adapter) (cell-json "{\"t\": \"VOICE_STATE_UPDATE\", \"d\": {\"guild_id\": \"g1\",
+                             \"user_id\": \"ana\", \"channel_id\": \"vc-2\"}}")))
+      (await-voice-seat-change)
+      (is (null (getf (nck:channel-status "discord") :voice)) "the status reports no failure"))))
+
 (deftest channel-discord-voice-its-own-leave-ends-no-lane ()
   ;; The bot asked to leave: the voice state that says it is out is its own
   ;; doing, and a lane sitting down meanwhile keeps its seat. Disconnected by
