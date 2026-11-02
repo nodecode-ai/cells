@@ -1,8 +1,110 @@
 {
   "format": 1,
-  "updated": "2026-11-02T04:16:48Z",
+  "updated": "2026-11-02T10:17:24Z",
   "window": "2026-10-19 to 2026-11-02",
   "advisories": [
+    {
+      "id": "bil-rgb-baileys-malware",
+      "title": "Malware in @bil-rgb/baileys (npm): a WhatsApp-library lookalike whose install clones attacker-controlled code from a personal GitHub repo",
+      "date": "2026-11-02",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "Version 1.0.0 (and 1.0.1) of @bil-rgb/baileys - named after the Baileys WhatsApp Web library, the second poisoned Baileys lookalike this feed has seen - declares its libsignal dependency as 'github:tenka-san/libsignal-node' with no commit SHA, tag or integrity check. npm resolves that by cloning whatever sits at HEAD of that personal GitHub account and running its lifecycle scripts at install time, so the installer executes code the account can change at will. A WhatsApp library also sits beside the session credentials, so a compromised install reaches the messaging account too.",
+      "affected": "@bil-rgb/baileys 1.0.0 and 1.0.1 (npm). No clean version exists: remove the package.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@bil-rgb/baileys",
+          "package": "@bil-rgb/baileys",
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall @bil-rgb/baileys; clean lockfiles and CI images) and install the real baileys from its official npm package",
+        "Treat machines that installed it as compromised: rotate secrets from a different machine, including the WhatsApp session credentials"
+      ],
+      "mitigation": [
+        "Reject dependencies pinned to a bare GitHub URL - a github:user/repo dependency without a commit SHA is code execution by whatever that account pushes next"
+      ],
+      "iocs": [
+        "github:tenka-san/libsignal-node (unpinned dependency)"
+      ],
+      "sources": [
+        "https://vulnerability.circl.lu/vuln/mal-2026-18441",
+        "https://osv.dev/vulnerability/MAL-2026-18441"
+      ]
+    },
+    {
+      "id": "axon-web-icons-malware",
+      "title": "Malware in @axon-web/icons (npm) 99.0.0: on require it beacons host and username over DNS and lists credential-like environment keys",
+      "date": "2026-11-01",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "The package @axon-web/icons 99.0.0 is a probe: on require it builds an identifier from os.hostname() and the OS username, resolves a subdomain under nxsqlpejfpamagxctjyv4c9qj1gfdtzwi.oast.fun (an interactsh-style out-of-band collector) - leaking both to an attacker-controlled DNS server as a side effect of import - and enumerates process.env key names matching /token|secret|key|pass|aws|github|npm/i, writing them to stdout as credential reconnaissance. A 99.x version number signals a dependency-confusion shim; nothing about icon rendering needs any of it.",
+      "affected": "@axon-web/icons 99.0.0 - the package's published version. Remove and rotate.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@axon-web/icons",
+          "package": "@axon-web/icons",
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall @axon-web/icons; clean lockfiles and CI images) and rotate any secret whose name it could have listed",
+        "Treat the install host as reconnoitered: hostname and OS username are with the attacker now"
+      ],
+      "mitigation": [
+        "Block *.oast.fun at build-host DNS and egress, and alert on requires that perform DNS lookups to per-run subdomains"
+      ],
+      "iocs": [
+        "nxsqlpejfpamagxctjyv4c9qj1gfdtzwi.oast.fun (DNS out-of-band collector)",
+        "process.env key enumeration: /token|secret|key|pass|aws|github|npm/i"
+      ],
+      "sources": [
+        "https://o3.security/malware/npm/%40axon-web/icons"
+      ]
+    },
+    {
+      "id": "hs-framework-malware",
+      "title": "Malware in hs-framework (npm) 999.9.1-999.9.2: install runs attacker-controlled code from a moving dependency",
+      "date": "2026-11-01",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "hs-framework 999.9.1 and 999.9.2 - a version number built to win dependency resolution - execute attacker-controlled code when installed, and the fetched dependency can change without a package update: the same version number is a different payload tomorrow. No fix is published; the package provides no legitimate function.",
+      "affected": "hs-framework 999.9.1 and 999.9.2 (npm) - remove it.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "hs-framework",
+          "package": "hs-framework",
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall hs-framework; clean lockfiles and CI images) and treat the install host as compromised: rotate its secrets from a different machine"
+      ],
+      "mitigation": [
+        "Reject 999.x or 99.x package versions in dependency review - nobody ships a library at version 999"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://vulertsecurity.com/vuln-db/malicious-code-in-hs-framework--npm",
+        "https://osv.dev/vulnerability/MAL-2026-18434"
+      ]
+    },
     {
       "id": "signalk-resources-traversal",
       "title": "Signal K resources API path traversal discloses the JWT signing secret and enables remote code execution",
@@ -1025,6 +1127,40 @@
       "sources": [
         "https://sec.cloudapps.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-asaftd-tunnel-dos-s6mgkb75",
         "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+      ]
+    },
+    {
+      "id": "nobtrainer-sdk-malware",
+      "title": "Malware in @notrainer/nobtrainer-sdk (npm): an information stealer exfiltrating to a Discord webhook",
+      "date": "2026-10-29",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "@notrainer/nobtrainer-sdk (1.0.2 and later) is an information stealer: it exfiltrates sensitive host data to an attacker-controlled Discord webhook (ID 1433690093175967776) - the same webhook used by the npm package @johnruff215-dev/solana-wallet-tracker, which ties both to one actor and campaign. The package provides no legitimate functionality.",
+      "affected": "@notrainer/nobtrainer-sdk 1.0.2 and later (npm). Remove it.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@notrainer/nobtrainer-sdk",
+          "package": "@notrainer/nobtrainer-sdk",
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall @notrainer/nobtrainer-sdk; clean lockfiles and CI images) and treat the host as compromised: rotate its secrets from a different machine",
+        "Check for @johnruff215-dev/solana-wallet-tracker on the same machines - the campaign shipped both"
+      ],
+      "mitigation": [
+        "Block Discord webhook traffic (discord.com/api/webhooks) from build hosts and CI - stealers use it because nothing blocks it"
+      ],
+      "iocs": [
+        "Discord webhook ID 1433690093175967776 (exfiltration endpoint)"
+      ],
+      "sources": [
+        "https://o3.security/malware/npm/%40notrainer/nobtrainer-sdk"
       ]
     },
     {
