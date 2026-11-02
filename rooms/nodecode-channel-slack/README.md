@@ -53,7 +53,7 @@ Slack's free plan allows custom apps (up to ten per workspace).
 
 ## Configure
 
-`/gateway setup slack` in the shell (`nodecode`) walks it on a sheet. Or add a
+`nodecode gateway setup slack` opens the shell on a setup sheet that walks it. Or add a
 `channels.slack` section to `~/.nodecode/config.jsonc`, or tell Nodecode
 "set up slack" and it walks you through it. It checks both tokens
 and lists your channels and people by name, so you pick ids from a list.

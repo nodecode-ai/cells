@@ -21,9 +21,9 @@ start until you name who may talk to it.
 ## Quick start
 
 With the token (step 1) and a message sent to the bot (step 3),
-`/gateway setup telegram` in the shell (`nodecode`) does the rest: it turns
-the cell on, keeps the token you paste in a 0600 file, checks it, offers the
-chats by name and starts the bot. By hand:
+`nodecode gateway setup telegram` does the rest on a setup sheet in the
+shell: it turns the cell on, keeps the token you paste in a 0600 file, checks
+it, offers the chats by name and starts the bot. By hand:
 
 1. Message [@BotFather](https://t.me/BotFather), send `/newbot`, and pick a
    name. Save the token it answers with to a file only you can read, for

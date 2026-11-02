@@ -6,11 +6,12 @@ Nodecode install with a working model (`/connect` and `/models` in the
 terminal).
 
 The short way: create the application and copy its token (steps 1 and 2),
-then in the shell (`nodecode`) type `/gateway setup discord` and paste the
-token. Its check switches on Message Content when it is off (Discord lets
-an app in fewer than 100 servers set it itself) and gives the invite link
-with the permissions in section 4. The sheet waits for the bot to join a
-server, then has you pick channels, the owner (whoever made the app, ticked
+then run `nodecode gateway setup discord` (or `/gateway setup discord` in a
+shell already open) and paste the token. It opens the shell on a setup
+sheet. Its check switches on Message Content when it is off (Discord lets an
+app in fewer than 100 servers set it itself) and gives the invite link with
+the permissions in section 4. The sheet waits for the bot to join a server,
+then has you pick channels, the owner (whoever made the app, ticked
 already), people and roles from a checklist. The rest of this page is the
 same by hand.
 
@@ -127,7 +128,7 @@ With voice, use `permissions=326420778048`. The `applications.commands`
 scope is what lets the bot's slash commands appear in the server. If you
 invited the bot without it, open the URL again.
 
-After step 4, `/gateway setup discord` in the shell does steps 5 to 8: it
+After step 4, `nodecode gateway setup discord` does steps 5 to 8 on a sheet in the shell: it
 turns the cell on, keeps the token you paste in a 0600 file, checks it with
 Discord, offers the channels by name and starts the bot. The steps below
 are the same by hand.
