@@ -2050,10 +2050,68 @@ button.p-row:active { background: var(--field-lit); }
 .ctl-mcp-from { margin: 0; font-size: var(--fs-body); line-height: 1.5; color: var(--secondary); }
 .ctl-mcp-from-name { font-family: var(--mono); color: var(--foreground); }
 .ctl-mcp-from .tag { font: var(--fs-micro) var(--mono); color: var(--tertiary); }
+/* The MCP servers as a ledger (mcp.js, the variants artifact's A): a line a server,
+   its columns aligned under their names; a server's lines (its line, its error, its
+   log, its tools) one group, a rule over each group, none inside it. The mark has a
+   slot of its own, so a name stands in the same place with a mark and without. */
+.ctl-mcp-block > .obs-head .ctl-mcp-find { margin-left: auto; width: 260px; }
+.ctl-mcp-block > .obs-head .micro + .quiet { margin-left: auto; }
+.ctl-mcp > li[hidden], .ctl-mcp-tool[hidden], .ctl-mcp-card[hidden] { display: none; }
+.ctl-mcp > li { border-bottom: 0; }
+.ctl-mcp { border-bottom: 1px solid var(--seam); }
+.ctl-mcp-cols, .ctl-mcp-row { display: grid; grid-template-columns: minmax(150px, 210px) 48px 52px minmax(0, 1fr) 64px 132px; column-gap: 16px; align-items: center; }
+.ctl-mcp-cols { padding: 9px 0 8px; }
+.ctl-mcp-cols .micro { color: var(--tertiary); }
+.ctl-mcp-cols :nth-child(2), .ctl-mcp-cols :nth-child(5), .ctl-mcp-n, .ctl-mcp-ms { text-align: right; }
+.ctl-mcp > .ctl-mcp-row { padding: 6px 0; border-top: 1px solid var(--seam); }
+.ctl-mcp-toggle { min-width: 0; min-height: 32px; padding: 0; text-align: left; font: inherit; cursor: pointer; }
+.ctl-mcp-toggle svg { flex: none; color: var(--tertiary); transition: transform 130ms; }
+.ctl-mcp-toggle[aria-expanded="true"] svg { transform: rotate(90deg); }
+.ctl-mcp-toggle:hover .ctl-mcp-name { color: var(--primary); }
+.ctl-mcp-mark { flex: none; width: 5px; display: flex; }
+.ctl-mcp-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctl-mcp-n { font: var(--fs-detail) var(--sans); font-variant-numeric: tabular-nums; color: var(--secondary); }
+.ctl-mcp-ms { font: var(--fs-detail) var(--sans); font-variant-numeric: tabular-nums; color: var(--tertiary); }
+.ctl-mcp-via { justify-self: start; padding: 1px 5px; border: 1px solid var(--seam-lit); border-radius: var(--r-chip); font: var(--fs-micro)/1.4 var(--mono); color: var(--tertiary); }
+.ctl-mcp-runs { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: var(--fs-detail) var(--mono); color: var(--tertiary); }
+.ctl-mcp-row .ctl-acts { justify-content: flex-end; align-items: center; margin-left: 0; }
+.ctl-mcp-row[data-level="error"] .ctl-acts .word { color: var(--secondary); }
+.ctl-mcp > .ctl-sub { margin-top: -2px; padding: 0 0 10px 37px; }
+.ctl-mcp > .ctl-inset { padding: 0 0 12px 37px; border-bottom: 0; }
+.ctl-mcp-path { margin: 0 0 6px; font: var(--fs-micro)/1.5 var(--mono); color: var(--tertiary); overflow-wrap: anywhere; }
+.ctl-mcp-log .ctl-mcp-said { max-height: 280px; font-family: var(--mono); }
+.ctl-mcp-fold { position: relative; padding: 0 0 14px 37px; }
+.ctl-mcp-fold > .ctl-said { margin: 0 0 8px; color: var(--secondary); }
+.ctl-mcp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); column-gap: 18px; }
+.ctl-mcp-tool { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: var(--fs-detail)/2 var(--mono); color: var(--secondary); cursor: default; outline: none; }
+.ctl-mcp-tool:is(:hover, :focus-visible) { color: var(--primary); text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: 3px; }
+.ctl-mcp-about { display: none; }
+.ctl-mcp-card { position: absolute; z-index: 4; width: min(360px, 100%); padding: 10px 12px; border: 1px solid var(--seam-lit); border-radius: var(--r-control); background: var(--raised); box-shadow: var(--shadow); font: var(--fs-detail)/1.5 var(--sans); color: var(--secondary); pointer-events: none; }
+.ctl-mcp-card-name { display: block; margin-bottom: 3px; font-family: var(--mono); color: var(--primary); }
+.ctl-mcp-none { padding: 12px 0; }
 @media (max-width: 720px) {
   .ctl-mcp-tools { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .ctl-mcp-tools dd { margin-bottom: 6px; }
+  /* A phone's ledger: the name, its count, the acts; what it runs is the desktop's. */
+  .ctl-mcp-block > .obs-head { flex-wrap: wrap; }
+  .ctl-mcp-block > .obs-head .ctl-mcp-find { order: 3; flex: 1 1 100%; width: auto; margin-left: 0; }
+  .ctl-mcp-block > .obs-head .quiet { margin-left: auto; }
+  .ctl-mcp-cols { display: none; }
+  .ctl-mcp-via, .ctl-mcp-runs, .ctl-mcp-ms { display: none; }
+  .ctl-mcp > .ctl-sub, .ctl-mcp > .ctl-inset, .ctl-mcp-fold { padding-left: 0; }
+  .ctl-mcp-grid { grid-template-columns: minmax(0, 1fr); }
+  .ctl-mcp-tool { padding: 8px 0; border-top: 1px solid var(--seam); white-space: normal; line-height: 1.4; }
+  .ctl-mcp-about { display: block; margin-top: 2px; font: var(--fs-detail)/1.45 var(--sans); color: var(--tertiary); }
+  .ctl-mcp-card { display: none; }
 }
+/* A phone's MCP row on the pane's phone grid: the name, which folds its tools out
+   (its chevron points down, never like the sheet's), the count on the same line,
+   and the sheet's chevron, which raises Test, Restart and Remove. */
+.ctl-phone .ctl-mcp > .ctl-mcp-row { grid-template-columns: minmax(0, 1fr) auto auto; column-gap: 12px; }
+.ctl-phone .ctl-mcp > .ctl-mcp-row > .ctl-mcp-n { grid-column: 2; grid-row: 1; font-size: var(--fs-body); }
+.ctl-phone .ctl-mcp > .ctl-mcp-row > .ctl-acts { grid-column: 3; grid-row: 1; }
+.ctl-phone .ctl-mcp-toggle svg { transform: rotate(90deg); }
+.ctl-phone .ctl-mcp-toggle[aria-expanded="true"] svg { transform: rotate(-90deg); }
 
 /* --- link --- */
 /* Who is let in (access.js): the Channels tab's Pairing block, and the Link
@@ -2622,6 +2680,7 @@ button.p-row:active { background: var(--field-lit); }
   .fs-acts .icon { width: 44px; height: 44px; }                  /* Read again, Upload */
   button.sw { min-height: 44px; }                                /* a switch: a range, a filter, a level */
   .ctl-prof-row { min-height: 56px; }                           /* a profile, its panel on a tap */
+  .ctl-mcp-toggle { min-height: 44px; }                         /* an MCP server, its tools on a tap */
 }
 
 /* --- end of a finger's hit areas */
