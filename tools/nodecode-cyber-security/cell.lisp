@@ -114,7 +114,7 @@ offer the nodecode-security-audit cell.")
     ("refresh_hours" :integer :default 6 :min 1 :doc "how often the feed is re-read")
     ("project_dirs" :list :doc "more folders whose projects and sites /security checks, beside the home, /var/www and /srv")
     ("scan_depth" :integer :default 4 :min 1 :doc "how many folder levels under each root the project search reads"))
-  (:help :security "cyber security, start here for breaches, CVEs, patches or 'check/secure my website or server': (security:report :dir \"/var/www/site\" :host \"example.com\"), then (help :security) for checking and patching a site" +manual+)
+  (:help :security "cyber security, start here for breaches, CVEs, patches or 'check/secure my website or server': (security:report) checks this machine and its own projects and sites, then (help :security) for checking and patching a site" +manual+)
   (:command "security" 'run-slash
             :description "Recent breaches and the patch for each; check this machine"
             :argument-hint "[check FOLDER HOST | show ID | all | projects | refresh]")

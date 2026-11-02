@@ -105,14 +105,28 @@ vulnerable build, a fixed one, or an error reading it."
             (:manual "READ ") (:ok "ok   ") (t "--   "))
           (string-upcase (or (getf r :severity) "")) (getf r :exploited)
           (getf r :id) (getf r :title))
-  (dolist (c (getf r :results))
-    (when (member (getf c :status) '(:vulnerable :error :skipped :ok))
-      (format s "    ~a~@[ in ~a~]: ~a~@[ ~a~]~%" (getf c :label)
-              (and (getf c :where) (short-folder (getf c :where)))
-              (getf c :why)
-              (and (eq (getf c :status) :vulnerable) (getf c :found)
-                   (not (search (getf c :found) (getf c :why)))
-                   (getf c :found))))))
+  (flet ((line (c)
+           (format s "    ~a~@[ in ~a~]: ~a~@[ ~a~]~%" (getf c :label)
+                   (and (getf c :where) (short-folder (getf c :where)))
+                   (getf c :why)
+                   (and (eq (getf c :status) :vulnerable) (getf c :found)
+                        (not (search (getf c :found) (getf c :why)))
+                        (getf c :found)))))
+    (let* ((results (getf r :results))
+           (bad (remove-if-not (lambda (c) (member (getf c :status) '(:vulnerable :error :skipped))) results))
+           ;; A fixed build is worth a line; a sign-of-compromise search that found nothing is not.
+           (fine (remove-if-not (lambda (c) (and (eq (getf c :status) :ok) (getf c :found)
+                                                  (not (member (getf c :kind) '("command" "files") :test #'equal))))
+                                results)))
+      (mapc #'line (sort (copy-list bad) #'< :key (lambda (c) (getf +rank+ (getf c :status)))))
+      (cond ((null fine))
+            ((and bad (eq (getf r :status) :vulnerable))
+             (format s "    already fixed ~{~a~^, ~}~%"
+                     (loop for c in fine
+                           collect (if (getf c :where)
+                                       (format nil "in ~a (~a)" (short-folder (getf c :where)) (getf c :found))
+                                       (format nil "on this machine (~a)" (getf c :found))))))
+            (t (mapc #'line fine))))))
 
 (defun report (&key dir host (fetch nil) rows all (dirs nil dirs-p))
   "CHECK's answer as text a person reads: what this machine and its projects
@@ -127,9 +141,9 @@ every advisory instead, the way the feed has them."
       (format s "~a~%" (feed-status))
       (format s "checked: this machine~@[, site folder ~a~]~@[, host ~a~]" dir host)
       (when dirs
-        (format s " and ~d project~:p: ~{~a~^, ~}~@[ and ~d more (security:projects)~]"
-                (length dirs) (mapcar #'short-folder (subseq dirs 0 (min 8 (length dirs))))
-                (and (> (length dirs) 8) (- (length dirs) 8))))
+        (if (<= (length dirs) 8)
+            (format s " and ~d project~:p: ~{~a~^, ~}" (length dirs) (mapcar #'short-folder dirs))
+            (format s " and its ~d projects (/security projects lists them)" (length dirs))))
       (format s "~%~%")
       (if shown
           (dolist (r shown) (report-row s r))

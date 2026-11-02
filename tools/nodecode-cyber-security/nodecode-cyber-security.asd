@@ -34,6 +34,7 @@
                (:file "feed-test")
                (:file "detect-test")
                (:file "run-test")
+               (:file "inventory-test")
                (:file "scan-test")
                (:file "cell-test"))
   :perform (test-op (operation component)

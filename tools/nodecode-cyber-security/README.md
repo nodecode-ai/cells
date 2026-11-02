@@ -7,15 +7,38 @@ says whether *this* machine or site still needs it.
 nodecode add nc://nodecode-cyber-security
 ```
 
-Then ask nodecode to "check my site for the latest breaches", or:
+Then ask nodecode "am I hit by any of the latest breaches?", or:
 
 ```lisp
-(security:report :dir "/var/www/site" :host "example.com")  ; what to patch first
+(security:report)                                            ; this machine and its projects
+(security:report :dir "/var/www/site" :host "example.com")  ; one site, with its host name
 (security:show "php2shell")                                  ; the fix, the stopgap, the signs
 ```
 
 `/security`, `/security check /var/www/site example.com`, `/security show ID` do the same
-from any shell or chat room.
+from any shell or chat room; `/security projects` lists the folders it checks and
+`/security all` the whole feed.
+
+## Your stack, not the news
+
+The report answers about the machine it runs on and the projects on it, never with the
+whole feed. It finds them itself: folders under the home, `/var/www` and `/srv` that hold
+a lockfile or manifest (npm, pnpm, yarn, composer, Python, Cargo, Go, Ruby, Maven,
+Gradle), a WordPress core, a virtualenv or a git repository, the folders nodecode
+sessions ran in, and any `project_dirs` you add. The search reads folder names only,
+follows no symbolic link, skips hidden folders, dependency trees and caches, and stops
+at `scan_depth` levels.
+
+Every check that reads a site folder runs in each project, and a Python package is read
+from each project's own virtualenv as well as the system python. The report lists only
+the advisories something was found for: what to patch first, each hit with the folder
+it is in, then what you run at a fixed build. The rest fold into one line that counts
+them: software found nowhere here, platform breaches with no machine check, and checks
+that could not run.
+
+```jsonc
+"cyber-security": { "project_dirs": ["/opt/sites"], "scan_depth": 4 }  // both optional
+```
 
 ## What it checks
 
@@ -30,8 +53,8 @@ Each advisory in [`advisories.json`](advisories.json) carries its own checks:
 | `command` | a command's output (e.g. the site certificate's issuer) |
 | `files` | known signs of compromise on disk |
 
-Advisories with no machine check (a platform breach: rotate your keys) are listed as
-`READ`.
+Advisories with no machine check (a platform breach: rotate your keys) are counted in
+the report's last line and listed as `READ` by `/security all` and `:all t`.
 
 ### What runs on your machine
 

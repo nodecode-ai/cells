@@ -31,7 +31,8 @@ or, for sh -c, by a substring of the script.")
   "BODY with the feed fetch and the command runner stubbed, and the feed state fresh."
   `(with-saved-globals (nodecode-cyber-security::*fetch* nodecode-cyber-security::*run*
                         nodecode-cyber-security::*feed* nodecode-cyber-security::*feed-state*
-                        nodecode-cyber-security::*feed-url* nodecode-cyber-security::*pinned*)
+                        nodecode-cyber-security::*feed-url* nodecode-cyber-security::*pinned*
+                        nodecode-cyber-security::*find-projects* nodecode-cyber-security::*inventory-cache*)
      (setf *sp-fetch-answer* '(nil 599)
            *sp-outputs* '()
            *sp-ran* '()
@@ -39,7 +40,10 @@ or, for sh -c, by a substring of the script.")
            nodecode-cyber-security::*feed-state* (list :source :none)
            nodecode-cyber-security::*fetch* (lambda (url) (declare (ignore url))
                                                 (values-list *sp-fetch-answer*))
-           nodecode-cyber-security::*run* 'sp-run)
+           nodecode-cyber-security::*run* 'sp-run
+           ;; No test walks the machine's home: a test names its projects.
+           nodecode-cyber-security::*inventory-cache* nil
+           nodecode-cyber-security::*find-projects* (lambda () '()))
      ,@body))
 
 (defvar *sp-ran* '() "Every argv the stubbed runner was handed, newest first.")
