@@ -2223,12 +2223,12 @@ button.p-row:active { background: var(--field-lit); }
    orange in a halo while its answer waits on you, green and still once done --
    three shapes as well as three hues. */
 .ball { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex: none; align-self: center; }
-.ball.is-run { background: transparent; box-shadow: inset 0 0 0 1.5px var(--run); animation: ball-beat 1.6s ease-in-out infinite; }
+.ball.is-run { background: transparent; border: 1.5px solid var(--run); box-sizing: border-box; animation: ball-beat 1.6s ease-in-out infinite; }
 .ball.is-ask { background: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 .ball.is-done { background: var(--live); }
 @keyframes ball-beat {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, var(--run) 30%, transparent); }
-  50% { opacity: 0.55; box-shadow: 0 0 0 4px color-mix(in srgb, var(--run) 30%, transparent); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--run) 30%, transparent); }
+  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--run) 30%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) { .ball.is-run { animation: none; } }
 /* What waits on you stands out of the list: a wash of the accent, its name
