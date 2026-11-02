@@ -523,19 +523,26 @@ or a picker card where the platform carries choices."
                  here provider model (first words)))))))
 
 (defun effort-card (host room provider model ladder current)
-  "(values TEXT CONTROLS): the room's reasoning-effort picker."
+  "(values TEXT CONTROLS): the room's reasoning-effort picker, with the way
+back to PROVIDER's models."
   (declare (ignore host room))
   (values (format nil "## Reasoning Effort~%Target: ~a/~a~%Current: ~a~%Select the effort for this room's next asks."
                   provider model (or current "provider default"))
           (list (list :menu "Select effort"
                       (loop for rung in ladder
+                            for says = (if (equal rung "off") "Answer without reasoning." "")
+                            ;; CURRENT named, never shown picked: a Discord
+                            ;; select does not re-send the option it shows
+                            ;; picked, and picking the current effort again
+                            ;; is how a person settles on it.
                             collect (menu-choice rung (format nil "/think ~a" rung)
-                                                 :description (if (equal rung "off")
-                                                                  "Answer without reasoning."
-                                                                  "")
-                                                 :current (equal rung current))))
-                (choice "Provider default" "/think default"
-                        :disabled (null current)))))
+                                                 :description (cond ((not (equal rung current)) says)
+                                                                    ((plusp (length says))
+                                                                     (format nil "~a · current" says))
+                                                                    (t "current")))))
+                (remove nil (list (and provider (choice "Models" (format nil "/models ~a" provider)))
+                                  (choice "Provider default" "/think default"
+                                          :disabled (null current)))))))
 
 ;;; --- the model picker (a /models card) ---------------------------------------------------
 ;;; Where a platform's messages carry choices, bare /models answers with a
@@ -609,9 +616,14 @@ to the default, which only a room that picked its own can take."
                           listing-error)
                   (append (list (list :menu (format nil "Select ~a model" provider)
                                       (loop for id in shown
+                                            ;; Named, never shown picked, as
+                                            ;; PROVIDERS-CARD's: a pick goes on
+                                            ;; to its effort, so the model the
+                                            ;; room runs must stay pickable.
                                             collect (menu-choice id (format nil "/models ~a ~a" provider id)
-                                                                 :current (and (equal id current-model)
-                                                                               (equal provider current-provider))))))
+                                                                 :description (and (equal id current-model)
+                                                                                   (equal provider current-provider)
+                                                                                   "current")))))
                           (picker-pager (format nil "/models ~a" provider) page pages)
                           (list (list (choice "Providers" "/models")
                                       ;; ROOM's own pick: a thread running its
