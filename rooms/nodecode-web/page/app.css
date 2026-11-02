@@ -2930,3 +2930,23 @@ button.p-row:active { background: var(--field-lit); }
   .gateway .where { padding: 0 22px; min-height: 52px; }
   .gateway .where:has(> #link:empty) { display: none; }
 }
+
+/* --- a row's third line, as Orca's: who answers and what it said -------------------
+   (the operator, 2026-11-02: Orca's Claude Code and Antigravity marks under a
+   row, "we probably need that"). A provider's mark wears the text's color. */
+.pmark { display: inline-grid; place-items: center; flex: none; width: 14px; height: 14px; color: var(--secondary); }
+.pmark svg { display: block; }
+.pmark.letter {
+  border: 1px solid var(--seam-lit); border-radius: var(--r-pill);
+  font: 600 var(--fs-micro)/1 var(--sans); color: var(--tertiary);
+}
+.row .said { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--fs-micro); line-height: 1.45; color: var(--tertiary); }
+.row .said > :not(.pmark) { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.row .said .ses-now { color: var(--run); }
+.row .said .ses-asks { color: var(--secondary); }
+.row .ses-pr.is-failing { color: var(--secondary); }
+@media (min-width: 721px) {
+  .sessions .row.three { grid-template-rows: auto auto auto; row-gap: 2px; padding-block: 8px; }
+  .sessions .row .said { grid-area: 3 / main; }
+  .sessions .row.three > .reading, .sessions .row.three > .news-dot { grid-row: 3; }
+}
