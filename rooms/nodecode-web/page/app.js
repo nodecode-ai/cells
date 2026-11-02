@@ -15,7 +15,7 @@ import { drawRun, drawInspector, drawDashboard, drawTimeline, turnSpan, meterOf,
 import { makeControl, WIDE } from "./control.js";
 import { qrCode } from "./access.js";
 import { makeFiles, putFile } from "./files.js";
-import { icon, iconButton } from "./icons.js";
+import { icon, iconButton, providerMark } from "./icons.js";
 
 const $ = (id) => document.getElementById(id);
 const app = $("app");
@@ -3139,8 +3139,35 @@ function whereOf(entry) {
     return PLATFORMS[kind] || kind;
   }
   const kind = sourceOf(entry);
-  if (entry.standby || kind === "gateway") return entry.working_directory ? `${t("Shell")} · ${folderName(entry.working_directory)}` : t("Shell");
+  // A shell's or this page's session is named by its folder alone, as Orca's rows name their repo.
+  if (entry.standby || kind === "gateway") return entry.working_directory ? folderName(entry.working_directory) : t("Shell");
   return sourceWord(kind);
+}
+
+// A session's pull request on its row's second line: its number, and its state
+// where it is not simply open; failing checks said too. Its tooltip says it all.
+function pullWord(pr) {
+  const state = ["draft", "merged", "closed"].includes(pr.state) ? pr.state : "open";
+  const words = { draft: t("draft"), merged: t("merged"), closed: t("closed") };
+  const checks = { failing: t("checks failing"), pending: t("checks pending"), passing: t("checks passing") }[pr.checks] || "";
+  const node = el("span", `ses-pr is-${state}${pr.checks === "failing" ? " is-failing" : ""}`,
+    ` · #${pr.number}${words[state] ? ` ${words[state]}` : ""}${pr.checks === "failing" ? ` · ${checks}` : ""}`);
+  node.title = [t("Pull request #{n}", { n: pr.number }), words[state] || t("open"), checks].filter(Boolean).join(" · ");
+  return node;
+}
+
+// A row's third line, once the gateway names the session's provider or its
+// newest answer: the provider's mark, then what holds the session -- answering
+// now, or what it waits on -- else the first line of what it said last.
+function saidLine(entry, now) {
+  if (!entry.provider && !entry.last_answer) return null;
+  const line = el("span", "said");
+  if (entry.provider) line.append(providerMark(entry.provider, entry.model));
+  const text = now === "run" ? el("span", "ses-now", t("answering now"))
+    : now === "ask" ? el("span", "ses-asks", waitsLine(entry.waits))
+    : el("span", "last", String(entry.last_answer || "").split("\n")[0]);
+  line.append(text);
+  return line;
 }
 
 function renderSessions() {
@@ -3244,11 +3271,20 @@ function renderSessions() {
     }
     // Two lines: its name, and where it is held -- answering now, while a turn
     // runs in it; what it waits on, while its answer waits on you.
+    // Orca's rows, where the gateway says who answers and what it said: the
+    // folder's branch and pull request beside where it is held, and a third
+    // line, the provider's mark and what holds the session now, else the
+    // start of its newest answer. Without them the row is its two lines.
     const words = el("span", "words");
     const meta = el("span", "meta", whereOf(entry));
-    if (now === "run") meta.append(el("span", "ses-now", ` · ${t("answering now")}`));
+    if (entry.branch) meta.append(el("span", "ses-branch", ` · ${entry.branch}`));
+    if (entry.pr?.number) meta.append(pullWord(entry.pr));
+    const said = saidLine(entry, now);
+    if (said) button.classList.add("three");
+    else if (now === "run") meta.append(el("span", "ses-now", ` · ${t("answering now")}`));
     else if (now === "ask") meta.append(el("span", "ses-asks", ` · ${waitsLine(entry.waits)}`));
     words.append(el("span", "name", sessionName(entry)), meta);
+    if (said) words.append(said);
     button.append(words);
     if (kids && !open) button.append(el("span", "n", String(kids)));
     if (unseen(entry) || (!open && !flat && newsUnder.has(entry.id))) {
@@ -3431,7 +3467,9 @@ function renderSources(scoped) {
   const order = Object.keys(SOURCE_WORDS);
   const rank = (kind) => (kind === "" ? order.length + 1 : order.includes(kind) ? order.indexOf(kind) : order.length);
   const ranked = [...counts].sort(([a], [b]) => rank(a) - rank(b) || sourceWord(a).localeCompare(sourceWord(b)));
-  const chips = [["all", t("All"), null], ...ranked.map(([kind, n]) => [`k:${kind}`, sourceWord(kind), n])];
+  // One source is no choice: no chips until a second one begins a session.
+  const chips = ranked.length < 2 && state.source === null ? []
+    : [["all", t("All"), null], ...ranked.map(([kind, n]) => [`k:${kind}`, sourceWord(kind), n])];
   const box = $("sources");
   // Rebuilt only when what it offers changed: the list redraws on every
   // activity frame, and the row under the reader's thumb must not move.
