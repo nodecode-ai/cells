@@ -2856,3 +2856,30 @@ button.p-row:active { background: var(--field-lit); }
   /* The list holds the Dashboard's sections, so its bar holds only the range. */
   .dashboard .dash-jumps { display: none; }
 }
+
+/* --- the frame, slick (the operator, 2026-11-02: "doesn't look as professional
+   and slick as others, like Orca"). Desktop only -- the phone's rules are its
+   own. One face for the frame: the sans, mono kept for code, paths and keys;
+   section heads in sentence case at a step under the rows; denser rows; the
+   session on screen a soft slab, not a bar; counts and times in the sans's
+   tabular figures. ---------------------------------------------------------- */
+@media (min-width: 721px) {
+  .sessions .ses-band {
+    font: 500 var(--fs-micro)/1.6 var(--sans); letter-spacing: 0; text-transform: none;
+    margin: 16px 0 4px; padding-left: 10px;
+  }
+  .sessions .ses-band:first-child { margin-top: 2px; }
+  .sessions .ses-band:not(:first-child) { margin-top: 12px; padding-top: 12px; }
+  .ses-band .n { font: 500 var(--fs-micro) var(--sans); color: var(--tertiary); font-variant-numeric: tabular-nums; }
+  .ses-band .n::before { content: ""; }
+  .sessions .row {
+    font-size: var(--fs-detail); line-height: 1.4; padding: 6px 8px 6px 10px; gap: 9px;
+    border-radius: var(--r-control); transition: color 130ms, background 130ms;
+  }
+  .sessions .row:hover { background: color-mix(in srgb, var(--primary) 4%, transparent); }
+  .sessions .row[aria-current="page"] { background: var(--selected); color: var(--primary); }
+  .sessions .row[aria-current="page"]::before { display: none; }
+  .reading, .chips .n { font-family: var(--sans); font-size: var(--fs-micro); font-variant-numeric: tabular-nums; }
+  .badge { font-family: var(--sans); }
+  .composer .folder, .composer .chip, .chip .tone { font-family: var(--sans); font-size: var(--fs-detail); }
+}
