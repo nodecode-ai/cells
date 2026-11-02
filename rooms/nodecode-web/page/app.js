@@ -3139,7 +3139,8 @@ function whereOf(entry) {
     return PLATFORMS[kind] || kind;
   }
   const kind = sourceOf(entry);
-  if (entry.standby || kind === "gateway") return entry.working_directory ? `${t("Shell")} · ${folderName(entry.working_directory)}` : t("Shell");
+  // A shell's or this page's session is named by its folder alone, as Orca's rows name their repo.
+  if (entry.standby || kind === "gateway") return entry.working_directory ? folderName(entry.working_directory) : t("Shell");
   return sourceWord(kind);
 }
 
@@ -3431,7 +3432,9 @@ function renderSources(scoped) {
   const order = Object.keys(SOURCE_WORDS);
   const rank = (kind) => (kind === "" ? order.length + 1 : order.includes(kind) ? order.indexOf(kind) : order.length);
   const ranked = [...counts].sort(([a], [b]) => rank(a) - rank(b) || sourceWord(a).localeCompare(sourceWord(b)));
-  const chips = [["all", t("All"), null], ...ranked.map(([kind, n]) => [`k:${kind}`, sourceWord(kind), n])];
+  // One source is no choice: no chips until a second one begins a session.
+  const chips = ranked.length < 2 && state.source === null ? []
+    : [["all", t("All"), null], ...ranked.map(([kind, n]) => [`k:${kind}`, sourceWord(kind), n])];
   const box = $("sources");
   // Rebuilt only when what it offers changed: the list redraws on every
   // activity frame, and the row under the reader's thumb must not move.

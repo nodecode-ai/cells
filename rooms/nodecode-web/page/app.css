@@ -2883,3 +2883,50 @@ button.p-row:active { background: var(--field-lit); }
   .badge { font-family: var(--sans); }
   .composer .folder, .composer .chip, .chip .tone { font-family: var(--sans); font-size: var(--fs-detail); }
 }
+
+/* --- the session list, as Orca's (the operator, 2026-11-02: "the sidebar on
+   Orca looks way better in terms of design; fix"). Desktop only -- the phone's
+   rules are its own. A row is two lines: the title across the whole row, then
+   where it is held with its age at the far end; the status glyph leads the
+   title. A band's count is a small pill; the address leaves the column; the
+   state chips leave it too, the bands being those states. ------------------ */
+@media (min-width: 721px) {
+  .sessions .row {
+    display: grid; grid-template-columns: [glyph] 8px [main] minmax(0, 1fr) [tail] auto; grid-template-rows: auto auto;
+    align-items: center; column-gap: 10px; row-gap: 1px; padding: 7px 10px;
+  }
+  .sessions .row > .words { display: contents; }
+  .sessions .row > .ball { grid-area: 1 / glyph; justify-self: center; }
+  .sessions .row > .fork { grid-area: 1 / glyph; justify-self: center; }
+  .sessions .row .name { grid-area: 1 / main / 2 / -1; font-size: var(--fs-detail); line-height: 1.45; color: var(--secondary); }
+  .sessions .row:has(> .n) .name { grid-column: main; }
+  .sessions .row > .n { grid-area: 1 / tail; }
+  .sessions .row .meta { grid-area: 2 / main; font-size: var(--fs-micro); line-height: 1.45; color: var(--tertiary); }
+  .sessions .row > .reading { grid-area: 2 / tail; justify-self: end; font-size: var(--fs-micro); line-height: 1.45; color: var(--tertiary); }
+  .sessions .row > .news-dot { grid-area: 2 / tail; justify-self: end; align-self: center; }
+  .sessions .row.with-news > .reading { margin-right: 12px; }
+  .sessions .row:is(:hover, [aria-current="page"], .with-news, .asks) .name { color: var(--primary); }
+  .sessions .row.asks { width: 100%; margin-right: 0; padding-right: 10px; }
+  /* The bin comes up under the hand over the row's right end, on the row's own ground. */
+  .sessions .ses-del { margin-right: 6px; border-radius: var(--r-chip); background: var(--column-ground); }
+  .sessions li:is(:hover, :focus-within) > .ses-del { background: color-mix(in srgb, var(--primary) 6%, var(--column-ground)); }
+  /* The bands: a quiet word and its count in a pill. */
+  .sessions .ses-band { align-items: center; gap: 6px; padding-left: 10px; color: var(--tertiary); font-weight: 500; }
+  .sessions .ses-band:is(.is-run, .is-ask, .is-done) { color: var(--tertiary); }
+  .sessions .ses-band.is-ask { color: var(--secondary); }
+  .ses-band .n {
+    min-width: 18px; height: 16px; padding: 0 5px; border-radius: var(--r-pill); text-align: center;
+    font: 500 var(--fs-micro)/16px var(--sans); font-variant-numeric: tabular-nums;
+    background: color-mix(in srgb, var(--primary) 9%, transparent); color: var(--secondary);
+  }
+  #states { display: none; }
+  .gateway .host { display: none; }
+}
+@media (min-width: 1024px) {
+  /* A wider list, and less margin around it: a title reads whole. */
+  .column { width: 420px; grid-template-rows: 60px minmax(0, 1fr) auto auto; }
+  .group { padding: 0 10px; }
+  .group-head { margin: 0 -10px 12px; padding-left: 20px; }
+  .gateway .where { padding: 0 22px; min-height: 52px; }
+  .gateway .where:has(> #link:empty) { display: none; }
+}
