@@ -323,6 +323,7 @@ async function api(method, path, body, type) {
 let sessionsTimer = null;
 async function loadSessions() {
   clearTimeout(sessionsTimer);
+  const asked = state.listAsked = (state.listAsked || 0) + 1;
   try {
     const list = await api("GET", "/api/gateway/sessions?limit=300");
     const known = new Map(list.map((entry) => [entry.id, entry]));
@@ -336,6 +337,7 @@ async function loadSessions() {
     for (const id of state.picking?.ids || []) if (!known.has(id)) state.picking.ids.delete(id);
     state.sessionsUnread = null;
     state.listed = true;
+    state.listReads = Math.max(state.listReads || 0, asked); // the newest read begun that has landed
     renderSessions();
     renderHead();
     if (!state.current) renderOpener();
@@ -2927,6 +2929,101 @@ function renderTitle() {
   const name = state.current ? `${v?.turn?.active || v?.execs?.length ? "● " : ""}${sessionName(entry)} · nodecode` : "nodecode";
   document.title = news ? `(${news}) ${name}` : name;
   $("unfold").toggleAttribute("data-news", news > 0);
+  reportDesktop();
+}
+
+// --- the window around the page ---------------------------------------------------
+// A desktop app that shows this page (nodecode-desktop) hands it a bridge,
+// window.nodecodeDesktop, before the page runs. The page tells it what waits on
+// the person, for the dock's badge and the tray, and what just happened that they
+// would want to hear while looking elsewhere; the window hands back a session to
+// open, when a notification or a tray row is clicked. Without a bridge, a page
+// installed as an app badges its own icon, and a tab does nothing. The contract
+// is docs/bridge.md in nodecode-desktop: every member optional, plain data only.
+const desktop = window.nodecodeDesktop || null;
+let attentionSaid = ""; // the counts last told, so one change is told once
+let told = null; // head session -> what the window last heard it doing; null until the list is read
+const stopped = new Map(); // head session -> the list read its turn stopped at, until a later read settles it
+
+// What each session the list starts a block with is doing, the way the Needs-you,
+// Running and Done bands sort it -- a team's seats and a thread's forks count as
+// the session they hang under -- over every session, whatever the list's scope or
+// search shows; and the counts the window shows.
+function attentionNow() {
+  const own = state.sessions.filter((entry) => !isNote(entry) && !entry.standby);
+  const holding = new Set();
+  for (const id of state.running) if (!isNote(state.sessionsById.get(id))) for (const up of folds(id)) holding.add(up);
+  const runs = (entry) => state.running.has(entry.id) || holding.has(entry.id);
+  const asksUnder = new Set();
+  for (const entry of own) if (!runs(entry) && entry.waits) for (const up of folds(entry.id)) asksUnder.add(up);
+  const doing = new Map();
+  for (const entry of own) {
+    if (folds(entry.id).length) continue;
+    doing.set(entry.id, runs(entry) ? "run" : entry.waits || asksUnder.has(entry.id) ? "ask" : "done");
+  }
+  const count = (key) => [...doing.values()].filter((now) => now === key).length;
+  return { asks: count("ask"), running: count("run"), news: state.sessions.filter(unseen).length, doing };
+}
+
+// Tell the window the counts when they change, and one notification for each
+// session that starts waiting on the person or ends its turn -- unless it is the
+// one on screen in a window they are looking at. The first read of the list only
+// takes stock: what was already waiting when the page opened is the badge's, not news.
+// A turn that stops reads as done until the list is read again, and a failed one
+// waits on the person only from that read on: so done is told once a read after
+// the stop still says done, and a turn that failed is told once, as waiting.
+function reportDesktop() {
+  if (!state.listed) return;
+  const { asks, running, news, doing } = attentionNow();
+  const said = `${asks} ${running} ${news}`;
+  if (said !== attentionSaid) {
+    attentionSaid = said;
+    if (desktop) callDesktop("attention", { asks, running, news });
+    else if (navigator.setAppBadge && matchMedia("(display-mode: standalone)").matches) {
+      (asks ? navigator.setAppBadge(asks) : navigator.clearAppBadge()).catch(() => {});
+    }
+  }
+  if (!desktop) return;
+  if (!told) {
+    told = new Map(doing);
+    return;
+  }
+  const looking = document.visibilityState === "visible" && document.hasFocus();
+  const tell = (id, kind) => {
+    told.set(id, kind);
+    stopped.delete(id);
+    if (looking && id === state.current && !board()) return;
+    callDesktop("notify", { session: id, kind, title: sessionName(state.sessionsById.get(id)), body: DOING_WORDS[kind] });
+  };
+  for (const [id, now] of doing) {
+    const before = told.get(id);
+    if (now === "run") {
+      told.set(id, "run");
+      stopped.delete(id);
+    } else if (now === "ask") {
+      if (before !== "ask") tell(id, "ask");
+    } else if (before !== "run") told.set(id, "done");
+    else if (!stopped.has(id)) stopped.set(id, state.listAsked || 0);
+    else if ((state.listReads || 0) > stopped.get(id)) tell(id, "done");
+  }
+}
+
+// One call across the bridge: a member it lacks is skipped, and whatever goes wrong
+// on the window's side stays there, never in the page.
+function callDesktop(name, value) {
+  if (typeof desktop?.[name] !== "function") return;
+  try { desktop[name](value); } catch {}
+}
+
+// A session the window asks for opens as a row clicked in the list does.
+if (typeof desktop?.onOpenSession === "function") {
+  try {
+    desktop.onOpenSession((id) => {
+      if (typeof id !== "string" || !id) return;
+      select(id);
+      writeLink();
+    });
+  } catch {}
 }
 
 // A folder by its own name, the last part of its path: the box's foot keeps
