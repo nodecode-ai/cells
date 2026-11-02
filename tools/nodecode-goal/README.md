@@ -81,6 +81,13 @@ stop`, or the session's own `goal:stop`) or replaced (a new goal). Met,
 spent, cancelled and failed are said in the session as a `[goal]` note, a
 settled exchange that a channel room posts.
 
+A goal keeps one turn in flight. Its next turn, asked for while another
+turn runs (a room's message, say), waits in the session's queue; a newer
+check takes that one back for its own, and none waits behind a turn of the
+goal's own. However the goal ends, the turn still waiting is taken back
+with it, so no `[goal]` turn arrives after the end; the worker takes back
+one an ended goal left behind as well.
+
 ## Where it lives
 
 A goal is facts in the session's own log, on the goal's aggregate:

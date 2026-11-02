@@ -276,13 +276,36 @@ posts as a note -- only while the session is idle. => the turn id, or NIL."
           (warn "goal: the end of ~a was recorded but not published: ~a" (getf goal :id) condition))))
     turn))
 
+(defun own-input-p (goal prompt-id)
+  "Whether PROMPT-ID, a queued prompt's or a turn's command id, is one of
+GOAL's turn inputs: goal:ID:N."
+  (let ((prefix (format nil "goal:~a:" (getf goal :id))))
+    (and (stringp prompt-id) (> (length prompt-id) (length prefix))
+         (string= prefix prompt-id :end2 (length prefix)))))
+
+(defun withdraw (goal &optional keep &aux (session (getf goal :session)))
+  "Take GOAL's turn inputs still waiting in its session's queue back out of
+it, all but KEEP's prompt id: an input admitted while another turn ran waits
+for it to end, and the goal may have ended, or a newer check spoken, since.
+=> how many were taken back."
+  (let ((taken (loop for prompt in (coerce (nlk::queue-prompts session) 'list)
+                     for id = (gethash "prompt_id" prompt)
+                     count (and (own-input-p goal id) (not (equal id keep))
+                                (nlk:withdraw-pending-prompt session id)))))
+    (when (plusp taken)
+      (nle::publish-queue-snapshot session))
+    taken))
+
 (defun finish (goal reason detail &key (by "cell") (announce t) &aux (id (getf goal :id)))
-  "End GOAL for REASON, once; ANNOUNCE says so in its session. The worker is
-woken: a goal tried K ways waits on its attempts' ends, and one that ended
-has copies to clear away."
+  "End GOAL for REASON, once, taking back the turn it still had waiting;
+ANNOUNCE says so in its session. The worker is woken: a goal tried K ways
+waits on its attempts' ends, and one that ended has copies to clear away."
   (prog1 (with-goal-lock
            (unless (ended id)
              (record (getf goal :session) +kind-ended+ id :reason reason :by by :detail detail)
+             (handler-case (withdraw goal)
+               (error (condition)
+                 (warn "goal ~a ended, but its waiting turn was not taken back: ~a" id condition)))
              (when announce
                (announce goal (ended-text goal reason detail)))))
     (poke)))
@@ -298,15 +321,21 @@ where it works."
       (let ((last (first (facts (getf goal :id) +kind-checked+ :order :newest :limit 1))))
         (format nil *continue-input* n (getf goal :turns) (getf goal :condition) (check-label goal)
                 (or (and last (nlk:json-value last :string "detail")) "nothing")))))
-(defun work (goal n &aux (id (getf goal :id)))
-  "Admit GOAL's Nth turn into its session -- once, whoever asks twice."
-  (if (> n (getf goal :turns))
-      (finish goal "spent" "no turn is left")
-      (handler-case
-          (nle:submit (getf goal :session) (turn-input goal n)
-                      :command-id (format nil "goal:~a:~d" id n) :source "goal" :source-id id)
-        (error (condition)
-          (finish goal "failed" (format nil "turn ~d could not start: ~a" n condition))))))
+(defun work (goal n &aux (id (getf goal :id)) (command (format nil "goal:~a:~d" id n)))
+  "Admit GOAL's Nth turn into its session -- once, whoever asks twice, and
+never once it ended. A goal has one turn in flight: while one of its own
+runs, that turn's end is checked and the next admitted then; one still
+waiting in the queue is taken back for this one, which says the newer check."
+  (with-goal-lock
+    (cond ((ended id) nil)
+          ((> n (getf goal :turns)) (finish goal "spent" "no turn is left"))
+          ((own-input-p goal (second (nlk::active-turn-row (getf goal :session)))) nil)
+          (t (withdraw goal command)
+             (handler-case
+                 (nle:submit (getf goal :session) (turn-input goal n)
+                             :command-id command :source "goal" :source-id id)
+               (error (condition)
+                 (finish goal "failed" (format nil "turn ~d could not start: ~a" n condition))))))))
 
 (defun conclude (goal turn n met detail &aux (id (getf goal :id)))
   "Record the verdict on GOAL's Nth checked turn TURN, then end the goal or
@@ -811,15 +840,20 @@ that met. Done, goal.swept."
                    ((and payload (eq t (nlk:json-value payload :boolean "steered"))) nil)
                    (t (check goal turn (1+ spent))))))))))
 (defun tick ()
-  "One pass of the worker: every running goal's next step, and the copies of
-each ended goal tried K ways cleared away."
+  "One pass of the worker: every running goal's next step; of each ended
+goal, a turn it left waiting taken back and, tried K ways, its copies
+cleared away."
   (when (nlk:store-open-p)
     (bt2:with-lock-held (*tick-lock*)
       (dolist (goal (goals))
         (let ((id (getf goal :id)))
           (handler-case
               (cond ((not (ended id)) (advance goal))
-                    ((and (> (getf goal :k) 1) (not (swept-p id))) (sweep goal)))
+                    (t
+                     ;; a turn an ended goal left waiting: an older build's
+                     ;; stop, or a crash between the end and its take-back
+                     (withdraw goal)
+                     (when (and (> (getf goal :k) 1) (not (swept-p id))) (sweep goal))))
             (error (condition) (warn "goal ~a: ~a" id condition))))))))
 (defun observe (op)
   "A turn ended somewhere: wake the worker. Publishing thread: a poke, no I/O."
