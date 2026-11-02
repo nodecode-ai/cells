@@ -216,9 +216,50 @@ itself; NIL for anything else."
 (defun board-key (host thread-id)
   (peer-key host thread-id))
 
+(defvar *thread-asks* (make-hash-table :test #'equal :synchronized t)
+  "(platform id . thread id) -> where each line a person typed in the team's
+thread sits (MESSAGE-ORDER, else the moment this kit heard it), newest first:
+each opens a task of its own, and the board's results before it fold none of
+its answers (BOARD-ANSWER-TEXT).")
+
+(defparameter +thread-asks-kept+ 64
+  "How many of a thread's person lines *THREAD-ASKS* keeps: the newest.")
+
+(defun note-thread-ask (host thread-id message-id)
+  "Keep that a person typed MESSAGE-ID in THREAD-ID, when it is a team's
+thread: the line opens a task there. => its place, or NIL."
+  (when (and thread-id (thread-slots host thread-id))
+    (let ((order (or (message-order message-id) (now-ms)))
+          (key (board-key host thread-id)))
+      (sb-ext:with-locked-hash-table (*thread-asks*)
+        (let ((asks (sort (adjoin order (gethash key *thread-asks*)) #'>)))
+          (setf (gethash key *thread-asks*)
+                (subseq asks 0 (min (length asks) +thread-asks-kept+)))))
+      order)))
+
+(defun board-task-start (host thread-id ask-id)
+  "Where the task ASK-ID -- the message an answer answers -- belongs to
+opened on THREAD-ID's board: the newest line the person typed there at or
+before ASK-ID, NIL when none (the thread's start). An ask whose place is
+unknown belongs to the newest task."
+  (let ((asks (gethash (board-key host thread-id) *thread-asks*))
+        (at (message-order ask-id)))
+    (if at
+        (find-if (lambda (order) (<= order at)) asks)
+        (first asks))))
+
+(defvar *board-since* nil
+  "NIL, or a place in the thread (POST-ORDER): BOARD-POSTS then reads only
+the posts made from there on -- one task's, as BOARD-ANSWER-TEXT ranks them.")
+
 (defun board-posts (host thread-id)
-  "THREAD-ID's board posts, newest first."
-  (values (gethash (board-key host thread-id) *team-posts*)))
+  "THREAD-ID's board posts, newest first: only those posted since
+*BOARD-SINCE* when it is bound to a place."
+  (let ((posts (values (gethash (board-key host thread-id) *team-posts*)))
+        (since *board-since*))
+    (if since
+        (remove-if (lambda (post) (< (post-order post) since)) posts)
+        posts)))
 
 (defun record-board-post (host thread-id post)
   "Keep POST on THREAD-ID's board, once per message. => POST, or NIL when
@@ -320,14 +361,16 @@ highest, the earliest of equals; NIL when none carries a value."
                             (< (getf entry :at) (getf best :at)))))
           (setf best entry))))))
 
+(defun message-order (message)
+  "Where MESSAGE, a platform message id, sits in its thread: the id when it is
+a number -- Discord's grow with time, the same for every kit -- else NIL."
+  (and (stringp message) (plusp (length message)) (every #'digit-char-p message)
+       (parse-integer message)))
+
 (defun post-order (post)
-  "Where POST sits in its thread: the platform's message id when it is a
-number -- Discord's grow with time, the same for every kit -- else the
-moment this kit kept it."
-  (let ((message (getf post :message)))
-    (or (and (stringp message) (plusp (length message)) (every #'digit-char-p message)
-             (parse-integer message))
-        (getf post :at))))
+  "Where POST sits in its thread: its message's place (MESSAGE-ORDER), else
+the moment this kit kept it."
+  (or (message-order (getf post :message)) (getf post :at)))
 
 (defun board-races (host thread-id)
   "The keys of the scorers THREAD-ID's posted results were measured on, the
@@ -799,26 +842,39 @@ result, and a result never competes with another scorer's.
 
 ;;; --- the one answer --------------------------------------------------------------
 
-(defun board-answer-text (host lane text)
+(defun board-answer-text (host lane text &optional ask-id)
   "TEXT, or the silent sentinel when LANE answers in a team's thread where a
 peer holds the best measured result under every scorer results were posted
-on: each scorer's best verified result writes its task's one answer, and a
-result ranks only against results from its own scorer. A board nobody
-measured anything on folds nothing -- each bot answers for itself."
+on for the task ASK-ID -- the message the answer answers -- belongs to: each
+scorer's best verified result writes its task's one answer, and a result
+ranks only against results from its own scorer. A task opens at the line the
+person typed (BOARD-TASK-START): results posted before it fold none of its
+answers, so a later question of the person's is every bot's to answer. A
+board nobody measured anything on folds nothing -- each bot answers for
+itself. => (values TEXT-OR-SENTINEL LEADER), LEADER the row of the peer's
+result that folded it."
   (let* ((thread (getf (lane-target lane) :thread-id))
          (self (host-self-id host))
          (leaders (and thread (stringp text) (not (silent-answer-p text))
                        (thread-slots host thread)
-                       (board-leaders host thread))))
+                       (let ((*board-since* (board-task-start host thread ask-id)))
+                         (board-leaders host thread)))))
     (cond ((or (null leaders)
                (find self leaders :key (lambda (row) (getf row :user)) :test #'equal))
            text)
           (t (note-thread-spoken thread)
-             (first +silence-spellings+)))))
+             (values (first +silence-spellings+) (first leaders))))))
+
+(defun folded-line (leader)
+  "The one line a card settles to when its answer folded under LEADER, a
+peer's result (BOARD-ANSWER-TEXT): who writes the task's answer, and on
+what score."
+  (format nil "Answer folded: s~d leads this task~@[ at ~a~], so its answer is the one posted"
+          (getf leader :slot) (getf leader :score)))
 
 (defun forget-board (host thread-id)
   "Drop what HOST's kit holds of THREAD-ID's board: its slots, posts, scores
 and final answer -- the room's state keeps the slots."
   (let ((key (board-key host thread-id)))
-    (dolist (table (list *thread-slots* *team-posts* *board-scores* *talk-finals*))
+    (dolist (table (list *thread-slots* *team-posts* *board-scores* *talk-finals* *thread-asks*))
       (remhash key table))))
