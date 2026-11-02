@@ -609,6 +609,9 @@ function receive(message) {
     // A cell started or stopped -- a boot starts them after this tab attached
     // -- so the commands this tab read at connect are stale.
     case "commands_changed": loadSlash(); break;
+    // The list reads differently for something no turn moved -- GitHub's word
+    // on a row's pull request -- so it is read again.
+    case "session_list_changed": loadSessionsSoon(); break;
     case "sync_protocol_error": toast(t("The gateway refused what this tab sent: {why}", { why: payload.message || payload.code }), { error: true }); break;
   }
 }
@@ -3146,13 +3149,21 @@ function whereOf(entry) {
 
 // A session's pull request on its row's second line: its number, and its state
 // where it is not simply open; failing checks said too. Its tooltip says it all.
+// The number opens the pull request on GitHub -- a new tab here, the system's
+// browser in the desktop app -- and not the session (the list's click).
 function pullWord(pr) {
   const state = ["draft", "merged", "closed"].includes(pr.state) ? pr.state : "open";
   const words = { draft: t("draft"), merged: t("merged"), closed: t("closed") };
   const checks = { failing: t("checks failing"), pending: t("checks pending"), passing: t("checks passing") }[pr.checks] || "";
-  const node = el("span", `ses-pr is-${state}${pr.checks === "failing" ? " is-failing" : ""}`,
-    ` · #${pr.number}${words[state] ? ` ${words[state]}` : ""}${pr.checks === "failing" ? ` · ${checks}` : ""}`);
+  const node = el("span", `ses-pr is-${state}${pr.checks === "failing" ? " is-failing" : ""}`, " · ");
+  const go = el("span", "ses-pr-go", `#${pr.number}${words[state] ? ` ${words[state]}` : ""}`);
+  node.append(go);
+  if (pr.checks === "failing") node.append(` · ${checks}`);
   node.title = [t("Pull request #{n}", { n: pr.number }), words[state] || t("open"), checks].filter(Boolean).join(" · ");
+  if (/^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+$/.test(pr.url || "")) {
+    go.dataset.url = pr.url;
+    go.title = `${node.title} · ${t("Open it on GitHub")}`;
+  }
   return node;
 }
 
@@ -5164,6 +5175,8 @@ $("sessions").addEventListener("click", (event) => {
   if (said) { if (said.dataset.act === "delete") drop(); else dropDone(); return; }
   const mark = event.target.closest(".ses-del");
   if (mark) { askDrop(mark.dataset.id); return; }
+  const pull = event.target.closest(".ses-pr-go[data-url]");
+  if (pull && !state.picking) { window.open(pull.dataset.url, "_blank", "noopener"); return; }
   const item = event.target.closest(".row");
   if (!item) return;
   if (event.target.closest(".caret")) { branch(item.dataset.id, !state.branches.has(item.dataset.id)); return; }

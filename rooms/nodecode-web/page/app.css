@@ -3070,6 +3070,8 @@ button.p-row:active { background: var(--field-lit); }
 .row .said .ses-now { color: var(--run); }
 .row .said .ses-asks { color: var(--secondary); }
 .row .ses-pr.is-failing { color: var(--secondary); }
+.row .ses-pr-go[data-url] { cursor: pointer; text-underline-offset: 3px; text-decoration-color: var(--seam-lit); }
+.row .ses-pr-go[data-url]:hover { color: var(--primary); text-decoration-line: underline; }
 @media (min-width: 721px) {
   .sessions .row.three { grid-template-rows: auto auto auto; row-gap: 2px; padding-block: 8px; }
   .sessions .row .said { grid-area: 3 / main; }
