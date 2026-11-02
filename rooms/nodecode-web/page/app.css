@@ -2785,6 +2785,36 @@ button.p-row:active { background: var(--field-lit); }
   .sessions li.swiped > .row { transform: translateX(-84px); }
   .sessions li.swiped > .ses-del { opacity: 1; pointer-events: auto; }
   .sessions li:has(> .ses-del) > .row:not(.asks) { background: var(--column-ground); }
+  /* Orca's anatomy on a phone: the title has the whole first line (two at
+     most, so a long ask reads whole), where it is and when on the second, the
+     glyph in a column of its own; the band's count a pill; no row boxed (the
+     waiting one's glyph and its band say it); the open row a slab, no bar at
+     the screen's edge. */
+  .ses-band .n {
+    display: inline-grid; place-items: center; min-width: 20px; height: 18px; padding: 0 6px; border-radius: var(--r-pill);
+    background: var(--selected); color: var(--secondary); font: 500 var(--fs-micro)/1 var(--sans); font-variant-numeric: tabular-nums;
+  }
+  .sessions .row:not([role="checkbox"]) {
+    display: grid; grid-template-columns: 20px minmax(0, 1fr) auto auto auto;
+    grid-template-areas: "glyph name name name name" "glyph meta kids dot when";
+    column-gap: 0; row-gap: 3px; align-items: center;
+  }
+  .sessions .row:not([role="checkbox"]) > .words { display: contents; }
+  .sessions .row:not([role="checkbox"]) > .ball { grid-area: glyph; justify-self: start; align-self: center; }
+  .sessions .row:not([role="checkbox"]) > .fork { display: none; }
+  .sessions .row:not([role="checkbox"]) .name { grid-area: name; margin-left: 12px; }
+  .sessions .row:not([role="checkbox"]):not(.found) .name {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+    white-space: normal; overflow-wrap: anywhere; line-height: 1.3;
+  }
+  .sessions .row:not([role="checkbox"]) .meta { grid-area: meta; margin-left: 12px; }
+  .sessions .row:not([role="checkbox"]) > .n { grid-area: kids; margin-left: 8px; }
+  .sessions .row:not([role="checkbox"]) > .news-dot { grid-area: dot; margin-left: 8px; }
+  .sessions .row:not([role="checkbox"]) > .reading { grid-area: when; align-self: center; margin: 0 0 0 8px; }
+  .sessions .row.asks, .sessions li:has(> .ses-del) > .row.asks { background: var(--column-ground); box-shadow: none; }
+  .sessions .row[aria-current="page"], .sessions li:has(> .ses-del) > .row[aria-current="page"] { background: var(--selected); }
+  .sessions .row[aria-current="page"]::before { display: none; }
+  .sessions .row:not([role="checkbox"]), .sessions li:has(> .ses-del) > .row.asks { width: 100%; margin-right: 0; padding-right: 12px; }
   #new-session { width: 56px; height: 56px; background: var(--primary); color: var(--void); }
   .railed > .row { font: 500 var(--fs-micro)/1 var(--sans); letter-spacing: 0; }
   .railed > .row .badge { font-family: var(--sans); }
