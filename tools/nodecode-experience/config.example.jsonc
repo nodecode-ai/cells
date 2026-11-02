@@ -11,5 +11,9 @@
     // "sources": ["gateway", "in_process"],   // invocation source kinds reflected on
     // "provider": "a6api", "model": "glm-5.3-flash"   // a reflection model of its own (gives up the shared prefix)
     // "verification_repair_attempts": 1   // repairs a reflection may make per failed check
+    // What a reflection may spend, any of the three; past it a call is refused and the
+    // reflection answers its recap with what it has. With none set, the cap every other
+    // turn runs under (none unless a layer sets one):
+    // "budget_seconds": 300, "budget_calls": 12, "budget_tokens": 60000
   }
 }

@@ -16,7 +16,11 @@
 ;;;;   "experience": {"reflect": "tools", "recap": true, "recap_lines": 1}
 ;;;; and optionally "sources" (the invocation source kinds reflected on),
 ;;;; "provider" with "model" (a reflection model other than the session's
-;;;; own, which gives up the shared prefix), "verification_repair_attempts".
+;;;; own, which gives up the shared prefix), "verification_repair_attempts",
+;;;; and "budget_seconds", "budget_calls", "budget_tokens" (what a reflection
+;;;; may spend; with none of them, *BUDGET* or the cap every other turn runs
+;;;; under). Each settled reflection leaves one experience.recap fact in its
+;;;; own log, the recap landed or dropped and why; /experience counts them.
 
 (in-package #:nodecode-experience)
 
@@ -149,15 +153,33 @@ when no reflection is in flight."
       (format nil "marked: the recap will reach the operator as a note (~a)"
               session))))
 
+(defun recap-outcomes ()
+  "(values LANDED DROPPED REASONS): the recaps the store says landed and
+were dropped, REASONS ((REASON . COUNT) ...) of the dropped ones, the most
+first."
+  (let ((reasons '()) (landed 0) (dropped 0))
+    (dolist (payload (and (nlk:store-open-p)
+                          (nlk:events :kind +kind-recap+ :as :payloads)))
+      (if (equal "landed" (nlk:json-value payload :string "outcome"))
+          (incf landed)
+          (let* ((reason (or (nlk:json-value payload :string "reason") "unknown"))
+                 (entry (assoc reason reasons :test #'equal)))
+            (incf dropped)
+            (if entry (incf (cdr entry)) (push (cons reason 1) reasons)))))
+    (values landed dropped (stable-sort (nreverse reasons) #'> :key #'cdr))))
+
 (defun summary-line (&aux (lines (experience-lines)))
   (flet ((kinds (kind)
            (count kind lines :key (lambda (line) (nlk:json-value line :string "kind")) :test #'equal)))
-    (format nil "experience: ~d sighting~:p (helped ~d · harm ~d · confounded ~d · no-effect ~d · call ~d · checks ~d) · reflect ~(~a~) · ~a"
-            (length lines)
-            (kinds "helped") (kinds "harm") (kinds "confounded") (kinds "no-effect") (kinds "call")
-            (kinds "verification")
-            (setting :reflect)
-            (sb-ext:native-namestring (nlk:home "usage.jsonl")))))
+    (multiple-value-bind (landed dropped reasons) (recap-outcomes)
+      (format nil "experience: ~d sighting~:p (helped ~d · harm ~d · confounded ~d · no-effect ~d · call ~d · checks ~d) · reflect ~(~a~) · recaps ~d landed, ~d dropped~@[ (~{~a~^, ~})~] · ~a"
+              (length lines)
+              (kinds "helped") (kinds "harm") (kinds "confounded") (kinds "no-effect") (kinds "call")
+              (kinds "verification")
+              (setting :reflect)
+              landed dropped
+              (loop for (reason . count) in reasons collect (format nil "~a ~d" reason count))
+              (sb-ext:native-namestring (nlk:home "usage.jsonl"))))))
 
 (defun run-slash (args session-id)
   "The answer to one /experience invocation."
@@ -200,7 +222,12 @@ thread: what the declaration's clauses do not carry."
     ("provider" :string :doc "with model, a reflection model of its own (no shared prefix)")
     ("model" :string :doc "the reflection's model, beside provider")
     ("verification_repair_attempts" :integer :default 1 :min 0
-                                    :doc "repair attempts a reflection may make per failed check"))
+                                    :doc "repair attempts a reflection may make per failed check")
+    ("budget_seconds" :integer :min 1
+                      :doc "seconds a reflection may run; with no budget_* key, the cap other turns run under")
+    ("budget_calls" :integer :min 0 :doc "tool calls a reflection may make")
+    ("budget_tokens" :integer :min 1
+                     :doc "billable tokens a reflection may spend: input, output and reasoning, cache reads free"))
   ;; A list whose default is not empty.
   (:settings (lambda (values table)
                (declare (ignore table))
