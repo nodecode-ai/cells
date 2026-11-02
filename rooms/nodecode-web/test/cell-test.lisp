@@ -1353,3 +1353,18 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (equal "1" (funcall value ".sessions li:is(:hover, :focus-within) > .ses-del, .sessions .ses-del[aria-expanded=\"true\"]" "opacity")) "and comes up under the hand or the focus")
     (is (equal "1" (funcall value ".sessions li > .ses-del" "opacity")) "and stands up where there is no hover")
     (is (search "\"Delete this session, and every session under it\":" (web-page-text "zh.js")) "its words in Chinese")))
+
+;; New cell in the Cells tab asks for a cell rather than taking a form: a new
+;; chat opens with the ask begun, and the agent asks the rest before it builds.
+(deftest web-cell-the-cells-tab-asks-for-a-new-cell ()
+  (let* ((control (web-page-text "control.js"))
+         (app (web-page-text "app.js"))
+         (draw (web-js-function control "drawCells"))
+         (ask (web-js-function app "askForCell")))
+    (is (search "button(\"quiet\", t(\"New cell\"), { act: \"new-cell\" })" draw) "the tab carries New cell")
+    (is (< (search "if (a.folder) {" draw) (search "t(\"New cell\")" draw)) "only where there is a cell folder to build in")
+    (is (search "case \"new-cell\": newCell(); return;" control) "pressing it asks the page")
+    (is (search "newCell: askForCell," app) "which opens the ask")
+    (is (< (search "openNew();" ask) (search "t(\"Make a cell that \")" ask)) "a new chat, then the ask begun in its box")
+    (is (search "promptEl.dispatchEvent(new Event(\"input\"))" ask) "read as typed: its draft, its height and Send")
+    (is (search "\"New cell\":" (web-page-text "zh.js")) "its words in Chinese")))

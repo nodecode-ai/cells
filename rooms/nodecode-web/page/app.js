@@ -2637,6 +2637,7 @@ const control = makeControl({
   api, download, toast, openSession: select, isOpen: () => state.open, folder: hereFolder,
   redraw: () => { renderObserve(); paintLink(); paintPlace(); }, onTab: () => { writeLink(); paintPlace(); },
   openTab: (tab) => { setPop(null); setPane("control", tab); },
+  newCell: askForCell,
 });
 // HOME is defined below, with the strip: read when drawn, not now.
 const filesView = makeFiles({ state, reach, save, toast, redraw: renderObserve, moved: () => writeLink(), home: (dir) => home(dir), openImage: openLightbox });
@@ -3833,6 +3834,18 @@ function openNew() {
   renderTranscript();
   renderOpener();
   renderSessions();
+  promptEl.focus();
+}
+
+// The Cells tab's New cell: a new chat whose box starts the ask, so the agent
+// asks what the cell needs and builds it. Words already typed there stay, after
+// the start; the box reads them as typed, its draft and its height included.
+function askForCell() {
+  openNew();
+  const start = t("Make a cell that ");
+  if (!promptEl.value.startsWith(start)) promptEl.value = start + promptEl.value.trimStart();
+  promptEl.setSelectionRange(promptEl.value.length, promptEl.value.length);
+  promptEl.dispatchEvent(new Event("input"));
   promptEl.focus();
 }
 

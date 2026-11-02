@@ -197,7 +197,7 @@ export function confirmBox(title, go, act, data = {}) {
 // ONTAB is told when a click in the pane turns it to another tab, so the page's
 // address follows; show(TAB) is the page turning it there, and OPENTAB the
 // page opening the pane on TAB from outside it (the link panel).
-export function makeControl({ api, download, toast, openSession, isOpen, folder, redraw, onTab, openTab }) {
+export function makeControl({ api, download, toast, openSession, isOpen, folder, redraw, onTab, openTab, newCell }) {
   const c = {
     tab: "gateway",
     service: null, identity: null, said: null, busy: null, confirm: null, leaving: null,
@@ -856,6 +856,14 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
         button("quiet", t("Read the log"), { act: "tab", tab: "logs" })));
     }
     root.append(words);
+    // A cell is asked for, not filled in: New cell opens a chat whose first words
+    // start the ask, and the agent asks the rest before it builds the cell.
+    if (a.folder) {
+      const ask = el("div", "ctl-line ctl-new-cell");
+      ask.append(button("quiet", t("New cell"), { act: "new-cell" }),
+        el("span", "ctl-what", t("Describe it in a new chat: the agent asks what it needs, then builds the cell and turns it on.")));
+      root.append(ask);
+    }
     const list = block("");
     const rows = el("ol", "ctl-list");
     for (const r of a.cells) cellRow(rows, r, false);
@@ -1581,6 +1589,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       case "ask-job": c.confirm = `job:${d.id}`; redraw(); return;
       case "job": jobOp(d.op, { id: d.id }); return;
       case "open": openSession(d.id); return;
+      case "new-cell": newCell(); return;
     }
   }
 
