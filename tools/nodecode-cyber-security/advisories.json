@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "updated": "2026-10-31T21:21:15Z",
-  "window": "2026-10-17 to 2026-10-31",
+  "updated": "2026-11-02T04:16:48Z",
+  "window": "2026-10-19 to 2026-11-02",
   "advisories": [
     {
       "id": "signalk-resources-traversal",
@@ -763,7 +763,7 @@
       "severity": "high",
       "exploited": true,
       "cves": [],
-      "summary": "AU Small Finance Bank (India) is investigating a potential data leak involving a software-as-a-service platform managed and hosted by Salesforce that holds limited data on the bank's vehicle loan customers; the bank states its own systems are unaffected and banking services are normal. The bank was listed on the Scarlettgroup cybercrime leak site on October 29; what was accessed and how has not been independently established. It lands in a wave of Indian banking-sector exposures - State Bank of India identified 3,897 customer records among dark-web data this month, and Bank of Baroda disclosed an employee-email compromise in July.",
+      "summary": "AU Small Finance Bank (India) is investigating a potential data leak involving a software-as-a-service platform managed and hosted by Salesforce that holds limited data on the bank's vehicle loan customers; the bank states its own systems are unaffected and banking services are normal. The bank was listed on the Scarlettgroup cybercrime leak site on October 29; what was accessed and how has not been independently established. It lands in a wave of Indian banking-sector exposures - State Bank of India identified 3,897 customer records among dark-web data this month, and Bank of Baroda disclosed an employee-email compromise in July. Salesforce states there is no vulnerability at its end (The Hindu BusinessLine, November 1).",
       "affected": "AU Small Finance Bank vehicle loan customers: the exposed platform held limited vehicle-loan data - treat personal details as potentially known to the extortion group.",
       "fixed": [],
       "checks": [],
@@ -777,7 +777,35 @@
       ],
       "iocs": [],
       "sources": [
-        "https://bfsi.economictimes.indiatimes.com/articles/au-small-finance-bank-says-investigating-potential-data-leak-involving-salesforce-hosted-platform/135350887"
+        "https://bfsi.economictimes.indiatimes.com/articles/au-small-finance-bank-says-investigating-potential-data-leak-involving-salesforce-hosted-platform/135350887",
+        "https://www.thehindubusinessline.com/money-and-banking/au-sfb-data-leak-salesforce-says-no-vulnerability-at-its-end/article71648769.ece"
+      ]
+    },
+    {
+      "id": "northflank-breach-2026-10",
+      "title": "Northflank (cloud app hosting): breach decrypted customer environment variables - assume every secret stolen, rotate now",
+      "date": "2026-10-30",
+      "severity": "high",
+      "exploited": true,
+      "cves": [],
+      "summary": "Northflank, a cloud platform for deploying applications, containers, databases and AI apps, disclosed a security incident on October 30: after a threat alert from Wiz at 11:43 UTC its engineers reviewed within a minute and shipped network-policy patches through 13:05, but customers were told to assume all environment variables had been decrypted and the secrets inside them stolen - 'Assume all environment variables have been decrypted. Disable/rotate all keys.' Multiple customers then reported unauthorized use of AI API keys stored on the platform. Environment variables usually hold database passwords, cloud credentials, auth tokens and API keys, so the exposure reaches well beyond Northflank itself. It follows the October Railway and Zeabur platform-key incidents already in this feed.",
+      "affected": "Northflank customers: every secret stored in a platform environment variable should be treated as stolen, especially AI provider API keys, cloud credentials and database passwords.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Rotate every secret that ever lived in a Northflank environment variable - from a different machine - including database passwords, cloud keys, registry tokens and AI provider API keys",
+        "Review AI provider and cloud usage and billing for unexpected activity across the window, and report suspicious usage to Northflank and the providers",
+        "Redeploy with new secrets rather than re-setting the old values"
+      ],
+      "mitigation": [
+        "Check what the old credentials could reach: git hosts, registries, cloud accounts, third-party SaaS",
+        "Follow Northflank's status-page incident updates for the confirmed timeline and scope"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://www.bleepingcomputer.com/news/security/northflank-security-breach-leads-to-abuse-of-customers-ai-api-keys/",
+        "https://status.northflank.com/cmvv0rn5a092f14rutwccodpp",
+        "https://mallory.ai/stories/01a193a0-200c-7393-87b6-1d76ea1465d0"
       ]
     },
     {
