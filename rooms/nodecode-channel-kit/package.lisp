@@ -79,6 +79,7 @@ it over any platform, and the /channels status surface.")
    #:digest-card #:card-text #:step-mark #:digest-details #:details-text #:thought-headline
    #:digest-note-line #:digest-note-lines #:+digest-note-cap+
    #:digest-status-plan #:digest-status-attempted #:digest-status-refused
+   #:digest-status-edit-spent
    #:digest-status-delivered #:digest-final-text
    #:recorded-answer-text
    ;; room.lisp --- the session topology every channel shares
@@ -99,7 +100,7 @@ it over any platform, and the /channels status surface.")
    #:transcribe-audio #:local-transcriber #:install-transcriber
    ;; host.lisp --- the lane interpreter over a platform
    #:platform-plan-control-ack #:platform-plan-autocomplete
-   #:platform-plan-thread #:platform-plan-delete-thread #:platform-plan-close-thread #:platform-closed-note
+   #:platform-plan-thread #:platform-plan-delete-thread #:platform-plan-close-thread #:platform-edit-spent-p #:platform-closed-note
    #:platform-close-refusal #:platform-plan-control-followup
    #:platform-thread-of-refusal
    #:platform-tables

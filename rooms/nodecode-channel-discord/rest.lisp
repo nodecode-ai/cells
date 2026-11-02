@@ -1046,6 +1046,13 @@ float."
   (let ((seconds (and (hash-table-p body) (gethash "retry_after" body))))
     (and (realp seconds) (round (* (max 0 seconds) 1000)))))
 
+(defun discord-edit-spent-p (status body)
+  "True when Discord refused an edit because the message's edit budget is
+spent: 429 code 30046, an edit to a message over an hour old."
+  ;; Its retry_after says a second or three, and the next edit is refused
+  ;; again: the kit holds the card rather than following that pacing.
+  (and (eql status 429) (hash-table-p body) (eql 30046 (gethash "code" body))))
+
 (defun make-discord-executor (&key (api-base +discord-rest-api-base+) token)
   (make-dexador-executor
    :base-url api-base

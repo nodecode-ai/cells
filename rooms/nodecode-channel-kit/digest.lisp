@@ -131,6 +131,12 @@ and a model a line.")
   ;; rate limit): the same request would be refused again, so no post is
   ;; planned until the card's state moves on (DIGEST-STATUS-REFUSED).
   (refused-state nil :type (or null keyword))
+  ;; The card's message refused an edit for now (the platform's EDIT-SPENT-P):
+  ;; no running edit is planned before EDIT-HELD-UNTIL-MS, each refusal in a
+  ;; row holding twice as long as the last, EDIT-HOLD-MS. An edit that lands
+  ;; clears both; the settle is never held, nothing follows it.
+  (edit-held-until-ms 0 :type integer)
+  (edit-hold-ms 0 :type integer)
   ;; What the delivered card's message holds of its pictures, in the
   ;; platform's own words (its MEDIA-OF): the next edit keeps them by these
   ;; rather than sending them again.
@@ -1042,6 +1048,8 @@ in a block, cut from the front when it is long."
             (values :skip nil))
            ((and (null status-id) (eq (getf card :state) digest.refused-state))
             (values :skip nil))
+           ((and live status-id (< now digest.edit-held-until-ms))
+            (values :skip nil))
            ((null status-id) (values :post card))
            (t (values :edit card))))))))
 
@@ -1064,10 +1072,31 @@ while the card stays in its state."
   (setf digest.refused-state (getf card :state))
   digest)
 
+(defparameter +edit-hold-first-ms+ 30000
+  "How long a card whose message refused an edit for now is first held.")
+
+(defparameter +edit-hold-max-ms+ 600000
+  "The longest a card whose message keeps refusing edits is held at a time.")
+
+(defun digest-status-edit-spent (digest now)
+  "Record that the card's message refused an edit for now: no running edit is
+planned for a while, each refusal in a row holding twice as long."
+  ;; Discord's 30046 names a retry_after of a second or three and refuses the
+  ;; next edit as well: one card asked 18 times a minute for four minutes
+  ;; (gateway logs, 2026-11-01). Held 30 s, then doubling to 10 min, the card
+  ;; asks a few times an hour and takes the first edit the budget allows.
+  (setf digest.edit-hold-ms (if (plusp digest.edit-hold-ms)
+                                (min (* 2 digest.edit-hold-ms) +edit-hold-max-ms+)
+                                +edit-hold-first-ms+)
+        digest.edit-held-until-ms (+ now digest.edit-hold-ms))
+  digest)
+
 (defun digest-status-delivered (digest card &optional message-id (media nil media-p))
   "Record a delivered CARD; MESSAGE-ID on the creating post, MEDIA what its
 message now holds of its pictures (the platform's MEDIA-OF)."
-  (setf digest.posted-card card)
+  (setf digest.posted-card card
+        digest.edit-hold-ms 0
+        digest.edit-held-until-ms 0)
   (when message-id
     (setf digest.status-id message-id))
   (when media-p

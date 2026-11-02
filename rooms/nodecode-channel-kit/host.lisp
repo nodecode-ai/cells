@@ -114,6 +114,11 @@
   ;; Discord — which the card's next edit keeps them by (MEDIA); NIL for a
   ;; platform whose card carries none.
   (media-of (constantly nil) :type function)
+  ;; (status body) => true when a refused card edit says the message takes no
+  ;; more edits for now -- Discord's 30046, the edit budget of a message over
+  ;; an hour old spent -- so the lane holds the card's running edits off
+  ;; (DIGEST-STATUS-EDIT-SPENT) rather than asking again on every tick.
+  (edit-spent-p (constantly nil) :type function)
   ;; (target message-id) => the address-book key for one platform message.
   ;; Discord's ids are global; Telegram's are per chat, so its key carries
   ;; the chat.
@@ -1474,7 +1479,12 @@ card's message holds of its pictures."
        (cond (result.ok-p (with-lane-digest (digest lane)
                             (digest-status-delivered digest card nil landed)))
              (terminal-p (with-lane-digest (digest lane)
-                           (digest-status-delivered digest card))))))))
+                           (digest-status-delivered digest card)))
+             ;; A message whose edits are spent refuses the next tick's edit
+             ;; too, whatever pacing the refusal names: the card is held.
+             ((funcall (platform-edit-spent-p host.platform) result.status result.body)
+              (with-lane-digest (digest lane)
+                (digest-status-edit-spent digest (now-ms)))))))))
 
 (defun wear-title (host lane digest title &aux (origin (lane-origin lane))
                                               (thread-id (getf origin :thread-id)))
