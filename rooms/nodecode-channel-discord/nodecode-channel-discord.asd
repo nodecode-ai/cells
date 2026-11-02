@@ -25,6 +25,8 @@
                (:file "dave")
                (:file "voice")
                (:file "adapter")
+               ;; /channels setup's card: the kit's command, the adapter's policy
+               (:file "setup-card")
                (:file "board")
                (:file "voicelap"))
   :in-order-to ((test-op (test-op "nodecode-channel-discord/test"))))
@@ -39,6 +41,7 @@
                (:file "rest-test")
                (:file "voice-test")
                (:file "adapter-test")
-               (:file "board-test"))
+               (:file "board-test")
+               (:file "setup-card-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-channel-tests)))

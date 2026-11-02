@@ -128,14 +128,16 @@ be let in and who is (PAIRING-JSON), and TEXT, what a verb just said."
      "pairing" (pairing-json)
      :opt "text" text)))
 
-(defun channels-command (args &aux (words (nlk:split-words (or args ""))))
-  "/channels ARGS: the status report, or the pairing verbs — pair CODE,
-unpair USER-ID, paired."
+(defun channels-command (args &optional session-id &aux (words (nlk:split-words (or args ""))))
+  "/channels ARGS in the room SESSION-ID is: the status report, the setup
+card (SETUP-COMMAND), or the pairing verbs -- pair CODE, unpair USER-ID,
+paired."
   (cond ((null words) (channels-status-report))
+        ((string-equal (first words) "setup") (setup-command (rest words) session-id))
         ((and (string-equal (first words) "pair") (second words)) (pair (second words)))
         ((and (string-equal (first words) "unpair") (second words)) (unpair (second words)))
         ((string-equal (first words) "paired") (pairing-report))
-        (t "usage: /channels [pair CODE | unpair USER-ID | paired]")))
+        (t "usage: /channels [setup | pair CODE | unpair USER-ID | paired]")))
 
 (defun register-channel-commands ()
   "Register /channels, /stop, /sethome, /agent and /threads, each answering its report
@@ -144,11 +146,9 @@ whole; /agent completes its room's agents."
            (nle:register-command "nodecode-channel-kit" name run
                                  :description description :argument-hint argument-hint
                                  :complete complete)))
-    (command "channels" (lambda (args session-id)
-                          (declare (ignore session-id))
-                          (channels-command args))
-             "Channel status; pair CODE lets in whoever a direct message gave it"
-             "pair CODE | unpair USER-ID | paired")
+    (command "channels" 'channels-command
+             "Channel status; setup picks where it answers and who may use it; pair CODE lets someone in"
+             "setup | pair CODE | unpair USER-ID | paired")
     (command "stop" (lambda (args session-id)
                       (declare (ignore args))
                       (nth-value 1 (stop-room-turn session-id)))
