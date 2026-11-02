@@ -631,11 +631,19 @@ after TIMEOUT seconds."
     (declare (ignore error-output))
     (values (or output "") code)))
 
+(defun scorer-cut-p (code)
+  "Whether exit CODE says the scorer never reached its last line: TIMEOUT's
+124 when the cut fell, or 128+N when a signal ended it."
+  (and (integerp code) (or (= code 124) (> code 128))))
+
 (defun scorer-score (output)
-  "The score OUTPUT ends on: the last `score: S' it prints, else the last N/M
-or number on its last line that holds one; NIL when it prints none."
+  "The score OUTPUT ends on: the last `score: S' (or `score=S') it prints,
+`score' a word of its own, else the last N/M or number on its last line that
+holds one; NIL when it prints none."
+  ;; The colon or equals sign is required and `score' must start a word: a
+  ;; progress line naming a path like /scratch/score-141/7 is not a score.
   (let ((said nil))
-    (ppcre:do-register-groups (score) ("(?i)score\\s*[:=]?\\s*(-?[0-9]+(?:\\.[0-9]+)?(?:/[0-9]+(?:\\.[0-9]+)?)?)" output)
+    (ppcre:do-register-groups (score) ("(?i)\\bscore\\s*[:=]\\s*(-?[0-9]+(?:\\.[0-9]+)?(?:/[0-9]+(?:\\.[0-9]+)?)?)" output)
       (setf said score))
     (or said
         (loop for line in (reverse (uiop:split-string output :separator '(#\Newline)))
@@ -680,6 +688,11 @@ one. => (:SCORE :IMPROVED :BEST :SOLVED :PLATEAU :LEADER :SCORER :EXIT :OUTPUT).
                         (error "no scorer: pass :command, or post the command as SCORER first")))
            (scorer (verify-scorer host thread command)))
       (multiple-value-bind (output code) (run-scorer command directory timeout)
+        ;; A cut run printed only what came before the cut: an early part's
+        ;; N/M is not the score the whole run ends on, so it scores nothing.
+        (when (scorer-cut-p code)
+          (error "the scorer was cut off (exit ~a) before its last line, so it scores nothing:~%~a"
+                 code (text-end output 1200)))
         (let* ((score (or (scorer-score output)
                           (error "the scorer printed no score (exit ~a):~%~a" code
                                  (text-end output 1200))))
