@@ -2736,6 +2736,90 @@ button.p-row:active { background: var(--field-lit); }
   .ctl-phone .ctl-logs [data-act="follow"] { bottom: calc(76px + env(safe-area-inset-bottom)); }
 }
 
+/* --- a phone, quiet: one face, its words in sentence case, nothing standing
+   that a finger does not need now (Peas, 2026-11-02: 'not as professional and
+   slick as others, like Orca'). The Sessions page reads as a phone's own inbox:
+   bands in the UI face, rows in two lines at a thumb's height, a session's
+   Delete under a swipe (app.js), not a bin on every row; a session's page drops
+   the mono marginalia (the turn's number, its run line) to the tertiary sans,
+   a failed turn is a card, not red code, and the message box is one rounded
+   field on the foot. Every rule here is the phone's: nothing above 720px. --- */
+@media (max-width: 720px) {
+  /* Sessions: the search a filled field, the bands carry the states (so the
+     state chips go), and the source chips only when there is a choice. */
+  .finder { height: 40px; margin-bottom: 14px; border-color: transparent; border-radius: var(--r-control); background: var(--subtle); }
+  .finder input { font-size: var(--fs-body); }
+  .chips.states { display: none; }
+  /* The list holds the one growing row: the column's rows count every slot
+     (bar, search, scope, prune, states, sources, picking, its confirm, unread)
+     before it; with one fewer the list fell into an implicit row and an empty
+     1fr row stood above it. */
+  .column, .app.folded .column { grid-template-rows: 52px repeat(8, auto) minmax(0, 1fr); }
+  #sources:not(:has(> button:nth-child(3))) { display: none; }
+  .sessions .ses-band {
+    margin: 22px 0 4px; padding: 0 0 0 2px; border-top: 0;
+    font: 600 var(--fs-detail)/1.5 var(--sans); letter-spacing: 0; text-transform: none; color: var(--tertiary);
+  }
+  .sessions .ses-band:not(:first-child) { margin-top: 22px; padding-top: 0; border-top: 0; }
+  .sessions .ses-band:first-child { margin-top: 4px; }
+  .ses-band.is-ask, .ses-band.is-run, .ses-band.is-done { color: var(--tertiary); }
+  .ses-band .n { color: var(--tertiary); font-family: var(--sans); font-weight: 400; }
+  .ses-band .n::before { content: ""; }
+  .sessions .row { min-height: 60px; padding-top: 10px; padding-bottom: 10px; gap: 12px; border-radius: var(--r-control); }
+  .sessions .row .words { gap: 3px; }
+  .sessions .row .name { font-size: var(--fs-body); font-weight: 500; color: var(--primary); }
+  .sessions .row .meta { font-size: var(--fs-detail); line-height: 1.35; }
+  .sessions .row .meta .ses-asks, .row.with-news .meta { color: var(--secondary); }
+  .sessions .row > .reading { align-self: flex-start; margin-top: 2px; font: var(--fs-micro)/1.4 var(--sans); color: var(--tertiary); }
+  .sessions .row.asks { background: var(--subtle); box-shadow: inset 0 0 0 1px var(--seam-lit); }
+  .sessions .row[aria-current="page"]:not(.asks) { background: transparent; }
+  /* A row's Delete waits under a swipe left (app.js), as a phone's own lists do. */
+  .sessions li:has(> .ses-del) { grid-template-columns: minmax(0, 1fr); overflow: hidden; border-radius: var(--r-control); }
+  .sessions li > .ses-del {
+    grid-area: 1 / 1; justify-self: end; align-self: stretch; width: 76px; height: auto; margin: 0; border-radius: var(--r-control);
+    background: var(--selected); color: var(--primary);
+  }
+  .sessions li:not(.swiped) > .ses-del { opacity: 0; pointer-events: none; }
+  .sessions li > .row { touch-action: pan-y; transition: transform 160ms ease-out; position: relative; z-index: 1; background-clip: padding-box; }
+  .sessions li:not(.swiped) > .row { will-change: auto; }
+  .sessions li.swiped > .row { transform: translateX(-84px); }
+  .sessions li.swiped > .ses-del { opacity: 1; pointer-events: auto; }
+  .sessions li:has(> .ses-del) > .row:not(.asks) { background: var(--column-ground); }
+  #new-session { width: 56px; height: 56px; background: var(--primary); color: var(--void); }
+  .railed > .row { font: 500 var(--fs-micro)/1 var(--sans); letter-spacing: 0; }
+  .railed > .row .badge { font-family: var(--sans); }
+
+  /* A session's page: the bar's state line in the UI face, the back mark's dot
+     clear of its chevron. */
+  .strip > .live { font: var(--fs-micro)/1.3 var(--sans); letter-spacing: 0; text-transform: none; color: var(--tertiary); }
+  .strip .live .led { background: var(--secondary); }
+  .strip #unfold[data-news]::after { top: 9px; right: 6px; background: var(--primary); }
+  /* The turn's marginalia, quiet: no number, its two acts at a finger's size. */
+  .ask .under { font-family: var(--sans); color: var(--tertiary); }
+  .ask .under .turn-n, .ask .under .led { display: none; }
+  .rest, .running { font-family: var(--sans); color: var(--tertiary); }
+  /* A failed turn is a card: what happened in the UI face, Retry under it. */
+  .loose.error {
+    margin: 14px 0 0; padding: 12px 14px; border-radius: var(--r-control); background: var(--subtle); box-shadow: inset 0 0 0 1px var(--seam-lit);
+    font: var(--fs-detail)/1.5 var(--sans); color: var(--secondary); white-space: normal; overflow-wrap: anywhere;
+  }
+  .again .retry { min-height: 40px; padding: 0 16px; border-radius: var(--r-pill); }
+
+  /* The message box: one rounded field on the foot, the model beside the
+     plus; the folder is the session's, named in its bar's More, not here. */
+  .composer { border-radius: var(--r-card); }
+  .composer .foot .folder { display: none; }
+  .composer .foot #model { font: 500 var(--fs-micro)/1 var(--sans); letter-spacing: 0; }
+  .composer .foot #model .tone { display: none; }
+
+  /* A new session on a phone: its box on the foot under the question, where
+     the thumb is; the list of others is the Sessions tab's. */
+  .opener { justify-content: flex-end; padding: 24px 0 12px; }
+  .opener .display { margin-bottom: auto; padding-top: 18vh; }
+  .opener #resume { display: none; }
+  .cwd-line { justify-content: center; font-size: var(--fs-detail); }
+}
+
 /* --- the page's foot: its drastic acts, under everything else (the standard's
    sixth slot; Channels' Restart channels first) --- */
 .ctl-foot { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--seam); }
