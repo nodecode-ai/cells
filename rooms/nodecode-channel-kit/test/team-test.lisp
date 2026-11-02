@@ -163,6 +163,13 @@ names; forget the thread after."
   (is (null (nck::score-value "fast")))
   (is (equal "7/9" (nck::scorer-score (format nil "running~%score: 7/9~%ok 3 4"))) "a score line wins")
   (is (equal "12" (nck::scorer-score (format nil "a 3~%took 12~%~%"))) "else the last number")
+  (is (equal "14/14" (nck::scorer-score (format nil "wrote /data/scratch/score-141/7.log~%14/14"))) "a path that holds score- is no score line")
+  (is (equal "4/5" (nck::scorer-score (format nil "Score=4/5~%done"))) "score= counts, in any case")
+  (is (equal "5" (nck::scorer-score (format nil "highscore: 9 then 5"))) "score must start a word")
+  (is (nck::scorer-cut-p 124) "timeout's own exit is a cut")
+  (is (nck::scorer-cut-p 143) "a signal's exit is a cut")
+  (is (not (nck::scorer-cut-p 1)) "a failing scorer still scores")
+  (is (not (nck::scorer-cut-p 0)))
   (with-team-thread (host "42" :peers '(("777" . "elektra") ("888" . "hindsight")))
     (is (nck::note-board-post host (said-in-thread host "**FINDING** s2 · score 3/5 · a")))
     (let ((again (said-in-thread host "**FINDING** s2 · score 3/5 · a"))
@@ -343,6 +350,7 @@ its board posted."
       (is (search "score 3/4" (nck::board-card-line (nck:lane-session-id lane))) "the card shows it")
       (is (signals-error error (nck:board-post "42" :solved "done" :platform "test")) "SOLVED takes the target")
       (is (getf (nck:board-verify "42" :command "echo 4/4" :platform "test") :solved))
+      (is (signals-error error (nck:board-verify "42" :command "echo 9/9; sleep 5; echo score: 9/14" :timeout 1 :platform "test")) "a run the timeout cut scores nothing, whatever it printed first")
       (is-present (post (nck:board-post "42" :finding "the cache key missed the profile" :platform "test")) "the finding posted"
         (is (getf post :posted))
         (is (equal (format nil "**FINDING** s1 · score 4/4 · scorer ~a · the cache key missed the profile"
