@@ -22,6 +22,13 @@ the cell and the extension is the consent: every session may drive Chrome.
 `/chrome status | doctor | onboard | background [on|off]` are the operator's
 controls. `background` decides whether actions leave Chrome's focus alone.
 
+One process on the machine serves the port. Any other process of the same
+home that runs the cell, such as a headless `nodecode rpc`, a bench or a second
+gateway, sends its commands through that one, and takes the port over once
+that one exits. A process of another home has no Chrome while the port is
+served, because the owner refuses its secret. `(chrome:status)` and any command
+say so.
+
 ```jsonc
 "chrome": {"enabled": true, "background": true,
            "screenshot_dir": "~/.nodecode/chrome-screenshots"}
