@@ -31,7 +31,8 @@ or, for sh -c, by a substring of the script.")
   "BODY with the feed fetch and the command runner stubbed, and the feed state fresh."
   `(with-saved-globals (nodecode-cyber-security::*fetch* nodecode-cyber-security::*run*
                         nodecode-cyber-security::*feed* nodecode-cyber-security::*feed-state*
-                        nodecode-cyber-security::*feed-url* nodecode-cyber-security::*pinned*)
+                        nodecode-cyber-security::*feed-url* nodecode-cyber-security::*pinned*
+                        nodecode-cyber-security::*home* nodecode-cyber-security::*root*)
      (setf *sp-fetch-answer* '(nil 599)
            *sp-outputs* '()
            *sp-ran* '()
@@ -39,7 +40,10 @@ or, for sh -c, by a substring of the script.")
            nodecode-cyber-security::*feed-state* (list :source :none)
            nodecode-cyber-security::*fetch* (lambda (url) (declare (ignore url))
                                                 (values-list *sp-fetch-answer*))
-           nodecode-cyber-security::*run* 'sp-run)
+           nodecode-cyber-security::*run* 'sp-run
+           ;; Signs of use read ~/ and / under empty folders: never this machine's.
+           nodecode-cyber-security::*home* (namestring (sp-scratch-dir "home"))
+           nodecode-cyber-security::*root* (namestring (sp-scratch-dir "root")))
      ,@body))
 
 (defvar *sp-ran* '() "Every argv the stubbed runner was handed, newest first.")

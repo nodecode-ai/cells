@@ -18,6 +18,14 @@
 (defparameter +check-kinds+ '("version" "npm" "composer" "wp-plugin" "command" "files")
   "The check kinds RUN-CHECK reads; a feed may use no other.")
 
+(defparameter +file-check-kinds+ '("lockfile" "gh-action" "uses" "npm" "composer" "wp-plugin" "files")
+  "The kinds an advisory's FILE_CHECKS may use: each reads files and runs no
+program. The first three are newer than CHECKS' kinds, so they live under
+their own key, which copies installed before them never read.")
+
+(defparameter +ecosystems+ '("crates.io" "Go" "Maven" "RubyGems" "PyPI" "npm" "Packagist")
+  "A lockfile check's ECOSYSTEM, in OSV's names.")
+
 (defparameter +severities+ '("critical" "high" "medium" "low"))
 
 (defun strings-p (value &key (min 1))
@@ -28,13 +36,14 @@
 
 (defun text-p (value) (and (stringp value) (plusp (length (string-trim " " value)))))
 
-(defun check-problems (id n c)
-  "What is wrong with check N of advisory ID."
+(defun check-problems (id n c &key (kinds +check-kinds+) (key "check"))
+  "What is wrong with check N of advisory ID; KINDS are the kinds its list
+may use, KEY names that list in a problem."
   (let ((kind (field c "kind")) (out '()))
-    (flet ((bad (fmt &rest args) (push (format nil "~a: check ~d (~a): ~?" id n kind fmt args) out)))
+    (flet ((bad (fmt &rest args) (push (format nil "~a: ~a ~d (~a): ~?" id key n kind fmt args) out)))
       (cond
-        ((not (member kind +check-kinds+ :test #'equal))
-         (bad "kind is not one of ~{~a~^, ~}" +check-kinds+))
+        ((not (member kind kinds :test #'equal))
+         (bad "kind is not one of ~{~a~^, ~}" kinds))
         (t
          (when (member kind '("version" "command") :test #'equal)
            (unless (strings-p (field c "command")) (bad "command is not a list of strings")))
@@ -42,7 +51,36 @@
          (when (equal kind "composer") (unless (strings-p (field c "packages")) (bad "packages is not a list of strings")))
          (when (equal kind "wp-plugin") (unless (strings-p (field c "slugs")) (bad "slugs is not a list of strings")))
          (when (equal kind "files") (unless (strings-p (field c "paths")) (bad "paths is not a list of strings")))
-         (when (member kind '("version" "npm" "composer" "wp-plugin") :test #'equal)
+         (when (equal kind "lockfile")
+           (unless (member (field c "ecosystem") +ecosystems+ :test #'equal)
+             (bad "ecosystem is not one of ~{~a~^, ~}" +ecosystems+))
+           (unless (text-p (field c "package")) (bad "package is missing"))
+           (when (and (equal (field c "ecosystem") "Maven") (text-p (field c "package"))
+                      (not (cl-ppcre:scan "^[^:\\s]+:[^:\\s]+$" (field c "package"))))
+             (bad "a Maven package is group:artifact")))
+         (when (equal kind "gh-action")
+           (unless (and (text-p (field c "action"))
+                        (cl-ppcre:scan "^[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+$" (field c "action")))
+             (bad "action is not owner/repo")))
+         (when (equal kind "uses")
+           (unless (text-p (field c "service")) (bad "service is missing"))
+           (unless (or (field c "paths") (field c "env") (field c "programs"))
+             (bad "names no sign: paths, env or programs"))
+           (let ((folder (remove-if-not (lambda (p) (and (stringp p) (search "{dir}" p))) (field c "paths"))))
+             (when (and folder (or (field c "env") (field c "programs")
+                                   (/= (length folder) (length (field c "paths")))))
+               (bad "mixes a folder's signs ({dir}) with the machine's: one check each, since a folder's check runs in every project")))
+           (dolist (p (field c "paths"))
+             (unless (and (text-p p) (or (uiop:string-prefix-p "~/" p) (uiop:string-prefix-p "{dir}/" p)
+                                         (uiop:string-prefix-p "/" p)))
+               (bad "path ~s does not start with ~~/, {dir}/ or /" p)))
+           (dolist (e (field c "env"))
+             (unless (and (stringp e) (cl-ppcre:scan "^[A-Za-z_][A-Za-z0-9_]*$" e))
+               (bad "env ~s is not a variable name" e)))
+           (dolist (p (field c "programs"))
+             (unless (and (stringp p) (cl-ppcre:scan "^[A-Za-z0-9][A-Za-z0-9._+-]*$" p))
+               (bad "program ~s is not a file name" p))))
+         (when (member kind '("version" "npm" "composer" "wp-plugin" "lockfile" "gh-action") :test #'equal)
            (let ((fixed (field c "fixed")) (badv (field c "bad")))
              (unless (or (strings-p fixed) (strings-p badv))
                (bad "names neither fixed nor bad versions"))
@@ -92,7 +130,12 @@
       (loop for c in (field a "checks") for n from 1
             do (if (hash-table-p c)
                    (dolist (p (check-problems name n c)) (push p out))
-                   (bad "check ~d is not an object" n))))
+                   (bad "check ~d is not an object" n)))
+      (loop for c in (field a "file_checks") for n from 1
+            do (if (hash-table-p c)
+                   (dolist (p (check-problems name n c :kinds +file-check-kinds+ :key "file_check"))
+                     (push p out))
+                   (bad "file_check ~d is not an object" n))))
     (nreverse out)))
 
 (defun new-command-problems (entries since)

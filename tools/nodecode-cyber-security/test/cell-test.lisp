@@ -24,10 +24,10 @@
     (is (equal "php2shell" (getf first-row :id)) "the vulnerable critical sorts first")
     (is (eq :vulnerable (getf first-row :status)))
     (is (eq :ok (getf node :status)) "a fixed node passes")
-    (is (eq :manual (getf railway :status)) "a platform breach has no machine check")
+    (is (member (getf railway :status) '(:absent :skipped)) "a platform breach is checked for signs of the platform, not READ for everyone")
     (is (search "PATCH CRITICAL (exploited) php2shell" text))
     (is (search "8.2.10 < 8.2.35" text))
-    (is (search "READ  HIGH (exploited) railway-2026-10-21" text))
+    (is (not (search "READ  HIGH (exploited) railway-2026-10-21" text)) "a breach of a platform this machine shows no sign of is not READ for everyone")
     (is (search "1 to patch" text))))
 
 (deftest cyber-security-slash-shows-one-advisory-in-full (with-stubbed-security)

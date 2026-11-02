@@ -30,8 +30,20 @@ Each advisory in [`advisories.json`](advisories.json) carries its own checks:
 | `command` | a command's output (e.g. the site certificate's issuer) |
 | `files` | known signs of compromise on disk |
 
-Advisories with no machine check (a platform breach: rotate your keys) are listed as
-`READ`.
+An advisory's `file_checks` say whether this person uses what it names, from files
+alone (no program runs, so the live feed may carry them):
+
+| kind | reads |
+| --- | --- |
+| `lockfile` | a package's version in a project's lockfile for its `ecosystem` (OSV's names): `Cargo.lock`, `go.mod`, `gradle.lockfile` / `build.gradle` / `pom.xml`, `Gemfile.lock`, `poetry.lock` / `uv.lock` / `pdm.lock` / `Pipfile.lock` / `requirements*.txt` pins |
+| `gh-action` | the version a project's `.github/workflows` pin an Action to (a commit pin by the version written beside it) |
+| `uses` | signs that a `service` is used: `paths` under `~/`, `{dir}/` or `/` (`match` narrows to files that say it), `env` variables set, `programs` on PATH |
+
+A platform breach then shows to the people who deploy there (a `railway.json`, a
+`~/.railway` login, a `*.rlwy.net` host in an `.env`), and to no one else. They sit
+apart from `checks` so a copy installed before these kinds never reads one. Advisories
+nothing on a machine can show (a network appliance, a provider's customer data) are
+listed as `READ`.
 
 ### What runs on your machine
 

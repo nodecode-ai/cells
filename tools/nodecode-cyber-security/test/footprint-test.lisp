@@ -1,0 +1,106 @@
+;;;; footprint-test.lisp --- the file-only kinds: lockfiles, workflow pins, signs of use.
+;;;;
+;;;; SPDX-License-Identifier: MIT
+
+(in-package #:nodecode.test)
+
+(defun sp-file-check (json &key dir)
+  (nodecode-cyber-security::run-check (sp-check json) :dir (and dir (namestring dir))))
+
+(deftest cyber-security-a-lockfile-check-reads-each-ecosystem (with-stubbed-security)
+  (let ((dir (sp-scratch-dir "lockfiles")))
+    (sp-write dir "Cargo.lock" (format nil "version = 3~%~%[[package]]~%name = \"russh\"~%version = \"0.64.2\"~%~%[[package]]~%name = \"zip\"~%version = \"2.1.0\"~%~%[[package]]~%name = \"zip\"~%version = \"9.0.5\"~%"))
+    (sp-write dir "go.mod" (format nil "module example.com/app~%~%go 1.22~%~%require (~%	github.com/labstack/echo/v4 v4.15.0~%	github.com/runatlantis/atlantis v0.47.1 // indirect~%)~%"))
+    (sp-write dir "Gemfile.lock" (format nil "GEM~%  specs:~%    shopify_app (23.0.2)~%      rails (>= 7)~%"))
+    (sp-write dir "gradle.lockfile" (format nil "org.xerial.snappy:snappy-java:1.1.10.8=runtimeClasspath~%"))
+    (sp-write dir "pom.xml" "<dependency><groupId>org.keycloak</groupId><artifactId>keycloak-services</artifactId><version>26.6.4</version></dependency>")
+    (sp-write dir "requirements.txt" (format nil "PyJWT[crypto]==2.13.0 ; python_version>'3'~%Zope_Interface==5.0~%numpy>=2~%"))
+    (flet ((status (json) (getf (sp-file-check json :dir dir) :status)))
+      (is (eq :vulnerable (status "{\"kind\":\"lockfile\",\"ecosystem\":\"crates.io\",\"package\":\"russh\",\"fixed\":[\"0.65\"]}")) "Cargo.lock: russh 0.64.2 < 0.65")
+      (is (eq :vulnerable (status "{\"kind\":\"lockfile\",\"ecosystem\":\"crates.io\",\"package\":\"zip\",\"fixed\":[\"9.0.5\"]}")) "a crate at two versions: the old one speaks")
+      (is (eq :ok (status "{\"kind\":\"lockfile\",\"ecosystem\":\"Go\",\"package\":\"github.com/runatlantis/atlantis\",\"min\":\"0.4.0\",\"fixed\":[\"0.47.1\"]}")) "go.mod, an indirect module at its fix")
+      (is (eq :vulnerable (status "{\"kind\":\"lockfile\",\"ecosystem\":\"Go\",\"package\":\"github.com/labstack/echo/v4\",\"fixed\":[\"4.16.0\"]}")) "go.mod's leading v")
+      (is (eq :absent (status "{\"kind\":\"lockfile\",\"ecosystem\":\"Go\",\"package\":\"github.com/labstack/echo/v5\",\"fixed\":[\"5.4.0\"]}")) "/v5 is another module than /v4")
+      (is (eq :vulnerable (status "{\"kind\":\"lockfile\",\"ecosystem\":\"RubyGems\",\"package\":\"shopify_app\",\"min\":\"22.1.0\",\"fixed\":[\"23.0.3\"]}")))
+      (is (eq :vulnerable (status "{\"kind\":\"lockfile\",\"ecosystem\":\"Maven\",\"package\":\"org.xerial.snappy:snappy-java\",\"fixed\":[\"1.1.10.9\"]}")) "gradle.lockfile, four-part versions")
+      (is (eq :ok (status "{\"kind\":\"lockfile\",\"ecosystem\":\"Maven\",\"package\":\"org.keycloak:keycloak-services\",\"fixed\":[\"26.6.4\"]}")) "pom.xml's literal version")
+      (is (eq :vulnerable (status "{\"kind\":\"lockfile\",\"ecosystem\":\"PyPI\",\"package\":\"pyjwt\",\"fixed\":[\"2.14.0\"]}")) "a requirements pin, its name normalised and its extras and marker read past")
+      (is (eq :vulnerable (status "{\"kind\":\"lockfile\",\"ecosystem\":\"PyPI\",\"package\":\"zope.interface\",\"fixed\":[\"6.0\"]}")) "PEP 503: Zope_Interface is zope.interface")
+      (is (eq :absent (status "{\"kind\":\"lockfile\",\"ecosystem\":\"PyPI\",\"package\":\"numpy\",\"fixed\":[\"9.0\"]}")) "a range is not a pin")
+      (is (eq :skipped (getf (sp-file-check "{\"kind\":\"lockfile\",\"ecosystem\":\"crates.io\",\"package\":\"russh\",\"fixed\":[\"0.65\"]}") :status)) "no folder, no lockfile"))))
+
+(deftest cyber-security-a-workflow-pin-is-judged-by-its-version (with-stubbed-security)
+  (let ((old (sp-scratch-dir "wf-old")) (sha (sp-scratch-dir "wf-sha")) (bare (sp-scratch-dir "wf-bare"))
+        (floating (sp-scratch-dir "wf-float"))
+        (check "{\"kind\":\"gh-action\",\"action\":\"pypa/gh-action-pypi-publish\",\"fixed\":[\"1.14.3\"]}"))
+    (sp-write old ".github/workflows/release.yml"
+              (format nil "jobs:~%  publish:~%    steps:~%      - uses: actions/checkout@v4~%      - uses: pypa/gh-action-pypi-publish@v1.14.2~%"))
+    (sp-write sha ".github/workflows/pypi.yaml"
+              (format nil "      - uses: \"pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc\" # v1.14.3~%"))
+    (sp-write bare ".github/workflows/pypi.yml"
+              (format nil "      - uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc~%"))
+    (sp-write floating ".github/workflows/pypi.yml" (format nil "      - uses: pypa/gh-action-pypi-publish@release/v1~%"))
+    (is (eq :vulnerable (getf (sp-file-check check :dir old) :status)) "a tag below the fix")
+    (is (eq :ok (getf (sp-file-check check :dir sha) :status)) "a commit pin with its version written beside it")
+    (let ((r (sp-file-check check :dir bare)))
+      (is (eq :error (getf r :status)) "a bare commit pin is unknown, never safe")
+      (is (search "76f52bc88423" (getf r :why))))
+    (is (eq :ok (getf (sp-file-check check :dir floating) :status)) "release/v1 moves with each release")
+    (is (eq :absent (getf (sp-file-check check :dir (sp-scratch-dir "wf-none")) :status)) "no workflow")))
+
+(deftest cyber-security-signs-of-use-come-from-home-project-env-and-path (with-stubbed-security)
+  (let* ((home (sp-scratch-dir "home"))
+         (project (sp-scratch-dir "deploy"))
+         (nodecode-cyber-security::*home* (namestring home))
+         (folder "{\"kind\":\"uses\",\"service\":\"Railway\",\"paths\":[\"{dir}/railway.json\",\"{dir}/railway.toml\"]}")
+         (machine "{\"kind\":\"uses\",\"service\":\"Railway\",\"paths\":[\"~/.railway/config.json\"],\"env\":[\"SP_NO_SUCH_RAILWAY_TOKEN\"],\"programs\":[\"sp-no-such-railway\"]}")
+         (hosts "{\"kind\":\"uses\",\"service\":\"Railway\",\"paths\":[\"{dir}/.env*\",\"{dir}/.env.*\"],\"match\":\"(?i)\\\\.rlwy\\\\.net\\\\b\"}")
+         (envkey "{\"kind\":\"uses\",\"service\":\"a PATH\",\"env\":[\"SP_NO_SUCH_VARIABLE\",\"PATH\"]}")
+         (program "{\"kind\":\"uses\",\"service\":\"a shell\",\"programs\":[\"sp-no-such-program\",\"sh\"]}"))
+    (is (eq :absent (getf (sp-file-check folder :dir project) :status)) "nothing of Railway's in the project")
+    (is (eq :absent (getf (sp-file-check machine) :status)) "nor on the machine")
+    (is (eq :skipped (getf (sp-file-check folder) :status)) "a sign only a folder holds needs the folder")
+    (sp-write project "railway.json" "{\"deploy\":{}}")
+    (let ((r (sp-file-check folder :dir project)))
+      (is (eq :vulnerable (getf r :status)) "a project file is a sign")
+      (is (search "uses Railway" (getf r :why)))
+      (is (search "railway.json" (getf r :found))))
+    (sp-write home ".railway/config.json" "{}")
+    (is (eq :vulnerable (getf (sp-file-check machine) :status)) "the CLI's login under ~/, no folder needed")
+    (sp-write project ".env.local" (format nil "DATABASE_URL=postgres://u:p@db.example.com/x~%"))
+    (is (eq :absent (getf (sp-file-check hosts :dir project) :status)) "MATCH narrows a path to the files that say it")
+    (sp-write project ".env.production" (format nil "DATABASE_URL=postgres://u:p@roundhouse.proxy.rlwy.net:5432/x~%"))
+    (is (eq :vulnerable (getf (sp-file-check hosts :dir project) :status)) "a host name in an env file")
+    (let ((r (sp-file-check envkey)))
+      (is (eq :vulnerable (getf r :status)) "a variable this process has set")
+      (is (search "$PATH is set" (getf r :why))))
+    (is (eq :vulnerable (getf (sp-file-check program) :status)) "a program on PATH")))
+
+(deftest cyber-security-file-checks-are-gated-apart-from-checks ()
+  (flet ((problems (checks file-checks)
+           (nodecode-cyber-security::advisory-problems
+            (shasht:read-json
+             (format nil "{\"id\":\"x\",\"title\":\"t\",\"date\":\"2026-11-02\",\"severity\":\"high\",\"exploited\":false,\"summary\":\"s\",\"affected\":\"a\",\"patch\":[\"p\"],\"sources\":[\"https://example.com\"],\"checks\":~a,\"file_checks\":~a}"
+                     checks file-checks)))))
+    (is (null (problems "[]" "[{\"kind\":\"uses\",\"service\":\"Railway\",\"paths\":[\"~/.railway/config.json\"]},{\"kind\":\"lockfile\",\"ecosystem\":\"crates.io\",\"package\":\"russh\",\"fixed\":[\"0.65\"]},{\"kind\":\"gh-action\",\"action\":\"pypa/gh-action-pypi-publish\",\"fixed\":[\"1.14.3\"]}]")) "the three new kinds, well formed")
+    (is (problems "[{\"kind\":\"uses\",\"service\":\"Railway\",\"paths\":[\"~/.railway/config.json\"]}]" "[]") "a new kind under checks: copies installed before it would call it an error")
+    (is (problems "[]" "[{\"kind\":\"command\",\"command\":[\"id\"]}]") "file_checks run no program")
+    (is (problems "[]" "[{\"kind\":\"lockfile\",\"ecosystem\":\"cargo\",\"package\":\"russh\",\"fixed\":[\"0.65\"]}]") "an ecosystem in OSV's names only")
+    (is (problems "[]" "[{\"kind\":\"lockfile\",\"ecosystem\":\"Maven\",\"package\":\"snappy-java\",\"fixed\":[\"1.1.10.9\"]}]") "a Maven package is group:artifact")
+    (is (problems "[]" "[{\"kind\":\"uses\",\"service\":\"Railway\",\"paths\":[\"railway.json\"]}]") "a relative path names no place")
+    (is (problems "[]" "[{\"kind\":\"uses\",\"service\":\"Railway\"}]") "a sign of use names a sign")
+    (is (problems "[]" "[{\"kind\":\"uses\",\"service\":\"Railway\",\"paths\":[\"{dir}/railway.json\",\"~/.railway/config.json\"]}]") "a folder's signs and the machine's are two checks: a folder's runs in every project")
+    (is (problems "[]" "[{\"kind\":\"gh-action\",\"action\":\"pypa/gh-action-pypi-publish\"}]") "a pin is judged against a fix")))
+
+(deftest cyber-security-the-shipped-feed-says-how-to-see-each-advisory (with-stubbed-security)
+  ;; Since 2026-11-02 only advisories nothing on a machine can show stay
+  ;; check-less: a network appliance, a provider's customer data.
+  (let* ((entries (nodecode-cyber-security::read-feed
+                   (uiop:read-file-string (nodecode-cyber-security::packaged-path))))
+         (blind (remove-if (lambda (a) (or (nodecode-cyber-security:field a "checks")
+                                           (nodecode-cyber-security:field a "file_checks")))
+                           entries)))
+    (is (< (length blind) (floor (length entries) 5)) "fewer than one in five advisories reach everyone as READ")
+    (is (find "railway-2026-10-21" entries
+              :test (lambda (id a) (and (equal id (nodecode-cyber-security:field a "id"))
+                                        (nodecode-cyber-security:field a "file_checks")))))))
