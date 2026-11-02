@@ -66,8 +66,7 @@ bound, else a fresh one), playing the process that serves it."
             "ok:false through the owner: CHROME-COMMAND-FAILED"
             (is (search "boom" (princ-to-string condition)))
             (is (search "page.click" (princ-to-string condition)))
-            (is (not (search "page.click failed: page.click" (princ-to-string condition)))
-                "the detail, not the owner's whole line, under this action")))))))
+            (is (not (search "page.click failed: page.click" (princ-to-string condition))))))))))
 
 (deftest chrome-cell-relay-refused-secret-is-said-by-the-command ()
   ;; Another home's nodecode serves the port: no Chrome here, said where it is asked.
@@ -93,8 +92,7 @@ bound, else a fresh one), playing the process that serves it."
           (sleep 0.4)
           (is (eq chrome::*bridge* relay) "while the owner serves, the relay relays")
           (chrome::stop-bridge owner)
-          (is (await (:timeout 5) (chrome::bridge-p chrome::*bridge*))
-              "the owner gone, this process serves the port")
+          (is (await (:timeout 5) (chrome::bridge-p chrome::*bridge*)))
           (is (eql port (chrome::bridge-port chrome::*bridge*)))
           (is (chrome::relay-stopping-p relay) "the relay stood down")
           (is-values (status body) (bridge-http port :get "/status")
@@ -115,8 +113,7 @@ bound, else a fresh one), playing the process that serves it."
           (chrome::stop-bridge owner)
           (with-cell-stop ((start-fake-extension port #'echo-handler :secret secret :origin +fake-origin+))
             (is (equal "tab.list" (nlk:json-value (chrome::bridge-send relay "tab.list" nil :timeout 10)
-                                                  :text "action"))
-                "the command ran, from this process")
+                                                  :text "action")))
             (is (chrome::bridge-p chrome::*bridge*))
             (is (eql port (chrome::bridge-port chrome::*bridge*)))))))))
 
