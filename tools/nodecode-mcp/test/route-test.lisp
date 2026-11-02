@@ -11,6 +11,18 @@
 
 (in-package #:nodecode.test)
 
+(deftest mcp-cell-tool-about-and-log-tail ()
+  (let ((about (nodecode-mcp::tool-about (format nil "Search arXiv.~%Dates too.~%~%Query: quoted."))))
+    (is (equal "Search arXiv. Dates too." about) "what a tool does: its first paragraph, on one line"))
+  (is (<= (length (nodecode-mcp::tool-about (make-string 900 :initial-element #\a))) 241) "at most 240 characters and the ellipsis")
+  (is (equal "" (nodecode-mcp::tool-about nil)) "none said, none shown")
+  (uiop:with-temporary-file (:pathname path :stream out :direction :output)
+    (dotimes (i 100) (format out "line ~d~%" (1+ i)))
+    :close-stream
+    (is (equal (format nil "line 98~%line 99~%line 100") (nodecode-mcp::log-tail path :lines 3)) "the last lines")
+    (is (equal (format nil "line 99~%line 100") (nodecode-mcp::log-tail path :bytes 20)) "a line the read's start cuts is left out"))
+  (is (null (nodecode-mcp::log-tail "/nonexistent/mcp.stderr.log")) "no file, no tail"))
+
 (defun mcp-route-message (body)
   "The refusal text of a route answer BODY."
   (nlk:json-value body :string "error" "message"))
@@ -74,7 +86,21 @@ gateway starts it on a scratch config.jsonc with no server; stopped on unwind."
           (is (= 10 (nlk:json-value row :integer "tools")) "its tool count")
           (is (search "stdio python3" (nlk:json-value row :string "transport")))
           (is (integerp (nlk:json-value row :any "connect_ms")) "how long its connect took")
-          (is (search "probe.stderr.log" (nlk:json-value row :string "log")) "and where its errors go"))))
+          (is (search "probe.stderr.log" (nlk:json-value row :string "log")) "and where its errors go")
+          (let ((tools (nlk:json-value row :array "tool_list")))
+            (is (= 10 (length tools)) "each tool for the ledger to fold out")
+            (let ((echo (find "echo" tools :key (lambda (tool) (nlk:json-value tool :string "name")) :test #'equal)))
+              (is (plusp (length (nlk:json-value echo :string "about"))) "with what it does")
+              (is (not (find #\Newline (nlk:json-value echo :string "about"))) "on one line"))))))
+    ;; Log: the end of the running server's stderr log, for the row's Log mark.
+    (with-gateway-http (port :post "/api/mcp" :body (mcp-op "op" "log" "name" "probe"))
+      (is (= 200 status))
+      (is-present (tail (nlk:json-value body :object "tail")) "the log's end"
+        (is (search "probe.stderr.log" (nlk:json-value tail :string "path")) "where it is")
+        (is (search ";; mcp probe: launched" (nlk:json-value tail :string "text")) "and its last lines"))
+      (is (plusp (length (nlk:json-value body :array "servers"))) "with the list, as every op answers"))
+    (with-gateway-http (port :post "/api/mcp" :body (mcp-op "op" "log" "name" "nobody"))
+      (is (search "no MCP server named \"nobody\"" (mcp-route-message body)) "a server not running has no log to read"))
     (with-gateway-http (port :post "/api/mcp" :body (mcp-op "op" "add" "name" "probe" "command" "x"))
       (is (= 500 status))
       (is (search "set already" (mcp-route-message body)) "a name taken is refused"))

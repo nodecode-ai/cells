@@ -73,7 +73,12 @@ and again after SIGTERM, before SIGKILL.")
              :log-path log-path
              :label (format nil "stdio ~a" spec.command))))
       (error (condition)
-        (error 'transport-closed :detail (format nil "cannot launch ~a: ~a" spec.command condition))))))
+        ;; The spawn's own words name the command again ("spawning X: ..."): it is said once.
+        (let* ((said (princ-to-string condition))
+               (again (format nil "spawning ~a" spec.command))
+               (cut (and (eql 0 (search again said)) (search ": " said :start2 (length again)))))
+          (error 'transport-closed :detail (format nil "cannot launch ~a: ~a" spec.command
+                                                   (if cut (subseq said (+ cut 2)) said))))))))
 
 (defmethod transport-send ((transport stdio-transport) text deadline)
   (declare (ignore deadline))
