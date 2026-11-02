@@ -1651,6 +1651,20 @@ it, settle it in place."
                    (equal status-id target-digest.status-id))
           (setf target-digest.status-id nil))))))
 
+(defun settle-folded-card (host lane status-id digest leader)
+  "Worker thread: LANE's card, its answer folded under LEADER -- the peer's
+result that writes its task's answer (BOARD-ANSWER-TEXT) -- settled to one
+line that says so where a silent answer's card is deleted: a fold is never
+silent."
+  (when status-id
+    (remhash status-id *replied-lines*)
+    (edit-card host lane status-id (list :state :done :headline (folded-line leader)) "card fold"
+               :controls :clear)
+    (bt2:with-lock-held ((lane-lock lane))
+      (let ((target-digest (or digest lane.digest)))
+        (when (and target-digest (equal status-id target-digest.status-id))
+          (setf target-digest.status-id nil))))))
+
 (defun settle-card (host lane digest &aux (now (now-ms)))
   "Worker thread: DIGEST's turn answered — its card, when it earned one,
 settles above the answer to how long the work took over its last steps,
@@ -1734,15 +1748,21 @@ the thread and the ask as they stand."
                                    (warn "~a completed answer lookup for ~a failed: ~a"
                                          (host-id host) turn-id condition)
                                    nil))))
-         ;; In a team's thread the best verified result writes the one
-         ;; answer: a bot a peer outscored answers silently (BOARD-ANSWER-TEXT).
-         (text (board-answer-text
-                host lane
-                (if text-p
-                    text
-                    (or (digest-final-text digest)
-                        ;; The event log is the durable answer; an unreadable store is reported.
-                        (some #'fact-message-content assistant-facts)))))
+         ;; In a team's thread the best verified result on the ask's task
+         ;; writes the one answer: a bot a peer outscored there answers
+         ;; silently, FOLDED the peer's result that did it (BOARD-ANSWER-TEXT).
+         (folded nil)
+         (text (multiple-value-bind (said leader)
+                   (board-answer-text
+                    host lane
+                    (if text-p
+                        text
+                        (or (digest-final-text digest)
+                            ;; The event log is the durable answer; an unreadable store is reported.
+                            (some #'fact-message-content assistant-facts)))
+                    (or digest.ask-id lane.trigger-message-id))
+                 (setf folded leader)
+                 said))
          (wordless-completion-p (and assistant-facts (null text)))
          (status-id digest.status-id)
          (origin (lane-thread-origin lane))
@@ -1775,13 +1795,21 @@ the thread and the ask as they stand."
        ;; SILENT is a control value: do not post it, write it back, or leave
        ;; the temporary working line behind.
        (setf digest.answer nil)
-       ;; The thread goes first: an empty one the kit opened for this ask is
-       ;; removed whole, and the working line inside it goes with it.
-       (unless (retire-thread host lane)
-         (retire-chrome host lane status-id digest))
-       ;; Silence on a peer's wake would leave its talk without an end: the
-       ;; bot writes the final answer instead (ASK-FOR-FINAL-ANSWER).
-       (ask-for-final-answer host lane (or heard digest.ask-id))
+       (cond
+         (folded
+          ;; The kit folded the answer under a peer's better result, not the
+          ;; bot: its card stays as one line that says so, and no final
+          ;; answer is asked for -- the leader's answer is the task's, and the
+          ;; bot never chose silence.
+          (settle-folded-card host lane status-id digest folded))
+         (t
+          ;; The thread goes first: an empty one the kit opened for this ask is
+          ;; removed whole, and the working line inside it goes with it.
+          (unless (retire-thread host lane)
+            (retire-chrome host lane status-id digest))
+          ;; Silence on a peer's wake would leave its talk without an end: the
+          ;; bot writes the final answer instead (ASK-FOR-FINAL-ANSWER).
+          (ask-for-final-answer host lane (or heard digest.ask-id))))
        nil)
       ((null text)
        ;; A completion that spoke and left no words the room can show is a
@@ -3767,6 +3795,9 @@ answer."
             ((not (candidate-bot-p candidate))
              (remhash key *talk-wakes*)
              (remhash key *talk-finals*)
+             ;; The person's line opens a task the board's results so far
+             ;; fold none of the answers of (BOARD-ANSWER-TEXT).
+             (note-thread-ask host thread (source-field candidate "message_id"))
              (values action reason))
             ((not (candidate-peer-p candidate)) (values action reason))
             ((final-answer-line-p (gethash "text" candidate))

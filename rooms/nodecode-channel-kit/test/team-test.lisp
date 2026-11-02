@@ -198,6 +198,60 @@ names; forget the thread after."
         (post "999" 1 "5/5" "400" 20)
         (is (equal "mine" (nck::board-answer-text host lane "mine")) "this bot's post leads: it answers")))))
 
+(defun person-said (host message text)
+  "The person typed TEXT in thread 42 as MESSAGE, counted in its talk as the
+kit counts every line there (PEER-RUN)."
+  (nck::peer-run host (said-in-thread host text :user "u1" :name "kim" :bot nil :message message)
+                 :answer nil))
+
+(deftest channel-team-a-result-folds-only-its-own-tasks-answers ()
+  ;; A line the person types opens a task: the results posted before it
+  ;; fold none of its answers, so a later question is every bot's to answer
+  ;; -- in the thread where a peer led once, every answer after it had
+  ;; folded, for the thread's whole life. A peer's wake and an answer whose
+  ;; ask has no place belong to the task they came in.
+  (with-team-thread (host "42" :peers '(("777" . "elektra")))
+    (let ((lane (running-thread-lane host)))
+      (person-said host "100" "fix the sign-in")
+      (is (nck::note-board-post host (said-in-thread host "**FINDING** s2 · score 4/5 · half" :message "200")))
+      (is-values (text leader) (nck::board-answer-text host lane "mine" "100")
+        ((nck::silent-answer-p text) is)
+        ((getf leader :slot) eql 2))
+      (is (nck::silent-answer-p (nck::board-answer-text host lane "mine" "250")) "a peer's wake in the task folds")
+      (person-said host "300" "what is still open?")
+      (is (equal "mine" (nck::board-answer-text host lane "mine" "300")) "the later question: each answers")
+      (is (equal "mine" (nck::board-answer-text host lane "mine" nil)) "an ask with no place belongs to the newest task")
+      (is (nck::silent-answer-p (nck::board-answer-text host lane "mine" "100")) "the first task's answers still fold")
+      (is (nck::note-board-post host (said-in-thread host "**FINDING** s2 · score 5/5 · all" :message "400")))
+      (is (nck::silent-answer-p (nck::board-answer-text host lane "mine" "300")) "a result posted in the new task folds its answers")
+      (is (nck::silent-answer-p (nck::board-answer-text host lane "mine" "100")) "and a late result still counts for the first"))))
+
+(deftest channel-team-a-folded-answer-says-so-and-asks-no-final-answer ()
+  ;; The kit folds an outscored answer, the bot never chose silence: its card
+  ;; settles to one line naming the leader where a silent answer's card is
+  ;; deleted, and it is never told it answered NO_REPLY and asked for a
+  ;; final answer -- the wake it answered stays untaken.
+  (with-team-thread (host "42" :peers '(("777" . "elektra")))
+    (let ((lane (running-thread-lane host))
+          (executor (nck::host-executor host)))
+      (person-said host "100" "fix the sign-in")
+      (is (nck::note-board-post host (said-in-thread host "**SOLVED** s2 · score 5/5 · done" :message "200")))
+      (setf (gethash (cons "test" "42") nck::*talk-wakes*)
+            (list (cons "250" (said-in-thread host "<@999> agreed?" :message "250"))))
+      (nck::deliver-answer host lane (nck:make-turn-digest :turn-id "turn-1" :phase :completed
+                                                           :answer "mine" :ask-id "250" :status-id "card-1"))
+      (let ((plans (nck:recording-executor-plans executor)))
+        (is (notany (lambda (plan) (search "mine" (or (plan-content plan) ""))) plans) "the answer does not post")
+        (is-present (fold (find-if (lambda (plan)
+                                       (and (equal "PATCH" (nck:request-plan-method plan))
+                                            (search "/card-1" (nck:request-plan-path plan))))
+                                     plans)) "the card settles"
+          (is (equal "Answer folded: s2 leads this task at 5/5, so its answer is the one posted"
+                     (getf (plan-field fold "card") :headline))))
+        (is (notany (lambda (plan) (equal "DELETE" (nck:request-plan-method plan))) plans) "nothing is deleted"))
+      (is (assoc "250" (gethash (cons "test" "42") nck::*talk-wakes*) :test #'equal) "the wake stays untaken")
+      (is (cdr (assoc "250" (gethash (cons "test" "42") nck::*talk-wakes*) :test #'equal)) "and unspent"))))
+
 (deftest channel-team-a-result-names-the-scorer-it-was-measured-on ()
   ;; A scored post names its scorer by a key every kit computes alike -- the
   ;; first hex digits of the command's SHA-256 -- and a post from a kit that
