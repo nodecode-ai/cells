@@ -11,14 +11,39 @@
 # passes.
 set -euo pipefail
 
+repo=nodecode-ai/nodecode
+
+# fetch_linter FILE --- write Nodecode main's lint-structure.lisp to FILE.
+# The linter has moved with Nodecode's layout (src/tools/, src/tools/check/,
+# tools/check/), so its path is read from main's tree; when the GitHub API
+# does not answer (rate limit), the homes it has had are tried newest first.
+fetch_linter() {
+  local auth=() path found
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
+    auth=(-H "Authorization: Bearer $GITHUB_TOKEN")
+  fi
+  found="$(curl -fsSL ${auth[@]+"${auth[@]}"} \
+             "https://api.github.com/repos/$repo/git/trees/main?recursive=1" \
+           | grep -o '"path": *"[^"]*lint-structure\.lisp"' \
+           | sed 's/.*"\([^"]*\)"$/\1/' | head -1)" || found=""
+  for path in $found tools/check/lint-structure.lisp \
+              src/tools/check/lint-structure.lisp src/tools/lint-structure.lisp; do
+    if curl -fsSL -o "$1" "https://raw.githubusercontent.com/$repo/main/$path" 2>/dev/null; then
+      echo "linter: $repo main $path" >&2
+      return 0
+    fi
+  done
+  echo "lint.sh: no lint-structure.lisp found in $repo main" >&2
+  return 1
+}
+
 here="$(cd "$(dirname "$0")/.." && pwd)"
 if [ -n "${1:-}" ]; then
   linter="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 else
   linter="$(mktemp)"
   trap 'rm -f "$linter"' EXIT
-  curl -fsSL -o "$linter" \
-    https://raw.githubusercontent.com/nodecode-ai/nodecode/main/src/tools/check/lint-structure.lisp
+  fetch_linter "$linter"
 fi
 
 cd "$here"
