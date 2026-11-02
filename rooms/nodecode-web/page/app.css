@@ -626,7 +626,7 @@ code, pre, kbd { font-family: var(--mono); }
 .answer.prose :where(em) { color: var(--foreground); }
 .answer.prose :where(:not(pre) > code) { background: none; padding: 0; color: var(--duo-code); }
 .answer.prose :where(code.path) { color: var(--duo-path); }
-.answer.prose :where(code .quiet) { color: var(--duo-quiet); }
+.answer.prose :where(code .still) { color: var(--duo-quiet); }
 .answer.prose :where(li)::marker { color: var(--duo-mark); }
 .answer.prose :where(pre) { background: var(--duo-slab); border-radius: var(--r-chip); }
 .answer.prose :where(pre[data-lang])::before { color: var(--duo-quiet); }
