@@ -432,6 +432,17 @@ then files[0] — carrying CONTENT and its one attachment; answers the payload."
                                     :retry t :retry-after-fn #'ncd::discord-retry-after-ms)))
     (is-shape result (nck:execution-ok-p is) (.retry-delays '(750)))))
 
+(deftest channel-discord-an-old-messages-spent-edits-are-told-apart ()
+  ;; 30046: the edit budget of a message over an hour old is spent. Its 429
+  ;; holds the card's running edits off (the kit's EDIT-SPENT-P); any other
+  ;; 429 is a rate limit, paced by its retry_after.
+  (let ((spent-p (nck:platform-edit-spent-p (ncd:discord-platform :bot-user-id "999"))))
+    (is-table (expected status json) (eq expected (funcall spent-p status (cell-json json)))
+      (t 429 "{\"message\": \"Maximum number of edits to messages older than 1 hour reached.\", \"retry_after\": 1.569, \"global\": false, \"code\": 30046}")
+      (nil 429 "{\"message\": \"You are being rate limited.\", \"retry_after\": 0.75, \"global\": false}")
+      (nil 400 "{\"code\": 30046}"))
+    (is (null (funcall spent-p 429 nil)))))
+
 ;;; --- the probe ----------------------------------------------------------------
 
 (defun discord-probe-executor (&rest tail)

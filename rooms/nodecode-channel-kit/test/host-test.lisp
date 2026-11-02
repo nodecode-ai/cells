@@ -700,6 +700,33 @@ message of ours."
     (is-plan (first (labelled "delete_message")) :path "/rooms/123/messages/s1")
     (is (null (nck::turn-digest-status-id (nck:lane-digest lane))))))
 
+(deftest channel-host-a-card-whose-edits-are-spent-is-not-asked-every-tick ()
+  ;; Discord refuses an edit to a message over an hour old once its edit
+  ;; budget is spent -- 429, code 30046, with a retry_after of a second or
+  ;; three -- and goes on refusing: a lane that asked again on every tick
+  ;; asked 18 times a minute for minutes (gateway logs, 2026-11-01). The
+  ;; first refusal holds the running edits off; the settle still goes,
+  ;; nothing follows it.
+  (let ((platform (test-platform)))
+    (setf (nck:platform-edit-spent-p platform)
+          (lambda (status body)
+            (and (eql status 429) (eql 30046 (nlk:json-value body :integer "code")))))
+    (with-digest-host (host lane :responses (list (reply 200 "id" "s1")
+                                                  (reply 429 "retry_after" 1.5 "code" 30046))
+                                 :host-keys (:platform platform))
+      (earn-line)
+      (is (= 1 (length (labelled "send_message"))) "the card posts")
+      (loop for call from 2 to 6
+            do (called (format nil "c~d" call))
+               ;; A running tick, as the fold schedules it; FLUSH-NOW is the settle.
+               (await (:timeout 10) (not (nck::lane-flush-in-flight-p lane)))
+               (nck::schedule-flush host lane)
+               (await (:timeout 10) (not (nck::lane-flush-in-flight-p lane))))
+      (is (= 1 (length (labelled "edit_message"))) "one refused edit, then the card is held")
+      (said "done")
+      (fact "turn.completed" (nlk:json-object))
+      (is (await-plan executor :label "edit_message" :content "Done in") "the settle still edits the card"))))
+
 (deftests channel-host-a-completion-the-fold-missed (messages said answer card)
   (with-temp-store ()
     (with-digest-host (host lane

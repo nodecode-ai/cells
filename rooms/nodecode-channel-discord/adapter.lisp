@@ -201,6 +201,8 @@ its own callback, and a control press the same path acknowledges."
    :message-id-of (lambda (body) (nlk:json-value body :string "id"))
    ;; A card's pictures are attachments, kept by id on its next edit.
    :media-of #'message-media
+   ;; A card over an hour old runs out of edits (30046): the kit holds it.
+   :edit-spent-p #'discord-edit-spent-p
    :strip-mention (lambda (text) (discord-strip-mention text bot-user-id))
    :answer-body (lambda (text footer) (format nil "~a~%~%-# ~a" text footer))
    :where-text (lambda (candidate) (discord-where-text candidate bot-user-id))
