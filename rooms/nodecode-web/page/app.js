@@ -3402,6 +3402,21 @@ function renderSessions() {
   $("sessions").replaceChildren(...items);
   renderPicking();
   renderTitle();
+  phoneFirstPage();
+}
+
+// --- a phone: what it opens on, and a row's Delete under a swipe -------------------
+// A phone opens on what needs you: its first look, with no session named in the
+// address, is the Sessions page once there is a session to show (Peas,
+// 2026-11-02: the phone opened on an empty message box).
+let phoneFirstSeen = false;
+function phoneFirstPage() {
+  // Decided once, by the first list the page draws: a page that opened wide
+  // and narrows later (a desktop window dragged narrow) is already on its
+  // way, and a session being opened is never sent back to the list.
+  if (phoneFirstSeen || !state.sessions?.length) return;
+  phoneFirstSeen = true;
+  if (PHONE.matches && !state.current && !new URLSearchParams(location.hash.slice(1)).get("s")) app.classList.add("column-open");
 }
 
 // --- what the sessions are doing: the column's state choice ----------------------------
@@ -5159,6 +5174,36 @@ $("sessions").addEventListener("click", (event) => {
   if (state.picking) pick([item.dataset.id], !state.picking.ids.has(item.dataset.id));
   else select(item.dataset.id);
 });
+// A row swiped left shows its Delete, as a phone's own lists do; a swipe back,
+// or a tap anywhere else, puts it away. The tap that ends a swipe opens nothing.
+{
+  let swipe = null;
+  let swallow = false;
+  const put = (except) => { for (const li of $("sessions").querySelectorAll(":scope > li.swiped")) if (li !== except) li.classList.remove("swiped"); };
+  $("sessions").addEventListener("pointerdown", (event) => {
+    if (!PHONE.matches || event.pointerType !== "touch") return;
+    const li = event.target.closest("#sessions > li");
+    if (!li || !li.querySelector(":scope > .ses-del") || event.target.closest(".ses-del")) return;
+    swipe = { li, x: event.clientX, y: event.clientY };
+  });
+  $("sessions").addEventListener("pointerup", (event) => {
+    if (!swipe) return;
+    const dx = event.clientX - swipe.x;
+    const dy = Math.abs(event.clientY - swipe.y);
+    if (dy < 30 && dx < -40) { put(swipe.li); swipe.li.classList.add("swiped"); swallow = true; }
+    else if (dy < 30 && dx > 24 && swipe.li.classList.contains("swiped")) { swipe.li.classList.remove("swiped"); swallow = true; }
+    swipe = null;
+    // Only the click this very swipe ends is swallowed, never a later tap.
+    if (swallow) setTimeout(() => { swallow = false; }, 350);
+  });
+  $("sessions").addEventListener("pointercancel", () => { swipe = null; });
+  $("sessions").addEventListener("click", (event) => {
+    if (swallow) { swallow = false; event.stopImmediatePropagation(); event.preventDefault(); return; }
+    const open = event.target.closest("#sessions > li.swiped");
+    if (open && !event.target.closest(".ses-del")) { open.classList.remove("swiped"); event.stopImmediatePropagation(); event.preventDefault(); }
+  }, true);
+  document.addEventListener("click", (event) => { if (!event.target.closest("#sessions")) put(null); });
+}
 // Right opens the row's session, Left closes it -- or, holding nothing open,
 // closes the session it hangs under and moves there: the shell's own keys.
 $("sessions").addEventListener("keydown", (event) => {
