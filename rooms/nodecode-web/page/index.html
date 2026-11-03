@@ -39,6 +39,10 @@
           <span class="name" data-i18n>Dashboard</span>
           <span class="reading" id="usage-reading"></span>
         </a>
+        <a class="row" id="board-open" href="#v=board" title="Tasks queued for the agent, and what became of each" data-i18n-attrs="title">
+          <svg class="plus" viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><path d="M2.5 2.5V12.5M7.5 2.5V8.5M12.5 2.5V10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="name" data-i18n>Board</span>
+        </a>
         <a class="row" id="control-open" href="#v=control" title="The gateway, its log, keys and cells, channels and scheduled jobs" data-i18n-attrs="title">
           <svg class="plus" viewBox="0 0 15 15" width="14" height="14" fill="none" aria-hidden="true"><path d="M2 4H8.5M11.5 4H13M2 11H3.5M6.5 11H13M10 2.5V5.5M5 9.5V12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           <span class="name" data-i18n>Settings</span>
@@ -259,6 +263,7 @@
         <button class="round jump" id="jump" type="button" aria-label="Jump to the latest" title="Jump to the latest" data-i18n-attrs="aria-label title" hidden>
           <svg viewBox="0 0 15 15" width="15" height="15" fill="none" aria-hidden="true"><path d="M7.5 2.5V12.5M7.5 12.5L3.2 8.2M7.5 12.5L11.8 8.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
+        <div class="questions" id="questions" role="group" aria-label="Waiting on you" data-i18n-attrs="aria-label" hidden></div>
         <div class="band" id="band" role="group" aria-label="Running in the background" data-i18n-attrs="aria-label" hidden></div>
         <form class="composer" id="composer" autocomplete="off">
           <div class="attachments" id="attachments" hidden></div>
@@ -274,6 +279,11 @@
             <button class="round stop" id="stop" type="button" aria-label="Stop the running turn" title="Stop (Esc)" data-i18n-attrs="aria-label title" hidden><i aria-hidden="true"></i></button>
             <button class="round queue-later" id="queue" type="button" aria-label="Queue for after this turn" title="Queue for after this turn (Tab)" data-i18n-attrs="aria-label title" hidden disabled>
               <svg viewBox="0 0 15 15" width="15" height="15" fill="none" aria-hidden="true"><path d="M4 2.5V8a2 2 0 0 0 2 2h6.5M9.5 7l3 3-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <span class="voice-time" id="voice-time" aria-live="off" hidden></span>
+            <button class="round voice" id="voice" type="button" aria-label="Speak a message" data-i18n-attrs="aria-label" hidden>
+              <svg class="mic" viewBox="0 0 15 15" width="15" height="15" fill="none" aria-hidden="true"><rect x="5.25" y="1.75" width="4.5" height="7.5" rx="2.25" stroke="currentColor" stroke-width="1.5"/><path d="M3 7.5a4.5 4.5 0 0 0 9 0M7.5 12v1.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <i class="halt" aria-hidden="true"></i>
             </button>
             <button class="round send" id="send" type="submit" aria-label="Send" data-i18n-attrs="aria-label" disabled>
               <svg viewBox="0 0 15 15" width="15" height="15" fill="none" aria-hidden="true"><path d="M7.5 12.5V2.5M7.5 2.5L3.2 6.8M7.5 2.5L11.8 6.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>

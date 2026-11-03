@@ -58,7 +58,15 @@ running. Never poll for it: end your turn, and it arrives as the next one.
 Its first line also stands on every attached shell as a notice under cron:<id>; a fire that
 answers exactly SILENT, or nothing at all, sends nothing. A fire's time limit (:timeout-minutes,
 default 10) is its turn's budget: past it the fire's tool calls are refused and it answers with
-what it has. A job's own session cannot add, edit, resume or run jobs."
+what it has. A job's own session cannot add, edit, resume, run or remove jobs.
+
+Wake-ups of its own: (cron:wake :on :min \"15m\" :max \"4h\" :allowance 2 :calls 40) turns on
+one wake job, \"wake\", whose turns nobody types; (cron:wake :off) stops it until the next :on,
+(cron:wake :status) reads it, (cron:wake :now) wakes it once. Before each wake a check in Lisp,
+at no cost, skips it when the allowance (dollars per 24 hours) is spent or unknown, or when
+nothing changed and the longest gap has not run out. A wake turn reads what changed since
+the last one, may only read (its writes are refused), answers SILENT when nothing is worth a
+line, and may pick its next wake with (cron:wake-next \"2h\" \"why\") inside the bounds."
   "What (help :cron) answers while the cell runs.")
 
 ;;; --- the verbs ------------------------------------------------------------------
@@ -67,7 +75,13 @@ what it has. A job's own session cannot add, edit, resume or run jobs."
   "hermes' rule: a scheduled run that could schedule runs is a loop."
   (when (and (stringp nlk:*scribe-session-id*)
              (find nlk:*scribe-session-id* *jobs* :key #'job-session :test #'string=))
-    (fail "a scheduled job's session cannot add, edit, resume or run jobs")))
+    (fail "a scheduled job's session cannot add, edit, resume, run or remove jobs")))
+
+(defun refuse-wake-job (job verb)
+  "The wake job keeps its own verbs: its bounds and its stop are (cron:wake ...)."
+  (when (job-wake job)
+    (fail "(cron:~a) leaves the wake job alone: (cron:wake :on ...) sets its bounds and turns it on, (cron:wake :off) stops it, (cron:wake :now) wakes it once"
+          verb)))
 
 (defun timeout-seconds-from-minutes (minutes)
   (unless (and (realp minutes) (plusp minutes))
@@ -144,6 +158,7 @@ registry is written after it -- the ticker woken too, with POKE."
 
 (define-job-verb edit (id &key schedule prompt name cwd timeout-minutes)
   "Change job ID in place. A new schedule counts from now." (:refuse t)
+  (refuse-wake-job job "edit")
   (when schedule
     (let* ((now (get-universal-time))
            (parsed (parse-schedule schedule :now now)))
@@ -169,6 +184,7 @@ registry is written after it -- the ticker woken too, with POKE."
 
 (define-job-verb resume (id)
   "Let job ID fire again, from the next due instant after now." (:refuse t)
+  (refuse-wake-job job "resume")
   (let ((next (next-fire (job-schedule job) (get-universal-time))))
     (unless next
       (fail "job ~a has no fire left (~a); (cron:edit ~s :schedule ...) gives it one"
@@ -178,12 +194,13 @@ registry is written after it -- the ticker woken too, with POKE."
     (format nil "job ~a resumed; next fire ~a" id (at-text next))))
 
 (define-job-verb remove (id)
-  "Forget job ID. Its session and transcript stay in the store." ()
+  "Forget job ID. Its session and transcript stay in the store." (:refuse t)
   (setf *jobs* (cl:remove job *jobs*))
   (format nil "job ~a removed; its session ~a keeps its history" id (job-session job)))
 
 (define-job-verb run (id &optional extra)
   "Fire job ID now, beside its schedule. EXTRA rides as run context." (:refuse t :poke nil)
+  (refuse-wake-job job "run")
   (nlk:if-let (fire (fire-job job (get-universal-time) :extra extra :manual t))
     (format nil "job ~a fired into session ~a~@[ (turn ~a)~]"
             id (job-session job) (fire-turn-id fire))
@@ -434,6 +451,13 @@ thread, and the standing line for the jobs that keep the gateway up."
   (:start #'install)
   (:hook :frame (nlk:observer #'observe-frame "cron"))
   (:hook 'nle:turn-budget #'budget-hook)
+  ;; The wake's observe level: every tool call of the wake's session, no other.
+  (:hook :tool #'wake-gate)
+  (:command "wake" (lambda (args session-id)
+                     (declare (ignore session-id))
+                     (wake-slash args))
+            :description "Wake-ups of its own: status, on, off, now"
+            :argument-hint "status | on | off | now")
   (:help :cron "cron:add schedules a prompt (\"every day at 9am\", \"in 45m\"); a fire's answer arrives as your next turn" +primer+)
   (:route "/api/cron/jobs" #'jobs-route)
   (:command "cron" (lambda (args session-id)

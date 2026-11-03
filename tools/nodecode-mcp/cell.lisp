@@ -111,16 +111,28 @@
 (defparameter +route+ "/api/mcp")
 (defparameter +catalog-route+ "/api/mcp/catalog")
 
+(defun tool-about (description)
+  "What a tool does as the page's ledger shows it under the hand: the first
+paragraph of its DESCRIPTION on one line, at most 240 characters. A test
+answers the whole description."
+  (let* ((text (or description ""))
+         (gap (search (format nil "~%~%") text)))
+    (nlk:one-line (if gap (subseq text 0 gap) text) :cap 240 :ellipsis "…")))
+
 (defun server-json (snapshot)
-  "A server's SNAPSHOT as the page lists it: its state, its tools, how it is
-reached (a header count, never a value), how long its last connect took, its
-last error and its log."
+  "A server's SNAPSHOT as the page lists it: its state, its tools with what
+each does, how it is reached (a header count, never a value), how long its
+last connect took, its last error and its log."
   (destructuring-bind (&key name state error tool-count tools transport log-path timing &allow-other-keys)
       snapshot
     (nlk:json-object "name" name
                      "state" (string-downcase state)
                      "tools" tool-count
                      "tool_names" (map 'vector (lambda (tool) (getf tool :name)) tools)
+                     "tool_list" (map 'vector (lambda (tool)
+                                                (nlk:json-object "name" (getf tool :name)
+                                                                 "about" (tool-about (getf tool :description))))
+                                      tools)
                      "transport" transport
                      :opt "connect_ms" (first timing)
                      :opt "list_ms" (second timing)
@@ -147,6 +159,30 @@ what the server said."
                                                tools))
                      :opt "error" (and error (nlk:one-line error :cap 600))
                      :opt "said" said)))
+
+(defun log-tail (path &key (lines 60) (bytes 16384))
+  "The last LINES lines of the log at PATH, read from at most its last BYTES:
+a line cut by that start is left out. NIL when there is no file."
+  (when (and path (probe-file path))
+    (with-open-file (in path :element-type '(unsigned-byte 8))
+      (let* ((size (file-length in))
+             (start (max 0 (- size bytes)))
+             (octets (make-array (- size start) :element-type '(unsigned-byte 8))))
+        (file-position in start)
+        (read-sequence octets in)
+        (let* ((text (string-right-trim '(#\Newline #\Return)
+                                        (sb-ext:octets-to-string octets :external-format '(:utf-8 :replacement #\?))))
+               (all (uiop:split-string text :separator '(#\Newline)))
+               (whole (if (and (plusp start) (rest all)) (rest all) all)))
+          (format nil "~{~a~^~%~}" (last whole lines)))))))
+
+(defun tail-json (name &aux (server (find-server name)))
+  "The end of the stderr log of the running server NAME, for the page's Log:
+where the log is and its last lines, empty when it has none yet."
+  (let ((path (getf (server-snapshot server) :log-path)))
+    (nlk:json-object "name" name
+                     :opt "path" path
+                     "text" (or (log-tail path) ""))))
 
 (defun configured-server (name)
   "The mcp.servers entry NAME as config.jsonc says it now, or NIL."
@@ -212,7 +248,8 @@ command, args?, env?} or {op: add, name, url, headers?} adds one, {op:
 remove, name} and {op: restart, name} move one, and each answers {text,
 enabled, servers}; {op: test, name} tests the configured server NAME, and
 {op: test, name, command|url ...} the entry the Add form holds, unsaved,
-answering {test, enabled, servers}."
+answering {test, enabled, servers}; {op: log, name} answers {tail, enabled,
+servers}, the end of that server's stderr log (TAIL-JSON)."
   (let* ((request (if (eq (getf env :request-method) :post)
                       (nle::gateway-request-json env)
                       (nlk:make-json-object)))
@@ -223,14 +260,16 @@ answering {test, enabled, servers}."
                     (test-json name (if unsaved
                                         (probe (checked-spec name (request-entry request)))
                                         (test-server (find-server name))))))
-         (text (cond ((or (null op) test) nil)
+         (tail (and (equal op "log") (tail-json name)))
+         (text (cond ((or (null op) test tail) nil)
                      ((string= op "add") (add-server name (request-entry request)))
                      ((string= op "remove") (remove-server name))
                      ((string= op "restart") (restart name))
-                     (t (fail "no op ~s; add, remove, restart or test" op))))
+                     (t (fail "no op ~s; add, remove, restart, test or log" op))))
          (section (nlk:json-value (nle:read-shared-config) :object "mcp")))
     (nlk:json-object :opt "text" text
                      :opt "test" test
+                     :opt "tail" tail
                      "enabled" (or (null section) (nlk:config-boolean section "enabled" t))
                      "servers" (map 'vector (lambda (server) (server-json (server-snapshot server)))
                                     (and *registry* (registry-servers *registry*))))))

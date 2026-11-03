@@ -65,6 +65,11 @@ turn has said so far."
 (defvar *inflight* '()
   "Fires whose turn has not settled. Guarded by *LOCK*.")
 
+(defvar *wake-read* nil
+  "(SINCE NEWS GAPS): what the wake's sources said, read before the cron lock
+was taken (WAKE-READ-NEWS, wake.lisp), for its gate to use while its cursor
+still is SINCE.")
+
 (defvar *worker* nil
   "The ticker thread while it runs (an NLK:WORKER), or NIL.")
 
@@ -116,9 +121,11 @@ schedule, the delivery rule, the limit. Data, so a layer can reword it.")
 (cron:run ...), a fire recovered at boot -- runs under the job's timeout."
   ;; Past it the turn's tool calls are refused and it answers with what it
   ;; has.
+  ;; A wake's turn is also held to its tool calls (wake.lisp).
   (nlk:if-let (job (with-cron-lock
                      (find (getf turn :session-id) *jobs* :key #'job-session :test #'equal)))
-    (list :seconds (job-timeout-seconds job))
+    (list* :seconds (job-timeout-seconds job)
+           (and (job-wake job) (list :calls (getf (job-wake job) :calls))))
     (funcall next turn)))
 
 (defun set-last (job now status &optional line turn-id)
@@ -143,9 +150,13 @@ schedule, the delivery rule, the limit. Data, so a layer can reword it.")
 
 ;;; --- firing ---------------------------------------------------------------------------
 
-(defun advance-job (job now due &aux (next (next-fire job.schedule now :anchor due)))
+(defun advance-job (job now due &aux (next (if (job-wake job)
+                                                 (wake-safety-next job now)
+                                                 (next-fire job.schedule now :anchor due))))
   "Move the job past the fire due at DUE: the next fire after NOW, an
-interval anchored on DUE so its phase holds; none left is :DONE."
+interval anchored on DUE so its phase holds; none left is :DONE. The wake
+job's next instant is set when its fire settles (WAKE-SETTLED); until then
+it stands at its longest gap, so a fire that never settles still wakes."
   (setf job.next-at next)
   (unless next
     (setf job.state :done))
@@ -255,6 +266,13 @@ Data, so a layer can reword it.")
 
 ;;; --- settling -----------------------------------------------------------------------------
 
+(defun silent-answer-p (answer)
+  "Whether ANSWER is the silence marker -- SILENT, [SILENT], NO_REPLY, NO
+REPLY, trimmed and case-insensitive -- or no answer at all."
+  (member (nlk:trimmed (or answer ""))
+          '("" "silent" "[silent]" "no_reply" "no reply")
+          :test #'string-equal))
+
 (defun settle-fire (fire now)
   "Take a terminal fire off the list and onto its job: LAST and the board."
   (setf *inflight* (cl:remove fire *inflight*))
@@ -269,9 +287,7 @@ Data, so a layer can reword it.")
          ;; Silence: the marker alone — SILENT, [SILENT], NO_REPLY, NO REPLY,
          ;; trimmed and case-insensitive — or no answer at all. A blank is
          ;; silence too: a real failure arrives as a failure, never as a blank.
-         (if (member (nlk:trimmed (or fire.answer ""))
-                     '("" "silent" "[silent]" "no_reply" "no reply")
-                     :test #'string-equal)
+         (if (silent-answer-p fire.answer)
              (progn
                ;; A silent fire is a success: a failure or a cancel still
                ;; standing under the job's key is over, and the board drops
@@ -300,15 +316,19 @@ Data, so a layer can reword it.")
         (t
          (set-last job now "cancelled" detail-line turn-id)
          (post job :info "cron ~a: cancelled~@[: ~a~]" id
-               (and (plusp (length detail-line)) detail-line)))))))
+               (and (plusp (length detail-line)) detail-line))))
+      (when (job-wake job)
+        (wake-settled job status fire.answer now)))))
 
 ;;; --- the tick -----------------------------------------------------------------------------
 
 (defun tick (&optional (now (get-universal-time)))
   "Everything the clock owes at NOW: settle the fires that ended, fire or
 miss every due job, write the row once."
-  ;; Returns the number of fires started.
-  (with-cron-lock
+  ;; Returns the number of fires started. The wake's news is read first,
+  ;; outside the lock (WAKE-READ-NEWS).
+  (let ((*wake-read* (wake-read-news now)))
+   (with-cron-lock
     (let ((fired 0)
           (changed nil))
       (dolist (fire (cl:remove-if-not #'fire-status (copy-list *inflight*)))
@@ -342,19 +362,26 @@ miss every due job, write the row once."
         (let ((due job.next-at))
           (when (and (eq job.state :active) due (<= due now))
             (setf changed t)
-            (if (> (- now due) (schedule-grace job.schedule due))
-                (let* ((late (- now due))
-                       (next (advance-job job now due)))
-                  (set-last job now "missed"
-                            (format nil "due ~a, seen ~a late" (local-text due) (duration-text late)))
-                  (post job :warning "cron ~a: missed its ~a fire by ~a~@[; next ~a~]"
-                        job.id (local-text due) (duration-text late)
-                        (and next (at-text next now))))
-                (when (fire-job job now)
-                  (incf fired))))))
+            (cond
+              ;; A wake is never missed: late or not, its due instant
+              ;; passes its gates once (WAKE-DUE).
+              ((job-wake job)
+               (when (wake-due job now)
+                 (incf fired)))
+              ((> (- now due) (schedule-grace job.schedule due))
+               (let* ((late (- now due))
+                      (next (advance-job job now due)))
+                 (set-last job now "missed"
+                           (format nil "due ~a, seen ~a late" (local-text due) (duration-text late)))
+                 (post job :warning "cron ~a: missed its ~a fire by ~a~@[; next ~a~]"
+                       job.id (local-text due) (duration-text late)
+                       (and next (at-text next now)))))
+              (t
+               (when (fire-job job now)
+                 (incf fired)))))))
       (when changed
         (persist-jobs))
-      fired)))
+      fired))))
 
 (defparameter +longest-sleep-seconds+ 3600
   "The ticker looks at the clock at least hourly whatever the registry says.")

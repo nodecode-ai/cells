@@ -20,6 +20,8 @@
   (:export
    ;; model-facing vocabulary (see the primer in cell.lisp)
    #:add #:jobs #:show #:edit #:pause #:resume #:remove #:run #:runs
+   ;; wake-ups of its own (wake.lisp)
+   #:wake #:wake-next
    ;; the one condition
    #:cron-error))
 

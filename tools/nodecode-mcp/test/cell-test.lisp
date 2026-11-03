@@ -70,6 +70,7 @@
       ;; the line clips the servers
       (is (uiop:string-prefix-p "MCP: /mcp on NAME | restart NAME | tools NAME -- bad refused (" line))
       (is (search "dead error (cannot launch /nonexistent/mcp-server" line))
+      (is (not (search "spawning /nonexistent/mcp-server" line)) "the command it could not launch is named once")
       (is (search "off off; probe ready 10 tools" line)))
     (is (equal (mcp-slash "") (mcp-slash "status")) "/mcp status is the bare form")
     (let ((line (mcp-slash "tools probe")))

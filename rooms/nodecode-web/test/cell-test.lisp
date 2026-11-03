@@ -540,6 +540,7 @@ no enclosing try block holds, as the line it is on."
     (44 ".fs-acts .icon" "width" "height")          ; Read again, Upload
     (44 "button.sw" "min-height")                   ; a switch, on a phone
     (44 ".ctl-prof-row" "min-height")               ; a profile, its panel on a tap
+    (44 ".ctl-mcp-toggle" "min-height")             ; an MCP server, its tools on a tap
     (32 ".icon" "width" "height")                    ; every other mark
     (32 ".looks .icon" "width" "height")             ; the foot's link, look and language
     (32 ".views .view" "min-width" "height")
@@ -1177,6 +1178,20 @@ corner or letter-spacing instead of naming the kit's scale."
 ;; count, four on nothing, Channels on its Restart button. Each owner draws its
 ;; head from what it read; Restart channels stands at the page's foot; the
 ;; dashboard's range follows its head (a phone's under its glance's hero).
+;; MCP is a ledger (the variants artifact's A, the operator's pick, 2026-11-02): a
+;; line a server, its columns under their names; its tools fold out with what each
+;; does (the route's tool_list), the find reaches every server's tools, a failing
+;; server's error is said once and its log is a click away.
+(deftest web-cell-mcp-is-a-ledger ()
+  (let* ((mcp (web-page-text "mcp.js"))
+         (css (web-css-declarations (web-page-text "app.css"))))
+    (is (search "el(\"ol\", \"ctl-list ctl-mcp\")" mcp) "one list, a line a server")
+    (is (equal "grid" (web-css-value css ".ctl-mcp-cols, .ctl-mcp-row" "display")) "the head and the rows share their columns")
+    (is (search "s.tool_list" (web-js-function mcp "toolsOf")) "a fold's tools carry what each does")
+    (is (search "op: \"log\"" mcp) "a failing server's log is a click away")
+    (is (search "s.error.endsWith(see)" (web-js-function mcp "lastError")) "its error said once: the log it names is the Log")
+    (is (search "tool.dataset.find.includes(needle)" (web-js-function mcp "sift")) "the find reaches every server's tools")))
+
 (deftest web-cell-every-place-opens-with-its-head ()
   (let* ((control (web-page-text "control.js"))
          (observe (web-page-text "observe.js"))
@@ -1184,15 +1199,42 @@ corner or letter-spacing instead of naming the kit's scale."
          (dash (web-js-function observe "drawDashboard")))
     (dolist (each '("drawGateway" "drawLogs" "drawSettings" "drawCells" "drawChannels" "drawJobs"))
       (is (search "headline(" (web-js-function control each)) (format nil "~a opens with the head" each)))
-    (loop for (file name) in '(("index.js" "draw") ("mcp.js" "head") ("profiles.js" "draw") ("files.js" "head") ("access.js" "draw"))
+    (loop for (file name) in '(("index.js" "draw") ("mcp.js" "head") ("profiles.js" "draw") ("files.js" "head") ("access.js" "draw") ("shortcuts.js" "draw"))
           do (is (search "headline(" (web-js-function (web-page-text file) name)) (format nil "~a's ~a opens with the head" file name)))
-    (is (search "root.append(...head(l), servers(l)" (web-page-text "mcp.js")) "MCP's head stands over its servers")
+    (is (search "root.append(head(l), servers(l)" (web-page-text "mcp.js")) "MCP's head stands over its servers")
     (is (not (search "el(\"span\", \"reading\"" (web-js-function control "drawCells"))) "the count moved into the head")
     (is (search "root.append(list, access.pairing(ch), foot);" channels) "Restart channels stands at the foot")
     (is (not (search "block(\"\", infoMark, button(" channels)) "and not over the list")
     (is (search "document.getElementById(\"control-log-state\")" (web-js-function control "drawLog")) "the log's head follows its lines")
     (is (search "root.append(dashHeadline(data, activity, range), ...(phone ? [] : [top])" dash) "the range follows the dashboard's head")
     (is (search "glance(parts, data, activity, phone ? top : null)" dash) "a phone's under its glance's hero")))
+
+;; What a section is for comes up in a card while the hand or the focus is on
+;; its info mark, and goes with them (the operator, 2026-11-02: "it should be a
+;; hover popup, not something that toggles"). Measured before it: the mark was a
+;; toggle (data-act about, aria-expanded) whose paragraph opened under the head
+;; and stayed there. The card's behaviour under a real hand is the experiment's
+;; e2e (2026-11-02-about-hover/score.cjs); this holds the shape.
+(deftest web-cell-an-info-mark-shows-its-card-under-the-hand ()
+  (let* ((control (web-page-text "control.js"))
+         (about (web-js-function control "about"))
+         (css (web-css-declarations (web-page-text "app.css")))
+         (value (lambda (selector property) (web-css-value css selector property)))
+         (pages (mapcar #'web-page-text '("control.js" "mcp.js" "access.js" "settings.js" "index.js" "profiles.js"))))
+    (is (search "role\", \"tooltip\"" about) "the card is the mark's tooltip")
+    (is (search "aria-describedby" about) "and describes it")
+    (is (search "removeAttribute(\"title\")" about) "with no second tooltip from the browser")
+    (is (search "\"pointerenter\"" about) "the hand on the mark shows it")
+    (is (search ":focus-visible" about) "so does the keys' focus")
+    (is (not (search "aria-expanded" about)) "the mark is no toggle")
+    (is (notany (lambda (page) (or (search "act: \"about\"" page) (search "case \"about\"" page) (search "c.about" page)))
+                pages) "no page keeps an about toggle's state or act")
+    (is (notany (lambda (page) (cl-ppcre:scan "const \\[\\w+, \\w+\\] = about\\(" page))
+                pages) "no caller lays the words under its head")
+    (is (equal "none" (funcall value ".ctl-about" "display")) "at rest the card is not drawn")
+    (is (equal "flex" (funcall value ".ctl-info[data-open] > .ctl-about" "display")) "open, it is")
+    (is (equal "absolute" (funcall value ".ctl-about" "position")) "over the page, never in its flow")
+    (is (equal "none" (funcall value ".ctl-about" "text-transform")) "in plain type inside a micro heading")))
 
 ;; One button, one filter, one field, one banner (step 3 of the standard).
 ;; Measured before it: 23 button looks on a phone, the desktop's capitalised
@@ -1353,3 +1395,18 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (equal "1" (funcall value ".sessions li:is(:hover, :focus-within) > .ses-del, .sessions .ses-del[aria-expanded=\"true\"]" "opacity")) "and comes up under the hand or the focus")
     (is (equal "1" (funcall value ".sessions li > .ses-del" "opacity")) "and stands up where there is no hover")
     (is (search "\"Delete this session, and every session under it\":" (web-page-text "zh.js")) "its words in Chinese")))
+
+;; New cell in the Cells tab asks for a cell rather than taking a form: a new
+;; chat opens with the ask begun, and the agent asks the rest before it builds.
+(deftest web-cell-the-cells-tab-asks-for-a-new-cell ()
+  (let* ((control (web-page-text "control.js"))
+         (app (web-page-text "app.js"))
+         (draw (web-js-function control "drawCells"))
+         (ask (web-js-function app "askForCell")))
+    (is (search "button(\"quiet\", t(\"New cell\"), { act: \"new-cell\" })" draw) "the tab carries New cell")
+    (is (< (search "if (a.folder) {" draw) (search "t(\"New cell\")" draw)) "only where there is a cell folder to build in")
+    (is (search "case \"new-cell\": newCell(); return;" control) "pressing it asks the page")
+    (is (search "newCell: askForCell," app) "which opens the ask")
+    (is (< (search "openNew();" ask) (search "t(\"Make a cell that \")" ask)) "a new chat, then the ask begun in its box")
+    (is (search "promptEl.dispatchEvent(new Event(\"input\"))" ask) "read as typed: its draft, its height and Send")
+    (is (search "\"New cell\":" (web-page-text "zh.js")) "its words in Chinese")))

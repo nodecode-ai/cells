@@ -1,8 +1,110 @@
 {
   "format": 1,
-  "updated": "2026-10-31T21:21:15Z",
-  "window": "2026-10-17 to 2026-10-31",
+  "updated": "2026-11-02T10:17:24Z",
+  "window": "2026-10-19 to 2026-11-02",
   "advisories": [
+    {
+      "id": "bil-rgb-baileys-malware",
+      "title": "Malware in @bil-rgb/baileys (npm): a WhatsApp-library lookalike whose install clones attacker-controlled code from a personal GitHub repo",
+      "date": "2026-11-02",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "Version 1.0.0 (and 1.0.1) of @bil-rgb/baileys - named after the Baileys WhatsApp Web library, the second poisoned Baileys lookalike this feed has seen - declares its libsignal dependency as 'github:tenka-san/libsignal-node' with no commit SHA, tag or integrity check. npm resolves that by cloning whatever sits at HEAD of that personal GitHub account and running its lifecycle scripts at install time, so the installer executes code the account can change at will. A WhatsApp library also sits beside the session credentials, so a compromised install reaches the messaging account too.",
+      "affected": "@bil-rgb/baileys 1.0.0 and 1.0.1 (npm). No clean version exists: remove the package.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@bil-rgb/baileys",
+          "package": "@bil-rgb/baileys",
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall @bil-rgb/baileys; clean lockfiles and CI images) and install the real baileys from its official npm package",
+        "Treat machines that installed it as compromised: rotate secrets from a different machine, including the WhatsApp session credentials"
+      ],
+      "mitigation": [
+        "Reject dependencies pinned to a bare GitHub URL - a github:user/repo dependency without a commit SHA is code execution by whatever that account pushes next"
+      ],
+      "iocs": [
+        "github:tenka-san/libsignal-node (unpinned dependency)"
+      ],
+      "sources": [
+        "https://vulnerability.circl.lu/vuln/mal-2026-18441",
+        "https://osv.dev/vulnerability/MAL-2026-18441"
+      ]
+    },
+    {
+      "id": "axon-web-icons-malware",
+      "title": "Malware in @axon-web/icons (npm) 99.0.0: on require it beacons host and username over DNS and lists credential-like environment keys",
+      "date": "2026-11-01",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "The package @axon-web/icons 99.0.0 is a probe: on require it builds an identifier from os.hostname() and the OS username, resolves a subdomain under nxsqlpejfpamagxctjyv4c9qj1gfdtzwi.oast.fun (an interactsh-style out-of-band collector) - leaking both to an attacker-controlled DNS server as a side effect of import - and enumerates process.env key names matching /token|secret|key|pass|aws|github|npm/i, writing them to stdout as credential reconnaissance. A 99.x version number signals a dependency-confusion shim; nothing about icon rendering needs any of it.",
+      "affected": "@axon-web/icons 99.0.0 - the package's published version. Remove and rotate.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@axon-web/icons",
+          "package": "@axon-web/icons",
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall @axon-web/icons; clean lockfiles and CI images) and rotate any secret whose name it could have listed",
+        "Treat the install host as reconnoitered: hostname and OS username are with the attacker now"
+      ],
+      "mitigation": [
+        "Block *.oast.fun at build-host DNS and egress, and alert on requires that perform DNS lookups to per-run subdomains"
+      ],
+      "iocs": [
+        "nxsqlpejfpamagxctjyv4c9qj1gfdtzwi.oast.fun (DNS out-of-band collector)",
+        "process.env key enumeration: /token|secret|key|pass|aws|github|npm/i"
+      ],
+      "sources": [
+        "https://o3.security/malware/npm/%40axon-web/icons"
+      ]
+    },
+    {
+      "id": "hs-framework-malware",
+      "title": "Malware in hs-framework (npm) 999.9.1-999.9.2: install runs attacker-controlled code from a moving dependency",
+      "date": "2026-11-01",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "hs-framework 999.9.1 and 999.9.2 - a version number built to win dependency resolution - execute attacker-controlled code when installed, and the fetched dependency can change without a package update: the same version number is a different payload tomorrow. No fix is published; the package provides no legitimate function.",
+      "affected": "hs-framework 999.9.1 and 999.9.2 (npm) - remove it.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "hs-framework",
+          "package": "hs-framework",
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall hs-framework; clean lockfiles and CI images) and treat the install host as compromised: rotate its secrets from a different machine"
+      ],
+      "mitigation": [
+        "Reject 999.x or 99.x package versions in dependency review - nobody ships a library at version 999"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://vulertsecurity.com/vuln-db/malicious-code-in-hs-framework--npm",
+        "https://osv.dev/vulnerability/MAL-2026-18434"
+      ]
+    },
     {
       "id": "signalk-resources-traversal",
       "title": "Signal K resources API path traversal discloses the JWT signing secret and enables remote code execution",
@@ -763,7 +865,7 @@
       "severity": "high",
       "exploited": true,
       "cves": [],
-      "summary": "AU Small Finance Bank (India) is investigating a potential data leak involving a software-as-a-service platform managed and hosted by Salesforce that holds limited data on the bank's vehicle loan customers; the bank states its own systems are unaffected and banking services are normal. The bank was listed on the Scarlettgroup cybercrime leak site on October 29; what was accessed and how has not been independently established. It lands in a wave of Indian banking-sector exposures - State Bank of India identified 3,897 customer records among dark-web data this month, and Bank of Baroda disclosed an employee-email compromise in July.",
+      "summary": "AU Small Finance Bank (India) is investigating a potential data leak involving a software-as-a-service platform managed and hosted by Salesforce that holds limited data on the bank's vehicle loan customers; the bank states its own systems are unaffected and banking services are normal. The bank was listed on the Scarlettgroup cybercrime leak site on October 29; what was accessed and how has not been independently established. It lands in a wave of Indian banking-sector exposures - State Bank of India identified 3,897 customer records among dark-web data this month, and Bank of Baroda disclosed an employee-email compromise in July. Salesforce states there is no vulnerability at its end (The Hindu BusinessLine, November 1).",
       "affected": "AU Small Finance Bank vehicle loan customers: the exposed platform held limited vehicle-loan data - treat personal details as potentially known to the extortion group.",
       "fixed": [],
       "checks": [],
@@ -777,7 +879,35 @@
       ],
       "iocs": [],
       "sources": [
-        "https://bfsi.economictimes.indiatimes.com/articles/au-small-finance-bank-says-investigating-potential-data-leak-involving-salesforce-hosted-platform/135350887"
+        "https://bfsi.economictimes.indiatimes.com/articles/au-small-finance-bank-says-investigating-potential-data-leak-involving-salesforce-hosted-platform/135350887",
+        "https://www.thehindubusinessline.com/money-and-banking/au-sfb-data-leak-salesforce-says-no-vulnerability-at-its-end/article71648769.ece"
+      ]
+    },
+    {
+      "id": "northflank-breach-2026-10",
+      "title": "Northflank (cloud app hosting): breach decrypted customer environment variables - assume every secret stolen, rotate now",
+      "date": "2026-10-30",
+      "severity": "high",
+      "exploited": true,
+      "cves": [],
+      "summary": "Northflank, a cloud platform for deploying applications, containers, databases and AI apps, disclosed a security incident on October 30: after a threat alert from Wiz at 11:43 UTC its engineers reviewed within a minute and shipped network-policy patches through 13:05, but customers were told to assume all environment variables had been decrypted and the secrets inside them stolen - 'Assume all environment variables have been decrypted. Disable/rotate all keys.' Multiple customers then reported unauthorized use of AI API keys stored on the platform. Environment variables usually hold database passwords, cloud credentials, auth tokens and API keys, so the exposure reaches well beyond Northflank itself. It follows the October Railway and Zeabur platform-key incidents already in this feed.",
+      "affected": "Northflank customers: every secret stored in a platform environment variable should be treated as stolen, especially AI provider API keys, cloud credentials and database passwords.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Rotate every secret that ever lived in a Northflank environment variable - from a different machine - including database passwords, cloud keys, registry tokens and AI provider API keys",
+        "Review AI provider and cloud usage and billing for unexpected activity across the window, and report suspicious usage to Northflank and the providers",
+        "Redeploy with new secrets rather than re-setting the old values"
+      ],
+      "mitigation": [
+        "Check what the old credentials could reach: git hosts, registries, cloud accounts, third-party SaaS",
+        "Follow Northflank's status-page incident updates for the confirmed timeline and scope"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://www.bleepingcomputer.com/news/security/northflank-security-breach-leads-to-abuse-of-customers-ai-api-keys/",
+        "https://status.northflank.com/cmvv0rn5a092f14rutwccodpp",
+        "https://mallory.ai/stories/01a193a0-200c-7393-87b6-1d76ea1465d0"
       ]
     },
     {
@@ -997,6 +1127,40 @@
       "sources": [
         "https://sec.cloudapps.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-asaftd-tunnel-dos-s6mgkb75",
         "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+      ]
+    },
+    {
+      "id": "nobtrainer-sdk-malware",
+      "title": "Malware in @notrainer/nobtrainer-sdk (npm): an information stealer exfiltrating to a Discord webhook",
+      "date": "2026-10-29",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "@notrainer/nobtrainer-sdk (1.0.2 and later) is an information stealer: it exfiltrates sensitive host data to an attacker-controlled Discord webhook (ID 1433690093175967776) - the same webhook used by the npm package @johnruff215-dev/solana-wallet-tracker, which ties both to one actor and campaign. The package provides no legitimate functionality.",
+      "affected": "@notrainer/nobtrainer-sdk 1.0.2 and later (npm). Remove it.",
+      "fixed": [],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "@notrainer/nobtrainer-sdk",
+          "package": "@notrainer/nobtrainer-sdk",
+          "bad": [
+            "*"
+          ]
+        }
+      ],
+      "patch": [
+        "Remove the package (npm uninstall @notrainer/nobtrainer-sdk; clean lockfiles and CI images) and treat the host as compromised: rotate its secrets from a different machine",
+        "Check for @johnruff215-dev/solana-wallet-tracker on the same machines - the campaign shipped both"
+      ],
+      "mitigation": [
+        "Block Discord webhook traffic (discord.com/api/webhooks) from build hosts and CI - stealers use it because nothing blocks it"
+      ],
+      "iocs": [
+        "Discord webhook ID 1433690093175967776 (exfiltration endpoint)"
+      ],
+      "sources": [
+        "https://o3.security/malware/npm/%40notrainer/nobtrainer-sdk"
       ]
     },
     {

@@ -13,7 +13,7 @@
   :license "MIT"
   :version "0.1.0"
   :depends-on ("nodecode")
-  :components ((:file "cell"))
+  :components ((:file "cell") (:file "tasks"))
   :in-order-to ((test-op (test-op "nodecode-web/test"))))
 
 (defsystem "nodecode-web/test"
@@ -24,6 +24,7 @@
   :serial t
   :components ((:file "support")
                (:file "cell-test")
+               (:file "tasks-test")
                (:file "inline-color-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-web-tests)))

@@ -19,10 +19,11 @@ import { makeIndex } from "./index.js";
 import { makeMcp } from "./mcp.js";
 import { makeProfiles } from "./profiles.js";
 import { makeAccess } from "./access.js";
+import { makeShortcuts } from "./shortcuts.js";
 import { t } from "./i18n.js";
-import { icon } from "./icons.js";
+import { icon, iconButton } from "./icons.js";
 
-const TABS = [["gateway", t("Gateway")], ["logs", t("Logs")], ["settings", t("Config")], ["cells", t("Cells")], ["index", t("Index")], ["mcp", "MCP"], ["profiles", t("Profiles")], ["channels", t("Channels")], ["link", t("Link")], ["jobs", t("Scheduled jobs")]];
+export const TABS = [["gateway", t("Gateway")], ["logs", t("Logs")], ["settings", t("Config")], ["cells", t("Cells")], ["index", t("Index")], ["mcp", "MCP"], ["profiles", t("Profiles")], ["channels", t("Channels")], ["link", t("Link")], ["jobs", t("Scheduled jobs")], ["shortcuts", t("Shortcuts")]];
 const LABELS = Object.fromEntries(TABS);
 // A phone -- the page's own phone width, app.css's 720 px -- opens Control on
 // its sections as one list, each saying how it stands, and a section as a page
@@ -32,10 +33,11 @@ export const PHONE = matchMedia("(max-width: 720px)");
 // A wide window -- app.css's rail and list, 1024 px and up -- has the same list
 // beside the rail, the open section lit, and no strip of tabs over the page.
 export const WIDE = matchMedia("(min-width: 1024px)");
+// Shortcuts are kept where the page runs, so their group says where that is.
 const GROUPS = [[t("This machine"), ["gateway", "logs"]], [t("What it runs"), ["settings", "cells", "mcp", "index"]],
-  [t("Who reaches it"), ["channels", "link", "profiles", "jobs"]]];
+  [t("Who reaches it"), ["channels", "link", "profiles", "jobs"]], [globalThis.nodecodeDesktop ? t("This app") : t("This browser"), ["shortcuts"]]];
 const MARKS = { gateway: "server", logs: "lines", settings: "sliders", cells: "grid", index: "book", mcp: "plug",
-  profiles: "person", channels: "chat", link: "globe", jobs: "clock" };
+  profiles: "person", channels: "chat", link: "globe", jobs: "clock", shortcuts: "keyboard" };
 const FAILED = ["error", "refused"];
 const RUNS = {
   unit: t("Runs as a systemd user unit, which starts it at login and after a crash."),
@@ -169,20 +171,107 @@ export function pill(on, word, data) {
   return node;
 }
 
-// What a section is for, folded behind an info mark by its heading: the mark,
-// for the heading, and the notes it opens under it. C.about keeps which are
-// open by ID, so the pane's redraws leave them as the hand left them.
-export function about(c, id, ...texts) {
-  const open = c.about.has(id);
-  const words = el("div", "ctl-about");
-  words.id = `ctl-about-${id}`;
-  words.hidden = !open;
-  words.append(...texts.map(note));
-  const node = mark("info", t("What this is"), { act: "about", id });
-  node.classList.add("info");
-  node.setAttribute("aria-expanded", String(open));
-  node.setAttribute("aria-controls", words.id);
-  return [node, words];
+// What a section is for, in a card by its heading's info mark: the card comes up
+// while the hand rests on the mark or the keys bring the focus to it, and goes
+// with them; a tap opens it and a tap anywhere else, or Escape, puts it away
+// (the operator, 2026-11-02: "a hover popup, not something that toggles"). The
+// pane draws itself again on every poll, so the open card's ID and where it was
+// placed are kept here, and a redraw draws it open where it stood, without
+// fading in again.
+let aboutOpen = null;
+let aboutListening = false;
+
+function aboutClose() {
+  aboutOpen = null;
+  for (const node of document.querySelectorAll(".ctl-info[data-open]")) node.removeAttribute("data-open");
+}
+
+// Where the card may stand: the window less a margin, cut down to every
+// scroller around the mark (the pane's), whose edges would clip it.
+function aboutRoom(wrap) {
+  const room = { left: 12, right: innerWidth - 12, top: 12, bottom: innerHeight - 12 };
+  for (let node = wrap.parentElement; node; node = node.parentElement) {
+    const style = getComputedStyle(node);
+    if (style.overflowX === "visible" && style.overflowY === "visible") continue;
+    const box = node.getBoundingClientRect();
+    const left = box.left + node.clientLeft, top = box.top + node.clientTop;
+    room.left = Math.max(room.left, left);
+    room.right = Math.min(room.right, left + node.clientWidth);
+    room.top = Math.max(room.top, top);
+    room.bottom = Math.min(room.bottom, top + node.clientHeight);
+  }
+  return room;
+}
+
+// Under the mark, as wide as the room allows, pulled in from its edges, and
+// over the mark where under it would run past the room's foot.
+function aboutPlace(wrap) {
+  const card = wrap.lastChild;
+  const room = aboutRoom(wrap);
+  wrap.removeAttribute("data-over");
+  card.style.removeProperty("--nudge");
+  const width = `${Math.max(0, Math.floor(Math.min(400, room.right - room.left)))}px`;
+  card.style.maxWidth = width;
+  const at = card.getBoundingClientRect();
+  const nudge = Math.round(Math.min(0, room.right - at.right) || Math.max(0, room.left - at.left));
+  const over = at.bottom > room.bottom && wrap.getBoundingClientRect().top - at.height - 6 >= room.top;
+  if (nudge) card.style.setProperty("--nudge", `${nudge}px`);
+  wrap.toggleAttribute("data-over", over);
+  aboutOpen = { id: wrap.dataset.about, nudge, over, width };
+}
+
+function aboutShow(wrap) {
+  if (wrap.hasAttribute("data-open")) return;
+  aboutClose();
+  wrap.toggleAttribute("data-open", true);
+  wrap.toggleAttribute("data-fresh", true);
+  aboutPlace(wrap);
+  if (aboutListening) return;
+  aboutListening = true;
+  // The hand gone from the mark and its card, or a tap anywhere else. A card the
+  // keys opened stays while the focus does.
+  const away = (event) => {
+    const open = document.querySelector(".ctl-info[data-open]");
+    if (!open) { aboutOpen = null; return; }
+    if (open.contains(event.target)) return;
+    if (event.type === "pointermove" && (event.pointerType === "touch" || open.querySelector(":focus-visible"))) return;
+    aboutClose();
+  };
+  document.addEventListener("pointermove", away, { passive: true });
+  document.addEventListener("pointerdown", away, true);
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !document.querySelector(".ctl-info[data-open]")) return;
+    aboutClose();
+    event.stopPropagation();
+  }, true);
+}
+
+export function about(id, ...texts) {
+  const wrap = el("span", "ctl-info");
+  wrap.dataset.about = id;
+  // The card is the mark's tooltip: no second one from the browser.
+  const node = iconButton("info", t("What this is"), "icon info");
+  node.removeAttribute("title");
+  const card = el("span", "ctl-about");
+  card.id = `ctl-about-${id}`;
+  card.setAttribute("role", "tooltip");
+  card.append(...texts.map((text) => el("span", "", text)));
+  node.setAttribute("aria-describedby", card.id);
+  wrap.append(node, card);
+  if (aboutOpen?.id === id) {
+    wrap.toggleAttribute("data-open", true);
+    wrap.toggleAttribute("data-over", aboutOpen.over);
+    if (aboutOpen.nudge) card.style.setProperty("--nudge", `${aboutOpen.nudge}px`);
+    card.style.maxWidth = aboutOpen.width;
+  }
+  wrap.addEventListener("pointerenter", (event) => { if (event.pointerType !== "touch") aboutShow(wrap); });
+  wrap.addEventListener("pointerleave", (event) => {
+    if (event.pointerType !== "touch" && !wrap.querySelector(":focus-visible")) aboutClose();
+  });
+  node.addEventListener("focus", () => { if (node.matches(":focus-visible")) aboutShow(wrap); });
+  node.addEventListener("blur", () => { if (node.isConnected && !wrap.matches(":hover")) aboutClose(); });
+  node.addEventListener("click", () => aboutShow(wrap));
+  return wrap;
 }
 
 export function confirmBox(title, go, act, data = {}) {
@@ -197,14 +286,14 @@ export function confirmBox(title, go, act, data = {}) {
 // ONTAB is told when a click in the pane turns it to another tab, so the page's
 // address follows; show(TAB) is the page turning it there, and OPENTAB the
 // page opening the pane on TAB from outside it (the link panel).
-export function makeControl({ api, download, toast, openSession, isOpen, folder, redraw, onTab, openTab }) {
+export function makeControl({ api, download, toast, openSession, isOpen, folder, redraw, onTab, openTab, newCell }) {
   const c = {
     tab: "gateway",
     service: null, identity: null, said: null, busy: null, confirm: null, leaving: null,
     doctor: null, backups: null, restoring: null,
     log: { lines: [], cursor: null, source: null, where: null, error: null, follow: true, filter: "", level: "all", shown: LOG_PAGE },
     keys: null, cells: null, model: null, models: null, editing: null,
-    channels: null, probed: {}, setup: null, jobs: null, hub: null, hubReading: false, about: new Set(),
+    channels: null, probed: {}, setup: null, jobs: null, hub: null, hubReading: false,
     // By FORMKEY: what the hand typed into a form no tab keeps itself, and why its last save was refused.
     drafts: {}, refused: {},
     // A phone's list: whether it is on screen rather than a section, where it was
@@ -222,6 +311,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   const index = makeIndex({ c, api, act, toast, redraw, settle: (rows) => { if (PHONE.matches) tapRows(rows); } });
   const mcp = makeMcp({ c, api, act, toast, redraw, reload: () => { if (shown && c.tab === "mcp") load(); } });
   const profs = makeProfiles({ c, api, act, toast, redraw, download });
+  const shortcuts = makeShortcuts({ c, toast, redraw: () => { if (shown && c.tab === "shortcuts") redraw(); } });
   const access = makeAccess({ c, api, act, toast, redraw, unread, missing, openTab });
   let followTimer = null;
   let pollTimer = null;
@@ -424,9 +514,8 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     );
     root.append(facts);
 
-    const [updateMark, updateAbout] = about(c, "update", t("A release that can go live does so at once, in this organism and every attached shell; one that changes what it boots with runs from the next restart."));
+    const updateMark = about("update", t("A release that can go live does so at once, in this organism and every attached shell; one that changes what it boots with runs from the next restart."));
     const update = block(t("Update"), updateMark);
-    update.append(updateAbout);
     const row = el("div", "ctl-actions");
     row.append(button("quiet", c.busy === "check" ? t("Checking…") : t("Check for an update"), { act: "check" }),
       button("quiet", c.busy === "update" ? t("Updating…") : t("Update now"), { act: "update" }));
@@ -512,9 +601,8 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     const running = b?.job?.state === "running";
     const go = button("quiet", running && b.job.verb === "backup" ? t("Backing up…") : t("Back up now"), { act: "backup" });
     go.disabled = !!c.busy || running;
-    const [infoMark, words] = about(c, "backups", t("A backup is one file that holds this home whole: every session (a copy of the store taken while it runs), config.jsonc, SOUL.md, memory, skills and the cell folders."));
+    const infoMark = about("backups", t("A backup is one file that holds this home whole: every session (a copy of the store taken while it runs), config.jsonc, SOUL.md, memory, skills and the cell folders."));
     const node = block(t("Backups"), infoMark, go);
-    node.append(words);
     const keys = el("p", "ctl-notice", t("It holds your provider keys and pasted secrets too: keep the file where you keep passwords."));
     keys.dataset.level = "warning";
     node.append(keys);
@@ -650,13 +738,13 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
 
   function drawSettings() {
     const root = el("div", "ctl-tab");
-    const [infoMark, words] = about(c, "settings", t("A key or the default model is used from the next turn on; nothing restarts. A cell reads its section of config.jsonc when it starts: after changing that section, restart the cell under Cells."));
+    const infoMark = about("settings", t("A key or the default model is used from the next turn on; nothing restarts. A cell reads its section of config.jsonc when it starts: after changing that section, restart the cell under Cells."));
     const m = c.model;
     const list = c.models?.models || [];
     const named = m && !m.error && (list.find((each) => each.provider === m.provider && each.model === m.model)?.name || m.model);
     const head = headline(t("Config"), named ? t("New sessions use {model}.", { model: named }) : m && !m.error ? t("No default model.") : t("Reading…"), m?.refusal || "");
     (head.querySelector(".micro") || head).append(" ", infoMark);
-    root.append(head, words);
+    root.append(head);
     const model = block(t("Default model"));
     if (!m || m.error) model.append(m?.error ? unread(m.error) : waiting(t("Looking…")));
     else {
@@ -840,7 +928,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     const root = el("div", "ctl-tab");
     const a = c.cells;
     if (!a || a.error) { root.append(a?.error ? unread(t("Could not read the cells: {error}", { error: a.error })) : waiting(t("Looking…"))); return root; }
-    const [infoMark, words] = about(c, "cells", a.folder
+    const infoMark = about("cells", a.folder
       ? t("A cell is a folder in {folder}. On puts it there, with the cells it needs, and loads it into this organism now; off takes it out and stops it. Code already loaded stays in this organism until a restart.", { folder: a.folder })
       : t("A cell is a folder in the cell folder. On puts it there, with the cells it needs, and loads it into this organism now; off takes it out and stops it. Code already loaded stays in this organism until a restart."));
     const on = a.cells.filter((r) => r.on).length;
@@ -855,7 +943,14 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
         a.cells.filter((r) => r.refused || r.level === "error").map((r) => r.label || r.name).join(", "),
         button("quiet", t("Read the log"), { act: "tab", tab: "logs" })));
     }
-    root.append(words);
+    // A cell is asked for, not filled in: New cell opens a chat whose first words
+    // start the ask, and the agent asks the rest before it builds the cell.
+    if (a.folder) {
+      const ask = el("div", "ctl-line ctl-new-cell");
+      ask.append(button("quiet", t("New cell"), { act: "new-cell" }),
+        el("span", "ctl-what", t("Describe it in a new chat: the agent asks what it needs, then builds the cell and turns it on.")));
+      root.append(ask);
+    }
     const list = block("");
     const rows = el("ol", "ctl-list");
     for (const r of a.cells) cellRow(rows, r, false);
@@ -916,7 +1011,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     const ch = c.channels;
     if (ch?.missing) { root.append(missing("channels", t("a channel (discord, telegram) with the channel kit"), "channels.<name>")); return root; }
     if (!ch || ch.error) { root.append(ch?.error ? unread(t("Could not read the channels: {error}", { error: ch.error })) : waiting(t("Looking…"))); return root; }
-    const [infoMark, words] = about(c, "channels", t("Set up walks a channel from its bot's token to who may talk to it. Check asks the platform what this channel's token can see. Restart channels starts every channel again on config.jsonc as it is now: what a changed section needs."));
+    const infoMark = about("channels", t("Set up walks a channel from its bot's token to who may talk to it. Check asks the platform what this channel's token can see. Restart channels starts every channel again on config.jsonc as it is now: what a changed section needs."));
     const running = ch.channels.filter((ch1) => ch1.state === "running").map((ch1) => `${ch1.id[0].toUpperCase()}${ch1.id.slice(1)}`);
     const asking = ch.pairing.reduce((n, p) => n + (p.asks?.length || 0), 0);
     const head = headline(t("Channels"),
@@ -925,7 +1020,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
         : t("{names} and {last} are running.", { names: running.slice(0, -1).join(", "), last: running.at(-1) }),
       asking ? plural(asking, t("{n} is asking to pair."), t("{n} are asking to pair.")) : t("Nobody is asking to pair."));
     (head.querySelector(".micro") || head).append(" ", infoMark);
-    root.append(head, words);
+    root.append(head);
     // The page's drastic act stands at its foot (the standard's sixth slot).
     const foot = el("div", "ctl-foot");
     foot.append(button("quiet", c.busy === "channels" ? t("Restarting…") : t("Restart channels"), { act: "restart-channels" }));
@@ -1002,14 +1097,14 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     const j = c.jobs;
     if (j?.missing) { root.append(missing("cron", "nodecode-cron")); return root; }
     if (!j || j.error) { root.append(j?.error ? unread(t("Could not read the jobs: {error}", { error: j.error })) : waiting(t("Looking…"))); return root; }
-    const [infoMark, words] = about(c, "jobs", t("A job runs in a session of its own, cron-<id>: open its name to read what it did."));
+    const infoMark = about("jobs", t("A job runs in a session of its own, cron-<id>: open its name to read what it did."));
     const count = (state) => j.jobs.filter((job) => job.state === state).length;
     const next = j.jobs.filter((job) => job.state === "active" && job.next_at).sort((a, b) => a.next_at - b.next_at)[0];
     const head = headline(plural(j.jobs.length, t("{n} job"), t("{n} jobs")),
       t("{active} active, {paused} paused.", { active: count("active"), paused: count("paused") }),
       next ? t("Next: {name}, {when}.", { name: next.name, when: when(new Date(next.next_at * 1000).toISOString()) }) : "");
     (head.querySelector(".micro") || head).append(" ", infoMark);
-    root.append(head, words);
+    root.append(head);
     const list = block("");
     const rows = el("ol", "ctl-list");
     for (const job of j.jobs) {
@@ -1076,6 +1171,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     switch (id) {
       case "gateway": return isOpen() ? [uptime(c.identity?.started_at) || "", ""] : [t("away"), "warn"];
       case "logs": return [t("what it writes"), ""];
+      case "shortcuts": return shortcuts.glance();
       case "settings": return got(c.model) ? [c.model.model || t("no default model"), c.model.refusal || !c.model.model ? "warn" : ""] : ["", ""];
       case "cells": {
         if (!got(c.cells)) return ["", ""];
@@ -1308,7 +1404,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
         const head = raised.matches(".ctl-cfg-body") && raised.parentElement.querySelector(":scope > .ctl-cfg-head");
         if (head) raised.prepend(el("h4", "ctl-sheet-title", head.querySelector(".ctl-cfg-title").textContent));
         closer = raised.querySelector('[data-act="cancel"], [data-act$="-close"], [data-act$="-cancel"]') || head
-          || tab.querySelector('[data-act][aria-expanded="true"]:not(.info)');
+          || tab.querySelector('[data-act][aria-expanded="true"]');
         raised.remove();
       }
     }
@@ -1422,7 +1518,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       root.append(drawHome());
       return root;
     }
-    const draws = { gateway: drawGateway, logs: drawLogs, settings: drawSettings, cells: drawCells, index: index.draw, mcp: mcp.draw, profiles: profs.draw, channels: drawChannels, link: access.draw, jobs: drawJobs };
+    const draws = { gateway: drawGateway, logs: drawLogs, settings: drawSettings, cells: drawCells, index: index.draw, mcp: mcp.draw, profiles: profs.draw, channels: drawChannels, link: access.draw, jobs: drawJobs, shortcuts: shortcuts.draw };
     root.append(draws[c.tab]());
     kept(root);
     if (phone) rise(root);
@@ -1476,7 +1572,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     }
     // Whatever a sheet offered, it leaves the sheet as it acts.
     c.sheet = null;
-    if (cfgs.click(d) || index.click(d) || mcp.click(d) || profs.click(d) || access.click(d)) return;
+    if (cfgs.click(d) || index.click(d) || mcp.click(d) || profs.click(d) || access.click(d) || shortcuts.click(d)) return;
     switch (d.act) {
       // A health finding about a config section opens Settings on that section's form.
       case "tab": {
@@ -1493,14 +1589,6 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
         return;
       }
       case "setup": c.setup = c.setup === d.id ? null : d.id; redraw(); return;
-      // Opened and closed in place: a redraw would take the hand's focus off the mark.
-      case "about": {
-        const open = !c.about.delete(d.id);
-        if (open) c.about.add(d.id);
-        target.setAttribute("aria-expanded", String(open));
-        document.getElementById(target.getAttribute("aria-controls")).hidden = !open;
-        return;
-      }
       case "cancel":
         for (const key of [`save-key:${c.editing}`, `restore:${c.restoring}`]) { delete c.drafts[key]; delete c.refused[key]; }
         c.confirm = null; c.editing = null; c.restoring = null; redraw(); return;
@@ -1581,6 +1669,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       case "ask-job": c.confirm = `job:${d.id}`; redraw(); return;
       case "job": jobOp(d.op, { id: d.id }); return;
       case "open": openSession(d.id); return;
+      case "new-cell": newCell(); return;
     }
   }
 
@@ -1598,7 +1687,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       if (list) sift(list);
       return;
     }
-    if (cfgs.input(event) || index.input(event) || mcp.input(event) || profs.input(event)) return;
+    if (cfgs.input(event) || index.input(event) || mcp.input(event) || profs.input(event) || shortcuts.input(event)) return;
     // A form no tab keeps itself is kept here, so no redraw takes back what the hand typed.
     const owner = event.target.name && event.target.closest?.("form.ctl-form");
     if (owner) (c.drafts[formKey(owner)] ||= {})[event.target.name] = event.target.value;
@@ -1717,7 +1806,9 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       load();
       schedule();
     },
-    hide() { shown = false; c.confirm = null; schedule(); },
+    hide() { shown = false; c.confirm = null; shortcuts.stop(); schedule(); },
+    // The keymap the Shortcuts tab lists and changes (keys.js), once the page has made it.
+    useKeys(keys) { shortcuts.use(keys); },
     reconnected() { c.leaving = null; if (shown) { load(); schedule(); } },
   };
 }

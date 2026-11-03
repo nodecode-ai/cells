@@ -124,9 +124,8 @@ export function makeAccess({ c, api, act, toast, redraw, unread, missing, openTa
       box.append(note(t("No channel is running, so nobody can ask to be let in. A running bot answers a direct message from someone no allowlist names with a pairing code, and the ask waits here.")));
       return box;
     }
-    const [infoMark, words] = about(c, "pairing", t("A bot answers a direct message from someone no allowlist names with a pairing code, and the ask waits here. Let in admits them by the name and id the platform shows; only the person who wrote holds the code, so when someone asks you to let them in, have them read you theirs and type it below."));
+    const infoMark = about("pairing", t("A bot answers a direct message from someone no allowlist names with a pairing code, and the ask waits here. Let in admits them by the name and id the platform shows; only the person who wrote holds the code, so when someone asks you to let them in, have them read you theirs and type it below."));
     const box = block(t("Pairing"), infoMark, reading);
-    box.append(words);
     for (const h of hosts.filter((each) => !each.on)) {
       box.append(el("p", "ctl-notice", t("{platform} gives no code: pairing is false in channels.{id}, so a stranger's direct message goes unanswered.", { platform: named(h.id), id: h.id })));
     }
@@ -227,9 +226,8 @@ export function makeAccess({ c, api, act, toast, redraw, unread, missing, openTa
       root.append(ask);
     }
 
-    const [addressMark, addressAbout] = about(c, "address", t("One line this machine dials out to the relay at {relay}: nothing listens here, and the sessions, the store and the turns stay on this machine. On, the link keeps the gateway running while no shell is open.", { relay: l.relay }));
+    const addressMark = about("address", t("One line this machine dials out to the relay at {relay}: nothing listens here, and the sessions, the store and the turns stay on this machine. On, the link keeps the gateway running while no shell is open.", { relay: l.relay }));
     const address = block(t("Address"), addressMark);
-    address.append(addressAbout);
     const where = el("div", "ctl-link-where");
     const said = el("div", "ctl-link-said");
     said.append(l.address ? addressLine(l) : note(l.state === "off"
@@ -258,9 +256,8 @@ export function makeAccess({ c, api, act, toast, redraw, unread, missing, openTa
     address.append(where);
     root.append(address);
 
-    const [allowedMark, allowedAbout] = about(c, "browsers", t("A browser asks from the address, shows a code, and waits two minutes; allowing it here or with /link allow in a shell lets it in for good, until it is removed."));
+    const allowedMark = about("browsers", t("A browser asks from the address, shows a code, and waits two minutes; allowing it here or with /link allow in a shell lets it in for good, until it is removed."));
     const allowed = block(t("Allowed browsers"), allowedMark, el("span", "reading", t("{n} allowed", { n: l.browsers.length })));
-    allowed.append(allowedAbout);
     const rows = el("ol", "ctl-list");
     for (const b of l.browsers) {
       const li = el("li", "ctl-row");

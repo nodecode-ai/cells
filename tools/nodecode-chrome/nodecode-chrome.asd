@@ -67,6 +67,7 @@
                (:file "bridge-test")
                (:file "format-test")
                (:file "surface-test")
-               (:file "cell-test"))
+               (:file "cell-test")
+               (:file "relay-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-chrome-tests)))
