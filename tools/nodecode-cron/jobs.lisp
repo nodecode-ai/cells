@@ -43,7 +43,12 @@
   ;; A settled answer waiting to be sent to ORIGIN as its next request:
   ;; (:input :answer :at). Kept on the row until the ingress admits it,
   ;; so a restart in between loses nothing.
-  (report nil :type list))
+  (report nil :type list)
+  ;; NIL for an ordinary job; the wake job's own clock and gates as a plist
+  ;; (wake.lisp): :MIN :MAX :GAP seconds, :ALLOWANCE dollars a day or NIL,
+  ;; :CALLS, :CURSOR, :FIRED-AT, :ASKED, :WHY, :CAUSE, :WAKES, :SAID,
+  ;; :SAID-AT, :OFF-BY, :OFF-AT.
+  (wake nil :type list))
 
 ;;; No session.created fact names it, so it never appears in the picker.
 (defparameter +registry-session+ "cron"
@@ -109,7 +114,53 @@ dash, trimmed, at most 32 characters; \"job\" when nothing survives."
                    (and report
                         (nlk:json-object "input" (getf report :input)
                                          "answer" (getf report :answer)
-                                         "at" (unix-from-universal (getf report :at)))))))
+                                         "at" (unix-from-universal (getf report :at)))))
+   :opt "wake" (wake-json job.wake)))
+
+;;; The wake plist as JSON and back: instants as unix seconds, the cause as
+;;; a word, every absent key absent.
+(defparameter +wake-integer-keys+ '((:min "min") (:max "max") (:gap "gap") (:calls "calls")
+                                    (:asked "asked") (:wakes "wakes")))
+(defparameter +wake-instant-keys+ '((:cursor "cursor") (:fired-at "fired_at") (:said-at "said_at")
+                                    (:off-at "off_at")))
+(defparameter +wake-string-keys+ '((:why "why") (:said "said") (:off-by "off_by")))
+
+(defun wake-json (wake)
+  (when wake
+    (let ((table (nlk:json-object)))
+      (loop for (key name) in +wake-integer-keys+
+            for value = (getf wake key)
+            when value do (setf (gethash name table) value))
+      (loop for (key name) in +wake-instant-keys+
+            for value = (getf wake key)
+            when value do (setf (gethash name table) (unix-from-universal value)))
+      (loop for (key name) in +wake-string-keys+
+            for value = (getf wake key)
+            when value do (setf (gethash name table) value))
+      (nlk:when-let (allowance (getf wake :allowance))
+        (setf (gethash "allowance" table) allowance))
+      (nlk:when-let (cause (getf wake :cause))
+        (setf (gethash "cause" table) (string-downcase (symbol-name cause))))
+      table)))
+
+(defun wake-from-json (object)
+  (when object
+    (append
+     (loop for (key name) in +wake-integer-keys+
+           for value = (nlk:json-value object :integer name)
+           when value append (list key value))
+     (loop for (key name) in +wake-instant-keys+
+           for value = (nlk:json-value object :integer name)
+           when value append (list key (universal-from-unix value)))
+     (loop for (key name) in +wake-string-keys+
+           for value = (nlk:json-value object :string name)
+           when value append (list key value))
+     (nlk:when-let (allowance (nlk:json-value object :number "allowance"))
+       (list :allowance allowance))
+     (nlk:when-let (cause (nlk:json-value object :string "cause"))
+       (list :cause (cond ((equal cause "asked") :asked)
+                          ((equal cause "now") :now)
+                          (t :timer)))))))
 
 (defun job-from-json (object &aux (state (nlk:json-value object :string "state")))
   (make-job
@@ -150,7 +201,8 @@ dash, trimmed, at most 32 characters; \"job\" when nothing survives."
                   (answer (nlk:json-value report :string "answer"))
                   (at (nlk:json-value report :integer "at")))
              (and input answer at
-                  (list :input input :answer answer :at (universal-from-unix at))))))
+                  (list :input input :answer answer :at (universal-from-unix at))))
+   :wake (wake-from-json (nlk:json-value object :object "wake"))))
 
 ;;; --- the store row -------------------------------------------------------------
 

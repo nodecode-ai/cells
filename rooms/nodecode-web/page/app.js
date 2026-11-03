@@ -12,7 +12,9 @@
 import { diffHtml, markdown } from "./md.js";
 import { t, translatePage } from "./i18n.js";
 import { drawRun, drawInspector, drawDashboard, drawTimeline, turnSpan, meterOf, ms, usd, plural, bytes, RANGES, JUMPS, INSPECTOR_TABS, ORIGIN_WORDS, PHONE } from "./observe.js";
-import { makeControl, WIDE } from "./control.js";
+import { makeControl, WIDE, TABS as CONTROL_TABS } from "./control.js";
+import { makePalette } from "./palette.js";
+import { makeKeys } from "./keys.js";
 import { qrCode } from "./access.js";
 import { makeFiles, putFile } from "./files.js";
 import { icon, iconButton } from "./icons.js";
@@ -344,6 +346,8 @@ async function loadSessions() {
     state.listed = true;
     renderSessions();
     renderHead();
+    // A question from a session the list had not named yet names it now.
+    renderQuestions();
     if (!state.current) renderOpener();
   } catch (error) {
     if (error.status === 401 && !state.token) location.reload();
@@ -540,7 +544,9 @@ function command(type, fields) {
 
 function subscribe() {
   const subscriptions = state.current ? [{ session_id: state.current, rows: true }] : [];
-  send({ type: "client_command", command: { type: "set_session_subscriptions", subscriptions } });
+  // answers: this page draws the organism's questions and sends their answers
+  // (the guard's Allow once / Deny), so the gateway asks while it is open.
+  send({ type: "client_command", command: { type: "set_session_subscriptions", subscriptions, answers: true } });
 }
 
 function receive(message) {
@@ -596,6 +602,15 @@ function receive(message) {
       readLinkSoon();
       // A sign-in from a shell's /login ends in a notice; the meter is read again (cached there).
       loadAccount();
+      break;
+    case "organism.questions":
+      state.questions = payload.questions || [];
+      // The gateway's clock against this tab's, for the countdown.
+      state.questionSkew = typeof payload.now === "number" ? payload.now - Date.now() / 1000 : 0;
+      for (const id of state.answering) if (!state.questions.some((q) => q.question_id === id)) state.answering.delete(id);
+      // A question from a session this tab has not listed yet: read the list, to name it.
+      if (state.questions.some((q) => !state.sessionsById.has(q.session_id))) loadSessionsSoon();
+      renderQuestions();
       break;
     case "organism.activity": {
       const before = state.running;
@@ -1505,6 +1520,90 @@ function execTail(exec, lines) {
 // kept in a window of eight lines that scrolls, the newest last, so a burst
 // of output never moves the page under the reader.
 const band = $("band");
+
+// --- questions a turn waits on (the gateway's organism.questions) ---------
+// A card above the box for each: what is asked, the call it is about, the
+// time left and one button per choice. Every session's question shows,
+// whichever session the tab is on, named with a way to open it.
+const questionsEl = $("questions");
+state.questions = [];
+state.questionSkew = 0;
+state.answering = new Set();
+let questionTick = 0;
+
+function renderQuestions() {
+  const open = state.questions;
+  clearInterval(questionTick);
+  questionTick = 0;
+  questionsEl.hidden = !open.length;
+  const sig = `${open.map((q) => `${q.question_id}:${state.sessionsById.has(q.session_id)}`).join()}|${state.current}|${[...state.answering].join()}`;
+  if (questionsEl.dataset.sig !== sig) {
+    questionsEl.dataset.sig = sig;
+    questionsEl.replaceChildren(...open.map(drawQuestion));
+  }
+  if (!open.length) return;
+  tickQuestions();
+  questionTick = setInterval(tickQuestions, 1000);
+}
+
+function drawQuestion(q) {
+  const card = el("div", "question-card");
+  card.dataset.question = q.question_id;
+  card.setAttribute("role", "alertdialog");
+  card.setAttribute("aria-label", t("Waiting on you"));
+  const head = el("div", "question-head");
+  head.append(el("span", "question-mark", t("Waiting on you")));
+  if (q.session_id !== state.current) {
+    const entry = state.sessionsById.get(q.session_id);
+    const go = el("button", "word question-session", entry ? sessionName(entry) : t("another session"));
+    go.type = "button";
+    go.dataset.act = "open";
+    head.append(go);
+  }
+  head.append(el("span", "question-left"));
+  card.append(head, el("p", "question-title", q.title));
+  if (q.detail) card.append(el("pre", "question-detail", q.detail));
+  const actions = el("div", "actions");
+  const busy = state.answering.has(q.question_id);
+  (q.choices || []).forEach((choice, at) => {
+    const button = el("button", at === 0 ? "solid" : "quiet", choiceWord(choice));
+    button.type = "button";
+    button.dataset.act = "answer";
+    button.dataset.answer = choice;
+    button.disabled = busy;
+    actions.append(button);
+  });
+  card.append(actions);
+  return card;
+}
+
+// The guard's two choices in this tab's language; any other choice as sent.
+function choiceWord(choice) {
+  if (choice === "Allow once") return t("Allow once");
+  if (choice === "Deny") return t("Deny");
+  return choice;
+}
+
+function tickQuestions() {
+  const now = Date.now() / 1000 + state.questionSkew;
+  for (const card of questionsEl.children) {
+    const q = state.questions.find((each) => each.question_id === card.dataset.question);
+    const left = q ? Math.max(0, Math.ceil(q.expires_at - now)) : 0;
+    card.querySelector(".question-left").textContent = t("{n}s left", { n: left });
+  }
+}
+
+questionsEl.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-act]");
+  const card = button?.closest(".question-card");
+  const q = card && state.questions.find((each) => each.question_id === card.dataset.question);
+  if (!q) return;
+  if (button.dataset.act === "open") { select(q.session_id); return; }
+  state.answering.add(q.question_id);
+  const id = command("answer_question", { session_id: q.session_id, question_id: q.question_id, answer: button.dataset.answer });
+  state.sent.set(id, { answer: q.question_id });
+  renderQuestions();
+});
 let bandSig = null;
 
 function drawRunning(exec) {
@@ -1821,6 +1920,7 @@ async function putBackPictures(session, { row, number }) {
 function renderTranscript() {
   const v = state.current ? state.views.get(state.current) : null;
   renderBand();
+  renderQuestions();
   if (state.shown !== state.current) {
     rowsEl.replaceChildren();
     state.drawn.clear();
@@ -4381,6 +4481,14 @@ function commandResult(result) {
     renderTranscript();
     return;
   }
+  if (sent?.answer) {
+    if (result.status === "rejected") {
+      state.answering.delete(sent.answer);
+      renderQuestions();
+      toast(result.message || result.code, { error: true });
+    }
+    return;
+  }
   if (sent?.interrupt) {
     if (result.status === "rejected") {
       state.stopping.delete(sent.key);
@@ -5565,3 +5673,89 @@ renderHead();
 renderSessions();
 if (!state.current) renderOpener();
 connect();
+
+// --- the palette and the keys ---------------------------------------------------------
+// Ctrl+K: palette.js matches what this page already holds; here is where it
+// reads it and how a pick goes there. keys.js keeps which key runs what;
+// the commands, and what each does, are below the palette.
+const keys = makeKeys();
+const VIEW_NAMES = { chat: t("Chat"), run: t("Run"), files: t("Files") };
+const palette = makePalette({
+  current: () => state.current,
+  sessions: () => state.sessions
+    .filter((entry) => !entry.standby)
+    .sort((a, b) => stamp(b.updated_at) - stamp(a.updated_at))
+    .map((entry) => ({
+      id: entry.id,
+      name: sessionName(entry),
+      detail: [entry.working_directory && folderName(entry.working_directory), entry.updated_at && since(entry.updated_at)].filter(Boolean).join(" · "),
+    })),
+  views: () => [
+    ...(state.current ? sessionViews().filter((v, i, all) => all.indexOf(v) === i).map((v) => ({
+      id: `session-${v}`, name: VIEW_NAMES[v] || v, detail: t("this session"), command: `view-${v}`,
+      hash: `s=${encodeURIComponent(state.current)}${v === "chat" ? "" : `&v=${v}`}`,
+    })) : []),
+    { id: "dashboard", name: t("Dashboard"), detail: t("usage, cost and health"), hash: "v=dashboard", command: "dashboard" },
+    ...CONTROL_TABS.map(([tab, label]) => ({ id: `control-${tab}`, name: `${t("Settings")}: ${label}`, detail: "", hash: `v=control&tab=${tab}`,
+      command: tab === "shortcuts" ? "shortcuts" : undefined })),
+  ],
+  actions: () => [
+    { id: "new", name: t("New session"), detail: "", command: "new-session", run: () => { openNew(); writeLink(); } },
+    ...(state.current ? [
+      { id: "model", name: t("Model and reasoning"), detail: t("this session"), command: "model", run: () => { if (board()) setPane("chat"); openModels(); } },
+      { id: "history", name: t("History"), detail: t("rewind or fork a turn"), command: "history", run: () => { if (board()) setPane("chat"); openHistory(); } },
+    ] : []),
+  ],
+  keyOf: (id) => keys.label(id),
+  commands: () => slash.commands,
+  files: async (id) => {
+    const body = await api("GET", `/api/gateway/sessions/${encodeURIComponent(id)}/files?find=1`);
+    // A nodecode from before ?find=1 answers the folder's own listing.
+    if (body.kind === "files") return { files: body.files || [], cut: !!body.cut };
+    return { files: (body.entries || []).filter((entry) => entry.kind === "file").map((entry) => entry.name), cut: true };
+  },
+  go: (hash) => { location.hash = hash; },
+  openSession: (id) => select(id),
+  compose: (text) => {
+    if (board()) { setPane("chat"); writeLink(); }
+    promptEl.value = text;
+    promptEl.dispatchEvent(new Event("input", { bubbles: true }));
+    promptEl.focus();
+    promptEl.setSelectionRange(text.length, text.length);
+  },
+});
+// The desktop app's menu opens it too.
+window.nodecodePalette = palette;
+
+// Every command a key can run, with its key as it comes; Settings:
+// Shortcuts changes any of them, and the desktop app's own join them there.
+// A view a session does not have, or a session's command with none open,
+// lets its key through to the page.
+const inSession = () => !!state.current;
+const hasView = (view) => () => !!state.current && sessionViews().includes(view);
+const toView = (view) => () => { location.hash = `s=${encodeURIComponent(state.current)}${view === "chat" ? "" : `&v=${view}`}`; };
+function toggleColumn() {
+  if (narrow.matches) app.classList.toggle("column-open");
+  else setFolded(!app.classList.contains("folded"));
+}
+keys.add([
+  { id: "palette", group: "palette", name: t("Command palette"), chord: "CmdOrCtrl+K", run: () => palette.toggle("all") },
+  { id: "quick-open", group: "palette", name: t("Open a file"), chord: "CmdOrCtrl+P", run: () => palette.toggle("files") },
+  { id: "commands", group: "palette", name: t("Find a command"), chord: "CmdOrCtrl+Shift+P", run: () => palette.toggle("commands") },
+  { id: "new-session", group: "go", name: t("New session"), chord: "", run: () => { palette.close(false); openNew(); writeLink(); } },
+  { id: "sidebar", group: "go", name: t("Show or hide the session list"), chord: "CmdOrCtrl+B", run: toggleColumn },
+  { id: "prompt", group: "go", name: t("Go to the prompt box"), chord: "", run: () => {
+    palette.close(false);
+    if (board()) { setPane("chat"); writeLink(); }
+    promptEl.focus();
+  } },
+  { id: "dashboard", group: "go", name: t("Dashboard"), chord: "", run: () => { location.hash = "v=dashboard"; } },
+  { id: "settings", group: "go", name: t("Settings"), chord: "CmdOrCtrl+,", run: () => { location.hash = "v=control"; } },
+  { id: "shortcuts", group: "go", name: t("Keyboard shortcuts"), chord: "", run: () => { location.hash = "v=control&tab=shortcuts"; } },
+  { id: "view-chat", group: "session", name: t("Chat"), chord: "", when: inSession, run: toView("chat") },
+  { id: "view-run", group: "session", name: t("Run"), chord: "", when: hasView("run"), run: toView("run") },
+  { id: "view-files", group: "session", name: t("Files"), chord: "", when: hasView("files"), run: toView("files") },
+  { id: "model", group: "session", name: t("Model and reasoning"), chord: "", when: inSession, run: () => { if (board()) setPane("chat"); openModels(); } },
+  { id: "history", group: "session", name: t("History"), chord: "", when: inSession, run: () => { if (board()) setPane("chat"); openHistory(); } },
+]);
+control.useKeys(keys);
