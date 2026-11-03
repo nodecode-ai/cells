@@ -16,6 +16,7 @@ import { makeControl, WIDE } from "./control.js";
 import { qrCode } from "./access.js";
 import { makeFiles, putFile } from "./files.js";
 import { icon, iconButton } from "./icons.js";
+import { recordingType, startRecording } from "./voice.js";
 
 const $ = (id) => document.getElementById(id);
 const app = $("app");
@@ -23,6 +24,11 @@ const rowsEl = $("rows");
 const ledger = $("ledger");
 const promptEl = $("prompt");
 const composer = $("composer");
+
+// The composer's microphone (voice.js): what /api/transcribe said of this
+// gateway (null: nothing reads recordings here), the recording running, and
+// whether one is being read.
+const voice = { status: null, recording: null, busy: false, timer: 0 };
 
 const TOKEN_KEY = "nodecode-web-token";
 const FOLD_KEY = "nodecode-web-fold";
@@ -569,6 +575,7 @@ function receive(message) {
       loadTarget();
       loadAccount();
       loadSlash();
+      loadVoice();
       loadTimeline();
       loadDashboard();
       control.reconnected();
@@ -608,7 +615,7 @@ function receive(message) {
     case "model_changed": if (!payload.session_id || payload.session_id === state.current) loadTarget(); break;
     // A cell started or stopped -- a boot starts them after this tab attached
     // -- so the commands this tab read at connect are stale.
-    case "commands_changed": loadSlash(); break;
+    case "commands_changed": loadSlash(); loadVoice(); break;
     case "sync_protocol_error": toast(t("The gateway refused what this tab sent: {why}", { why: payload.message || payload.code }), { error: true }); break;
   }
 }
@@ -4147,11 +4154,134 @@ function renderComposer() {
   else $("send").removeAttribute("aria-describedby");
   $("queue").disabled = $("send").disabled;
   const running = busy();
-  promptEl.placeholder = running ? t("Enter steers this turn · Tab queues for after it")
+  promptEl.placeholder = voice.recording ? t("Listening: the microphone again reads it into the box, Esc drops it")
+    : voice.busy ? t("Reading the recording…")
+    : running ? t("Enter steers this turn · Tab queues for after it")
     : state.current ? t("Message this session") : t("The first message opens the session");
   $("send").title = running ? t("Steer this turn (Enter): it ends at its next step and this runs next") : t("Send (Enter)");
   $("send").setAttribute("aria-label", running ? t("Steer this turn") : t("Send"));
 }
+
+// --- voice: the composer's microphone ---------------------------------------------
+
+// Whether this gateway reads recordings: the channel kit's /api/transcribe. A
+// gateway without it (404) shows no microphone; one whose transcriber is not
+// set up shows it with why, which a click says.
+async function loadVoice() {
+  try {
+    voice.status = await api("GET", "/api/transcribe");
+  } catch {
+    voice.status = null;
+  }
+  renderVoice();
+}
+
+const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+
+function renderVoice() {
+  const button = $("voice");
+  const time = $("voice-time");
+  const status = voice.status;
+  button.hidden = !status || recordingType() === null;
+  const recording = voice.recording;
+  button.dataset.state = recording ? "recording" : voice.busy ? "reading" : "idle";
+  button.setAttribute("aria-pressed", recording ? "true" : "false");
+  button.setAttribute("aria-disabled", !status?.ready || voice.busy ? "true" : "false");
+  button.title = recording ? t("Read it into the box (Esc drops it)")
+    : voice.busy ? t("Reading the recording…")
+    : status?.ready ? t("Speak a message: the words land in the box, to be read over before they are sent")
+    : t("Voice input: {why}", { why: status?.why || "" });
+  button.setAttribute("aria-label", recording ? t("Stop recording") : t("Speak a message"));
+  if (!recording) button.style.removeProperty("--level");
+  time.hidden = !recording;
+  if (recording) {
+    const seconds = recording.seconds();
+    time.textContent = clock(seconds);
+    // The gateway's cap (transcription.max_seconds): the recording stops at it
+    // and is read, rather than refused whole.
+    if (status?.max_seconds && seconds >= status.max_seconds) finishVoice();
+  }
+  renderComposer();
+}
+
+async function beginVoice() {
+  if (!voice.status?.ready) {
+    toast(t("Voice input: {why}", { why: voice.status?.why || "" }), { error: true });
+    return;
+  }
+  voice.busy = true;
+  renderVoice();
+  try {
+    voice.recording = await startRecording({
+      onLevel: (level) => $("voice").style.setProperty("--level", level.toFixed(2)),
+    });
+  } catch (error) {
+    toast(error.name === "NotAllowedError" ? t("The microphone is blocked for this page: allow it, then try again")
+      : error.name === "NotFoundError" ? t("No microphone was found")
+      : t("The microphone did not open: {why}", { why: error.message }), { error: true });
+    return;
+  } finally {
+    voice.busy = false;
+    renderVoice();
+  }
+  clearInterval(voice.timer);
+  voice.timer = setInterval(renderVoice, 250);
+  renderVoice();
+}
+
+// Ends the recording: read into the box, or dropped unread when DROP.
+async function finishVoice(drop) {
+  const recording = voice.recording;
+  if (!recording) return;
+  voice.recording = null;
+  clearInterval(voice.timer);
+  if (drop) {
+    recording.cancel();
+    renderVoice();
+    return;
+  }
+  const seconds = Math.max(1, Math.ceil(recording.seconds()));
+  voice.busy = true;
+  renderVoice();
+  try {
+    const blob = await recording.stop();
+    const { text } = await api("POST", `/api/transcribe?seconds=${seconds}`, blob, blob.type || "audio/webm");
+    const words = (text || "").trim();
+    if (words) speakInto(words);
+    else toast(t("Heard no words in that recording"));
+  } catch (error) {
+    toast(t("The recording was not read: {why}", { why: error.message }), { error: true });
+  } finally {
+    voice.busy = false;
+    renderVoice();
+  }
+}
+
+// WORDS at the caret, a space between them and any word they meet.
+function speakInto(words) {
+  const { selectionStart: start, selectionEnd: end, value } = promptEl;
+  const before = value.slice(0, start);
+  const after = value.slice(end);
+  const text = (before && !/\s$/.test(before) ? " " : "") + words + (after && !/^\s/.test(after) ? " " : "");
+  promptEl.setRangeText(text, start, end, "end");
+  promptEl.dispatchEvent(new Event("input"));
+  promptEl.focus();
+  renderComposer();
+}
+
+$("voice").addEventListener("click", () => {
+  if (voice.recording) finishVoice();
+  else if (!voice.busy) beginVoice();
+});
+
+// Esc while it records drops the recording, and only that: not the turn's Stop,
+// not a sheet's close.
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !voice.recording) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  finishVoice(true);
+}, true);
 
 // The files ride the prompt as one line each under its text, naming the path
 // each went up to.

@@ -955,6 +955,27 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
 .queue-later:hover:not(:disabled) { color: var(--primary); border-color: var(--faint); }
 .queue-later:disabled { opacity: 0.4; cursor: default; }
 .send { background: var(--primary); color: var(--void); transition: opacity 130ms; }
+/* Voice, beside Send: the microphone. While it records, the danger colour, a
+   square to stop on, a ring that swells with the voice, and the time it has
+   run; while the recording is read, the microphone breathes. */
+.voice { position: relative; color: var(--muted); transition: color 130ms, opacity 130ms; }
+.voice:hover { color: var(--primary); }
+.voice[aria-disabled="true"]:not([data-state="reading"]) { opacity: 0.4; }
+.voice .halt { display: none; width: 10px; height: 10px; background: currentColor; }
+.voice[data-state="recording"] { color: var(--danger-lit); }
+.voice[data-state="recording"] .mic { display: none; }
+.voice[data-state="recording"] .halt { display: block; }
+.voice[data-state="recording"]::before {
+  content: ""; position: absolute; inset: 3px; border-radius: 50%; border: 1.5px solid currentColor;
+  transform: scale(calc(1 + var(--level, 0) * 0.3)); transition: transform 80ms linear;
+}
+.voice[data-state="reading"] { cursor: progress; }
+.voice[data-state="reading"] .mic { animation: led 1.1s ease-in-out infinite; }
+.voice-time { font: var(--fs-micro) var(--mono); font-variant-numeric: tabular-nums; color: var(--danger-lit); }
+@media (prefers-reduced-motion: reduce) {
+  .voice[data-state="recording"]::before { transform: none; transition: none; }
+  .voice[data-state="reading"] .mic { animation: none; }
+}
 .send:disabled { opacity: 0.4; cursor: default; }
 
 /* --- the gate and the toasts ----------------------------------------------------- */

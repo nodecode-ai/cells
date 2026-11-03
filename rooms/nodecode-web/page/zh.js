@@ -1258,5 +1258,17 @@ export const ZH = {
   "Needs you: its answer waits on you, or its last turn failed. Running: a turn runs in it or under it. Done: the rest.": "需要你处理：它的回答在等你，或它最近一轮失败了。运行中：它或它下面有一轮正在运行。完成：其余的。",
   "waits on you": "在等你",
   "its last turn failed": "最近一轮失败了",
-  "{n} waiting on you": "{n} 个在等你"
+  "{n} waiting on you": "{n} 个在等你",
+  "Speak a message": "说一条消息",
+  "Stop recording": "停止录音",
+  "Listening: the microphone again reads it into the box, Esc drops it": "正在听：再按麦克风把它写进输入框，Esc 丢弃",
+  "Reading the recording…": "正在识别录音…",
+  "Read it into the box (Esc drops it)": "写进输入框（Esc 丢弃）",
+  "Speak a message: the words land in the box, to be read over before they are sent": "说一条消息：文字落在输入框里，发送前可先看一遍",
+  "Voice input: {why}": "语音输入：{why}",
+  "The microphone is blocked for this page: allow it, then try again": "此页面的麦克风被禁止了：允许后再试",
+  "No microphone was found": "没有找到麦克风",
+  "The microphone did not open: {why}": "麦克风没能打开：{why}",
+  "Heard no words in that recording": "这段录音里没听到话",
+  "The recording was not read: {why}": "录音没能识别：{why}"
 };
