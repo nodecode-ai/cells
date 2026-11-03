@@ -876,6 +876,48 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
 }
 .exec-stop { display: grid; place-items: center; width: 24px; height: 24px; margin: -4px -6px -4px -4px; border-radius: 50%; flex: none; color: var(--tertiary); transition: color 130ms, background 130ms; }
 .exec-stop:hover { color: var(--danger-lit); background: var(--subtle); }
+
+/* Helpers: the forks a running call made, a band over the message box as the
+   execs' is. A head (Helpers, how many run, Stop all from two), then a line a
+   fork: its lamp or how it ended, its number, its name (opens its session),
+   its calls and time, what it is doing in italics or what it said, and its
+   Steer and x. Steer opens a box under its line; what this tab steered it
+   with stands there in the accent until the call ends. Under the call in the
+   transcript the same forks stand as a tree on the shell's rails. */
+.helpers {
+  display: flex; flex-direction: column; gap: 2px; padding: 0 16px 10px; max-height: 40vh; overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: var(--seam-lit) transparent; overscroll-behavior: contain;
+}
+.helpers-head { display: flex; align-items: center; gap: 10px; min-height: 28px; font: var(--fs-micro)/1.6 var(--mono); color: var(--tertiary); }
+.helpers-head .micro { color: var(--secondary); }
+.helpers-count { font-variant-numeric: tabular-nums; }
+.helpers-stop-all { margin-left: auto; font-size: var(--fs-detail); }
+.helpers-stop-all:hover { color: var(--danger-lit); }
+.helper-line, .fork-line { display: flex; align-items: center; gap: 10px; min-height: 28px; min-width: 0; font: var(--fs-detail)/20px var(--mono); color: var(--tertiary); }
+.helper-mark { flex: none; display: grid; place-items: center; width: 12px; }
+.fork-mark { flex: none; width: 12px; text-align: center; font-size: var(--fs-micro); }
+.fork-mark.done { color: var(--live); }
+.fork-mark.ended { color: var(--danger-lit); }
+.helper-n { flex: none; }
+.helper-name {
+  flex: 0 1 auto; max-width: 40%; min-width: 0; text-align: left; font: inherit; color: var(--secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 130ms;
+}
+.helper-name:hover { color: var(--primary); }
+.helper-stats { flex: none; font-variant-numeric: tabular-nums; }
+.helper-words { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--secondary); }
+.helper-words.note { color: var(--tertiary); font-style: italic; }
+.helper-acts { flex: none; display: flex; align-items: center; gap: 10px; }
+.helper-acts .state { font: var(--fs-micro) var(--mono); color: var(--accent); }
+.helper-steer { min-height: 26px; padding: 0 10px; font-size: var(--fs-detail); }
+.helper-said { padding: 0 0 4px 22px; font: var(--fs-micro)/1.6 var(--mono); color: var(--accent); overflow-wrap: anywhere; }
+.helper-box { display: flex; align-items: center; gap: 8px; padding: 2px 0 8px 22px; }
+.helper-input { flex: 1 1 auto; min-width: 0; min-height: 32px; padding: 5px 12px; font-size: var(--fs-detail); }
+.helper-send { min-height: 32px; padding: 0 14px; }
+.fork-tree { display: flex; flex-direction: column; padding: 0 0 6px 6px; }
+.fork-line { min-height: 24px; }
+.fork-rail { flex: none; color: var(--tertiary); }
+.fork-line .led { margin-inline: 3.5px; }
 /* An ended one is its call's row under the turn, one line as a call's is: what
    it ran, its last line, how many it kept and how it ended, the danger tone
    only for an end that went wrong. Open, every line the organism kept --
@@ -2754,6 +2796,10 @@ button.p-row:active { background: var(--field-lit); }
   .tag a, .ctl-cell-what a { padding-block: 1.2px; }
   .exec > summary, .exec-line, .bg-open { min-height: 44px; }
   .exec-stop { width: 44px; height: 44px; padding: 10px; margin: -8px -12px -8px -8px; background-clip: content-box; }
+  .helper-steer, .helper-send { min-height: 36px; }
+  .helper-input { min-height: 36px; }
+  .helper-n, .helper-line .helper-stats { display: none; }
+  .helper-name { max-width: 45%; }
   .toast .shut { width: 36px; height: 36px; margin: -8px -6px -8px 0; }
   /* A picture's remove hangs off its corner, so the 32 px it needs takes under a
      fifth of the picture and leaves its middle, which opens it, alone. */

@@ -20,6 +20,7 @@ import { makeFiles, putFile } from "./files.js";
 import { makeBoard, COLUMNS } from "./board.js";
 import { icon, iconButton } from "./icons.js";
 import { recordingType, startRecording } from "./voice.js";
+import { makeHelpers } from "./helpers.js";
 
 const $ = (id) => document.getElementById(id);
 const app = $("app");
@@ -1293,7 +1294,12 @@ function drawWork(article, turn, live, v) {
     summary.append(showClose());
     const acts = el("div", "acts");
     for (const row of work) {
-      if (row.kind === "tool_call") acts.append(toolAct(row), ...toolDiff(row));
+      if (row.kind === "tool_call") {
+        acts.append(toolAct(row), ...toolDiff(row));
+        // A call that forked: its forks under it, as the shell draws them.
+        const forks = helpers.tree(row);
+        if (forks) acts.append(forks);
+      }
       else {
         const act = row.kind === "reasoning" ? (row.live ? thinking(row) : proseAct(row, "thought")) : proseAct(row, "said");
         if (row.voided) act.classList.add("att-void");
@@ -1933,6 +1939,7 @@ async function putBackPictures(session, { row, number }) {
 function renderTranscript() {
   const v = state.current ? state.views.get(state.current) : null;
   renderBand();
+  helpers.render(v);
   renderQuestions();
   if (state.shown !== state.current) {
     rowsEl.replaceChildren();
@@ -2767,6 +2774,16 @@ const control = makeControl({
 const filesView = makeFiles({ state, reach, save, toast, redraw: renderObserve, moved: () => writeLink(), home: (dir) => home(dir), openImage: openLightbox });
 
 // The Board (board.js): tasks in To do, each started as a session it then follows.
+// A fork's session, opened from the Helpers band or the tree under its call:
+// the list may not hold it yet (it was made by the call), so it is read again.
+function openHelper(id) {
+  if (!id) return;
+  if (!state.sessionsById.has(id)) loadSessionsSoon();
+  select(id);
+}
+
+const helpers = makeHelpers({ state, command, toast, open: openHelper, redraw: schedule });
+
 const boardView = makeBoard({
   state, reach, toast,
   redraw: () => { if (state.pane === "board") { renderObserve(); } },
@@ -4608,6 +4625,7 @@ function commandResult(result) {
   const sent = state.sent.get(result.command_id);
   if (result.status === "accepted" || result.status === "rejected") state.sent.delete(result.command_id);
   if (sent?.navigate) { navigated(result, sent); return; }
+  if (helpers.result(sent, result)) return;
   if (sent?.withdraw) {
     state.withdrawing.delete(sent.withdraw);
     if (result.status === "accepted") tookBack(sent.session, result.response || {});
@@ -5129,6 +5147,7 @@ rowsEl.addEventListener("click", (event) => {
     if (act.dataset.act === "copy") copyCode(act);
     else if (act.dataset.act === "fork") forkAt(act.dataset.turn);
     else if (act.dataset.act === "withdraw") takeBack(act.dataset.prompt);
+    else if (act.dataset.act === "fork-open") openHelper(act.dataset.session);
     else if (act.dataset.act === "rewind") askRewind(act.dataset.key, act.dataset.turn, Number(act.dataset.number));
     else if (act.dataset.act === "retry") retry(act);
     else answerRewind(act.dataset.act);
