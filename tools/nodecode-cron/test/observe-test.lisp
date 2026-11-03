@@ -36,8 +36,7 @@ its arguments a hash table, or the JSON text when JSON."
                   "(nodecode-cron:wake :on)" "(nodecode-cron:remove \"wake\")"
                   "(sh \"ls 'unclosed\")" "(sh (concatenate 'string \"r\" \"m x\"))"))
     (is (stringp (wake-call-verdict form)) (format nil "refused: ~a" form)))
-  ;; A ($ key) command is judged by the text it names.
-  (is (search "touch" (wake-call-verdict "(sh ($ \"s\"))" :strings '(("s" . "touch x"))))))
+  (is (search "touch" (wake-call-verdict "(sh ($ \"s\"))" :strings '(("s" . "touch x")))) "a ($ key) command is judged by the text it names"))
 
 (deftest cron-cell-wake-gate-passes-reads ()
   (dolist (form '("(recall-log :match \"keep an eye\")"
@@ -51,10 +50,11 @@ its arguments a hash table, or the JSON text when JSON."
                   "(sh \"nvidia-smi --query-gpu=memory.used --format=csv\")"
                   "(sh \"systemctl --user status nodecode\")" "(sh \"journalctl -n 50 -u x\")"
                   "(sh \"docker logs --tail 50 web\")" "(sh \"df -h\" :timeout 10)" "(sh \"sed -n 1,40p file.lisp\")"
-                  "(sh \"gh pr checks 178\")" "(nodecode-cron:wake-next \"2h\" \"why\")"))
+                  "(sh \"gh pr checks 178\")" "(nodecode-cron:wake-next \"2h\" \"why\")"
+                  "(nodecode-cron:wake :status)" "(let (seen (n 0)) (push 1 seen) (incf n) seen)"
+                  "(sh \"cd ~/Lab && rg -n wake tools 2>/dev/null | wc -l\")"))
     (is (null (wake-call-verdict form)) (format nil "passes: ~a" form)))
-  ;; A ($ key) read command passes from JSON arguments.
-  (is (null (wake-call-verdict "(sh ($ \"s\"))" :strings '(("s" . "git status")) :json t))))
+  (is (null (wake-call-verdict "(sh ($ \"s\"))" :strings '(("s" . "git status")) :json t)) "a ($ key) read command passes from JSON arguments"))
 
 (deftest cron-cell-wake-gate-refuses-other-tools-and-noise ()
   (is (search "only eval" (wake-call-verdict "(+ 1 2)" :name "report_issue")) "a tool other than eval is refused")

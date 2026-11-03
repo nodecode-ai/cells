@@ -96,8 +96,12 @@ thing it moves, inside the owner's bounds).")
 ;;; sequencing, background or escape: the characters that spell them refuse
 ;;; the line before any word is read.
 
-(defparameter +sh-refused-characters+ '(#\; #\& #\> #\< #\` #\$ #\( #\) #\{ #\} #\\ #\Newline #\Return)
-  "A command line carrying any of these is refused whole.")
+(defparameter +sh-refused-characters+ '(#\> #\< #\` #\$ #\( #\) #\{ #\} #\\ #\Newline #\Return)
+  "A command line carrying any of these, once its stderr noise is dropped,
+is refused whole: redirection, substitution, grouping, escapes.")
+
+(defparameter +sh-noise+ "\\s*(?:2>&1|[12]?>\\s*/dev/null)"
+  "Output thrown away: the one redirection a read may carry.")
 
 (defun sh-words (segment)
   "SEGMENT's words, quotes ' and \" grouping (no escapes: a backslash
@@ -135,6 +139,7 @@ never reaches here), or :UNBALANCED."
     (flet ((no (fmt &rest xs) (return-from sh-program-refusal (apply #'format nil fmt xs))))
       (cond
         ((member program +sh-plain-readers+ :test #'string=) nil)
+        ((string= program "cd") (when (rest args) (no "cd takes one folder")))
         ((string= program "tail")
          (when (any-option args "-f" "-F" "--follow") (no "tail follows forever")))
         ((string= program "sort")
@@ -209,24 +214,26 @@ never reaches here), or :UNBALANCED."
 
 (defun wake-sh-refusal (command)
   "NIL when the shell line COMMAND only reads; else the reason it is refused."
-  (cond
-    ((not (stringp command)) "sh's command is no literal string")
-    ((find-if (lambda (c) (member c +sh-refused-characters+)) command)
-     (format nil "sh line carries ~s: a wake runs one plain pipe"
-             (string (find-if (lambda (c) (member c +sh-refused-characters+)) command))))
-    (t (let ((segments (loop with start = 0
-                             for bar = (position #\| command :start start)
-                             collect (subseq command start bar)
-                             while bar do (setf start (1+ bar)))))
-         (dolist (segment segments nil)
-           (let ((words (sh-words segment)))
-             (cond ((eq words :unbalanced) (return "sh line has an unclosed quote"))
-                   ((null words) (return "sh line has an empty pipe segment"))
-                   ((find #\/ (first words)) (return (format nil "~a: a wake runs programs by name only" (first words))))
-                   ((find #\= (first words)) (return "sh line sets the environment"))
-                   (t (let ((no (sh-program-refusal words))) (when no (return no)))))))))))
+  (let ((line (and (stringp command) (ppcre:regex-replace-all +sh-noise+ command ""))))
+    (cond
+      ((not (stringp command)) "sh's command is no literal string")
+      ((find-if (lambda (c) (member c +sh-refused-characters+)) line)
+       (format nil "sh line carries ~s: a wake runs one plain pipe"
+               (string (find-if (lambda (c) (member c +sh-refused-characters+)) line))))
+      (t (let ((segments (ppcre:split "&&|\\|\\||;|\\|" line :limit most-positive-fixnum)))
+           (dolist (segment segments nil)
+             (let ((words (if (find #\& segment) :background (sh-words segment))))
+               (cond ((eq words :background) (return "sh line runs a job in the background"))
+                     ((eq words :unbalanced) (return "sh line has an unclosed quote"))
+                     ((null words) (return "sh line has an empty pipe segment"))
+                     ((find #\/ (first words)) (return (format nil "~a: a wake runs programs by name only" (first words))))
+                     ((find #\= (first words)) (return "sh line sets the environment"))
+                     (t (let ((no (sh-program-refusal words))) (when no (return no))))))))))))
 
 ;;; The walk.
+
+(defvar *wake-bound* '()
+  "The names the forms around the walk's place bind: the only places a wake assigns.")
 
 (defun observe-refusal (form strings)
   "NIL when FORM only reads; else the reason. STRINGS is the call's
@@ -249,7 +256,12 @@ $ table (a hash table or NIL), which ($ \"key\") and (sh ($ \"key\")) read."
                             (every (lambda (p) (and (symbolp p) (not (member p lambda-list-keywords))))
                                    (car tail)))
                  (no "a lambda list a wake cannot read"))
-               (forms (cdr tail)))
+               (let ((*wake-bound* (append (car tail) *wake-bound*))) (forms (cdr tail))))
+             (assign (place)
+               ;; Only a name this snippet bound: a special, a global or a
+               ;; structure is the image's, and a wake does not move it.
+               (unless (and (symbolp place) (member place *wake-bound*))
+                 (no "~s is no name the snippet bound, and a wake assigns only its own" place)))
              (function-form (x)
                ;; An argument that is called: #'<operator> or a lambda.
                (cond ((and (consp x) (eq (car x) 'function) (symbolp (second x)))
@@ -269,13 +281,27 @@ $ table (a hash table or NIL), which ($ \"key\") and (sh ($ \"key\")) read."
                  (quote nil)
                  (function (function-form x))
                  (lambda (lambda-form args))
-                 ((let let*) (binding-forms (first args)) (forms (rest args)))
+                 ((let let*) (binding-forms (first args))
+                  (let ((*wake-bound* (append (mapcar (lambda (b) (if (consp b) (car b) b)) (first args))
+                                              *wake-bound*)))
+                    (forms (rest args))))
+                 ((setq setf)
+                  (unless (evenp (length args)) (no "a malformed ~(~a~)" head))
+                  (loop for (place value) on args by #'cddr
+                        do (assign place) (walk value)))
+                 ((push pushnew)
+                  (unless (>= (length args) 2) (no "a malformed ~(~a~)" head))
+                  (walk (first args)) (assign (second args)) (forms (cddr args)))
+                 ((pop incf decf)
+                  (unless (<= 1 (length args) 2) (no "a malformed ~(~a~)" head))
+                  (assign (first args)) (forms (rest args)))
                  ((dolist dotimes)
                   (unless (and (consp (first args)) (symbolp (car (first args)))) (no "a malformed ~(~a~)" head))
-                  (forms (cdr (first args))) (forms (rest args)))
+                  (forms (cdr (first args)))
+                  (let ((*wake-bound* (cons (car (first args)) *wake-bound*))) (forms (rest args))))
                  ((multiple-value-bind destructuring-bind)
                   (unless (and (listp (first args)) (every #'symbolp (first args))) (no "a malformed ~(~a~)" head))
-                  (forms (rest args)))
+                  (let ((*wake-bound* (append (first args) *wake-bound*))) (forms (rest args))))
                  (cond (dolist (clause args) (if (consp clause) (forms clause) (no "a malformed cond"))))
                  ((case ecase typecase etypecase)
                   (walk (first args))
@@ -292,17 +318,20 @@ $ table (a hash table or NIL), which ($ \"key\") and (sh ($ \"key\")) read."
                   (forms (cddr args)))
                  (t
                   (cond
-                    ;; The wake may read its own status, and read Discord.
-                    ((and (eq head 'wake) (equal args '(:status))) nil)
-                    ((and (let ((ncd (find-package "NCD")))
-                            (and ncd (eq head (find-symbol "REQUEST" ncd))))
-                          (stringp (first args)) (string-equal (first args) "GET"))
-                     (forms (rest args)))
                     ((sh-symbol-p head)
                      (let ((command (string-arg (first args))))
                        (unless command (no "sh's command must be a literal or ($ \"key\")"))
                        (unless (every #'literal-p (rest args)) (no "sh's options must be literals"))
                        (let ((reason (wake-sh-refusal command))) (when reason (no "~a" reason)))))
+                    ((and (symbolp head) (string= (symbol-name head) "WAKE")
+                          (eq (symbol-package head) (find-package '#:nodecode-cron)))
+                     ;; The operator's verb: its status reads, every other use moves the wake.
+                     (unless (equal args '(:status)) (no "cron:wake ~{~s~^ ~} is the owner's" args)))
+                    ((and (symbolp head) (string= (symbol-name head) "REQUEST")
+                          (find-package "NCD") (eq (symbol-package head) (find-package "NCD")))
+                     (unless (and (stringp (first args)) (string-equal (first args) "GET"))
+                       (no "ncd:request ~a writes to the platform" (first args)))
+                     (forms (rest args)))
                     ((not (wake-operator-p head))
                      (no "~s is not an operator a wake may call" head))
                     (t
