@@ -12,7 +12,8 @@
 import { diffHtml, markdown } from "./md.js";
 import { t, translatePage } from "./i18n.js";
 import { drawRun, drawInspector, drawDashboard, drawTimeline, turnSpan, meterOf, ms, usd, plural, bytes, RANGES, JUMPS, INSPECTOR_TABS, ORIGIN_WORDS, PHONE } from "./observe.js";
-import { makeControl, WIDE } from "./control.js";
+import { makeControl, WIDE, TABS as CONTROL_TABS } from "./control.js";
+import { makePalette } from "./palette.js";
 import { qrCode } from "./access.js";
 import { makeFiles, putFile } from "./files.js";
 import { icon, iconButton } from "./icons.js";
@@ -5435,3 +5436,52 @@ renderHead();
 renderSessions();
 if (!state.current) renderOpener();
 connect();
+
+// --- the palette ------------------------------------------------------------------------
+// Ctrl+K: palette.js matches what this page already holds; here is where it
+// reads it and how a pick goes there.
+const VIEW_NAMES = { chat: t("Chat"), run: t("Run"), files: t("Files") };
+const palette = makePalette({
+  current: () => state.current,
+  sessions: () => state.sessions
+    .filter((entry) => !entry.standby)
+    .sort((a, b) => stamp(b.updated_at) - stamp(a.updated_at))
+    .map((entry) => ({
+      id: entry.id,
+      name: sessionName(entry),
+      detail: [entry.working_directory && folderName(entry.working_directory), entry.updated_at && since(entry.updated_at)].filter(Boolean).join(" · "),
+    })),
+  views: () => [
+    ...(state.current ? sessionViews().filter((v, i, all) => all.indexOf(v) === i).map((v) => ({
+      id: `session-${v}`, name: VIEW_NAMES[v] || v, detail: t("this session"),
+      hash: `s=${encodeURIComponent(state.current)}${v === "chat" ? "" : `&v=${v}`}`,
+    })) : []),
+    { id: "dashboard", name: t("Dashboard"), detail: t("usage, cost and health"), hash: "v=dashboard" },
+    ...CONTROL_TABS.map(([tab, label]) => ({ id: `control-${tab}`, name: `${t("Settings")}: ${label}`, detail: "", hash: `v=control&tab=${tab}` })),
+  ],
+  actions: () => [
+    { id: "new", name: t("New session"), detail: "", run: () => { openNew(); writeLink(); } },
+    ...(state.current ? [
+      { id: "model", name: t("Model and reasoning"), detail: t("this session"), run: () => { if (board()) setPane("chat"); openModels(); } },
+      { id: "history", name: t("History"), detail: t("rewind or fork a turn"), run: () => { if (board()) setPane("chat"); openHistory(); } },
+    ] : []),
+  ],
+  commands: () => slash.commands,
+  files: async (id) => {
+    const body = await api("GET", `/api/gateway/sessions/${encodeURIComponent(id)}/files?find=1`);
+    // A nodecode from before ?find=1 answers the folder's own listing.
+    if (body.kind === "files") return { files: body.files || [], cut: !!body.cut };
+    return { files: (body.entries || []).filter((entry) => entry.kind === "file").map((entry) => entry.name), cut: true };
+  },
+  go: (hash) => { location.hash = hash; },
+  openSession: (id) => select(id),
+  compose: (text) => {
+    if (board()) { setPane("chat"); writeLink(); }
+    promptEl.value = text;
+    promptEl.dispatchEvent(new Event("input", { bubbles: true }));
+    promptEl.focus();
+    promptEl.setSelectionRange(text.length, text.length);
+  },
+});
+// The desktop app's menu opens it too.
+window.nodecodePalette = palette;
