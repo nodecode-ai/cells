@@ -1395,5 +1395,21 @@ export const ZH = {
   "Let go of your changes to {name}?": "放弃你对 {name} 的改动吗？",
   "Let them go": "放弃改动",
   "↑↓ to move, Enter to go, Esc to close": "↑↓ 移动，Enter 前往，Esc 关闭",
-  "tasks, queued and running": "任务：排队中与运行中"
+  "tasks, queued and running": "任务：排队中与运行中",
+  "out of time": "超时",
+  "it had already finished": "它已经结束了",
+  "Couldn't stop fork {n}: {why}": "无法停止分支 {n}：{why}",
+  "Couldn't steer fork {n}: {why}": "无法引导分支 {n}：{why}",
+  "Steer": "引导",
+  "fork {n}": "分支 {n}",
+  "Open fork {n}'s session": "打开分支 {n} 的会话",
+  "Steer fork {n}": "引导分支 {n}",
+  "Stop fork {n}": "停止分支 {n}",
+  "You steered it: {words}": "你的引导：{words}",
+  "Steered once": "已引导一次",
+  "Steered {n} times": "已引导 {n} 次",
+  "Tell fork {n}: it ends its step and does this next": "告诉分支 {n}：它完成当前一步后接着做这个",
+  "Stop all": "全部停止",
+  "Helpers": "助手",
+  "all done": "全部完成"
 };
