@@ -17,6 +17,7 @@ import { makePalette } from "./palette.js";
 import { makeKeys } from "./keys.js";
 import { qrCode } from "./access.js";
 import { makeFiles, putFile } from "./files.js";
+import { makeBoard, COLUMNS } from "./board.js";
 import { icon, iconButton } from "./icons.js";
 import { recordingType, startRecording } from "./voice.js";
 
@@ -137,7 +138,7 @@ function readLink() {
 }
 
 // The panes over every session or over the organism, which name no session.
-const BOARDS = ["dashboard", "control"];
+const BOARDS = ["dashboard", "control", "board"];
 
 // The views the strip offers a session -- its switch's Chat and Run, Files
 // among the acts (under More on a phone), and any a module puts there: the
@@ -159,6 +160,8 @@ function addressOf() {
   } else if (state.pane === "control") {
     put("v", "control");
     put("tab", control.tab);
+  } else if (state.pane === "board") {
+    put("v", "board");
   } else if (state.current) {
     put("s", state.current);
     if (state.pane !== "chat") put("v", state.pane);
@@ -349,6 +352,7 @@ async function loadSessions() {
     // A question from a session the list had not named yet names it now.
     renderQuestions();
     if (!state.current) renderOpener();
+    if (state.pane === "board") boardView.sessionsMoved();
   } catch (error) {
     if (error.status === 401 && !state.token) location.reload();
     else if (error.status === 401) gate(t("{host} refused this tab's token", { host: location.host }));
@@ -542,8 +546,14 @@ function command(type, fields) {
   return id;
 }
 
+// Sessions the Board started, followed beside the one on screen until their
+// first turn is listed: the gateway starts a turn only in a session the
+// client follows.
+const boardHolds = new Set();
+
 function subscribe() {
-  const subscriptions = state.current ? [{ session_id: state.current, rows: true }] : [];
+  const ids = [...new Set([state.current, ...boardHolds].filter(Boolean))];
+  const subscriptions = ids.map((session_id) => ({ session_id, rows: true }));
   // answers: this page draws the organism's questions and sends their answers
   // (the guard's Allow once / Deny), so the gateway asks while it is open.
   send({ type: "client_command", command: { type: "set_session_subscriptions", subscriptions, answers: true } });
@@ -623,6 +633,7 @@ function receive(message) {
       // A turn that ended may have spent the account's requests or credit.
       if ([...before].some((id) => !state.running.has(id))) loadAccount();
       renderSessions();
+      if (state.pane === "board") boardView.sessionsMoved();
       break;
     }
     // A pick in another tab or shell, or the default moved in Control: the
@@ -2659,7 +2670,7 @@ function loadDashboard() {
 
 // The panes over every session, or over the organism, stand in for the
 // session's own and take the box away.
-const board = () => state.pane === "dashboard" || state.pane === "control";
+const board = () => BOARDS.includes(state.pane);
 
 // The strip names where a board is, once: Dashboard, Control, or Control / the
 // tab open in it, Control there the way back on a phone; the page under it
@@ -2667,10 +2678,10 @@ const board = () => state.pane === "dashboard" || state.pane === "control";
 function paintPlace() {
   const title = $("title");
   if (!board() || title.isContentEditable) return;
-  title.title = state.pane === "control" ? t("this organism") : t("every session");
+  title.title = state.pane === "control" ? t("this organism") : state.pane === "board" ? t("work queued as tasks") : t("every session");
   const tab = state.pane === "control" ? control.label : null;
   if (!tab) {
-    title.textContent = state.pane === "control" ? t("Settings") : t("Dashboard");
+    title.textContent = state.pane === "control" ? t("Settings") : state.pane === "board" ? t("Board") : t("Dashboard");
     return;
   }
   const back = document.createElement("button");
@@ -2700,8 +2711,9 @@ function paintList() {
   list.hidden = !shown;
   if (!shown) { list.replaceChildren(); return; }
   const dash = state.pane === "dashboard";
+  const tasks = state.pane === "board";
   const head = el("div", "place-head");
-  head.append(el("h2", "", dash ? t("Dashboard") : t("Settings")),
+  head.append(el("h2", "", dash ? t("Dashboard") : tasks ? t("Board") : t("Settings")),
     el("span", "reading", dash ? RANGES.find(([id]) => id === state.range)?.[1] || "" : ""));
   const rows = el("div", "place-rows");
   const row = (label, data, { mark, words = "", tone = "", open = false } = {}) => {
@@ -2716,7 +2728,10 @@ function paintList() {
     return go;
   };
   if (dash) rows.append(row(t("Overview"), { jump: "top" }), ...JUMPS.map(([id, label]) => row(label, { jump: id })));
-  else for (const [label, sections] of control.places()) {
+  else if (tasks) {
+    const counts = boardView.counts();
+    rows.append(...COLUMNS.map(([id, label]) => row(label, { col: id }, { words: counts ? String(counts[id]) : "" })));
+  } else for (const [label, sections] of control.places()) {
     rows.append(el("h3", "micro", label), ...sections.map((s) => row(s.label, { tab: s.id }, s)));
   }
   list.replaceChildren(head, rows);
@@ -2749,6 +2764,22 @@ const control = makeControl({
 // HOME is defined below, with the strip: read when drawn, not now.
 const filesView = makeFiles({ state, reach, save, toast, redraw: renderObserve, moved: () => writeLink(), home: (dir) => home(dir), openImage: openLightbox });
 
+// The Board (board.js): tasks in To do, each started as a session it then follows.
+const boardView = makeBoard({
+  state, reach, toast,
+  redraw: () => { if (state.pane === "board") { renderObserve(); } },
+  refresh: () => loadSessionsSoon(),
+  start: (cwd) => newSession(cwd || undefined, { stay: true }),
+  send: (session, text) => { boardHolds.add(session); subscribe(); sendPrompt(session, text, [], false); },
+  release: (id) => { if (boardHolds.delete(id)) subscribe(); },
+  open: (id) => { select(id); if (board()) setPane("chat"); },
+  doing: (entry) => (state.running.has(entry.id) ? "run" : entry.waits ? "ask" : "done"),
+  waitsLine, ball, since, knownFolders,
+  // Read when called: these are declared further down.
+  home: (dir) => home(dir), folderName: (dir) => folderName(dir), askFolder: (dir) => askFolder(dir),
+  desktop: () => window.nodecodeDesktop,
+});
+
 // A session's pane takes over from the board.
 function toChat() {
   if (state.pane === "control") control.hide();
@@ -2776,6 +2807,7 @@ function setPane(pane, tab) {
   if (pane === "dashboard") loadDashboard();
   if (pane === "control") control.show(tab);
   if (pane === "files") filesView.show();
+  if (pane === "board") boardView.show();
   $("observe").scrollTop = 0;
   placeComposer();
   renderHead();
@@ -2792,7 +2824,7 @@ function renderObserve() {
   placeJump();
   paintList();
   $("observe").hidden = pane === "chat";
-  $("observe").setAttribute("aria-label", pane === "control" ? t("Settings") : pane === "files" ? t("The session's folder") : t("Where the time and money went"));
+  $("observe").setAttribute("aria-label", pane === "control" ? t("Settings") : pane === "files" ? t("The session's folder") : pane === "board" ? t("Board") : t("Where the time and money went"));
   const lane = $("observe-lane");
   const timeline = state.timeline?.session === state.current ? state.timeline : null;
   if (pane === "run") {
@@ -2809,6 +2841,8 @@ function renderObserve() {
     lane.replaceChildren(control.draw());
   } else if (pane === "files") {
     lane.replaceChildren(filesView.draw());
+  } else if (pane === "board") {
+    lane.replaceChildren(boardView.draw());
   }
   const drawer = $("drawer");
   const inspect = pane === "run" && state.drawer && timeline?.data;
@@ -3300,7 +3334,7 @@ function renderSessions() {
   const elsewhere = scope === "folder" ? state.sessions.filter((entry) => unseen(entry) && !inHere.includes(entry)).length : 0;
   $("scope").toggleAttribute("data-news", elsewhere > 0);
   if (elsewhere) $("scope").title += ` · ${t("{n} with news in other folders", { n: elsewhere })}`;
-  for (const [id, pane] of [["usage-open", "dashboard"], ["control-open", "control"]]) {
+  for (const [id, pane] of [["usage-open", "dashboard"], ["control-open", "control"], ["board-open", "board"]]) {
     if (state.pane === pane) $(id).setAttribute("aria-current", "page");
     else $(id).removeAttribute("aria-current");
   }
@@ -3956,14 +3990,17 @@ function askForCell() {
   promptEl.focus();
 }
 
-async function newSession(cwd) {
+// STAY: the page stays where it is (the Board starting a task), the new
+// session listed but not opened.
+async function newSession(cwd, { stay } = {}) {
   const id = `s-${Math.floor(Math.random() * 36 ** 8).toString(36).padStart(8, "0")}`;
   try {
     const entry = await api("POST", "/api/gateway/sessions", { session_id: id, ...(cwd ? { cwd } : {}) });
     const standby = { id, title: "", working_directory: entry?.working_directory || cwd || "", updated_at: new Date().toISOString(), standby: true };
     state.sessionsById.set(id, standby);
     state.sessions = [standby, ...state.sessions.filter((each) => each.id !== id)];
-    select(id, true);
+    if (stay) renderSessions();
+    else select(id, true);
     return id;
   } catch (error) {
     // A refusal is the gateway's answer, and asking again changes nothing; the
@@ -5021,7 +5058,7 @@ function handOver(link) {
   setTimeout(() => link.setAttribute("href", place));
 }
 
-for (const [id, go] of [["home", openNew], ["strip-home", openNew], ["usage-open", () => setPane("dashboard")], ["control-open", () => setPane("control")], ["link-open", () => setPane("control", "link")]]) {
+for (const [id, go] of [["home", openNew], ["strip-home", openNew], ["usage-open", () => setPane("dashboard")], ["control-open", () => setPane("control")], ["board-open", () => setPane("board")], ["link-open", () => setPane("control", "link")]]) {
   const link = $(id);
   link.addEventListener("click", (event) => {
     if (!inPlace(event)) { handOver(link); return; }
@@ -5493,6 +5530,11 @@ $("place").addEventListener("click", (event) => {
   if (go.dataset.tab) setPane("control", go.dataset.tab);
   else if (go.dataset.jump === "top") $("observe").scrollTo({ top: 0, behavior: "smooth" });
   else if (go.dataset.jump) $(`dash-${go.dataset.jump}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  else if (go.dataset.col) {
+    const column = document.querySelector(`.board-col[data-col="${go.dataset.col}"]`);
+    column?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+    column?.querySelector(".task-card[tabindex], .task-open")?.focus({ preventScroll: true });
+  }
 });
 let spying = false;
 $("observe").addEventListener("scroll", () => {
@@ -5696,6 +5738,7 @@ const palette = makePalette({
       hash: `s=${encodeURIComponent(state.current)}${v === "chat" ? "" : `&v=${v}`}`,
     })) : []),
     { id: "dashboard", name: t("Dashboard"), detail: t("usage, cost and health"), hash: "v=dashboard", command: "dashboard" },
+    { id: "board", name: t("Board"), detail: t("tasks, queued and running"), hash: "v=board", command: "board" },
     ...CONTROL_TABS.map(([tab, label]) => ({ id: `control-${tab}`, name: `${t("Settings")}: ${label}`, detail: "", hash: `v=control&tab=${tab}`,
       command: tab === "shortcuts" ? "shortcuts" : undefined })),
   ],
@@ -5750,6 +5793,7 @@ keys.add([
     promptEl.focus();
   } },
   { id: "dashboard", group: "go", name: t("Dashboard"), chord: "", run: () => { location.hash = "v=dashboard"; } },
+  { id: "board", group: "go", name: t("Board"), chord: "CmdOrCtrl+Shift+K", run: () => { palette.close(false); location.hash = "v=board"; } },
   { id: "settings", group: "go", name: t("Settings"), chord: "CmdOrCtrl+,", run: () => { location.hash = "v=control"; } },
   { id: "shortcuts", group: "go", name: t("Keyboard shortcuts"), chord: "", run: () => { location.hash = "v=control&tab=shortcuts"; } },
   { id: "view-chat", group: "session", name: t("Chat"), chord: "", when: inSession, run: toView("chat") },
