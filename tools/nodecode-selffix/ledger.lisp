@@ -2,10 +2,11 @@
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
-;;;; One append-only JSON-lines file, selffix/ledger.jsonl. Every row is one
-;;;; outcome: a cycle's (finding, not-reproduced, failed), an item dropped, or
-;;;; the operator's stop and start. Nothing is rewritten, so the record of
-;;;; what was tried, and why it ended, is the same file the gates read.
+;;;; One append-only file of Lisp forms, selffix/ledger.sexp: every row is one
+;;;; readable plist, read back with *READ-EVAL* off. A row is one outcome: a
+;;;; cycle's (finding, not-reproduced, failed), an item dropped, or the
+;;;; operator's stop and start. Nothing is rewritten, so the record of what was
+;;;; tried, and why it ended, is the same file the gates read.
 ;;;;
 ;;;; Taken from Ouroboros's evolution loop (supervisor/evolution_lifecycle.py,
 ;;;; razzant/ouroboros add0ce32): it pauses after three failed cycles in a row
@@ -13,8 +14,9 @@
 ;;;; without landing is capped (OBJECTIVE_REPEAT_CAP = 3); an owner stop is
 ;;;; stored, and nothing the loop runs can lift it.
 ;;;;
-;;;; Two sightings of one failure share a fingerprint: the backlog's own
-;;;; NORMALIZE-TEXT over the item's key, with its source.
+;;;; Two sightings of one failure share a fingerprint: a captured case's exact
+;;;; key, its (condition-type . function) printed with every symbol's package;
+;;;; a note's key, which is text, through the backlog's NORMALIZE-TEXT.
 ;;;;
 ;;;; The backlog ranks and counts; this file only filters: what was dropped
 ;;;; stays dropped, what already has a finding is not found again, and an item
@@ -31,40 +33,54 @@
 (defparameter +cycle-outcomes+ '("finding" "not-reproduced" "failed")
   "The outcomes a cycle that picked an item ends in.")
 
-(defun ledger-path () (selffix-path "ledger.jsonl"))
+(defun ledger-path () (selffix-path "ledger.sexp"))
+
+(defun readable (object)
+  "OBJECT printed so it reads back the same in any package."
+  (with-standard-io-syntax
+    (let ((*package* (find-package '#:keyword)))
+      (prin1-to-string object))))
 
 ;;; --- fingerprints -----------------------------------------------------------------
 
 (defun fingerprint (item)
-  "ITEM's stable id: 16 hex digits over its source and its normalized key."
-  (let ((digest (nlk:sha256-text (format nil "~a|~a" (getf item :source) (normalize-text (princ-to-string (getf item :key)) :cap 400)))))
+  "ITEM's stable id: 16 hex digits over its source and its key."
+  (let* ((key (getf item :key))
+         (digest (nlk:sha256-text (format nil "~a|~a" (getf item :source)
+                                          (if (stringp key) (normalize-text key :cap 400) (readable key))))))
     (subseq digest (1+ (position #\: digest)) (+ 17 (position #\: digest)))))
 
 ;;; --- rows -------------------------------------------------------------------------
 
-(defun record (outcome &key fp item detail by sha256 (at (get-universal-time)))
+(defun record (outcome &key fp item detail by commit (at (get-universal-time)))
   "Append one OUTCOME row; keys with no value are left out. Returns OUTCOME."
-  (let ((path (ledger-path)))
+  (let ((path (ledger-path))
+        (row (loop for (key value) on (list :at (iso at) :outcome outcome :fp fp
+                                              :source (and item (princ-to-string (getf item :source)))
+                                              :key (and item (nlk:one-line (princ-to-string (getf item :key)) :cap 300))
+                                              :detail (and detail (nlk:one-line (princ-to-string detail) :cap 300))
+                                              :commit commit :by by)
+                   by #'cddr when value append (list key value))))
     (ensure-directories-exist path)
-    (nlk:append-json-line
-     path
-     (let ((line (make-hash-table :test #'equal)))
-       (loop for (key value) on (list "at" (iso at) "outcome" outcome "fp" fp
-                                           "source" (and item (princ-to-string (getf item :source)))
-                                           "key" (and item (nlk:one-line (princ-to-string (getf item :key)) :cap 300))
-                                           "detail" (and detail (nlk:one-line (princ-to-string detail) :cap 300))
-                                           "sha256" sha256 "by" by)
-                  by #'cddr
-             when value do (setf (gethash key line) value))
-       line))
+    (with-open-file (out path :direction :output :if-exists :append :if-does-not-exist :create)
+      (write-line (readable row) out))
     outcome))
 
 (defun ledger-rows ()
-  "Every row, oldest first; a torn last line is skipped."
+  "Every row, oldest first; a torn or unreadable line is skipped."
   (let ((path (ledger-path)))
-    (and (probe-file path) (nlk:read-json-lines path))))
+    (and (probe-file path)
+         (with-open-file (in path)
+           (loop for line = (read-line in nil) while line
+                 for row = (ignore-errors
+                            (with-standard-io-syntax
+                              (let ((*read-eval* nil) (*package* (find-package '#:keyword)))
+                                (read-from-string line))))
+                 when (and (consp row) (evenp (length row))) collect row)))))
 
-(defun row (row key) (gethash key row))
+(defun row (row key)
+  "ROW's value under KEY, a string naming the keyword."
+  (getf row (intern (string-upcase key) '#:keyword)))
 
 ;;; --- the stop ---------------------------------------------------------------------
 

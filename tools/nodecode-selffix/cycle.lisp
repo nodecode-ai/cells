@@ -4,11 +4,13 @@
 ;;;;
 ;;;; A cycle: the stop, the breakers and the idle gate, all in Lisp and before
 ;;;; any work, so a cycle that holds costs nothing; then the lock, the first
-;;;; item the backlog ranks that the ledger still allows, its repro in a
-;;;; throwaway home, and the outcome. A repro that fails as the item says is
-;;;; a finding: the test is copied under selffix/findings/<fp>/, hashed, and
-;;;; the hash goes in the ledger, so a later fix is checked against the test
-;;;; as it was found, never against one the fixing session rewrote. Observe
+;;;; captured case the backlog ranks that the ledger still allows, and its
+;;;; repro: one Lisp form, asked sealed in a fresh process laid at the newest
+;;;; generation (runner.lisp). A repro that answers 1 there is a finding: one
+;;;; readable .lisp file under selffix/findings/, committed to that folder's
+;;;; own git, with the generation step where it turned from gone to standing.
+;;;; The commit is the lock: a later fix is checked against the repro as that
+;;;; commit holds it, never against one the fixing session rewrote. Observe
 ;;;; changes no code, and makes no model call of its own.
 ;;;;
 ;;;; It runs as a source on the cron wake: when the wake is due, the source
@@ -19,26 +21,27 @@
 
 (defparameter *backlog-limit* 20 "Items read from the backlog for one cycle.")
 
-(defparameter *output-cap* 4000 "Characters of repro output a finding keeps.")
-
 (defvar *backlog* 'backlog "The backlog reader; a test binds a stub.")
-(defvar *repro* 'repro "The repro; a test binds a stub.")
+(defvar *repro-form* 'repro-form
+  "(funcall *repro-form* ITEM) => the repro's form as text, answering 1 while
+the failure stands and 0 once gone, or NIL when the case is no one form
+(repro.lisp); a test binds a stub.")
+(defvar *repro-deftest* 'repro-deftest
+  "(funcall *repro-deftest* ITEM) => the deftest the owning cell gets
+upstream, as text, or NIL (repro.lisp); a test binds a stub.")
+(defvar *generations* 'generation-numbers "The sealed generations, oldest first; a test binds a stub.")
 (defvar *busy* 'busy-reason "The idle gate's reader; a test binds a stub.")
 
-(defun finding-dir (fp) (selffix-path (format nil "findings/~a/" fp)))
-(defun scratch-home (fp) (selffix-path (format nil "scratch/~a/" fp)))
+(defun findings-dir () (selffix-path "findings/"))
+(defun finding-file (fp) (merge-pathnames (format nil "~a.lisp" fp) (findings-dir)))
 
 (defun file-sha256 (path)
-  "PATH's SHA-256 as lowercase hex."
+  "PATH's SHA-256 as lowercase hex; the replayed repro (repro.lisp) still reads it."
   (let ((digest (with-open-file (in path :element-type '(unsigned-byte 8))
                   (let ((octets (make-array (file-length in) :element-type '(unsigned-byte 8))))
                     (read-sequence octets in)
                     (nlk:sha256-text octets)))))
     (subseq digest (1+ (position #\: digest)))))
-
-(defun bare-hex (hash)
-  (let ((text (string-downcase (princ-to-string (or hash "")))))
-    (subseq text (if (uiop:string-prefix-p "sha256:" text) 7 0))))
 
 (defun item-text (item)
   "What ITEM is called: its title, else its key."
@@ -48,38 +51,62 @@
   (format nil "~a (~(~a~), seen ~d time~:p): ~a" fp (getf item :source) (or (getf item :count) 1)
           (nlk:one-line (item-text item) :cap 120)))
 
-(defun write-finding (fp item result now)
-  "Copy RESULT's test under FP's folder, check its hash, write finding.md;
-answer (values FINDING-PATH TEST-COPY HASH)."
-  (let* ((dir (finding-dir fp))
-         (test (pathname (getf result :test)))
-         (copy (merge-pathnames (file-namestring test) dir)))
-    (ensure-directories-exist dir)
-    (uiop:copy-file test copy)
-    (let ((hash (file-sha256 copy)))
-      (unless (equal hash (bare-hex (getf result :sha256)))
-        (fail "the repro test changed between its run and its copy: ~a" (namestring test)))
-      (let ((finding (merge-pathnames "finding.md" dir))
-            (output (princ-to-string (or (getf result :output) ""))))
-        (with-open-file (out finding :direction :output :if-exists :supersede)
-          (format out "# selffix finding ~a~%~%" fp)
-          (format out "- source: ~a~%- key: ~a~%- seen: ~d time~:p~@[, last ~a~]~%- found: ~a~%"
-                  (getf item :source) (nlk:one-line (princ-to-string (getf item :key)) :cap 300)
-                  (or (getf item :count) 1) (getf item :last) (iso now))
-          (format out "- test: ~a, sha256 ~a~%" (file-namestring copy) hash)
-          (format out "~%The test fails today. It is locked: a fix counts only when this file,~%~
-                       unchanged (same sha256), passes.~%")
-          (let ((evidence (getf item :evidence)))
-            (when evidence
-              (format out "~%## Evidence~%~%~{- ~a~%~}" (mapcar (lambda (e) (nlk:one-line (princ-to-string e) :cap 300))
-                                                              (if (listp evidence) evidence (list evidence))))))
-          (format out "~%## What the test printed~%~%```~%~a~%```~%"
-                  (subseq output 0 (min *output-cap* (length output)))))
-        (values finding copy hash)))))
+(defun git (&rest arguments)
+  "Run git in the findings folder => its output; a nonzero exit signals."
+  (multiple-value-bind (out err status)
+      (nlk:run-bounded (list* "git" "-c" "user.name=selffix" "-c" "user.email=selffix@localhost"
+                              "-C" (native (findings-dir)) arguments)
+                       :seconds 30)
+    (unless (eql status 0)
+      (fail "git ~{~a~^ ~} exited ~a: ~a" arguments status (nlk:one-line (princ-to-string (or err "")) :cap 200)))
+    (string-trim '(#\Space #\Newline) (princ-to-string (or out "")))))
+
+(defun write-finding (fp item text located now)
+  "FP's finding as one readable file, committed => (values PATH COMMIT)."
+  (let ((path (finding-file fp))
+        (deftest (ignore-errors (funcall *repro-deftest* item))))
+    (ensure-directories-exist path)
+    (unless (probe-file (merge-pathnames ".git/" (findings-dir)))
+      (git "init" "-q"))
+    (with-open-file (out path :direction :output :if-exists :supersede)
+      (format out ";;;; selffix finding ~a: ~a~%" fp (nlk:one-line (item-text item) :cap 120))
+      (format out ";;;; The repro answers 1 while the failure stands. It is locked by this file's~%~
+                   ;;;; commit: a fix counts only when the repro as committed answers 0.~%~%")
+      (write-line (readable (list :finding fp
+                                  :source (getf item :source) :key (getf item :key)
+                                  :count (or (getf item :count) 1) :last (getf item :last)
+                                  :found (iso now) :located located :repro text))
+                  out)
+      (when deftest
+        (format out "~%;;; The test the cell that owns the function gets upstream:~%~a~%" deftest)))
+    (git "add" "--" (file-namestring path))
+    (git "commit" "-q" "-m" (format nil "finding ~a: ~a" fp (nlk:one-line (item-text item) :cap 72)) "--" (file-namestring path))
+    (values path (git "rev-parse" "HEAD"))))
+
+(defun locked-repro (fp commit)
+  "The repro text of FP's finding as COMMIT holds it, whatever the file says now."
+  (getf (with-standard-io-syntax
+          (let ((*read-eval* nil) (*package* (find-package '#:keyword)))
+            (read-from-string (git "show" (format nil "~a:~a.lisp" commit fp)))))
+        :repro))
+
+(defun reproduce (path)
+  "The finding at PATH, its repro as its last commit holds it, asked sealed at
+the newest generation => 1 while the failure stands, 0 once gone, -1 when it
+could not run."
+  (let* ((fp (pathname-name path))
+         (commit (git "log" "-1" "--format=%H" "--" (format nil "~a.lisp" fp)))
+         (numbers (funcall *generations*)))
+    (if (or (zerop (length commit)) (null numbers))
+        -1
+        (ecase (ask-at (locked-repro fp commit) (car (last numbers)))
+          (:stands 1)
+          (:gone 0)
+          (:unknown -1)))))
 
 (defun run-one (now)
   "With the lock held: one item through its repro => (STATUS DETAIL)."
-  (let ((items (handler-case (funcall *backlog* :limit *backlog-limit*)
+  (let ((items (handler-case (funcall *backlog* :limit *backlog-limit* :fixable t)
                  (error (condition) (record "failed" :detail (format nil "backlog: ~a" condition))
                    (return-from run-one (list :failed (format nil "the backlog could not be read: ~a" condition)))))))
     (multiple-value-bind (kept dropped) (eligible items (ledger-rows))
@@ -91,16 +118,27 @@ answer (values FINDING-PATH TEST-COPY HASH)."
           (let* ((item (first kept))
                  (fp (fingerprint item)))
             (handler-case
-                (let ((result (funcall *repro* item :home (scratch-home fp))))
-                  (cond ((getf result :fails)
-                         (multiple-value-bind (finding copy hash) (write-finding fp item result now)
-                           (declare (ignore copy))
-                           (record "finding" :fp fp :item item :detail (namestring finding) :sha256 hash :at now)
-                           (list :finding (finding-line fp item))))
+                (let ((text (funcall *repro-form* item))
+                      (numbers (funcall *generations*)))
+                  (cond ((null text)
+                         (record "not-reproduced" :fp fp :item item :at now :detail "the case is no one form")
+                         (list :not-reproduced (finding-line fp item)))
+                        ((null numbers)
+                         (record "failed" :fp fp :item item :at now :detail "this home has sealed no generation")
+                         (list :failed (format nil "~a: no generation to lay" fp)))
                         (t
-                         (record "not-reproduced" :fp fp :item item :at now
-                                                  :detail (nlk:one-line (princ-to-string (or (getf result :output) "")) :cap 200))
-                         (list :not-reproduced (finding-line fp item)))))
+                         (multiple-value-bind (verdict detail) (ask-at text (car (last numbers)))
+                           (case verdict
+                             (:stands
+                              (multiple-value-bind (path commit) (write-finding fp item text (locate text numbers) now)
+                                (record "finding" :fp fp :item item :detail (namestring path) :commit commit :at now)
+                                (list :finding (finding-line fp item))))
+                             (:gone
+                              (record "not-reproduced" :fp fp :item item :at now :detail "the repro answered 0")
+                              (list :not-reproduced (finding-line fp item)))
+                             (t
+                              (record "failed" :fp fp :item item :at now :detail detail)
+                              (list :failed (format nil "~a: ~a" fp detail))))))))
               (error (condition)
                 (record "failed" :fp fp :item item :at now :detail (princ-to-string condition))
                 (list :failed (format nil "~a: ~a" fp condition)))))))))

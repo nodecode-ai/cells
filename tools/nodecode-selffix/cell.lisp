@@ -37,13 +37,12 @@
         (format nil "~{~a~^~%~}"
                 (loop for r in found
                       for fp = (row r "fp")
-                      for dir = (finding-dir fp)
-                      for test = (find-if (lambda (p) (not (equal (file-namestring p) "finding.md")))
-                                          (uiop:directory-files dir))
+                      for commit = (row r "commit")
                       collect (format nil "~a ~a: ~a [~a]" (row r "at") fp (row r "key")
-                                      (cond ((null test) "test missing")
-                                            ((equal (file-sha256 test) (row r "sha256")) "test locked")
-                                            (t "test changed"))))))))
+                                      (cond ((not (probe-file (finding-file fp))) "repro missing")
+                                            ((ignore-errors (git "diff" "--quiet" commit "--" (format nil "~a.lisp" fp)) t)
+                                             (format nil "repro locked at ~a" (subseq commit 0 (min 7 (length commit)))))
+                                            (t "repro changed since its commit"))))))))
 
 (defun selffix (&optional (action :status))
   "The loop's verb: :STATUS, :FINDINGS, :NOW (one cycle, gates held), :OFF, :ON."

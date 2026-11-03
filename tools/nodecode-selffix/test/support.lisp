@@ -29,12 +29,21 @@
   (list :source source :key key :count count :last "2026-11-03T01:00:00Z"
         :evidence (list (format nil "seen in s-work: ~a" key))))
 
-(defun selffix-repro-stub (&key (fails t) (calls (list 0)) error)
-  "A repro that writes a failing test under HOME; CALLS' car counts calls."
-  (lambda (item &key home)
-    (incf (car calls))
-    (when error (error "~a" error))
-    (let ((path (merge-pathnames "repro-test.lisp" (ensure-directories-exist home))))
-      (with-open-file (out path :direction :output :if-exists :supersede)
-        (format out ";; repro for ~a~%(assert nil)~%" (getf item :key)))
-      (list :test path :sha256 (nodecode-selffix::file-sha256 path) :fails fails :output "assertion failed"))))
+(defmacro with-selffix-runner ((&key (answer 1) (calls '(list 0)) error (form "(+ 0 1)")
+                                     (generations ''(1 2 3)))
+                               &body body)
+  "BODY with the repro form, the generations, the laying and the sealed ask
+stubbed: every ask answers ANSWER (a number, or NIL for could not run), or
+signals ERROR; CALLS' car counts the asks."
+  (let ((counter (gensym "CALLS")))
+    `(let* ((,counter ,calls)
+            (nodecode-selffix::*repro-form* (lambda (item) (declare (ignore item)) ,form))
+            (nodecode-selffix::*repro-deftest* (lambda (item) (declare (ignore item)) "(deftest selffix-found () (is (= 0 1)))"))
+            (nodecode-selffix::*generations* (lambda () ,generations))
+            (nodecode-selffix::*lay* (lambda (number home) (declare (ignore number home))))
+            (nodecode-selffix::*ask* (lambda (text home)
+                                       (declare (ignore text home))
+                                       (incf (car ,counter))
+                                       ,@(and error `((error "~a" ,error)))
+                                       (values ,answer "stubbed"))))
+       ,@body)))
