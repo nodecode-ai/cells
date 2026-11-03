@@ -340,6 +340,8 @@ async function loadSessions() {
     state.listed = true;
     renderSessions();
     renderHead();
+    // A question from a session the list had not named yet names it now.
+    renderQuestions();
     if (!state.current) renderOpener();
   } catch (error) {
     if (error.status === 401 && !state.token) location.reload();
@@ -536,7 +538,9 @@ function command(type, fields) {
 
 function subscribe() {
   const subscriptions = state.current ? [{ session_id: state.current, rows: true }] : [];
-  send({ type: "client_command", command: { type: "set_session_subscriptions", subscriptions } });
+  // answers: this page draws the organism's questions and sends their answers
+  // (the guard's Allow once / Deny), so the gateway asks while it is open.
+  send({ type: "client_command", command: { type: "set_session_subscriptions", subscriptions, answers: true } });
 }
 
 function receive(message) {
@@ -591,6 +595,15 @@ function receive(message) {
       readLinkSoon();
       // A sign-in from a shell's /login ends in a notice; the meter is read again (cached there).
       loadAccount();
+      break;
+    case "organism.questions":
+      state.questions = payload.questions || [];
+      // The gateway's clock against this tab's, for the countdown.
+      state.questionSkew = typeof payload.now === "number" ? payload.now - Date.now() / 1000 : 0;
+      for (const id of state.answering) if (!state.questions.some((q) => q.question_id === id)) state.answering.delete(id);
+      // A question from a session this tab has not listed yet: read the list, to name it.
+      if (state.questions.some((q) => !state.sessionsById.has(q.session_id))) loadSessionsSoon();
+      renderQuestions();
       break;
     case "organism.activity": {
       const before = state.running;
@@ -1500,6 +1513,90 @@ function execTail(exec, lines) {
 // kept in a window of eight lines that scrolls, the newest last, so a burst
 // of output never moves the page under the reader.
 const band = $("band");
+
+// --- questions a turn waits on (the gateway's organism.questions) ---------
+// A card above the box for each: what is asked, the call it is about, the
+// time left and one button per choice. Every session's question shows,
+// whichever session the tab is on, named with a way to open it.
+const questionsEl = $("questions");
+state.questions = [];
+state.questionSkew = 0;
+state.answering = new Set();
+let questionTick = 0;
+
+function renderQuestions() {
+  const open = state.questions;
+  clearInterval(questionTick);
+  questionTick = 0;
+  questionsEl.hidden = !open.length;
+  const sig = `${open.map((q) => `${q.question_id}:${state.sessionsById.has(q.session_id)}`).join()}|${state.current}|${[...state.answering].join()}`;
+  if (questionsEl.dataset.sig !== sig) {
+    questionsEl.dataset.sig = sig;
+    questionsEl.replaceChildren(...open.map(drawQuestion));
+  }
+  if (!open.length) return;
+  tickQuestions();
+  questionTick = setInterval(tickQuestions, 1000);
+}
+
+function drawQuestion(q) {
+  const card = el("div", "question-card");
+  card.dataset.question = q.question_id;
+  card.setAttribute("role", "alertdialog");
+  card.setAttribute("aria-label", t("Waiting on you"));
+  const head = el("div", "question-head");
+  head.append(el("span", "question-mark", t("Waiting on you")));
+  if (q.session_id !== state.current) {
+    const entry = state.sessionsById.get(q.session_id);
+    const go = el("button", "word question-session", entry ? sessionName(entry) : t("another session"));
+    go.type = "button";
+    go.dataset.act = "open";
+    head.append(go);
+  }
+  head.append(el("span", "question-left"));
+  card.append(head, el("p", "question-title", q.title));
+  if (q.detail) card.append(el("pre", "question-detail", q.detail));
+  const actions = el("div", "actions");
+  const busy = state.answering.has(q.question_id);
+  (q.choices || []).forEach((choice, at) => {
+    const button = el("button", at === 0 ? "solid" : "quiet", choiceWord(choice));
+    button.type = "button";
+    button.dataset.act = "answer";
+    button.dataset.answer = choice;
+    button.disabled = busy;
+    actions.append(button);
+  });
+  card.append(actions);
+  return card;
+}
+
+// The guard's two choices in this tab's language; any other choice as sent.
+function choiceWord(choice) {
+  if (choice === "Allow once") return t("Allow once");
+  if (choice === "Deny") return t("Deny");
+  return choice;
+}
+
+function tickQuestions() {
+  const now = Date.now() / 1000 + state.questionSkew;
+  for (const card of questionsEl.children) {
+    const q = state.questions.find((each) => each.question_id === card.dataset.question);
+    const left = q ? Math.max(0, Math.ceil(q.expires_at - now)) : 0;
+    card.querySelector(".question-left").textContent = t("{n}s left", { n: left });
+  }
+}
+
+questionsEl.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-act]");
+  const card = button?.closest(".question-card");
+  const q = card && state.questions.find((each) => each.question_id === card.dataset.question);
+  if (!q) return;
+  if (button.dataset.act === "open") { select(q.session_id); return; }
+  state.answering.add(q.question_id);
+  const id = command("answer_question", { session_id: q.session_id, question_id: q.question_id, answer: button.dataset.answer });
+  state.sent.set(id, { answer: q.question_id });
+  renderQuestions();
+});
 let bandSig = null;
 
 function drawRunning(exec) {
@@ -1816,6 +1913,7 @@ async function putBackPictures(session, { row, number }) {
 function renderTranscript() {
   const v = state.current ? state.views.get(state.current) : null;
   renderBand();
+  renderQuestions();
   if (state.shown !== state.current) {
     rowsEl.replaceChildren();
     state.drawn.clear();
@@ -4251,6 +4349,14 @@ function commandResult(result) {
     if (result.status === "accepted") tookBack(sent.session, result.response || {});
     else if (result.status === "rejected") toast(result.code === "prompt_not_pending" ? t("It already ran") : result.message || result.code, { error: true });
     renderTranscript();
+    return;
+  }
+  if (sent?.answer) {
+    if (result.status === "rejected") {
+      state.answering.delete(sent.answer);
+      renderQuestions();
+      toast(result.message || result.code, { error: true });
+    }
     return;
   }
   if (sent?.interrupt) {
