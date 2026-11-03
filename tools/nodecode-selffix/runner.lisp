@@ -52,12 +52,23 @@
   "This organism's binary, or NIL in a developer image, which runs no trial."
   (first (nlk::organism-command "trial")))
 
-(defun sealed-command (binary home)
-  "The argv that runs BINARY's trial verb sealed, with HOME its whole world."
+(defun hidden-roots ()
+  "The folders a repro must not see wherever they live: this organism's home
+and the user's, beside the fixed /home and /root."
+  (remove-duplicates (remove nil (list (ignore-errors (native (nlk:home "")))
+                                       (let ((home (uiop:getenv "HOME")))
+                                         (and home (plusp (length home)) (native home)))))
+                     :test #'equal))
+
+(defun sealed-command (binary home &key (hide (hidden-roots)))
+  "The argv that runs BINARY's trial verb sealed, with HOME its whole world:
+every folder in HIDE, /home, /root, /run and the temporary folders under an
+empty tmpfs, then the binary's own folder read-only and HOME writable."
   (let ((root (native home))
         (own (native (uiop:pathname-directory-pathname binary))))
     `("bwrap" "--ro-bind" "/" "/"
               "--tmpfs" "/home" "--tmpfs" "/root" "--tmpfs" "/run" "--tmpfs" "/tmp" "--tmpfs" "/var/tmp"
+              ,@(loop for dir in hide append (list "--tmpfs" dir))
               "--ro-bind" ,own ,own "--bind" ,root ,root
               "--dev" "/dev" "--proc" "/proc"
               "--unshare-all" "--die-with-parent" "--new-session" "--clearenv"
@@ -79,6 +90,8 @@
         when (realp value) return value))
 
 (defun ask-sealed (text home)
+  ;; HOME lies under this organism's home (selffix/scratch/), which the seal
+  ;; hides: it is bound back after the tmpfs, alone.
   "TEXT, one form, asked in a sealed fresh process under HOME => (values SCORE DETAIL)."
   (let ((binary (organism-binary)))
     (cond ((null binary) (values nil "no organism binary: a developer image runs no trial"))
@@ -97,7 +110,20 @@
                                                (nlk:one-line (princ-to-string err) :cap 200))))))))))))
 
 (defun lay-generation (number home)
-  (nlk:build-generation number (merge-pathnames "cells/" home)))
+  "HOME's cells/ as generation NUMBER had it, or, when NUMBER is NIL (a home
+that has sealed no generation yet), this home's folder as it stands."
+  (let ((target (merge-pathnames "cells/" home)))
+    (if number
+        (nlk:build-generation number target)
+        (let ((root (or nlk::*cells-directory* (nlk:home "cells/"))))
+          (if (and root (probe-file root))
+              (multiple-value-bind (out err status)
+                  (nlk:run-bounded (list "cp" "-R" (native root) (native target)) :seconds 120)
+                (declare (ignore out))
+                (unless (eql status 0)
+                  (fail "the folder could not be copied: ~a" (nlk:one-line (princ-to-string (or err "")) :cap 200))))
+              (ensure-directories-exist target))))
+    target))
 
 (defun generation-numbers ()
   "The generations this home sealed, oldest first."

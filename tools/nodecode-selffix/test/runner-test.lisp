@@ -3,7 +3,7 @@
 (in-package #:nodecode.test)
 
 (deftest selffix-cell-runner-sealed-command ()
-  (let* ((argv (nodecode-selffix::sealed-command #p"/opt/nc/1/nodecode" #p"/x/selffix/scratch/a/"))
+  (let* ((argv (nodecode-selffix::sealed-command #p"/opt/nc/1/nodecode" #p"/x/selffix/scratch/a/" :hide '("/x" "/data/u")))
          (set (loop for (word name) on argv when (equal word "--setenv") collect name)))
     (is (equal "bwrap" (first argv)))
     (is (member "--unshare-all" argv :test #'equal) "every namespace unshared, the network with them")
@@ -11,6 +11,8 @@
     (is (equal '("PATH" "LANG" "HOME" "NODECODE_HOME" "XDG_CACHE_HOME" "XDG_CONFIG_HOME" "XDG_DATA_HOME") set))
     (is (search '("--bind" "/x/selffix/scratch/a" "/x/selffix/scratch/a") argv :test #'equal) "only the throwaway home is writable")
     (is (search '("--tmpfs" "/home") argv :test #'equal) "the real home is hidden")
+    (is (< (search '("--tmpfs" "/x") argv :test #'equal) (search '("--bind" "/x/selffix/scratch/a") argv :test #'equal)) "the organism's home is hidden, then the throwaway home under it bound back")
+    (is (search '("--tmpfs" "/data/u") argv :test #'equal) "a home outside /home is hidden too")
     (is (equal '("/opt/nc/1/nodecode" "trial") (last argv 2)))))
 
 (deftest selffix-cell-runner-score-line ()

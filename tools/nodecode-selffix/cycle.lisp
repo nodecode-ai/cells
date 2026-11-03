@@ -92,7 +92,7 @@ could not run."
   (let* ((fp (pathname-name path))
          (commit (git "log" "-1" "--format=%H" "--" (format nil "~a.lisp" fp)))
          (numbers (funcall *generations*)))
-    (if (or (zerop (length commit)) (null numbers))
+    (if (zerop (length commit))
         -1
         (ecase (ask-at (locked-repro fp commit) (car (last numbers)))
           (:stands 1)
@@ -118,14 +118,11 @@ could not run."
                   (cond ((null text)
                          (record "not-reproduced" :fp fp :item item :at now :detail "the case is no one form")
                          (list :not-reproduced (finding-line fp item)))
-                        ((null numbers)
-                         (record "failed" :fp fp :item item :at now :detail "this home has sealed no generation")
-                         (list :failed (format nil "~a: no generation to lay" fp)))
                         (t
                          (multiple-value-bind (verdict detail) (ask-at text (car (last numbers)))
                            (case verdict
                              (:stands
-                              (multiple-value-bind (path commit) (write-finding fp item text (locate text numbers) now)
+                              (multiple-value-bind (path commit) (write-finding fp item text (and numbers (locate text numbers)) now)
                                 (record "finding" :fp fp :item item :detail (namestring path) :commit commit :at now)
                                 (list :finding (finding-line fp item))))
                              ((:gone :undecided)
