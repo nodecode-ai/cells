@@ -1,9 +1,11 @@
 /* app.css -- the gateway's own page, "Slate Instrument": black page, one grey
-   slab, hairline seams, three faces, and one chroma -- the accent -- spent on
-   what is live. Every color is a token of :root; dark is the look, and light
-   (theme.js sets data-theme on the root) is the same instrument on paper: the
-   column a step below the slab, sheets above it, the same hairlines and the
-   one accent, deepened so it still reads as text on white.
+   slab, hairline seams, three faces, and no chroma: white (black on paper) is
+   what is lit, and a state is told by shape -- a ring runs, a haloed dot waits
+   on you, a grey dot is done. Only an error keeps a red (the operator,
+   2026-11-02: "black, grey, white; not Halloween"). Every color is a token
+   of :root; dark is the look, and light (theme.js sets data-theme on the root)
+   is the same instrument on paper: the column a step below the slab, sheets
+   above it, the same hairlines, and black where dark has white.
 
    No reading rides a box's frame line, a focused field keeps its border, and
    nothing under the message box explains what Enter does. */
@@ -36,38 +38,38 @@
   --faint: #575757;
   --dim: #3a3a3a;
   --thought-strong: #4D6174;
-  --accent: #fa8b3e;
-  --danger-lit: #ff9159;
+  --accent: #ffffff;
+  --danger-lit: #ff6b5e;
   /* The accent as a mark rather than a word: a lamp, a switch's line, a hatch.
-     Dark needs no second tone; light takes a brighter one than its text. */
-  --accent-fill: #fa8b3e;
+     White on dark, black on paper: the lit tone, never a hue. */
+  --accent-fill: #ffffff;
   /* Done, and what answers -- a session's still ball, a hop that answers, a
-     link that is back: the one green. */
-  --live: #5fd08a;
+     link that is back: a quiet grey dot. */
+  --live: #8a8a8a;
   /* A turn running now: every lamp that says so and a session's pulsing ball,
-     the one red of running (the operator, 2026-10-21: green done, orange
-     waiting on you, red running). Deeper than --fail, which is not running. */
-  --run: #f2554b;
-  /* An answer's two hues, the TUI's Duotone: its ANSWER-TONES (theme.lisp)
-     solved on this canvas from the accent. Warm is what to act on -- a bold
-     run on its chip, a list's marks; cool is the structure -- a heading, the
-     band under # and ## and a bold lead, code in two blues, a code block's
-     slab, a quote's bar. */
-  --duo-strong: #fdae76;
-  --duo-chip: #4b2d19;
-  --duo-glint: rgba(255, 222, 196, 0.62);
-  --duo-mark: #cf7231;
-  --duo-heading: #b3d9f4;
-  --duo-band: #1b3546;
-  --duo-title-band: #1f455e;
-  --duo-subheading: #8dc1e5;
-  --duo-code: #72aed8;
-  --duo-path: #8dc1e5;
-  --duo-quiet: #5782a1;
-  --duo-bar: #6096bb;
-  --duo-line: #425b6c;
-  --duo-slab: #181e21;
-  --duo-link: #6eaaff;
+     drawn as a ring in this tone (the operator, 2026-11-02, replacing
+     2026-10-21's green done / orange waiting / red running: no hues; a ring
+     runs, a haloed white dot waits on you, a grey dot is done). */
+  --run: #ededed;
+  /* An answer's two voices, the TUI's Duotone roles kept in greys: what to act
+     on -- a bold run on its chip, a list's marks -- is the brightest; the
+     structure -- a heading, the band under # and ## and a bold lead, code, a
+     code block's slab, a quote's bar -- steps down the grey ramp. */
+  --duo-strong: #ffffff;
+  --duo-chip: #262626;
+  --duo-glint: rgba(255, 255, 255, 0.5);
+  --duo-mark: #bdbdbd;
+  --duo-heading: #f2f2f2;
+  --duo-band: #1c1c1c;
+  --duo-title-band: #242424;
+  --duo-subheading: #d9d9d9;
+  --duo-code: #d4d4d4;
+  --duo-path: #d9d9d9;
+  --duo-quiet: #8f8f8f;
+  --duo-bar: #6b6b6b;
+  --duo-line: #3a3a3a;
+  --duo-slab: #141414;
+  --duo-link: #ffffff;
 
   /* The two planes re-cut the ramp for what stands on them: the column a step
      below the slab, the slab (and the gate, which stands in for it) a step up. */
@@ -93,17 +95,17 @@
   --bar-quiet: #6b6b6b;
   --hatch: #5a5a5a;
   --hatch-gap: #1f1f1f;
-  --hatch-hot-gap: #3b2213;
+  --hatch-hot-gap: #2a2a2a;
   /* A code a camera reads (the link's QR code): black on white in either theme. */
   --paper: #ffffff;
   --ink: #000000;
   /* A diff's lines: what it adds, what it removes, each on a faint wash of its own. */
-  --diff-add: #8fd19e;
-  --diff-add-fill: rgba(143, 209, 158, 0.08);
-  --diff-del: #f2877e;
+  --diff-add: #ffffff;
+  --diff-add-fill: rgba(255, 255, 255, 0.08);
+  --diff-del: #8a8a8a;
   /* Failed: the one red of the kit (a dot, a banner, a danger button). */
   --fail: #f2877e;
-  --diff-del-fill: rgba(242, 135, 126, 0.08);
+  --diff-del-fill: rgba(255, 255, 255, 0.025);
 
   --column: 264px;
   --lane: 880px;
@@ -151,26 +153,26 @@
   --faint: #8e8e8e;
   --dim: #c4c4c4;
   --thought-strong: #4D6174;
-  --accent: #9e4400;
+  --accent: #0a0a0a;
   --danger-lit: #ad3419;
-  --accent-fill: #dd6408;
-  --live: #17864a;
-  --run: #d93025;
-  --duo-strong: #692e02;
-  --duo-chip: #e6cab5;
+  --accent-fill: #0a0a0a;
+  --live: #8e8e8e;
+  --run: #1f1f1f;
+  --duo-strong: #000000;
+  --duo-chip: #e2e2e2;
   --duo-glint: rgba(255, 255, 255, 0.85);
-  --duo-mark: #995724;
-  --duo-heading: #0c3352;
-  --duo-band: #bfd6e7;
-  --duo-title-band: #9ac1dd;
-  --duo-subheading: #0b4775;
-  --duo-code: #265478;
-  --duo-path: #0b4775;
-  --duo-quiet: #507895;
-  --duo-bar: #2c6a98;
-  --duo-line: #86a0b5;
-  --duo-slab: #eef0f3;
-  --duo-link: #2563eb;
+  --duo-mark: #555555;
+  --duo-heading: #0a0a0a;
+  --duo-band: #e6e6e6;
+  --duo-title-band: #d6d6d6;
+  --duo-subheading: #262626;
+  --duo-code: #333333;
+  --duo-path: #262626;
+  --duo-quiet: #6b6b6b;
+  --duo-bar: #8e8e8e;
+  --duo-line: #c4c4c4;
+  --duo-slab: #f2f2f2;
+  --duo-link: #000000;
 
   --column-ground: #f3f3f3;
   --column-seam: #e0e0e0;
@@ -190,14 +192,14 @@
   --bar-quiet: #a6a6a6;
   --hatch: #b3b3b3;
   --hatch-gap: #ececec;
-  --hatch-hot-gap: #fbe0cc;
+  --hatch-hot-gap: #e6e6e6;
   --paper: #ffffff;
   --ink: #000000;
-  --diff-add: #187332;
-  --diff-add-fill: rgba(26, 127, 55, 0.08);
-  --diff-del: #c0262d;
+  --diff-add: #0a0a0a;
+  --diff-add-fill: rgba(0, 0, 0, 0.06);
+  --diff-del: #626262;
   --fail: #c0262d;
-  --diff-del-fill: rgba(192, 38, 45, 0.07);
+  --diff-del-fill: rgba(0, 0, 0, 0.02);
 
   color-scheme: light;
 }
@@ -239,7 +241,7 @@ code, pre, kbd { font-family: var(--mono); }
 /* Colour marks exceptions only (the standard's rule 5; observe.js dot): running
    red, act here the accent, failed the danger red, off a hollow ring; a healthy
    row has none, and what answers is green. */
-.led.live { background: var(--run); }
+.led.live { background: transparent; box-shadow: inset 0 0 0 1px var(--run); }
 .led.ok { background: var(--live); }
 .led.act { background: var(--accent-fill); }
 .led.fail { background: var(--fail); }
@@ -2281,12 +2283,12 @@ button.p-row:active { background: var(--field-lit); }
    orange in a halo while its answer waits on you, green and still once done --
    three shapes as well as three hues. */
 .ball { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex: none; align-self: center; }
-.ball.is-run { background: var(--run); animation: ball-beat 1.6s ease-in-out infinite; }
-.ball.is-ask { background: var(--accent-fill); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-fill) 28%, transparent); }
+.ball.is-run { background: transparent; border: 1.5px solid var(--run); box-sizing: border-box; animation: ball-beat 1.6s ease-in-out infinite; }
+.ball.is-ask { background: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 .ball.is-done { background: var(--live); }
 @keyframes ball-beat {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, var(--run) 30%, transparent); }
-  50% { opacity: 0.55; box-shadow: 0 0 0 4px color-mix(in srgb, var(--run) 30%, transparent); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--run) 30%, transparent); }
+  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--run) 30%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) { .ball.is-run { animation: none; } }
 /* What waits on you stands out of the list: a wash of the accent, its name
@@ -2933,4 +2935,31 @@ button.p-row:active { background: var(--field-lit); }
   .slab:has(> .ledger > .opener:not([hidden])) .title-block { visibility: hidden; }
   /* The list holds the Dashboard's sections, so its bar holds only the range. */
   .dashboard .dash-jumps { display: none; }
+}
+
+/* --- the frame, slick (the operator, 2026-11-02: "doesn't look as professional
+   and slick as others, like Orca"). Desktop only -- the phone's rules are its
+   own. One face for the frame: the sans, mono kept for code, paths and keys;
+   section heads in sentence case at a step under the rows; denser rows; the
+   session on screen a soft slab, not a bar; counts and times in the sans's
+   tabular figures. ---------------------------------------------------------- */
+@media (min-width: 721px) {
+  .sessions .ses-band {
+    font: 500 var(--fs-micro)/1.6 var(--sans); letter-spacing: 0; text-transform: none;
+    margin: 16px 0 4px; padding-left: 10px;
+  }
+  .sessions .ses-band:first-child { margin-top: 2px; }
+  .sessions .ses-band:not(:first-child) { margin-top: 12px; padding-top: 12px; }
+  .ses-band .n { font: 500 var(--fs-micro) var(--sans); color: var(--tertiary); font-variant-numeric: tabular-nums; }
+  .ses-band .n::before { content: ""; }
+  .sessions .row {
+    font-size: var(--fs-detail); line-height: 1.4; padding: 6px 8px 6px 10px; gap: 9px;
+    border-radius: var(--r-control); transition: color 130ms, background 130ms;
+  }
+  .sessions .row:hover { background: color-mix(in srgb, var(--primary) 4%, transparent); }
+  .sessions .row[aria-current="page"] { background: var(--selected); color: var(--primary); }
+  .sessions .row[aria-current="page"]::before { display: none; }
+  .reading, .chips .n { font-family: var(--sans); font-size: var(--fs-micro); font-variant-numeric: tabular-nums; }
+  .badge { font-family: var(--sans); }
+  .composer .folder, .composer .chip, .chip .tone { font-family: var(--sans); font-size: var(--fs-detail); }
 }

@@ -1311,8 +1311,9 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (search "kind ? el(\"i\", `led ${kind}`) : document.createTextNode(\"\")" (web-js-function observe "dot")) "a healthy row carries none")
     (dolist (file '("control.js" "index.js" "mcp.js" "profiles.js" "access.js"))
       (is (not (search "el(\"i\", `led${" (web-page-text file))) (format nil "~a marks rows through dot" file)))
-    (is (equal "var(--run)" (funcall value ".led.live" "background")) "running is red")
-    (is (equal "var(--live)" (funcall value ".led.ok" "background")) "what answers is green")
+    (is (equal "transparent" (funcall value ".led.live" "background")) "running is a ring")
+    (is (search "var(--run)" (funcall value ".led.live" "box-shadow")) "drawn in the running tone")
+    (is (equal "var(--live)" (funcall value ".led.ok" "background")) "what answers is the quiet grey")
     (is (equal "var(--accent-fill)" (funcall value ".led.act" "background")) "act here is the accent")
     (is (equal "var(--fail)" (funcall value ".led.fail" "background")) "failed is red")
     (is (equal "transparent" (funcall value ".led.off" "background")) "off is a hollow ring")
@@ -1343,7 +1344,10 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (equal "var(--live)" (web-css-value css ".linkbar.back .led" "background")) "a link that is back is green")))
 
 ;; Every session wears a ball (the operator, 2026-10-21: "green, orange or red
-;; ... like the kanban board", the artifact's B): red and pulsing while a turn
+;; ... like the kanban board", the artifact's B; since 2026-11-02 no hues --
+;; "black, grey, white; not Halloween" -- so state is shape: a ring, pulsing,
+;; while a turn runs, a white dot in a halo while it waits on you, a grey dot
+;; once done). Before that: red and pulsing while a turn
 ;; runs in it or under it, orange in a halo while its answer waits on you --
 ;; the gateway's `waits', marked by the turn or a newest turn that failed --
 ;; green and still once done. The list reads as the board does: Needs you,
@@ -1362,11 +1366,14 @@ corner or letter-spacing instead of naming the kit's scale."
     (is (search "el(\"i\", `ball is-${kind}`)" (web-js-function app "ball")) "one ball, its state its class")
     (is (search "else if (now === \"ask\") meta.append(el(\"span\", \"ses-asks\"" render) "a waiting row says on what")
     (is (search "waits?.why === \"failed\"" app) "or that its last turn failed")
-    (is (equal "var(--run)" (funcall value ".ball.is-run" "background")) "running is the red")
+    (is (equal "transparent" (funcall value ".ball.is-run" "background")) "running is a ring")
+    (is (equal "1.5px solid var(--run)" (funcall value ".ball.is-run" "border")) "a solid ring in the running tone")
+    (let* ((raw (web-page-text "app.css")) (at (search "@keyframes ball-beat" raw)) (end (and at (search (format nil "~%}") raw :start2 at))))
+      (is (and at end (not (search "opacity" raw :start2 at :end2 end))) "its halo pulses, the ring never fades"))
     (is (search "ball-beat" (funcall value ".ball.is-run" "animation")) "and pulses")
-    (is (equal "var(--accent-fill)" (funcall value ".ball.is-ask" "background")) "waiting on you is the accent")
+    (is (equal "var(--primary)" (funcall value ".ball.is-ask" "background")) "waiting on you is the lit dot")
     (is (search "0 0 0 3px" (funcall value ".ball.is-ask" "box-shadow")) "in a halo")
-    (is (equal "var(--live)" (funcall value ".ball.is-done" "background")) "done is the green")
+    (is (equal "var(--live)" (funcall value ".ball.is-done" "background")) "done is the grey")
     (is (equal "-1" (funcall value ".sessions .row > .ball" "order")) "the ball leads its row")
     (is (equal "1px solid var(--seam-lit)" (funcall value ".sessions .ses-band:not(:first-child)" "border-top")) "a band below another stands apart under its rule")
     (is (not (search "li.append(ball(key))" render)) "a band head wears no ball: the balls are the rows'")
