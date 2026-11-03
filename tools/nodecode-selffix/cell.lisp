@@ -82,6 +82,8 @@
   (:command "selffix" 'selffix-slash
             :description "Idle self-fixes: status, findings, one cycle now, on, off"
             :argument-hint "[status|findings|now|on|off]")
+  (:hook 'nle::agent-loop #'note-frame)
+  (:hook 'nlk:fail-turn #'capture-failure)
   (:start (lambda ()
             (pushnew 'wake-source nodecode-cron::*wake-sources*)
             (nle:on-stop (lambda ()

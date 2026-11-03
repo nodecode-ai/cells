@@ -1,139 +1,149 @@
-;;;; repro.lisp --- prove an item: a test that fails today.
+;;;; repro.lisp --- a case becomes one Lisp form that says whether its fault stands.
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
-;;;; (REPRO ITEM &key HOME) answers (:TEST PATH :SHA256 HEX :FAILS BOOL
-;;;; :OUTPUT STRING). For a failed turn the test is one self-contained shell
-;;;; file, written under HOME: it replays the recorded turn (the input, then
-;;;; the model's recorded answers in order, from a loopback provider) in a
-;;;; throwaway home inside a bwrap sandbox -- read-only filesystem, /home and
-;;;; /tmp hidden, no environment, no network -- and exits 1 when the turn
-;;;; fails again with the recorded condition type and normalized detail, 0
-;;;; when it does not, 2 when it could not run. The file carries everything
-;;;; it needs (replay.py and the recorded turn), so the hash the ledger keeps
-;;;; covers the whole test, and a fix is checked against it unchanged.
+;;;; REPRO-FORM turns a case (capture.lisp) into the text of one form the
+;;;; runner asks in a sealed fresh process (runner.lisp). It answers 1 while
+;;;; the fault stands, 0 once it is gone, and 2 when that process cannot judge
+;;;; it - the function's package is not there, the generic function is not
+;;;; one - which is never a pass and never a finding. Symbols ride the text as
+;;;; package and name strings, found with FIND-SYMBOL, so a form never fails
+;;;; to read where a cell is missing.
 ;;;;
-;;;; Only turns replay. An item from another source, or a turn the store no
-;;;; longer holds, answers :FAILS NIL with the reason, never a test.
+;;;; Most faults need no call at all, and their form calls nothing:
+;;;;   - a generic function with no method: does it have a primary method for
+;;;;     the arguments' classes now (COMPUTE-APPLICABLE-METHODS-USING-CLASSES)?
+;;;;   - a function that is not defined: is it FBOUNDP now?
+;;;;   - a variable that is not bound: is it BOUNDP now?
+;;;; Any other fault is a :CALL repro, the recorded call made again, and only
+;;;; when its arguments read back whole; without them it has no repro.
+;;;;
+;;;; REPRO-DEFTEST is the same check as a DEFTEST for the cell that owns the
+;;;; function (OWNING-CELL, from where the function was defined): the test an
+;;;; upstream fix lands with, in that cell's own test suite and CI.
 
 (in-package #:nodecode-selffix)
 
-(defparameter *repro-seconds* 900
-  "The most a test may run, boot and turn included; past it the test is killed.")
+(defun case-of (item)
+  "The case behind ITEM: a backlog item's :CASE or :FILE, else ITEM itself."
+  (or (getf item :case)
+      (and (getf item :file) (read-case (getf item :file)))
+      item))
 
-(defvar *run-test* 'run-test
-  "Runs a test file => (values EXIT-CODE OUTPUT); a test binds a stub.")
+(defun name-parts (fname)
+  "FNAME, a symbol or (SETF symbol), as (SETF-P PACKAGE NAME) strings."
+  (let ((symbol (if (consp fname) (second fname) fname)))
+    (list (consp fname) (package-name (symbol-package symbol)) (symbol-name symbol))))
 
-(defun cell-file (name)
-  (asdf:system-relative-pathname "nodecode-selffix" name))
+(defun found-symbol-form (fname)
+  "Text of a form answering FNAME's symbol in the asking process, or NIL when its package or name is not there."
+  (destructuring-bind (setf-p package name) (name-parts fname)
+    (declare (ignore setf-p))
+    (format nil "(and (find-package ~s) (find-symbol ~s ~s))" package name package)))
 
-(defun payload (row)
-  (ignore-errors (nlk:decode-json (first row))))
+(defun fname-form (fname symbol-var)
+  "Text naming the function FNAME stands for, with its symbol in SYMBOL-VAR."
+  (if (consp fname) (format nil "(list 'setf ~a)" symbol-var) symbol-var))
 
-(defun turn-facts (session turn kind)
-  "The payloads of TURN's facts of KIND, oldest first."
-  (remove nil (mapcar #'payload (nlk:events :kind kind :session-id session :turn-id turn
-                                            :as :rows :columns '("payload")))))
+(defun class-forms (classes)
+  "Text of a list form finding each class of CLASSES, NIL for one not there."
+  (format nil "(list ~{~a~^ ~})"
+          (mapcar (lambda (class)
+                    (format nil "(let ((s ~a)) (and s (find-class s nil)))" (found-symbol-form class)))
+                  classes)))
 
-(defun json-text (object &rest path)
-  (ignore-errors (apply #'nlk:json-value object :string path)))
+(defun args-text (case)
+  "The case's arguments as readable text, or NIL when they did not read back."
+  (let ((args (getf case :args)))
+    (and (listp args) (readable-text args))))
 
-(defun replay-message (fact)
-  "The model's answer a recorded assistant message carries, without its reasoning."
-  (let ((message (ignore-errors (nlk:json-value fact :object "message"))))
-    (when message
-      (let ((calls (ignore-errors (nlk:json-value message :array "tool_calls"))))
-        (nlk:json-object "role" "assistant"
-                         "content" (or (json-text message "content") "")
-                         "tool_calls" (or calls #()))))))
+(defun repro-kind (case)
+  "How CASE is reproduced: :METHOD, :FBOUND, :BOUND, :CALL, or NIL for not at all."
+  (let ((type (getf case :type)) (fn (getf case :function)))
+    (cond ((null fn) nil)
+          ((and (subtypep type 'sb-pcl::no-applicable-method-error) (getf case :classes)) :method)
+          ((subtypep type 'undefined-function) :fbound)
+          ((and (subtypep type 'unbound-variable) (getf case :name)) :bound)
+          ((args-text case) :call))))
 
-(defun turn-replay (session turn)
-  "What replaying TURN needs => (:INPUT :MESSAGES :TYPE :DETAIL), or NIL when
-the store no longer holds its input or its failure."
-  (let ((started (first (turn-facts session turn "turn.started")))
-        (failed (first (turn-facts session turn "turn.failed"))))
-    (when (and started failed (json-text started "input"))
-      (list :input (json-text started "input")
-            :messages (remove nil (mapcar #'replay-message
-                                          (turn-facts session turn "turn.assistant_message_completed")))
-            :type (or (json-text failed "condition-type") "ERROR")
-            :detail (or (json-text failed "detail") "")))))
+(defun repro-form (case)
+  "The text of the form that says whether CASE's fault stands (1), is gone (0)
+or cannot be judged (2), and its kind: (values TEXT KIND), KIND :CHECK for a
+form that calls nothing, :CALL for one that makes the recorded call again.
+NIL when CASE has no repro."
+  (let* ((fn (getf case :function))
+         (kind (repro-kind case)))
+    (case kind
+      (:method
+       (values (format nil "(let* ((s ~a) (gf (and s (fboundp ~a) (fdefinition ~a))) (classes ~a))~%  ~
+                              (cond ((not (typep gf 'generic-function)) 2)~%        ~
+                                    ((some #'null classes) 2)~%        ~
+                                    ((some (lambda (m) (null (method-qualifiers m)))~%               ~
+                                           (sb-mop:compute-applicable-methods-using-classes gf classes)) 0)~%        ~
+                                    (t 1)))"
+                       (found-symbol-form fn) (fname-form fn "s") (fname-form fn "s")
+                       (class-forms (getf case :classes)))
+               :check))
+      (:fbound
+       (values (format nil "(let ((s ~a)) (cond ((not (find-package ~s)) 2) ((and s (fboundp ~a)) 0) (t 1)))"
+                       (found-symbol-form fn) (second (name-parts fn)) (fname-form fn "s"))
+               :check))
+      (:bound
+       (let ((name (getf case :name)))
+         (values (format nil "(let ((s ~a)) (cond ((not (find-package ~s)) 2) ((and s (boundp s)) 0) (t 1)))"
+                         (found-symbol-form name) (second (name-parts name)))
+                 :check)))
+      (:call
+       (destructuring-bind (setf-p tpackage tname) (name-parts (getf case :type))
+         (declare (ignore setf-p))
+         (values (format nil "(let ((s ~a) (type (and (find-package ~s) (find-symbol ~s ~s))))~%  ~
+                                (if (not (and s type (fboundp ~a))) 2~%      ~
+                                    (handler-case (progn (apply (fdefinition ~a) (let ((*read-eval* nil)) (read-from-string ~s))) 0)~%        ~
+                                      (error (c) (if (typep c type) 1 2)))))"
+                         (found-symbol-form fn) tpackage tname tpackage (fname-form fn "s") (fname-form fn "s")
+                         (args-text case))
+                 :call))))))
 
-(defun replayable-evidence (item)
-  "ITEM's newest occurrence that names a turn the store can replay => (values
-OCCURRENCE REPLAY), or NIL."
-  (dolist (occurrence (getf item :evidence))
-    (when (and (listp occurrence) (getf occurrence :session) (getf occurrence :turn))
-      (nlk:when-let (replay (turn-replay (getf occurrence :session) (getf occurrence :turn)))
-        (return (values occurrence replay))))))
+;;; --- the deftest an upstream fix lands with -----------------------------------
 
-(defun base64-lines (text)
-  (let ((encoded (cl-base64:usb8-array-to-base64-string
-                  (sb-ext:string-to-octets text :external-format :utf-8))))
-    (with-output-to-string (out)
-      (loop for start from 0 below (length encoded) by 76
-            do (write-line (subseq encoded start (min (length encoded) (+ start 76))) out)))))
+(defun source-file (fname)
+  "Where FNAME was defined, a pathname, or NIL."
+  (let ((source (or (first (ignore-errors (sb-introspect:find-definition-sources-by-name fname :generic-function)))
+                    (first (ignore-errors (sb-introspect:find-definition-sources-by-name fname :function))))))
+    (and source (sb-introspect:definition-source-pathname source))))
 
-(defun shell-quote (text)
-  (format nil "'~a'" (cl-ppcre:regex-replace-all "'" text "'\\\\''")))
+(defun owning-cell (fname)
+  "The cell that owns FNAME: (values SYSTEM FOLDER), SYSTEM the name of the
+.asd nearest above its source file (\"nodecode\" for the core), FOLDER that
+file's folder; NIL when the source is not known."
+  (let ((file (source-file fname)))
+    (when file
+      (loop for dir = (uiop:pathname-directory-pathname file) then (uiop:pathname-parent-directory-pathname dir)
+            for asd = (first (directory (merge-pathnames "*.asd" dir)))
+            repeat 12
+            when asd return (values (pathname-name asd) dir)
+            until (equal dir (uiop:pathname-parent-directory-pathname dir))))))
 
-(defun comment-lines (text)
-  (format nil "~{# ~a~^~%~}" (uiop:split-string (nlk:one-line text :cap 400) :separator '(#\Newline))))
+(defun lisp-name (symbol)
+  "SYMBOL as source text with its package."
+  (with-case-syntax (prin1-to-string symbol)))
 
-(defun fill-template (template &rest pairs)
-  (loop for (key value) on pairs by #'cddr
-        do (setf template (cl-ppcre:regex-replace-all (cl-ppcre:quote-meta-chars key) template
-                                                      (lambda (&rest _) (declare (ignore _)) value))))
-  template)
-
-(defun write-test (path item occurrence replay)
-  "Write the self-contained test for ITEM's REPLAY at PATH."
-  (let ((json (nlk:encode-json-object
-               (nlk:json-object "session" (getf occurrence :session) "turn" (getf occurrence :turn)
-                                "input" (getf replay :input) "messages" (coerce (getf replay :messages) 'vector)
-                                "expect" (nlk:json-object "condition_type" (getf replay :type)
-                                                          "detail" (nlk:one-line (getf replay :detail) :cap 300)
-                                                          "detail_normal" (normalize-text (getf replay :detail)))))))
-    (ensure-directories-exist path)
-    (with-open-file (out path :direction :output :if-exists :supersede :external-format :utf-8)
-      (write-string
-       (fill-template (uiop:read-file-string (cell-file "repro.sh.in"))
-                      "@HEADER@" (format nil "~a~%~a"
-                                         (comment-lines (format nil "Recorded failure: ~a: ~a" (getf replay :type) (getf replay :detail)))
-                                         (comment-lines (format nil "Turn ~a of session ~a, ~d time~:p in the backlog~@[, last ~a~]."
-                                                                (getf occurrence :turn) (getf occurrence :session)
-                                                                (or (getf item :count) 1) (getf item :last))))
-                      "@FOUND_HOME@" (shell-quote (string-right-trim "/" (namestring (nlk:home ""))))
-                      "@REPLAY_JSON@" (string-right-trim '(#\Newline) (base64-lines json))
-                      "@REPLAY_PY@" (string-right-trim '(#\Newline) (uiop:read-file-string (cell-file "replay.py"))))
-       out))
-    path))
-
-(defun run-test (path)
-  "Run the test at PATH => (values EXIT-CODE OUTPUT)."
-  (multiple-value-bind (output error-output code)
-      (uiop:run-program (list "timeout" "-k" "10" (princ-to-string *repro-seconds*) "sh" (namestring path))
-                        :output :string :error-output :output :ignore-error-status t)
-    (declare (ignore error-output))
-    (values code output)))
-
-(defun repro (item &key home)
-  "Prove ITEM with a test that fails today => (:TEST PATH :SHA256 HEX :FAILS
-BOOL :OUTPUT STRING). The test is written under HOME; it makes its own
-throwaway home when it runs and removes it after."
-  (multiple-value-bind (occurrence replay) (replayable-evidence item)
-    (unless replay
-      (return-from repro
-        (list :test nil :sha256 nil :fails nil
-              :output (if (eq (getf item :source) :turn-failed)
-                          "not replayable: the store no longer holds the failed turn's input and failure"
-                          (format nil "not replayable: a ~(~a~) item names no failed turn to replay"
-                                  (getf item :source))))))
-    (let ((test (write-test (merge-pathnames "repro.sh" (uiop:ensure-directory-pathname home))
-                            item occurrence replay)))
-      (multiple-value-bind (code output) (funcall *run-test* test)
-        (case code
-          (1 (list :test test :sha256 (file-sha256 test) :fails t :output output))
-          (0 (list :test test :sha256 (file-sha256 test) :fails nil :output output))
-          (t (fail "the test could not run (exit ~a): ~a" code
-                   (nlk:one-line (princ-to-string output) :cap 400))))))))
+(defun repro-deftest (case &key (fp (case-fingerprint case)))
+  "CASE's check as the text of a DEFTEST for the owning cell's test suite, or
+NIL when CASE has no :CHECK repro. A :CALL repro stays a finding: its
+arguments are the user's data and do not travel upstream."
+  (let ((fn (getf case :function))
+        (why (format nil "turn ~a failed with ~a~@[ (seen ~d times)~]"
+                     (getf case :turn) (lisp-name (getf case :type)) (getf case :count))))
+    (case (repro-kind case)
+      (:method
+       (format nil "(deftest selffix-~a ()~%  (is (some (lambda (m) (null (method-qualifiers m)))~%            ~
+                    (sb-mop:compute-applicable-methods-using-classes~%             #'~a (list~{ (find-class '~a)~})))~%      ~s))~%"
+               fp (lisp-name fn) (mapcar #'lisp-name (getf case :classes))
+               (format nil "~a has a method for ~{~a~^, ~}: ~a" (lisp-name fn) (mapcar #'lisp-name (getf case :classes)) why)))
+      (:fbound
+       (format nil "(deftest selffix-~a ()~%  (is (fboundp '~a) ~s))~%"
+               fp (lisp-name fn) (format nil "~a is defined: ~a" (lisp-name fn) why)))
+      (:bound
+       (format nil "(deftest selffix-~a ()~%  (is (boundp '~a) ~s))~%"
+               fp (lisp-name (getf case :name)) (format nil "~a is bound: ~a" (lisp-name (getf case :name)) why))))))
