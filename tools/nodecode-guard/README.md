@@ -18,6 +18,27 @@ needs no config: the built-in rules apply as soon as it is on.
 To turn it off, select it in `/cells` and press space, or set
 `"enabled": false` in its `guard` section.
 
+## Ask before refusing
+
+With `"ask": true` in the `guard` section, a call a rule matches is not refused
+at once. The web page and the desktop app put up a card above the message box:
+the rule, the command, the time left, and **Allow once** or **Deny**. The turn
+waits on it.
+
+- **Allow once** runs that one call. The next match asks again.
+- **Deny** refuses it, and the agent is told you chose Deny, so it asks you
+  rather than working around it.
+- **No answer** within `ask_seconds` (default 120) refuses it, saying so.
+- **Nobody to ask** (no page or app open, only a terminal or a chat lane)
+  refuses it at once, as with `ask` off.
+
+The card shows on whichever session the page is on, naming the session that
+asks. Esc on the turn ends the wait with the turn.
+
+```jsonc
+"guard": { "ask": true, "ask_seconds": 120 }
+```
+
 ## What it refuses
 
 | Rule | Refuses | For example |
