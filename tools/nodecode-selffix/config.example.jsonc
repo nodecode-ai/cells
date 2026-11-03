@@ -1,0 +1,9 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell. Absent, the
+// cell installs nothing: idle self-fixes are off until the operator adds it.
+// The loop runs only on the cron wake's clock, so turn wakes on as well:
+// (cron:wake :on) or /wake on.
+{
+  "selffix": {
+    "idle_minutes": 30
+  }
+}
