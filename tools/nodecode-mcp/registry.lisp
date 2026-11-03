@@ -46,7 +46,12 @@
   (state-lock (bt2:make-lock :name "mcp-state"))
   (connected-at nil)
   (timing nil)                          ; (CONNECT-MS LIST-MS) of the last connect
+  (sign-in nil)                         ; (:url :redirect :held :id :until) while its command waits on a browser
   (settled-p t))                        ; NIL while a connect is publishing
+
+(defparameter *sign-in-grace-seconds* 2
+  "How long a call waits for a command held on a browser to answer before it
+fails, saying the sign-in still waits.")
 
 (nlk:define-record (registry (:copier nil))
   (servers '() :type list)              ; name order
@@ -85,6 +90,7 @@
             :transport (transport-text spec)
             :log-path (when (eq spec.transport :stdio) (namestring (stderr-log-path spec.name)))
             :timing server.timing
+            :sign-in (getf server.sign-in :url)
             :server-info (let ((client server.client)) (and client client.server-info))))))
 
 (defun make-registry-from-section (section)
@@ -140,6 +146,7 @@ to answer the handshake (a process's start-up inside it) and how long to list."
 
 (defun close-client (server)
   "Close the server's transport, if any; never signals."
+  (setf server.sign-in nil)
   (nlk:when-let (client server.client)
     (setf server.client nil)
     (ignore-errors (transport-close client.transport))))
@@ -166,7 +173,9 @@ to answer the handshake (a process's start-up inside it) and how long to list."
     (set-state server :connecting)
     (nlk:with-cleanup ((bt2:with-lock-held ((server-state-lock server))
                          (setf (server-settled-p server) t)))
-      (nlk:with-handlers ((error (condition)
+      (nlk:with-handlers (;; Its command waits on a browser: kept, the one the browser answers.
+                          (awaits-sign-in (condition) (note-sign-in server condition) nil)
+                          (error (condition)
                             (let ((text (failure-text server condition)))
                               (close-client server)
                               (set-state server :error text)
@@ -176,17 +185,87 @@ to answer the handshake (a process's start-up inside it) and how long to list."
         ;; from outside closes a handshake that hangs.
         (let ((client (open-client spec allowlist)))
           (setf server.client client)
-          (multiple-value-bind (tools connect-ms list-ms) (greet client deadline)
-            (bt2:with-lock-held ((server-state-lock server))
-              (setf server.tools tools
-                    server.connected-at (get-universal-time)
-                    server.timing (list connect-ms list-ms))))
-          ;; Functions first, then the state, then the primer: a reader
-          ;; that sees :ready finds the functions defined.
-          (sync-tool-functions server)
-          (set-state server :ready)
-          (refresh-primer)
+          (multiple-value-call #'publish-ready server (greet client deadline))
           t)))))
+
+(defun publish-ready (server tools connect-ms list-ms)
+  "SERVER connected with TOOLS: its catalog, timing and functions, then
+:READY, then the primer -- a reader that sees :ready finds the functions defined."
+  (bt2:with-lock-held ((server-state-lock server))
+    (setf server.tools tools
+          server.connected-at (get-universal-time)
+          server.timing (list connect-ms list-ms)
+          server.sign-in nil))
+  (sync-tool-functions server)
+  (set-state server :ready)
+  (refresh-primer))
+
+;;; --- a command that signs in on its own -----------------------------------
+;;; mcp-remote and its kind hold every request until a browser comes back to
+;;; their loopback listener (stdio.lisp sees the address they print). The
+;;; process is kept, so the sign-in it started can finish: the server reads
+;;; :ERROR with the sign-in named, a call fails at once with the address, and
+;;; the request it held is taken up again once its command answers -- the
+;;; initialize of a connect, then the catalog. *SIGN-IN-WAIT-SECONDS* on, a
+;;; call starts it over on a fresh process.
+
+(defun note-sign-in (server condition &aux (name (server-name server))
+                                           (method (awaits-sign-in-method condition)))
+  "SERVER's command waits on a browser (CONDITION): publish :ERROR naming the
+sign-in and keep what a call takes up again."
+  (bt2:with-lock-held ((server-state-lock server))
+    (setf server.sign-in (list :url (awaits-sign-in-url condition)
+                               :redirect (awaits-sign-in-redirect condition)
+                               ;; What the next answer finishes: the handshake, the catalog or a call.
+                               :held (cond ((equal method "initialize") :initialize)
+                                           ((equal method "tools/list") :catalog)
+                                           (t :call))
+                               :id (awaits-sign-in-request-id condition)
+                               :until (+ (now-seconds) *sign-in-wait-seconds*))
+          server.state :error
+          server.error-text (format nil "~a needs a sign-in in a browser: /mcp login ~a" name name)))
+  (refresh-primer))
+
+(defun pending-sign-in-p (server &aux (pending server.sign-in) (client server.client))
+  "True while SERVER's command still waits on the browser it asked for."
+  (and pending client
+       (< (now-seconds) (getf pending :until))
+       (let ((transport client.transport))
+         (and (typep transport 'stdio-transport)
+              (not (stdio-transport-closed-p transport))
+              (not (child-exited transport))))))
+
+(defun sign-in-text (server &aux (name (server-name server)) (pending server.sign-in))
+  "What a call held on SERVER's sign-in says: the address to open, whole."
+  (format nil "~a needs a sign-in in a browser: open ~a and approve it. Its command waits for the answer at ~a~
+~:[~;, and the call it held goes through once it is signed in~]. From a browser on another machine, paste the ~
+address it lands on: /mcp login ~a ADDRESS"
+          name (getf pending :url) (or (getf pending :redirect) "its own listener")
+          (eq (getf pending :held) :call) name))
+
+(defun resume-sign-in (server deadline &key (wait *sign-in-grace-seconds*)
+                       &aux (client server.client) (pending server.sign-in) (start (now-seconds)))
+  "Take up what SERVER's command held for its sign-in, waiting at most WAIT
+seconds for it to answer: T once SERVER is ready, NIL while it still waits.
+Call with SERVER's call lock held."
+  (handler-case
+      (let ((answer-by (min deadline (+ start wait))))
+        (ecase (getf pending :held)
+          (:initialize
+           (handshake client deadline (rpc-await-reply client (getf pending :id) "initialize" answer-by))
+           (let ((shaken (now-seconds)))
+             (publish-ready server (list-tools client deadline)
+                            (elapsed-ms start shaken) (elapsed-ms shaken (now-seconds)))))
+          (:catalog
+           (publish-ready server (list-tools client deadline) (first server.timing) (elapsed-ms start (now-seconds))))
+          ;; A call held: its late answer is skipped; the next call finds out.
+          (:call
+           (bt2:with-lock-held ((server-state-lock server)) (setf server.sign-in nil))
+           (set-state server :ready)
+           (refresh-primer)))
+        t)
+    (rpc-timeout () nil)
+    (awaits-sign-in (condition) (note-sign-in server condition) nil)))
 
 (defun spawn-connect (server)
   "Connect SERVER on its own short-lived thread."
@@ -235,9 +314,13 @@ the model last saw (its functions answer MCP-OFFLINE until a reconnect)."
                                (case server.state
                                  (:ready server.client)
                                  ((:error :disconnected :connecting)
-                                  (if (connect-locked server :deadline deadline)
-                                      server.client
-                                      (offline (or server.error-text "connect failed"))))
+                                  (cond ((pending-sign-in-p server)
+                                         (if (resume-sign-in server deadline)
+                                             server.client
+                                             (offline (sign-in-text server))))
+                                        ((connect-locked server :deadline deadline) server.client)
+                                        ((pending-sign-in-p server) (offline (sign-in-text server)))
+                                        (t (offline (or server.error-text "connect failed")))))
                                  (:disabled (offline "disabled in config (enabled: false)"))
                                  (:refused (offline (or server.error-text "refused config")))
                                  (:stopped (offline "the cell is stopped"))
@@ -249,6 +332,11 @@ the model last saw (its functions answer MCP-OFFLINE until a reconnect)."
                   (setf phase :reading)
                   (rpc-await-reply client id "tools/call" deadline)))
             (mcp-error (condition) (error condition))
+            ;; Its command holds the call for a browser: kept, failed now with the address.
+            (awaits-sign-in (condition)
+              (setf phase :idle)
+              (note-sign-in server condition)
+              (error 'mcp-offline :server name :detail (sign-in-text server)))
             (rpc-timeout (condition)
               (setf phase :idle)
               (error 'mcp-timeout
@@ -367,10 +455,16 @@ config.jsonc is PROBEd instead, and stays off. => the test plist."
                             (list :ok t :reused t :connect-ms (first server.timing)
                                   :list-ms list-ms :tools tools
                                   :server-info (client-server-info server.client))))
-                         ((connect-locked server :deadline deadline)
+                         ((if (pending-sign-in-p server)
+                              (resume-sign-in server deadline)
+                              (connect-locked server :deadline deadline))
                           (list :ok t :connect-ms (first server.timing) :list-ms (second server.timing)
                                 :tools server.tools :server-info (client-server-info server.client)))
+                         ((pending-sign-in-p server) (list :error (sign-in-text server)))
                          (t (list :error server.error-text)))
+                     (awaits-sign-in (condition)
+                       (note-sign-in server condition)
+                       (list :error (sign-in-text server)))
                      ;; A deadline keeps the connection, as a call's does; a closed one is dropped.
                      (transport-closed (condition)
                        (drop-connection server condition)

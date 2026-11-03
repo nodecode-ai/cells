@@ -13,11 +13,21 @@ Lisp client's contract needs to see:
          echo2), image (every non-text block kind), empty (no content)
   flags: --slow-init (initialize sleeps 5 s), --pages (tools/list in two
          pages), --many N (N generated tools), --stderr-noise, --linger
-         (outlives stdin EOF and SIGTERM, as an npx or uvx server can)
+         (outlives stdin EOF and SIGTERM, as an npx or uvx server can),
+         --sign-in (signs in on its own, as mcp-remote does: every request
+         is held until a browser comes back to its loopback listener, the
+         address to open printed on stderr in mcp-remote's words, a fresh
+         state per request held; sign_out forgets it again)
+  more tools: sign_out (listed with --sign-in), chatty (listed with --chatty:
+         prints an authorization address on stderr, answers 0.3 s later)
 """
 import json
 import sys
+import threading
 import time
+import urllib.parse
+import uuid
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 ARGS = sys.argv[1:]
 SLOW_INIT = "--slow-init" in ARGS
@@ -89,11 +99,70 @@ TOOLS = [
      "inputSchema": {"type": "object", "properties": {}}},
     {"name": "empty", "description": "No content, only structuredContent.",
      "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "sign_out", "description": "Forgets the sign-in: the next request waits on a browser.",
+     "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "chatty", "description": "Prints an authorization address on stderr, answers anyway.",
+     "inputSchema": {"type": "object", "properties": {}}},
 ]
+
+# --sign-in: mcp-remote's way of signing in. The loopback listener takes the
+# browser's answer; a request is held until it has come back.
+SIGN_IN = "--sign-in" in ARGS
+CHATTY = "--chatty" in ARGS
+signed_in = threading.Event()
+flow = {"state": None, "port": None}
+if not SIGN_IN:
+    signed_in.set()
+
+
+class Callback(BaseHTTPRequestHandler):
+    def do_GET(self):
+        url = urllib.parse.urlparse(self.path)
+        query = urllib.parse.parse_qs(url.query)
+        ok = (url.path == "/oauth/callback" and "code" in query
+              and query.get("state", [None])[0] == flow["state"])
+        body = b"Authorization successful" if ok else b"Authorization failed"
+        self.send_response(200 if ok else 400)
+        self.send_header("Content-Type", "text/plain")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+        if ok:
+            signed_in.set()
+
+    def log_message(self, *args):
+        pass
+
+
+if SIGN_IN:
+    listener = HTTPServer(("127.0.0.1", 0), Callback)
+    flow["port"] = listener.server_address[1]
+    threading.Thread(target=listener.serve_forever, daemon=True).start()
+
+
+def authorization_address(port, state):
+    redirect = "http://localhost:%d/oauth/callback" % port
+    return ("https://auth.invalid/authorize?response_type=code&client_id=fixture"
+            "&code_challenge=x&code_challenge_method=S256&redirect_uri=%s&state=%s&scope=mcp"
+            % (urllib.parse.quote(redirect, safe=""), state))
+
+
+def hold_for_sign_in():
+    """mcp-remote's wait: the address on stderr, then nothing until the browser answers."""
+    if signed_in.is_set():
+        return
+    flow["state"] = uuid.uuid4().hex
+    sys.stderr.write("[fixture] Connecting to remote server: https://auth.invalid/mcp\n")
+    sys.stderr.write("\nPlease authorize this client by visiting:\n%s\n\n"
+                     % authorization_address(flow["port"], flow["state"]))
+    sys.stderr.write("[fixture] Authentication required. Waiting for authorization...\n")
+    sys.stderr.flush()
+    signed_in.wait()
 
 
 def catalog():
-    tools = list(TOOLS)
+    tools = [tool for tool in TOOLS
+             if (tool["name"] != "sign_out" or SIGN_IN) and (tool["name"] != "chatty" or CHATTY)]
     if changed:
         tools.append({"name": "echo2", "description": "The tool that appeared.",
                       "inputSchema": {"type": "object", "properties": {}}})
@@ -150,6 +219,15 @@ def handle_call(req):
         ]})
     elif name == "empty":
         reply(req, {"content": [], "structuredContent": {"answer": 42}})
+    elif name == "sign_out":
+        signed_in.clear()
+        reply(req, {"content": [text("signed out")]})
+    elif name == "chatty":
+        sys.stderr.write("fixture: to use the dashboard too, visit %s\n"
+                         % authorization_address(1, "chatty"))
+        sys.stderr.flush()
+        time.sleep(0.3)
+        reply(req, {"content": [text("chatty answered")]})
     else:
         error(req, -32602, "unknown tool %r" % name)
 
@@ -158,6 +236,8 @@ def handle(req):
     method = req.get("method")
     if "id" not in req:
         return  # notifications: initialized, cancelled, ...
+    if method != "ping":
+        hold_for_sign_in()
     if method == "initialize":
         if SLOW_INIT:
             time.sleep(5)
