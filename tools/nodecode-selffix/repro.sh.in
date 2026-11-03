@@ -1,0 +1,45 @@
+#!/bin/sh
+# selffix test, written by repro.lisp. SPDX-License-Identifier: MIT
+#
+@HEADER@
+#
+# It replays the recorded turn in a sealed throwaway home: the input as the person
+# gave it, then the model's recorded answers in order, served from a loopback
+# provider inside the sandbox, so the organism under test runs its real turn path
+# and its real tools. The sandbox (bwrap) keeps the filesystem read-only except the
+# throwaway folder, hides /home, /root, /run and /tmp, clears the environment (no
+# keys), and has no network but its own loopback.
+#
+# Exit 0: the recorded failure no longer happens (a fix passes this test).
+# Exit 1: it happens as recorded (the test fails; how it was found).
+# Exit 2: the test could not run (no build, no bwrap, or the sandbox did not seal).
+#
+# Locked: a fix counts only when this file, unchanged (same sha256), exits 0.
+# SELFFIX_SOURCE_HOME picks the home whose cells the replay loads (default: the home
+# it was found in); NODECODE_BIN picks the build (default: nodecode on PATH).
+set -u
+SRC=${SELFFIX_SOURCE_HOME:-@FOUND_HOME@}
+NC=$(readlink -f "${NODECODE_BIN:-$(command -v nodecode)}" 2>/dev/null)
+[ -n "$NC" ] && [ -x "$NC" ] || { echo "could not run: no nodecode build (set NODECODE_BIN)"; exit 2; }
+command -v bwrap >/dev/null 2>&1 || { echo "could not run: bwrap is missing, so the replay cannot be sealed"; exit 2; }
+command -v python3 >/dev/null 2>&1 || { echo "could not run: python3 is missing"; exit 2; }
+[ -d "$SRC/cells" ] || { echo "could not run: no cells under $SRC"; exit 2; }
+T=$(mktemp -d "${TMPDIR:-/tmp}/selffix-test.XXXXXX") || { echo "could not run: no scratch folder"; exit 2; }
+trap 'rm -rf "$T"' EXIT INT TERM
+mkdir -p "$T/home" "$T/work" "$T/cache"
+tar -C "$SRC" -h --exclude=.git -cf - cells | tar -C "$T/home" -xf - || { echo "could not run: copying the cells failed"; exit 2; }
+base64 -d > "$T/replay.json" <<'SELFFIX_REPLAY_JSON'
+@REPLAY_JSON@
+SELFFIX_REPLAY_JSON
+cat > "$T/replay.py" <<'SELFFIX_REPLAY_PY'
+@REPLAY_PY@
+SELFFIX_REPLAY_PY
+PROBE="$SRC/cells"
+bwrap --ro-bind / / --tmpfs /home --tmpfs /root --tmpfs /run --tmpfs /tmp --tmpfs /var/tmp \
+  --tmpfs "$HOME" --tmpfs "$SRC" \
+  --ro-bind "$(dirname "$NC")" "$(dirname "$NC")" --bind "$T" "$T" \
+  --dev /dev --proc /proc --unshare-all --die-with-parent --new-session --clearenv \
+  --setenv PATH /usr/bin:/bin --setenv HOME "$T/home" --setenv NODECODE_HOME "$T/home" \
+  --setenv XDG_CACHE_HOME "$T/cache" --setenv TMPDIR "$T" --setenv SELFFIX_PROBE "$PROBE" \
+  --setenv SELFFIX_TIMEOUT "${SELFFIX_TIMEOUT:-240}" \
+  python3 "$T/replay.py" "$T/replay.json" "$NC" "$T/work"

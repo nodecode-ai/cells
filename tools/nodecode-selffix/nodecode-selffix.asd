@@ -12,11 +12,13 @@
   :description "Idle self-fixes, observe level: findings with a failing test"
   :license "MIT"
   :version "0.1.0"
-  :depends-on ("nodecode" "nodecode-cron" "sb-posix")
+  :depends-on ("nodecode" "nodecode-cron" "sb-posix" "cl-base64")
   :serial t
   :components ((:file "package")
                (:file "backlog")
                (:file "ledger")
+               (:static-file "replay.py")
+               (:static-file "repro.sh.in")
                (:file "repro")
                (:file "gate")
                (:file "cycle")
@@ -32,6 +34,7 @@
   :components ((:file "support")
                (:file "backlog-test")
                (:file "ledger-test")
+               (:file "repro-test")
                (:file "gate-test")
                (:file "cycle-test"))
   :perform (test-op (operation component)
