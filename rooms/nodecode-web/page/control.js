@@ -19,10 +19,11 @@ import { makeIndex } from "./index.js";
 import { makeMcp } from "./mcp.js";
 import { makeProfiles } from "./profiles.js";
 import { makeAccess } from "./access.js";
+import { makeShortcuts } from "./shortcuts.js";
 import { t } from "./i18n.js";
 import { icon, iconButton } from "./icons.js";
 
-const TABS = [["gateway", t("Gateway")], ["logs", t("Logs")], ["settings", t("Config")], ["cells", t("Cells")], ["index", t("Index")], ["mcp", "MCP"], ["profiles", t("Profiles")], ["channels", t("Channels")], ["link", t("Link")], ["jobs", t("Scheduled jobs")]];
+export const TABS = [["gateway", t("Gateway")], ["logs", t("Logs")], ["settings", t("Config")], ["cells", t("Cells")], ["index", t("Index")], ["mcp", "MCP"], ["profiles", t("Profiles")], ["channels", t("Channels")], ["link", t("Link")], ["jobs", t("Scheduled jobs")], ["shortcuts", t("Shortcuts")]];
 const LABELS = Object.fromEntries(TABS);
 // A phone -- the page's own phone width, app.css's 720 px -- opens Control on
 // its sections as one list, each saying how it stands, and a section as a page
@@ -32,10 +33,11 @@ export const PHONE = matchMedia("(max-width: 720px)");
 // A wide window -- app.css's rail and list, 1024 px and up -- has the same list
 // beside the rail, the open section lit, and no strip of tabs over the page.
 export const WIDE = matchMedia("(min-width: 1024px)");
+// Shortcuts are kept where the page runs, so their group says where that is.
 const GROUPS = [[t("This machine"), ["gateway", "logs"]], [t("What it runs"), ["settings", "cells", "mcp", "index"]],
-  [t("Who reaches it"), ["channels", "link", "profiles", "jobs"]]];
+  [t("Who reaches it"), ["channels", "link", "profiles", "jobs"]], [globalThis.nodecodeDesktop ? t("This app") : t("This browser"), ["shortcuts"]]];
 const MARKS = { gateway: "server", logs: "lines", settings: "sliders", cells: "grid", index: "book", mcp: "plug",
-  profiles: "person", channels: "chat", link: "globe", jobs: "clock" };
+  profiles: "person", channels: "chat", link: "globe", jobs: "clock", shortcuts: "keyboard" };
 const FAILED = ["error", "refused"];
 const RUNS = {
   unit: t("Runs as a systemd user unit, which starts it at login and after a crash."),
@@ -309,6 +311,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
   const index = makeIndex({ c, api, act, toast, redraw, settle: (rows) => { if (PHONE.matches) tapRows(rows); } });
   const mcp = makeMcp({ c, api, act, toast, redraw, reload: () => { if (shown && c.tab === "mcp") load(); } });
   const profs = makeProfiles({ c, api, act, toast, redraw, download });
+  const shortcuts = makeShortcuts({ c, toast, redraw: () => { if (shown && c.tab === "shortcuts") redraw(); } });
   const access = makeAccess({ c, api, act, toast, redraw, unread, missing, openTab });
   let followTimer = null;
   let pollTimer = null;
@@ -1168,6 +1171,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     switch (id) {
       case "gateway": return isOpen() ? [uptime(c.identity?.started_at) || "", ""] : [t("away"), "warn"];
       case "logs": return [t("what it writes"), ""];
+      case "shortcuts": return shortcuts.glance();
       case "settings": return got(c.model) ? [c.model.model || t("no default model"), c.model.refusal || !c.model.model ? "warn" : ""] : ["", ""];
       case "cells": {
         if (!got(c.cells)) return ["", ""];
@@ -1514,7 +1518,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       root.append(drawHome());
       return root;
     }
-    const draws = { gateway: drawGateway, logs: drawLogs, settings: drawSettings, cells: drawCells, index: index.draw, mcp: mcp.draw, profiles: profs.draw, channels: drawChannels, link: access.draw, jobs: drawJobs };
+    const draws = { gateway: drawGateway, logs: drawLogs, settings: drawSettings, cells: drawCells, index: index.draw, mcp: mcp.draw, profiles: profs.draw, channels: drawChannels, link: access.draw, jobs: drawJobs, shortcuts: shortcuts.draw };
     root.append(draws[c.tab]());
     kept(root);
     if (phone) rise(root);
@@ -1568,7 +1572,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
     }
     // Whatever a sheet offered, it leaves the sheet as it acts.
     c.sheet = null;
-    if (cfgs.click(d) || index.click(d) || mcp.click(d) || profs.click(d) || access.click(d)) return;
+    if (cfgs.click(d) || index.click(d) || mcp.click(d) || profs.click(d) || access.click(d) || shortcuts.click(d)) return;
     switch (d.act) {
       // A health finding about a config section opens Settings on that section's form.
       case "tab": {
@@ -1683,7 +1687,7 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       if (list) sift(list);
       return;
     }
-    if (cfgs.input(event) || index.input(event) || mcp.input(event) || profs.input(event)) return;
+    if (cfgs.input(event) || index.input(event) || mcp.input(event) || profs.input(event) || shortcuts.input(event)) return;
     // A form no tab keeps itself is kept here, so no redraw takes back what the hand typed.
     const owner = event.target.name && event.target.closest?.("form.ctl-form");
     if (owner) (c.drafts[formKey(owner)] ||= {})[event.target.name] = event.target.value;
@@ -1802,7 +1806,9 @@ export function makeControl({ api, download, toast, openSession, isOpen, folder,
       load();
       schedule();
     },
-    hide() { shown = false; c.confirm = null; schedule(); },
+    hide() { shown = false; c.confirm = null; shortcuts.stop(); schedule(); },
+    // The keymap the Shortcuts tab lists and changes (keys.js), once the page has made it.
+    useKeys(keys) { shortcuts.use(keys); },
     reconnected() { c.leaving = null; if (shown) { load(); schedule(); } },
   };
 }
