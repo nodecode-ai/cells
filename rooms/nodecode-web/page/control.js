@@ -22,7 +22,7 @@ import { makeAccess } from "./access.js";
 import { t } from "./i18n.js";
 import { icon, iconButton } from "./icons.js";
 
-const TABS = [["gateway", t("Gateway")], ["logs", t("Logs")], ["settings", t("Config")], ["cells", t("Cells")], ["index", t("Index")], ["mcp", "MCP"], ["profiles", t("Profiles")], ["channels", t("Channels")], ["link", t("Link")], ["jobs", t("Scheduled jobs")]];
+export const TABS = [["gateway", t("Gateway")], ["logs", t("Logs")], ["settings", t("Config")], ["cells", t("Cells")], ["index", t("Index")], ["mcp", "MCP"], ["profiles", t("Profiles")], ["channels", t("Channels")], ["link", t("Link")], ["jobs", t("Scheduled jobs")]];
 const LABELS = Object.fromEntries(TABS);
 // A phone -- the page's own phone width, app.css's 720 px -- opens Control on
 // its sections as one list, each saying how it stands, and a section as a page
