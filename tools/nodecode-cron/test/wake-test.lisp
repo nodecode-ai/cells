@@ -99,8 +99,7 @@
       (is (<= (+ +cron-now+ 1800) due (+ +cron-now+ 14400)) "first fire between min and max")
       (is (= 0 (wake-tick (1- due))) "not before it is due")
       (is (= 1 (wake-tick due)) "fires when due")
-      (is (equal (list (wake-session)) (mapcar (lambda (s) (getf s :session)) (cron-submits)))
-          "into the wake's own session"))))
+      (is (equal (list (wake-session)) (mapcar (lambda (s) (getf s :session)) (cron-submits)))))))
 
 ;;; --- the agent's clock ------------------------------------------------------
 
@@ -287,8 +286,7 @@
       (wake-tick due)
       (wake-settle due "PR #90 went red: the lint job.")
       (is (some (lambda (s) (search "PR #90 went red" (getf s :prompt)))
-                (cron-submits-to +wake-operator+))
-          "an answer reaches the operator"))))
+                (cron-submits-to +wake-operator+)) "an answer reaches the operator"))))
 
 ;;; --- the in-image digest ----------------------------------------------------
 
@@ -297,5 +295,4 @@
     (nlk:create-session :id "s-work")
     (with-durable-turn (turn "s-work" :input "fix the lint" :complete t))
     (wake-tick (wake-next-at))
-    (is (some (lambda (prompt) (search "s-work" prompt)) (wake-prompts))
-        "the session whose turn ended since the cursor is named")))
+    (is (some (lambda (prompt) (search "s-work" prompt)) (wake-prompts)))))

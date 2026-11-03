@@ -25,8 +25,7 @@
                  now :name (lambda (id) (if (equal id "s-work") "perf thread" id)))))
     (is (equal '("turns in perf thread: 4 ended, 1 failed, the last 10m ago"
                  "turns in s-docs: 3 ended, 2 stopped, the last 3h ago")
-               lines)
-        "one line a session, newest first; the wake's own session and forks left out")))
+               lines) "one line a session, newest first; the wake's own session and forks left out")))
 
 (deftest cron-cell-wake-digest-clean-title ()
   (is (equal "peasantry (operator)"
