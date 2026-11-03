@@ -111,14 +111,15 @@
   (format nil "(handler-case ~a (error () -1))" text))
 
 (defun ask-at (text number)
-  "TEXT asked at generation NUMBER => (values :STANDS, :GONE or :UNKNOWN, DETAIL)."
+  "TEXT asked at generation NUMBER => (values VERDICT DETAIL): :STANDS on 1, :GONE on 0,
+:UNDECIDED on 2 (the repro cannot judge), :UNKNOWN when it could not run."
   (let ((home (uiop:ensure-directory-pathname
                (selffix-path (format nil "scratch/~36r/" (random (expt 36 10) (make-random-state t)))))))
     (ensure-directories-exist home)
     (unwind-protect
          (progn (funcall *lay* number home)
                 (multiple-value-bind (score detail) (funcall *ask* (guarded text) home)
-                  (values (case score (1 :stands) (0 :gone) (t :unknown))
+                  (values (case score (1 :stands) (0 :gone) (2 :undecided) (t :unknown))
                           (if (eql score -1) "the repro signalled" detail))))
       (ignore-errors (uiop:delete-directory-tree home :validate t :if-does-not-exist :ignore)))))
 

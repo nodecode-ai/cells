@@ -21,16 +21,15 @@
 
 (deftest selffix-cell-runner-verdicts ()
   (with-selffix-root ()
-    (loop for (score verdict) in '((1 :stands) (0 :gone) (-1 :unknown) (nil :unknown))
+    (loop for (score verdict) in '((1 :stands) (0 :gone) (2 :undecided) (-1 :unknown) (nil :unknown))
           do (let ((seen nil))
                (let ((nodecode-selffix::*lay* (lambda (number home) (declare (ignore number)) (setf seen home)))
                      (nodecode-selffix::*ask* (lambda (text home) (declare (ignore text home)) (values score "stubbed"))))
                  (is (eq verdict (nodecode-selffix::ask-at "(+ 0 1)" 3)))
                  (is (not (probe-file seen)) "the throwaway home is removed"))))
-    (is (equal '(handler-case (+ 0 1) (error () -1))
-               (let ((*package* (find-package '#:nodecode-selffix)))
-                 (read-from-string (nodecode-selffix::guarded "(+ 0 1)"))))
-        "a repro that signals answers -1, never 0")))
+    (let ((guarded (let ((*package* (find-package '#:nodecode-selffix)))
+                     (read-from-string (nodecode-selffix::guarded "(+ 0 1)")))))
+      (is (equal '(handler-case (+ 0 1) (error () -1)) guarded) "a repro that signals answers -1, never 0"))))
 
 (defvar *selffix-laid* nil)
 

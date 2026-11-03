@@ -22,11 +22,14 @@
 (defparameter *backlog-limit* 20 "Items read from the backlog for one cycle.")
 
 (defvar *backlog* 'backlog "The backlog reader; a test binds a stub.")
-(defvar *repro-form* 'repro-form
+(defun item-repro (item) (repro-form (case-of item)))
+(defun item-deftest (item) (repro-deftest (case-of item)))
+
+(defvar *repro-form* 'item-repro
   "(funcall *repro-form* ITEM) => the repro's form as text, answering 1 while
-the failure stands and 0 once gone, or NIL when the case is no one form
-(repro.lisp); a test binds a stub.")
-(defvar *repro-deftest* 'repro-deftest
+the failure stands, 0 once gone and 2 when it cannot judge, or NIL when the
+case is no one form (repro.lisp); a test binds a stub.")
+(defvar *repro-deftest* 'item-deftest
   "(funcall *repro-deftest* ITEM) => the deftest the owning cell gets
 upstream, as text, or NIL (repro.lisp); a test binds a stub.")
 (defvar *generations* 'generation-numbers "The sealed generations, oldest first; a test binds a stub.")
@@ -34,14 +37,6 @@ upstream, as text, or NIL (repro.lisp); a test binds a stub.")
 
 (defun findings-dir () (selffix-path "findings/"))
 (defun finding-file (fp) (merge-pathnames (format nil "~a.lisp" fp) (findings-dir)))
-
-(defun file-sha256 (path)
-  "PATH's SHA-256 as lowercase hex; the replayed repro (repro.lisp) still reads it."
-  (let ((digest (with-open-file (in path :element-type '(unsigned-byte 8))
-                  (let ((octets (make-array (file-length in) :element-type '(unsigned-byte 8))))
-                    (read-sequence octets in)
-                    (nlk:sha256-text octets)))))
-    (subseq digest (1+ (position #\: digest)))))
 
 (defun item-text (item)
   "What ITEM is called: its title, else its key."
@@ -102,7 +97,7 @@ could not run."
         (ecase (ask-at (locked-repro fp commit) (car (last numbers)))
           (:stands 1)
           (:gone 0)
-          (:unknown -1)))))
+          ((:undecided :unknown) -1)))))
 
 (defun run-one (now)
   "With the lock held: one item through its repro => (STATUS DETAIL)."
@@ -133,8 +128,9 @@ could not run."
                               (multiple-value-bind (path commit) (write-finding fp item text (locate text numbers) now)
                                 (record "finding" :fp fp :item item :detail (namestring path) :commit commit :at now)
                                 (list :finding (finding-line fp item))))
-                             (:gone
-                              (record "not-reproduced" :fp fp :item item :at now :detail "the repro answered 0")
+                             ((:gone :undecided)
+                              (record "not-reproduced" :fp fp :item item :at now
+                                                       :detail (if (eq verdict :gone) "the repro answered 0" "the repro could not judge"))
                               (list :not-reproduced (finding-line fp item)))
                              (t
                               (record "failed" :fp fp :item item :at now :detail detail)
