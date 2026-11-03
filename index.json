@@ -2,6 +2,27 @@
   "format": 1,
   "cells": [
     {
+      "name": "nodecode-acp",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0463692b09fdffde99aef8a55103b5ff10fa722f",
+      "path": "providers/nodecode-acp",
+      "description": "Claude Code, Codex, Gemini CLI or any ACP agent as a session's agent",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "platforms": [
+        "linux",
+        "macos"
+      ],
+      "serves": [
+        {
+          "provider": "acp",
+          "name": "Agents (Claude Code, Codex, Gemini CLI, any ACP agent)"
+        }
+      ]
+    },
+    {
       "name": "nodecode-alibaba-coding-plan",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
