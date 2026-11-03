@@ -2978,7 +2978,7 @@ button.p-row:active { background: var(--field-lit); }
 .task-title { margin: 0; font: var(--fs-body)/1.45 var(--sans); color: var(--foreground); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .task-meta { margin: 6px 0 0; font: var(--fs-detail)/1.45 var(--sans); color: var(--tertiary); overflow-wrap: anywhere; }
 .task-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; }
-.task-acts [data-act="edit"] { margin-left: auto; }
+.task-more { display: inline-flex; gap: 14px; margin-left: auto; white-space: nowrap; }
 .task-edit { width: 100%; resize: vertical; font: var(--fs-body)/1.5 var(--sans); }
 .task-card:has(> .task-open) { padding: 0; }
 .task-open { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 10px; width: 100%; padding: 12px; border-radius: var(--r-control); text-align: left; }

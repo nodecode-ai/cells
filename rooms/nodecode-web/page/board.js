@@ -310,7 +310,9 @@ export function makeBoard({ state, reach, toast, redraw, refresh, start, send, r
       drop.type = "button";
       drop.dataset.act = "delete";
       drop.addEventListener("click", () => remove(task.id));
-      acts.append(go, reword, drop);
+      const more = el("span", "task-more");
+      more.append(reword, drop);
+      acts.append(go, more);
       li.append(acts);
       li.addEventListener("keydown", (event) => {
         if (event.target !== li || !event.altKey) return;
