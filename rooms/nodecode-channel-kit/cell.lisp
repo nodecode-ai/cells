@@ -209,6 +209,8 @@ adapter folder present; return one stop thunk."
     (nle:hook 'nle::read-live-sections +where-hook-key+ (live-section-advice))
     (register-channel-commands)
     (nle:route "/api/channels" #'channels-route)
+    ;; The page's voice input reads through the same engine (transcribe.lisp).
+    (nle:route "/api/transcribe" #'transcribe-route)
     (lambda ()
       (dolist (entry stops)
         (handler-case (funcall (cdr entry))
@@ -217,6 +219,7 @@ adapter folder present; return one stop thunk."
       (nle:set-help-topic :channels nil)
       (nle:unhook 'nle::read-live-sections +where-hook-key+)
       (nle:route "/api/channels" nil)
+      (nle:route "/api/transcribe" nil)
       (nle:unregister-commands "nodecode-channel-kit")
       (setf *unconfigured* '()
             *transcription* nil)

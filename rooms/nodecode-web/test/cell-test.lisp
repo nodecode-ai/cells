@@ -1199,7 +1199,7 @@ corner or letter-spacing instead of naming the kit's scale."
          (dash (web-js-function observe "drawDashboard")))
     (dolist (each '("drawGateway" "drawLogs" "drawSettings" "drawCells" "drawChannels" "drawJobs"))
       (is (search "headline(" (web-js-function control each)) (format nil "~a opens with the head" each)))
-    (loop for (file name) in '(("index.js" "draw") ("mcp.js" "head") ("profiles.js" "draw") ("files.js" "head") ("access.js" "draw"))
+    (loop for (file name) in '(("index.js" "draw") ("mcp.js" "head") ("profiles.js" "draw") ("files.js" "head") ("access.js" "draw") ("shortcuts.js" "draw"))
           do (is (search "headline(" (web-js-function (web-page-text file) name)) (format nil "~a's ~a opens with the head" file name)))
     (is (search "root.append(head(l), servers(l)" (web-page-text "mcp.js")) "MCP's head stands over its servers")
     (is (not (search "el(\"span\", \"reading\"" (web-js-function control "drawCells"))) "the count moved into the head")
