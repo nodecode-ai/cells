@@ -1258,5 +1258,16 @@ export const ZH = {
   "Needs you: its answer waits on you, or its last turn failed. Running: a turn runs in it or under it. Done: the rest.": "需要你处理：它的回答在等你，或它最近一轮失败了。运行中：它或它下面有一轮正在运行。完成：其余的。",
   "waits on you": "在等你",
   "its last turn failed": "最近一轮失败了",
-  "{n} waiting on you": "{n} 个在等你"
+  "{n} waiting on you": "{n} 个在等你",
+  "Edit {name}": "编辑 {name}",
+  "modified": "已修改",
+  "Save ({keys})": "保存（{keys}）",
+  "Not saved: {why}": "未保存：{why}",
+  "Saved": "已保存",
+  "{name} changed on disk since you opened it. Save yours over it?": "{name} 在你打开后已在磁盘上改动。用你的版本覆盖它吗？",
+  "Save over it": "覆盖保存",
+  "Take the disk's version": "采用磁盘上的版本",
+  "Keep editing": "继续编辑",
+  "Let go of your changes to {name}?": "放弃你对 {name} 的改动吗？",
+  "Let them go": "放弃改动"
 };
