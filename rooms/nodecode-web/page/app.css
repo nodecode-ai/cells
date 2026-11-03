@@ -2189,6 +2189,25 @@ button.p-row:active { background: var(--field-lit); }
 .fs-text pre { margin: 0; padding: 10px 14px; white-space: pre; font: inherit; }
 .fs-gutter { position: sticky; left: 0; text-align: right; color: var(--tertiary); background: var(--inset); border-right: 1px solid var(--seam); user-select: none; }
 .fs-code { color: var(--secondary); }
+/* Editing: the numbers beside one textarea that scrolls itself; the numbers
+   follow its scroll, so both hold the same lines whatever the length. */
+.fs-text.fs-editing { height: min(72vh, 780px); overflow: hidden; }
+.fs-editing .fs-gutter { position: static; overflow: hidden; padding-bottom: 40px; }
+.fs-edit {
+  display: block; width: 100%; height: 100%; min-width: 0; margin: 0; padding: 10px 14px; border: 0; border-radius: 0; resize: none;
+  background: transparent; color: var(--primary); caret-color: var(--accent); font: inherit; tab-size: 4;
+  white-space: pre; overflow: auto; outline: none; scrollbar-width: thin; scrollbar-color: var(--seam-lit) transparent;
+}
+.fs-view:has(.fs-edit:focus-visible) { border-color: var(--accent); }
+.fs-dirty { display: none; margin-left: 10px; font: var(--fs-micro) var(--sans); color: var(--accent); }
+.fs-view[data-dirty] .fs-dirty { display: inline; }
+.fs-edit-said { font: var(--fs-micro) var(--sans); color: var(--tertiary); }
+.fs-view[data-editing] .fs-view-head .fs-acts { gap: 14px; margin-right: 0; }
+.fs-view-head .fs-save { padding: 3px 12px; border-radius: var(--r-control); font: 600 var(--fs-micro)/1.5 var(--sans); }
+.fs-view-head .fs-save:disabled { background: transparent; border-color: var(--seam-lit); color: var(--tertiary); cursor: default; }
+.fs-view-head .fs-acts .word { font-size: var(--fs-micro); }
+.fs-view > .confirm { width: auto; margin: 0; padding: 12px 14px; border: 0; border-bottom: 1px solid var(--seam); border-radius: 0; }
+.fs-view > .confirm .actions .word + .word { margin-left: 0; }
 .fs-picture { display: block; width: 100%; padding: 14px; cursor: zoom-in; }
 .fs-picture img { display: block; max-width: 100%; max-height: min(72vh, 780px); margin: 0 auto; }
 
