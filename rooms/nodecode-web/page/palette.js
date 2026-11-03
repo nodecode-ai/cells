@@ -1,6 +1,7 @@
 // palette.js -- one box that goes anywhere: Ctrl+K (⌘K) opens it over any
 // pane, Ctrl+P (Cmd+P) opens it on the session's files, Ctrl+Shift+P on the
-// commands. What it offers is what the page already has -- the sessions the
+// commands -- keys the keymap (keys.js) holds, so they can be changed, and a
+// row whose command has a key shows it. What it offers is what the page already has -- the sessions the
 // list holds, the views and boards an address can name, the Control tabs, the
 // gateway's own slash catalog, and the files of the session's folder (the
 // files route's ?find=1) -- matched as the operator types, the letters that
@@ -16,8 +17,6 @@ const FILES_FRESH_MS = 30_000;
 const SHOWN = { recent: 5, session: 6, action: 4, view: 6, file: 8, command: 6 };
 const ORDER = ["recent", "session", "action", "view", "file", "command"];
 const LEAN = { file: 700, command: 500 };
-// The modifier as this machine's keyboard names it.
-const MOD = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘" : "Ctrl+";
 const GROUP = { recent: t("Recent"), session: t("Sessions"), view: t("Go to"), action: t("Actions"), file: t("Files"), command: t("Commands") };
 const MODES = {
   all: { kinds: ORDER, hint: t("Go to a session, a view, a file or a command") },
@@ -171,9 +170,9 @@ export function makePalette(source) {
       case "session":
         return source.sessions().map((s) => ({ kind, key: `session:${s.id}`, name: s.name, detail: s.detail, here: s.id === current, pick: () => source.openSession(s.id) }));
       case "view":
-        return source.views().map((v) => ({ kind, key: `view:${v.id}`, name: v.name, detail: v.detail, pick: () => source.go(v.hash) }));
+        return source.views().map((v) => ({ kind, key: `view:${v.id}`, name: v.name, detail: v.detail, command: v.command, pick: () => source.go(v.hash) }));
       case "action":
-        return source.actions().map((a) => ({ kind, key: `action:${a.id}`, name: a.name, detail: a.detail, pick: a.run }));
+        return source.actions().map((a) => ({ kind, key: `action:${a.id}`, name: a.name, detail: a.detail, command: a.command, pick: a.run }));
       case "command":
         return (source.commands() || []).map((c) => ({ kind, key: `command:${c.name}`, name: `/${c.name}`, detail: c.description || "", pick: () => source.compose(`/${c.name} `) }));
       case "file": {
@@ -250,6 +249,8 @@ export function makePalette(source) {
         li.append(lit(item.name, item.hits, item.file && item.dir ? item.dir.length + 1 : 0));
         const detail = item.file ? "" : item.here ? t("open now") : item.detail;
         if (detail) li.append(el("span", "detail", detail));
+        const key = item.command && source.keyOf?.(item.command);
+        if (key) li.append(el("kbd", "palette-key", key));
         rows.push(li);
       }
       if (g.more > 0) rows.push(el("li", "palette-more", t("{n} more: type to narrow", { n: g.more })));
@@ -267,7 +268,8 @@ export function makePalette(source) {
     const files = p.session && p.files.get(p.session);
     foot.replaceChildren(
       el("span", "", t("↑↓ to move, Enter to go, Esc to close")),
-      el("span", "", mode === "all" ? t("> commands · {mod}P files", { mod: MOD }) : files?.cut && mode === "files" ? t("The folder is large: only part of it is listed") : ""),
+      el("span", "", mode === "all" ? (source.keyOf?.("quick-open") ? t("> commands · {key} files", { key: source.keyOf("quick-open") }) : t("> commands"))
+        : files?.cut && mode === "files" ? t("The folder is large: only part of it is listed") : ""),
     );
     list.querySelector("[aria-selected='true']")?.scrollIntoView({ block: "nearest" });
   }
@@ -325,19 +327,8 @@ export function makePalette(source) {
   });
   root.addEventListener("mousedown", (event) => { if (event.target === root) close(); });
 
-  // The keys that open it, before anything on the page takes them: a box
-  // with focus still opens it, the way an editor's palette opens.
-  document.addEventListener("keydown", (event) => {
-    const mod = event.ctrlKey !== event.metaKey && (event.ctrlKey || event.metaKey) && !event.altKey;
-    if (!mod || event.isComposing) return;
-    const key = event.key.toLowerCase();
-    const mode = key === "k" && !event.shiftKey ? "all" : key === "p" ? (event.shiftKey ? "commands" : "files") : null;
-    if (!mode) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (!root.hidden && p.mode === mode) close();
-    else open(mode);
-  }, true);
+  // A key that opens it closes it again from the same mode, as an editor's does.
+  const toggle = (mode) => (!root.hidden && p.mode === mode ? close() : open(mode));
 
-  return { open, close, get shown() { return !root.hidden; }, redraw: () => { if (!root.hidden) draw(); } };
+  return { open, close, toggle, get shown() { return !root.hidden; }, redraw: () => { if (!root.hidden) draw(); } };
 }

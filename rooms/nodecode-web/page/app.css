@@ -2978,3 +2978,21 @@ button.p-row:active { background: var(--field-lit); }
 }
 .palette-item .name .dir { color: var(--tertiary); }
 .palette-item .name .dir mark { color: var(--accent); }
+
+/* Shortcuts: a command's key, in the palette's row and on Settings: Shortcuts.
+   A key is caps in the mono face; on the tab the caps are the row's button,
+   which listens for the new key, ringed in the accent while it does. */
+.palette-item .palette-key { flex: none; padding: 0 6px; font: var(--fs-detail) var(--mono); color: var(--tertiary); border: 1px solid var(--seam); border-radius: var(--r-chip); }
+.short-row { align-items: center; }
+.short-key { display: inline-flex; align-items: center; min-height: 30px; min-width: 132px; padding: 2px 6px; border: 1px solid transparent; border-radius: var(--r-control); background: none; color: var(--secondary); font: var(--fs-detail) var(--sans); text-align: left; }
+button.short-key { cursor: pointer; }
+button.short-key:hover { border-color: var(--seam); background: var(--hover); }
+button.short-key:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.short-key[data-listening] { border-color: var(--accent); color: var(--accent); }
+.short-caps { display: inline-flex; gap: 4px; }
+.short-cap { min-width: 22px; padding: 1px 6px; text-align: center; font: var(--fs-detail) var(--mono); color: var(--foreground); background: var(--raised); border: 1px solid var(--seam); border-bottom-width: 2px; border-radius: var(--r-chip); }
+.short-none { color: var(--tertiary); }
+.short-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; color: var(--secondary); }
+
+.control-pane:not(.ctl-phone) .short-bar { display: flex; align-items: center; gap: 18px; margin-bottom: 8px; }
+.control-pane:not(.ctl-phone) .short-bar input { flex: 1; min-width: 0; }
