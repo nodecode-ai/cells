@@ -65,6 +65,11 @@ turn has said so far."
 (defvar *inflight* '()
   "Fires whose turn has not settled. Guarded by *LOCK*.")
 
+(defvar *wake-read* nil
+  "(SINCE NEWS GAPS): what the wake's sources said, read before the cron lock
+was taken (WAKE-READ-NEWS, wake.lisp), for its gate to use while its cursor
+still is SINCE.")
+
 (defvar *worker* nil
   "The ticker thread while it runs (an NLK:WORKER), or NIL.")
 
@@ -320,8 +325,10 @@ REPLY, trimmed and case-insensitive -- or no answer at all."
 (defun tick (&optional (now (get-universal-time)))
   "Everything the clock owes at NOW: settle the fires that ended, fire or
 miss every due job, write the row once."
-  ;; Returns the number of fires started.
-  (with-cron-lock
+  ;; Returns the number of fires started. The wake's news is read first,
+  ;; outside the lock (WAKE-READ-NEWS).
+  (let ((*wake-read* (wake-read-news now)))
+   (with-cron-lock
     (let ((fired 0)
           (changed nil))
       (dolist (fire (cl:remove-if-not #'fire-status (copy-list *inflight*)))
@@ -374,7 +381,7 @@ miss every due job, write the row once."
                  (incf fired)))))))
       (when changed
         (persist-jobs))
-      fired)))
+      fired))))
 
 (defparameter +longest-sleep-seconds+ 3600
   "The ticker looks at the clock at least hourly whatever the registry says.")

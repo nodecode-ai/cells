@@ -24,7 +24,6 @@ spend SPENT."
      (let ((nodecode-cron::*wake-sources* (list (lambda (since) (declare (ignore since)) ,news)))
            (nodecode-cron::*wake-jitter* (constantly 0)))
        (with-stubbed-fdefinitions ((nodecode-cron::wake-spent-24h (session now)
-                                     (declare (ignore session now))
                                      ,spent))
          (let ((nlk:*scribe-session-id* +cron-wake-operator+))
            (nodecode-cron::wake-verb :on :min ,min :max ,max

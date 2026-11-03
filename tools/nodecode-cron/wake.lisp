@@ -130,7 +130,8 @@ or a CRON-ERROR naming WHAT."
 (defun wake-source-cron-outcomes (since)
   "The other jobs whose newest outcome since SINCE failed, was cancelled,
 missed its instant, overran or was not fired."
-  (loop for job in *jobs*
+  (with-cron-lock
+   (loop for job in *jobs*
         for last = (job-last job)
         when (and (null (job-wake job))
                   last
@@ -138,7 +139,7 @@ missed its instant, overran or was not fired."
                   (member (getf last :status) '("failed" "cancelled" "missed" "overrun" "error")
                           :test #'equal))
           collect (format nil "cron ~a ~a at ~a~@[: ~a~]" (job-id job) (getf last :status)
-                          (local-text (getf last :at)) (getf last :line))))
+                          (local-text (getf last :at)) (getf last :line)))))
 
 (defun wake-source-turns-elsewhere (since)
   "Sessions other than the wake's whose turns ended since SINCE: one line
@@ -146,7 +147,7 @@ each, with how many and how the newest ended."
   (if (not (nlk:store-open-p))
       :unavailable
       (let ((cutoff (iso-utc since))
-            (own (let ((job (wake-job))) (and job (job-session job))))
+            (own (with-cron-lock (let ((job (wake-job))) (and job (job-session job)))))
             (seen (make-hash-table :test #'equal))
             (order '()))
         (dolist (event (nlk:events :kind (list "turn.completed" "turn.failed" "turn.cancelled")
@@ -167,6 +168,20 @@ each, with how many and how the newest ended."
 
 (defun source-label (source)
   (string-downcase (if (symbolp source) (symbol-name source) "source")))
+
+(defun wake-read-news (now &key any)
+  "Outside the cron lock: when the wake job is due at NOW -- or on, under
+ANY -- what its sources report since its cursor, as (SINCE NEWS GAPS); else
+NIL. A source may call GitHub or scan the store, and the lock is what every
+turn's :FRAME publication takes, so no source runs under it."
+  (let ((since (with-cron-lock
+                 (let ((job (wake-job)))
+                   (and job (eq (job-state job) :active)
+                        (or any (and (job-next-at job) (<= (job-next-at job) now)))
+                        (or (wake-get job :cursor) (job-created-at job)))))))
+    (when since
+      (multiple-value-bind (news gaps) (wake-news since)
+        (list since news gaps)))))
 
 (defun wake-news (since)
   "(values NEWS GAPS): the lines *WAKE-SOURCES* report since SINCE, and one
@@ -272,7 +287,10 @@ Caller holds the lock."
                   :warn t))
       (t
        (let ((since (or (wake-get job :cursor) (job-created-at job))))
-         (multiple-value-bind (news gaps) (wake-news since)
+         (multiple-value-bind (news gaps)
+             (if (eql (first *wake-read*) since)
+                 (values (second *wake-read*) (third *wake-read*))
+                 (wake-news since))
            ;; The first wake always fires; after it, the timer's own
            ;; instants wait for news or the longest gap.
            (if (and (null news)
@@ -522,7 +540,8 @@ answers that refusal and does not run."
 (define-verb wake-verb (action &rest keys)
   "The whole of (cron:wake) behind an explicit clock: KEYS are (cron:wake)'s
 and :NOW."
-  (let ((now (or (getf keys :now) (get-universal-time))))
+  (let* ((now (or (getf keys :now) (get-universal-time)))
+         (*wake-read* (and (eq action :now) (wake-read-news now :any t))))
    (with-cron-lock
     (unless (eq action :status)
       (refuse-from-job-session))

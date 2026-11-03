@@ -29,10 +29,6 @@
 
 (in-package #:nodecode-cron)
 
-(defvar *wake-sources* '()
-  "Functions (SINCE-UNIVERSAL-TIME) -> list of one-line strings the wake runner
-calls at a due tick.")
-
 (defparameter *wake-wait-threshold* (* 2 60 60)
   "Seconds an answer may wait on its person before a wake hears of it.")
 
