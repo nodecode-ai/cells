@@ -18,6 +18,8 @@ env SELFFIX_SPEC_COPY="$COPY" SELFFIX_SPEC_ROOT="$R" SELFFIX_SPEC_NC="$NC" \
 P=$(sed -n 's/^nodecode-trial-score \([0-9][0-9]*\).*/\1/p' "$R/trial.out" | tail -1)
 cat "$R/report" 2>/dev/null
 [ -n "$P" ] || { echo "FAIL spec.lisp gave no score:"; tail -5 "$R/trial.out"; P=0; }
-tests=$(bash .github/test-cell.sh tools/nodecode-selffix 2>&1 | tail -1)
+SRC=${NODECODE_SRC:-}
+for d in "$HOME/nodecode/nodecode" "$HOME/Lab/nodecode/nodecode-public"; do [ -z "$SRC" ] && [ -d "$d" ] && SRC=$d; done
+tests=$(NODECODE_SRC=$SRC bash .github/test-cell.sh tools/nodecode-selffix 2>&1 | tail -1)
 case "$tests" in *" 0 failed"*) P=$((P + 1)); echo "pass the cell's tests: $tests";; *) echo "FAIL the cell's tests: $tests";; esac
 echo "$P/14"
