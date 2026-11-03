@@ -129,11 +129,15 @@ or :FAILED."
                 :key "nodecode-selffix")))
 
 (defun wake-source (since)
-  "The cron wake's source: one cycle at the due instant; a finding or a pause is news."
+  "The cron wake's source: one cycle at the due instant. News buys the wake a
+model turn, so only a finding and the failure that trips the breaker are news;
+a single failure, a held pause and every gate answer nothing, and the wake
+keeps its quiet backoff at $0. /selffix status shows the rest."
   (declare (ignore since))
   (multiple-value-bind (status detail) (cycle)
     (case status
       (:finding (post-findings) (list (format nil "selffix found ~a" detail)))
-      (:paused (list (format nil "selffix paused: ~a; (selffix:selffix :on) resumes it" detail)))
-      (:failed (list (format nil "selffix cycle failed: ~a" detail)))
+      (:failed (nlk:when-let (pause (breaker (ledger-rows)))
+                 (list (format nil "selffix paused: ~a, the last ~a; (selffix:selffix :on) resumes it"
+                               pause detail))))
       (t '()))))

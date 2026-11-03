@@ -57,6 +57,15 @@
       (is (eq :paused status) "three failed cycles in a row pause the loop")
       (is (search "3 failed" detail)))))
 
+(deftest selffix-cell-wake-source-pause-is-news-once ()
+  (with-selffix-cycle (:items (list (selffix-item "a") (selffix-item "b") (selffix-item "c") (selffix-item "d"))
+                       :repro (selffix-repro-stub :error "the throwaway home did not start"))
+    (with-cell-stop ((selffix-start "idle_minutes" 30))
+      (let ((news (loop repeat 6 collect (nodecode-selffix::wake-source nil))))
+        (is (and (null (first news)) (null (second news))) "a single failed cycle buys no wake turn")
+        (is (search "paused: 3 failed" (first (third news))) "the failure that trips the breaker is news")
+        (is (every #'null (nthcdr 3 news)) "a held pause stays quiet, so the wake backs off at $0")))))
+
 (deftest selffix-cell-cycle-stop-sticks ()
   (with-selffix-cycle ()
     (let ((nlk:*scribe-session-id* "s-op"))
