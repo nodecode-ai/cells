@@ -297,10 +297,18 @@ turned off meanwhile stays off."
 ;; WAKE-CALL-REFUSAL, the observe level itself, is observe.lisp's: a
 ;; whitelist walk of the snippet's forms, never a match on its text.
 
+(defun calling-session ()
+  "The session whose turn runs on this thread. A :TOOL hook runs before the
+eval binds the scribe's session, so the running turn's own record names it
+there; inside an eval the scribe does."
+  (or (let ((live nle::*live-turn*))
+        (and live (nle::live-turn-session-id live)))
+      nlk:*scribe-session-id*))
+
 (defun wake-gate (op next)
   "The :TOOL point: in the wake's session, a call WAKE-CALL-REFUSAL refuses
 answers that refusal and does not run."
-  (nlk:if-let (refusal (and (wake-session-p nlk:*scribe-session-id*) (wake-call-refusal op)))
+  (nlk:if-let (refusal (and (wake-session-p (calling-session)) (wake-call-refusal op)))
     (nle:failure (format nil "ERROR: refused by the wake's observe level: ~a; the call did not run. A wake reads and thinks; say in your answer what should change." refusal))
     (funcall next op)))
 

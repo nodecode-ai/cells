@@ -191,4 +191,8 @@ spend SPENT."
                                            (lambda (op) (declare (ignore op)) (incf ran) :ran)))))
         (is (eq :ran (call +cron-wake-operator+)) "another session's write runs")
         (is (not (eq :ran (call "cron-wake"))) "the wake's write does not")
+        ;; As a real turn calls it: the :tool point runs before the eval binds
+        ;; the scribe, so only the running turn's record names the session.
+        (let ((nle::*live-turn* (nle::open-live-turn "cron-wake" "t9")))
+          (is (not (eq :ran (call nil))) "the live turn's session is the wake's"))
         (is (= 1 ran))))))
