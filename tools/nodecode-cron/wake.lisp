@@ -273,11 +273,13 @@ Caller holds the lock."
       (t
        (let ((since (or (wake-get job :cursor) (job-created-at job))))
          (multiple-value-bind (news gaps) (wake-news since)
+           ;; The first wake always fires; after it, the timer's own
+           ;; instants wait for news or the longest gap.
            (if (and (null news)
                     (not forced)
                     (not (eq (wake-get job :cause) :asked))
-                    (< (- now (or (wake-get job :fired-at) (job-created-at job)))
-                       (wake-get job :max)))
+                    (wake-get job :fired-at)
+                    (< (- now (wake-get job :fired-at)) (wake-get job :max)))
                (wake-skip job now "no news" :backoff t)
                (let ((extra (wake-context job now news gaps spent)))
                  (wake-put job :asked nil)
@@ -320,7 +322,8 @@ turned off meanwhile stays off."
             "\\(\\s*(?:setf|setq|defparameter|defvar)\\s+\\*"
             "ncd:request\\s+\"(?:post|put|patch|delete)\""
             "\\((?:nck|ncd):(?:post|answer|board-post|board-promote|board-verify|deliver)[a-z-]*[\\s)]"
-            "\\(cron:(?:add|edit|pause|resume|remove|run|wake)[\\s)]"
+            "\\(cron:(?:add|edit|pause|resume|remove|run)[\\s)]"
+            "\\(cron:wake(?!\\s+:status\\s*\\))[\\s)]"
             "\\((?:goal|security|mcp|typesafe|web):[a-z-]*(?:start|stop|patch|fix|add|remove|write|post|send)"
             "\\(with-open-file\\s"))
   "A call whose text matches one of these writes: refused in a wake.")
