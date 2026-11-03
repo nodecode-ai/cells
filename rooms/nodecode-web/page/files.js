@@ -4,7 +4,8 @@
 // itself): a folder is drawn as its rows, a file beside the rows of the
 // folder it is in. The route follows every link and refuses whatever leads
 // out of the folder; this draws what it answers and never judges a path
-// itself. Text is drawn in the mono face with its line numbers, a picture as
+// itself. Text is drawn in the mono face with its line numbers, in its
+// language's colours (syntax.js) when its name says one, a picture as
 // itself, and anything else is offered to save. An upload sends one file's
 // bytes at a time, its progress on the line under the bar, and a name
 // already there is asked about before it is replaced.
@@ -15,6 +16,7 @@
 import { el, when, bytes, headline, plural } from "./observe.js";
 import { iconButton } from "./icons.js";
 import { t } from "./i18n.js";
+import { languageOf, paintFor, LANGUAGE_NAMES } from "./syntax.js";
 
 const parentOf = (path) => path.split("/").slice(0, -1).join("/");
 const nameOf = (path) => path.split("/").pop();
@@ -86,6 +88,11 @@ export function makeFiles({ state, reach, save, toast, redraw, moved, home, open
     edit: null,
     area: null, // the editor's textarea, one node for the whole edit (focus and undo live in it)
     gutter: null, // its line numbers
+    // The editor's colours: the text painted line for line under nothing, over
+    // the textarea whose own letters are clear (paint), and what paints it.
+    paint: null,
+    painter: null,
+    read: null, // the reader's drawn text, kept while the file is the same: { file, text, box }
     leave: null, // a step away from unsaved changes, asking first: { to }
   };
 
@@ -176,6 +183,8 @@ export function makeFiles({ state, reach, save, toast, redraw, moved, home, open
     f.edit = null;
     f.area = null;
     f.gutter = null;
+    f.paint = null;
+    f.painter = null;
     f.leave = null;
   }
 
@@ -239,6 +248,7 @@ export function makeFiles({ state, reach, save, toast, redraw, moved, home, open
     e.text = f.area.value;
     if (e.said && !e.saving) e.said = "";
     numbers();
+    colours();
     paintHead();
   }
 
@@ -249,6 +259,41 @@ export function makeFiles({ state, reach, save, toast, redraw, moved, home, open
       f.gutter.dataset.count = String(count);
     }
     f.gutter.scrollTop = f.area.scrollTop;
+  }
+
+  // The editor in colour: only the lines on screen and a margin either side
+  // are drawn, shifted by the textarea's own scroll, so a megabyte file costs
+  // a keystroke what a screenful does. Its lines stand a whole number of
+  // pixels apart (app.css), so line N is N line heights down, exactly where
+  // the textarea has it, however long the file.
+  function colours() {
+    const area = f.area;
+    const paint = f.paint;
+    if (!paint || !area?.isConnected) return;
+    const painter = f.painter;
+    painter.set(area.value);
+    // The letters' measures are the textarea's own, whatever a rule for a
+    // phone or a zoom gives it: a letter painted wider would drift off its own.
+    const look = getComputedStyle(area);
+    const measures = [look.font, look.letterSpacing, look.wordSpacing, look.tabSize, look.padding, look.fontFeatureSettings, look.fontVariantLigatures].join("|");
+    if (paint.dataset.measures !== measures) {
+      Object.assign(paint.style, { font: look.font, letterSpacing: look.letterSpacing, wordSpacing: look.wordSpacing, tabSize: look.tabSize,
+        padding: look.padding, fontFeatureSettings: look.fontFeatureSettings, fontVariantLigatures: look.fontVariantLigatures });
+      paint.dataset.measures = measures;
+    }
+    const height = parseFloat(look.lineHeight) || 21;
+    const top = area.scrollTop;
+    const first = Math.max(0, Math.floor(top / height) - 40);
+    const last = Math.ceil((top + area.clientHeight) / height) + 40;
+    const key = `${painter.version}:${first}:${last}`;
+    if (paint.dataset.key !== key) {
+      paint.innerHTML = painter.html(first, last);
+      paint.dataset.key = key;
+    }
+    const clip = paint.parentElement;
+    clip.style.width = `${area.clientWidth}px`;
+    clip.style.height = `${area.clientHeight}px`;
+    paint.style.transform = `translate(${-area.scrollLeft}px, ${first * height - top}px)`;
   }
 
   function paintHead() {
@@ -271,15 +316,33 @@ export function makeFiles({ state, reach, save, toast, redraw, moved, home, open
       area.setAttribute("aria-label", t("Edit {name}", { name: f.file.name }));
       area.addEventListener("input", edited);
       area.addEventListener("keydown", keys);
-      area.addEventListener("scroll", () => { f.gutter.scrollTop = area.scrollTop; });
+      area.addEventListener("scroll", () => { f.gutter.scrollTop = area.scrollTop; colours(); });
       f.area = area;
       f.gutter = el("pre", "fs-gutter");
       f.gutter.setAttribute("aria-hidden", "true");
       f.focus = { start: 0, end: 0, top: 0, now: true };
+      const lang = languageOf(f.file.name, e.text);
+      f.painter = lang ? paintFor(lang) : null;
+      if (f.painter) {
+        f.paint = el("pre", "fs-paint");
+        f.paint.setAttribute("aria-hidden", "true");
+        f.paint.dataset.lang = lang;
+        // The window, the panes beside it or the phone turning resize it.
+        new ResizeObserver(() => colours()).observe(area);
+      }
     }
     const box = el("div", "fs-text fs-editing");
-    box.append(f.gutter, f.area);
+    const well = el("div", "fs-well");
+    if (f.paint) {
+      well.dataset.painted = "";
+      const clip = el("div", "fs-clip");
+      clip.append(f.paint);
+      well.append(clip);
+    }
+    well.append(f.area);
+    box.append(f.gutter, well);
     numbers();
+    queueMicrotask(colours);
     return box;
   }
 
@@ -491,15 +554,28 @@ export function makeFiles({ state, reach, save, toast, redraw, moved, home, open
     const row = f.listing?.entries?.find((entry) => join(f.listing.path, entry.name) === file.path);
     const size = file.size ?? row?.size;
     const modified = file.modified ?? row?.modified;
-    return [size != null ? bytes(size) : "", modified ? when(modified) : ""].filter(Boolean).join(" · ");
+    const lang = file.text !== undefined && LANGUAGE_NAMES[languageOf(file.name, file.text)];
+    return [lang || "", size != null ? bytes(size) : "", modified ? when(modified) : ""].filter(Boolean).join(" · ");
   }
 
-  function numbered(text) {
+  // The file's text with its line numbers, in its language's colours when it
+  // has one; drawn once per file read and kept through the view's redraws.
+  function numbered(file) {
+    const text = file.text;
+    if (f.read?.file === file && f.read.text === text) return f.read.box;
     const body = text.endsWith("\n") ? text.slice(0, -1) : text;
     const box = el("div", "fs-text");
     const count = body.split("\n").length;
-    box.append(el("pre", "fs-gutter", Array.from({ length: count }, (_, at) => at + 1).join("\n")),
-      el("pre", "fs-code", body));
+    const code = el("pre", "fs-code");
+    const lang = languageOf(file.name, text);
+    const painter = lang && paintFor(lang);
+    if (painter) {
+      painter.set(body);
+      code.innerHTML = painter.html(0, painter.count);
+      code.dataset.lang = lang;
+    } else code.textContent = body;
+    box.append(el("pre", "fs-gutter", Array.from({ length: count }, (_, at) => at + 1).join("\n")), code);
+    f.read = { file, text, box };
     return box;
   }
 
@@ -547,7 +623,7 @@ export function makeFiles({ state, reach, save, toast, redraw, moved, home, open
       picture.append(img);
       node.append(picture);
     } else if (file.text !== undefined) {
-      node.append(file.text ? numbered(file.text) : el("p", "obs-note fs-note", t("This file is empty.")));
+      node.append(file.text ? numbered(file) : el("p", "obs-note fs-note", t("This file is empty.")));
     } else {
       node.append(el("p", "obs-note fs-note", file.why === "too_large"
         ? t("Not shown: this file is too large to read here. Download saves it.")
@@ -572,6 +648,9 @@ export function makeFiles({ state, reach, save, toast, redraw, moved, home, open
     if (f.area && document.activeElement === f.area) {
       f.focus = { start: f.area.selectionStart, end: f.area.selectionEnd, top: f.area.scrollTop, now: true };
     }
+    // Where the reader was scrolled to comes back through a redraw, and
+    // through a read again of the same file.
+    const read = f.read?.box?.isConnected ? { path: f.read.file.path, top: f.read.box.scrollTop, left: f.read.box.scrollLeft } : null;
     load();
     const root = el("div", "fs");
     const l = f.listing;
@@ -601,6 +680,15 @@ export function makeFiles({ state, reach, save, toast, redraw, moved, home, open
         f.area.setSelectionRange(start, end);
         f.area.scrollTop = top;
         f.gutter.scrollTop = top;
+        colours();
+      });
+    }
+    if (read && (read.top || read.left)) {
+      queueMicrotask(() => {
+        const box = f.read?.box;
+        if (!box?.isConnected || f.read.file.path !== read.path) return;
+        box.scrollTop = read.top;
+        box.scrollLeft = read.left;
       });
     }
     return root;
