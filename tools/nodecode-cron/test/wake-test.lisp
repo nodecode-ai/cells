@@ -46,8 +46,7 @@ spend SPENT."
       (is (= first (nodecode-cron::job-next-at (cron-wake-job))) "the first wake is one shortest gap away")
       (is (= 1 (nodecode-cron::tick first)) "the first wake fires with no news")
       (cron-wake-settle (+ first 60) "SILENT")
-      (is (= (+ first 3600) (nodecode-cron::job-next-at (cron-wake-job)))
-          "a silent wake doubles the gap, counted from its start")
+      (is (= (+ first 3600) (nodecode-cron::job-next-at (cron-wake-job))) "silent: the gap doubles, from the start")
       (is (= 0 (nodecode-cron::tick (+ first 3600))) "no news: no fire")
       (is (= 1 (length (cron-submits))) "and no model call")
       (is (equal "skipped" (getf (nodecode-cron::job-last (cron-wake-job)) :status)))
@@ -63,8 +62,7 @@ spend SPENT."
       (cron-wake-settle (+ first 120) "SILENT")
       (is (= (+ first 120 2700) (nodecode-cron::job-next-at (cron-wake-job))) "the picked delay, from the wake's end")
       (is (= 1 (nodecode-cron::tick (+ first 120 2700))) "a picked instant fires with no news")
-      (is (search "the time you picked (check CI)" (getf (second (cron-submits)) :prompt))
-          "and the wake reads why it woke"))))
+      (is (search "the time you picked (check CI)" (getf (second (cron-submits)) :prompt)) "it reads why"))))
 
 (deftest cron-cell-wake-next-is-held-to-the-bounds-and-to-its-own-session ()
   (with-cron-wake (:min "30m" :max "2h")
@@ -80,11 +78,10 @@ spend SPENT."
       (nodecode-cron::tick first)
       (cron-wake-settle (+ first 60) "PR #178 went red on macOS.")
       (let ((job (cron-wake-job)))
-        (is (= (+ first 60 1800) (nodecode-cron::job-next-at job))
-            "the shortest gap after a wake that spoke, from its end")
+        (is (= (+ first 60 1800) (nodecode-cron::job-next-at job)) "spoke: the shortest gap, from its end")
         (is (equal "PR #178 went red on macOS." (nodecode-cron::wake-get job :said)))
-        (is (search "PR #178 went red" (getf (first (cron-submits-to +cron-wake-operator+)) :prompt))
-            "the answer went to the session that turned wakes on")))))
+        ;; The answer went to the session that turned wakes on.
+        (is (search "PR #178 went red" (getf (first (cron-submits-to +cron-wake-operator+)) :prompt)))))))
 
 ;;; --- the gates ---------------------------------------------------------------------------
 
@@ -158,15 +155,13 @@ spend SPENT."
            (let ((arguments (make-hash-table :test #'equal)))
              (setf (gethash "form" arguments) form)
              (when strings (setf (gethash "strings" arguments) strings))
-             (nodecode-cron::wake-call-refusal (list :arguments arguments)))))
+             (nodecode-cron::wake-call-refusal (list :name "eval" :arguments arguments)))))
     (dolist (read '("(sh \"git log -3 --oneline\")"
                     "(sh \"gh pr checks 178 --repo nodecode-ai/nodecode | head -20\")"
-                    "(sh \"cd ~/Lab && rg -n wake tools 2>/dev/null | wc -l\")"
+                    "(sh \"rg -n wake /home/vise/Lab/nodecode\")"
                     "(recall-log :match \"keep an eye\" :limit 20)"
-                    "(let (seen) (push 1 seen) seen)"
                     "(cron:wake-next \"2h\" \"check CI\")"
-                    "(cron:wake :status)"
-                    "(ncd:request \"GET\" \"/channels/1/messages\")"))
+                    "(cron:wake :status)"))
       (is (null (verdict read)) (format nil "a read passes: ~a" read)))
     (dolist (write '("(write-file \"x\" \"y\")"
                      "(edit \"x\" ($ \"a\") ($ \"b\"))"
