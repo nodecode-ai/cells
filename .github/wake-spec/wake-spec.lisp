@@ -88,7 +88,7 @@
 
 (deftest wake-spec-on-makes-one-job-that-status-reads ()
   (with-wake ()
-    (is-present (wake-job) "on made the wake job")
+    (is-present (job (wake-job)) "on made the wake job")
     (wake-on :min "1h" :max "8h")
     (is (= 1 (length nodecode-cron::*jobs*)) "a second on re-bounds the one job")
     (let ((status (wake-status)))
@@ -143,19 +143,37 @@
 
 ;;; --- the $0 check before any model call -------------------------------------
 
+;; An instant the wake picked always fires ("check #178's CI in 30m" must
+;; not be dropped because no source watches CI); the $0 gate holds only the
+;; timer's own instants, the backoff after a silent wake.
+
+(deftest wake-spec-a-picked-instant-fires-without-news ()
+  (with-wake (:min "30m" :max "4h" :sources ((wake-news)))
+    (wake-at (+cron-now+) (wake-as ((wake-session)) (cron:wake-next "30m" "check #178's CI")))
+    (wake-tick (+ +cron-now+ 1800))
+    (is (= 1 (length (cron-submits))) "the wake's own pick fires")))
+
 (deftest wake-spec-no-news-skips-at-zero-cost-and-backs-off ()
   (with-wake (:min "30m" :max "4h" :sources ((wake-news)))
     (wake-at (+cron-now+) (wake-as ((wake-session)) (cron:wake-next "30m" "start")))
     (let ((due (+ +cron-now+ 1800)))
       (wake-tick due)
-      (is (null (cron-submits)) "no model call")
-      (is (= (+ due 3600) (wake-next-at)) "the gap doubled"))))
+      (wake-settle due "SILENT")
+      (is (= (+ due 3600) (wake-next-at)) "a silent wake doubled the gap")
+      (setf due (+ due 3600))
+      (wake-tick due)
+      (is (= 1 (length (cron-submits))) "the backoff instant with no news: no model call")
+      (is (= (+ due 7200) (wake-next-at)) "and the gap doubled again"))))
 
 (deftest wake-spec-quiet-at-max-still-fires ()
   (with-wake (:min "30m" :max "1h" :sources ((wake-news)))
-    (wake-at (+cron-now+) (wake-as ((wake-session)) (cron:wake-next "1h" "heartbeat")))
-    (wake-tick (+ +cron-now+ 3600))
-    (is (= 1 (length (cron-submits))) "at max the wake fires with no news")))
+    (wake-at (+cron-now+) (wake-as ((wake-session)) (cron:wake-next "30m" "start")))
+    (let ((due (+ +cron-now+ 1800)))
+      (wake-tick due)
+      (wake-settle due "SILENT")
+      (is (= (+ due 3600) (wake-next-at)) "the backoff reached max")
+      (wake-tick (+ due 3600))
+      (is (= 2 (length (cron-submits))) "at max the wake fires with no news"))))
 
 (deftest wake-spec-the-prompt-carries-the-facts-and-the-verbs ()
   (with-wake (:sources ((wake-news "PR #90: checks went red" "s-work: 2 turns ended")))
@@ -226,7 +244,7 @@
       (is (signals-error cron:cron-error (cron:add "30m" "z")) "add")
       (is (signals-error cron:cron-error (cron:run "other")) "run another job")
       (is (signals-error cron:cron-error (cron:remove "other")) "remove another job"))
-    (is-present (nodecode-cron::find-job "other"))))
+    (is-present (job (nodecode-cron::find-job "other")) "the other job is still there")))
 
 (deftest wake-spec-the-wake-session-observes-only ()
   (with-wake ()
