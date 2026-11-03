@@ -207,21 +207,8 @@ line for each source that could not say. Only NEWS counts toward waking."
   (multiple-value-bind (second minute hour day month year) (decode-universal-time universal 0)
     (format nil "~4,'0d-~2,'0d-~2,'0dT~2,'0d:~2,'0d:~2,'0d" year month day hour minute second)))
 
-(defun wake-spent-24h (session now)
-  "US dollars SESSION's provider rounds cost in the 24 hours before NOW, or
-NIL when a round in that window is unpriced or no store is open: unknown is
-never zero."
-  (when (nlk:store-open-p)
-    (let ((cutoff (iso-utc (- now 86400)))
-          (total 0d0))
-      (dolist (event (nlk:events :session-id session :kind (list "turn.usage")
-                                 :order :newest :limit 5000 :as :instances)
-                     total)
-        (when (string< (nlk::event-occurred-at event) cutoff)
-          (return total))
-        (unless (nlk::turn-usage-event-cost-known event)
-          (return nil))
-        (incf total (nlk::turn-usage-event-cost-usd event))))))
+;; WAKE-SPENT-24H, the reader the allowance gates on, is observe.lisp's:
+;; the wake's session and every session under it, off the event log.
 
 ;;; --- the due instant ----------------------------------------------------------------
 
@@ -332,97 +319,8 @@ turned off meanwhile stays off."
 
 ;;; --- the observe level ----------------------------------------------------------------
 
-(defparameter +wake-write-patterns+
-  (mapcar (lambda (pattern) (ppcre:create-scanner pattern :case-insensitive-mode t))
-          '("\\((?:[a-z0-9.-]+:{1,2})?(?:edit|write-file|patch|forget|rollback|fork|look-write|delete-file|rename-file|ensure-directories-exist|config-set|fmakunbound|makunbound|unintern|unhook|hook|remhash|clrhash)[\\s)]"
-            "\\((?:[a-z0-9.-]+:{1,2})?def[a-z-]*\\s"
-            "\\(\\s*setf\\s+\\(\\s*(?:symbol-value|fdefinition|symbol-function|gethash)\\s"
-            "\\(\\s*(?:setf|setq|defparameter|defvar)\\s+\\*"
-            "ncd:request\\s+\"(?:post|put|patch|delete)\""
-            "\\((?:nck|ncd):(?:post|answer|board-post|board-promote|board-verify|deliver)[a-z-]*[\\s)]"
-            "\\(cron:(?:add|edit|pause|resume|remove|run)[\\s)]"
-            "\\(cron:wake(?!\\s+:status\\s*\\))[\\s)]"
-            "\\((?:goal|security|mcp|typesafe|web):[a-z-]*(?:start|stop|patch|fix|add|remove|write|post|send)"
-            "\\(with-open-file\\s"))
-  "A call whose text matches one of these writes: refused in a wake.")
-
-(defparameter +wake-sh-literal+ (ppcre:create-scanner "\\(sh\\s+\"((?:[^\"\\\\]|\\\\.)*)\"")
-  "(sh \"command\"): the one shape of a shell call a wake may make.")
-
-(defparameter +wake-sh-call+ (ppcre:create-scanner "\\(sh[\\s)]"))
-
-(defparameter +wake-read-commands+
-  '("ls" "cat" "head" "tail" "wc" "grep" "egrep" "fgrep" "rg" "find" "stat" "du" "df" "file"
-    "sort" "uniq" "cut" "jq" "tr" "date" "echo" "pwd" "which" "uptime" "free" "ps" "readlink"
-    "basename" "dirname" "tree" "diff" "comm" "column" "nl" "true" "cd" "sed" "git" "gh")
-  "First words a wake's shell command may start with; sed, git and gh are
-further held by WAKE-SH-SEGMENT-REFUSAL.")
-
-(defparameter +wake-git-reads+
-  '("log" "show" "diff" "status" "rev-parse" "blame" "describe" "ls-files" "ls-tree"
-    "shortlog" "grep" "cat-file" "rev-list" "merge-base"))
-
-(defparameter +wake-gh-reads+ '("view" "list" "checks" "diff" "status"))
-
-(defun unescape-literal (text)
-  (ppcre:regex-replace-all "\\\\(.)" text "\\1"))
-
-(defun wake-sh-segment-refusal (segment)
-  "Why one pipeline segment of a wake's shell command is not a read, or NIL."
-  (let* ((words (cl:remove "" (ppcre:split "\\s+" (string-trim '(#\Space #\Tab) segment))
-                           :test #'string=))
-         (head (first words)))
-    (cond
-      ((null head) nil)
-      ((not (member head +wake-read-commands+ :test #'string=))
-       (format nil "~a is not a read the wake may run" head))
-      ((and (string= head "sed") (or (not (member "-n" words :test #'string=))
-                                     (find-if (lambda (w) (uiop:string-prefix-p "-i" w)) words)))
-       "sed runs only as sed -n, never -i")
-      ((and (string= head "find") (intersection words '("-delete" "-exec" "-execdir" "-ok" "-fprint" "-fls")
-                                                :test #'string=))
-       "find with an action that writes or runs")
-      ((and (string= head "git")
-            (not (member (find-if-not (lambda (w) (uiop:string-prefix-p "-" w)) (rest words))
-                         +wake-git-reads+ :test #'string=)))
-       (format nil "git ~a is not a read" (or (second words) "")))
-      ((and (string= head "gh")
-            (not (and (member (second words) '("pr" "issue" "run" "release" "repo") :test #'string=)
-                      (member (third words) +wake-gh-reads+ :test #'string=))))
-       (format nil "gh ~{~a~^ ~} is not a read" (subseq (rest words) 0 (min 2 (length (rest words)))))))))
-
-(defun wake-sh-refusal (command)
-  "Why the shell COMMAND is not a read a wake may run, or NIL."
-  (let ((stripped (ppcre:regex-replace-all "(?:2>&1|2?>\\s*/dev/null)" command "")))
-    (cond
-      ((ppcre:scan "[<>]" stripped) "a redirection")
-      ((ppcre:scan "\\$\\(|`" stripped) "a command substitution")
-      (t (some #'wake-sh-segment-refusal (ppcre:split "&&|\\|\\||;|\\||\\n|&" stripped))))))
-
-(defun wake-call-refusal (op)
-  "Why the tool call OP is not a read the observe level allows, or NIL: a
-call whose text names a write, or a shell call that is not one literal
-command of reads."
-  (let* ((arguments (getf op :arguments))
-         (form (and (hash-table-p arguments) (gethash "form" arguments)))
-         (text (cond ((stringp form) form) (form (format nil "~s" form)) (t ""))))
-    (or (when (find-if (lambda (scanner) (ppcre:scan scanner text)) +wake-write-patterns+)
-          (let ((match (some (lambda (scanner)
-                               (multiple-value-bind (start end) (ppcre:scan scanner text)
-                                 (and start (subseq text start (min end (+ start 40))))))
-                             +wake-write-patterns+)))
-            (format nil "~s writes" (string-trim '(#\Space #\Newline) match))))
-        (let ((calls (length (ppcre:all-matches-as-strings +wake-sh-call+ text)))
-              (literals '()))
-          (ppcre:do-register-groups (literal) (+wake-sh-literal+ text)
-            (push (unescape-literal literal) literals))
-          (cond ((zerop calls) nil)
-                ((/= calls (length literals))
-                 "a shell call must be (sh \"one literal command\")")
-                (t (some (lambda (command)
-                           (nlk:when-let (why (wake-sh-refusal command))
-                             (format nil "sh ~s: ~a" (nlk:first-line command 80) why)))
-                         literals)))))))
+;; WAKE-CALL-REFUSAL, the observe level itself, is observe.lisp's: a
+;; whitelist walk of the snippet's forms, never a match on its text.
 
 (defun wake-gate (op next)
   "The :TOOL point: in the wake's session, a call WAKE-CALL-REFUSAL refuses
