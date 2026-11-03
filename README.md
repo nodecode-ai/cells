@@ -16,6 +16,7 @@ is what a new cell is copied from.
 
 | Folder | What it does |
 | --- | --- |
+| [`nodecode-acp`](providers/nodecode-acp) | Claude Code, Codex, Gemini CLI or any ACP agent as a session's agent: its calls, diffs, permission cards and Stop on the page. |
 | [`nodecode-alibaba-coding-plan`](providers/nodecode-alibaba-coding-plan) | Alibaba Coding Plan: Model Studio's coding subscription as a Nodecode provider. |
 | [`nodecode-alibaba-token-plan`](providers/nodecode-alibaba-token-plan) | QwenCloud Token Plan: Alibaba's regional token subscription as a Nodecode provider. |
 | [`nodecode-amazon-bedrock`](providers/nodecode-amazon-bedrock) | Amazon Bedrock: the Converse Stream wire, SigV4 signing and the AWS event stream, on a lane of its own. |

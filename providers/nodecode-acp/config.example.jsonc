@@ -1,0 +1,31 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. Every member is optional: with no section the
+// presets (claude-code, codex, gemini) are offered as acp/<name>.
+{
+  "acp": {
+    "agents": {
+      // A preset changed: Claude Code's own permission mode for the
+      // sessions it opens (default, acceptEdits, plan, bypassPermissions).
+      "claude-code": { "mode": "acceptEdits" },
+
+      // An agent added: any program that speaks ACP on stdio. title is what
+      // its question cards say ("OpenCode wants to edit x"); env is added to
+      // the environment it starts in.
+      "opencode": { "command": "opencode", "args": ["acp"], "title": "OpenCode", "env": {} },
+
+      // A preset taken off.
+      "gemini": { "enabled": false }
+    },
+
+    // How long an agent may take to start and open its session; npx fetches
+    // an adapter on first use.
+    "start_seconds": 120,
+
+    // How long a permission card waits before the agent hears no.
+    "ask_seconds": 600,
+
+    // An agent no turn has used this long is stopped; its session is loaded
+    // again at the next turn.
+    "idle_minutes": 30
+  }
+}
