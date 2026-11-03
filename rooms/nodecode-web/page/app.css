@@ -2785,6 +2785,8 @@ button.p-row:active { background: var(--field-lit); }
   .strip-mark .axo { width: 35px; height: 30px; }
   #app:is([data-pane="dashboard"], [data-pane="control"]) .strip > #unfold { display: none; }
   #app:is([data-pane="dashboard"], [data-pane="control"]) .strip > .strip-mark { display: flex; }
+  #app[data-pane="board"] .strip > #unfold { display: none; }
+  #app[data-pane="board"] .strip > .strip-mark { display: flex; }
   #app .strip:has(.crumb) > .strip-mark { display: none; }
   .title-block { grid-area: 1 / 2 / 2 / 3; align-self: end; justify-content: center; min-width: 0; }
   .strip:has(> #status[hidden]) .title-block { grid-row: 1 / 3; align-self: center; }
@@ -2809,8 +2811,14 @@ button.p-row:active { background: var(--field-lit); }
   #app:is([data-pane="dashboard"], [data-pane="control"]):not(.column-open) .railed { visibility: visible; }
   #app:is([data-pane="dashboard"], [data-pane="control"]):not(.column-open) #new-session { visibility: hidden; }
   #app:is([data-pane="dashboard"], [data-pane="control"]):not(.column-open) #sessions-tab { color: var(--secondary); }
+  /* The Board is a top page as they are. */
+  #app[data-pane="board"]:not(.column-open) .column { transform: none; transition: none; }
+  #app[data-pane="board"]:not(.column-open) .railed { visibility: visible; }
+  #app[data-pane="board"]:not(.column-open) #new-session { visibility: hidden; }
+  #app[data-pane="board"]:not(.column-open) #sessions-tab { color: var(--secondary); }
   #app.column-open .railed > a.row[aria-current="page"] { color: var(--secondary); }
   #app:is([data-pane="dashboard"], [data-pane="control"]) .observe .lane { padding-bottom: calc(109px + env(safe-area-inset-bottom)); }
+  #app[data-pane="board"] .observe .lane { padding-bottom: calc(109px + env(safe-area-inset-bottom)); }
   .ctl-phone .ctl-logs [data-act="follow"] { bottom: calc(76px + env(safe-area-inset-bottom)); }
 }
 
@@ -2890,6 +2898,7 @@ button.p-row:active { background: var(--field-lit); }
   .group-head { height: 60px; flex: none; margin: 0 -20px 12px; padding: 0 52px 0 20px; border-bottom: 1px solid var(--seam); }
   .group-head .micro { font: 600 var(--fs-title)/1.3 var(--sans); letter-spacing: 0; text-transform: none; color: var(--primary); }
   #app:is([data-pane="dashboard"], [data-pane="control"]) .group { display: none; }
+  #app[data-pane="board"] .group { display: none; }
   .place { grid-area: 1 / 2 / 4 / 3; min-height: 0; display: flex; flex-direction: column; padding: 0 12px 16px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--seam-lit) transparent; }
   .place[hidden] { display: none; }
   .place-head {
@@ -2934,3 +2943,52 @@ button.p-row:active { background: var(--field-lit); }
   /* The list holds the Dashboard's sections, so its bar holds only the range. */
   .dashboard .dash-jumps { display: none; }
 }
+
+/* The Board (board.js): the form a task is written in, over four columns of
+   cards -- To do, Running, Needs you, Done -- as many abreast as its width
+   holds. A To do card is lifted and dropped; a started one opens its session. */
+.board { container-type: inline-size; }
+.board > * + * { margin-top: 28px; }
+.task-new { display: grid; gap: 10px; }
+.task-new .task-prompt { width: 100%; min-height: 64px; resize: vertical; font: var(--fs-body)/1.5 var(--sans); }
+.task-new-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.task-new-row .task-folder { flex: 1 1 260px; min-width: 0; font: var(--fs-detail) var(--mono); }
+.task-wt { display: inline-flex; align-items: center; gap: 8px; font: var(--fs-body) var(--sans); color: var(--secondary); cursor: pointer; }
+.task-wt[hidden] { display: none; }
+.task-wt input { accent-color: var(--accent-fill); }
+.task-said { margin: 0; font: var(--fs-detail)/1.6 var(--sans); color: var(--danger-lit); }
+.task-said:empty { display: none; }
+.board-cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
+@container (max-width: 760px) { .board-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (max-width: 440px) { .board-cols { grid-template-columns: minmax(0, 1fr); } }
+.board-col { min-width: 0; padding: 12px; border: 1px solid transparent; border-radius: var(--r-control); background: var(--subtle); transition: border-color 130ms; }
+.board-col.drop-here { border-color: var(--accent-fill); }
+.board-col-head { display: flex; align-items: baseline; gap: 8px; min-height: 22px; margin: 0 2px 12px; }
+.board-col-head .micro { margin: 0; color: var(--tertiary); }
+.board-col-head .n { font: var(--fs-detail) var(--mono); color: var(--tertiary); }
+.board-col-head .word { margin-left: auto; font-size: var(--fs-detail); }
+.board-cards { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.board-empty { padding: 12px 2px; font: var(--fs-detail)/1.5 var(--sans); color: var(--tertiary); }
+.task-card { position: relative; min-width: 0; padding: 12px; border: 1px solid var(--seam); border-radius: var(--r-control); background: var(--raised); transition: border-color 130ms, opacity 130ms; }
+.task-card:hover { border-color: var(--seam-lit); }
+.task-card[draggable="true"] { cursor: grab; }
+.task-card.lifted { opacity: 0.45; }
+.task-card.drop-here { box-shadow: 0 -2px 0 var(--accent-fill); }
+.task-card:focus-visible { outline: 1px solid var(--accent-fill); outline-offset: 2px; }
+.task-title { margin: 0; font: var(--fs-body)/1.45 var(--sans); color: var(--foreground); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.task-meta { margin: 6px 0 0; font: var(--fs-detail)/1.45 var(--sans); color: var(--tertiary); overflow-wrap: anywhere; }
+.task-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; }
+.task-acts [data-act="edit"] { margin-left: auto; }
+.task-edit { width: 100%; resize: vertical; font: var(--fs-body)/1.5 var(--sans); }
+.task-card:has(> .task-open) { padding: 0; }
+.task-open { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 10px; width: 100%; padding: 12px; border-radius: var(--r-control); text-align: left; }
+.task-open .ball { align-self: start; margin-top: 7px; }
+.task-open:hover .task-title { color: var(--primary); }
+.task-open:focus-visible { outline: 1px solid var(--accent-fill); outline-offset: 2px; }
+.task-words { display: grid; min-width: 0; }
+.task-words .task-meta { margin-top: 4px; }
+.task-open .reading { font: var(--fs-detail) var(--mono); color: var(--tertiary); }
+.task-clear { margin: 0 12px 12px; }
+
+/* The board takes the reading column whole: four columns want the width. */
+.observe .lane:has(> .board) { max-width: 1120px; }

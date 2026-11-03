@@ -76,4 +76,6 @@ switch is on is served from here, so the page cannot turn it off."
     (:guide "nothing to set: `nodecode web' opens the page"))
   (:route "/web/" #'serve-page :public t)
   (:route "/web" #'redirect-to-page :public t)
+  ;; The Board's To do list (tasks.lisp), behind the operator token.
+  (:route "/api/web/tasks" (lambda (env) (tasks-route env)))
   (:hook 'nle::cell-off-refusal #'keep-the-page))
