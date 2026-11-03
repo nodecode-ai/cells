@@ -93,3 +93,9 @@
       (is (null items))
       (is (equal '(:turn-failed) (mapcar #'car unread)) "the source that could not read is named")
       (is (search "store locked" (cdr (first unread)))))))
+
+(deftest selffix-cell-backlog-leaves-out-the-wake ()
+  (is (eq 'nodecode-cron::wake-session-p nodecode-selffix::*excluded-session-p*) "the wake the cycle runs on is not backlog by default")
+  (let ((nodecode-selffix::*excluded-session-p* (lambda (id) (equal id "cron-wake")))
+        (rows '(("cron-wake" "turn-1" "2026-11-03T00:00:00.000Z" "{\"condition-type\":\"ERROR\",\"detail\":\"x\"}"))))
+    (is (null (nodecode-selffix::turn-failed-items rows)) "a failure in the excluded session is left out")))

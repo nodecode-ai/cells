@@ -37,10 +37,11 @@
 (defparameter *evidence-cap* 3
   "How many of an item's newest occurrences it carries as evidence.")
 
-(defvar *excluded-session-p* (constantly nil)
+(defvar *excluded-session-p* 'nodecode-cron::wake-session-p
   "A predicate on a session id: true for a session whose failures are not
-backlog -- the self-fix cycle's own, so it never feeds on itself. Forks are
-left out besides.")
+backlog. The cron wake's own, by default: the cycle runs on that wake, so a
+cycle that fails never feeds the next one its own failure. Forks are left
+out besides.")
 
 ;;; --- normalizing ------------------------------------------------------------
 
