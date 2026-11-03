@@ -38,7 +38,8 @@
                (:file "schedule")
                (:file "jobs")
                (:file "ticker")
-               (:file "cell"))
+               (:file "cell")
+               (:file "wake-sources"))
   :in-order-to ((test-op (test-op "nodecode-cron/test"))))
 
 (defsystem "nodecode-cron/test"
@@ -50,6 +51,7 @@
   :components ((:file "support")
                (:file "schedule-test")
                (:file "cell-test")
-               (:file "import-test"))
+               (:file "import-test")
+               (:file "wake-sources-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-cron-tests)))
