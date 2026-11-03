@@ -12,7 +12,9 @@
 import { diffHtml, markdown } from "./md.js";
 import { t, translatePage } from "./i18n.js";
 import { drawRun, drawInspector, drawDashboard, drawTimeline, turnSpan, meterOf, ms, usd, plural, bytes, RANGES, JUMPS, INSPECTOR_TABS, ORIGIN_WORDS, PHONE } from "./observe.js";
-import { makeControl, WIDE } from "./control.js";
+import { makeControl, WIDE, TABS as CONTROL_TABS } from "./control.js";
+import { makePalette } from "./palette.js";
+import { makeKeys } from "./keys.js";
 import { qrCode } from "./access.js";
 import { makeFiles, putFile } from "./files.js";
 import { icon, iconButton } from "./icons.js";
@@ -5541,3 +5543,89 @@ renderHead();
 renderSessions();
 if (!state.current) renderOpener();
 connect();
+
+// --- the palette and the keys ---------------------------------------------------------
+// Ctrl+K: palette.js matches what this page already holds; here is where it
+// reads it and how a pick goes there. keys.js keeps which key runs what;
+// the commands, and what each does, are below the palette.
+const keys = makeKeys();
+const VIEW_NAMES = { chat: t("Chat"), run: t("Run"), files: t("Files") };
+const palette = makePalette({
+  current: () => state.current,
+  sessions: () => state.sessions
+    .filter((entry) => !entry.standby)
+    .sort((a, b) => stamp(b.updated_at) - stamp(a.updated_at))
+    .map((entry) => ({
+      id: entry.id,
+      name: sessionName(entry),
+      detail: [entry.working_directory && folderName(entry.working_directory), entry.updated_at && since(entry.updated_at)].filter(Boolean).join(" · "),
+    })),
+  views: () => [
+    ...(state.current ? sessionViews().filter((v, i, all) => all.indexOf(v) === i).map((v) => ({
+      id: `session-${v}`, name: VIEW_NAMES[v] || v, detail: t("this session"), command: `view-${v}`,
+      hash: `s=${encodeURIComponent(state.current)}${v === "chat" ? "" : `&v=${v}`}`,
+    })) : []),
+    { id: "dashboard", name: t("Dashboard"), detail: t("usage, cost and health"), hash: "v=dashboard", command: "dashboard" },
+    ...CONTROL_TABS.map(([tab, label]) => ({ id: `control-${tab}`, name: `${t("Settings")}: ${label}`, detail: "", hash: `v=control&tab=${tab}`,
+      command: tab === "shortcuts" ? "shortcuts" : undefined })),
+  ],
+  actions: () => [
+    { id: "new", name: t("New session"), detail: "", command: "new-session", run: () => { openNew(); writeLink(); } },
+    ...(state.current ? [
+      { id: "model", name: t("Model and reasoning"), detail: t("this session"), command: "model", run: () => { if (board()) setPane("chat"); openModels(); } },
+      { id: "history", name: t("History"), detail: t("rewind or fork a turn"), command: "history", run: () => { if (board()) setPane("chat"); openHistory(); } },
+    ] : []),
+  ],
+  keyOf: (id) => keys.label(id),
+  commands: () => slash.commands,
+  files: async (id) => {
+    const body = await api("GET", `/api/gateway/sessions/${encodeURIComponent(id)}/files?find=1`);
+    // A nodecode from before ?find=1 answers the folder's own listing.
+    if (body.kind === "files") return { files: body.files || [], cut: !!body.cut };
+    return { files: (body.entries || []).filter((entry) => entry.kind === "file").map((entry) => entry.name), cut: true };
+  },
+  go: (hash) => { location.hash = hash; },
+  openSession: (id) => select(id),
+  compose: (text) => {
+    if (board()) { setPane("chat"); writeLink(); }
+    promptEl.value = text;
+    promptEl.dispatchEvent(new Event("input", { bubbles: true }));
+    promptEl.focus();
+    promptEl.setSelectionRange(text.length, text.length);
+  },
+});
+// The desktop app's menu opens it too.
+window.nodecodePalette = palette;
+
+// Every command a key can run, with its key as it comes; Settings:
+// Shortcuts changes any of them, and the desktop app's own join them there.
+// A view a session does not have, or a session's command with none open,
+// lets its key through to the page.
+const inSession = () => !!state.current;
+const hasView = (view) => () => !!state.current && sessionViews().includes(view);
+const toView = (view) => () => { location.hash = `s=${encodeURIComponent(state.current)}${view === "chat" ? "" : `&v=${view}`}`; };
+function toggleColumn() {
+  if (narrow.matches) app.classList.toggle("column-open");
+  else setFolded(!app.classList.contains("folded"));
+}
+keys.add([
+  { id: "palette", group: "palette", name: t("Command palette"), chord: "CmdOrCtrl+K", run: () => palette.toggle("all") },
+  { id: "quick-open", group: "palette", name: t("Open a file"), chord: "CmdOrCtrl+P", run: () => palette.toggle("files") },
+  { id: "commands", group: "palette", name: t("Find a command"), chord: "CmdOrCtrl+Shift+P", run: () => palette.toggle("commands") },
+  { id: "new-session", group: "go", name: t("New session"), chord: "", run: () => { palette.close(false); openNew(); writeLink(); } },
+  { id: "sidebar", group: "go", name: t("Show or hide the session list"), chord: "CmdOrCtrl+B", run: toggleColumn },
+  { id: "prompt", group: "go", name: t("Go to the prompt box"), chord: "", run: () => {
+    palette.close(false);
+    if (board()) { setPane("chat"); writeLink(); }
+    promptEl.focus();
+  } },
+  { id: "dashboard", group: "go", name: t("Dashboard"), chord: "", run: () => { location.hash = "v=dashboard"; } },
+  { id: "settings", group: "go", name: t("Settings"), chord: "CmdOrCtrl+,", run: () => { location.hash = "v=control"; } },
+  { id: "shortcuts", group: "go", name: t("Keyboard shortcuts"), chord: "", run: () => { location.hash = "v=control&tab=shortcuts"; } },
+  { id: "view-chat", group: "session", name: t("Chat"), chord: "", when: inSession, run: toView("chat") },
+  { id: "view-run", group: "session", name: t("Run"), chord: "", when: hasView("run"), run: toView("run") },
+  { id: "view-files", group: "session", name: t("Files"), chord: "", when: hasView("files"), run: toView("files") },
+  { id: "model", group: "session", name: t("Model and reasoning"), chord: "", when: inSession, run: () => { if (board()) setPane("chat"); openModels(); } },
+  { id: "history", group: "session", name: t("History"), chord: "", when: inSession, run: () => { if (board()) setPane("chat"); openHistory(); } },
+]);
+control.useKeys(keys);
