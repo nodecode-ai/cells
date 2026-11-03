@@ -58,6 +58,7 @@
                (:file "import-test")
                (:file "wake-sources-test")
                (:file "observe-test")
-               (:file "wake-digest-test"))
+               (:file "wake-digest-test")
+               (:file "wake-spec-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-cron-tests)))
