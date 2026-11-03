@@ -196,6 +196,10 @@ Content-Length DECLARED (the body's own length by default)."
         :content-length (or declared (and octets (length octets)))
         :raw-body (and octets (flexi-streams:make-in-memory-input-stream octets))))
 
+(defun voice-refused (&rest request)
+  "(STATUS CODE) of the route's refusal of REQUEST (VOICE-REQUEST's arguments)."
+  (subseq (voice-refusal (nck::transcribe-route (apply #'voice-request request))) 0 2))
+
 (defun voice-refusal (answer)
   "(STATUS CODE MESSAGE) of a refusal the route answered."
   (destructuring-bind (status headers body) answer
@@ -211,11 +215,8 @@ Content-Length DECLARED (the body's own length by default)."
         (is (eq nil (gethash "ready" answer)) "nothing installed, nothing hosted: not ready")
         (is (search "no transcriber here yet" (gethash "why" answer)))
         (is (= nck::+transcription-max-seconds+ (gethash "max_seconds" answer))))
-      (is (equal '(503 "no_transcriber")
-                 (subseq (voice-refusal (nck::transcribe-route
-                                         (voice-request :post :octets (fixture-recording))))
-                         0 2))
-          "a recording sent anyway is refused with why, its body read to its end"))
+      (let ((sent-anyway (voice-refused :post :octets (fixture-recording))))
+        (is (equal '(503 "no_transcriber") sent-anyway) "a recording sent anyway is refused with why, its body read to its end")))
     (let ((nck:*transcription* (nlk:json-object "enabled" nil "base_url" "https://stt.example/v1")))
       (is (search "transcription is off" (gethash "why" (nck::transcribe-route (voice-request :get))))))
     (let ((nck:*transcription* (nlk:json-object "base_url" "https://stt.example/v1" "model" "m"
@@ -246,26 +247,15 @@ Content-Length DECLARED (the body's own length by default)."
                  (subseq (voice-refusal (nck::transcribe-route
                                          (voice-request :post :octets (octets-of))))
                          0 2)))
-      (is (equal '(413 "too_long")
-                 (subseq (voice-refusal (nck::transcribe-route
-                                         (voice-request :post :octets (fixture-recording)
-                                                              :query "seconds=61")))
-                         0 2))
-          "over transcription.max_seconds, refused before the engine is asked")
+      (let ((too-long (voice-refused :post :octets (fixture-recording) :query "seconds=61")))
+        (is (equal '(413 "too_long") too-long) "over transcription.max_seconds, refused before the engine is asked"))
       (let ((big (make-array 16 :element-type '(unsigned-byte 8) :initial-element 0)))
-        (is (equal '(413 "too_large")
-                   (subseq (voice-refusal (nck::transcribe-route
-                                           (voice-request :post :octets big
-                                                                :declared (1+ nck::+audio-max-bytes+))))
-                           0 2))
-            "a body declared past the ceiling is refused, not held"))
+        (let ((too-large (voice-refused :post :octets big :declared (1+ nck::+audio-max-bytes+))))
+          (is (equal '(413 "too_large") too-large) "a body declared past the ceiling is refused, not held")))
       (is (= 1 posts) "only the readable recording reached the engine"))
     (with-stubbed-fdefinition (nlk:http (method url &rest options)
                                (declare (ignore method url options))
                                (error "stt.example: connection refused"))
-      (is (equal '(502 "transcription_failed")
-                 (subseq (voice-refusal (nck::transcribe-route
-                                         (voice-request :post :octets (fixture-recording))))
-                         0 2))
-          "an engine that fails says so, with its own words"))
+      (let ((failed (voice-refused :post :octets (fixture-recording))))
+        (is (equal '(502 "transcription_failed") failed) "an engine that fails says so, with its own words")))
     (is (equal 405 (first (nck::transcribe-route (voice-request :delete)))))))
