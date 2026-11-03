@@ -45,6 +45,15 @@
       (is (eq :unreadable (getf case :args)) "a hash table does not read back whole")
       (is (null (nodecode-selffix::repro-form case)) "no arguments, no call repro: the case stays a note"))))
 
+(deftest selffix-cell-capture-off-without-a-section ()
+  (with-selffix-root ()
+    (let ((recorded nil)
+          (nodecode-selffix::*present* (constantly nil)))
+      (nodecode-selffix::capture-failure (lambda (&rest args) (setf recorded args)) :no-turn
+                                         (selffix-caught (lambda () (selffix-test-gf "a"))))
+      (is recorded "the failure is still recorded")
+      (is (null (probe-file (nodecode-selffix::cases-dir))) "no selffix section: nothing under selffix/"))))
+
 (deftest selffix-cell-capture-provider-failure-makes-no-case ()
   (with-selffix-root ()
     (let ((recorded nil)

@@ -21,7 +21,8 @@
   "BODY over a fresh, empty loop folder, removed after."
   (let ((root (gensym "ROOT")))
     `(let* ((,root (selffix-temp-root))
-            (nodecode-selffix::*root* ,root))
+            (nodecode-selffix::*root* ,root)
+            (nodecode-selffix::*present* (constantly t)))
        (unwind-protect (progn ,@body)
          (uiop:delete-directory-tree ,root :validate t :if-does-not-exist :ignore)))))
 

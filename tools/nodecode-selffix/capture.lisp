@@ -73,12 +73,23 @@ READABLE-TEXT refuses them."
        :count 60))
     found))
 
+(defun section-present-p ()
+  "Whether the shared config carries a \"selffix\" section that is not vetoed.
+An absent section starts the cell, as every section's presence rule has it,
+but this cell is off until the operator writes one: nothing is caught,
+counted or written before."
+  (let ((table (ignore-errors (nlk:json-value (nle:read-shared-config) :object "selffix"))))
+    (and (hash-table-p table) (nlk:config-boolean table "enabled" t))))
+
+(defvar *present* 'section-present-p
+  "The function that says whether the loop is configured; tests stub it.")
+
 (defun note-frame (next &rest args)
   "AGENT-LOOP advice: note the frame of an error that leaves the loop, then
 decline it, so the turn fails as before. Never signals on its own."
   (handler-bind ((error (lambda (condition)
                           (ignore-errors
-                           (unless (gethash condition *frames*)
+                           (unless (or (gethash condition *frames*) (not (funcall *present*)))
                              (let ((frame (signalling-frame)))
                                (when frame (setf (gethash condition *frames*) frame))))))))
     (apply next args)))
@@ -197,7 +208,7 @@ when the failure makes none."
   "FAIL-TURN advice: the failure is recorded first, then counted into its
 case. A provider's failure (EVIDENCE) makes none. Never fails the turn's record."
   (multiple-value-prog1 (apply next turn condition keys)
-    (unless evidence
+    (unless (or evidence (not (funcall *present*)))
       (ignore-errors (note-case turn condition)))
     (remhash condition *frames*)))
 
