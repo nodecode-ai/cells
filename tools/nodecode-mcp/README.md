@@ -26,9 +26,21 @@ default (`:timeout` changes it).
 down after one reconnect, and names its last failure and its stderr log.
 `MCP-TIMEOUT` is a deadline that passed; the connection stays up.
 
+A server that needs a sign-in says so within seconds instead of waiting out
+its timeout. An http server that asks for OAuth names `/mcp login NAME`,
+which answers the address to open. A stdio command that signs in on its own,
+like `npx mcp-remote URL`, prints that address on its stderr and holds every
+request until a browser comes back to its `localhost` listener. The cell
+reads the address there, keeps the process (it is the one the browser
+answers), fails each call at once with the address, and shows it under
+`(mcp:status)`; `/mcp login NAME` answers it too. Once the browser comes
+back, the request the command held goes through. A browser on another
+machine lands on a `localhost` page that does not load: paste that address
+back with `/mcp login NAME ADDRESS` and the cell hands it to the command.
+
 The model learns all this from `(help :mcp)`, which adds a live catalog of the
-tools. `/mcp status | on NAME | off NAME | restart NAME | tools NAME` answers
-one line. The web page's Control > MCP tab adds, removes, restarts and tests
+tools. `/mcp status | on NAME | off NAME | restart NAME | tools NAME |
+login NAME [ADDRESS] | logout NAME` answers one line. The web page's Control > MCP tab adds, removes, restarts and tests
 servers through `/api/mcp`, and its Catalog fills the form from
 `catalog.json`, a list of known servers whose recipes come from each
 project's own docs.
@@ -49,7 +61,7 @@ project's own docs.
 A url without a command is HTTP and anything else is stdio; `transport`
 overrides. Header values never appear in a status or an error. An entry that
 fails to validate shows as `refused` while the others run. Not supported:
-`cwd`, per-tool allow and deny lists, OAuth, and the old two-endpoint SSE
+`cwd`, per-tool allow and deny lists, and the old two-endpoint SSE
 transport.
 
 A header or env value can name its secret instead of holding it, so the key

@@ -271,8 +271,9 @@ count, never a value), the last error and the stderr log of a process."
     (format nil "~{~a~^~%~}"
             (loop for server in servers
                   for snapshot = (server-snapshot server)
-                  collect (format nil "~a~@[~%  stderr: ~a~]"
+                  collect (format nil "~a~@[~%  sign in: ~a~]~@[~%  stderr: ~a~]"
                                   (state-line snapshot)
+                                  (getf snapshot :sign-in)
                                   (getf snapshot :log-path))))
     "no MCP servers configured (mcp.servers in ~/.nodecode/config.jsonc)"))
 
@@ -291,12 +292,15 @@ saying why it does not."
   (if (listp settings) settings '()))
 
 (defun login (server-name &optional address)
-  "Sign in to SERVER-NAME, an http MCP server that asks for OAuth: the
-address to open in a browser (handed to a browser here when there is one),
+  "Sign in to SERVER-NAME. A stdio server whose command signs in on its own
+(mcp-remote and its kind) goes to COMMAND-LOGIN. An http MCP server that asks
+for OAuth: the address to open in a browser (handed to a browser here when there is one),
 the sign-in finishing on its own once the browser comes back and the server
 then connecting. With ADDRESS -- the address the browser landed on, pasted
 back from another machine -- finish the sign-in in progress."
   (check-type server-name string)
+  (when (eq (server-spec-transport (server-spec (find-server server-name))) :stdio)
+    (return-from login (command-login (find-server server-name) address)))
   (let ((server (sign-in-server server-name)))
     (handler-case
         (if address
@@ -312,6 +316,70 @@ paste the address it lands on: /mcp login ~a ADDRESS"
                           server-name opened outcome redirect-uri server-name server-name))))
       (error (condition)
         (format nil "~a: the sign-in could not start: ~a" server-name condition)))))
+
+(defun landing-refusal (pending address)
+  "Why ADDRESS is not where the browser of PENDING, a command's sign-in, lands
+-- its listener's port and path, carrying a code (or an error) and that
+sign-in's state -- or NIL when it is."
+  (let* ((redirect (ignore-errors (quri:uri (getf pending :redirect))))
+         (asked (ignore-errors (quri:uri-query-params (quri:uri (getf pending :url)))))
+         (state (cdr (assoc "state" asked :test #'string=)))
+         (uri (ignore-errors (quri:uri address)))
+         (params (and uri (ignore-errors (quri:uri-query-params uri)))))
+    (flet ((param (key) (cdr (assoc key params :test #'string=))))
+      (cond ((null redirect) "its command named no address for the browser to come back to")
+            ((not (and uri (equal (quri:uri-scheme uri) "http")
+                       (loopback-host-p (quri:uri-host uri))
+                       (eql (quri:uri-port uri) (quri:uri-port redirect))
+                       (equal (quri:uri-path uri) (quri:uri-path redirect))
+                       (or (param "code") (param "error"))
+                       (or (null state) (equal (param "state") state))))
+             (format nil "that address does not belong to the sign-in its command waits for: ~
+it lands on ~a, with that sign-in's state" (getf pending :redirect)))))))
+
+(defun hand-back (pending address &aux (uri (quri:uri address))
+                                       (port (quri:uri-port (quri:uri (getf pending :redirect)))))
+  "Give ADDRESS, where a browser landed, to the listener of PENDING's command here."
+  (let ((status (nth-value 1 (oauth-request :get (format nil "http://127.0.0.1:~d~a~@[?~a~]" port
+                                                          (quri:uri-path uri) (quri:uri-query uri))))))
+    (when (>= status 400)
+      (oauth-fail "its command refused the address (HTTP ~d)" status))))
+
+(defun command-login (server address &aux (name (server-name server)) (spec server.spec)
+                                          (lock server.call-lock))
+  "LOGIN for a stdio server whose command signs in on its own (mcp-remote and
+its kind): the address it asked a browser to open, a connect started for it
+when none waits; with ADDRESS, the one that browser landed on, handed to the
+command's own listener here, and the server connected."
+  (if (not (bt2:acquire-lock lock :timeout (/ spec.timeout-ms 1000)))
+      (format nil "~a is busy with a call or a connect; try again in a moment" name)
+      (nlk:with-cleanup ((bt2:release-lock lock))
+        (handler-case
+            (let ((deadline (deadline-after spec.timeout-ms)))
+              (cond
+                (address
+                 (let ((refusal (and (pending-sign-in-p server) (landing-refusal server.sign-in address)))
+                       (held (getf server.sign-in :held)))
+                   (cond ((not (pending-sign-in-p server))
+                          (format nil "~a has no sign-in waiting; (mcp:login ~s) starts one" name name))
+                         (refusal (format nil "~a: ~a" name refusal))
+                         ((progn (hand-back server.sign-in address)
+                                 (not (resume-sign-in server deadline :wait (/ spec.timeout-ms 1000))))
+                          (format nil "~a: the address was handed to its command, which has not answered yet; ~
+(mcp:status) follows it" name))
+                         ((eq held :call)
+                          (format nil "~a: the address was handed to its command; the call it held goes through ~
+once it is signed in" name))
+                         (t (format nil "~a: signed in; connected, ~d tool~:p" name (length server.tools))))))
+                ((pending-sign-in-p server) (sign-in-text server))
+                ((eq server.state :ready) (format nil "~a is connected; its command keeps its own sign-in" name))
+                ((member server.state '(:disabled :refused :stopped))
+                 (format nil "~a is ~(~a~); nothing to sign in" name server.state))
+                ((connect-locked server :deadline deadline)
+                 (format nil "~a connected without asking for a sign-in" name))
+                ((pending-sign-in-p server) (sign-in-text server))
+                (t (format nil "~a did not ask for a sign-in: ~a" name server.error-text))))
+          (error (condition) (format nil "~a: ~a" name condition))))))
 
 (defun logout (server-name &aux (server (sign-in-server server-name)))
   "Forget SERVER-NAME's sign-in -- its tokens, revoked where the server

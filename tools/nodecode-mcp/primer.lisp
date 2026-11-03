@@ -40,7 +40,7 @@ tool is a Lisp function in the mcp: package, called through eval; every function
   (mcp:schema \"files\" \"read_file\")            the tool's full JSON input schema
   (mcp:status)                                 every server: state, tool count, transport, last error, stderr log
   (mcp:restart \"files\")                        reconnect one server
-  (mcp:login \"docs\")                           sign in to an http server that needs one: an address for the user to open
+  (mcp:login \"docs\")                           sign in to a server that needs one: an address for the user to open
   (mcp:login \"docs\" ADDRESS)                   finish it with the address the user's browser landed on
   (mcp:logout \"docs\")                          forget its sign-in
 

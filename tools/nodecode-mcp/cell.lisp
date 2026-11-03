@@ -25,8 +25,7 @@
   (if (null snapshots)
       "MCP: no servers configured (mcp.servers in ~/.nodecode/config.jsonc)"
       (let* ((states (mapcar (lambda (snapshot) (getf snapshot :state)) snapshots))
-             (ready (count :ready states))
-             (errors (count-if (lambda (state) (member state '(:error :refused))) states)))
+             (ready (count :ready states)))
         ;; What the operator can do next leads, and names only the verbs the
         ;; states call for: five imported servers pushed `/mcp on NAME' past
         ;; 120 columns.
