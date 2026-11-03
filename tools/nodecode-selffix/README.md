@@ -2,7 +2,7 @@
 
 Idle self-fixes, observe level. When nobody is using the home, the failure
 it records most often becomes a **finding**: a short report plus a test that
-fails today, locked by its hash. Nothing else changes: no code, no config,
+fails today, locked by a git commit. Nothing else changes: no code, no config,
 no layer, and the cycle makes no model call of its own.
 
 It is modeled on Ouroboros's evolution loop
@@ -17,18 +17,26 @@ reduced to what any install already has.
    wake's own bounds and 24-hour allowance. A wake that is off runs nothing.
 2. **Gates, in Lisp, before any work:** the operator's stop, the breakers,
    then idle: no turn at work in any session of this home for `idle_minutes`,
-   and none still open. The wake's own session and forks do not count. Then a
-   lock file (`O_EXCL`), so two processes serving one home run one cycle.
+   and none still open. The wake's own session and forks do not count. Then an
+   fcntl lock on `cycle.lock`, so two processes serving one home run one
+   cycle; the kernel drops it when its holder dies, so a crash frees it at once.
+   The cycle runs on a thread of its own, never on the cron ticker, so its
+   sealed runs hold back no cron job; the wake says its news at the next due
+   wake, read from the ledger since the wake's cursor.
 3. **Pick.** The backlog (`backlog.lisp`) reads failed turns, experience
    harms and failed verifications, and `/qa` notes, groups them by fault and
    sorts them most frequent first. The ledger skips what was dropped or
    already found.
-4. **Reproduce.** `repro.lisp` writes a test for the item and runs it in a
-   throwaway home with keys and network off.
-5. **Record.** A test that fails as the item says is copied to
-   `~/.nodecode/selffix/findings/<fp>/` with `finding.md`; its SHA-256 goes in
-   the ledger. A later fix counts only when that file, unchanged, passes.
-   The wake's turn gets the finding as news, and the shell shows a notice.
+4. **Reproduce.** `repro.lisp` turns the captured case into one Lisp form
+   that answers 1 while the failure stands, 0 once it is gone. `runner.lisp`
+   asks it in a fresh process of the same build (its `trial` verb), in a
+   throwaway home laid from the newest generation, under bwrap: environment
+   cleared, no network, the real home hidden. No bwrap, no run.
+5. **Record.** A form that answers 1 becomes `findings/<fp>.lisp`, with the
+   generation where it turned and the `deftest` for the cell that owns the
+   function, committed to that folder's own git. The commit is the lock: a
+   later fix counts only when the committed form answers 0. The next wake's
+   turn gets the finding as news, and the shell shows a notice at once.
 
 ## Limits the loop cannot change
 
@@ -66,8 +74,9 @@ Absent, the cell installs nothing: the loop is off until the section exists.
 
 ## Files
 
-Under `~/.nodecode/selffix/`: `ledger.jsonl` (one row per outcome, append
-only), `cycle.lock`, `findings/<fp>/` and `scratch/<fp>/` (the throwaway homes).
+Under `~/.nodecode/selffix/`: `ledger.sexp` (one readable row per outcome,
+append only), `cycle.lock`, `cases/<fp>.lisp` (captured failures),
+`findings/<fp>.lisp` (a git repository) and `scratch/` (the throwaway homes).
 
 ## Tests
 

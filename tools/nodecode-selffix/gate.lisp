@@ -10,17 +10,21 @@
 ;;;; The wake's own session and forks do not count; a cron job's do, since
 ;;;; it spends the same model.
 ;;;;
-;;;; The lock is a file made with O_EXCL, so two processes serving one home
-;;;; run one cycle between them. A lock older than *LOCK-STALE* belonged to
-;;;; a process that died mid-cycle and is taken over.
+;;;; The lock is an fcntl write lock on selffix/cycle.lock, held on an open
+;;;; descriptor while a cycle runs, so two processes serving one home run one
+;;;; cycle between them. The kernel drops it when its process dies, so a cycle
+;;;; that died mid-run frees it at once, and no age decides a takeover: two
+;;;; processes taking over one stale lock file by delete and create could both
+;;;; win. The file is never deleted either, since a process that opened it
+;;;; before a delete would lock a file the next one no longer sees. fcntl does
+;;;; not keep a process from itself, so a table under a mutex keeps a second
+;;;; taker in this one out. Windows has no fcntl lock, and no bwrap to seal a
+;;;; repro with, so there the lock is this process's alone.
 
 (in-package #:nodecode-selffix)
 
 (defparameter *open-turn-window* (* 6 3600)
   "How far back a turn that started and never ended still counts as running.")
-
-(defparameter *lock-stale* (* 2 3600)
-  "Seconds after which a cycle lock is taken over.")
 
 (defparameter +activity-kinds+
   '("turn.started" "turn.tool_call_started" "turn.tool_result" "turn.completed" "turn.failed" "turn.cancelled")
@@ -63,21 +67,38 @@ open-turn window, ENDED the turn ids among them that ended."
 
 (defun lock-path () (selffix-path "cycle.lock"))
 
-(defun take-lock (now)
-  "Whether this process now holds the cycle lock."
-  (let ((path (lock-path)))
-    (ensure-directories-exist path)
-    (let ((written (ignore-errors (file-write-date path))))
-      (when (and written (> (- now written) *lock-stale*))
-        (ignore-errors (delete-file path))))
+(defvar *held* (make-hash-table :test 'equal)
+  "The descriptors this process holds a cycle lock on, by lock file name.")
+
+(defvar *held-mutex* (sb-thread:make-mutex :name "selffix cycle lock"))
+
+(defun locked-fd (name)
+  "NAME opened and write-locked without waiting => the descriptor, or NIL
+while another process holds it."
+  (let ((fd (sb-posix:open name (logior sb-posix:o-creat sb-posix:o-wronly) #o644)))
     (handler-case
-        (let ((fd (sb-posix:open (namestring path)
-                                 (logior sb-posix:o-creat sb-posix:o-excl sb-posix:o-wronly) #o644)))
-          (sb-posix:close fd)
-          (with-open-file (out path :direction :output :if-exists :append)
-            (format out "~a~%" (iso now)))
-          t)
-      (sb-posix:syscall-error () nil))))
+        (progn
+          #-win32 (sb-posix:fcntl fd sb-posix:f-setlk
+                                  (make-instance 'sb-posix:flock :type sb-posix:f-wrlck
+                                                                 :whence sb-posix:seek-set :start 0 :len 0))
+          fd)
+      (sb-posix:syscall-error ()
+        (sb-posix:close fd)
+        nil))))
+
+(defun take-lock ()
+  "Whether this process now holds the cycle lock."
+  (let ((name (namestring (ensure-directories-exist (lock-path)))))
+    (sb-thread:with-mutex (*held-mutex*)
+      (unless (gethash name *held*)
+        (nlk:when-let (fd (locked-fd name))
+          (setf (gethash name *held*) fd)
+          t)))))
 
 (defun drop-lock ()
-  (ignore-errors (delete-file (lock-path))))
+  "Let the cycle lock go: closing its descriptor drops the fcntl lock."
+  (let ((name (namestring (lock-path))))
+    (sb-thread:with-mutex (*held-mutex*)
+      (nlk:when-let (fd (gethash name *held*))
+        (remhash name *held*)
+        (ignore-errors (sb-posix:close fd))))))

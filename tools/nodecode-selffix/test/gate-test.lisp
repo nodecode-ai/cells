@@ -14,12 +14,41 @@
 
 (deftest selffix-cell-gate-lock ()
   (with-selffix-root ()
-    (let ((now (get-universal-time)))
-      (is (nodecode-selffix::take-lock now) "the first taker holds it")
-      (is (not (nodecode-selffix::take-lock now)) "a second does not")
-      (nodecode-selffix::drop-lock)
-      (is (nodecode-selffix::take-lock now) "free again after the drop")
-      (let ((old (- (get-universal-time) nlk:+unix-epoch+ (* 3 3600))))
-        (sb-posix:utimes (namestring (nodecode-selffix::lock-path)) old old))
-      (is (nodecode-selffix::take-lock now) "a stale lock is taken over")
-      (nodecode-selffix::drop-lock))))
+    (is (nodecode-selffix::take-lock) "the first taker holds it")
+    (is (not (nodecode-selffix::take-lock)) "a second in the same process does not")
+    (nodecode-selffix::drop-lock)
+    (is (nodecode-selffix::take-lock) "free again after the drop")
+    (nodecode-selffix::drop-lock)
+    (is (probe-file (nodecode-selffix::lock-path)) "the lock file stays, so no taker locks a file the next one cannot see")))
+
+(deftest selffix-cell-gate-lock-dies-with-its-holder ()
+  (with-selffix-root ()
+    (with-open-file (out (ensure-directories-exist (nodecode-selffix::lock-path))
+                         :direction :output :if-exists :supersede)
+      (write-line "2026-11-03T05:00:00Z" out))
+    (is (nodecode-selffix::take-lock) "a lock file whose holder died blocks nothing")
+    (nodecode-selffix::drop-lock)))
+
+(defun selffix-child-takes-lock-p (path)
+  "Whether a second SBCL process gets an fcntl write lock on PATH, or :NO-SBCL."
+  (let ((sbcl (nodecode-selffix::on-path "sbcl")))
+    (if (null sbcl)
+        :no-sbcl
+        (search "got"
+                (uiop:run-program
+                 (list sbcl "--non-interactive" "--no-sysinit" "--no-userinit" "--eval" "(require :sb-posix)"
+                       "--eval"
+                       (format nil "(let ((fd (sb-posix:open ~s sb-posix:o-wronly))) (princ (handler-case (progn (sb-posix:fcntl fd sb-posix:f-setlk (make-instance 'sb-posix:flock :type sb-posix:f-wrlck :whence sb-posix:seek-set :start 0 :len 0)) \"got\") (sb-posix:syscall-error () \"refused\"))))"
+                               (namestring path)))
+                 :output :string :ignore-error-status t)))))
+
+(deftest selffix-cell-gate-lock-holds-across-processes ()
+  (with-selffix-root ()
+    (is (nodecode-selffix::take-lock))
+    (let ((held (selffix-child-takes-lock-p (nodecode-selffix::lock-path))))
+      (unless (eq held :no-sbcl)
+        (is (not held) "another process is refused while this one holds it")))
+    (nodecode-selffix::drop-lock)
+    (let ((free (selffix-child-takes-lock-p (nodecode-selffix::lock-path))))
+      (unless (eq free :no-sbcl)
+        (is free "and gets it once this one drops it")))))

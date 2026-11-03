@@ -116,24 +116,24 @@ could not run."
                 (let ((text (funcall *repro-form* item))
                       (numbers (funcall *generations*)))
                   (cond ((null text)
-                         (record "not-reproduced" :fp fp :item item :at now :detail "the case is no one form")
+                         (record "not-reproduced" :fp fp :item item :detail "the case is no one form")
                          (list :not-reproduced (finding-line fp item)))
                         (t
                          (multiple-value-bind (verdict detail) (ask-at text (car (last numbers)))
                            (case verdict
                              (:stands
                               (multiple-value-bind (path commit) (write-finding fp item text (and numbers (locate text numbers)) now)
-                                (record "finding" :fp fp :item item :detail (namestring path) :commit commit :at now)
+                                (record "finding" :fp fp :item item :detail (namestring path) :commit commit)
                                 (list :finding (finding-line fp item))))
                              ((:gone :undecided)
-                              (record "not-reproduced" :fp fp :item item :at now
+                              (record "not-reproduced" :fp fp :item item
                                                        :detail (if (eq verdict :gone) "the repro answered 0" "the repro could not judge"))
                               (list :not-reproduced (finding-line fp item)))
                              (t
-                              (record "failed" :fp fp :item item :at now :detail detail)
+                              (record "failed" :fp fp :item item :detail detail)
                               (list :failed (format nil "~a: ~a" fp detail))))))))
               (error (condition)
-                (record "failed" :fp fp :item item :at now :detail (princ-to-string condition))
+                (record "failed" :fp fp :item item :detail (princ-to-string condition))
                 (list :failed (format nil "~a: ~a" fp condition)))))))))
 
 (defun cycle (&key (now (get-universal-time)) (idle-seconds (* 60 (setting :idle-minutes))))
@@ -147,7 +147,7 @@ or :FAILED."
       (return-from cycle (values :paused reason)))
     (nlk:when-let (busy (funcall *busy* now idle-seconds))
       (return-from cycle (values :busy busy)))
-    (unless (take-lock now)
+    (unless (take-lock)
       (return-from cycle (values :locked "another cycle holds the lock")))
     (unwind-protect (values-list (run-one now))
       (drop-lock))))
@@ -159,16 +159,82 @@ or :FAILED."
                      (format nil "selffix: ~d finding~:p, each with a failing test (/selffix findings)" count))
                 :key "nodecode-selffix")))
 
+;;; --- the wake source -------------------------------------------------------------
+;;;
+;;; Cron asks its wake sources on the ticker thread, and a cycle is slow: one
+;;; sealed run is a generation laid and a fresh process (each bounded by
+;;; *REPRO-SECONDS*), and a finding's locate asks up to *LOCATE-PROBES* more.
+;;; Run there, it would hold every other cron job back for minutes. So the
+;;; source starts the cycle on a thread of its own and answers at once with
+;;; what the ledger gained since the wake's cursor: a cycle's news is said at
+;;; the next due wake, and a wake that is skipped (a money gate) leaves the
+;;; cursor, so it loses nothing. The findings notice stands at once.
+
+(defvar *async* t
+  "Whether a wake starts its cycle on a thread of its own; a test binds NIL.")
+
+(defvar *cycle-thread* nil "The thread the last wake started its cycle on, or NIL.")
+
+(defvar *cycle-mutex* (sb-thread:make-mutex :name "selffix cycle thread"))
+
+(defparameter +carried+
+  '(*root* *present* *backlog* *backlog-limit* *backlog-days* *backlog-sources* *excluded-session-p*
+    *repro-form* *repro-deftest* *generations* *busy* *ask* *lay* *repro-seconds* *locate-probes*
+    *attempt-cap* *failure-breaker*)
+  "The specials a cycle thread takes from the wake that starts it, since a
+new thread sees only their global values.")
+
+(defun cycle-and-notice (idle-seconds)
+  (when (eq :finding (cycle :idle-seconds idle-seconds))
+    (post-findings)))
+
+(defun start-cycle (idle-seconds)
+  "One cycle on a thread of its own, unless the last one still runs => the thread, or NIL."
+  (let ((values (mapcar #'symbol-value +carried+)))
+    (sb-thread:with-mutex (*cycle-mutex*)
+      (unless (and *cycle-thread* (bt2:thread-alive-p *cycle-thread*))
+        (setf *cycle-thread*
+              (nlk:spawn "nodecode-selffix cycle"
+                (progv +carried+ values
+                  (handler-case (cycle-and-notice idle-seconds)
+                    (error (condition) (warn "selffix cycle: ~a" condition))))))))))
+
+(defvar *said* (make-hash-table :test 'equal)
+  "Rows this process said as news, each with its time: a row in the very second
+a wake fired may have been said by that wake, whose cursor is that second.")
+
+(defun news-line (row pause)
+  (if (equal (row row "outcome") "finding")
+      (format nil "selffix found ~a (~(~a~)): ~a" (row row "fp") (row row "source") (row row "key"))
+      (format nil "selffix paused: ~a, the last ~a: ~a; (selffix:selffix :on) resumes it"
+              pause (row row "fp") (row row "detail"))))
+
+(defun news-since (since)
+  "What the ledger gained at or after SINCE (a universal time, NIL for ever)
+that is news: each finding, and the failure that tripped the breaker while
+the pause holds. A row in SINCE's own second that was said already is not
+said again."
+  (let* ((rows (ledger-rows))
+         (from (if since (iso since) ""))
+         (pause (breaker rows))
+         (trip (and pause (find "failed" rows :key (lambda (r) (row r "outcome")) :test #'equal :from-end t))))
+    (maphash (lambda (key at) (when (string< at from) (remhash key *said*))) *said*)
+    (loop for r in rows
+          for at = (row r "at")
+          for key = (readable r)
+          when (and (stringp at) (string<= from at)
+                    (or (equal (row r "outcome") "finding") (eq r trip))
+                    (not (and (string= at from) (gethash key *said*))))
+            collect (progn (setf (gethash key *said*) at)
+                           (news-line r pause)))))
+
 (defun wake-source (since)
-  "The cron wake's source: one cycle at the due instant. News buys the wake a
+  "The cron wake's source, on the ticker thread at $0: the ledger's news since
+the wake's cursor, and the next cycle started beside it. News buys the wake a
 model turn, so only a finding and the failure that trips the breaker are news;
-a single failure, a held pause and every gate answer nothing, and the wake
-keeps its quiet backoff at $0. /selffix status shows the rest."
-  (declare (ignore since))
-  (multiple-value-bind (status detail) (cycle)
-    (case status
-      (:finding (post-findings) (list (format nil "selffix found ~a" detail)))
-      (:failed (nlk:when-let (pause (breaker (ledger-rows)))
-                 (list (format nil "selffix paused: ~a, the last ~a; (selffix:selffix :on) resumes it"
-                               pause detail))))
-      (t '()))))
+a single failure, a held pause and every gate say nothing, and the wake keeps
+its quiet backoff. /selffix status shows the rest."
+  (let ((idle-seconds (* 60 (setting :idle-minutes))))
+    (cond (*async* (prog1 (news-since since) (start-cycle idle-seconds)))
+          (t (cycle-and-notice idle-seconds)
+             (news-since since)))))

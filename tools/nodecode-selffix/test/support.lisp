@@ -22,8 +22,10 @@
   (let ((root (gensym "ROOT")))
     `(let* ((,root (selffix-temp-root))
             (nodecode-selffix::*root* ,root)
-            (nodecode-selffix::*present* (constantly t)))
+            (nodecode-selffix::*present* (constantly t))
+            (nodecode-selffix::*async* nil))
        (unwind-protect (progn ,@body)
+         (nodecode-selffix::drop-lock)
          (uiop:delete-directory-tree ,root :validate t :if-does-not-exist :ignore)))))
 
 (defun selffix-item (key &key (source "turn.failed") (count 2))
