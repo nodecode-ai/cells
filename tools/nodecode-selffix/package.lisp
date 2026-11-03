@@ -9,7 +9,7 @@
 (defpackage #:nodecode-selffix
   (:use #:cl)
   (:nicknames #:selffix)
-  (:export #:selffix))
+  (:export #:selffix #:backlog))
 
 (in-package #:nodecode-selffix)
 

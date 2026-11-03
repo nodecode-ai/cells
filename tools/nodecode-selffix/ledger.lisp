@@ -13,6 +13,9 @@
 ;;;; without landing is capped (OBJECTIVE_REPEAT_CAP = 3); an owner stop is
 ;;;; stored, and nothing the loop runs can lift it.
 ;;;;
+;;;; Two sightings of one failure share a fingerprint: the backlog's own
+;;;; NORMALIZE-TEXT over the item's key, with its source.
+;;;;
 ;;;; The backlog ranks and counts; this file only filters: what was dropped
 ;;;; stays dropped, what already has a finding is not found again, and an item
 ;;;; tried *ATTEMPT-CAP* times without a finding is dropped.
@@ -28,29 +31,13 @@
 (defparameter +cycle-outcomes+ '("finding" "not-reproduced" "failed")
   "The outcomes a cycle that picked an item ends in.")
 
-(defparameter +key-rewrites+
-  '(("(?:^|(?<=[\\s'\"(=]))(?:~|\\.{1,2})?/[^\\s'\"():,]+" . "<path>")
-    ("\\b(?=[a-z]*[0-9])(?=[0-9]*[a-z])[a-z0-9]{6,}\\b" . "<id>")
-    ("[0-9]+" . "#")
-    ("\\s+" . " "))
-  "Regex and replacement, in order, that make two sightings of one failure
-read alike: paths, ids that mix letters and digits, then any number.")
-
 (defun ledger-path () (selffix-path "ledger.jsonl"))
 
 ;;; --- fingerprints -----------------------------------------------------------------
 
-(defun normalize-key (text)
-  "TEXT lowercased, with paths, mixed ids and numbers replaced, on one line."
-  (let ((key (string-downcase (princ-to-string (or text "")))))
-    (loop for (regex . replacement) in +key-rewrites+
-          do (setf key (ppcre:regex-replace-all regex key replacement)))
-    (let ((key (string-trim " " key)))
-      (subseq key 0 (min 400 (length key))))))
-
 (defun fingerprint (item)
   "ITEM's stable id: 16 hex digits over its source and its normalized key."
-  (let ((digest (nlk:sha256-text (format nil "~a|~a" (getf item :source) (normalize-key (getf item :key))))))
+  (let ((digest (nlk:sha256-text (format nil "~a|~a" (getf item :source) (normalize-text (princ-to-string (getf item :key)) :cap 400)))))
     (subseq digest (1+ (position #\: digest)) (+ 17 (position #\: digest)))))
 
 ;;; --- rows -------------------------------------------------------------------------
@@ -61,14 +48,15 @@ read alike: paths, ids that mix letters and digits, then any number.")
     (ensure-directories-exist path)
     (nlk:append-json-line
      path
-     (apply #'nlk:json-object
-            (loop for (key value) on (list "at" (iso at) "outcome" outcome "fp" fp
+     (let ((line (make-hash-table :test #'equal)))
+       (loop for (key value) on (list "at" (iso at) "outcome" outcome "fp" fp
                                            "source" (and item (princ-to-string (getf item :source)))
                                            "key" (and item (nlk:one-line (princ-to-string (getf item :key)) :cap 300))
                                            "detail" (and detail (nlk:one-line (princ-to-string detail) :cap 300))
                                            "sha256" sha256 "by" by)
                   by #'cddr
-                  when value append (list key value))))
+             when value do (setf (gethash key line) value))
+       line))
     outcome))
 
 (defun ledger-rows ()

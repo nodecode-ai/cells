@@ -2,14 +2,6 @@
 
 (in-package #:nodecode.test)
 
-(deftest selffix-cell-ledger-normalize-key ()
-  (is (equal "error at <path>:# in turn-<id>-<id>"
-             (nodecode-selffix::normalize-key "Error at /home/vise/x.lisp:12 in turn-1U72XJX-1BJTDKOXGE"))
-      "paths, ids that mix letters and digits, and numbers read alike")
-  (is (equal "no-applicable-method-error on wake-call-refusal"
-             (nodecode-selffix::normalize-key "NO-APPLICABLE-METHOD-ERROR  on WAKE-CALL-REFUSAL"))
-      "a function name without digits stays as it is"))
-
 (deftest selffix-cell-ledger-fingerprint ()
   (let ((a (nodecode-selffix::fingerprint (selffix-item "timed out after 12 s in /tmp/a")))
         (b (nodecode-selffix::fingerprint (selffix-item "timed out after 9 s in /tmp/b")))
@@ -29,8 +21,7 @@
     (dotimes (i 2) (nodecode-selffix::record "failed" :fp "f3"))
     (nodecode-selffix::record "not-reproduced" :fp "f4")
     (nodecode-selffix::record "failed" :fp "f5")
-    (is (= 1 (nodecode-selffix::failure-streak (nodecode-selffix::ledger-rows)))
-        "a cycle that ran to an outcome ends the streak")))
+    (is (= 1 (nodecode-selffix::failure-streak (nodecode-selffix::ledger-rows))))))
 
 (deftest selffix-cell-ledger-eligible ()
   (with-selffix-root ()
@@ -52,7 +43,6 @@
     (is (null (nodecode-selffix::stopped (nodecode-selffix::ledger-rows))) "no stop on an empty ledger")
     (nodecode-selffix::record "stopped" :by "s-op")
     (nodecode-selffix::record "failed" :fp "x")
-    (is (equal "s-op" (nodecode-selffix::row (nodecode-selffix::stopped (nodecode-selffix::ledger-rows)) "by"))
-        "a stop stands until a start")
+    (is (equal "s-op" (nodecode-selffix::row (nodecode-selffix::stopped (nodecode-selffix::ledger-rows)) "by")))
     (nodecode-selffix::record "started" :by "s-op")
     (is (null (nodecode-selffix::stopped (nodecode-selffix::ledger-rows))))))

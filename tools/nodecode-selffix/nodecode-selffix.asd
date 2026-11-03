@@ -15,8 +15,8 @@
   :depends-on ("nodecode" "nodecode-cron" "sb-posix")
   :serial t
   :components ((:file "package")
-               (:file "ledger")
                (:file "backlog")
+               (:file "ledger")
                (:file "repro")
                (:file "gate")
                (:file "cycle")
@@ -30,6 +30,7 @@
   :pathname "test/"
   :serial t
   :components ((:file "support")
+               (:file "backlog-test")
                (:file "ledger-test")
                (:file "gate-test")
                (:file "cycle-test"))

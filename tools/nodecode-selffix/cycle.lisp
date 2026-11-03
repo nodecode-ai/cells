@@ -40,9 +40,13 @@
   (let ((text (string-downcase (princ-to-string (or hash "")))))
     (subseq text (if (uiop:string-prefix-p "sha256:" text) 7 0))))
 
+(defun item-text (item)
+  "What ITEM is called: its title, else its key."
+  (princ-to-string (or (getf item :title) (getf item :key))))
+
 (defun finding-line (fp item)
-  (format nil "~a (~a, seen ~d time~:p): ~a" fp (getf item :source) (or (getf item :count) 1)
-          (nlk:one-line (princ-to-string (getf item :key)) :cap 120)))
+  (format nil "~a (~(~a~), seen ~d time~:p): ~a" fp (getf item :source) (or (getf item :count) 1)
+          (nlk:one-line (item-text item) :cap 120)))
 
 (defun write-finding (fp item result now)
   "Copy RESULT's test under FP's folder, check its hash, write finding.md;
