@@ -2623,7 +2623,7 @@ function paintList() {
   if (dash) rows.append(row(t("Overview"), { jump: "top" }), ...JUMPS.map(([id, label]) => row(label, { jump: id })));
   else if (tasks) {
     const counts = boardView.counts();
-    rows.append(...COLUMNS.map(([id, label]) => row(label, { col: id }, { words: String(counts[id]) })));
+    rows.append(...COLUMNS.map(([id, label]) => row(label, { col: id }, { words: counts ? String(counts[id]) : "" })));
   } else for (const [label, sections] of control.places()) {
     rows.append(el("h3", "micro", label), ...sections.map((s) => row(s.label, { tab: s.id }, s)));
   }

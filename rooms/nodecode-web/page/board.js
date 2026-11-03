@@ -373,12 +373,12 @@ export function makeBoard({ state, reach, toast, redraw, refresh, start, send, r
     return li;
   }
 
-  function column(id, word, tasks) {
+  function column(id, word, tasks, ready) {
     const section = el("section", "board-col");
     section.dataset.col = id;
     section.setAttribute("aria-label", word);
     const head = el("div", "board-col-head");
-    head.append(el("h3", "micro", word), el("span", "n", String(tasks.length)));
+    head.append(el("h3", "micro", word), el("span", "n", ready ? String(tasks.length) : ""));
     if (id === "done" && tasks.length) {
       const clear = el("button", "word", t("Clear all"));
       clear.type = "button";
@@ -388,7 +388,7 @@ export function makeBoard({ state, reach, toast, redraw, refresh, start, send, r
     }
     const list = el("ol", "board-cards");
     list.append(...tasks.map((task) => card(task, id)));
-    if (!tasks.length) {
+    if (!tasks.length && ready) {
       list.append(el("li", "board-empty", id === "todo" ? t("Nothing queued") : id === "run" ? t("Drop a task here to start it") : t("None")));
     }
     section.append(head, list);
@@ -429,7 +429,7 @@ export function makeBoard({ state, reach, toast, redraw, refresh, start, send, r
   // What the columns show, in one string: a redraw that would show the same
   // is not made, so the activity frames a turn sends leave the hand alone.
   function signature() {
-    return JSON.stringify([state.open, board.read, board.error, board.version, [...starting],
+    return JSON.stringify([state.open, board.read, state.listed, board.error, board.version, [...starting],
       board.tasks.map((task) => {
         const entry = task.session_id ? state.sessionsById.get(task.session_id) : null;
         return [task.id, columnOf(task), entry?.updated_at, waitsLine(entry?.waits)];
@@ -457,15 +457,19 @@ export function makeBoard({ state, reach, toast, redraw, refresh, start, send, r
     if (!form.folder.value && !form.folder.matches(":focus")) form.folder.value = state.folder || folders[0] || "";
     form.folder.placeholder = t("Folder: the gateway's own when empty");
     form.wt.hidden = !worktrees();
+    // Where a started task stands is its session's: until the list of
+    // sessions is read, no card is placed, so none shows in a column it is
+    // not in.
+    const ready = board.read && state.listed;
     const grouped = Object.fromEntries(COLUMNS.map(([id]) => [id, []]));
-    for (const task of board.tasks) grouped[columnOf(task)].push(task);
+    if (ready) for (const task of board.tasks) grouped[columnOf(task)].push(task);
     const counts = Object.fromEntries(COLUMNS.map(([id]) => [id, grouped[id].length]));
-    root.append(headline(t("Tasks"), board.read ? sentence(counts) : t("Reading the board…"),
+    root.append(headline(t("Tasks"), ready ? sentence(counts) : t("Reading the board…"),
       board.error ? t("The board couldn't be read: {why}", { why: board.error })
         : t("A task waits in To do until you start it. Started, it follows its session: running, waiting on you, done.")));
     root.append(form.node);
     const cols = el("div", "board-cols");
-    cols.append(...COLUMNS.map(([id, word]) => column(id, word, grouped[id])));
+    cols.append(...COLUMNS.map(([id, word]) => column(id, word, grouped[id], ready)));
     root.append(cols);
     return root;
   }
@@ -477,6 +481,7 @@ export function makeBoard({ state, reach, toast, redraw, refresh, start, send, r
     // moved, never while a card is held in the hand.
     sessionsMoved() { settle(); if (!dragging && !editing && signature() !== drawn) redraw(); },
     counts() {
+      if (!board.read || !state.listed) return null;
       const counts = { todo: 0, run: 0, ask: 0, done: 0 };
       for (const task of board.tasks) counts[columnOf(task)] += 1;
       return counts;
