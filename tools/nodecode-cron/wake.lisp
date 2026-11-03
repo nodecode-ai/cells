@@ -62,7 +62,7 @@ operator's bounds. Without it the gap doubles after a silent wake and resets aft
 spoke."
   "What every wake turn is asked. Data, so a layer can reword it.")
 
-(defparameter *wake-sources* (list 'wake-source-turns-elsewhere 'wake-source-cron-outcomes)
+(defparameter *wake-sources* (list 'wake-source-cron-outcomes)
   "Functions of one argument, the instant of the last admitted wake, each
 answering a list of one-line strings -- what it saw change since -- or
 :UNAVAILABLE. Called under the cron lock at each due instant; one that
@@ -140,31 +140,6 @@ missed its instant, overran or was not fired."
                           :test #'equal))
           collect (format nil "cron ~a ~a at ~a~@[: ~a~]" (job-id job) (getf last :status)
                           (local-text (getf last :at)) (getf last :line)))))
-
-(defun wake-source-turns-elsewhere (since)
-  "Sessions other than the wake's whose turns ended since SINCE: one line
-each, with how many and how the newest ended."
-  (if (not (nlk:store-open-p))
-      :unavailable
-      (let ((cutoff (iso-utc since))
-            (own (with-cron-lock (let ((job (wake-job))) (and job (job-session job)))))
-            (seen (make-hash-table :test #'equal))
-            (order '()))
-        (dolist (event (nlk:events :kind (list "turn.completed" "turn.failed" "turn.cancelled")
-                                   :order :newest :limit 500 :as :instances))
-          (when (string< (nlk::event-occurred-at event) cutoff)
-            (return))
-          (let ((session (nlk:event-session-id event)))
-            (unless (equal session own)
-              (nlk:if-let (entry (gethash session seen))
-                (incf (first entry))
-                (progn (setf (gethash session seen) (list 1 (nlk:event-kind event)))
-                       (push session order))))))
-        (loop for session in (nreverse order)
-              for (count kind) = (gethash session seen)
-              collect (format nil "session ~a~@[ (~a)~]: ~d turn~:p ended, the newest ~a"
-                              session (ignore-errors (nlk::session-title session)) count
-                              (subseq kind (length "turn.")))))))
 
 (defun source-label (source)
   (string-downcase (if (symbolp source) (symbol-name source) "source")))
