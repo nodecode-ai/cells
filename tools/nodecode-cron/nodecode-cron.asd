@@ -38,6 +38,7 @@
                (:file "schedule")
                (:file "jobs")
                (:file "ticker")
+               (:file "wake")
                (:file "cell"))
   :in-order-to ((test-op (test-op "nodecode-cron/test"))))
 
