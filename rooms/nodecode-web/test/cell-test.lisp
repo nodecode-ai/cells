@@ -1058,7 +1058,11 @@ brace that closes it at the start of a line, or NIL."
     (is (string= marks (format nil "code [2ba5acc9b]~%path [src/tui/]ui.lisp~%code [nle::]cell-off-refusal~%code nodecode gateway on~%path [rooms/]nodecode-web[/]~%code [{]a[,]b[}]~%")) "code is two blues: an id quiet, a path's folders, a name's package and punctuation")
     (is (search "linear-gradient(90deg, var(--band-ground) calc(100% - var(--tail) + 0.6em), transparent)" css) "a band fades into the page, never a box")
     (is (search ".answer.prose { overflow-x: clip; }" css) "and never passes the answer's edge")
-    (is (search ".answer.prose :where(.inline-color strong) { background: none; padding: 0; }" css) "a model's own color keeps no chip")))
+    (is (search ".answer.prose :where(.inline-color strong) { background: none; padding: 0; }" css) "a model's own color keeps no chip")
+    ;; Named .quiet, a path's still part took the kit's button rule: "store/"
+    ;; drawn as a 36 px button inside its own code.
+    (is (search "el(\"span\", \"still\", text)" js) "a code run's still part is span.still, never the kit's .quiet button")
+    (is (search ".answer.prose :where(code .still) { color: var(--duo-quiet); }" css) "drawn only in the quiet tone")))
 
 ;; Sessions on a phone are a page of their own (variant A of the column).
 ;; Without this, the sessions list would sit below the place rows, most

@@ -1420,7 +1420,7 @@ function duotone(prose) {
       if (i && quiet[i] === quiet[i - 1]) runs[runs.length - 1][1] += body[i];
       else runs.push([quiet[i], body[i]]);
     }
-    code.replaceChildren(...runs.map(([still, text]) => (still ? el("span", "quiet", text) : text)));
+    code.replaceChildren(...runs.map(([still, text]) => (still ? el("span", "still", text) : text)));
   }
 }
 
