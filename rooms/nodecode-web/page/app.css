@@ -105,6 +105,25 @@
   /* Failed: the one red of the kit (a dot, a banner, a danger button). */
   --fail: #f2877e;
   --diff-del-fill: rgba(242, 135, 126, 0.08);
+  /* A file's text in colour (syntax.js): the Duotone once more. The structure
+     is cool -- keywords, types, keys, marks -- and what the text says warm --
+     strings, numbers; comments a step down the greys, a call the brightest
+     of them. Each is a token above, so light takes its own along, and each
+     holds AA on the Files view's ground (cell-test.lisp). */
+  --sx-keyword: var(--duo-subheading);
+  --sx-type: var(--duo-heading);
+  --sx-function: var(--primary);
+  --sx-property: var(--duo-code);
+  --sx-meta: var(--duo-bar);
+  --sx-string: var(--duo-strong);
+  --sx-number: var(--duo-mark);
+  --sx-comment: var(--tertiary);
+  --sx-heading: var(--duo-heading);
+  --sx-added: var(--diff-add);
+  --sx-deleted: var(--diff-del);
+  /* A selection in the editor in colour lies over the painted letters, so
+     it is a wash they show through, about --selected on the ground. */
+  --sx-selection: rgba(255, 255, 255, 0.13);
 
   --column: 264px;
   --lane: 880px;
@@ -200,6 +219,7 @@
   --diff-del: #c0262d;
   --fail: #c0262d;
   --diff-del-fill: rgba(192, 38, 45, 0.07);
+  --sx-selection: rgba(0, 0, 0, 0.04);
 
   color-scheme: light;
 }
@@ -2222,7 +2242,10 @@ button.p-row:active { background: var(--field-lit); }
 .fs-view .fs-note { padding: 14px; }
 .fs-text {
   display: grid; grid-template-columns: auto minmax(0, 1fr); max-height: min(72vh, 780px); overflow: auto;
-  font: var(--fs-detail)/1.6 var(--mono); tab-size: 4; scrollbar-width: thin; scrollbar-color: var(--seam-lit) transparent;
+  /* Lines a whole number of pixels apart (13px at 1.6 would be 20.8): the
+     editor's colours draw line N at N line heights down, and only whole
+     pixels keep that where the textarea has it a thousand lines on. */
+  font: var(--fs-detail)/21px var(--mono); tab-size: 4; scrollbar-width: thin; scrollbar-color: var(--seam-lit) transparent;
 }
 .fs-text pre { margin: 0; padding: 10px 14px; white-space: pre; font: inherit; }
 .fs-gutter { position: sticky; left: 0; text-align: right; color: var(--tertiary); background: var(--inset); border-right: 1px solid var(--seam); user-select: none; }
@@ -2237,6 +2260,30 @@ button.p-row:active { background: var(--field-lit); }
   white-space: pre; overflow: auto; outline: none; scrollbar-width: thin; scrollbar-color: var(--seam-lit) transparent;
 }
 .fs-view:has(.fs-edit:focus-visible) { border-color: var(--accent); }
+/* Editing in colour: the textarea keeps the caret, the selection, undo and
+   every key, its own letters clear, over the painted lines (files.js
+   colours) in the same face, size, line and padding, which lie on the
+   view's own ground, clipped to its text area so its scrollbars show. An
+   opaque ground under them draws their letters as the reader's are drawn,
+   whichever layer the browser gives them; the selection over them is a wash. */
+.fs-well { position: relative; min-width: 0; height: 100%; }
+.fs-clip { position: absolute; top: 0; left: 0; overflow: hidden; pointer-events: none; background: var(--inset); }
+.fs-text pre.fs-paint { color: var(--secondary); }
+.fs-well[data-painted] .fs-edit { position: relative; color: transparent; }
+.fs-well[data-painted] .fs-edit::selection { color: transparent; background: var(--sx-selection); }
+/* The colours themselves: colour only, never a weight or a slant, which
+   would move a painted letter off the textarea's. */
+.sx-k { color: var(--sx-keyword); }
+.sx-t { color: var(--sx-type); }
+.sx-f { color: var(--sx-function); }
+.sx-p { color: var(--sx-property); }
+.sx-m { color: var(--sx-meta); }
+.sx-s { color: var(--sx-string); }
+.sx-n, .sx-v { color: var(--sx-number); }
+.sx-c { color: var(--sx-comment); }
+.sx-h { color: var(--sx-heading); }
+.sx-a { color: var(--sx-added); }
+.sx-d { color: var(--sx-deleted); }
 .fs-dirty { display: none; margin-left: 10px; font: var(--fs-micro) var(--sans); color: var(--accent); }
 .fs-view[data-dirty] .fs-dirty { display: inline; }
 .fs-edit-said { font: var(--fs-micro) var(--sans); color: var(--tertiary); }
