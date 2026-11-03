@@ -44,8 +44,8 @@
             (unless (and color (>= (web-contrast color ground) 4.5d0))
               (push (format nil "~a~:[~; (light)~]~@[ ~,2f~]" token light (and color (web-contrast color ground))) short))))))
     (is (null short) (format nil "code colours under 4.5:1 on --inset: ~{~a~^, ~}" short))
-    (is (null (loop for (rule . declaration) in declarations
-                    when (and (eql 0 (search ".sx-" rule)) (or (search "font" declaration) (search "weight" declaration)))
-                      collect rule))
-        "colour only: no code mark changes a letter's width")
+    (let ((widening (loop for (rule . declaration) in declarations
+                          when (and (eql 0 (search ".sx-" rule)) (or (search "font" declaration) (search "weight" declaration)))
+                            collect rule)))
+      (is (null widening) "colour only: no code mark changes a letter's width"))
     (is (search "/21px" css) "the code views' lines stand whole pixels apart")))
