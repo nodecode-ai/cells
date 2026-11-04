@@ -1,0 +1,31 @@
+/* terminal.css --- one terminal filling its window, the nodecode page's colours. */
+:root {
+  --bg: #16181c;
+  --fg: #d7dae0;
+  --muted: #8b919c;
+  --edge: #2a2e35;
+  color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; background: var(--bg); }
+body { overflow: hidden; }
+#screen {
+  position: absolute;
+  inset: 0;
+  padding: 6px 0 0 8px;
+  padding: max(6px, env(safe-area-inset-top)) max(0px, env(safe-area-inset-right))
+           max(0px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  box-sizing: border-box;
+}
+#screen .xterm { height: 100%; }
+#screen .xterm-viewport { background: var(--bg) !important; }
+#status {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  padding: 4px 10px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: #1e2126;
+  color: var(--muted);
+  font: 12px/1.4 system-ui, sans-serif;
+}
