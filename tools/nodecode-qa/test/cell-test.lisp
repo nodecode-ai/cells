@@ -122,7 +122,7 @@
   (with-stubbed-collector
     (with-qa (:share :weekly)
       (nodecode-qa::keep-note "eval" "timeout" "the snippet never came back")
-      (is (search "only by /qa push" (refusal-text qa:qa-error (qa:push-notes))))
+      (is (search "only from /qa" (refusal-text qa:qa-error (qa:push-notes))))
       (is (null *qa-posts*))
       (is (search "pushed 1 note to https://collector.test/api/qa/notes" (qa-slash "push")))
       (is (equal "https://collector.test/api/qa/notes" (car (first *qa-posts*))))

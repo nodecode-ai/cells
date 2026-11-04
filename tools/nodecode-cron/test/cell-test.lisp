@@ -255,7 +255,7 @@ session ORIGIN when given."
                (nodecode-cron::summary-text)))
     (dotimes (i 4)
       (cron-add "every 2h" "x" :name (format nil "j~d" i)))
-    (is (search (concatenate 'string (string #\Newline) "+3 more (/cron jobs)")
+    (is (search (concatenate 'string (string #\Newline) "+3 more in /cron")
                 (nodecode-cron::summary-text)))))
 
 (deftest cron-cell-slash-panel-lists-the-jobs-and-a-row-opens-its-record (with-cron-runtime (:store t))

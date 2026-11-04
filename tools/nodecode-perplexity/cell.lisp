@@ -28,7 +28,7 @@ through eval, that returns a string.
       PERPLEXITY_COOKIES, else an API key, else anonymously.
 Use it for a question that wants a synthesized, cited answer, and cite the urls it lists. One
 search answers one question: read the answer before asking again. ERROR: PERPLEXITY-ERROR names
-the problem; when it says no credential answered, tell the operator /perplexity login EMAIL."
+the problem; when it says no credential answered, tell the operator to sign in from /perplexity."
   "What (help :perplexity) answers while the cell runs.")
 
 (defun start ()
@@ -38,13 +38,13 @@ the problem; when it says no credential answered, tell the operator /perplexity 
 
 (nle:define-cell perplexity
   (:section ("perplexity")
-    (:guide "sign in with /perplexity login EMAIL and type the mailed code with /perplexity code CODE (on a Mac with the legacy Perplexity app, /perplexity login borrows its session); or set PERPLEXITY_COOKIES to a browser's Cookie header, or save an API key with /connect or PERPLEXITY_API_KEY; model is the subscription model a signed-in search asks for, api_model the one a key search asks for")
+    (:guide "sign in from /perplexity with an email and the code Perplexity mails it (on a Mac with the legacy Perplexity app, signing in borrows its session); or set PERPLEXITY_COOKIES to a browser's Cookie header, or save an API key with /connect or PERPLEXITY_API_KEY; model is the subscription model a signed-in search asks for, api_model the one a key search asks for")
     ("model" :string :default "experimental"
      :doc "the subscription model a signed-in or cookie search asks Perplexity for (experimental is Sonar)")
     ("api_model" :string :default "sonar-pro"
      :doc "the API model a key search asks api.perplexity.ai for")
     ("borrow_app_session" :boolean :default t
-     :doc "on macOS, whether /perplexity login takes the legacy Perplexity app's session before it mails a code"))
+     :doc "on macOS, whether signing in takes the legacy Perplexity app's session before it mails a code"))
   (:start #'start)
   (:help :perplexity "perplexity:search answers a question from a live Perplexity web search, with its sources" +primer+)
   (:command "perplexity" 'run-command

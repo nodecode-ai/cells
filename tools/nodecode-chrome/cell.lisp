@@ -185,9 +185,9 @@ when that exits; one that exited 0 handed the page to a running browser."
          (format nil "'~a' is polling instead; remove it at chrome://extensions and install this one from /chrome"
                  (bridge-foreign-name bridge)))
         ((unauthorized-polling-p bridge)
-         "an extension without this bridge's secret is polling; reload it at chrome://extensions or run /chrome onboard")
+         "an extension without this bridge's secret is polling; reload it at chrome://extensions or install it from /chrome")
         ((poll-age-seconds bridge) "extension not polling")
-        (t "extension never polled; run /chrome onboard")))
+        (t "extension never polled; install it from /chrome")))
 
 (defun relay-line (relay)
   "CONNECTION-LINE for a process that relays through the port's owner."
@@ -310,7 +310,7 @@ session's own eval, whether its Chrome work stays in background tabs."
   (:section ("chrome")
     (:guide "background decides whether actions keep Chrome's focus")
     ("background" :boolean :default t
-                  :doc "whether actions keep Chrome's focus by default; /chrome background sets a session's own")
+                  :doc "whether actions keep Chrome's focus by default; /chrome sets a session's own")
     ("screenshot_dir" :directory :default "chrome-screenshots/"
                       :doc "where a screenshot lands; a leading ~/ expands"))
   ;; A refused section signals NLK:CONFIG-REFUSAL, the loader's one loud

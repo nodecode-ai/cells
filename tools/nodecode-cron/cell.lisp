@@ -252,7 +252,7 @@ list naming each job, its state and its timing."
         +no-jobs-line+
         (let* ((ordered (summary-order (reverse *jobs*)))
                (shown (subseq ordered 0 (min 3 (length ordered)))))
-          (format nil "cron: ~d job~:p~%~{- ~a~^~%~}~@[~%+~d more (/cron jobs)~]"
+          (format nil "cron: ~d job~:p~%~{- ~a~^~%~}~@[~%+~d more in /cron~]"
                   (length ordered)
                   ;; Next fire while active, else the last outcome.
                   (mapcar (lambda (job)

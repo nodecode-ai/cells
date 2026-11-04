@@ -66,7 +66,7 @@
     (keep-note (issue-report-tool report)
                (issue-report-symptom report)
                (issue-report-note report))
-    "noted, thanks: kept on this machine for the operator (/qa notes)"))
+    "noted, thanks: kept on this machine for the operator (/qa lists them)"))
 
 ;;; --- the collector ------------------------------------------------------------
 
@@ -254,12 +254,12 @@ turn, never on the weekly page."
   ;; Tool, symptom, note, provider and model ride; no session, turn, time or
   ;; id does.
   (unless *operator*
-    (fail "notes leave only by /qa push, the operator's own act"))
+    (fail "notes leave only from /qa, the operator's own act"))
   (when (setting :off-by-env)
     (fail "NODECODE_QA turns sharing off in this environment"))
   (let* ((notes (or (remove-if #'pushed-p (read-notes))
                     (fail "no unpushed notes: a note is what the model files with report_issue ~
-                           when one of its tools misbehaves, and none is waiting; /qa notes lists ~
+                           when one of its tools misbehaves, and none is waiting; /qa lists ~
                            what is kept")))
          (url (format nil "~a/api/qa/notes" (setting :url)))
          (body (nlk:encode-json-object
@@ -341,7 +341,7 @@ none, and sends only when a period has passed since the last page."
 
 (nle:define-cell qa
   (:section ("qa")
-    (:guide "Once a week the organism can send nodecode.ai one page of counts: the build and platform, requests and failures per provider and model, calls and errors per tool, crashes; never a prompt, a path, a file, a hostname or an id that follows this install; /qa show prints the next page exactly as it would go; share weekly sends it, never keeps everything on this machine; the choice is asked once, and NODECODE_QA=0 turns sending off whatever it says")
+    (:guide "Once a week the organism can send nodecode.ai one page of counts: the build and platform, requests and failures per provider and model, calls and errors per tool, crashes; never a prompt, a path, a file, a hostname or an id that follows this install; /qa shows the next page exactly as it would go; share weekly sends it, never keeps everything on this machine; the choice is asked once, and NODECODE_QA=0 turns sending off whatever it says")
     ("share" :choice :required t :options '("weekly" "never")
              :doc "weekly sends one page of counts to nodecode.ai; never keeps it all here")
     ("url" :string :default (collector-root)

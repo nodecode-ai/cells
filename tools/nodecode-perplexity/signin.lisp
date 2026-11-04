@@ -148,7 +148,7 @@ authenticator's once Perplexity asked for it. Answers what to say."
           (if (and challenge (equal "totp_challenge_required" (nlk:json-value json :string "status")))
               (progn
                 (setf (pending-challenge pending) challenge)
-                "perplexity: this account also asks for an authenticator code; type /perplexity code CODE with the code your authenticator app shows")
+                "perplexity: this account also asks for an authenticator code; enter the code your authenticator app shows in /perplexity")
               (accept pending json))))))
 
 ;;; --- the slash command -----------------------------------------------------------------
@@ -168,12 +168,12 @@ else a code mailed to EMAIL."
   "What /perplexity status says of the sign-in kept at PATH."
   (let ((entry (stored-entry (ignore-errors (nle::read-auth-file path)))))
     (cond ((null entry)
-           (format nil "perplexity: not signed in; /perplexity login EMAIL signs in with a mailed code~
+           (format nil "perplexity: not signed in; /perplexity signs in with a mailed code~
                         ~@[; ~a is set~]~@[; ~a is set~]"
                    (and (nle::credential-env +cookies-env+) +cookies-env+)
                    (and (nle::credential-env +key-env+) +key-env+)))
           ((not (usable-p entry))
-           "perplexity: the session has expired; /perplexity login signs in again")
+           "perplexity: the session has expired; /perplexity signs in again")
           (t (let ((expiry (nlk:json-value entry :integer "expires_at")))
                (format nil "perplexity: signed in~@[ as ~a~]; ~:[the session does not expire~;~:*the session is good for ~d more minutes~]"
                        (nlk:json-value entry :text "email")

@@ -289,7 +289,7 @@ than *DEDUPE-SECONDS*, else NIL."
   "Post TEXT to SESSION's board under AUTHOR, whose turn HOP board wakes in a
 row led to. => the answer's text."
   (let ((name (or (member-board session)
-                  (fail "this session is on no board: (board:join \"name\") first, or /board NAME")))
+                  (fail "this session is on no board: (board:join \"name\") first, or join one from /board")))
         (text (string-trim '(#\Space #\Tab #\Newline #\Return) (princ-to-string text)))
         (limit (setting :post-chars)))
     (when (zerop (length text))
