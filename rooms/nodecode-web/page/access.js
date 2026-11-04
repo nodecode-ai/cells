@@ -244,19 +244,19 @@ export function makeAccess({ c, api, act, toast, redraw, unread, missing, openTa
       if (c.showQr) {
         const sheet = el("div", "ctl-rises ctl-link-qr-sheet");
         sheet.append(el("h4", "ctl-sheet-title", t("Open on another phone")), qrCode(l.qr),
-          note(t("Point a phone's camera at the code to open the address there. The phone asks to open this machine; allow its code here, or with /link allow in a shell.")),
+          note(t("Point a phone's camera at the code to open the address there. The phone asks to open this machine; allow its code here, or from /link in a shell.")),
           button("word ctl-sheet-cancel", t("Close"), { act: "link-qr-close" }));
         where.append(sheet);
       }
     } else if (l.qr) {
       where.append(qrCode(l.qr));
-      said.append(note(t("Point a phone's camera at the code to open the address there. The phone asks to open this machine; allow its code here, or with /link allow in a shell.")));
+      said.append(note(t("Point a phone's camera at the code to open the address there. The phone asks to open this machine; allow its code here, or from /link in a shell.")));
     }
     where.append(said);
     address.append(where);
     root.append(address);
 
-    const allowedMark = about("browsers", t("A browser asks from the address, shows a code, and waits two minutes; allowing it here or with /link allow in a shell lets it in for good, until it is removed."));
+    const allowedMark = about("browsers", t("A browser asks from the address, shows a code, and waits two minutes; allowing it here or from /link in a shell lets it in for good, until it is removed."));
     const allowed = block(t("Allowed browsers"), allowedMark, el("span", "reading", t("{n} allowed", { n: l.browsers.length })));
     const rows = el("ol", "ctl-list");
     for (const b of l.browsers) {
@@ -293,7 +293,7 @@ export function makeAccess({ c, api, act, toast, redraw, unread, missing, openTa
 
   function offQuestion(l) {
     return confirmBox(l.here
-      ? t("Turn the link off? This page came through it, so it is cut off now; turning it on again takes a browser on this machine, or /link on in a shell.")
+      ? t("Turn the link off? This page came through it, so it is cut off now; turning it on again takes a browser on this machine, or /link in a shell.")
       : t("Turn the link off? Every browser you allowed is cut off until it is on again; the list of them is kept."), t("Turn off"), "link-off");
   }
 

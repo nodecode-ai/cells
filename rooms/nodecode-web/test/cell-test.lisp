@@ -866,6 +866,36 @@ brace that closes it at the start of a line, or NIL."
     (is (search "if (pick.dataset.run) { runSlash(pick.dataset.run); return; }" app) "runs on a click")
     (is (search "id=\"slash-panel\"" (web-page-text "index.html")))))
 
+;; A command is its name. The box offers names alone as `/' is typed --
+;; nothing after a name, and no completion asked of the gateway -- and a pick
+;; runs. A row that asks for its text moves to the box, which wears the row's
+;; label and its placeholder, runs the row's line with what was typed on Enter,
+;; and puts the ask away on Esc; the reply's head names the command, never the
+;; line a row ran, and no row shows its line.
+
+(deftest web-cell-a-command-is-its-name ()
+  (let* ((app (web-page-text "app.js"))
+         (input (web-js-function app "slashInput"))
+         (pick (web-js-function app "pickSlash"))
+         (panel (web-js-function app "slashPanel"))
+         (ask (web-js-function app "askInComposer"))
+         (submit (web-js-function app "submitAsk"))
+         (reply (web-js-function app "showReply")))
+    (is (not (search "/api/gateway/slash/completions" app)) "no completion is asked")
+    (is (not (search "usage" input)) "nor a usage read")
+    (is (search "if (!naming) { showSlash([]); return; }" input) "nothing after a name")
+    (is (search "if (run) { showSlash([]); runSlash(line); return; }" pick) "a pick runs")
+    (is (search "pick.dataset.ask = JSON.stringify(ask)" panel) "a row that asks is a button")
+    (is (not (search "pick.title = run" panel)) "a row's line is never shown")
+    (is (search "if (pick.dataset.ask) { askInComposer(JSON.parse(pick.dataset.ask)); return; }" app))
+    (is (search "$(\"asking-label\").textContent = asking.label" ask) "the box wears the label")
+    (is (search ": asking ? asking.placeholder || asking.label" app) "and its placeholder")
+    (is (search "const line = `${asking.line} ${text}`;" submit) "Enter runs the row's line with the text")
+    (is (search "if (asking) { submitAsk(); return; }" (web-js-function app "submit")))
+    (is (search "event.key === \"Escape\" && asking" app) "Esc puts it away")
+    (is (search "line.trim().split(/\\s+/)[0]" reply) "the head names the command")
+    (is (search "id=\"asking-label\"" (web-page-text "index.html")))))
+
 ;; A phone opens Control on its sections as one list, each saying how it
 ;; stands, and a section as a page of its own under the way back.
 (deftest web-cell-control-on-a-phone-is-a-list-of-its-sections ()

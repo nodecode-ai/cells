@@ -142,7 +142,7 @@ export function makeIndex({ c, api, act, toast, redraw, settle }) {
       root.append(line);
       return root;
     }
-    const infoMark = about("index", t("What the agent keeps and does not run — memories, skills in prose — and the definitions of its own layer, ranked by use: the index at the head of every conversation lists the hot ones, and the agent reads one before it follows it. A memory never cools; a skill or a definition unused for a while does. A new session lists a change at once, one already running after its next eviction, or at once after /index reload in it."));
+    const infoMark = about("index", t("What the agent keeps and does not run — memories, skills in prose — and the definitions of its own layer, ranked by use: the index at the head of every conversation lists the hot ones, and the agent reads one before it follows it. A memory never cools; a skill or a definition unused for a while does. A new session lists a change at once, one already running after its next eviction, or at once after the index is reloaded from /index in it."));
     const cells = new Set(l.definitions.map((d) => d.cell)).size;
     const head = headline(t("Index"), t("{hot} hot, {cold} cold.", { hot: l.hot, cold: l.cold }), t("From {n} cells.", { n: cells }));
     (head.querySelector(".micro") || head).append(" ", infoMark);
