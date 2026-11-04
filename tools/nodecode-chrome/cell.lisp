@@ -8,7 +8,7 @@
 ;;;; on the manual, register /chrome, return the stop thunk. There is no
 ;;;; authorization step: a running cell is Chrome control for every
 ;;;; session. Config is materialized here and closed over; nothing rewrites it
-;;;; later — the one operator toggle (/chrome background) is a session-state
+;;;; later — the one operator toggle (background, in /chrome) is a session-state
 ;;;; row, not config.
 ;;;;
 ;;;; Config, a sibling top-level key next to `cells':
@@ -24,9 +24,6 @@
 
 (defparameter *doctor-timeout-seconds* 10
   "Per-probe wait in /chrome doctor (pi-chrome's 10 s). Tests shorten it.")
-
-(defparameter +usage+
-  "/chrome status | doctor | onboard | background [on|off]")
 
 ;;; --- the manual -----------------------------------------------------------
 ;;; (help :chrome) answers it while the cell runs; a request carries the one
@@ -67,8 +64,8 @@ Rules:
 4. Calls block until Chrome answers (usually under 3 s). For navigate, wait-for, screenshot
    and slow pages pass yield_time_ms 40000 on the eval call so the form is not
    backgrounded; if you ever see status running, (eval-await ID) - never re-send the action.
-5. CHROME-OFFLINE or a timeout naming the extension: ask the user to run /chrome doctor
-   (or /chrome onboard when the extension was never loaded).
+5. CHROME-OFFLINE or a timeout naming the extension: ask the user to open /chrome and run its
+   Doctor (or Install the extension when it was never loaded).
 6. Output is capped near 6000 characters; zoom with :mode, :query, :near-uid or :limit.
 7. Native file pickers, permission prompts and other browser chrome cannot be driven."
   "What (help :chrome) answers while the cell runs.")
@@ -185,7 +182,7 @@ when that exits; one that exited 0 handed the page to a running browser."
         ((relay-p bridge) (relay-line bridge))
         ((bridge-connected-p bridge) "extension connected")
         ((foreign-polling-p bridge)
-         (format nil "'~a' is polling instead; remove it at chrome://extensions and run /chrome onboard"
+         (format nil "'~a' is polling instead; remove it at chrome://extensions and install this one from /chrome"
                  (bridge-foreign-name bridge)))
         ((unauthorized-polling-p bridge)
          "an extension without this bridge's secret is polling; reload it at chrome://extensions or run /chrome onboard")
@@ -212,8 +209,9 @@ when that exits; one that exited 0 handed the page to a running browser."
     ((member word '("on" "off") :test #'string=)
      (set-session-background session-id (string= word "on"))
      (format nil "Chrome background ~a for this session" word))
-    (t (format nil "Chrome background is ~:[off~;on~]; /chrome background on|off"
-               (session-background session-id)))))
+    (t (values (format nil "Chrome background is ~:[off~;on~] for this session"
+                       (session-background session-id))
+               (panel session-id)))))
 
 (defun do-doctor ()
   "pi-chrome's doctor, one line: version probe, evaluate, page probe."
@@ -260,6 +258,26 @@ when that exits; one that exited 0 handed the page to a running browser."
                 "?")
             warnings)))
 
+(defun panel (session-id)
+  "The dialog bare /chrome answers: a row for each thing it does, and for a
+session's own eval, whether its Chrome work stays in background tabs."
+  (let ((session (and (stringp session-id) (nlk:store-open-p))))
+    (nle:list-dialog
+     :title "Chrome" :summary (connection-line)
+     :rows (append
+            (list (nle:run-row "Status" "/chrome status" :detail "the bridge, the extension and this session's tabs")
+                  (nle:run-row "Doctor" "/chrome doctor" :detail "probe the extension: its version, an evaluate, a page")
+                  (nle:run-row "Install the extension" "/chrome onboard"
+                               :detail "open chrome://extensions and the folder to load unpacked"))
+            (when session
+              (let ((on (session-background session-id)))
+                (list (nle:run-row "Leave Chrome's focus alone" "/chrome background on"
+                                   :detail "this session's actions work behind whatever you look at"
+                                   :mark (if on "●" "") :mark-tone :accent)
+                      (nle:run-row "Bring Chrome forward" "/chrome background off"
+                                   :detail "this session's actions take Chrome's focus"
+                                   :mark (if on "" "●") :mark-tone :accent))))))))
+
 (defun run-subcommand (session-id args)
   (let* ((tokens (nlk:split-words args))
          (head (string-downcase (or (first tokens) "")))
@@ -269,7 +287,7 @@ when that exits; one that exited 0 handed the page to a running browser."
                       (progn ,@body)
                       "No session bound to this command")))
       (nlk:dispatch head string=
-        ("" (format nil "~a -- ~a" (connection-line) +usage+))
+        ("" (values (connection-line) (panel session-id)))
         ("status" (do-status session-id))
         ("background" (with-session (do-background session-id rest)))
         ("doctor" (do-doctor))
@@ -284,7 +302,7 @@ when that exits; one that exited 0 handed the page to a running browser."
                      (format nil "Load unpacked at chrome://extensions, Developer mode on ~
                                   and left on: ~a (remove any 'Pi Chrome Connector' first)"
                              folder)))
-        (t (format nil "Unknown /chrome subcommand ~a. ~a" head +usage+))))))
+        (t (values (format nil "/chrome: ~a is not one of its choices" head) (panel session-id)))))))
 
 ;;; --- the entry ------------------------------------------------------------
 
@@ -315,5 +333,4 @@ when that exits; one that exited 0 handed the page to a running browser."
   (:command "chrome" (lambda (args session-id) (run-subcommand session-id args))
             :label "Chrome"
             :catches 'chrome-error
-            :description "Chrome control: status, doctor, onboard, background"
-            :argument-hint "status | doctor | onboard | background [on|off]"))
+            :description "Chrome control: the connection, the doctor, the extension, background tabs"))

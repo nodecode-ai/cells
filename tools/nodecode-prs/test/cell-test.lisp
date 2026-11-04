@@ -199,7 +199,12 @@
       (with-github ((:all (watch-routes (list (gh-pull 1) (gh-pull 5)))))
         (nodecode-prs::poll-repo "a/b"))
       (is (= 2 (length *prs-submits*)) "the next goes once the first has ended")
-      (is-carrying (text (nodecode-prs::run-slash "")) "a/b: 2 open" "#1  unranked  @alice"))))
+      (is-carrying (text (nodecode-prs::run-slash "")) "a/b: 2 open" "#1  unranked  @alice")
+      (let ((dialog (nle::dialog-json (nth-value 1 (nodecode-prs::run-slash "")))))
+        (is (equal '("/prs poll")
+                   (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) (nle::json-array dialog "rows")))
+            "typed alone, its panel offers a poll now"))
+      (is (search "nope is not one of its choices" (nodecode-prs::run-slash "nope"))))))
 
 (deftest prs-cell-rank-turns-run-under-their-budget ()
   (with-prs ("turn_minutes" 3)
