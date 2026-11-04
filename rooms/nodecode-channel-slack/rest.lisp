@@ -574,11 +574,7 @@ else, which is answered as a reply."
                                          "text" (notification-text text)
                                          "blocks" (message-blocks text controls)))))))
 
-(defun ask-modal-plan (candidate ask &key prompt (timeout-seconds 3)
-                                   &aux (trigger (source-field candidate "trigger_id"))
-                                        (label (nlk:trimmed (or (nlk:json-value ask :text "label") "")))
-                                        (verb (nlk:trimmed (or (nlk:json-value ask :text "verb") "")))
-                                        (placeholder (nlk:trimmed (or (nlk:json-value ask :text "placeholder") ""))))
+(defun ask-modal-plan (candidate ask &key prompt (timeout-seconds 3))
   "(values PLAN T): how a press on a row that asks for its text asks for it
 (NCK:PLATFORM-PLAN-ASK) -- views.open with the press's trigger_id, a modal
 named after ASK's label holding one line of text, its placeholder ASK's and
@@ -593,7 +589,11 @@ candidate no press made."
   (flet ((plain (text limit)
            (nlk:json-object "type" "plain_text"
                             "text" (if (> (length text) limit) (nlk:clip text (1- limit) :ellipsis "…") text))))
-    (let ((label (if (plusp (length label)) label "Text")))
+    (let* ((trigger (source-field candidate "trigger_id"))
+           (label (nlk:trimmed (or (nlk:json-value ask :text "label") "")))
+           (label (if (plusp (length label)) label "Text"))
+           (verb (nlk:trimmed (or (nlk:json-value ask :text "verb") "")))
+           (placeholder (nlk:trimmed (or (nlk:json-value ask :text "placeholder") ""))))
       (when (and trigger (candidate-pressed-p candidate))
         (values
          (api-plan "views.open"

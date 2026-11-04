@@ -145,8 +145,7 @@ adapter and the fake gateway have stopped."
         (is (wire-row "help" (nck:request-plan-body menu) "name"))
         (is (null (wire-row "model-aux" (nck:request-plan-body menu) "name")) "the auxiliary model is /models' own")
         (is (wire-row "models" (nck:request-plan-body menu) "name"))
-        (is (notany (lambda (command) (gethash "options" command)) (nck:request-plan-body menu))
-            "a command is its name: none takes an option"))
+        (is (notany (lambda (command) (gethash "options" command)) (nck:request-plan-body menu))))
       (is-present (defer (await-plan executor :label "interaction_defer" :timeout 15))
         "held open first, so a slow command still lands"
         (is-plan defer :path "/interactions/i1/tok/callback" "type" 5))

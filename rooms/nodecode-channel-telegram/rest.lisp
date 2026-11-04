@@ -551,18 +551,18 @@ that is not private."
           (t (edit-message-plan (channel-target candidate) card text
                                 :retry t :controls controls :timeout-seconds timeout-seconds)))))
 
-(defun ask-reply-plan (candidate ask &key prompt (timeout-seconds 30)
-                                   &aux (target (channel-target candidate))
-                                        (card (source-field candidate "reply_to_message_id"))
-                                        (placeholder (nlk:trimmed (or (nlk:json-value ask :text "placeholder") ""))))
+(defun ask-reply-plan (candidate ask &key prompt (timeout-seconds 30))
   "(values PLAN NIL): how a press on a row that asks for its text asks for it
 (NCK:PLATFORM-PLAN-ASK) -- PROMPT, the kit's words, sent where the card was
 pressed as a reply to it, naming the presser, with Telegram's force reply:
 their app opens a reply to it at once, ASK's placeholder in the field, and in
 a group it opens for them alone (selective). The reply is the text (NCK's
 ASKED-REPLY)."
-  (let ((body (target-body target))
-        (who (mention-markdown (source-field candidate "user_id") (source-field candidate "user_name"))))
+  (let* ((target (channel-target candidate))
+         (card (source-field candidate "reply_to_message_id"))
+         (placeholder (nlk:trimmed (or (nlk:json-value ask :text "placeholder") "")))
+         (body (target-body target))
+         (who (mention-markdown (source-field candidate "user_id") (source-field candidate "user_name"))))
     (setf (gethash "rich_message" body) (rich-message (format nil "~@[~a ~]~a" who prompt) nil nil)
           (gethash "reply_markup" body)
           (nlk:json-object "force_reply" t "selective" t

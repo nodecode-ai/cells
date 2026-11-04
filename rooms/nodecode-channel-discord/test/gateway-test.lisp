@@ -523,13 +523,10 @@ ROUTE-DISCORD-AUTOCOMPLETE."
       (is (eq t (gethash "asked" (nck:candidate-source candidate))) "and asks nothing again")
       (is (equal "/rename" (nlk:json-value (nck:candidate-press candidate) :text "back"))))
     (is (equal "/rename Ada" (nlk:json-value (dgw-interaction (funcall submit "Ada" :components "label"))
-                                            :string "text"))
-        "a label carries its input too")
+                                            :string "text")) "a label carries its input too")
     (is (null (dgw-interaction (funcall submit "   "))) "nothing typed is no line")
-    (is (null (dgw-interaction (funcall submit "Ada" :id "nck:p:0123456789ab")))
-        "a custom_id naming no ask is no line")
-    (is (null (dgw-interaction (funcall submit "Ada") #'ncd:route-discord-control))
-        "a submit is never a control press")))
+    (is (null (dgw-interaction (funcall submit "Ada" :id "nck:p:0123456789ab"))) "a custom_id naming no ask is no line")
+    (is (null (dgw-interaction (funcall submit "Ada") #'ncd:route-discord-control)))))
 
 (defun dgw-reaction (event d-json &rest keys)
   "The candidate ROUTE-DISCORD-REACTION derives from the EVENT dispatch

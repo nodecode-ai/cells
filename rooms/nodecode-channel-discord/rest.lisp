@@ -845,10 +845,7 @@ words to the presser of PAYLOAD after its press has been answered."
 cut to make room for an ellipsis."
   (if (> (length text) limit) (nlk:clip text (1- limit) :ellipsis "…") text))
 
-(defun interaction-modal-plan (candidate ask &key prompt (timeout-seconds 3)
-                                 &aux (data (source-field candidate "press_data"))
-                                      (label (nlk:trimmed (or (nlk:json-value ask :text "label") "")))
-                                      (placeholder (nlk:trimmed (or (nlk:json-value ask :text "placeholder") ""))))
+(defun interaction-modal-plan (candidate ask &key prompt (timeout-seconds 3))
   "(values PLAN T): the answer a press on a row that asks for its text takes
 (NCK:PLATFORM-PLAN-ASK) -- POST /interactions/<id>/<token>/callback type 9, a
 modal named after ASK's label holding one line of text, its placeholder
@@ -860,9 +857,12 @@ a choice."
   ;; interaction, and the kit then asks with a message instead. A title and
   ;; a label hold 45 characters, a placeholder 100.
   (declare (ignore prompt))
-  (let* ((id (source-field candidate "interaction_id"))
-         (token (source-field candidate "interaction_token"))
-         (label (if (plusp (length label)) label "Text")))
+  (let* ((data (source-field candidate "press_data"))
+         (label (nlk:trimmed (or (nlk:json-value ask :text "label") "")))
+         (label (if (plusp (length label)) label "Text"))
+         (placeholder (nlk:trimmed (or (nlk:json-value ask :text "placeholder") "")))
+         (id (source-field candidate "interaction_id"))
+         (token (source-field candidate "interaction_token")))
     (when (and id token (candidate-pressed-p candidate) (stringp data) (<= 1 (length data) 100))
       (values
        (interaction-callback-plan

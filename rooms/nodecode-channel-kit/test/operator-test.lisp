@@ -109,8 +109,7 @@ THREAD, on the server GUILD — runs as."
             (is (equal '(("coder" "/agent coder" "") ("support" "/agent support" "")
                          ("Back to the routes" "/agent default" "●"))
                        (loop for row in (getf dialog :rows)
-                             collect (list (getf row :label) (getf (getf row :run) :enter) (getf row :mark))))
-                "a row an agent, then the routes, which answer now"))
+                             collect (list (getf row :label) (getf (getf row :run) :enter) (getf row :mark))))))
           (is (search "answered by agent support, by the route on user u7" (agent "chat-100" "" kim)))
           (lane "chat-100-m1" "chat-100")
           (lane "chat-100-t42-m2" "chat-100-t42")
@@ -126,8 +125,7 @@ THREAD, on the server GUILD — runs as."
             ("100" :thread "42" "coder" "a thread runs as its channel was handed"))
           (is (search "answered by agent coder, handed to it here" (agent "chat-100" "" kim)))
           (is (equal '("●" "" "")
-                     (mapcar (lambda (row) (getf row :mark)) (getf (nth-value 1 (agent "chat-100")) :rows)))
-              "the agent the room was handed to is marked")
+                     (mapcar (lambda (row) (getf row :mark)) (getf (nth-value 1 (agent "chat-100")) :rows))))
           (is (search "as its channel was handed to it" (agent "chat-100-t42")))
           ;; Default goes back to the routes.
           (is (search "this channel is answered by agent support from its next ask"
@@ -157,8 +155,7 @@ THREAD, on the server GUILD — runs as."
           (is (equal (list "coder" "support" "Back to the routes")
                      (mapcar (lambda (row) (getf row :label))
                              (getf (nck::agent-dialog "chat-100-t42" "thread" nil :route) :rows))))
-          (is (equal folder (getf (first (getf (nck::agent-dialog "chat-100" "channel" nil nil) :rows)) :detail))
-              "an agent's row says its folder"))))))
+          (is (equal folder (getf (first (getf (nck::agent-dialog "chat-100" "channel" nil nil) :rows)) :detail))))))))
 
 (deftest channel-operator-an-ask-runs-as-its-agent ()
   ;; A routed ask's lane works in its agent's folder, with its persona and
