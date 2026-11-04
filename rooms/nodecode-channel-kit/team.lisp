@@ -582,8 +582,8 @@ note. When the ask is one task with a measurable outcome, work it this way. ~
 the command in backticks; an ask of several tasks gets one SCORER each. A score comes only ~
 from (nck:board-verify ~s :command \"...\" :directory \"<your working copy>\"), which runs ~
 your task's scorer and puts your score on your card. ~
-The scorer prints the score on its last line, higher is better: N/M, or a number (negate a ~
-time or a size). ~
+The scorer prints the score alone on its last line, higher is better: N/M, or a number (negate a ~
+time or a size); its stderr is never read. ~
 3. Post only measured progress: FINDING when your score improved -- what changed and why it ~
 works -- and FAIL for an idea ruled out, so no peer retries it. No chatter, and no ~
 @mentions: a mention asks a peer for a turn. ~
@@ -665,14 +665,17 @@ only after a verify reached the target."
   "How long one scorer run may take before BOARD-VERIFY calls it failed.")
 
 (defun run-scorer (command directory timeout)
-  "(values OUTPUT EXIT-CODE) of COMMAND run by bash in DIRECTORY, cut off
-after TIMEOUT seconds."
-  (multiple-value-bind (output error-output code)
+  "(values OUTPUT EXIT-CODE SHOWN) of COMMAND run by bash in DIRECTORY, cut
+off after TIMEOUT seconds: OUTPUT what it printed, the only text its score is
+read from, and SHOWN that with what it wrote to stderr under a stderr line."
+  (multiple-value-bind (output errors code)
       (uiop:run-program (list "timeout" (princ-to-string timeout) "bash" "-c" command)
                         :directory (and directory (uiop:ensure-directory-pathname directory))
-                        :output :string :error-output :output :ignore-error-status t)
-    (declare (ignore error-output))
-    (values (or output "") code)))
+                        :output :string :error-output :string :ignore-error-status t)
+    (let ((output (or output "")))
+      (values output code (if (plusp (length (nlk:trimmed (or errors ""))))
+                              (format nil "~a~&stderr:~%~a" output errors)
+                              output)))))
 
 (defun scorer-cut-p (code)
   "Whether exit CODE says the scorer never reached its last line: TIMEOUT's
@@ -680,22 +683,23 @@ after TIMEOUT seconds."
   (and (integerp code) (or (= code 124) (> code 128))))
 
 (defun scorer-score (output)
-  "The score OUTPUT ends on: the last `score: S' (or `score=S') it prints,
-`score' a word of its own, else the last N/M or number on its last line that
-holds one; NIL when it prints none."
+  "The score OUTPUT, a scorer's stdout, ends on: the last `score: S' (or
+`score=S') it prints, `score' a word of its own, else its last line that is
+not blank when that line is wholly N/M or a number; NIL for anything else,
+a score with no value such as N/0 among it."
   ;; The colon or equals sign is required and `score' must start a word: a
   ;; progress line naming a path like /scratch/score-141/7 is not a score.
+  ;; The last line must be the score alone: a number taken from a line like
+  ;; `cat: /proc/2714128/environ' is a pid, and higher is better, so a bogus
+  ;; score would stand as the best over every real run after it.
   (let ((said nil))
     (ppcre:do-register-groups (score) ("(?i)\\bscore\\s*[:=]\\s*(-?[0-9]+(?:\\.[0-9]+)?(?:/[0-9]+(?:\\.[0-9]+)?)?)" output)
       (setf said score))
-    (or said
-        (loop for line in (reverse (uiop:split-string output :separator '(#\Newline)))
-              for found = (let ((last nil))
-                            (ppcre:do-matches-as-strings
-                                (match "-?[0-9]+(?:\\.[0-9]+)?(?:/[0-9]+(?:\\.[0-9]+)?)?" line)
-                              (setf last match))
-                            last)
-              when found return found))))
+    (let ((score (or said
+                     (find-if (lambda (line) (plusp (length line)))
+                              (mapcar #'nlk:trimmed (uiop:split-string output :separator '(#\Newline)))
+                              :from-end t))))
+      (and score (score-value score) score))))
 
 (defun card-score-line (host thread-id)
   "The row a lane's card shows for this bot on THREAD-ID's board: its newest
@@ -730,15 +734,17 @@ one. => (:SCORE :IMPROVED :BEST :SOLVED :PLATEAU :LEADER :SCORER :EXIT :OUTPUT).
     (let* ((command (or command (board-scorer host thread)
                         (error "no scorer: pass :command, or post the command as SCORER first")))
            (scorer (verify-scorer host thread command)))
-      (multiple-value-bind (output code) (run-scorer command directory timeout)
+      ;; Only what it printed is read for the score: its stderr -- an EXIT
+      ;; trap's complaint, a warning -- lands after its last line.
+      (multiple-value-bind (output code shown) (run-scorer command directory timeout)
         ;; A cut run printed only what came before the cut: an early part's
         ;; N/M is not the score the whole run ends on, so it scores nothing.
         (when (scorer-cut-p code)
           (error "the scorer was cut off (exit ~a) before its last line, so it scores nothing:~%~a"
-                 code (text-end output 1200)))
+                 code (text-end shown 1200)))
         (let* ((score (or (scorer-score output)
-                          (error "the scorer printed no score (exit ~a):~%~a" code
-                                 (text-end output 1200))))
+                          (error "the scorer printed no score (exit ~a): its last line must be N/M or a number alone, and stderr is not read:~%~a"
+                                 code (text-end shown 1200))))
                (value (score-value score))
                (before (best-entry (board-scores-under host thread scorer)))
                (improved (or (null before) (> value (getf before :value))))
@@ -760,7 +766,7 @@ one. => (:SCORE :IMPROVED :BEST :SOLVED :PLATEAU :LEADER :SCORER :EXIT :OUTPUT).
                   :leader (and leader (format nil "s~d ~a" (getf leader :slot) (getf leader :score)))
                   :scorer scorer
                   :exit code
-                  :output (text-end output 1500))))))))
+                  :output (text-end shown 1500))))))))
 
 (defun board-read (thread &key (platform "discord"))
   "THREAD's board as this bot's kit holds it: the slots, the first scorer and
