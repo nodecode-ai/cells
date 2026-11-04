@@ -1287,21 +1287,40 @@ HOST's home channel when one is set."
         for target = (session-target (platform-session-prefix host.platform) session-id)
         when target return (values host target)))
 
-(defun sethome-command (args session-id)
-  "/sethome: make the room SESSION-ID is the home channel — `off' clears it —
-or, from a shell, say where each home is."
+(defun home-words (home)
+  "HOME, a home target, as the words that name it."
+  (format nil "channel ~a~@[ thread ~a~]" (getf home :channel-id) (getf home :thread-id)))
+
+(defun sethome-command (args session-id &aux (words (nlk:trimmed (or args ""))))
+  "/sethome in the room SESSION-ID is: bare, where the home channel is, with
+the rows that make this room it or leave none; `here' makes it the home
+channel, `off' clears it. From a shell, where each home is."
   (multiple-value-bind (host target) (room-host session-id)
     (cond
       ((null host)
        (format nil "~{~a~^~%~}"
                (or (loop for host in *hosts*
-                         collect (format nil "~a: ~:[no home channel; type /sethome in the one you want~;~:*home is ~a~]"
+                         collect (format nil "~a: ~:[no home channel; /sethome in the one you want sets it~;~:*home is ~a~]"
                                          (host-id host)
-                                         (nlk:when-let (home (home-target host))
-                                           (format nil "channel ~a~@[ thread ~a~]"
-                                                   (getf home :channel-id) (getf home :thread-id)))))
+                                         (nlk:when-let (home (home-target host)) (home-words home))))
                    (list "no channel adapters running"))))
-      ((string-equal (nlk:trimmed (or args "")) "off")
+      ((zerop (length words))
+       (let* ((home (home-target host))
+              (here (and home (equal (getf home :channel-id) (getf target :channel-id))
+                         (equal (getf home :thread-id) (getf target :thread-id)))))
+         (values (cond (here "this is the home channel")
+                       (home (format nil "the home channel is ~a" (home-words home)))
+                       (t "no home channel: the bot reports to the operator's shells alone"))
+                 (nle:list-dialog
+                  :title "Home channel"
+                  :summary "Where restart notices, new releases, pairing requests and refused commands are said"
+                  :rows (list (nle:run-row "Make this channel home" "/sethome here"
+                                           :detail "they come here from now on"
+                                           :mark (if here "●" "") :mark-tone :accent)
+                              (nle:run-row "No home channel" "/sethome off"
+                                           :detail "the operator's shells alone hear them"
+                                           :mark (if home "" "●") :mark-tone :accent))))))
+      ((string-equal words "off")
        (set-home host nil)
        "no home channel now: the bot reports to the operator's shells alone")
       (t
