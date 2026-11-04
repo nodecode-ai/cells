@@ -2977,7 +2977,7 @@ draws (*SETUP-CARDS*), for whom may open it (SETUP-OWNER-P)."
     (let ((card (and host (getf (gethash (platform-id (host-platform host)) *setup-cards*) :card)))
           (user (and (hash-table-p *command-source*) (gethash "user_id" *command-source*))))
       (cond ((null host)
-             "a channel is set up from a room of its own; `nodecode gateway setup' sets one up from a terminal")
+             "setting a channel up runs in a room of the channel it sets up; `nodecode gateway setup' sets one up from a terminal")
             ((null card)
              (format nil "~a has no setup card: `nodecode gateway setup ~a' sets it up from a terminal"
                      (platform-name (host-platform host)) (platform-id (host-platform host))))

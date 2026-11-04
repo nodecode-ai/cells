@@ -112,7 +112,7 @@ WORDS PANEL CONTROLS)."
       (is (equal "<#202>, <#203>" (cdr (assoc "Channels" (getf panel :fields) :test #'equal)))))
     (is (equal '("999" "201") (setup-config-member "allowed_channels")) "a pick writes nothing")
     (multiple-value-bind (text panel controls) (card "save")
-      (is (equal "I answer in 3 channels, and 1 person may use me. /channels setup changes it again." text))
+      (is (equal "I answer in 3 channels, and 1 person may use me. /channels changes it again." text))
       (is (eq :done (getf panel :tone)))
       (is (null controls) "the saved card has no pickers left"))
     (is (equal '("999" "202" "203") (setup-config-member "allowed_channels")))
@@ -136,7 +136,7 @@ WORDS PANEL CONTROLS)."
       (declare (ignore text))
       (is (equal "all 3 text channels" (cdr (assoc "Channels" (getf panel :fields) :test #'equal)))))
     (card "roles" "401")
-    (is (equal "I answer in 4 channels (all of this server's), and 1 person and 1 role may use me. /channels setup changes it again."
+    (is (equal "I answer in 4 channels (all of this server's), and 1 person and 1 role may use me. /channels changes it again."
                (card "save")))
     (is (equal '("999" "201" "202" "203") (setup-config-member "allowed_channels")))
     (is (equal '("401") (setup-config-member "allowed_roles")))
@@ -149,14 +149,14 @@ WORDS PANEL CONTROLS)."
     (card "users")
     (card "roles")
     (let ((said (card "save")))
-      (is (equal "I answer in 4 channels, and its owner may use me. /channels setup changes it again." said) "the channels still answer, so emptying people and roles goes through"))
+      (is (equal "I answer in 4 channels, and its owner may use me. /channels changes it again." said) "the channels still answer, so emptying people and roles goes through"))
     (is (equal '() (setup-config-member "allowed_users")))
     (is (equal '() (setup-config-member "allowed_roles"))))
   (with-setup-card (host card :config "{\"channels\": {\"discord\": {\"allowed_channels\": [\"201\"]}}}")
     (card)
     (card "channels")
     (multiple-value-bind (text panel) (card "save")
-      (is (search "/channels setup save keeps it" text) "the card stays open")
+      (is (search "Save keeps it" text) "the card stays open")
       (is (search "with none, I would answer nobody" (getf panel :notice))))
     (is (equal '("201") (setup-config-member "allowed_channels")) "and nothing was written")))
 
@@ -185,9 +185,9 @@ WORDS PANEL CONTROLS)."
     (is (nck::setup-owner-p host "501") "a team's member")
     (is (not (nck::setup-owner-p host "999")) "a team owns the app, not its placeholder owner"))
   (let ((said (ncd::discord-setup-card (test-host) nil '() (nlk:json-object "user_id" "300"))))
-    (is (search "Run /channels setup in a channel of the server" said) "a direct message has no server to pick from"))
-  (is (search "a channel is set up from a room of its own" (nck::channels-command "setup" nil)))
-  (is (search "setup |" (nck::channels-command "nope" nil)) "the usage names it"))
+    (is (search "Open /channels in a channel of the server" said) "a direct message has no server to pick from"))
+  (is (search "runs in a room of the channel" (nck::channels-command "setup" nil)))
+  (is (search "nope is not one of its choices" (nck::channels-command "nope" nil)) "the panel answers it"))
 
 (deftest channel-discord-setup-passes-the-gate-for-operators-alone ()
   ;; The card is where the channels are picked, so an operator's /channels
