@@ -67,22 +67,44 @@ offer the nodecode-security-audit cell.")
       (format s "~a  ~a ~a~:[~; (exploited)~] -- ~a~%" (field a "date")
               (string-upcase (field a "severity" "")) (field a "id")
               (eq (field a "exploited") t) (field a "title")))
-    (format s "~%/security check [FOLDER] [HOST] checks this machine; /security show ID gives the fix.~%")))
+    (format s "~%Pick one in /security for its fix, or check this machine there.~%")))
+
+(defun panel ()
+  "The dialog bare /security answers: a row per advisory the feed holds, its
+Enter the fix, then the checks it runs and a fresh read of the feed."
+  (nle:list-dialog
+   :title "Security" :summary (feed-status)
+   :rows (append
+          (mapcar (lambda (a)
+                    (nle:run-row (field a "title") (format nil "/security show ~a" (field a "id"))
+                                 :detail (format nil "~a ~a~:[~; · exploited~]" (field a "date")
+                                                 (string-upcase (field a "severity" ""))
+                                                 (eq (field a "exploited") t))))
+                  (advisories))
+          (list (nle:run-row "Check this machine" "/security check"
+                             :detail "what runs here, against every advisory")
+                (nle:ask-row "Check a site or a server" "Folder or host" "/security check"
+                             :placeholder "a folder like /var/www/site, a host like example.com, or both"
+                             :verb "check")
+                (nle:run-row "Read the feed again" "/security refresh"
+                             :detail "the advisories as the feed holds them now")))
+   :searchable t :search-placeholder "Search advisories"))
 
 (defun run-slash (args session-id)
-  "One /security invocation => its text."
+  "One /security invocation => its text: typed alone, the advisories and its
+panel."
   (declare (ignore session-id))
   (let* ((words (nlk:split-words (or args "")))
          (head (first words)))
     (handler-case
-        (cond ((null head) (list-text))
+        (cond ((null head) (values (list-text) (panel)))
               ((string-equal head "check")
                (let ((dir (find-if (lambda (w) (find #\/ w)) (rest words)))
                      (host (find-if (lambda (w) (and (find #\. w) (not (find #\/ w)))) (rest words))))
                  (report :dir dir :host host)))
               ((string-equal head "show") (show (or (second words) "")))
               ((string-equal head "refresh") (progn (refresh) (feed-status)))
-              (t (format nil "security: unknown subcommand ~a; /security, /security check [FOLDER] [HOST], /security show ID, /security refresh" head)))
+              (t (values (format nil "security: ~a is not one of its choices" head) (panel))))
       (error (e) (format nil "security: ~a" e)))))
 
 (defun step-refresh ()
@@ -97,8 +119,7 @@ offer the nodecode-security-audit cell.")
     ("refresh_hours" :integer :default 6 :min 1 :doc "how often the feed is re-read"))
   (:help :security "cyber security, start here for breaches, CVEs, patches or 'check/secure my website or server': (security:report :dir \"/var/www/site\" :host \"example.com\"), then (help :security) for checking and patching a site" +manual+)
   (:command "security" 'run-slash
-            :description "Recent breaches and the patch for each; check this machine"
-            :argument-hint "[check FOLDER HOST | show ID | refresh]")
+            :description "Recent breaches and the patch for each; check this machine")
   (:start (lambda ()
             (setf *feed-url* (setting :feed-url))
             (load-feed :fetch nil)
