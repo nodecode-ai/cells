@@ -159,6 +159,8 @@ person."
                     (list (set-my-commands-plan
                            entries :timeout-seconds timeout-seconds)))
    :message-id-of #'telegram-message-id
+   ;; A row that asks for its text asks with a force reply under the card.
+   :plan-ask #'ask-reply-plan
    :address-of #'telegram-address
    :strip-mention (lambda (text) (telegram-strip-mention text bot-username))
    :where-text (lambda (candidate)
