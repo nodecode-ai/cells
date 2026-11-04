@@ -7,13 +7,13 @@ nodes, no roles, no controller process.
 
 ## The standing team
 
-`/team TEXT` in a session's shell seats that session's standing team: the
-first one mints `team.nodes` nodes under it, working from
-`~/.nodecode/team/<session>/standing/`, and gives each node TEXT behind its
-own marker. Every later `/team TEXT` goes to the same nodes -- a steer of the
-turn a node is running, a follow-up to a node running none -- and between
-inputs they sit idle. `/team` alone reads where the team stands; `/team stop`
-stops every node. Nothing else the operator types reaches the team: the first
+**Seat a team on a task** in `/team`, in a session's shell, seats that
+session's standing team: the first task mints `team.nodes` nodes under it,
+working from `~/.nodecode/team/<session>/standing/`, and gives each node the
+task behind its own marker. Every later **Put a task to the team** goes to the
+same nodes -- a steer of the turn a node is running, a follow-up to a node
+running none -- and between inputs they sit idle. `/team` reads where the team
+stands; its **Stop the team** stops every node. Nothing else the operator types reaches the team: the first
 real runs seated every input, a status question included, and the nodes
 billed three and a half times what their session did.
 

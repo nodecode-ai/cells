@@ -1,7 +1,7 @@
 // The section ~/.nodecode/config.jsonc may carry for the board cell --
 // documentation, not config. A present section is enabled; "enabled": false
 // vetoes it, and an absent one runs on the defaults below. Sessions join a
-// board with /board NAME or (board:join "name"); a post reaches every other
+// board from /board or with (board:join "name"); a post reaches every other
 // session on it at that session's next model request.
 {
   "board": {

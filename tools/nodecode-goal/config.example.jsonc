@@ -1,11 +1,11 @@
 // The section ~/.nodecode/config.jsonc may carry for the goal cell --
 // documentation, not config. A present section is enabled; "enabled": false
 // vetoes it, and an absent one runs on the defaults below. A session takes a
-// goal with /goal CONDITION [--check COMMAND] [--turns N], or (goal:start ...)
+// goal from /goal, or with (goal:start ...)
 // through eval, and keeps taking turns until the check passes.
 {
   "goal": {
-    // The turns one goal may take when /goal names none (--turns N does):
+    // The turns one goal may take when it is set without its own:
     // after the last, an unmet goal ends and says so.
     "turns": 10,
     // How long a --check command may run, in seconds, before it is killed

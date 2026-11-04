@@ -22,7 +22,7 @@
       // /help is theirs.
       "owner": ["<user id>"],
       // true: a direct message from someone no list names is answered with a
-      // pairing code; /channels pair CODE lets them in.
+      // pairing code; /channels lets them in with it.
       "pairing": true,
       // Other bots' messages: "none", "mentions" (one that @mentions this
       // bot), or "all". The bot's own are always ignored.
@@ -51,8 +51,8 @@
       "stream": true,
       // An answer can come as a voice message too, below its words: "on"
       // answers an ask said in a voice message with one, "tts" answers every
-      // ask with one, "off" (default) never does. /voice on, tts or off sets
-      // it for one room. Spoken by the speech section's voice; needs ffmpeg.
+      // ask with one, "off" (default) never does. /voice sets it for one
+      // room. Spoken by the speech section's voice; needs ffmpeg.
       "voice_replies": "off",
       // Minutes an ask's turn may run. Past them its tool calls are refused
       // and it answers with what is done and what is left; the room gets a
@@ -86,7 +86,7 @@
       "catch_up_minutes": 60,
       // Agents a room's asks may run as: the folder they work in, a persona
       // in place of soul_file, standing instructions, a model, and skills
-      // the model reads first. /agent NAME typed in a room hands it to one.
+      // the model reads first. /agent in a room hands it to one.
       "agents": {
         // "coder": {"folder": "~/src/app", "soul_file": "/path/to/SOUL.md",
         //           "prompt": "...", "provider": "...", "model": "...",
