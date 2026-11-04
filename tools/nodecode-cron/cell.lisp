@@ -232,7 +232,7 @@ registry is written after it -- the ticker woken too, with POKE."
 
 
 (defparameter +no-jobs-line+
-  "cron: no jobs; (cron:add \"every day at 9am\" \"...\") through eval"
+  "cron: no jobs; ask the agent for one, as in “every weekday at 9am, sum up my inbox”"
   "The bare /cron answer, and its hint, while no job is scheduled.")
 
 (defun summary-order (jobs)
@@ -245,7 +245,7 @@ first, then the rest in the order they arrived."
 (defun summary-text ()
   "The bare /cron answer: how many jobs, then one line per job — a vertical
 list naming each job, its state and its timing."
-  ;; Past three jobs it lists the first and points at /cron jobs for the rest;
+  ;; Past three jobs it lists the first and points at /cron for the rest;
   ;; the one-line form rides the composer hint.
   (with-cron-lock
     (if (null *jobs*)
@@ -323,7 +323,7 @@ outcome."
                                             :detail "every job and its next fire, kept above the composer")))))
        :searchable t
        :search-placeholder "Search jobs"
-       :empty-label "No jobs · ask for one, or (cron:add \"every day at 9am\" \"...\") through eval"
+       :empty-label "No jobs · ask the agent for one, as in “every weekday at 9am, sum up my inbox”"
        :hint "space pause/resume  enter details  esc close  ↑↓ navigate  type search"))))
 
 (defun wrapped (text width)

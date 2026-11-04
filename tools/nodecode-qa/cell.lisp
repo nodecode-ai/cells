@@ -116,7 +116,7 @@ ANSWER names, `HTTP 400: rounds.0.ttft_ms: Invalid input'."
        t))
 
 (defparameter +unanswered+
-  "not answered yet: choose weekly or never in /settings, Diagnostics, or set qa.share in config.jsonc"
+  "not answered yet: weekly or never, in /settings, Diagnostics"
   "What /qa and /qa send say before qa.share has an answer: the surface that
 asks it.")
 

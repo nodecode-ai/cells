@@ -232,12 +232,12 @@ AFTER, PAYLOAD decoded; NIL when none ended since."
        (let ((last (newest-goal session)))
          (if last
              (let ((end (ended (getf last :id))))
-               (format nil "no goal running; the last, ~s, ended ~a~@[: ~a~]~%~a"
+               (format nil "no goal running; the last, ~s, ended ~a~@[: ~a~]"
                        (nlk:clip (nlk:one-line (getf last :condition)) 120)
                        (nlk:json-value end :string "reason")
-                       (nlk:json-value end :string "detail")
-                       "/goal sets another"))
-             "no goal on this session; /goal sets one"))))))
+                       (nlk:json-value end :string "detail")))
+             "no goal on this session"))))))
+
 (defun ended-text (goal reason detail)
   "The [goal] note that says GOAL ended for REASON."
   (let ((spent (length (checks (getf goal :id)))))

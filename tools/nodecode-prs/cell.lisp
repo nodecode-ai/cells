@@ -83,7 +83,7 @@ and its panel; `poll' wakes the watch now."
   (let ((repos (setting :repos))
         (word (nlk:trimmed (or args ""))))
     (cond ((null repos)
-           "prs: no repository is watched; set prs.repos in config.jsonc, or (prs:queue \"owner/name\")")
+           "prs: no repository is watched; name one in /settings, Prs")
           ((equal word "poll")
            (nlk:worker-poke *worker*)
            "prs: polling now")
