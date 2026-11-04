@@ -162,10 +162,14 @@ names; forget the thread after."
   (is (= -12.5d0 (nck::score-value "-12.5")))
   (is (null (nck::score-value "fast")))
   (is (equal "7/9" (nck::scorer-score (format nil "running~%score: 7/9~%ok 3 4"))) "a score line wins")
-  (is (equal "12" (nck::scorer-score (format nil "a 3~%took 12~%~%"))) "else the last number")
+  (is (equal "12" (nck::scorer-score (format nil "a 3~%12~%~%"))) "else the last line, wholly a number")
+  (is (equal "7/9" (nck::scorer-score (format nil "ok~% 7/9 ~c~%" #\Return))) "blanks around it are no part of it")
+  (is (null (nck::scorer-score (format nil "a 3~%took 12~%"))) "a last line that is not wholly a score is none")
+  (is (null (nck::scorer-score (format nil "10/10~%cat: /proc/2714128/environ: No such file or directory~%"))) "a pid on the last line is no score")
+  (is (null (nck::scorer-score (format nil "ok~%0/0~%"))) "N/0 has no value, so it is none")
   (is (equal "14/14" (nck::scorer-score (format nil "wrote /data/scratch/score-141/7.log~%14/14"))) "a path that holds score- is no score line")
   (is (equal "4/5" (nck::scorer-score (format nil "Score=4/5~%done"))) "score= counts, in any case")
-  (is (equal "5" (nck::scorer-score (format nil "highscore: 9 then 5"))) "score must start a word")
+  (is (equal "5" (nck::scorer-score (format nil "highscore: 9~%5"))) "score must start a word")
   (is (nck::scorer-cut-p 124) "timeout's own exit is a cut")
   (is (nck::scorer-cut-p 143) "a signal's exit is a cut")
   (is (not (nck::scorer-cut-p 1)) "a failing scorer still scores")
@@ -411,6 +415,23 @@ its board posted."
                            (nlk:short-digest "echo 4/4" 6))
                    (getf post :line))))
       (is (equal "4/4" (getf (first (nck::board-posts host "42")) :score)) "and the board keeps it"))))
+
+(deftest channel-team-verify-reads-the-score-from-stdout-alone ()
+  ;; A scorer's stderr comes after its last line: an EXIT trap's complaint
+  ;; naming a pid scored that pid once, and higher is better, so the bogus
+  ;; best outranked every real run after it.
+  (with-team-thread (host "42" :peers '(("777" . "elektra")))
+    (let* ((nck::*hosts* (list host))
+           (lane (running-thread-lane host))
+           (trapped "trap 'echo \"score.sh: line 28: /proc/2714128/environ: No such file or directory\" >&2' EXIT; echo 10/10"))
+      (is-present (run (nck:board-verify "42" :command trapped :platform "test")) "the scorer ran"
+        (is (equal "10/10" (getf run :score)) "the score is stdout's last line, not stderr's pid")
+        (is (getf run :solved))
+        (is (search "/proc/2714128/environ" (getf run :output)) "its stderr still shows"))
+      (is (search "score 10/10" (nck::board-card-line (nck:lane-session-id lane))) "the card shows the score")
+      (is (equal "10/10" (getf (nck:board-verify "42" :command trapped :platform "test") :best)) "the best stays a score")
+      (is (signals-error error (nck:board-verify "42" :command "echo 10/10; echo wrote /tmp/run-2714128.log" :platform "test")) "a last line that is not a score scores nothing")
+      (is (equal '("10/10" "10/10") (mapcar (lambda (e) (getf e :score)) (nck::board-scores host "42"))) "and nothing else was kept"))))
 
 (deftest channel-team-promote-moves-the-best-branch-by-compare-and-swap ()
   ;; The best commit moves only for a better verified score.
