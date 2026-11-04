@@ -255,9 +255,10 @@ ROOM to that agent, default gives it back to the routes."
     (agent-report host room target words)))
 
 (defun agent-choices (text room)
-  "The /agent argument completions for the tail TEXT typed in ROOM: its
-channel's agents in the order the config names them, each beside its folder,
-then default — none outside a channel's room."
+  "The agents ROOM's channel may hand it to whose names hold TEXT, as
+(:NAME :VALUE) plists: its agents in the order the config names them, each
+beside its folder, then default, back to the routes -- none outside a
+channel's room. What bare /agent offers (AGENT-DIALOG)."
   (nlk:when-let (host (room-host room))
     (loop with needle = (nlk:trimmed text)
           for (name . agent) in (append host.agents (list (list +own-agent+)))
@@ -268,10 +269,34 @@ then default — none outside a channel's room."
                                       (t name))
                           :value name))))
 
+(defun agent-dialog (room here current why)
+  "The dialog bare /agent answers in ROOM, a HERE (a channel or a thread): a
+row a agent of its channel's that hands ROOM to it, CURRENT, the one
+answering now, marked, then the way back to the routes, marked unless ROOM
+was handed (WHY :ROOM)."
+  (nle:list-dialog
+   :title "Agent"
+   :summary (format nil "Who answers in this ~a" here)
+   :rows (loop for choice in (agent-choices "" room)
+               for name = (getf choice :value)
+               for back = (equal name +own-agent+)
+               collect (nle:run-row (if back "Back to the routes" name)
+                                    (format nil "/agent ~a" name)
+                                    :detail (if back
+                                                "the agent a route picks, else the channel itself"
+                                                (let ((folder (getf (agent-of (room-host room) name) :folder)))
+                                                  (or folder "")))
+                                    :mark (if (if back (not (eq why :room)) (and (eq why :room) (equal name current)))
+                                              "●" "")
+                                    :mark-tone :accent))
+   :hint "enter hand over"))
+
 (defun agent-report (host room target words)
-  "AGENT-COMMAND's answer to WORDS in HOST's ROOM at TARGET."
+  "AGENT-COMMAND's answer to WORDS in HOST's ROOM at TARGET: bare, who
+answers there and why, with the dialog that hands it on (AGENT-DIALOG)."
   (let ((here (if (getf target :thread-id) "thread" "channel"))
-        (names (mapcar #'car host.agents)))
+        (names (mapcar #'car host.agents))
+        (words (and words (list (format nil "~{~a~^ ~}" words)))))
     (flet ((who (name) (if name (format nil "agent ~a" name) "the channel itself"))
            (hand (name)
              (set-room-setting host +room-agents-key+ room name)
@@ -284,16 +309,17 @@ then default — none outside a channel's room."
       (cond
         ((null words)
          (multiple-value-bind (name why route) (now)
-           (format nil "this ~a is answered by ~a~a~%~:[no agents: channels.~a.agents defines them~;~
-                        ~:*agents: ~{~a~^, ~}; /agent NAME hands this ~a to one~]"
-                   here (who name)
-                   (case why
-                     (:room ", handed to it with /agent; /agent default gives it back")
-                     (:parent ", as its channel was handed with /agent")
-                     (:route (format nil ", by the route on ~a" (route-text route)))
-                     (t ""))
-                   names (if names here (host-id host)))))
-        ((rest words) "usage: /agent [NAME | default]")
+           (values
+            (format nil "this ~a is answered by ~a~a~%~:[no agents: channels.~a.agents defines them~;~
+                         ~:*agents: ~{~a~^, ~}~]"
+                    here (who name)
+                    (case why
+                      (:room ", handed to it here")
+                      (:parent ", as its channel was handed to it")
+                      (:route (format nil ", by the route on ~a" (route-text route)))
+                      (t ""))
+                    names (host-id host))
+            (and names (agent-dialog room here name why)))))
         ((string-equal (first words) +own-agent+)
          (hand nil)
          (format nil "this ~a is answered by ~a from its next ask" here (who (now))))
@@ -412,10 +438,9 @@ messages as MODE, a key of +VOICE-REPLIES+, says. => the line that says so."
   "The configured provider that lists MODEL, or a refusal naming why none
 does: no provider lists it, or more than one does."
   (cond ((null found)
-         (error "no configured provider lists ~a; /models list shows the catalog" model))
+         (error "no configured provider lists ~a" model))
         ((rest found)
-         (error "~a is served by ~{~a~^ and ~}; name one: /models ~a ~a"
-                model found (first found) model))
+         (error "~a is served by ~{~a~^ and ~}: pick it under its provider" model found))
         (t (first found))))
 
 (defun checked-pick (provider model)
@@ -423,7 +448,7 @@ does: no provider lists it, or more than one does."
 unreachable, the model is taken on its word — or a refusal saying why."
   (multiple-value-bind (ids listing-error) (nle:models provider)
     (unless (or listing-error (member model ids :test #'string=))
-      (error "~a lists no model ~a; /models list ~a shows its ~d" provider model provider (length ids)))
+      (error "~a lists no model ~a among its ~d" provider model (length ids)))
     provider))
 
 (defun room-models-command (host candidate args room &aux (words (nlk:split-words (or args "")))
@@ -453,9 +478,8 @@ picker card, (values TEXT CONTROLS)."
       ((null words)
        (multiple-value-bind (provider model why) (lane-model host room target agent)
          (if model
-             (format nil "this ~a runs ~@[~a/~]~a, ~:[set by its agent~;set with /models~]; ~
-                          /models <provider> <model> changes it, /models default goes back"
-                     here provider model (eq why :room))
+             (format nil "this ~a runs ~@[~a/~]~a, ~:[set by its agent~;~:*picked for this ~a~]"
+                     here provider model (and (eq why :room) here))
              ;; The organism's report ends saying how a pick is made, and here
              ;; a pick is this room's.
              (format nil "this ~a runs the organism's default:~%~a" here (nle:slash "/models" :session-id room)))))
@@ -468,7 +492,7 @@ picker card, (values TEXT CONTROLS)."
        (if cards
            (models-card host room target agent (first words) (page (third words)))
            (nle:slash (format nil "/models list ~a" (first words)) :session-id room)))
-      ((rest (rest words)) "usage: /models [provider] [model] | default | list [provider]")
+      ((rest (rest words)) (error "no model ~{~a~^ ~}" words))
       (t
        (let* ((model (first (last words)))
               (provider (if (rest words) (checked-pick (first words) model) (model-provider model)))
@@ -503,20 +527,17 @@ or a picker card where the platform carries choices."
         ((and cards (null words))
          (effort-card host room provider model ladder current))
         ((null words)
-         (format nil "this ~a uses ~a/~a at ~a~%/think <rung> changes it; /think default follows the provider"
-                 here provider model (or current "provider default")))
+         (format nil "this ~a uses ~a/~a at ~a" here provider model (or current "provider default")))
         ((and (null (rest words))
               (member (first words) '("default" "reset") :test #'string-equal))
          (set-room-effort host room nil)
          (format nil "this ~a follows ~a/~a's provider default from its next ask"
                  here provider model))
-        ((rest words)
-         "usage: /think [off | minimal | low | medium | high | xhigh | max | default]")
         ((null ladder)
          (format nil "~a/~a offers no reasoning control" provider model))
-        ((not (member (first words) ladder :test #'string-equal))
+        ((or (rest words) (not (member (first words) ladder :test #'string-equal)))
          (error "~s is not a reasoning effort ~a/~a offers; the ladder: ~{~a~^ ~}"
-                (first words) provider model ladder))
+                (format nil "~{~a~^ ~}" words) provider model ladder))
         (t
          (set-room-effort host room (first words))
          (format nil "this ~a uses ~a/~a at ~a from its next ask; the organism's default is unchanged"
@@ -771,7 +792,8 @@ trigger; test asks each backup once. MAIN is the room's (PROVIDER MODEL)."
                                       :test #'equal :from-end t)))
        (multiple-value-call #'backups-wrote (nle::set-failover-chain chain))
        (backups-card main)))
-    (t "usage: /models backups [test | N provider model | N none | on TRIGGER | off TRIGGER]")))
+    ;; A line no control says shows the card, whose controls say them all.
+    (t (backups-card main))))
 
 ;;; --- a command's dialog as a card --------------------------------------------------------
 ;;; A command answers a shell with a dialog (NLE:LIST-DIALOG, NLE:SLASH's
@@ -796,14 +818,18 @@ OPTIONS), as a vector of rows of their own, or NIL for a row with none."
   (and options (plusp (length options)) options))
 
 (defun dialog-row-press (row &aux (run (nlk:json-value row :text "run" "enter"))
+                                  (ask (nlk:json-value row :object "ask"))
                                   (value (nlk:trimmed (or (nlk:json-value row :text "value") ""))))
-  "(values LINE DRAFT): the line a press on ROW, one of a dialog's rows,
-says -- its RUN's enter line, what the shell's Enter runs, else its VALUE
-when that is a slash line, DRAFT then, since the shell's Enter hands it to
-the composer to be read before it runs -- or NIL for a row that runs
-nothing."
-  (cond ((plusp (length run)) (values run nil))
-        ((and (< 1 (length value)) (char= #\/ (char value 0))) (values value t))))
+  "(values LINE DRAFT ASK): the line a press on ROW, one of a dialog's rows,
+says -- its RUN's enter line, what the shell's Enter runs; else the line of
+its ASK (NLE:ASK-ROW), ASK then, since the press asks for the one line of
+text the line runs with (ASK-FOR-TEXT); else its VALUE when that is a slash
+line, DRAFT then, since the shell's Enter hands it to the composer to be
+read before it runs -- or NIL for a row that runs nothing."
+  (let ((asked (and ask (nlk:trimmed (or (nlk:json-value ask :text "line") "")))))
+    (cond ((plusp (length run)) (values run nil nil))
+          ((plusp (length asked)) (values asked nil ask))
+          ((and (< 1 (length value)) (char= #\/ (char value 0))) (values value t nil)))))
 
 (defun dialog-tab-rows (dialog tab &aux (tabs (coerce (nlk:json-array dialog "tabs") 'list))
                                         (rows (coerce (nlk:json-array dialog "rows") 'list)))
@@ -940,18 +966,23 @@ beside it, the picture in one row (PICTURE-STRIP), the summary, its tone."
                    ;; ROW's options as its menu, each saying the row it is a pick of
                    (list :menu (format nil "~@[~a~]…" (label row))
                          (loop for option across (dialog-row-options row)
-                               for line-of = (dialog-row-press option)
+                               for (line-of nil ask) = (multiple-value-list (dialog-row-press option))
                                when line-of
-                                 collect (menu-choice (format nil "~@[~a · ~]~a" (label row) (or (label option) line-of))
+                                 collect (menu-choice (format nil "~@[~a · ~]~a~:[~;…~]" (label row)
+                                                              (or (label option) (and ask (words (field ask "label"))) line-of) ask)
                                                       line-of
                                                       :description (detail option)
                                                       :current (plusp (length (field option "mark")))
+                                                      :ask ask
                                                       :back line :back-tab tab :back-page page))))
-                 (press (row &optional (as (or (words (field row "verb")) enter "open")))
-                   ;; the choice ROW's press says, and the card it answers comes back to
-                   (multiple-value-bind (press draft) (dialog-row-press row)
-                     (choice (format nil "~a~:[~;…~]" (first-capital as) draft) press
-                             :confirm draft :back line :back-tab tab :back-page page))))
+                 (press (row)
+                   ;; the choice ROW's press says, and the card it answers comes back to;
+                   ;; one that asks says so with its ellipsis, and its own verb
+                   (multiple-value-bind (press draft ask) (dialog-row-press row)
+                     (let ((as (or (words (field row "verb")) (and ask (words (field ask "verb")))
+                                   enter "open")))
+                       (choice (format nil "~a~:[~;…~]" (first-capital as) (or draft ask)) press
+                               :confirm draft :ask ask :back line :back-tab tab :back-page page)))))
           (let* ((title (or (words (field dialog "title")) line))
                  (context (words (field dialog "context")))
                  (strip (picture-strip dialog))
@@ -1000,11 +1031,13 @@ beside it, the picture in one row (PICTURE-STRIP), the summary, its tone."
                                              (format nil "Pick one of ~d" (length pressable)))
                                    (loop for row in shown
                                          for mark = (field row "mark")
-                                         collect (multiple-value-bind (press draft) (dialog-row-press row)
-                                                   (menu-choice (or (label row) press) press
+                                         collect (multiple-value-bind (press draft ask) (dialog-row-press row)
+                                                   (menu-choice (format nil "~a~:[~;…~]"
+                                                                        (or (label row) (and ask (words (field ask "label"))) press) ask)
+                                                                press
                                                                 :description (words (format nil "~@[~a ~]~a" (words mark)
                                                                                             (or (detail row) "")))
-                                                                :confirm draft
+                                                                :confirm draft :ask ask
                                                                 :back line :back-tab tab :back-page page))))))))
               (and (> pages 1)
                    (list (list (apply #'choice "Prev" line :disabled (= page 1) (here :page (1- page)))

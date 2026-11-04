@@ -82,11 +82,12 @@ THREAD, on the server GUILD — runs as."
     ("{\"coder\": {}}" "[{\"agent\": \"coder\", \"user\": 1}]" "user is an id, written as a string")))
 
 (deftest channel-operator-agent-hands-a-room-to-an-agent ()
-  ;; /agent in a room says who answers there and why; /agent NAME hands the
-  ;; room to that agent, its threads with it, ahead of every route, and
-  ;; retires the lanes forked there and in its threads, so the next line runs
-  ;; as the agent; /agent default gives the room back to the routes. A name no
-  ;; agent has, and a room no running channel holds, are refused.
+  ;; Bare /agent in a room says who answers there and why, with a row a
+  ;; agent that hands the room to it, its threads with it, ahead of every
+  ;; route, and retires the lanes forked there and in its threads, so the
+  ;; next line runs as the agent; the last row gives the room back to the
+  ;; routes. A name no agent has, and a room no running channel holds, are
+  ;; refused.
   (with-temp-store ()
     (multiple-value-bind (agents routes)
         (agents-and-routes "{\"coder\": {}, \"support\": {}}" "[{\"agent\": \"support\", \"user\": \"u7\"}]")
@@ -102,7 +103,14 @@ THREAD, on the server GUILD — runs as."
                                                            :parent-session-id room))
                (kept (id) (and (nck:find-lane (nck:host-lanes host) id) t)))
           (is (search "this channel is answered by the channel itself" (agent "chat-100")))
-          (is (search "agents: coder, support; /agent NAME hands this channel to one" (agent "chat-100")))
+          (is (search "agents: coder, support" (agent "chat-100")))
+          (is (not (search "/agent" (agent "chat-100"))) "the words teach no line")
+          (let ((dialog (nth-value 1 (agent "chat-100"))))
+            (is (equal '(("coder" "/agent coder" "") ("support" "/agent support" "")
+                         ("Back to the routes" "/agent default" "●"))
+                       (loop for row in (getf dialog :rows)
+                             collect (list (getf row :label) (getf (getf row :run) :enter) (getf row :mark))))
+                "a row an agent, then the routes, which answer now"))
           (is (search "answered by agent support, by the route on user u7" (agent "chat-100" "" kim)))
           (lane "chat-100-m1" "chat-100")
           (lane "chat-100-t42-m2" "chat-100-t42")
@@ -116,59 +124,41 @@ THREAD, on the server GUILD — runs as."
           (is-each (routed-agent host)
             ("100" :user "u7" "coder" "the room's agent outweighs every route")
             ("100" :thread "42" "coder" "a thread runs as its channel was handed"))
-          (is (search "handed to it with /agent; /agent default gives it back" (agent "chat-100" "" kim)))
-          (is (search "as its channel was handed with /agent" (agent "chat-100-t42")))
+          (is (search "answered by agent coder, handed to it here" (agent "chat-100" "" kim)))
+          (is (equal '("●" "" "")
+                     (mapcar (lambda (row) (getf row :mark)) (getf (nth-value 1 (agent "chat-100")) :rows)))
+              "the agent the room was handed to is marked")
+          (is (search "as its channel was handed to it" (agent "chat-100-t42")))
           ;; Default goes back to the routes.
           (is (search "this channel is answered by agent support from its next ask"
                       (agent "chat-100" "default" kim)))
           (is (null (routed-agent host "100")))
           (is (search "no agent cdoer; the agents are coder, support"
                       (refusal-text error (agent "chat-100" "cdoer"))))
-          (is (search "usage: /agent" (agent "chat-100" "coder now")))
+          (is (search "no agent coder now" (refusal-text error (agent "chat-100" "coder now"))))
           (is (search "no room of a running channel" (refusal-text error (agent "tui-1" "coder")))))))))
 
-(deftest channel-operator-agent-completes-its-room-s-agents ()
-  ;; /agent's argument completes, while it is typed, to the agents of the room
-  ;; it is typed in, in the order the config names them, each beside its
-  ;; folder, then default; the tail typed narrows them, and a session no
-  ;; channel holds completes nothing. The menu's request completes in the
-  ;; room it was typed in: a thread's, placed under its channel.
-  (let ((folder (namestring (uiop:temporary-directory)))
-        (platform (test-platform))
-        (asked '()))
-    (setf (nck:platform-plan-autocomplete platform)
-          (lambda (payload choices &key timeout-seconds)
-            (declare (ignore timeout-seconds))
-            (push (list payload choices) asked)
-            '()))
+(deftest channel-operator-agent-offers-its-room-s-agents ()
+  ;; What bare /agent offers is the agents of the room it runs in, in the
+  ;; order the config names them, each beside its folder, then the way back
+  ;; to the routes; a session no channel holds offers nothing, and a thread
+  ;; offers its channel's.
+  (let ((folder (namestring (uiop:temporary-directory))))
     (multiple-value-bind (agents routes)
         (agents-and-routes (format nil "{\"coder\": {\"folder\": ~s}, \"support\": {}}" folder))
-      (let* ((host (test-host :name "agent-choices" :agents agents :routes routes :workers 1
-                              :platform platform))
-             (coder (format nil "coder — ~a" (getf (nck::agent-of host "coder") :folder))))
-        ;; Set, not bound: the menu's request is answered on the host's worker.
-        (with-saved-globals (nle::*registered-commands* nck::*hosts*)
-          (setf nck::*hosts* (list host))
-          (nlk:with-cleanup ((nck:stop-delivery-worker (nck:host-worker host)))
-            (flet ((offered (text room &optional (key :name))
-                     (mapcar (lambda (choice) (getf choice key)) (nck::agent-choices text room))))
-              (is (equal (list coder "support" "default — back to the routes") (offered "" "chat-100")))
-              (is (equal '("support") (offered "SUP" "chat-100-t42" :value)))
-              (is (equal '("default") (offered "def" "chat-100" :value)))
-              (is (null (offered "" "tui-1")))
-              (nck:register-channel-commands)
-              (nle:register-command "probe-pack" "where" (constantly nil)
-                                    :complete (lambda (text session-id)
-                                                (list (list :name session-id :value text))))
-              (flet ((complete (command)
-                       (setf asked '())
-                       (nck:completion-requested host (list :id "i1" :token "tok" :command command
-                                                            :text "co" :user-id "mike"
-                                                            :channel-id "100" :thread-id "42"))
-                       (and (await (:timeout 5) asked) (second (first asked)))))
-                (is (equal (list (list :name coder :value "coder")) (complete "agent")))
-                ;; A thread's request completes in the thread's room.
-                (is (equal '((:name "chat-100-t42" :value "co")) (complete "where")))))))))))
+      (let* ((host (test-host :name "agent-choices" :agents agents :routes routes))
+             (nck::*hosts* (list host))
+             (folder (getf (nck::agent-of host "coder") :folder)))
+        (flet ((offered (text room &optional (key :value))
+                 (mapcar (lambda (choice) (getf choice key)) (nck::agent-choices text room))))
+          (is (equal '("coder" "support" "default") (offered "" "chat-100")))
+          (is (equal '("support") (offered "SUP" "chat-100-t42")))
+          (is (null (offered "" "tui-1")))
+          (is (equal (list "coder" "support" "Back to the routes")
+                     (mapcar (lambda (row) (getf row :label))
+                             (getf (nck::agent-dialog "chat-100-t42" "thread" nil :route) :rows))))
+          (is (equal folder (getf (first (getf (nck::agent-dialog "chat-100" "channel" nil nil) :rows)) :detail))
+              "an agent's row says its folder"))))))
 
 (deftest channel-operator-an-ask-runs-as-its-agent ()
   ;; A routed ask's lane works in its agent's folder, with its persona and
