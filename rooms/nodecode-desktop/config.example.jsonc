@@ -1,0 +1,8 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. The declaration in cell.lisp is the authority.
+// The cell works with no section at all: /desktop opens the window.
+{
+  "desktop": {
+    "open": true
+  }
+}
