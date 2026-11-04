@@ -167,8 +167,7 @@
       (is (search "the next page" (qa-slash "show")))
       (is (search "bogus is not one of its choices" (qa-slash "bogus")))
       (is (equal '("/qa show" "/qa send" "/qa notes" "/qa push" "/qa clear")
-                 (mapcar (lambda (row) (getf (getf row :run) :enter)) (getf (nth-value 1 (qa-slash "")) :rows)))
-          "typed alone, a row runs each line")
+                 (mapcar (lambda (row) (getf (getf row :run) :enter)) (getf (nth-value 1 (qa-slash "")) :rows))))
       (is (null *qa-posts*) "show and status send nothing"))))
 
 ;;; --- the post --------------------------------------------------------------

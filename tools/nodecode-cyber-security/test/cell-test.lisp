@@ -41,6 +41,5 @@
          (runs (remove nil (mapcar (lambda (row) (getf (getf row :run) :enter)) (getf panel :rows)))))
     (is (member "/security show php2shell" runs :test #'equal) "a row per advisory opens its fix")
     (is (equal '("/security check" "/security refresh") (last runs 2)) "then the checks and the feed")
-    (is (equal '("/security check") (remove nil (mapcar (lambda (row) (getf (getf row :ask) :line)) (getf panel :rows))))
-        "a row asks for a folder or a host"))
+    (is (equal '("/security check") (remove nil (mapcar (lambda (row) (getf (getf row :ask) :line)) (getf panel :rows))))))
   (is (search "nope is not one of its choices" (nodecode-cyber-security:run-slash "nope" nil))))

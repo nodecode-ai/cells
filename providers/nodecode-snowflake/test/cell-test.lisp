@@ -386,10 +386,7 @@ against a temp auth.json AUTH, URL its authorization address and POSTS the
         (is (plusp (length text)) "the sign-in as it stands, in words")
         (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
           (is (equal '("/snowflake login" "/snowflake logout")
-                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)))
-              "a row runs each line")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
           (is (equal '("/snowflake login" "/snowflake code")
-                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows)))
-              "a row asks for the text a line takes")))
-      (is (search "not one of its choices" (cell-entry "nodecode-snowflake" "snowflake" "frobnicate"))
-          "a word it does not know answers the panel, not a usage line"))))
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-snowflake" "snowflake" "frobnicate"))))))

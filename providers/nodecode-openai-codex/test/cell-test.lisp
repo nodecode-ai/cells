@@ -465,10 +465,7 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
         (is (plusp (length text)) "the sign-in as it stands, in words")
         (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
           (is (equal '("/openai-codex login" "/openai-codex logout")
-                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)))
-              "a row runs each line")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
           (is (equal '("/openai-codex code")
-                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows)))
-              "a row asks for the text a line takes")))
-      (is (search "not one of its choices" (cell-entry "nodecode-openai-codex" "openai-codex" "frobnicate"))
-          "a word it does not know answers the panel, not a usage line"))))
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-openai-codex" "openai-codex" "frobnicate"))))))

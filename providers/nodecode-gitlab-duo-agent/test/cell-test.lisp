@@ -450,10 +450,7 @@ call; the tool's result with the answer and FINISHED."
         (is (plusp (length text)) "the sign-in as it stands, in words")
         (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
           (is (equal '("/gitlab-duo-agent login" "/gitlab-duo-agent models" "/gitlab-duo-agent logout")
-                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)))
-              "a row runs each line")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
           (is (equal '("/gitlab-duo-agent code")
-                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows)))
-              "a row asks for the text a line takes")))
-      (is (search "not one of its choices" (cell-entry "nodecode-gitlab-duo-agent" "gitlab-duo-agent" "frobnicate"))
-          "a word it does not know answers the panel, not a usage line"))))
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-gitlab-duo-agent" "gitlab-duo-agent" "frobnicate"))))))

@@ -87,12 +87,9 @@ settings and the registry restored on unwind."
         (is-present (rows (and dialog (nle::json-array dialog "rows"))) "and answers its panel"
           (is (equal '("/chrome status" "/chrome doctor" "/chrome onboard"
                        "/chrome background on" "/chrome background off")
-                     (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))
-              "a row runs each line")
-          (is (equal '("" "" "" "●" "") (map 'list (lambda (row) (nle::json-value row :string "mark")) rows))
-              "the session's background stands marked")))
-      (is (= 3 (length (nle::json-array (nth-value 1 (slash-chrome "" nil)) "rows")))
-          "no session, no background rows")
+                     (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)) "a row runs each line")
+          (is (equal '("" "" "" "●" "") (map 'list (lambda (row) (nle::json-value row :string "mark")) rows)))))
+      (is (= 3 (length (nle::json-array (nth-value 1 (slash-chrome "" nil)) "rows"))) "no session, no background rows")
       (is (search "No session bound" (slash-chrome "background on" nil)))
       (let ((text (slash-chrome "onboard" sid)))
         (is (search "chrome://extensions" text))

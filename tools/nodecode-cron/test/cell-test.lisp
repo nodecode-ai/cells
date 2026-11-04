@@ -271,8 +271,7 @@ session ORIGIN when given."
   (multiple-value-bind (text panel) (nodecode-cron::run-slash "")
     (is (uiop:string-prefix-p "cron: 2 jobs" text) "the text is the summary")
     (let ((rows (butlast (getf panel :rows))))
-      (is (equal "/cron jobs" (getf (getf (car (last (getf panel :rows))) :run) :enter))
-          "under the jobs, a row posts their list")
+      (is (equal "/cron jobs" (getf (getf (car (last (getf panel :rows))) :run) :enter)))
       (is (equal "Cron (2)" (getf panel :title)))
       (is (equal "1 active · 1 paused" (getf panel :context)))
       ;; the ids padded to one width, so the columns after them line up
@@ -309,8 +308,7 @@ session ORIGIN when given."
     (is (equal text (nodecode-cron::wake :status)) "the text is the status")
     (is (equal '("/wake on" "/wake off" "/wake now")
                (mapcar (lambda (row) (getf (getf row :run) :enter)) (getf panel :rows))))
-    (is (equal '("" "●" nil) (mapcar (lambda (row) (getf row :mark)) (getf panel :rows)))
-        "no wake yet stands marked off")))
+    (is (equal '("" "●" nil) (mapcar (lambda (row) (getf row :mark)) (getf panel :rows))))))
 
 (deftest cron-cell-a-job-session-cannot-schedule (with-cron-runtime (:submits t))
   (cron-add "30m" "x" :name "loop")

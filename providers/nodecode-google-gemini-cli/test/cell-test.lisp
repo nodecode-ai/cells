@@ -482,10 +482,7 @@ POSTS and GETS collect (URL HEADERS CONTENT); the loopback callback is dialled f
         (is (plusp (length text)) "the sign-in as it stands, in words")
         (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
           (is (equal '("/google-gemini-cli login" "/google-gemini-cli logout")
-                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)))
-              "a row runs each line")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
           (is (equal '("/google-gemini-cli code")
-                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows)))
-              "a row asks for the text a line takes")))
-      (is (search "not one of its choices" (cell-entry "nodecode-google-gemini-cli" "google-gemini-cli" "frobnicate"))
-          "a word it does not know answers the panel, not a usage line"))))
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-google-gemini-cli" "google-gemini-cli" "frobnicate"))))))

@@ -536,8 +536,7 @@ thinks with aside."
                      ("Voice messages here" "Words only" "change" "/voice replies" nil)
                      ("Say something now" "out loud, with no turn behind it" "say" nil nil))
                    (voice-seat-rows dialog)))
-        (is (equal "/voice say" (getf (getf (find "Say something now" (getf dialog :rows) :key (lambda (row) (getf row :label)) :test #'equal) :ask) :line))
-            "the say row asks for the words"))
+        (is (equal "/voice say" (getf (getf (find "Say something now" (getf dialog :rows) :key (lambda (row) (getf row :label)) :test #'equal) :ask) :line))))
       (setf (ncd::voice-lane-notes-by ncd:*voice-lane*) "u1"
             (ncd::voice-lane-speakers ncd:*voice-lane*) '("*"))
       (is (equal '(("Hearing" "everyone" "change" "/voice hear" nil)

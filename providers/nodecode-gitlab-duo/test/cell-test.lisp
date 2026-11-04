@@ -329,10 +329,7 @@ every request pushed onto POSTS as (URL HEADERS BODY)."
         (is (plusp (length text)) "the sign-in as it stands, in words")
         (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
           (is (equal '("/gitlab-duo login" "/gitlab-duo logout")
-                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)))
-              "a row runs each line")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
           (is (equal '("/gitlab-duo code")
-                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows)))
-              "a row asks for the text a line takes")))
-      (is (search "not one of its choices" (cell-entry "nodecode-gitlab-duo" "gitlab-duo" "frobnicate"))
-          "a word it does not know answers the panel, not a usage line"))))
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-gitlab-duo" "gitlab-duo" "frobnicate"))))))

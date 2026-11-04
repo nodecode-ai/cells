@@ -202,8 +202,7 @@
       (is-carrying (text (nodecode-prs::run-slash "")) "a/b: 2 open" "#1  unranked  @alice")
       (let ((dialog (nle::dialog-json (nth-value 1 (nodecode-prs::run-slash "")))))
         (is (equal '("/prs poll")
-                   (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) (nle::json-array dialog "rows")))
-            "typed alone, its panel offers a poll now"))
+                   (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) (nle::json-array dialog "rows")))))
       (is (search "nope is not one of its choices" (nodecode-prs::run-slash "nope"))))))
 
 (deftest prs-cell-rank-turns-run-under-their-budget ()
