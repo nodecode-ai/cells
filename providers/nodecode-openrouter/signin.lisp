@@ -403,16 +403,30 @@ any free port; => FLOW's redirect address."
   (nle::save-provider-api-key +provider+ nil)
   (format nil "Signed out: the key is gone from auth.json (it stays live at OpenRouter until you delete it at ~a)." +key-page+))
 
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
 (defun panel (summary)
   "The dialog bare /openrouter answers: SUMMARY, the sign-in as it stands, over a
 row for each thing to do about it."
   (nle:list-dialog
    :title "OpenRouter" :summary summary
-   :rows (list (nle:run-row "Sign in" "/openrouter login" :detail "in the browser, for a key")
-               (nle:ask-row "Paste where the browser landed" "Key or address" "/openrouter code"
+   :rows (list (panel-run "Sign in" "/openrouter login" :detail "in the browser, for a key")
+               (panel-ask "Paste where the browser landed" "Key or address" "/openrouter code"
                             :placeholder "the address the browser landed on, its code, or a key" :verb "sign in"
                             :detail "when the browser cannot reach this machine")
-               (nle:run-row "Sign out" "/openrouter logout" :detail "forget the kept sign-in, or end one in progress"))))
+               (panel-run "Sign out" "/openrouter logout" :detail "forget the kept sign-in, or end one in progress"))))
 
 (defun run-command (args session-id)
   "/openrouter typed alone answers its panel; a row runs one of its lines."

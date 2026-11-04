@@ -433,16 +433,30 @@ no PKCE, no scope."
   (save-entry nil)
   "Signed out: the minted key is gone from auth.json (it stays live at Z.AI until you delete it there).")
 
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
 (defun panel (summary)
   "The dialog bare /zai-coding-plan answers: SUMMARY, the sign-in as it stands, over a
 row for each thing to do about it."
   (nle:list-dialog
    :title "Z.AI Coding Plan" :summary summary
-   :rows (list (nle:run-row "Sign in" "/zai-coding-plan login" :detail "in the browser, with a Z.AI account")
-               (nle:ask-row "Paste where the browser landed" "Address" "/zai-coding-plan code"
+   :rows (list (panel-run "Sign in" "/zai-coding-plan login" :detail "in the browser, with a Z.AI account")
+               (panel-ask "Paste where the browser landed" "Address" "/zai-coding-plan code"
                             :placeholder "the address the browser landed on, or its code" :verb "sign in"
                             :detail "when the browser cannot reach this machine")
-               (nle:run-row "Sign out" "/zai-coding-plan logout" :detail "forget the kept sign-in, or end one in progress"))))
+               (panel-run "Sign out" "/zai-coding-plan logout" :detail "forget the kept sign-in, or end one in progress"))))
 
 (defun run-command (args session-id)
   "/zai-coding-plan typed alone answers its panel; a row runs one of its lines."

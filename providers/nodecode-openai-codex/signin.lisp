@@ -507,16 +507,30 @@ is answered again, its address unchanged."
                                    (floor (- expiry (unix-seconds)) 60))
                            "the token has expired and refreshes at the next round")))))))
 
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
 (defun panel (summary)
   "The dialog bare /openai-codex answers: SUMMARY, the sign-in as it stands, over a
 row for each thing to do about it."
   (nle:list-dialog
    :title "ChatGPT (Codex)" :summary summary
-   :rows (list (nle:run-row "Sign in" "/openai-codex login" :detail "in the browser, with a ChatGPT Plus or Pro account")
-               (nle:ask-row "Paste where the browser landed" "Address" "/openai-codex code"
+   :rows (list (panel-run "Sign in" "/openai-codex login" :detail "in the browser, with a ChatGPT Plus or Pro account")
+               (panel-ask "Paste where the browser landed" "Address" "/openai-codex code"
                             :placeholder "the address the browser landed on" :verb "sign in"
                             :detail "when the browser cannot reach this machine")
-               (nle:run-row "Sign out" "/openai-codex logout" :detail "forget the kept sign-in, or end one in progress"))))
+               (panel-run "Sign out" "/openai-codex logout" :detail "forget the kept sign-in, or end one in progress"))))
 
 (defun run-command (args session-id)
   "/openai-codex typed alone answers its panel; a row runs one of its lines."

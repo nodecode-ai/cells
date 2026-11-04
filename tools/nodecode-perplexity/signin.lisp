@@ -179,18 +179,32 @@ else a code mailed to EMAIL."
                        (nlk:json-value entry :text "email")
                        (and expiry (floor (- expiry (unix-seconds)) 60))))))))
 
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
 (defun panel (summary)
   "The dialog bare /perplexity answers: SUMMARY, the sign-in as it stands,
 over a row for each thing to do about it."
   (nle:list-dialog
    :title "Perplexity" :summary summary
-   :rows (list (nle:run-row "Sign in" "/perplexity login"
+   :rows (list (panel-run "Sign in" "/perplexity login"
                             :detail "with the desktop app's session, where there is one")
-               (nle:ask-row "Sign in with an email" "Email" "/perplexity login"
+               (panel-ask "Sign in with an email" "Email" "/perplexity login"
                             :placeholder "the account's email; Perplexity mails it a code" :verb "send")
-               (nle:ask-row "Enter the code from the email" "Code" "/perplexity code"
+               (panel-ask "Enter the code from the email" "Code" "/perplexity code"
                             :placeholder "the code Perplexity mailed" :verb "sign in")
-               (nle:run-row "Sign out" "/perplexity logout" :detail "forget the kept session"))))
+               (panel-run "Sign out" "/perplexity logout" :detail "forget the kept session"))))
 
 (defun run-command (args session-id)
   "/perplexity typed alone answers its panel; a row runs one of its lines."

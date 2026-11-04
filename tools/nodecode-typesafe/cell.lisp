@@ -90,12 +90,26 @@ which need not list models, one judgment asked of it."
               (format nil "typesafe: asking ~a one judgment" (base-url))
               "typesafe: checking the key against /v1/models")))))
 
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
 (defun panel (summary)
   "The dialog bare /typesafe answers: SUMMARY, where the key comes from, over
 the check it runs on asking."
   (nle:list-dialog
    :title "TypeSafe" :summary summary
-   :rows (list (nle:run-row "Check the key" "/typesafe check" :detail "ask TypeSafe whether it answers to it"))))
+   :rows (list (panel-run "Check the key" "/typesafe check" :detail "ask TypeSafe whether it answers to it"))))
 
 (defun run-slash (args session-id)
   "/typesafe typed alone: where the key comes from, and its panel; a row runs

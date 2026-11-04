@@ -148,16 +148,30 @@ account's roster and keeps it for the catalog."
   (nle:notice nil :key +key+)
   "devin: signed out")
 
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
 (defun panel (summary)
   "The dialog bare /devin answers: SUMMARY, the sign-in as it stands, over a
 row for each thing to do about it."
   (nle:list-dialog
    :title "Devin" :summary summary
-   :rows (list (nle:run-row "Sign in" "/devin login" :detail "in the browser, with a Devin account")
-               (nle:ask-row "Paste where the browser landed" "Address" "/devin code"
+   :rows (list (panel-run "Sign in" "/devin login" :detail "in the browser, with a Devin account")
+               (panel-ask "Paste where the browser landed" "Address" "/devin code"
                             :placeholder "the address the browser landed on, or its code" :verb "sign in"
                             :detail "when the browser cannot reach this machine")
-               (nle:run-row "Sign out" "/devin logout" :detail "forget the kept sign-in, or end one in progress"))))
+               (panel-run "Sign out" "/devin logout" :detail "forget the kept sign-in, or end one in progress"))))
 
 (defun run-slash (args session-id)
   "/devin typed alone answers its panel; a row runs one of its lines."

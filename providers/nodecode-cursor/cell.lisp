@@ -150,13 +150,27 @@ answers the core's `HTTP <status> <code>'."
   (nle:notice nil :key +key+)
   (format nil "~a: signed out" +provider+))
 
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
 (defun panel (summary)
   "The dialog bare /cursor answers: SUMMARY, the sign-in as it stands, over a
 row for each thing to do about it."
   (nle:list-dialog
    :title "Cursor" :summary summary
-   :rows (list (nle:run-row "Sign in" "/cursor login" :detail "in the browser, with a Cursor account")
-               (nle:run-row "Sign out" "/cursor logout" :detail "forget the kept sign-in, or end one in progress"))))
+   :rows (list (panel-run "Sign in" "/cursor login" :detail "in the browser, with a Cursor account")
+               (panel-run "Sign out" "/cursor logout" :detail "forget the kept sign-in, or end one in progress"))))
 
 
 (defun run-slash (args session-id)
