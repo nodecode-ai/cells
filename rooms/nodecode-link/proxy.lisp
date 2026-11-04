@@ -143,7 +143,7 @@ since +FORWARDED+ is all of its headers the gateway sees.")
   "Tell the attached shells a browser is asking."
   ;; Said once, never on the board: the board rides into the model's prompt.
   (nle:notice (format nil "link: ~a~@[ in ~a~] asks to open this machine.~%~
-                           If its page shows ~a, let it in: /link allow ~a  (or /link deny)"
+                           If its page shows ~a, let it in from /link"
                       (getf ask :agent) (and (plusp (length (getf ask :place))) (getf ask :place))
                       (code-text (getf ask :code)) (getf ask :code))))
 
