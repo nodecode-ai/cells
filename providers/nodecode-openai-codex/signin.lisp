@@ -182,7 +182,7 @@ the REDIRECT it was issued for."
 refresh rule: the standard grant, form-encoded)."
   (let ((refresh (nlk:json-value entry :text "refresh_token")))
     (unless refresh
-      (fail "the saved sign-in has no refresh token; sign in again with /openai-codex login"))
+      (fail "the saved sign-in has no refresh token; sign in again from /openai-codex"))
     (multiple-value-bind (json status text)
         (post +token-url+ (form "grant_type" "refresh_token" "client_id" +client-id+
                                 "refresh_token" refresh)
@@ -217,7 +217,7 @@ keeps a token that has not expired yet, and is a credential error once it has."
               (if (> (or (entry-expiry current) 0) (unix-seconds))
                   current
                   (error 'nle:credential-error
-                         :detail (format nil "openai-codex: ~a; sign in again with /openai-codex login"
+                         :detail (format nil "openai-codex: ~a; sign in again from /openai-codex"
                                          condition)))))))))
 
 ;;; --- PKCE and the authorization address ------------------------------------------------
@@ -448,7 +448,7 @@ to do when the browser runs elsewhere."
   (format nil "Open this address in a browser to sign in to ChatGPT:~%~%~a~%~%~
                This machine waits ~d minutes for the browser to return to ~a. ~
                If the browser runs elsewhere, copy the address it ends on (a page that does ~
-               not load) and send /openai-codex code ADDRESS."
+               not load) and paste it in /openai-codex."
           (login-url login) (floor +login-seconds+ 60) (login-redirect login)))
 
 (defun start-login (auth-path)
@@ -480,7 +480,7 @@ is answered again, its address unchanged."
   "Hand the waiting sign-in the code the operator pasted."
   (let ((login *login*))
     (unless login
-      (fail "no sign-in is waiting; start one with /openai-codex login"))
+      (fail "no sign-in is waiting; start one from /openai-codex"))
     (multiple-value-bind (code state) (parse-callback-input text)
       (cond ((null code) (fail "no authorization code in that; paste the whole address the browser ended on"))
             ((and state (string/= state (login-state login)))
@@ -494,7 +494,7 @@ is answered again, its address unchanged."
   "What /openai-codex status says of the sign-in kept at PATH."
   (let ((entry (stored-entry (ignore-errors (nle::read-auth-file path)))))
     (if (null entry)
-        (format nil "openai-codex: not signed in; /openai-codex login signs in with a browser~@[, ~a holds a token~]"
+        (format nil "openai-codex: not signed in; /openai-codex signs in with a browser~@[, ~a holds a token~]"
                 (some (lambda (name) (and (nle::credential-env name) name)) +env+))
         (let ((expiry (entry-expiry entry)))
           (format nil "openai-codex: signed in~@[ as ~a~]~@[ (~a)~]~@[, workspace ~a~]~@[; ~a~]"
@@ -507,8 +507,33 @@ is answered again, its address unchanged."
                                    (floor (- expiry (unix-seconds)) 60))
                            "the token has expired and refreshes at the next round")))))))
 
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
+(defun panel (summary)
+  "The dialog bare /openai-codex answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "ChatGPT (Codex)" :summary summary
+   :rows (list (panel-run "Sign in" "/openai-codex login" :detail "in the browser, with a ChatGPT Plus or Pro account")
+               (panel-ask "Paste where the browser landed" "Address" "/openai-codex code"
+                            :placeholder "the address the browser landed on" :verb "sign in"
+                            :detail "when the browser cannot reach this machine")
+               (panel-run "Sign out" "/openai-codex logout" :detail "forget the kept sign-in, or end one in progress"))))
+
 (defun run-command (args session-id)
-  "/openai-codex login | code ADDRESS | logout | status."
+  "/openai-codex typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let* ((args (string-trim " " (or args "")))
          (space (position #\Space args))
@@ -516,13 +541,14 @@ is answered again, its address unchanged."
          (rest (if space (string-trim " " (subseq args space)) ""))
          (path nle::*auth-file-path*))
     (handler-case
-        (cond ((equal verb "login") (start-login path))
+        (cond ((equal verb "login") (values (start-login path) (panel (status-text path))))
               ((equal verb "code") (paste-code rest))
               ((equal verb "logout")
                (cancel-login)
                (bt2:with-lock-held (*store-lock*) (save-entry path nil))
                (say nil)
                "openai-codex: signed out; the token is gone from auth.json")
-              ((member verb '("" "status") :test #'equal) (status-text path))
-              (t "usage: /openai-codex login | code ADDRESS | logout | status"))
+              ((equal verb "") (let ((text (status-text path))) (values text (panel text))))
+              ((string-equal verb "status") (status-text path))
+              (t (values (format nil "openai-codex: ~a is not one of its choices" verb) (panel (status-text path)))))
       (openai-codex-error (condition) (format nil "openai-codex: ~a" condition)))))

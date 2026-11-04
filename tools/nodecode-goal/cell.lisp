@@ -61,11 +61,9 @@ After each turn of the session ends the check runs. Not met with turns left,
 the session's next turn starts on its own, its input beginning [goal] and
 carrying what the check said: the cell's words, not the operator's. Met,
 spent, cancelled (the operator's stop) or failed, the goal ends and a [goal]
-note says so. The operator sets one with /goal CONDITION [--check COMMAND]
-[--turns N] [--k N], reads it with /goal and ends it with /goal stop."
+note says so. The operator sets, reads and ends one from /goal."
   "What (help :goal) answers while the cell runs.")
 
-(defparameter +usage+ "/goal CONDITION [--check COMMAND] [--turns N] [--k N] | /goal | /goal stop")
 
 ;;; --- the words -------------------------------------------------------------------
 ;;; Data, so a layer can reword them.
@@ -234,12 +232,12 @@ AFTER, PAYLOAD decoded; NIL when none ended since."
        (let ((last (newest-goal session)))
          (if last
              (let ((end (ended (getf last :id))))
-               (format nil "no goal running; the last, ~s, ended ~a~@[: ~a~]~%~a"
+               (format nil "no goal running; the last, ~s, ended ~a~@[: ~a~]"
                        (nlk:clip (nlk:one-line (getf last :condition)) 120)
                        (nlk:json-value end :string "reason")
-                       (nlk:json-value end :string "detail")
-                       +usage+))
-             (format nil "no goal on this session: ~a" +usage+)))))))
+                       (nlk:json-value end :string "detail")))
+             "no goal on this session"))))))
+
 (defun ended-text (goal reason detail)
   "The [goal] note that says GOAL ended for REASON."
   (let ((spent (length (checks (getf goal :id)))))
@@ -927,7 +925,7 @@ session idles; ATTEMPT, the plist an attempt's own goal carries, marks one.
          (cwd (nlk:find-session-cwd session))
          (folder (and cwd (uiop:directory-exists-p (uiop:ensure-directory-pathname cwd)) cwd)))
     (unless condition
-      (fail "a goal needs words: ~a" +usage+))
+      (fail "a goal needs words: what must hold"))
     (when (> (length condition) *condition-chars*)
       (fail "a goal is at most ~d characters and this one is ~d: put the detail in a file and name it"
             *condition-chars* (length condition)))
@@ -986,15 +984,82 @@ mid-turn, the check runs when the turn ends, and attempts start from it.
 
 ;;; --- /goal -------------------------------------------------------------------------
 
+(defun goal-line (condition check turns k &key options)
+  "The /goal line that sets CONDITION with CHECK, TURNS and K, NIL each for
+its default -- the options first, the check last, since it takes the rest
+of the line -- or, OPTIONS true, the one that answers their panel."
+  (format nil "/goal~:[~; --options~]~@[ --k ~d~]~@[ --turns ~d~]~@[ ~a~]~@[ --check ~a~]"
+          options (and k (> k 1) k) turns
+          (and (plusp (length (or condition ""))) condition) check))
+
+(defun panel (session)
+  "The dialog bare /goal answers for SESSION: stop the goal it runs, or set
+one -- checked by a judge, by a command, or with its options laid out."
+  (nle:list-dialog
+   :title "Goal" :summary (nlk:first-line (standing session) 120)
+   :rows (append
+          (when (goal-of session)
+            (list (nle:run-row "Stop the goal" "/goal stop" :detail "a turn already running finishes")))
+          (list (nle:ask-row "Set a goal" "Goal" "/goal"
+                             :placeholder "what must hold, in words" :verb "start"
+                             :detail "a judge, a fork of this session, checks it after each turn")
+                (nle:ask-row "Set a goal a command checks" "Command" "/goal --check"
+                             :placeholder "a command that exits 0 once the goal holds" :verb "start"
+                             :detail "run in the session's folder after each turn")
+                (nle:ask-row "Set a goal with options" "Goal" "/goal --options"
+                             :placeholder "what must hold, in words" :verb "next"
+                             :detail "the turns it may take, the ways it is tried, a command that checks it")))))
+
+(defun options-panel (condition check turns k)
+  "The dialog that lays a goal's options out before it starts: CONDITION what
+must hold, CHECK the command that checks it or NIL for a judge, TURNS and K
+as given or NIL. Each row answers this panel again with one option changed;
+the first starts the goal as it stands."
+  (let ((k (or k 1)) (shown (or turns (setting :turns))))
+    (flet ((again (&key (check check) (turns turns) (k k))
+             (goal-line condition check turns k :options t)))
+      (nle:list-dialog
+       :title "Goal" :summary (or condition (format nil "`~a` exits 0" check))
+       :rows (append
+              (list (nle:run-row "Start it" (goal-line condition check turns k)
+                                 :detail (format nil "checked by ~:[a judge~;~:*`~a`~] · at most ~d turn~:p~:[~*~; · tried ~d ways, the best kept~]"
+                                                 check shown (> k 1) k)))
+              (loop for ways in '(1 2 3 4)
+                    collect (nle:run-row (if (= ways 1) "Tried one way" (format nil "Tried ~d ways, the best kept" ways))
+                                         (again :k ways)
+                                         :detail (if (= ways 1) "in the session itself" "each in its own git worktree")
+                                         :mark (if (= ways k) "●" "") :mark-tone :accent))
+              (list (nle:ask-row "Tried more ways" "Ways" (format nil "~a --k" (again :k nil))
+                                 :placeholder (format nil "a whole number up to ~d" *attempts-cap*) :verb "set")
+                    (nle:ask-row "Within how many turns" "Turns" (format nil "~a --turns" (again :turns nil))
+                                 :placeholder (format nil "~d now" shown) :verb "set"))
+              (if check
+                  (list (nle:run-row "Checked by a judge instead" (again :check nil)
+                                     :detail "a fork of this session says whether it holds"))
+                  (list (nle:ask-row "Checked by a command" "Command" (format nil "~a --check" (again))
+                                     :placeholder "a command that exits 0 once the goal holds" :verb "set"))))))))
+
 (defun run-slash (args session-id)
-  "/goal: CONDITION sets the goal and starts its first turn, or its attempts;
-nothing reads it, stop ends it. => the answer's text."
+  "/goal typed alone: the goal as it stands and its panel, whose rows run its
+lines -- CONDITION sets the goal and starts its first turn, or its attempts;
+--options before it answers the options panel instead; stop ends it. =>
+the answer's text, and the panel."
   (unless (nlk:store-open-p)
     (fail "no store is open"))
   (unless session-id
     (fail "this shell has no session"))
-  (let ((text (nlk:trimmed (or args ""))))
-    (cond ((string= text "") (standing session-id))
+  (let* ((text (nlk:trimmed (or args "")))
+         (options (option-at "--options" text)))
+    (when options
+      (setf text (nlk:trimmed (concatenate 'string (subseq text 0 options)
+                                           (subseq text (+ options (length "--options")))))))
+    (cond ((and (string= text "") options)
+           (values "goal: say what must hold first" (panel session-id)))
+          ((string= text "") (values (standing session-id) (panel session-id)))
+          (options
+           (multiple-value-bind (condition check turns k) (parse-request text)
+             (let ((condition (and (plusp (length condition)) condition)))
+               (values (format nil "goal: ~a" (or condition check)) (options-panel condition check turns k)))))
           ((member (string-downcase text) '("stop" "off" "clear") :test #'string=)
            (let ((goal (halt session-id "the operator stopped it" "operator")))
              (format nil "goal stopped: ~a~%a turn already running finishes; stop it as you stop any turn~:[~;~%its attempts are stopped and their copies cleared away~]"
@@ -1012,7 +1077,7 @@ nothing reads it, stop ends it. => the answer's text."
   (:section ("goal")
     (:guide "A goal keeps a session taking turns until its check passes: a command that exits 0 in the session's folder, or a judge -- a fork of the session -- that answers MET. turns caps one goal's turns, check_seconds a command's run, judge_seconds and judge_calls a judge's turn")
     ("turns" :integer :default 10 :min 1
-             :doc "turns one goal may take when /goal names none")
+             :doc "turns one goal may take when it is set without its own")
     ("check_seconds" :integer :default 600 :min 1
                      :doc "how long a check command runs before it is killed and counts as not met")
     ("judge_seconds" :integer :default 600 :min 1
@@ -1022,11 +1087,10 @@ nothing reads it, stop ends it. => the answer's text."
   (:hook :frame (nle:observer #'observe "goal"))
   (:hook 'nle:turn-budget #'budget-hook)
   (:hook 'nle:name-session #'naming-hook)
-  (:help :goal "goal: /goal CONDITION keeps the session taking turns until a check passes (a command exits 0, or a judge says MET), --k N tries it N ways and keeps the best; goal:start, goal:status, goal:stop" +primer+)
+  (:help :goal "goal: /goal keeps the session taking turns until a check passes (a command exits 0, or a judge says MET), tried one way or several and the best kept; goal:start, goal:status, goal:stop" +primer+)
   (:command "goal" 'run-slash
             :catches 'goal-error
-            :description "Keep working until a check passes: CONDITION sets the goal, --check COMMAND makes the check a command, --k N tries it N ways and keeps the best, nothing reads it, stop ends it"
-            :argument-hint "CONDITION [--check COMMAND] [--turns N] [--k N] | stop")
+            :description "Keep working until a check passes: set a goal, read where it stands, or stop it")
   (:start (lambda ()
                         ;; the symbol, so a live redefinition of TICK reaches the running worker
             (setf *worker* (nlk:worker-start "goal" 'tick :wake 30 :prime t))

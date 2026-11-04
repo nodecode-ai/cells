@@ -104,7 +104,7 @@ its GitLab token buys, in place of the token."
 
 (nle:define-cell gitlab-duo
   (:section ("gitlab-duo")
-    (:guide "sign in with /gitlab-duo login, or set GITLAB_TOKEN to a personal access token with the api scope; Duo must be enabled for the account")
+    (:guide "sign in from /gitlab-duo, or set GITLAB_TOKEN to a personal access token with the api scope; Duo must be enabled for the account")
     ("gitlab_url" :string :default +gitlab-url+
      :doc "the GitLab instance the sign-in and the Duo direct-access exchange go to")
     ("gateway_url" :string :default +gateway-url+
@@ -119,5 +119,4 @@ its GitLab token buys, in place of the token."
   (:hook 'nle::responses-request-body #'body)
   (:hook 'nle::walk-provider-stream #'walk)
   (:command "gitlab-duo" #'run-command
-            :description "GitLab Duo (non-agentic chat): sign in with GitLab"
-            :argument-hint "login | code <address or code> | logout | status"))
+            :description "GitLab Duo (non-agentic chat): sign in with GitLab"))

@@ -574,6 +574,63 @@ else, which is answered as a reply."
                                          "text" (notification-text text)
                                          "blocks" (message-blocks text controls)))))))
 
+(defun ask-modal-plan (candidate ask &key prompt (timeout-seconds 3))
+  "(values PLAN T): how a press on a row that asks for its text asks for it
+(NCK:PLATFORM-PLAN-ASK) -- views.open with the press's trigger_id, a modal
+named after ASK's label holding one line of text, its placeholder ASK's and
+its submit button ASK's verb; where the card was and the press's own return
+path ride in its private_metadata, so its submit comes back as the row's
+line answered in place of the card (SLACK-ASK-CANDIDATE) -- or NIL for a
+candidate no press made."
+  ;; A trigger opens a view for three seconds once: not retried, and a modal
+  ;; that did not open leaves the kit to ask with a message instead. A title
+  ;; and a button hold 24 characters, a placeholder 150.
+  (declare (ignore prompt))
+  (flet ((plain (text limit)
+           (nlk:json-object "type" "plain_text"
+                            "text" (if (> (length text) limit) (nlk:clip text (1- limit) :ellipsis "…") text))))
+    (let* ((trigger (source-field candidate "trigger_id"))
+           (label (nlk:trimmed (or (nlk:json-value ask :text "label") "")))
+           (label (if (plusp (length label)) label "Text"))
+           (verb (nlk:trimmed (or (nlk:json-value ask :text "verb") "")))
+           (placeholder (nlk:trimmed (or (nlk:json-value ask :text "placeholder") ""))))
+      (when (and trigger (candidate-pressed-p candidate))
+        (values
+         (api-plan "views.open"
+                   (nlk:json-object
+                    "trigger_id" trigger
+                    "view" (nlk:json-object
+                            "type" "modal"
+                            "callback_id" +ask-callback+
+                            "private_metadata"
+                            (nlk:encode-json-object
+                             (nlk:json-object
+                              "data" (source-field candidate "press_data")
+                              "channel" (source-field candidate "channel_id")
+                              :opt "thread" (source-field candidate "thread_id")
+                              :opt "card" (source-field candidate "reply_to_message_id")
+                              :opt "response_url" (source-field candidate "response_url")
+                              :when (eq t (gethash "card_ephemeral" (gethash "source" candidate)))
+                              "card_ephemeral" t))
+                            "title" (plain label 24)
+                            "submit" (plain (if (plusp (length verb))
+                                                 (concatenate 'string (string-upcase (subseq verb 0 1)) (subseq verb 1))
+                                                 "Run")
+                                             24)
+                            "close" (plain "Cancel" 24)
+                            "blocks" (vector
+                                      (nlk:json-object
+                                       "type" "input"
+                                       "block_id" "ask"
+                                       "label" (plain label 2000)
+                                       "element" (nlk:json-object
+                                                  "type" "plain_text_input"
+                                                  "action_id" "text"
+                                                  :when (plusp (length placeholder))
+                                                  "placeholder" (plain placeholder 150))))))
+                   "views_open" :timeout-seconds timeout-seconds)
+         t)))))
+
 (defun slack-message-id (body)
   "The ts of the message a chat.postMessage execution created."
   (nlk:json-value body :string "ts"))

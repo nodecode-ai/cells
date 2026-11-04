@@ -20,8 +20,6 @@
 
 (in-package #:nodecode-experience)
 
-(defparameter +usage+ "/experience [reflect]")
-
 ;;; --- the manual ------------------------------------------------------------------------
 ;;; (help :experience) answers it while the cell runs; a request carries the
 ;;; one line the :HELP clause below gives. The reflection is told its verbs in
@@ -159,15 +157,25 @@ when no reflection is in flight."
             (setting :reflect)
             (sb-ext:native-namestring (nlk:home "usage.jsonl")))))
 
+(defun panel (summary)
+  "The dialog bare /experience answers: SUMMARY, its sightings in a line,
+over the reflection it runs on asking."
+  (nle:list-dialog
+   :title "Experience" :summary summary
+   :rows (list (nle:run-row "Reflect on the last turn now" "/experience reflect"
+                            :detail "a fork of this session looks back on its newest completed turn"))))
+
 (defun run-slash (args session-id)
-  "The answer to one /experience invocation."
+  "The answer to one /experience invocation: typed alone, its sightings and
+its panel."
   (let ((words (nlk:split-words args))
         (nlk:*scribe-session-id* session-id))
     ;; No word at all reads as "": a word is never empty.
     (nlk:dispatch (or (first words) "") string=
-      ("" (summary-line))
+      ("" (let ((line (summary-line))) (values line (panel line))))
       ("reflect" (reflect :session session-id))
-      (t (format nil "experience: unknown subcommand ~a; usage ~a" (first words) +usage+)))))
+      (t (let ((line (summary-line)))
+           (values (format nil "experience: ~a is not one of its choices" (first words)) (panel line)))))))
 
 ;;; --- the entry -----------------------------------------------------------------------------------
 
@@ -213,5 +221,4 @@ thread: what the declaration's clauses do not carry."
   (:hook 'nle:turn-budget #'budget-hook)
   (:hook 'nle:name-session #'naming-hook)
   (:command "experience" #'run-slash
-            :description "Experience across sessions: the sightings, reflect"
-            :argument-hint "reflect"))
+            :description "Experience across sessions: the sightings, and a reflection now"))

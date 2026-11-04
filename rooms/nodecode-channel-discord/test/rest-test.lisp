@@ -603,19 +603,18 @@ Manage Threads, the bot's own managed role holding nothing."
 (deftest channel-discord-commands-plan ()
   ;; The catalog as the application's global commands: one bulk overwrite,
   ;; names Discord would refuse left out rather than failing the sync,
-  ;; descriptions cut to 100 and never empty, one optional `args' option
-  ;; for a command with a usage.
+  ;; descriptions cut to 100 and never empty. A command is its name: none
+  ;; takes an option, whatever an entry still carries beside it.
   (let* ((plan (ncd:commands-plan
                 "app1"
-                (list (list :name "help" :description "Show commands" :usage "")
+                (list (list :name "help" :description "Show commands")
                       (list :name "models"
                             :description (make-string 150 :initial-element #\d)
                             :usage "/models [provider] [model]"
                             :autocomplete t)
-                      (list :name "evict" :description "Drop"
-                            :usage "/evict [percent]")
-                      (list :name "Bad Name" :description "x" :usage "")
-                      (list :name "bare" :description "" :usage ""))
+                      (list :name "evict" :description "Drop")
+                      (list :name "Bad Name" :description "x")
+                      (list :name "bare" :description ""))
                 :timeout-seconds 9))
          (body (nck:request-plan-body plan)))
     (is-plan plan :method "PUT" :path "/applications/app1/commands" :retry t
@@ -623,18 +622,46 @@ Manage Threads, the bot's own managed role holding nothing."
     (is (= 4 (length body)) "a name Discord would refuse is left out")
     (let ((help (aref body 0)))
       (is-shape help ("name" "help") ("type" = 1 "a chat input command")
-        ("description" "Show commands") ("options" null "a bare command takes no option")))
-    (let ((models (aref body 1)))
-      (is (= 100 (length (gethash "description" models))))
-      (is-present (option (aref (gethash "options" models) 0))
-        "a command with a usage takes one string option"
-        (is-shape option ("type" = 3) ("name" "args") ("description" "/models [provider] [model]")
-          ("required" null "and optional") ("autocomplete" eq t))))
-    (is (null (gethash "autocomplete" (aref (gethash "options" (wire-row "evict" body "name")) 0))))
+        ("description" "Show commands")))
+    (is (= 100 (length (gethash "description" (aref body 1)))))
+    (is (notany (lambda (command) (gethash "options" command)) body) "no command takes an option")
     (is (equal "bare" (gethash "description" (wire-row "bare" body "name"))))
     (is (ncd:discord-command-name-p "memory-index"))
     (is (not (ncd:discord-command-name-p "Memory")))
     (is (not (ncd:discord-command-name-p "")))))
+
+(deftest channel-discord-a-row-that-asks-opens-a-modal ()
+  ;; A press on a row that asks for its text is answered with a modal: type
+  ;; 9 on the press's own callback, not retried, its custom_id the press's
+  ;; data, named after the ask's label, one required line of text under that
+  ;; label with the ask's placeholder -- each cut to Discord's caps. A
+  ;; candidate that is no press opens none.
+  (let* ((ask (nlk:json-object "label" "Name" "line" "/rename" "placeholder" "The new name"))
+         (data (nck:press-token "/rename" :ask ask))
+         (press (lambda (&optional pressed)
+                  (nlk:json-object "text" "/rename"
+                                   "source" (nlk:json-object
+                                             "platform" "discord" "channel_id" "c1"
+                                             "press_data" data "interaction_id" "i9"
+                                             "interaction_token" "tok" :when pressed "pressed" t)))))
+    (multiple-value-bind (plan form-p) (ncd:interaction-modal-plan (funcall press t) ask :timeout-seconds 3)
+      (is (eq t form-p) "the platform's own form")
+      (is-plan plan :method "POST" :path "/interactions/i9/tok/callback" :retry nil
+                    :label "interaction_modal" :timeout 3 "type" 9
+                    (:string "data" "custom_id") data (:string "data" "title") "Name")
+      (let ((input (aref (nlk:json-value (aref (nlk:json-value (nck:request-plan-body plan) :array "data" "components") 0)
+                                         :array "components")
+                         0)))
+        (is-shape input ("type" = 4) ("custom_id" "text") ("label" "Name") ("style" = 1 "one line")
+          ("required" eq t) ("placeholder" "The new name"))))
+    (let* ((long (nlk:json-object "label" (make-string 60 :initial-element #\n) "line" "/rename"
+                                  "placeholder" (make-string 120 :initial-element #\p)))
+           (body (nck:request-plan-body (ncd:interaction-modal-plan (funcall press t) long)))
+           (input (aref (nlk:json-value (aref (nlk:json-value body :array "data" "components") 0) :array "components") 0)))
+      (is (= 45 (length (nlk:json-value body :string "data" "title"))))
+      (is (= 45 (length (nlk:json-value input :string "label"))))
+      (is (= 100 (length (nlk:json-value input :string "placeholder")))))
+    (is (null (ncd:interaction-modal-plan (funcall press) ask)) "a command typed is no press")))
 
 (deftest channel-discord-interaction-response-plan ()
   ;; An interaction is answered in two steps: held open first — a deferred
@@ -1036,38 +1063,6 @@ its section included."
   (is (equal "<a:nc_running:9>"
              (ncd:emoji-spelling (nlk:json-object "id" "9" "name" "nc_running" "animated" t))))
   (is (equal "<:nc_done:8>" (ncd:emoji-spelling (nlk:json-object "id" "8" "name" "nc_done")))))
-
-(deftest channel-discord-autocomplete-plan ()
-  ;; The one answer an autocomplete request takes: its callback, the
-  ;; completion result, at most 25 choices cut to Discord's caps, never
-  ;; retried — the menu waits three seconds only.
-  (let* ((plan (first (ncd:interaction-autocomplete-plans
-                       '(:id "i1" :token "tok")
-                       (list (list :name "a6api/grok-4.6" :value "a6api grok-4.6")
-                             (list :name (make-string 150 :initial-element #\n)
-                                   :value (make-string 150 :initial-element #\v))))))
-         (body (nck:request-plan-body plan))
-         (choices (nlk:json-value body :array "data" "choices")))
-    (is-plan plan :method "POST" :path "/interactions/i1/tok/callback"
-                  :label "interaction_autocomplete" :retry nil)
-    (is (= 8 (gethash "type" body)) "APPLICATION_COMMAND_AUTOCOMPLETE_RESULT")
-    (is (= 2 (length choices)))
-    (is-shape (aref choices 0) ((:string "name") "a6api/grok-4.6")
-      ((:string "value") "a6api grok-4.6"))
-    (is (= 100 (length (nlk:json-value (aref choices 1) :string "name"))))
-    (is (= 100 (length (nlk:json-value (aref choices 1) :string "value")))))
-  (let* ((many (loop for index below 40
-                     collect (list :name (format nil "n~d" index)
-                                   :value (format nil "v~d" index))))
-         (plan (first (ncd:interaction-autocomplete-plans '(:id "i2" :token "tok") many)))
-         (choices (nlk:json-value (nck:request-plan-body plan)
-                                  :array "data" "choices")))
-    (is (= 25 (length choices)) "Discord's menu holds 25 choices"))
-  (let* ((plan (first (ncd:interaction-autocomplete-plans '(:id "i3" :token "tok") '())))
-         (choices (nlk:json-value (nck:request-plan-body plan)
-                                  :array "data" "choices")))
-    (is (= 0 (length choices)) "no choices is an answer: nothing to show")))
-
 
 (deftest channel-discord-failed-steps-have-a-red-cross ()
   ;; Existing application success/spinner emojis must not hide a failure.

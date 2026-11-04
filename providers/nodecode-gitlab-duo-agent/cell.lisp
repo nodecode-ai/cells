@@ -69,7 +69,7 @@ workflow and any sign-in, and forget what discovery found."
 
 (nle:define-cell gitlab-duo-agent
   (:section ("gitlab-duo-agent")
-    (:guide "sign in with /gitlab-duo-agent login, or set GITLAB_TOKEN to a personal access token with the api scope; namespace_id or project scopes the workflow, else the session's GitLab remote or the first group with Duo does")
+    (:guide "sign in from /gitlab-duo-agent, or set GITLAB_TOKEN to a personal access token with the api scope; namespace_id or project scopes the workflow, else the session's GitLab remote or the first group with Duo does")
     ("gitlab_url" :string :default +gitlab-url+
      :doc "the GitLab instance: sign-in, the REST setup and the workflow socket")
     ("namespace_id" :string :default ""
@@ -81,6 +81,5 @@ workflow and any sign-in, and forget what discovery found."
   (:hook 'nle::models-catalog-table #'catalog)
   (:hook :credential #'credential)
   (:command "gitlab-duo-agent" #'run-command
-            :description "GitLab Duo Agent: sign in with GitLab, list the models it offers"
-            :argument-hint "login | code <address or code> | models | logout | status")
+            :description "GitLab Duo Agent: sign in with GitLab, list the models it offers")
   (:start #'start))

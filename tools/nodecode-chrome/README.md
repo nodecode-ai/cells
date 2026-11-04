@@ -16,11 +16,12 @@ active one. `(chrome:screenshot)` saves a file and returns its path.
 ## Setup
 
 The cell copies the extension to `~/.nodecode/chrome-extension/`, and
-`/chrome onboard` names that folder to load at `chrome://extensions`. Loading
+**Install the extension** in `/chrome` names that folder to load at `chrome://extensions`. Loading
 the cell and the extension is the consent: every session may drive Chrome.
 
-`/chrome status | doctor | onboard | background [on|off]` are the operator's
-controls. `background` decides whether actions leave Chrome's focus alone.
+`/chrome` holds the operator's controls: **Status**, **Doctor**, **Install the
+extension**, and for a session **Leave Chrome's focus alone** or **Bring Chrome
+forward**, which decides whether its actions leave Chrome's focus alone.
 
 One process on the machine serves the port. Any other process of the same
 home that runs the cell, such as a headless `nodecode rpc`, a bench or a second
@@ -49,7 +50,7 @@ secret, as it can read the rest of your home, so the bridge still does not
 defend you against your own account.
 
 An extension loaded before the secret existed hears the newer version on its
-next poll and reloads itself. `/chrome status` names one that still polls
+next poll and reloads itself. **Status** in `/chrome` names one that still polls
 without the secret; reload it at `chrome://extensions`.
 
 Tests: `just chrome-check` in nodecode.

@@ -631,7 +631,7 @@ async function pageHidden(tabId) {
 }
 
 function hiddenPageError(what) {
-  return new Error(`${what} needs a rendered page, and this tab is hidden (its window is minimized or covered, or it is a background tab). Ask the user to run /chrome background off, or click instead.`);
+  return new Error(`${what} needs a rendered page, and this tab is hidden (its window is minimized or covered, or it is a background tab). Ask the user to pick Bring Chrome forward in /chrome, or click instead.`);
 }
 
 // Synthetic key events on the focused element. Enter in a form field submits the form unless a
@@ -1445,7 +1445,7 @@ async function dispatch(action, params) {
     }
     case "tab.activate": {
       if (!foregroundRequested(params)) {
-        throw new Error("Tab activation is blocked by background mode. Ask the user to run /chrome background off to allow foreground work.");
+        throw new Error("Tab activation is blocked by background mode. Ask the user to pick Bring Chrome forward in /chrome to allow foreground work.");
       }
       // Management actions never auto-create an automation target (createOwnedTarget:false): with
       // no explicit target they act on an owned target if one exists, else error — they must never

@@ -257,10 +257,10 @@ it expires within a minute; a failed refresh says so and signals."
                   (error (condition)
                     ;; a state the model should keep seeing until a sign-in
                     ;; clears it: every round on this provider fails until then
-                    (nle:notice "gitlab-duo: the GitLab sign-in has expired and could not be refreshed; sign in again with /gitlab-duo login"
+                    (nle:notice "gitlab-duo: the GitLab sign-in has expired and could not be refreshed; sign in again from /gitlab-duo"
                                 :level :warning :key +key+)
                     (error 'nle::credential-error
-                           :detail (format nil "the GitLab Duo sign-in could not be refreshed (~a): sign in again with /gitlab-duo login"
+                           :detail (format nil "the GitLab Duo sign-in could not be refreshed (~a): sign in again from /gitlab-duo"
                                            condition))))))))))
 
 (defun credential (op next)
@@ -450,7 +450,7 @@ when that is taken, any free port."
        (handler-case
            (let ((message (sb-concurrency:receive-message (flow-mailbox flow) :timeout +login-seconds+)))
              (case (first message)
-               ((nil) (say (format nil "gitlab-duo: the sign-in timed out after ~d minutes with no code; start again with /gitlab-duo login"
+               ((nil) (say (format nil "gitlab-duo: the sign-in timed out after ~d minutes with no code; start again from /gitlab-duo"
                                    (floor +login-seconds+ 60))
                            :warning))
                (:error (say (format nil "gitlab-duo: the sign-in failed: ~a" (second message)) :warning))
@@ -482,14 +482,14 @@ when that is taken, any free port."
         (bt2:make-thread (lambda () (serve-callbacks flow)) :name "nodecode-gitlab-duo callback"))
       (setf (flow-thread flow)
             (bt2:make-thread (lambda () (run-flow flow)) :name "nodecode-gitlab-duo sign-in"))
-      (format nil "Open this address and sign in to GitLab:~%~a~%~%~:[GitLab sends the browser to ~a; paste~;The browser comes back to ~a and the sign-in finishes on its own. On another machine, paste~] the address it ends on, or the code in it, with~%  /gitlab-duo code <address or code>~%If GitLab answers \"The redirect URI included is not valid\", register an OAuth application of your own and set GITLAB_CLIENT_ID and GITLAB_REDIRECT_URI, or set GITLAB_TOKEN to a personal access token (scope api). The sign-in waits ~d minutes."
+      (format nil "Open this address and sign in to GitLab:~%~a~%~%~:[GitLab sends the browser to ~a; paste~;The browser comes back to ~a and the sign-in finishes on its own. On another machine, paste~] the address it ends on, or the code in it, under Paste where the browser landed, in /gitlab-duo.~%If GitLab answers \"The redirect URI included is not valid\", register an OAuth application of your own and set GITLAB_CLIENT_ID and GITLAB_REDIRECT_URI, or set GITLAB_TOKEN to a personal access token (scope api). The sign-in waits ~d minutes."
               (flow-url flow) (flow-sockets flow) (flow-redirect-uri flow) (floor +login-seconds+ 60)))))
 
 (defun paste (text)
   "Hand the sign-in in flight the code TEXT carries; => what happened."
   (let ((flow *flow*))
     (if (null flow)
-        "No sign-in is waiting for a code: start one with /gitlab-duo login."
+        "No sign-in is waiting for a code: start one from /gitlab-duo."
         (multiple-value-bind (code state) (parse-callback-input text)
           (cond ((null code)
                  "That carries no code: paste the address the browser ended on, or the code in it.")
@@ -501,13 +501,13 @@ when that is taken, any free port."
 (defun status ()
   "Whether GitLab Duo is signed in."
   (let ((entry (stored-entry (ignore-errors (nle::read-auth-file nle::*auth-file-path*)))))
-    (cond (*flow* "A sign-in is waiting for the browser, or a pasted code with /gitlab-duo code.")
+    (cond (*flow* "A sign-in is waiting for the browser, or a code pasted in /gitlab-duo.")
           ((nlk:json-value entry :text "access_token")
            (let ((expires (nlk:json-value entry :number "expires_at")))
              (format nil "Signed in to GitLab~@[; the token is refreshed after ~a~]."
                      (and expires (local-time-string expires)))))
           ((env-key) "Not signed in; GITLAB_TOKEN is set and is used.")
-          (t "Not signed in: /gitlab-duo login, or set GITLAB_TOKEN."))))
+          (t "Not signed in: /gitlab-duo signs in, or set GITLAB_TOKEN."))))
 
 (defun local-time-string (epoch)
   "EPOCH seconds as an ISO time, UTC."
@@ -522,15 +522,41 @@ when that is taken, any free port."
   (clear-direct-access)
   "Signed out: the GitLab token is gone from auth.json.")
 
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
+(defun panel (summary)
+  "The dialog bare /gitlab-duo answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "GitLab Duo" :summary summary
+   :rows (list (panel-run "Sign in" "/gitlab-duo login" :detail "in the browser, with a GitLab account")
+               (panel-ask "Paste where the browser landed" "Address" "/gitlab-duo code"
+                            :placeholder "the address the browser landed on, or its code" :verb "sign in"
+                            :detail "when the browser cannot reach this machine")
+               (panel-run "Sign out" "/gitlab-duo logout" :detail "forget the kept sign-in, or end one in progress"))))
+
 (defun run-command (args session-id)
-  "/gitlab-duo login | code TEXT | logout | status."
+  "/gitlab-duo typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let* ((text (nlk:trimmed (or args "")))
          (space (position #\Space text))
          (verb (subseq text 0 space))
          (rest (if space (nlk:trimmed (subseq text space)) "")))
-    (cond ((member verb '("" "status") :test #'string-equal) (status))
-          ((string-equal verb "login") (start-login))
+    (cond ((equal verb "") (let ((text (status))) (values text (panel text))))
+          ((string-equal verb "status") (status))
+          ((string-equal verb "login") (values (start-login) (panel (status))))
           ((string-equal verb "code") (paste rest))
           ((string-equal verb "logout") (logout))
-          (t "Usage: /gitlab-duo login | code <address or code> | logout | status"))))
+          (t (values (format nil "gitlab-duo: ~a is not one of its choices" verb) (panel (status)))))))

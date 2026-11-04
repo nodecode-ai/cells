@@ -255,7 +255,7 @@ session ORIGIN when given."
                (nodecode-cron::summary-text)))
     (dotimes (i 4)
       (cron-add "every 2h" "x" :name (format nil "j~d" i)))
-    (is (search (concatenate 'string (string #\Newline) "+3 more (/cron jobs)")
+    (is (search (concatenate 'string (string #\Newline) "+3 more in /cron")
                 (nodecode-cron::summary-text)))))
 
 (deftest cron-cell-slash-panel-lists-the-jobs-and-a-row-opens-its-record (with-cron-runtime (:store t))
@@ -270,7 +270,8 @@ session ORIGIN when given."
   (cron:pause "health")
   (multiple-value-bind (text panel) (nodecode-cron::run-slash "")
     (is (uiop:string-prefix-p "cron: 2 jobs" text) "the text is the summary")
-    (let ((rows (getf panel :rows)))
+    (let ((rows (butlast (getf panel :rows))))
+      (is (equal "/cron jobs" (getf (getf (car (last (getf panel :rows))) :run) :enter)))
       (is (equal "Cron (2)" (getf panel :title)))
       (is (equal "1 active · 1 paused" (getf panel :context)))
       ;; the ids padded to one width, so the columns after them line up
@@ -297,7 +298,17 @@ session ORIGIN when given."
   (let ((record (format nil "~s" (nth-value 1 (nodecode-cron::run-slash "show health")))))
     (is (search "/cron resume health" record))
     (is (search "\"- (paused)\"" record)))
-  (is (signals-error cron:cron-error (nodecode-cron::run-slash "show nope"))))
+  (is (signals-error cron:cron-error (nodecode-cron::run-slash "show nope")))
+  (multiple-value-bind (text panel) (nodecode-cron::run-slash "pause")
+    (is (search "needs a job" text) "a verb short of its job answers the panel")
+    (is (equal "Cron (2)" (getf panel :title))))
+  (is (search "nope is not one of its choices" (nodecode-cron::run-slash "nope")))
+  ;; Bare /wake answers the wake as it stands over its switch and a wake now.
+  (multiple-value-bind (text panel) (nodecode-cron::wake-slash "")
+    (is (equal text (nodecode-cron::wake :status)) "the text is the status")
+    (is (equal '("/wake on" "/wake off" "/wake now")
+               (mapcar (lambda (row) (getf (getf row :run) :enter)) (getf panel :rows))))
+    (is (equal '("" "●" nil) (mapcar (lambda (row) (getf row :mark)) (getf panel :rows))))))
 
 (deftest cron-cell-a-job-session-cannot-schedule (with-cron-runtime (:submits t))
   (cron-add "30m" "x" :name "loop")

@@ -218,7 +218,7 @@ refresh token is kept unless Cursor rotated it, and the email too, read now
 when the entry keeps none."
   (let ((refresh (nlk:json-value entry :text "refresh_token")))
     (unless refresh
-      (refuse "~a: the sign-in keeps no refresh token; run /~a login" +provider+ +provider+))
+      (refuse "~a: the sign-in keeps no refresh token; /~a signs in again" +provider+ +provider+))
     (multiple-value-bind (text status)
         (exchange :post +refresh-url+
                   :headers '(("Content-Type" . "application/json"))
@@ -231,7 +231,7 @@ when the entry keeps none."
       (let ((data (json-of text)))
         ;; a session Cursor will not renew answers 200, no token, shouldLogout
         (when (eq t (nlk:json-value data :boolean "shouldLogout"))
-          (refuse "invalid_grant: Cursor ended this session; run /~a login again" +provider+))
+          (refuse "invalid_grant: Cursor ended this session; /~a signs in again" +provider+))
         (let ((access (nlk:json-value data :text "access_token")))
           (unless access
             (refuse "Cursor token refresh returned no access token"))

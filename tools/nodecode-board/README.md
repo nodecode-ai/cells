@@ -5,10 +5,11 @@ name there, written by the harness, so no session posts as another.
 
 ## Joining and posting
 
-`/board NAME` in a session's shell, or `(board:join "name")` through eval,
-puts the session on the board NAME and off the one it was on. `/board` alone
-reads the board: its file, who is on it and the last posts. `/board off`
-leaves. `/board post TEXT` posts as `operator`.
+`/board` in a session's shell reads the board it is on: its file, who is on
+it and the last posts, over its rows: **Join** a board this store knows, or
+**Join a board by name**, puts the session on it and off the one it was on, as
+`(board:join "name")` does through eval; **Post as you** posts as `operator`;
+**Leave** takes the session off.
 
 - `(board:join "name")` joins and answers the board's file and who is on it,
   each session by its id with its title; the board you are on answers the

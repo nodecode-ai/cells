@@ -868,12 +868,26 @@ payload's own channel object (types 10 to 12)."
       (and (member (nlk:json-value data :integer "channel" "type") '(10 11 12))
            (nlk:json-value data :string "channel" "parent_id"))))
 
+(defun modal-text (data)
+  "The text the person typed in the modal whose submit is the
+INTERACTION_CREATE object DATA: the value of its one text input, in an
+action row or a label."
+  (loop for row across (or (nlk:json-value data :array "data" "components") #())
+        do (loop for input across (or (nlk:json-value row :array "components")
+                                      (let ((one (nlk:json-value row :object "component")))
+                                        (and one (vector one)))
+                                      #())
+                 when (equal "text" (nlk:json-value input :string "custom_id"))
+                   do (return-from modal-text (nlk:json-value input :string "value")))))
+
 (defun route-discord-interaction (payload &aux (data (dispatch-data payload "INTERACTION_CREATE")))
   "The normalized candidate for an INTERACTION_CREATE dispatch that is an
-application command — its text the slash line the command spells, `/name'
-plus the `args' option, so it runs through the host exactly as a typed
-`/name args' would — or a press on a choice a message carries (SAID-LINE)
-— its text the line the choice says, a reply to the message pressed."
+application command — its text the slash line the command's name spells,
+which answers what it offers — or a press on a choice a message carries
+(SAID-LINE) — its text the line the choice says, a reply to the message
+pressed — or the submit of the modal a press on a row that asks for its
+text opened (INTERACTION-MODAL-PLAN) — its text the row's line with what
+was typed after it (ASKED-LINE), answered as the press would have been."
   ;; Addressed by construction: the person picked this bot's command, or
   ;; pressed something one of its messages carries. The source carries
   ;; interaction_id, interaction_token and application_id, the return path the
@@ -887,12 +901,13 @@ plus the `args' option, so it runs through the host exactly as a typed
   ;; allowlist names admits it. The payload's own channel object says it is a
   ;; thread (types 10 to 12) and names the parent; a thread the adapter has
   ;; heard of already says so too. NIL for every other payload.
+  ;; A command registered before commands took no option may still send
+  ;; one until the menu is published again; it is not read.
   (let* ((kind (nlk:json-value data :integer "type"))
-         (pressed (and (eql kind 3) (picked-line data))) ; MESSAGE_COMPONENT
+         (asked (and (eql kind 5)        ; MODAL_SUBMIT
+                     (asked-line (nlk:json-value data :text "data" "custom_id") (modal-text data))))
+         (pressed (or asked (and (eql kind 3) (picked-line data)))) ; MESSAGE_COMPONENT
          (name (and (eql kind 2) (nlk:json-value data :text "data" "name"))) ; APPLICATION_COMMAND
-         (args (loop for option across (nlk:json-array data "data" "options")
-                     when (equal "args" (nlk:json-value option :string "name"))
-                       return (nlk:json-value option :string "value")))
          (channel-id (nlk:json-value data :string "channel_id"))
          (parent (interaction-thread-parent data))
          (guild (nlk:json-value data :string "guild_id"))
@@ -900,8 +915,7 @@ plus the `args' option, so it runs through the host exactly as a typed
                    (nlk:json-value data :object "user"))))
     (when (and (or name pressed) channel-id)
       (nlk:json-object
-       "text" (or pressed
-                  (format nil "/~a~@[ ~a~]" name (and args (plusp (length args)) args)))
+       "text" (or pressed (format nil "/~a" name))
        "source"
        (nlk:json-object
         "platform" "discord"
@@ -916,6 +930,8 @@ plus the `args' option, so it runs through the host exactly as a typed
         "interaction_token" (nlk:json-value data :string "token")
         "application_id" (nlk:json-value data :string "application_id")
         :when pressed "pressed" t
+        ;; the modal's submit is the answer to its ask, never a second ask
+        :when asked "asked" t
         ;; what the card the press's answer draws opens on (NCK:CANDIDATE-PRESS)
         :when pressed "press_data" (press-data data)
         :when pressed "reply_to_message_id" (nlk:json-value data :string "message" "id")
@@ -1056,30 +1072,6 @@ or NIL for every other payload."
                            t)
           "is_bot" bot-p
           "role_ids" (nlk:json-value data :array "member" "roles")))))))
-
-(defun route-discord-autocomplete (payload)
-  "The kit's normal completion request for an INTERACTION_CREATE dispatch
-that is a slash command's on-the-fly argument completion, or NIL for every
-other payload: the command's name, the typed tail of the option the person
-focused, who is typing, where — the channel, and the thread inside it, as a
-command typed there is placed — and the interaction's id and token, the
-return path the one answer goes through."
-  (let* ((data (dispatch-data payload "INTERACTION_CREATE"))
-         (channel (nlk:json-value data :string "channel_id"))
-         (parent (interaction-thread-parent data))
-         (user (or (nlk:json-value data :object "member" "user")
-                   (nlk:json-value data :object "user"))))
-    (when (eql (nlk:json-value data :integer "type") 4) ; APPLICATION_COMMAND_AUTOCOMPLETE
-      (let ((focused (loop for option across (nlk:json-array data "data" "options")
-                           when (nlk:json-value option :any "focused")
-                             return option)))
-        (list :id (nlk:json-value data :string "id")
-              :token (nlk:json-value data :string "token")
-              :command (nlk:json-value data :text "data" "name")
-              :text (and focused (nlk:json-value focused :string "value"))
-              :user-id (nlk:json-value user :string "id")
-              :channel-id (or parent channel)
-              :thread-id (and parent channel))))))
 
 (defun discord-inbound-policy (&key allowed-guilds allowed-channels
                                     allowed-users allowed-roles dm-policy group-policy

@@ -6,7 +6,7 @@ No Nodecode lane speaks its wire, so the cell registers one,
 WebSocket, the way oh-my-pi runs it, and comes back as the chat-shaped
 message every lane answers.
 
-- `/gitlab-duo-agent login` signs in with GitLab (its own sign-in record,
+- `/gitlab-duo-agent` signs in with GitLab (its own sign-in record,
   apart from `gitlab-duo`'s), and `/models` lists the models the account's
   namespace offers
 - a round sets the workflow up over REST (namespace, its Duo flags, a
@@ -34,7 +34,7 @@ Ported from [oh-my-pi](https://github.com/can1357/oh-my-pi)'s
 ## Sign in
 
 ```
-/gitlab-duo-agent login
+/gitlab-duo-agent → Sign in
 ```
 
 answers at once with the address to open. It is GitLab's authorization-code
@@ -45,7 +45,7 @@ that, so copy the whole `vscode://...` address the browser (or VS Code) is
 sent to and paste it:
 
 ```
-/gitlab-duo-agent code vscode://gitlab.gitlab-workflow/authentication?code=...&state=...
+/gitlab-duo-agent → Paste where the browser landed  like vscode://gitlab.gitlab-workflow/authentication?code=...&state=...
 ```
 
 The sign-in finishes in the background, says so once, keeps the token in
@@ -60,8 +60,8 @@ Or skip the sign-in: set `GITLAB_TOKEN` to a personal access token with the
 `api` scope. The sign-in wins over the variable. No other provider's key is
 ever sent to GitLab.
 
-`/gitlab-duo-agent models` looks for the models again, `/gitlab-duo-agent
-status` says where things stand, `/gitlab-duo-agent logout` forgets the
+**The models it offers** in `/gitlab-duo-agent` looks for the models again, `/gitlab-duo-agent`
+says where things stand, **Sign out** in `/gitlab-duo-agent` forgets the
 token and stops every workflow waiting on it.
 
 ## Install
@@ -116,7 +116,7 @@ GitLab's REST and GraphQL a stubbed `dex:request`.
   its session is reset or disposed (`ProviderSessionState.close`). The core
   tells a cell nothing when a session is reset, compacted away or closed, so
   such a workflow stays open until the next round of that conversation
-  abandons it, the cell stops, `/gitlab-duo-agent logout` runs, or GitLab
+  abandons it, the cell stops, **Sign out** in `/gitlab-duo-agent` runs, or GitLab
   times it out. The seam: a hook point (say `:session`, `(op next)`) the
   core runs with `(:kind :reset|:closed :session-id ID)`.
 
@@ -129,6 +129,6 @@ GitLab's REST and GraphQL a stubbed `dex:request`.
   `workflowId`/`workflowToken` options
 - omp's model cache partitioned by account and directory: discovery runs
   after a sign-in, at start when a sign-in is kept, and on
-  `/gitlab-duo-agent models`, and its last answer is what `/models` lists
+  **The models it offers** in `/gitlab-duo-agent`, and its last answer is what `/models` lists
 
 MIT licensed.

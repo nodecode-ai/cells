@@ -104,7 +104,7 @@ repairs. DETAIL names /mcp login, and why a refresh did not do."))
 
 (defun sign-in-required (name &key step-up why)
   (error 'sign-in-required
-         :detail (format nil "~a needs a sign-in~:[~; with more scope~]: /mcp login ~a~@[ (~a)~]"
+         :detail (format nil "~a needs a sign-in~:[~; with more scope~]: sign ~a in from /mcp~@[ (~a)~]"
                          name step-up name why)))
 
 ;;; --- JSON and URLs --------------------------------------------------------------
@@ -1023,7 +1023,7 @@ the state, the scope and the resource."
 and wait for the code exchange. => what came of it, one line."
   (let ((flow (bt2:with-lock-held (*sign-ins-lock*) (gethash name *sign-ins*))))
     (if (null flow)
-        (format nil "no sign-in to ~a is waiting; /mcp login ~a starts one" name name)
+        (format nil "no sign-in to ~a is waiting; sign ~a in from /mcp" name name)
         (multiple-value-bind (path code state iss error) (redirect-answer (or text ""))
           (cond ((not (equal path (redirect-path flow)))
                  (format nil "that is not the address the sign-in to ~a waits for (~a?code=...)"

@@ -1,8 +1,8 @@
 # nodecode-qa
 
 One page of counts a week, only if you say so. The whole page is
-`report.schema.json` beside this file; `/qa show` prints the next one
-exactly as it would go.
+`report.schema.json` beside this file; **Show the next page** in `/qa`
+prints the next one exactly as it would go.
 
 ## What leaves
 
@@ -30,9 +30,9 @@ covers the week after the choice.
 
 `report_issue` is a tool the model calls when another tool misbehaved: a
 tool name, a symptom, one sentence. The note is kept on this machine,
-`/qa notes` lists it, and the weekly page carries only its tool and
-symptom as a count. The text leaves one way: `/qa push`, by hand,
-after reading what `/qa notes` shows. A call to `(qa:push-notes)`
+**The model's notes** in `/qa` lists it, and the weekly page carries only its tool and
+symptom as a count. The text leaves one way: **Ship the notes' text** in `/qa`, by hand,
+after reading what **The model's notes** shows. A call to `(qa:push-notes)`
 from a turn is refused.
 
 ## The switch
@@ -46,19 +46,19 @@ whatever the config says, `push` included.
 The answer is read when the cell starts. A cell already running when it
 was answered keeps what it read at its start until
 `(restart-cells "nodecode-qa")` or the next launch; until then `/qa`
-says the answer waits, and `/qa send` refuses whichever way it went.
+says the answer waits, and **Send it now** refuses whichever way it went.
 
-`/qa push` ships the model's notes, so it has something to send only
-after the model filed one through `report_issue`; `/qa notes` lists
-them.
+**Ship the notes' text** ships the model's notes, so it has something to send
+only after the model filed one through `report_issue`; **The model's notes**
+lists them.
 
 ```
-/qa          one line: sharing or not, when the next page is due, notes kept
-/qa show     the next page, as it would go
-/qa send     send it now
-/qa notes    the model's notes, newest first
-/qa push     ship the notes' text, by hand
-/qa clear    drop the notes
+/qa                          one line: sharing or not, when the next page is due, notes kept
+/qa → Show the next page     the next page, as it would go
+/qa → Send it now            send it now
+/qa → The model's notes      the model's notes, newest first
+/qa → Ship the notes' text   ship the notes' text, by hand
+/qa → Drop the notes         drop the notes
 ```
 
 ## How it works

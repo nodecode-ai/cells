@@ -398,8 +398,8 @@ the answer /mcp login gave."
     (with-mcp-oauth-fixture (fixture)
       (with-mcp-cell ("remote" (mcp-oauth-entry fixture))
         (is (eq :error (mcp-wait-ready "remote")) "a 401 fails the connect")
-        (is (search "remote needs a sign-in: /mcp login remote" (mcp::server-error-text (mcp-server "remote"))))
-        (is (search "/mcp login NAME" (mcp-slash "status")) "/mcp status offers login")
+        (is (search "remote needs a sign-in: sign remote in from /mcp" (mcp::server-error-text (mcp-server "remote"))))
+        (is (search "sign remote in from /mcp" (mcp-slash "status")) "/mcp status says it waits for a sign-in")
         (is (null (mcp-oauth-events fixture :prm)) "a connect never starts a sign-in on its own")))))
 
 (deftest mcp-cell-oauth-signs-in-by-registration ()
@@ -409,7 +409,7 @@ the answer /mcp login gave."
         (mcp-wait-ready "remote")
         (let ((answer (mcp-slash "login remote")))
           (is (search "Sign in to remote in a browser: http://127.0.0.1:" answer) "the answer is the address to open")
-          (is (search "/mcp login remote ADDRESS" answer) "and how to paste an answer back")
+          (is (search "Paste where the browser landed" answer) "and the row that takes an answer pasted back")
           (is (eql 200 (mcp-browse (mcp-sign-in-address "remote"))) "the loopback takes the browser's answer"))
         (is (eq :ready (mcp-await-state "remote" :ready)) "signed in, the server connects")
         (is (equal "echo: hi" (mcp:call "remote" "echo" :message "hi")) "and its tools answer")
@@ -481,7 +481,7 @@ the answer /mcp login gave."
         (bt2:with-lock-held ((mcp-oauth-fixture-lock fixture))
           (clrhash (mcp-oauth-fixture-access fixture))
           (clrhash (mcp-oauth-fixture-refresh fixture)))
-        (is (search "needs a sign-in: /mcp login remote"
+        (is (search "needs a sign-in: sign remote in from /mcp"
                     (refusal-text mcp:mcp-offline (mcp:call "remote" "echo" :message "x"))))
         (is (null (gethash "tokens" (mcp::stored-state (mcp::state-key "remote" (mcp-oauth-resource fixture))))))))))
 

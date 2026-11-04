@@ -266,6 +266,46 @@ threads: the request, platform and seam tests drive it directly."
         (is (null (nct:press-response-plan (tg-message "{\"message_id\": 12, \"chat\": {\"id\": 555}, \"text\": \"/cron\"}")
                                            nil)) "a command typed is answered in the chat")))))
 
+(deftest channel-telegram-a-row-that-asks-asks-with-a-force-reply ()
+  ;; A press on a row that asks for its text (NLE:ASK-ROW) asks for it with
+  ;; a message under the card pressed, naming the presser, and Telegram's
+  ;; force reply: their app opens a reply to it at once, the ask's
+  ;; placeholder in the field, and in a group it opens for them alone. The
+  ;; reply is a message like any other, a reply to the one that asked, which
+  ;; the kit reads as the row's text (ASKED-REPLY). It is the platform's
+  ;; PLAN-ASK, a message rather than a form.
+  (with-temp-store ()
+    (let* ((ask (nlk:json-object "label" "Name" "line" "/rename" "placeholder" "The new name"))
+           (data (nck:press-token "/rename" :back "/rename" :ask ask))
+           (seen '())
+           (adapter (test-telegram-adapter :lanes "ask-test")))
+      (with-stubbed-fdefinition (nck:handle-candidate (host candidate) (push candidate seen))
+        (nct:telegram-handle-update
+         adapter
+         (nlk:json-object
+          "update_id" 7
+          "callback_query"
+          (nlk:json-object "id" "cb1" "data" data
+                           "from" (nlk:json-object "id" 42 "username" "kim")
+                           "message" (nlk:json-object "message_id" 90 "text" "## Name"
+                                                      "chat" (nlk:json-object "id" -555 "type" "group"))))))
+      (is-present (press (first seen)) "the press is the presser saying the row's line"
+        (is-source press :text "/rename" "press_data" data "reply_to_message_id" "90")
+        (multiple-value-bind (plan form-p) (nct:ask-reply-plan press ask :prompt "**Name**: reply to this message with it")
+          (is (null form-p) "a message, which a reply answers")
+          (is-plan plan :path "/sendRichMessage" :label "send_ask" :retry nil "chat_id" "-555")
+          (is (search "[kim](tg://user?id=42) **Name**: reply to this message with it"
+                      (nlk:json-value (plan-field plan "rich_message") :string "markdown")))
+          (is-shape (plan-field plan "reply_markup") ((:boolean "force_reply") t) ((:boolean "selective") t)
+            ((:string "input_field_placeholder") "The new name"))
+          (is (eql 90 (nlk:json-value (plan-field plan "reply_parameters") :any "message_id")) "under the card")))
+      (is (eq (fdefinition 'nct:ask-reply-plan)
+              (nck:platform-plan-ask (nct:telegram-platform :bot-username "orgbot")))))
+    (is-source (tg-message "{\"message_id\": 92, \"chat\": {\"id\": -555, \"type\": \"group\"},
+                             \"from\": {\"id\": 42, \"username\": \"kim\"}, \"text\": \"Release notes\",
+                             \"reply_to_message\": {\"message_id\": 91, \"from\": {\"id\": 777, \"is_bot\": true}}}")
+               :text "Release notes" "reply_to_message_id" "91" "user_id" "42")))
+
 (deftest channel-telegram-platform-carries-files ()
   ;; The kit's file seam over Telegram's own plan: the platform answers a
   ;; plan, the file's bytes decide which call, and a file that is not there

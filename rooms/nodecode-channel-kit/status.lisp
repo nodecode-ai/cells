@@ -129,34 +129,30 @@ be let in and who is (PAIRING-JSON), and TEXT, what a verb just said."
      :opt "text" text)))
 
 (defun channels-command (args &optional session-id &aux (words (nlk:split-words (or args ""))))
-  "/channels ARGS in the room SESSION-ID is: the status report, the setup
-card (SETUP-COMMAND), or the pairing verbs -- pair CODE, unpair USER-ID,
-paired."
-  (cond ((null words) (channels-status-report))
+  "/channels ARGS in the room SESSION-ID is: typed alone, the status report and
+its panel; else the setup card (SETUP-COMMAND), or the pairing verbs -- pair
+CODE, unpair USER-ID, paired."
+  (cond ((null words) (values (channels-status-report) (channels-panel session-id)))
         ((string-equal (first words) "setup") (setup-command (rest words) session-id))
         ((and (string-equal (first words) "pair") (second words)) (pair (second words)))
         ((and (string-equal (first words) "unpair") (second words)) (unpair (second words)))
         ((string-equal (first words) "paired") (pairing-report))
-        (t "usage: /channels [setup | pair CODE | unpair USER-ID | paired]")))
+        (t (values (format nil "channels: ~{~a~^ ~} is not one of its choices" words)
+                   (channels-panel session-id)))))
 
 (defun register-channel-commands ()
   "Register /channels, /stop, /sethome, /agent and /threads, each answering its report
-whole; /agent completes its room's agents."
-  (flet ((command (name run description &optional argument-hint complete)
-           (nle:register-command "nodecode-channel-kit" name run
-                                 :description description :argument-hint argument-hint
-                                 :complete complete)))
+whole; typed alone, /channels, /sethome and /agent answer their panels too."
+  (flet ((command (name run description)
+           (nle:register-command "nodecode-channel-kit" name run :description description)))
     (command "channels" 'channels-command
-             "Channel status; setup picks where it answers and who may use it; pair CODE lets someone in"
-             "setup | pair CODE | unpair USER-ID | paired")
+             "Channel status; set one up, let someone in, or take a pairing back")
     (command "stop" (lambda (args session-id)
                       (declare (ignore args))
                       (nth-value 1 (stop-room-turn session-id)))
              "Stop the newest turn running in this room")
     (command "sethome" 'sethome-command
-             "Make this channel the bot's home: restarts, pairing requests and refusals are said here"
-             "off")
-    (command "agent" (lambda (args session-id) (agent-command args session-id))
-             "Which agent answers here; NAME hands this room to another"
-             "NAME | default" 'agent-choices)
+             "Make this channel the bot's home: restarts, pairing requests and refusals are said here")
+    (command "agent" 'agent-command
+             "Which agent answers here, and handing this room to another")
     (command "threads" 'board-command "Every open thread, by who moves next")))

@@ -232,3 +232,17 @@ the body of a poll still waiting."
            (is (null (nth-value 1 (gethash "client_metadata" body))) "and shaped no body"))
       (setf nle::*provider-lanes*
             (remove "openai-codex" nle::*provider-lanes* :key #'nle::provider-lane-name :test #'equal)))))
+
+;;; --- /openai-codex-device typed alone --------------------------------------------------------------
+
+(deftest OPENAI-CODEX-DEVICE-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((openai-codex-device-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-openai-codex-device" "openai-codex-device" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/openai-codex-device login" "/openai-codex-device logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
+          (is (equal 'NIL
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-openai-codex-device" "openai-codex-device" "frobnicate"))))))

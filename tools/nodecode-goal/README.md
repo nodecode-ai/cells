@@ -7,17 +7,19 @@ and while it fails the next turn starts on its own, told what the check said
 
 ## Setting a goal
 
-`/goal CONDITION` in a session's shell (or a channel room, where /goal is
-the room operators') sets the goal and starts its first turn:
+`/goal` in a session's shell (or a channel room, where /goal is the room
+operators') reads the goal -- its check, the turns checked, the last verdict --
+over the rows that set one and start its first turn:
 
-- `/goal the core suite is green --check just test` -- done when `just test`
-  exits 0 in the session's folder.
-- `/goal the README documents every flag` -- no command: a judge decides.
-- `--turns N` caps the turns (`goal.turns`, 10, unless given).
-- `--k N` (2 to 8) tries the goal N ways at once and keeps the best: see
-  below.
-- `/goal` alone reads the goal: its check, the turns checked, the last
-  verdict; `/goal stop` ends it.
+- **Set a goal** asks for what must hold, in words; a judge decides.
+- **Set a goal a command checks** asks for a command, like `just test`: done
+  when it exits 0 in the session's folder.
+- **Set a goal with options** asks for the words, then lays the options out:
+  **Within how many turns** caps the turns (`goal.turns`, 10, unless set),
+  **Tried 2 ways** up to 8 tries the goal that many ways at once and keeps the
+  best (see below), **Checked by a command** makes the check a command;
+  **Start it** starts it.
+- **Stop the goal** ends it.
 
 Through eval, `(goal:start "condition" :check "cmd" :turns n :k n)`,
 `(goal:status)` and `(goal:stop "why")` do the same for the calling
@@ -45,8 +47,7 @@ can be read back. A first line that says neither is not met.
 
 ## Trying it K ways
 
-`/goal CONDITION --k N` (in a git repository) works the goal N ways at once
-and keeps one:
+A goal tried N ways (in a git repository) works N ways at once and keeps one:
 
 - Once the session idles, its folder is snapshotted as it stands -- tracked
   edits and untracked files, the ignored left out -- into a commit made

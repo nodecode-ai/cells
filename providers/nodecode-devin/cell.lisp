@@ -73,10 +73,10 @@ else DEVIN_API_KEY, else nothing to send."
               ((and entry (getf op :endpoint))
                ;; omp has no refresh for Devin: an expired sign-in is asked
                ;; for again, and the notice stands until one succeeds
-               (nle:notice (format nil "devin: the sign-in expired at ~a; run /devin login"
+               (nle:notice (format nil "devin: the sign-in expired at ~a; /devin signs in again"
                                    (expiry-text (nlk:json-value entry :number "expires_at")))
                            :level :warning :key +key+)
-               (nle::credential-fail "the Devin sign-in expired; run /devin login"))
+               (nle::credential-fail "the Devin sign-in expired; /devin signs in again"))
               (t (nle:make-credential "public" :public))))))
 
 ;;; --- the lane -------------------------------------------------------------------------
@@ -122,7 +122,7 @@ account's roster and keeps it for the catalog."
               (answer (lambda () (fetch-models key base)))
               (let ((key (ignore-errors (nle:credential-key (nle::resolve-provider-credential +provider+)))))
                 (if (or (null key) (equal key "public"))
-                    (values nil "not signed in: /devin login, or set DEVIN_API_KEY")
+                    (values nil "not signed in: /devin signs in, or set DEVIN_API_KEY")
                     (answer (lambda () (discover key base))))))))))
 
 ;;; --- /devin ------------------------------------------------------------------------------
@@ -133,13 +133,13 @@ account's roster and keeps it for the catalog."
         (expires nil))
     (when entry (setf expires (nlk:json-value entry :number "expires_at")))
     (cond ((and entry (expired-p entry))
-           (format nil "devin: the sign-in expired at ~a; /devin login signs in again" (expiry-text expires)))
+           (format nil "devin: the sign-in expired at ~a; /devin signs in again" (expiry-text expires)))
           (entry
            (format nil "devin: signed in~@[ until ~a~]~:[~;; a sign-in is in progress~]"
                    (and expires (expiry-text expires)) *flow*))
           (*flow* "devin: a sign-in is in progress")
-          ((env-key) "devin: DEVIN_API_KEY is set; /devin login signs in with the browser instead")
-          (t "devin: not signed in; /devin login signs in with the browser"))))
+          ((env-key) "devin: DEVIN_API_KEY is set; /devin signs in with the browser instead")
+          (t "devin: not signed in; /devin signs in with the browser"))))
 
 (defun logout ()
   "Forget the kept sign-in."
@@ -148,25 +148,44 @@ account's roster and keeps it for the catalog."
   (nle:notice nil :key +key+)
   "devin: signed out")
 
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
+(defun panel (summary)
+  "The dialog bare /devin answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "Devin" :summary summary
+   :rows (list (panel-run "Sign in" "/devin login" :detail "in the browser, with a Devin account")
+               (panel-ask "Paste where the browser landed" "Address" "/devin code"
+                            :placeholder "the address the browser landed on, or its code" :verb "sign in"
+                            :detail "when the browser cannot reach this machine")
+               (panel-run "Sign out" "/devin logout" :detail "forget the kept sign-in, or end one in progress"))))
+
 (defun run-slash (args session-id)
-  "/devin login | code ADDRESS | logout | status"
+  "/devin typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let* ((trimmed (nlk:trimmed (or args "")))
          (space (position-if (lambda (char) (member char '(#\Space #\Tab))) trimmed))
-         (verb (string-downcase (if (plusp (length trimmed)) (subseq trimmed 0 space) "status")))
+         (verb (string-downcase (if (plusp (length trimmed)) (subseq trimmed 0 space) "")))
          (rest (if space (nlk:trimmed (subseq trimmed space)) "")))
-    (cond ((equal verb "login") (login nle::*auth-file-path*))
+    (cond ((equal verb "") (let ((text (status))) (values text (panel text))))
+          ((equal verb "login") (values (login nle::*auth-file-path*) (panel (status))))
           ((equal verb "code") (paste rest))
           ((equal verb "logout") (logout))
           ((equal verb "status") (status))
-          (t "usage: /devin login | code ADDRESS | logout | status"))))
-
-(defun complete-slash (text session-id)
-  "The verbs /devin takes, those that start with TEXT."
-  (declare (ignore session-id))
-  (loop for verb in '("login" "code" "logout" "status")
-        when (uiop:string-prefix-p (string-downcase (nlk:trimmed (or text ""))) verb)
-          collect (list :name verb :value verb)))
+          (t (values (format nil "devin: ~a is not one of its choices" verb) (panel (status)))))))
 
 (defun forget-roster ()
   "Forget the roster discovery answered, and which model wrote which
@@ -187,7 +206,7 @@ and clear what it said."
 
 (nle:define-cell devin
   (:section ("devin")
-    (:guide "sign in with /devin login (a Devin account in the browser), or set DEVIN_API_KEY; base_url is where Codeium's Cascade is served")
+    (:guide "sign in from /devin (a Devin account in the browser), or set DEVIN_API_KEY; base_url is where Codeium's Cascade is served")
     ("base_url" :string :default +base+
      :doc "the Cascade base the devin lane calls GetUserJwt, AssignModel, GetChatMessage and GetCliModelConfigs at"))
   (:start #'start)
@@ -196,6 +215,4 @@ and clear what it said."
   (:hook 'nle::list-provider-models #'listing)
   (:command "devin" 'run-slash
    :description "Sign in to Devin, or out"
-   :argument-hint "login | code ADDRESS | logout | status"
-   :session nil
-   :complete 'complete-slash))
+   :session nil))

@@ -272,3 +272,17 @@ interval the flow would have slept."
     (is (search "signed out" (cell-entry "nodecode-kimi-code" "kimi-code" "logout")))
     (is (null (nlk:json-value (nle::read-auth-file nle::*auth-file-path*) :object "oauth_tokens" "kimi-code")))
     (is (equal "k" (nlk:json-value (nle::read-auth-file nle::*auth-file-path*) :string "api_keys" "other" "key")))))
+
+;;; --- /kimi-code typed alone --------------------------------------------------------------
+
+(deftest KIMI-CODE-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((kimi-code-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-kimi-code" "kimi-code" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/kimi-code login" "/kimi-code logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
+          (is (equal 'NIL
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-kimi-code" "kimi-code" "frobnicate"))))))

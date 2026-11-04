@@ -270,3 +270,17 @@ at EFFORT captured: URL, HEADERS and BODY (the decoded request) as dex:post saw 
         (nle::call-provider-streaming (user-context)))
       (is (equal "qwen/qwen3.7-max" (nlk:json-value body :string "model")))
       (is (null (nth-value 1 (gethash "enable_thinking" body)))))))
+
+;;; --- /kilo typed alone --------------------------------------------------------------
+
+(deftest KILO-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((kilo-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-kilo" "kilo" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/kilo login" "/kilo logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
+          (is (equal 'NIL
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-kilo" "kilo" "frobnicate"))))))

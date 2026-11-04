@@ -1089,7 +1089,7 @@ to the turn loop. => (values MESSAGE USAGE FINISH-REASON REQUEST-OCTETS)"
     (unless token
       (error 'nle::provider-config-error
              :status 401
-             :detail (format nil "Cursor is not signed in: run /~a login, or set CURSOR_ACCESS_TOKEN" +provider+)))
+             :detail (format nil "Cursor is not signed in: /~a signs in, or set CURSOR_ACCESS_TOKEN" +provider+)))
     (unwind-protect
          (let ((mode :normalized))
            (loop

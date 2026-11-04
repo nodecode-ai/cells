@@ -469,11 +469,25 @@ bounds, WHY the reason the next wake reads. Answers a string."
 
 ;;; --- /wake ----------------------------------------------------------------------------
 
-(defparameter +wake-usage+ "/wake [status | on | off | now]")
+
+(defun wake-panel (status)
+  "The dialog bare /wake answers: STATUS, the wake as it stands, over its
+switch -- the state it is in marked -- and a wake now."
+  (let* ((job (ignore-errors (wake-job)))
+         (on (and job (eq (job-state job) :active))))
+    (nle:list-dialog
+     :title "Wake" :summary (nlk:first-line (nlk:trimmed status) +line-limit+)
+     :rows (list (nle:run-row "On" "/wake on" :detail "wake-ups of its own, held to the section's bounds"
+                              :mark (if on "●" "") :mark-tone :accent)
+                 (nle:run-row "Off" "/wake off" :detail "no wake until it is turned on again"
+                              :mark (if on "" "●") :mark-tone :accent)
+                 (nle:run-row "Wake now" "/wake now" :detail "one wake turn at once")))))
 
 (defun wake-slash (args &aux (head (first (nlk:split-words args))))
-  (cond ((or (null head) (string= head "status")) (wake :status))
+  "/wake typed alone: the wake as it stands, and its panel."
+  (cond ((null head) (let ((status (wake :status))) (values status (wake-panel status))))
+        ((string= head "status") (wake :status))
         ((string= head "on") (wake :on))
         ((string= head "off") (wake :off))
         ((string= head "now") (wake :now))
-        (t (format nil "wake: unknown subcommand ~a; usage ~a" head +wake-usage+))))
+        (t (values (format nil "wake: ~a is not one of its choices" head) (wake-panel (wake :status))))))

@@ -709,7 +709,7 @@ the organism's assistant message. => (values MESSAGE USAGE FINISH-REASON REQUEST
     (when (or (zerop (length token)) (equal token "public"))
       (error 'nle::provider-config-error
              :status 401
-             :detail (format nil "Devin is not signed in: run /~a login, or set DEVIN_API_KEY" +provider+)))
+             :detail (format nil "Devin is not signed in: /~a signs in, or set DEVIN_API_KEY" +provider+)))
     ;; a model the seeds do not name is looked up in the account's roster first
     (unless (or (model-spec model-id) *discovery-tried*)
       (handler-case (discover token base)

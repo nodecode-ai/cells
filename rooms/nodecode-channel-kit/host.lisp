@@ -169,11 +169,15 @@
   ;; card's Details). PAYLOAD is the normal form the adapter relays (:id :data
   ;; :user-id :user-name :message-id :channel-id).
   (plan-control-ack (constantly nil) :type function)
-  ;; (payload choices &key timeout-seconds) => the request plans that answer
-  ;; one autocomplete request — the menu shown while a command's argument is
-  ;; typed; PAYLOAD is (:id :token :command :text :user-id :channel-id) and
-  ;; CHOICES the (:name :value) plists the catalog offers, possibly empty.
-  (plan-autocomplete (constantly nil) :type function)
+  ;; (candidate ask &key prompt timeout-seconds) => (values PLAN FORM-P): how
+  ;; the person CANDIDATE is, who pressed a row that asks for its one line of
+  ;; text (NLE:ASK-ROW; ASK its JSON, CANDIDATE's press_data the press), is
+  ;; asked for it. FORM-P true: PLAN opens the platform's own form -- Discord's
+  ;; modal, Slack's -- whose submit comes back as a candidate saying the line
+  ;; with the text after it (ASKED-LINE). FORM-P NIL: PLAN posts PROMPT, the
+  ;; kit's words asking for the text, as a message whose reply is the text
+  ;; (Telegram's force reply). NIL: the kit posts PROMPT itself (ASK-BY-REPLY).
+  (plan-ask (constantly nil) :type function)
   ;; (target name &key message-id timeout-seconds) => the plan that opens a
   ;; THREAD named NAME for the ask that arrived on TARGET, hung off the ask's
   ;; own MESSAGE-ID where the platform works that way, or NIL when it cannot
@@ -760,18 +764,20 @@ state's per-namespace key quota (512), so minting a press never fails a card.")
   "Press id -> its action, the JSON object PRESS-TOKEN made: read through
 from the store, which outlives this image.")
 
-(defun press-token (line &key tab page back back-tab back-page confirm)
+(defun press-token (line &key tab page back back-tab back-page confirm ask)
   "The data a choice carries: the id of its press, saying LINE -- the view
 the card its answer draws opens on beside it: TAB and PAGE of a dialog
 (DIALOG-CARD), BACK the line of the dialog it was pressed on, at BACK-TAB
-and BACK-PAGE, CONFIRM a line asked about before it runs."
+and BACK-PAGE, CONFIRM a line asked about before it runs, ASK the ask of a
+row that asks for its text first (NLE:ASK-ROW's, ASK-FOR-TEXT)."
   ;; The id is the action's digest: the same press is the same id on every
   ;; card and every boot, so the store holds one key per distinct press.
   (let* ((action (nlk:json-object "line" line
                                   :when tab "tab" tab :when page "page" page
                                   :when back "back" back :when back-tab "back_tab" back-tab
                                   :when back-page "back_page" back-page
-                                  :when confirm "confirm" t))
+                                  :when confirm "confirm" t
+                                  :when ask "ask" ask))
          (json (nlk:encode-json-object action))
          (id (nlk:short-digest json 12)))
     (unless (gethash id *presses*)
@@ -1275,35 +1281,12 @@ answered; who may press is Details' rule."
                                            "This step is no longer held."))))
                      (format nil "step output for ~a failed" (getf payload :id)))))
 
-;;; --- completions (a command's argument, completed while it is typed) -----------------
-;;; The platform asks for choices as the operator types an argument: the
-;;; catalog owns what completes (NLE:SLASH-COMPLETIONS), the kit owns who
-;;; may see it — the commands' own rule — and the platform owns how the
-;;; menu is answered. One request, one answer, three seconds to give it.
+;;; --- who may run a command ---------------------------------------------------------------
 
-(defun completion-allowed-p (host name user-id)
-  "Whether USER-ID may see NAME's argument completions: the commands' own
-rule — with operators declared, every command but /help is theirs."
+(defun command-allowed-p (host name user-id)
+  "Whether USER-ID may run the command NAME in HOST's rooms: with operators
+declared, every command but /help is theirs."
   (or (null host.owners) (and (stringp name) (string= name "help")) (operator-p host user-id)))
-
-(defun completion-requested (host payload)
-  "Adapter thread: one autocomplete request — PAYLOAD is the normal form
-(:id :token :command :text :user-id :channel-id :thread-id), its channel and
-thread a target."
-  ;; Answers on a worker; returns at once, the thread that runs this is the
-  ;; connection's. The command completes in the room it is typed in, the
-  ;; session it would act on, which completing never opens.
-  (on-worker host
-    ;; Choices only for an asker who may run the command.
-    (let* ((name (getf payload :command))
-           (choices (and (stringp name)
-                         (completion-allowed-p host name (getf payload :user-id))
-                         (nle:slash-completions
-                          name (getf payload :text)
-                          :session-id (target-room-id (platform-session-prefix host.platform)
-                                                      payload)))))
-      (deliver-or-warn host (host-plan host #'platform-plan-autocomplete payload choices)
-                       (format nil "completions for ~a failed" name)))))
 
 (defun stop-room-turn (room-session-id)
   "(values STOPPED-P TEXT): ask the engine to cancel the newest turn
@@ -2994,7 +2977,7 @@ draws (*SETUP-CARDS*), for whom may open it (SETUP-OWNER-P)."
     (let ((card (and host (getf (gethash (platform-id (host-platform host)) *setup-cards*) :card)))
           (user (and (hash-table-p *command-source*) (gethash "user_id" *command-source*))))
       (cond ((null host)
-             "/channels setup runs in a room of the channel it sets up; `nodecode gateway setup' sets one up from a terminal")
+             "setting a channel up runs in a room of the channel it sets up; `nodecode gateway setup' sets one up from a terminal")
             ((null card)
              (format nil "~a has no setup card: `nodecode gateway setup ~a' sets it up from a terminal"
                      (platform-name (host-platform host)) (platform-id (host-platform host))))
@@ -3076,12 +3059,15 @@ refused command.")
   ;; With operators declared, every command but /help is theirs: the commands
   ;; act on the shared room and on the organism's own configuration, and the
   ;; room's contract already says whose word is policy.
-  (if (completion-allowed-p host name user)
+  (if (command-allowed-p host name user)
       ;; A press answers in place, on a card whose privacy was settled when it
-      ;; was posted.
-      (respond host candidate (lambda () (run-command host candidate line))
-               :private (and (not (candidate-pressed-p candidate))
-                             (member name +private-commands+ :test #'equal)))
+      ;; was posted; a press on a row that asks for its text asks for it first,
+      ;; and its line runs once it is given.
+      (nlk:if-let (ask (candidate-ask host candidate))
+        (ask-for-text host candidate ask)
+        (respond host candidate (lambda () (run-command host candidate line))
+                 :private (and (not (candidate-pressed-p candidate))
+                               (member name +private-commands+ :test #'equal))))
       ;; The refusal says what to do next, and carries it: Ask for access sends
       ;; the room's operators a request they answer with one press.
       (refuse host candidate (format nil "🔒 Only this room's operators can run /~a. Press Ask for access to send them a request, or send /help to see what you can use." name)
@@ -3157,6 +3143,110 @@ message that asked, pinging its author."
                                     :panel panel)))
             (note-delivery (host-id host) delivered error "command")))))))
 
+;;; --- a row that asks for its text -----------------------------------------------------
+;;; A dialog's row may ask for one line of text before its line runs
+;;; (NLE:ASK-ROW: a name, a code, a sentence), as a shell's composer asks for
+;;; it under the row's label. A press on one asks the person who pressed it,
+;;; in the platform's own form where it has one (PLATFORM-PLAN-ASK: Discord's
+;;; modal, Slack's), whose submit comes back saying the line with the text
+;;; after it (ASKED-LINE); elsewhere a message asks, and that person's reply
+;;; to it is the text (ASK-BY-REPLY, ASKED-REPLY). Either way the line then
+;;; runs as the press would have run it, under the commands' own rule, and
+;;; nobody is asked to spell it.
+
+(defparameter +ask-reply-ms+ 900000
+  "How long a message asking for a row's text waits for its reply.")
+
+(defvar *asked* (make-hash-table :test #'equal :synchronized t)
+  "(host id . address of a message asking for a row's text) -> (:LINE :USER
+:AT): what a reply to it by USER runs (ASKED-REPLY). Live-only: a restart
+drops them, and the person presses again.")
+
+(defun ask-of (press)
+  "The ask the press action PRESS carries (PRESS-TOKEN's ASK), or NIL."
+  (and press (nlk:json-value press :object "ask")))
+
+(defun candidate-ask (host candidate)
+  "The ask CANDIDATE's press carries (ASK-OF), when it is a press on a row
+that asks for its text rather than the text's answer (source.asked); NIL
+for anything else."
+  (and (platform-choices host.platform)
+       (not (gethash "asked" (candidate-source candidate)))
+       (ask-of (candidate-press candidate))))
+
+(defun asked-line (data text &aux (ask (ask-of (press-action data))))
+  "The line the row whose press carries DATA runs once TEXT, what the person
+typed for it, is given (NLE:ASK-LINE), or NIL for DATA no asking row's press
+carries, or TEXT that is nothing."
+  (let ((line (and ask (nlk:json-value ask :text "line"))))
+    (when (and (plusp (length line)) (plusp (length (nlk:trimmed (or text "")))))
+      (nle:ask-line line text))))
+
+(defun asking-prompt (ask &aux (label (nlk:trimmed (or (nlk:json-value ask :text "label") "")))
+                            (placeholder (nlk:trimmed (or (nlk:json-value ask :text "placeholder") ""))))
+  "The words a message asking for ASK's text says: its label, that a reply
+gives it, and the placeholder that says what it is."
+  (format nil "**~a**: reply to this message with it~@[~%_~a_~]"
+          (if (plusp (length label)) label "Text")
+          (and (plusp (length placeholder)) placeholder)))
+
+(defun ask-for-text (host candidate ask &aux (prompt (asking-prompt ask)))
+  "Worker thread: ask the person CANDIDATE is, who pressed a row that asks,
+for ASK's text -- in the platform's own form (PLATFORM-PLAN-ASK), else by a
+message they reply to (ASK-BY-REPLY), as well when the form would not open."
+  (multiple-value-bind (plan form-p) (host-plan host #'platform-plan-ask candidate ask :prompt prompt)
+    (if (and plan form-p)
+        (unless (execution-ok-p (execute-plan host.executor plan))
+          ;; the form's window passed, or the platform refused it: the press
+          ;; is spent, and a message asks instead
+          (warn "~a: the form asking for ~s did not open; a message asks" (host-id host)
+                (nlk:json-value ask :text "label"))
+          (ask-by-reply host candidate ask prompt nil :answered t))
+        (ask-by-reply host candidate ask prompt plan))))
+
+(defun ask-by-reply (host candidate ask prompt plan &key answered
+                     &aux (target (channel-target candidate)) (now (now-ms)))
+  "Worker thread: post PROMPT -- through PLAN, the platform's own way to ask
+for a reply, else as a reply to the card pressed -- and keep it as an ask
+the reply of the person CANDIDATE is runs ASK's line with (ASKED-REPLY).
+ANSWERED says the press was answered already. => the ids of the messages
+that ask."
+  ;; The press is answered first, the card left as it stands, so the
+  ;; platform's own spinner stops.
+  (when (and (candidate-pressed-p candidate) (not answered))
+    (nlk:when-let (hold (host-plan host #'platform-plan-respond candidate nil))
+      (execute-plan host.executor hold)))
+  (let ((ids (if plan
+                 (let ((result (execute-plan host.executor plan)))
+                   (and (execution-ok-p result)
+                        (nlk:when-let (id (funcall (platform-message-id-of host.platform)
+                                                   (execution-body result)))
+                          (list id))))
+                 (nth-value 1 (post-message host target prompt
+                                            :reply-to (source-field candidate "reply_to_message_id")
+                                            :what "ask")))))
+    (sb-ext:with-locked-hash-table (*asked*)
+      (loop for key being the hash-keys of *asked* using (hash-value entry)
+            when (> (- now (getf entry :at)) +ask-reply-ms+) do (remhash key *asked*))
+      (dolist (id ids)
+        (setf (gethash (cons (host-id host) (address-of host target id)) *asked*)
+              (list :line (nlk:json-value ask :text "line")
+                    :user (source-field candidate "user_id") :at now))))
+    ids))
+
+(defun asked-reply (host candidate text &aux (reply-to (source-field candidate "reply_to_message_id")))
+  "The line TEXT, what CANDIDATE said, runs as the reply to a message asking
+for a row's text (ASK-BY-REPLY) by the person it asked, or NIL for any other
+line; a slash line runs as itself. An ask is answered once."
+  (when (and reply-to (plusp (length text)) (not (slash-line-p text)))
+    (let* ((key (cons (host-id host) (address-of host (channel-target candidate) reply-to)))
+           (entry (gethash key *asked*)))
+      (when (and entry
+                 (equal (getf entry :user) (source-field candidate "user_id"))
+                 (<= (- (now-ms) (getf entry :at)) +ask-reply-ms+))
+        (remhash key *asked*)
+        (nle:ask-line (getf entry :line) text)))))
+
 (defun menu-entries (catalog &aux (names (mapcar (lambda (entry) (getf entry :name)) catalog)))
   "CATALOG as a platform's command menu: every command, then each of its
 aliases as a command of its own — a name already in the menu stays the one
@@ -3174,19 +3264,19 @@ command it names."
 
 (defun sync-commands (host &aux (plan-commands (platform-plan-commands host.platform)))
   "Tick thread: publish the command catalog to the platform when its shape
-— the names, the descriptions, and which argument tails complete —
-differs from the one last published — at start, and again when a cell
-registers a command later."
+— the names and the descriptions — differs from the one last published —
+at start, and again when a cell registers a command later."
   ;; Planning only; the calls run as one queued job, and the fingerprint is
   ;; recorded whether they landed or not, so a platform that refuses the menu
-  ;; is one warning per catalog shape, never a loop.
+  ;; is one warning per catalog shape, never a loop. A menu entry is a name
+  ;; and what it does, nothing typed after it: a command picked from the menu
+  ;; answers what it offers.
   (when (and plan-commands (not host.commands-in-flight-p))
     (let* ((entries (menu-entries (nle:slash-catalog)))
-           (fingerprint (format nil "~{~a=~a~:[~;+~]~^|~}"
+           (fingerprint (format nil "~{~a=~a~^|~}"
                                 (loop for entry in entries
                                       append (list (getf entry :name)
-                                                   (getf entry :description)
-                                                   (getf entry :autocomplete))))))
+                                                   (getf entry :description))))))
       (unless (equal fingerprint host.commands-published)
         (nlk:when-let (plans (host-plan host #'platform-plan-commands entries))
           (setf host.commands-in-flight-p t)
@@ -3371,8 +3461,11 @@ lane running a turn there, else the one active there last."
                                               (address-of host target reply-to)))
                        (conversation-lane host candidate)))
          ;; The text as the model would read it: our own mention stripped,
-         ;; so `@bot /help' and Telegram's `/help@bot' are the command.
-         (line (candidate-said host candidate))
+         ;; so `@bot /help' and Telegram's `/help@bot' are the command; a
+         ;; reply to a message asking for a row's text is that row's line
+         ;; (ASKED-REPLY).
+         (line (let ((said (candidate-said host candidate)))
+                 (or (asked-reply host candidate said) said)))
          ;; An ask typed INSIDE an existing thread carries the parent
          ;; channel's live chatter, exactly as a thread-opening ask does; the
          ;; conversation itself is the fork's, never text read back. The

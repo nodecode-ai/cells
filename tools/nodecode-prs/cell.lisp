@@ -68,15 +68,28 @@ push, or a (prs:rank ...) from here. /prs lists what the watch saw last."
                                     (author-of pull) (nlk:one-line (title-of pull) :cap 70))))
                         pulls)))))
 
+(defun panel (repos)
+  "The dialog bare /prs answers: the REPOS watched, over the poll it runs on
+asking."
+  (nle:list-dialog
+   :title "Pull requests"
+   :summary (format nil "~d repositor~:@p watched" (length repos))
+   :rows (list (nle:run-row "Ask GitHub now" "/prs poll"
+                            :detail "the watch polls at once, not at its next beat"))))
+
 (defun run-slash (args)
-  "The answer to one /prs invocation: `poll' wakes the watch now."
-  (let ((repos (setting :repos)))
+  "The answer to one /prs invocation: typed alone, what the watch saw last
+and its panel; `poll' wakes the watch now."
+  (let ((repos (setting :repos))
+        (word (nlk:trimmed (or args ""))))
     (cond ((null repos)
-           "prs: no repository is watched; set prs.repos in config.jsonc, or (prs:queue \"owner/name\")")
-          ((equal (nlk:trimmed (or args "")) "poll")
+           "prs: no repository is watched; name one in /settings, Prs")
+          ((equal word "poll")
            (nlk:worker-poke *worker*)
            "prs: polling now")
-          (t (format nil "~{~a~^~%~}" (mapcar #'watched-text repos))))))
+          ((equal word "")
+           (values (format nil "~{~a~^~%~}" (mapcar #'watched-text repos)) (panel repos)))
+          (t (values (format nil "prs: ~a is not one of its choices" word) (panel repos))))))
 
 ;;; --- the entry -----------------------------------------------------------------------
 
@@ -139,5 +152,4 @@ push, or a (prs:rank ...) from here. /prs lists what the watch saw last."
   (:command "prs" (lambda (args session-id)
                     (declare (ignore session-id))
                     (run-slash args))
-            :description "Pull requests the watch saw last; poll asks GitHub now"
-            :argument-hint "poll"))
+            :description "Pull requests the watch saw last, and a poll of GitHub now"))

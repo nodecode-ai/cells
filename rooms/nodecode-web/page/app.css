@@ -798,7 +798,6 @@ code, pre, kbd { font-family: var(--mono); }
 }
 .slash .pick[aria-selected="true"] { color: var(--primary); background: var(--selected); }
 .slash .cmd { flex: none; font: var(--fs-detail) var(--mono); }
-.slash .args { flex: none; max-width: 45%; font: var(--fs-detail) var(--mono); color: var(--tertiary); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .slash .about { flex: 1; min-width: 0; text-align: right; font-size: var(--fs-detail); color: var(--tertiary); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .slash .reply { display: flex; flex-direction: column; min-height: 0; }
 .slash .reply[hidden] { display: none; }
@@ -1022,6 +1021,18 @@ button.reply-row:hover, button.reply-row:focus-visible { outline: none; color: v
   font: var(--fs-title)/1.6 var(--sans); color: var(--primary); caret-color: var(--primary);
 }
 .composer .foot { margin-top: 4px; display: flex; align-items: center; gap: 8px; }
+/* A command's row that asks for its text: the box wears its label as a chip, the keys beside it. */
+.composer .asking { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 4px 2px 0; }
+.composer .asking[hidden] { display: none; }
+.asking-label {
+  flex: none; max-width: 60%; padding: 2px 8px; border-radius: var(--r-chip); overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  font: var(--fs-micro) var(--mono); color: var(--accent); background: var(--selected);
+}
+.asking-keys { min-width: 0; font: var(--fs-micro) var(--mono); color: var(--tertiary); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* Enter on an empty ask: the chip nods once, saying what it waits for. */
+.asking.nudge .asking-label { animation: ask-nudge 320ms ease-out; }
+@keyframes ask-nudge { 0%, 100% { transform: translateX(0); } 30% { transform: translateX(-3px); } 60% { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) { .asking.nudge .asking-label { animation: none; outline: 1px solid var(--accent); } }
 /* The folder gives up its room before the model and the reasoning give up any. */
 .composer .folder { flex: 0 1000 auto; min-width: 0; font: var(--fs-micro) var(--mono); color: var(--tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* On a phone, a running turn's Stop and Queue take the folder's room. */

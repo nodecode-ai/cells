@@ -372,7 +372,7 @@ token, and say how it went."
                                                   :name "devin sign-in"))
         (format nil "Sign in to Devin in your browser: ~a~%~
 Nodecode listens at ~a for Devin's answer, finishes the sign-in and says so in a notice. ~
-If the browser runs on another machine, paste the address it lands on with /devin code ADDRESS."
+If the browser runs on another machine, paste the address it lands on in /devin."
                 (authorize-url state challenge redirect-uri) redirect-uri)))))
 
 (defun paste (text)
@@ -380,8 +380,8 @@ If the browser runs on another machine, paste the address it lands on with /devi
 landed on, or the code alone (omp's pasted-code path)."
   (let ((flow *flow*)
         (trimmed (nlk:trimmed (or text ""))))
-    (cond ((null flow) "devin: no sign-in is waiting; /devin login starts one")
-          ((zerop (length trimmed)) "usage: /devin code ADDRESS-OR-CODE")
+    (cond ((null flow) "devin: no sign-in is waiting; /devin starts one")
+          ((zerop (length trimmed)) "paste the address the browser landed on, or its code")
           (t (multiple-value-bind (code state error)
                  (if (find #\? trimmed)
                      (callback-answer trimmed)

@@ -761,7 +761,7 @@ chat (VOICE-ROOM-CHANNEL), and hearing SPEAKERS where it names nobody
     (nlk:when-let (refusal
                    (cond ((not (gateway-ready-p))
                           "the Discord gateway is still connecting; try again in a moment")
-                         ((null channel) "sit in a voice channel first, then /voice join")
+                         ((null channel) "sit in a voice channel first, then join from /voice")
                          ((null guild)
                           (format nil "<#~a> is no voice channel of a server the bot is in" channel))
                          ((null speakers)
@@ -1052,13 +1052,13 @@ unless it was typed there, where the answer already says it. => LINE."
                  (plusp (voice-stop-notes lane)) lane.room-channel-id)
          "voice: no notes are being taken"))
     (argument (format nil "voice: notes, or notes stop — not ~s" argument))
-    (lane.notes-by "voice: already taking notes; `/voice notes stop` writes them up")
+    (lane.notes-by "voice: already taking notes; stopping them in /voice writes them up")
     ;; The notes are written up as an ask, and an ask is somebody's.
     ((null by) "voice: ask for notes in Discord, so they have somebody to answer")
     (t (bt2:with-lock-held ((voice-lane-lock lane))
          (setf lane.notes '() lane.notes-by by lane.notes-from-ms (nck:now-ms)))
        (voice-announce lane (format nil "voice: taking notes in <#~a> — what everyone says is ~
-                                         written down and nothing is answered until `/voice notes stop`."
+                                         written down and nothing is answered until they are stopped in /voice."
                                     lane.channel-id)
                        typed))))
 
@@ -1145,7 +1145,10 @@ one owner for both."
                                                    "stop" "/voice notes stop"))
                                        (in-room (voice-row "Notes" "not taking" "take" "/voice notes"))))
                        (and in-room (voice-row "Voice messages here" (voice-replies-label room)
-                                               "change" "/voice replies"))))
+                                               "change" "/voice replies"))
+                       (and lane (nle:ask-row "Say something now" "Words" "/voice say"
+                                              :detail "out loud, with no turn behind it" :verb "say"
+                                              :placeholder "what to say in the voice channel"))))
            (voice-model-rows (and in-room room))))))
 
 (defun voice-pick-dialog (title context summary rows empty &optional (verb "use"))
@@ -1380,7 +1383,7 @@ its channel or the room's speakers (VOICE-SPEAKERS), typed by BY in TYPED."
   (cond
     ((null lane)
      (voice-how-to-start section (concatenate 'string "voice: not in a voice channel. "
-                                             "Sit in one and type `/voice join`, and I sit beside you")))
+                                             "Sit in one and pick Join in /voice, and I sit beside you")))
     (t
      (format nil "voice: in <#~a>, talking through <#~a>~%~
                     · encryption: ~a~%~
@@ -1590,7 +1593,7 @@ ROOM — bare, the status in words and the dialog (VOICE-DIALOG)."
                                                meaning "use" (format nil "/voice ~a" key)
                                                :mark (if (equal key mode) "●" "") :mark-tone :accent))
                       ""))
-             "voice: voice messages are a room's — pick them there, with `/voice replies`"))
+             "voice: voice messages are a room's — pick them there, in /voice"))
         ((string= verb "join")
          ;; Beside the person who asked, wherever they sit in voice, or in the
          ;; channel named; talking through the channel it was typed in and
@@ -1608,8 +1611,7 @@ ROOM — bare, the status in words and the dialog (VOICE-DIALOG)."
                      ((not (voice-await-seat lane)) (format nil "voice: ~a" (voice-unseated-text lane)))
                      (t (voice-announce lane (voice-joining-line lane) typed))))))))
         ((not (member verb '("say" "leave" "notes" "room" "hear") :test #'string=))
-         (format nil "voice: no such verb ~s — join, leave, status, room, hear, replies, on, tts, off, ~
-                      notes, hears, speaks, say <words>" verb))
+         (values (format nil "voice: ~a is not one of its choices" verb) (voice-dialog section room)))
         ((null lane) "voice: not in a voice channel")
         ((string= verb "room") (voice-room-command lane object section typed))
         ((string= verb "hear") (voice-hear-command lane object section by typed))
@@ -1634,30 +1636,6 @@ ROOM — bare, the status in words and the dialog (VOICE-DIALOG)."
                            (assoc verb +voice-replies+ :test #'string=))
                        (voice-dialog section room)))))))
 
-(defun voice-choices (text &aux (lane *voice-lane*))
-  "The /voice argument completions for the tail TEXT: the verbs that would
-do something now, each with what it does — join only while the bot sits
-nowhere; leave, room, hear, notes and say only while it sits; notes stop
-only while notes are taken."
-  (loop with needle = (nlk:trimmed text)
-        for (verb . what)
-          in (append (if lane
-                         (list '("leave" . "get up from the voice channel")
-                               '("room" . "the text channel I talk through")
-                               '("hear" . "whose speech opens a turn: everyone, or the room's speakers")
-                               (if lane.notes-by
-                                   '("notes stop" . "stop the notes and write them up")
-                                   '("notes" . "write down what everyone says; answer nothing"))
-                               '("say" . "speak the words after it, now"))
-                         (list '("join" . "sit in the voice channel you are in, or one you pick")))
-                     (list '("status" . "where the bot sits and what it hears")
-                           '("hears" . "the model speech is heard with")
-                           '("speaks" . "the voice answers are said in")
-                           '("replies" . "how this room's answers come back: words or voice"))
-                     +voice-replies+)
-        when (search needle verb :test #'char-equal)
-          collect (list :name (format nil "~a — ~a" verb what) :value verb)))
-
 (defun register-voice-command (section)
   "Register /voice."
   ;; The section is closed over: the command reads the live configuration the
@@ -1665,11 +1643,7 @@ only while notes are taken."
   (nle:register-command "nodecode-channel-discord" "voice"
                         (lambda (args session-id)
                           (voice-command args section session-id))
-                        :description "Voice: join, leave, where it talks and whom it hears; answers as voice messages (on, tts, off); meeting notes"
-                        :argument-hint "join [channel] | leave | status | room | hear | replies | on | tts | off | notes [stop] | hears [model] | speaks [voice] | say <words>"
-                        :complete (lambda (text session-id)
-                                    (declare (ignore session-id))
-                                    (voice-choices text))))
+                        :description "Voice: join, leave, where it talks and whom it hears; answers as voice messages; meeting notes"))
 
 ;;; --- start and stop ----------------------------------------------------------------------------
 

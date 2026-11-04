@@ -27,6 +27,8 @@ const app = $("app");
 const rowsEl = $("rows");
 const ledger = $("ledger");
 const promptEl = $("prompt");
+// The ask the box wears, when a command's row asked for its text (ASK-IN-COMPOSER).
+let asking = null;
 const composer = $("composer");
 
 // The composer's microphone (voice.js): what /api/transcribe said of this
@@ -4407,6 +4409,7 @@ function renderComposer() {
   const running = busy();
   promptEl.placeholder = voice.recording ? t("Listening: the microphone again reads it into the box, Esc drops it")
     : voice.busy ? t("Reading the recording…")
+    : asking ? asking.placeholder || asking.label
     : running ? t("Enter steers this turn · Tab queues for after it")
     : state.current ? t("Message this session") : t("The first message opens the session");
   $("send").title = running ? t("Steer this turn (Enter): it ends at its next step and this runs next") : t("Send (Enter)");
@@ -4537,6 +4540,7 @@ document.addEventListener("keydown", (event) => {
 // The files ride the prompt as one line each under its text, naming the path
 // each went up to.
 async function submit(steer) {
+  if (asking) { submitAsk(); return; }
   const text = promptEl.value;
   const { images, files } = state;
   if ((!text.trim() && !images.length && !files.length) || !state.open || !attachedReady()) return;
@@ -4832,8 +4836,7 @@ function recall(step) {
 // same place until it is put away. A line naming no command is a prompt, as
 // Discord sends one.
 
-const slash = { commands: null, loaded: 0, items: [], at: 0, asked: 0 };
-let slashTimer = null;
+const slash = { commands: null, loaded: 0, items: [], at: 0 };
 
 async function loadSlash() {
   slash.loaded = Date.now();
@@ -4857,38 +4860,53 @@ async function knownSlash(text) {
   return Boolean(slashCommand(text));
 }
 
-// A command's arguments as its usage spells them, without its own name.
-function slashArgs(command) {
-  const [first, ...rest] = (command.usage || "").split(/\s+/);
-  return first.replace(/^\//, "").toLowerCase() === command.name.toLowerCase() ? rest.join(" ") : command.usage || "";
+// What picking ITEM says: a command is its name, and typed alone it answers
+// what it offers -- its rows run its lines or ask for its text.
+function slashCompletion(item) {
+  return `/${item.command.name}`;
 }
 
-// What picking ITEM leaves in the box.
-function slashCompletion(item) {
-  if (item.choice) return `/${item.command.name} ${item.choice.value}`;
-  return `/${item.command.name}${slashArgs(item.command) ? " " : ""}`;
+// --- a row that asks for its text -------------------------------------------------
+// A command's row may ask for one line of text before its line runs (a name, a
+// code, a sentence), as a shell's composer asks for it: the box wears the row's
+// label, its placeholder says what the text is, Enter runs the line with the
+// text after it, and Esc puts the ask away, what was typed kept as a draft.
+function askInComposer(ask) {
+  closeSlash();
+  asking = { label: ask.label || t("Text"), line: ask.line, placeholder: ask.placeholder || "", verb: ask.verb || t("run") };
+  $("asking-label").textContent = asking.label;
+  $("asking-keys").textContent = t("Enter {verb} · Esc cancel", { verb: asking.verb });
+  $("asking").hidden = false;
+  promptEl.value = "";
+  fit();
+  renderComposer();
+  promptEl.focus();
+}
+
+function putAskAway() {
+  if (!asking) return false;
+  asking = null;
+  $("asking").hidden = true;
+  renderComposer();
+  return true;
+}
+
+function submitAsk() {
+  const text = promptEl.value.trim().replace(/\s*\n\s*/g, " ");
+  if (!text) { $("asking").classList.remove("nudge"); void $("asking").offsetWidth; $("asking").classList.add("nudge"); return; }
+  const line = `${asking.line} ${text}`;
+  putAskAway();
+  runSlash(line);
 }
 
 function slashInput() {
-  clearTimeout(slashTimer);
   const text = promptEl.value;
-  const naming = /^\/(\S*)$/.exec(text);
-  const arguing = !naming && /^\/(\S+) ([^\n]*)$/.exec(text);
-  if (!naming && !arguing) { showSlash([]); return; }
+  // Names alone: nothing is offered after a command's name.
+  const naming = !asking && /^\/(\S*)$/.exec(text);
+  if (!naming) { showSlash([]); return; }
   if (Date.now() - slash.loaded > 30000) loadSlash().then((ok) => { if (ok && promptEl.value === text) slashInput(); });
-  if (naming) {
-    const prefix = naming[1].toLowerCase();
-    showSlash((slash.commands || []).filter((command) => command.name.toLowerCase().startsWith(prefix)).map((command) => ({ command })));
-    return;
-  }
-  const command = slashCommand(text);
-  if (!command?.autocomplete) { showSlash([]); return; }
-  const asked = ++slash.asked;
-  slashTimer = setTimeout(async () => {
-    let choices = [];
-    try { choices = (await api("POST", "/api/gateway/slash/completions", { name: command.name, text: arguing[2], ...(state.current ? { session_id: state.current } : {}) })).choices || []; } catch {}
-    if (asked === slash.asked && promptEl.value === text) showSlash(choices.slice(0, 60).map((choice) => ({ command, choice })));
-  }, 120);
+  const prefix = naming[1].toLowerCase();
+  showSlash((slash.commands || []).filter((command) => command.name.toLowerCase().startsWith(prefix)).map((command) => ({ command })));
 }
 
 // Over the box, as wide as it, wherever it stands: the dock or the opener.
@@ -4921,8 +4939,7 @@ function showSlash(items) {
     pick.dataset.index = at;
     pick.setAttribute("role", "option");
     pick.setAttribute("aria-selected", String(at === slash.at));
-    if (item.choice) pick.append(el("span", "cmd", item.choice.name));
-    else pick.append(el("span", "cmd", `/${item.command.name}`), el("span", "args", slashArgs(item.command)), el("span", "about", item.command.description || ""));
+    pick.append(el("span", "cmd", `/${item.command.name}`), el("span", "about", item.command.description || ""));
     li.append(pick);
     return li;
   }));
@@ -4939,21 +4956,22 @@ function moveSlash(step) {
   $("slash-list").children[slash.at]?.scrollIntoView({ block: "nearest" });
 }
 
-// Tab, or a click: the pick goes in the box. Enter does the same, and runs the
-// line once the box already says it.
+// Enter, or a click: the pick runs, a command being its name. Tab puts its name
+// in the box.
 function pickSlash(run) {
   const item = slash.items[slash.at];
   if (!item) return;
   const line = slashCompletion(item);
-  if (run && line.trim() === promptEl.value.trim()) { showSlash([]); submit(false); return; }
+  if (run) { showSlash([]); runSlash(line); return; }
   promptEl.value = line;
   fit();
   promptEl.setSelectionRange(line.length, line.length);
   slashInput();
 }
 
+// The answer's head names the command, never the line a row ran.
 function showReply(line, text, how, dialog) {
-  $("slash-line").textContent = line;
+  $("slash-line").textContent = line.trim().split(/\s+/)[0];
   $("slash-text").textContent = text;
   $("slash-text").className = `reply-text${how ? ` ${how}` : ""}`;
   slashPanel(dialog);
@@ -4964,7 +4982,6 @@ function showReply(line, text, how, dialog) {
 }
 
 function closeSlash() {
-  clearTimeout(slashTimer);
   slash.items = [];
   $("slash").hidden = true;
   $("slash-list").hidden = true;
@@ -4973,8 +4990,9 @@ function closeSlash() {
 
 // The panel a command answered with, under its line: what it says of itself,
 // its picture (a QR code a phone's camera reads), and its rows, one with a
-// value putting it in the box and one with a line to run running it, as Enter
-// on it does in a shell.
+// value putting it in the box, one with a line to run running it, as Enter on
+// it does in a shell, and one that asks for its text moving to the box under
+// its label (ASK-IN-COMPOSER).
 function slashPanel(dialog) {
   const panel = $("slash-panel");
   panel.hidden = !dialog;
@@ -4984,8 +5002,10 @@ function slashPanel(dialog) {
   const rows = (dialog.rows || []).map((row) => {
     const li = el("li");
     const run = row.run?.enter;
-    const pick = el(run || row.value ? "button" : "div", "reply-row");
-    if (run) { pick.type = "button"; pick.dataset.run = run; pick.title = run; }
+    const ask = !run && row.ask?.line ? row.ask : null;
+    const pick = el(run || ask || row.value ? "button" : "div", "reply-row");
+    if (run) { pick.type = "button"; pick.dataset.run = run; }
+    else if (ask) { pick.type = "button"; pick.dataset.ask = JSON.stringify(ask); }
     else if (row.value) { pick.type = "button"; pick.dataset.value = row.value; pick.title = row.value; }
     pick.append(el("span", `reply-mark${row.mark_tone === "accent" ? " lit" : ""}`, row.mark || ""),
       el("span", "reply-label", row.label), el("span", "reply-detail", row.detail));
@@ -5087,6 +5107,9 @@ promptEl.addEventListener("keydown", (event) => {
   } else if (event.key === "Tab" && !event.shiftKey && busy() && !$("queue").disabled) {
     event.preventDefault();
     submit(false);
+  } else if (event.key === "Escape" && asking) {
+    event.preventDefault();
+    putAskAway();
   } else if (event.key === "Escape") {
     stop();
   } else if (event.key === "ArrowUp" && !promptEl.value && newestQueued()) {
@@ -5109,9 +5132,10 @@ $("slash-list").addEventListener("click", (event) => {
 });
 $("slash-close").addEventListener("click", () => { closeSlash(); promptEl.focus(); });
 $("slash-panel").addEventListener("click", (event) => {
-  const pick = event.target.closest("button[data-value], button[data-run]");
+  const pick = event.target.closest("button[data-value], button[data-run], button[data-ask]");
   if (!pick) return;
   if (pick.dataset.run) { runSlash(pick.dataset.run); return; }
+  if (pick.dataset.ask) { askInComposer(JSON.parse(pick.dataset.ask)); return; }
   closeSlash();
   promptEl.value = pick.dataset.value;
   fit();

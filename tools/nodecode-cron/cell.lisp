@@ -230,10 +230,9 @@ registry is written after it -- the ticker woken too, with POKE."
 
 ;;; --- /cron -------------------------------------------------------------------------
 
-(defparameter +usage+ "/cron [jobs | show ID | run ID | pause ID | resume ID | remove ID]")
 
 (defparameter +no-jobs-line+
-  "cron: no jobs; (cron:add \"every day at 9am\" \"...\") through eval"
+  "cron: no jobs; ask the agent for one, as in “every weekday at 9am, sum up my inbox”"
   "The bare /cron answer, and its hint, while no job is scheduled.")
 
 (defun summary-order (jobs)
@@ -246,14 +245,14 @@ first, then the rest in the order they arrived."
 (defun summary-text ()
   "The bare /cron answer: how many jobs, then one line per job — a vertical
 list naming each job, its state and its timing."
-  ;; Past three jobs it lists the first and points at /cron jobs for the rest;
+  ;; Past three jobs it lists the first and points at /cron for the rest;
   ;; the one-line form rides the composer hint.
   (with-cron-lock
     (if (null *jobs*)
         +no-jobs-line+
         (let* ((ordered (summary-order (reverse *jobs*)))
                (shown (subseq ordered 0 (min 3 (length ordered)))))
-          (format nil "cron: ~d job~:p~%~{- ~a~^~%~}~@[~%+~d more (/cron jobs)~]"
+          (format nil "cron: ~d job~:p~%~{- ~a~^~%~}~@[~%+~d more in /cron~]"
                   (length ordered)
                   ;; Next fire while active, else the last outcome.
                   (mapcar (lambda (job)
@@ -318,10 +317,13 @@ outcome."
                               when (plusp count)
                                 collect (format nil "~d ~(~a~)" count state)))
        :rows (let ((width (reduce #'max jobs :key (lambda (job) (length job.id)) :initial-value 0)))
-               (mapcar (lambda (job) (job-row job width)) jobs))
+               (append (mapcar (lambda (job) (job-row job width)) jobs)
+                       (when jobs
+                         (list (nle:run-row "Post the list as a notice" "/cron jobs"
+                                            :detail "every job and its next fire, kept above the composer")))))
        :searchable t
        :search-placeholder "Search jobs"
-       :empty-label "No jobs · ask for one, or (cron:add \"every day at 9am\" \"...\") through eval"
+       :empty-label "No jobs · ask the agent for one, as in “every weekday at 9am, sum up my inbox”"
        :hint "space pause/resume  enter details  esc close  ↑↓ navigate  type search"))))
 
 (defun wrapped (text width)
@@ -379,13 +381,14 @@ panel a shell opens over it, bare or for one job's record."
     ((member head '("jobs" "list") :test #'string=)
      (nle:notice (jobs-text) :level :info)
      (format nil "cron: ~d job~:p posted" (length *jobs*)))
-    ((null id) (format nil "cron: ~a needs a job id; usage ~a" head +usage+))
+    ((and (null id) (member head '("show" "run" "pause" "resume" "remove") :test #'string=))
+     (values (format nil "cron: ~a needs a job; pick one in the panel" head) (panel)))
     ((string= head "show") (values (show id) (with-cron-lock (record-panel (require-job id)))))
     ((string= head "run") (run id))
     ((string= head "pause") (pause id))
     ((string= head "resume") (resume id))
     ((string= head "remove") (remove id))
-    (t (format nil "cron: unknown subcommand ~a; usage ~a" head +usage+))))
+    (t (values (format nil "cron: ~a is not one of its choices" head) (panel)))))
 
 ;;; --- the page's route ---------------------------------------------------------------
 ;;; The web page's Control pane reads the registry as its row holds it
@@ -456,12 +459,10 @@ thread, and the standing line for the jobs that keep the gateway up."
   (:command "wake" (lambda (args session-id)
                      (declare (ignore session-id))
                      (wake-slash args))
-            :description "Wake-ups of its own: status, on, off, now"
-            :argument-hint "status | on | off | now")
+            :description "Wake-ups of its own: on, off, or one now")
   (:help :cron "cron:add schedules a prompt (\"every day at 9am\", \"in 45m\"); a fire's answer arrives as your next turn" +primer+)
   (:route "/api/cron/jobs" #'jobs-route)
   (:command "cron" (lambda (args session-id)
                      (declare (ignore session-id))
                      (run-slash args))
-            :description "Scheduled jobs: the list, jobs, show ID, run ID, pause ID, resume ID, remove ID"
-            :argument-hint "jobs | show ID | run ID | pause ID | resume ID | remove ID"))
+            :description "Scheduled jobs: each one's record, and running, pausing, resuming or removing it"))

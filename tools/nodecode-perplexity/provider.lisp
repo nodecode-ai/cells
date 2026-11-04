@@ -535,7 +535,7 @@ failure is tried once more; an HTTP answer, a refusal included, never is."
         ;; Anonymous quota exhaustion answers 200 with a short signup wall and
         ;; no sources; a grounded anonymous ask always has some.
         (when (and (eq kind :anonymous) (null sources))
-          (fail "Perplexity anonymous ask returned no sources (likely signup wall or exhausted anonymous quota); sign in with /perplexity login or set ~a"
+          (fail "Perplexity anonymous ask returned no sources (likely signup wall or exhausted anonymous quota); sign in from /perplexity or set ~a"
                 +key-env+))
         (list :answer (and answer (answer-text answer))
               :sources (mapcar #'cdr sources)

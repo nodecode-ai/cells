@@ -2,7 +2,7 @@
 
 A Nodecode cell for [Cursor](https://cursor.com): Claude, GPT, Gemini, Grok,
 Kimi and Cursor's own Composer models through a Cursor account. With it,
-`/models` lists the account's models, `/cursor login` signs in, and a turn on
+`/models` lists the account's models, `/cursor` signs in, and a turn on
 `cursor/<model>` runs on Cursor's agent service the way the Cursor agent CLI
 drives it.
 
@@ -50,9 +50,9 @@ search and fetch are approved; questions, mode switches and plans are refused.
 ## Sign-in
 
 ```
-/cursor login     prints the page to open; Nodecode polls until Cursor confirms
-/cursor status
-/cursor logout
+/cursor → Sign in   prints the page to open; Nodecode polls until Cursor confirms
+/cursor             where the sign-in stands, over its rows
+/cursor → Sign out
 ```
 
 The sign-in is Cursor's own browser poll: a PKCE verifier and a UUID, the
@@ -63,7 +63,7 @@ refresh token. auth.json keeps them under `oauth_tokens.cursor`
 own exp less five minutes, and `email` when the account's profile names it).
 A round refreshes the token when it expires within a minute; a status
 question never does. When Cursor ends the session (`shouldLogout`), the cell
-says so in a standing notice until `/cursor login` succeeds.
+says so in a standing notice until a sign-in from `/cursor` succeeds.
 
 Without a sign-in, `CURSOR_ACCESS_TOKEN` or `CURSOR_API_KEY` is sent as the
 bearer. A token `/connect` saved answers before either; `/connect` checks it

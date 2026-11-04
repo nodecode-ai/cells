@@ -74,10 +74,10 @@ with its project, else nothing to send."
                             (signin-failed (refusal)
                               ;; stands until a sign-in succeeds: the model
                               ;; keeps seeing why its rounds cannot go
-                              (nle:notice (format nil "~a: the sign-in could not be refreshed (~a); run /~a login"
+                              (nle:notice (format nil "~a: the sign-in could not be refreshed (~a); /~a signs in again"
                                                   +provider+ refusal +provider+)
                                           :level :warning :key +key+)
-                              (nle::credential-fail "~a; run /~a login" refusal +provider+)))
+                              (nle::credential-fail "~a; /~a signs in again" refusal +provider+)))
                           entry)))
           (nle:make-credential (nlk:json-value entry :text "access_token") :oauth
                                (list :project-id (nlk:json-value entry :text "project_id")
@@ -176,7 +176,7 @@ must end on a finish reason. => (values MESSAGE USAGE FINISH-REASON REQUEST-JSON
       (unless (and token project)
         (error 'nle::provider-config-error
                :status 401
-               :detail (format nil "Google Cloud Code Assist is not signed in: run /~a login" +provider+)))
+               :detail (format nil "Google Cloud Code Assist is not signed in: /~a signs in again" +provider+)))
       (let ((*round* (make-round :provider (nle::effective-provider-config-provider config)
                                  :model model :facts (model-facts model)
                                  :token token :project project :email email
@@ -236,7 +236,7 @@ never read as one that works."
                                     :display (nlk:json-value row :string "name")
                                     :context-window (nlk:json-value row :integer "context")))
               (and (getf keys :key)
-                   (format nil "~a signs in with Google, so a key is not checked: run /~a login"
+                   (format nil "~a signs in with Google, so a key is not checked: /~a signs in again"
                            +provider+ +provider+)))
       (apply next provider keys)))
 
@@ -250,7 +250,7 @@ never read as one that works."
                    +provider+ (nlk:json-value entry :text "email")
                    (nlk:json-value entry :text "project_id") *flow*))
           (*flow* (format nil "~a: a sign-in is in progress" +provider+))
-          (t (format nil "~a: not signed in; /~a login signs in with Google" +provider+ +provider+)))))
+          (t (format nil "~a: not signed in; /~a signs in with Google" +provider+ +provider+)))))
 
 (defun logout ()
   "Forget the kept sign-in."
@@ -259,25 +259,44 @@ never read as one that works."
   (nle:notice nil :key +key+)
   (format nil "~a: signed out" +provider+))
 
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
+(defun panel (summary)
+  "The dialog bare /google-gemini-cli answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "Gemini CLI" :summary summary
+   :rows (list (panel-run "Sign in" "/google-gemini-cli login" :detail "in the browser, with a Google account")
+               (panel-ask "Paste where the browser landed" "Address" "/google-gemini-cli code"
+                            :placeholder "the address the browser landed on" :verb "sign in"
+                            :detail "when the browser cannot reach this machine")
+               (panel-run "Sign out" "/google-gemini-cli logout" :detail "forget the kept sign-in, or end one in progress"))))
+
 (defun run-slash (args session-id)
-  "/google-gemini-cli login | code ADDRESS | logout | status"
+  "/google-gemini-cli typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let* ((trimmed (nlk:trimmed (or args "")))
          (space (position-if (lambda (char) (member char '(#\Space #\Tab))) trimmed))
-         (verb (string-downcase (if (plusp (length trimmed)) (subseq trimmed 0 space) "status")))
+         (verb (string-downcase (if (plusp (length trimmed)) (subseq trimmed 0 space) "")))
          (rest (if space (nlk:trimmed (subseq trimmed space)) "")))
-    (cond ((equal verb "login") (login nle::*auth-file-path*))
+    (cond ((equal verb "") (let ((text (status))) (values text (panel text))))
+          ((equal verb "login") (values (login nle::*auth-file-path*) (panel (status))))
           ((equal verb "code") (paste rest))
           ((equal verb "logout") (logout))
           ((equal verb "status") (status))
-          (t (format nil "usage: /~a login | code ADDRESS | logout | status" +provider+)))))
-
-(defun complete-slash (text session-id)
-  "The verbs /google-gemini-cli takes, those that start with TEXT."
-  (declare (ignore session-id))
-  (loop for verb in '("login" "code" "logout" "status")
-        when (uiop:string-prefix-p (string-downcase (nlk:trimmed (or text ""))) verb)
-          collect (list :name verb :value verb)))
+          (t (values (format nil "google-gemini-cli: ~a is not one of its choices" verb) (panel (status)))))))
 
 (defun start ()
   "Register the lane; on the way down, take it out, end a sign-in in progress
@@ -290,7 +309,7 @@ and clear what it said."
 
 (nle:define-cell google-gemini-cli
   (:section ("google-gemini-cli")
-    (:guide "sign in with /google-gemini-cli login (a Google account; GOOGLE_CLOUD_PROJECT names the project of a paid tier); base_url is where Cloud Code Assist is served")
+    (:guide "sign in from /google-gemini-cli (a Google account; GOOGLE_CLOUD_PROJECT names the project of a paid tier); base_url is where Cloud Code Assist is served")
     ("base_url" :string :default +base+
      :doc "the Cloud Code Assist base the lane appends /v1internal:streamGenerateContent to"))
   (:start #'start)
@@ -301,6 +320,4 @@ and clear what it said."
   (:hook 'nle::list-provider-models #'listing)
   (:command "google-gemini-cli" 'run-slash
    :description "Sign in to Google Cloud Code Assist (Gemini CLI), or out"
-   :argument-hint "login | code ADDRESS | logout | status"
-   :session nil
-   :complete 'complete-slash))
+   :session nil))

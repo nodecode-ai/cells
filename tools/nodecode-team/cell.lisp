@@ -48,11 +48,11 @@ called through eval. Every one returns a string; every refusal is ERROR: TEAM-ER
 reason. A team is identical full-tool sessions working one task in parallel from one shared
 directory; they never message each other or you, the directory's files are the only channel,
 and each runs under a fixed budget of tokens and time.
-The operator seats a session's standing team from their shell with /team TEXT: team.nodes nodes
+The operator seats a session's standing team from their shell with /team: team.nodes nodes
 under the session, working from team/<session>/standing/ in the home, each given TEXT behind its
-own marker. Every later /team TEXT goes to the same nodes, a steer of the turn a node is running;
-nothing else the operator types reaches them, and between inputs they sit idle. /team alone
-reads where the team stands and /team stop stops it. A standing team's seconds count from the
+own marker. Every later task from /team goes to the same nodes, a steer of the turn a node is running;
+nothing else the operator types reaches them, and between inputs they sit idle. /team
+says where the team stands and stops it. A standing team's seconds count from the
 latest /team, and a node's tokens are its cap over every input it takes: a node that has spent
 them is never prompted again, and at the next /team a fresh node takes its seat. A standing team
 has no scorer: its product is LOG, best/ and work-K/ in that directory, and nothing of it comes
@@ -458,7 +458,6 @@ identifier of the session that opened it."
 ;;; The directory and the store are the whole state; between inputs the
 ;;; nodes sit idle.
 
-(defparameter +usage+ "/team TEXT | /team | /team stop")
 
 (defun standing-dir (session-id)
   "SESSION-ID's standing team directory: one per session, for its whole life."
@@ -502,9 +501,22 @@ a fresh node. COMMAND names each node's command id (NODE-COMMAND).
     (start-nodes dir session-id fresh prompt n command)
     (append kept fresh)))
 
+(defun panel (config)
+  "The dialog bare /team answers, CONFIG the standing team's or NIL: a row
+that puts a task to the team, seating it the first time, and one that
+stops a team that stands."
+  (nle:list-dialog
+   :title "Team" :summary (if config "A standing team" "No standing team yet")
+   :rows (append (list (nle:ask-row (if config "Put a task to the team" "Seat a team on a task") "Task" "/team"
+                                    :placeholder "the work, in words" :verb "send"
+                                    :detail (if config "a steer of the turn each node runs" "identical sessions, one shared directory")))
+                 (when config
+                   (list (nle:run-row "Stop the team" "/team stop" :detail "its nodes stop; a fresh one takes a seat next time"))))))
+
 (define-verb run-slash (args session-id)
-  "/team: TEXT seats SESSION-ID's standing team with TEXT, nothing reads
-where it stands, `stop' stops it => the answer's text."
+  "/team typed alone: where SESSION-ID's standing team stands, and its panel,
+whose rows run its lines -- TEXT seats the team with TEXT, `stop' stops it.
+=> the answer's text, and the panel."
   (unless (nlk:store-open-p)
     (fail "no store is open; a node is a durable session"))
   (unless (and session-id (or (nlk:session-exists-p session-id) (nlk:on-standby-p session-id)))
@@ -515,9 +527,9 @@ where it stands, `stop' stops it => the answer's text."
          (dir (standing-dir session-id))
          (config (ignore-errors (read-config dir))))
     (cond ((and (string= text "") (null config))
-           (format nil "team: no standing team yet; ~a" +usage+))
+           (values "team: no standing team yet" (panel nil)))
           ((string= text "")
-           (result-text (result dir config :confirm nil)))
+           (values (result-text (result dir config :confirm nil)) (panel config)))
           ((string-equal text "stop")
            (if config
                (stop (namestring dir) "the operator stopped the team")
@@ -531,7 +543,7 @@ where it stands, `stop' stops it => the answer's text."
                           (team-error (condition) (error condition))
                           (error (condition)
                             (fail "the standing team was not seated: ~a" condition)))))
-             (format nil "team: ~d node~:p took it (~{~a~^ ~}); /team reads where they stand"
+             (format nil "team: ~d node~:p took it (~{~a~^ ~}); /team says where they stand"
                      (length nodes) nodes))))))
 
 ;;; --- what a node keeps ---------------------------------------------------------------
@@ -774,5 +786,4 @@ settled, or the deadline passed -- then answer its best."
   (:help :team "team:open starts identical sessions on one task in parallel, scored or not; /team seats a standing team" +primer+)
   (:command "team" 'run-slash
             :catches 'team-error
-            :description "The session's standing team: TEXT puts it to the team, nothing reads where it stands, stop stops it"
-            :argument-hint "TEXT | stop"))
+            :description "The session's standing team: put a task to it, read where it stands, or stop it"))

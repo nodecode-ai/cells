@@ -103,6 +103,12 @@
       ("operator: everyone rebase first" "told to the shell's own session"))
     (is-carrying (text (nodecode-board::run-slash "" "a"))
       ("board dev:") ("operator: everyone rebase first" "/board reads the last posts"))
+    (let ((dialog (nle::dialog-json (nth-value 1 (nodecode-board::run-slash "" "a")))))
+      (is (equal "On dev" (nle::json-value dialog :text "summary")) "typed alone, its panel says where it is")
+      (is (equal '("/board off")
+                 (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) (nle::json-array dialog "rows")))))
+      (is (equal '("/board post" "/board")
+                 (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) (nle::json-array dialog "rows"))))))
     (is-carrying (text (nodecode-board::run-slash "off" "a")) ("left board dev"))))
 
 ;;; --- the wake ----------------------------------------------------------------------

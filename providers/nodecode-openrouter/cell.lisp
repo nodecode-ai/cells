@@ -76,7 +76,7 @@ per catalog the core reads."
 
 (nle:define-cell openrouter
   (:section ("openrouter")
-    (:guide "sign in with /openrouter login, or make a key at https://openrouter.ai/settings/keys and save it with /connect or OPENROUTER_API_KEY; variant routes every model (nitro, floor, online, exacto); only and order are provider slugs")
+    (:guide "sign in from /openrouter, or make a key at https://openrouter.ai/settings/keys and save it with /connect or OPENROUTER_API_KEY; variant routes every model (nitro, floor, online, exacto); only and order are provider slugs")
     ("base_url" :string :default +base+
      :doc "the OpenRouter API base the chat lane appends /chat/completions to")
     ("variant" :choice :options +variants+ :default "default"
@@ -89,5 +89,4 @@ per catalog the core reads."
   (:hook 'nle::request-body #'body)
   (:hook 'nle::walk-provider-stream #'walk)
   (:command "openrouter" #'run-command
-            :description "OpenRouter: sign in from the browser for a key"
-            :argument-hint "login | code <address, code or key> | logout | status"))
+            :description "OpenRouter: sign in from the browser for a key"))

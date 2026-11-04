@@ -702,37 +702,25 @@ letters, digits, `-' and `_' (the ASCII slice of its ^[-_\\p{L}\\p{N}]{1,32}$)."
 
 (defun commands-plan (application-id entries &key (timeout-seconds 30))
   "PUT /applications/<id>/commands — the bulk overwrite that makes ENTRIES
-((:name :description :usage) plists) the application's global command
-menu, every previous command gone."
-  ;; A command with a usage takes one optional string option, `args', the
-  ;; verbatim tail the interaction carries back — completed on the fly when
-  ;; the entry is marked :AUTOCOMPLETE. A name Discord would refuse is left
-  ;; out — one bad name fails the whole sync; descriptions are cut to
-  ;; Discord's 100 and never empty. Retried: the menu is set once per catalog
-  ;; shape.
+((:name :description) plists) the application's global command menu, every
+previous command gone."
+  ;; A command is its name: it takes no option, and picked from the menu it
+  ;; answers what it offers, a card whose rows run its lines or ask for its
+  ;; text (NCK::DIALOG-CARD). A name Discord would refuse is left out — one
+  ;; bad name fails the whole sync; descriptions are cut to Discord's 100 and
+  ;; never empty. Retried: the menu is set once per catalog shape.
   (rest-plan "PUT" (format nil "/applications/~a/commands" application-id)
              "set_commands" t timeout-seconds
              (coerce
               (loop for entry in entries
                     for name = (getf entry :name)
-                    for usage = (or (getf entry :usage) "")
                     when (discord-command-name-p name)
                       collect (nlk:json-object
                                "name" name
                                "type" 1
                                "description"
                                (nlk:clip (or (nlk:json-value (getf entry :description) :text) name)
-                                         100 :ellipsis "")
-                               :when (plusp (length usage))
-                               "options" (vector
-                                          (nlk:json-object
-                                           "type" 3
-                                           "name" "args"
-                                           "description"
-                                           (nlk:clip usage 100 :ellipsis "")
-                                           "required" nil
-                                           :when (getf entry :autocomplete)
-                                           "autocomplete" t))))
+                                         100 :ellipsis "")))
               'vector)))
 
 (defun interaction-response-plan (candidate text &key private controls panel (timeout-seconds 30))
@@ -852,25 +840,53 @@ words to the presser of PAYLOAD after its press has been answered."
                                     (split-text-chunks text (1- +discord-message-content-limit+)))
                             timeout-seconds)))
 
-(defun interaction-autocomplete-plans (payload choices &key (timeout-seconds 3))
-  "POST /interactions/<id>/<token>/callback — the one answer the autocomplete
-request PAYLOAD takes, type 8: at most 25 of CHOICES, (:name :value) plists cut
-to Discord's 100-character caps."
-  ;; Not retried: a late answer is refused as an unknown interaction, and the
-  ;; menu waits three seconds only.
-  (list (interaction-callback-plan
-         (getf payload :id) (getf payload :token)
-         (nlk:json-object
-          "type" 8                          ; the autocomplete result: no deferral admitted
-          "data" (nlk:json-object
-                  "choices"
-                  (coerce
-                   (loop for choice in (subseq choices 0 (min 25 (length choices)))
-                         collect (nlk:json-object
-                                  "name" (nlk:clip (or (getf choice :name) "") 100 :ellipsis "")
-                                  "value" (nlk:clip (or (getf choice :value) "") 100 :ellipsis "")))
-                   'vector)))
-         "interaction_autocomplete" timeout-seconds)))
+(defun capped (text limit)
+  "TEXT as a field LIMIT characters long holds it: whole when it fits, else
+cut to make room for an ellipsis."
+  (if (> (length text) limit) (nlk:clip text (1- limit) :ellipsis "…") text))
+
+(defun interaction-modal-plan (candidate ask &key prompt (timeout-seconds 3))
+  "(values PLAN T): the answer a press on a row that asks for its text takes
+(NCK:PLATFORM-PLAN-ASK) -- POST /interactions/<id>/<token>/callback type 9, a
+modal named after ASK's label holding one line of text, its placeholder
+ASK's, whose submit carries the press's own data back as its custom_id
+(ROUTE-DISCORD-INTERACTION) -- or NIL for a CANDIDATE that is no press on
+a choice."
+  ;; A modal is the one answer its press takes, inside the press's three
+  ;; seconds, so it is not retried: a late one is refused as an unknown
+  ;; interaction, and the kit then asks with a message instead. A title and
+  ;; a label hold 45 characters, a placeholder 100.
+  (declare (ignore prompt))
+  (let* ((data (source-field candidate "press_data"))
+         (label (nlk:trimmed (or (nlk:json-value ask :text "label") "")))
+         (label (if (plusp (length label)) label "Text"))
+         (placeholder (nlk:trimmed (or (nlk:json-value ask :text "placeholder") "")))
+         (id (source-field candidate "interaction_id"))
+         (token (source-field candidate "interaction_token")))
+    (when (and id token (candidate-pressed-p candidate) (stringp data) (<= 1 (length data) 100))
+      (values
+       (interaction-callback-plan
+        id token
+        (nlk:json-object
+         "type" 9                           ; MODAL
+         "data" (nlk:json-object
+                 "custom_id" data
+                 "title" (capped label 45)
+                 "components"
+                 (vector (nlk:json-object
+                          "type" 1          ; ACTION_ROW
+                          "components"
+                          (vector (nlk:json-object
+                                   "type" 4 ; TEXT_INPUT
+                                   "custom_id" "text"
+                                   "label" (capped label 45)
+                                   "style" 1 ; one line
+                                   "required" t
+                                   "max_length" 4000
+                                   :when (plusp (length placeholder))
+                                   "placeholder" (capped placeholder 100)))))))
+        "interaction_modal" timeout-seconds)
+       t))))
 
 (defun hydrate-self-roles (executor bot-user-id &key (timeout-seconds 30))
   "Ask Discord which roles the bot itself holds and note them as addresses:

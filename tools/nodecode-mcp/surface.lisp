@@ -312,7 +312,7 @@ back from another machine -- finish the sign-in in progress."
                   (format nil "~a: signed in again with the kept refresh token; connecting" server-name)
                   (format nil "Sign in to ~a in a browser~:[~;; one here was handed the address~]: ~a~%~
 Nodecode waits at ~a for the answer, then connects ~a. If the browser runs on another machine, ~
-paste the address it lands on: /mcp login ~a ADDRESS"
+paste the address it lands on in /mcp, under ~a's Paste where the browser landed"
                           server-name opened outcome redirect-uri server-name server-name))))
       (error (condition)
         (format nil "~a: the sign-in could not start: ~a" server-name condition)))))

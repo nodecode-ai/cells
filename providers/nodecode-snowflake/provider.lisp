@@ -52,7 +52,7 @@ host signals SNOWFLAKE-ERROR (omp's normalizeSnowflakeAccountUrl)."
          (scheme (nth-value 1 (ppcre:scan-to-strings "(?i)^([a-z][a-z0-9+.-]*)://" value)))
          (host nil))
     (when (zerop (length value))
-      (fail "Snowflake account is required: run /snowflake login ACCOUNT, set snowflake.account, or set ~a"
+      (fail "Snowflake account is required: /snowflake signs in to an account, set snowflake.account, or set ~a"
             +account-env+))
     (when (and scheme (string-not-equal (aref scheme 0) "https"))
       (fail "Snowflake account URL must use https"))
@@ -107,11 +107,11 @@ parseSnowflakeCredential)."
                     (token (nlk:json-value parsed :text "token"))
                     (account (nlk:json-value parsed :text "enterpriseUrl")))
                (unless (and token account)
-                 (fail "Invalid Snowflake credential; run /snowflake login again"))
+                 (fail "Invalid Snowflake credential; /snowflake signs in again"))
                (values (string-trim " " token)
                        (handler-case (normalize-account-url account)
                          (snowflake-error (condition)
-                           (fail "Invalid Snowflake credential account: ~a; run /snowflake login again"
+                           (fail "Invalid Snowflake credential account: ~a; /snowflake signs in again"
                                  condition)))))))))
 
 (defun account-base (account-url)
@@ -203,7 +203,7 @@ else the section's, else SNOWFLAKE_ACCOUNT's (omp's snowflakeTransport)."
           (error 'nle::provider-config-error :detail (princ-to-string condition))))
     (unless (and token (string/= token "public"))
       (error 'nle::provider-config-error
-             :detail (format nil "Snowflake is not signed in: run /snowflake login ACCOUNT, or save a ~
+             :detail (format nil "Snowflake is not signed in: /snowflake signs in to an account, or save a ~
                                   programmatic access token with /connect or ~a (and name the account ~
                                   in snowflake.account or ~a)" (first +env+) +account-env+)))
     (let ((account (or (nle::credential-attribute config :account-url)

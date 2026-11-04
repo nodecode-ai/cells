@@ -2,7 +2,7 @@
 
 A Nodecode cell for [Kilo Gateway](https://kilo.ai), a gateway that serves
 some six hundred models from many vendors behind one account. With it,
-`/kilo login` signs you in with a device code, `/connect` offers Kilo
+`/kilo` signs you in with a device code, `/connect` offers Kilo
 Gateway for a key, `/models` lists its models under their vendors' ids
 (`anthropic/claude-opus-4.7`, `qwen/qwen3.7-max`, ...), and a turn on
 `kilo/<model>` goes to `https://api.kilo.ai/api/gateway` over the OpenAI chat
@@ -15,7 +15,7 @@ provider. See [NOTICE](NOTICE).
 ## Sign in
 
 ```
-/kilo login
+/kilo → Sign in
 ```
 
 omp's Kilo login is a custom one: a device flow against Kilo's own
@@ -32,10 +32,10 @@ The token goes into Nodecode's shared `auth.json` under `oauth_tokens.kilo`:
 ```
 
 Kilo hands back a bearer with no refresh token, and omp keeps it for a year.
-So does this cell. After that, a turn is refused with "sign in again with
-/kilo login", and that notice stands until you do. Every other field of
-`auth.json` is kept, and the file stays mode 0600. `/kilo status` says
-whether you are signed in, and `/kilo logout` takes the entry out.
+So does this cell. After that, a turn is refused with "sign in again from
+/kilo", and that notice stands until you do. Every other field of
+`auth.json` is kept, and the file stays mode 0600. `/kilo` says
+whether you are signed in, and **Sign out** in `/kilo` takes the entry out.
 
 ## Key
 

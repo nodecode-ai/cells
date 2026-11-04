@@ -250,3 +250,17 @@ each poll interval the flow would have slept."
     (is (search "signed in as grok@example.com" (cell-entry "nodecode-xai-oauth" "xai-oauth" "")))
     (is (search "signed out" (cell-entry "nodecode-xai-oauth" "xai-oauth" "logout")))
     (is (null (nlk:json-value (nle::read-auth-file nle::*auth-file-path*) :object "oauth_tokens" "xai-oauth")))))
+
+;;; --- /xai-oauth typed alone --------------------------------------------------------------
+
+(deftest XAI-OAUTH-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((xai-oauth-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-xai-oauth" "xai-oauth" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/xai-oauth login" "/xai-oauth logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
+          (is (equal 'NIL
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-xai-oauth" "xai-oauth" "frobnicate"))))))

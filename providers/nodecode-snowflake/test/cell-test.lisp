@@ -376,3 +376,17 @@ against a temp auth.json AUTH, URL its authorization address and POSTS the
         (nle::call-provider (user-context)))
       (is (equal "https://api.anthropic.com/v1/messages" url))
       (is (equal "sk-ant" (sf-header headers "x-api-key"))))))
+
+;;; --- /snowflake typed alone --------------------------------------------------------------
+
+(deftest SNOWFLAKE-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((snowflake-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-snowflake" "snowflake" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/snowflake login" "/snowflake logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
+          (is (equal '("/snowflake login" "/snowflake code")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-snowflake" "snowflake" "frobnicate"))))))

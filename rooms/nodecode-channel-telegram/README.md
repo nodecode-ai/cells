@@ -187,8 +187,8 @@ them.
   always talk to the bot.
 - With `pairing` on (the default), someone no list names who writes to the
   bot in a private chat gets a pairing code, and you are told.
-  `/channels pair CODE` lets them in; `/channels paired` lists who is in and
-  `/channels unpair USER-ID` takes someone out.
+  `/channels` lets them in with it (**Let someone in**), lists who is in
+  (**Who is paired**) and takes someone out (**Take back** beside their name).
 
 ## Configuration
 

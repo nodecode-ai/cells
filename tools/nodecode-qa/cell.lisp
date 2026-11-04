@@ -21,7 +21,6 @@
 (in-package #:nodecode-qa)
 
 (defparameter +tool-name+ "report_issue")
-(defparameter +usage+ "/qa [show | send | notes | push | clear]")
 (defparameter +period-seconds+ (* 7 24 60 60)
   "How often a page goes: once a week.")
 (defparameter +retry-seconds+ (* 60 60)
@@ -67,7 +66,7 @@
     (keep-note (issue-report-tool report)
                (issue-report-symptom report)
                (issue-report-note report))
-    "noted, thanks: kept on this machine for the operator (/qa notes)"))
+    "noted, thanks: kept on this machine for the operator (/qa lists them)"))
 
 ;;; --- the collector ------------------------------------------------------------
 
@@ -117,7 +116,7 @@ ANSWER names, `HTTP 400: rounds.0.ttft_ms: Invalid input'."
        t))
 
 (defparameter +unanswered+
-  "not answered yet: choose weekly or never in /settings, Diagnostics, or set qa.share in config.jsonc"
+  "not answered yet: weekly or never, in /settings, Diagnostics"
   "What /qa and /qa send say before qa.share has an answer: the surface that
 asks it.")
 
@@ -255,12 +254,12 @@ turn, never on the weekly page."
   ;; Tool, symptom, note, provider and model ride; no session, turn, time or
   ;; id does.
   (unless *operator*
-    (fail "notes leave only by /qa push, the operator's own act"))
+    (fail "notes leave only from /qa, the operator's own act"))
   (when (setting :off-by-env)
     (fail "NODECODE_QA turns sharing off in this environment"))
   (let* ((notes (or (remove-if #'pushed-p (read-notes))
                     (fail "no unpushed notes: a note is what the model files with report_issue ~
-                           when one of its tools misbehaves, and none is waiting; /qa notes lists ~
+                           when one of its tools misbehaves, and none is waiting; /qa lists ~
                            what is kept")))
          (url (format nil "~a/api/qa/notes" (setting :url)))
          (body (nlk:encode-json-object
@@ -298,21 +297,34 @@ turn, never on the weekly page."
 
 ;;; --- /qa ---------------------------------------------------------------
 
+(defun panel (summary)
+  "The dialog bare /qa answers: SUMMARY, sharing as it stands, over a row
+for each thing it does -- the next page shown or sent, the model's notes
+listed, shipped by hand or dropped."
+  (nle:list-dialog
+   :title "QA" :summary summary
+   :rows (list (nle:run-row "Show the next page" "/qa show" :detail "exactly as it would go")
+               (nle:run-row "Send it now" "/qa send" :detail "instead of at the week's end")
+               (nle:run-row "The model's notes" "/qa notes" :detail "what it filed through report_issue, newest first")
+               (nle:run-row "Ship the notes' text" "/qa push" :detail "by hand, after reading them")
+               (nle:run-row "Drop the notes" "/qa clear" :detail "nothing of them is sent"))))
+
 (defun run-slash (args session-id)
-  "The answer to one /qa invocation."
+  "The answer to one /qa invocation: typed alone, sharing as it stands and
+its panel."
   (declare (ignore session-id))
   (let* ((words (nlk:split-words args))
          (head (first words))
          (*operator* t))
     (nlk:with-handlers ((qa-error (condition)
                           (format nil "qa: ~a" condition)))
-      (cond ((null head) (status-line))
+      (cond ((null head) (let ((line (status-line))) (values line (panel line))))
             ((string= head "show") (show))
             ((string= head "send") (send))
             ((string= head "notes") (notes))
             ((string= head "push") (push-notes))
             ((string= head "clear") (clear-notes))
-            (t (format nil "qa: unknown subcommand ~a; usage ~a" head +usage+))))))
+            (t (values (format nil "qa: ~a is not one of its choices" head) (panel (status-line))))))))
 
 ;;; --- the entry: the one declaration -------------------------------------------
 
@@ -329,7 +341,7 @@ none, and sends only when a period has passed since the last page."
 
 (nle:define-cell qa
   (:section ("qa")
-    (:guide "Once a week the organism can send nodecode.ai one page of counts: the build and platform, requests and failures per provider and model, calls and errors per tool, crashes; never a prompt, a path, a file, a hostname or an id that follows this install; /qa show prints the next page exactly as it would go; share weekly sends it, never keeps everything on this machine; the choice is asked once, and NODECODE_QA=0 turns sending off whatever it says")
+    (:guide "Once a week the organism can send nodecode.ai one page of counts: the build and platform, requests and failures per provider and model, calls and errors per tool, crashes; never a prompt, a path, a file, a hostname or an id that follows this install; /qa shows the next page exactly as it would go; share weekly sends it, never keeps everything on this machine; the choice is asked once, and NODECODE_QA=0 turns sending off whatever it says")
     ("share" :choice :required t :options '("weekly" "never")
              :doc "weekly sends one page of counts to nodecode.ai; never keeps it all here")
     ("url" :string :default (collector-root)
@@ -349,8 +361,7 @@ none, and sends only when a period has passed since the last page."
                (list* :off-by-env (env-off-p) values)))
   (:tool +tool-name+ (nlk:contract 'issue-report) 'report-issue)
   (:command "qa" 'run-slash
-            :description "What leaves this machine: the next page, the notes, the switch"
-            :argument-hint "show | send | notes | push | clear")
+            :description "What leaves this machine: the next page, the notes, the switch")
   (:start (lambda ()
             (setf *last-error* nil)
             ;; A page may go at all only when sharing is weekly and the

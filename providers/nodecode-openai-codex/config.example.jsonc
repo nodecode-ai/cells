@@ -1,6 +1,6 @@
 // The section ~/.nodecode/config.jsonc may carry for this cell --
 // documentation, not config. A present section is enabled; "enabled": false
-// vetoes it. The sign-in lives in auth.json (/openai-codex login), or a token
+// vetoes it. The sign-in lives in auth.json (/openai-codex), or a token
 // in OPENAI_CODEX_OAUTH_TOKEN.
 {
   "openai-codex": {

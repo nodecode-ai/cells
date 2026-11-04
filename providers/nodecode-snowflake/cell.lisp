@@ -127,9 +127,9 @@ clear what the cell said."
 
 (nle:define-cell snowflake
   (:section ("snowflake")
-    (:guide "sign in with /snowflake login ACCOUNT (a browser; ACCOUNT is orgname-accountname or the account URL), or save a programmatic access token with /connect or SNOWFLAKE_PAT and name the account here or in SNOWFLAKE_ACCOUNT")
+    (:guide "sign in from /snowflake (a browser, to an account: orgname-accountname or its URL), or save a programmatic access token with /connect or SNOWFLAKE_PAT and name the account here or in SNOWFLAKE_ACCOUNT")
     ("account" :string
-     :doc "the account identifier (orgname-accountname) or URL a PAT is sent to, and /snowflake login signs in to by default (else SNOWFLAKE_ACCOUNT)"))
+     :doc "the account identifier (orgname-accountname) or URL a PAT is sent to, and /snowflake signs in to by default (else SNOWFLAKE_ACCOUNT)"))
   (:start #'start)
   (:hook 'nle::models-catalog-table #'catalog)
   (:hook 'nle::list-provider-models #'listing)
@@ -138,7 +138,5 @@ clear what the cell said."
   (:hook 'nle::request-body #'chat)
   (:hook 'nle::walk-provider-stream #'walk)
   (:command "snowflake" 'run-command
-            :description "Snowflake Cortex sign-in: login [ACCOUNT], code ADDRESS, logout, status"
-            :argument-hint "login [ACCOUNT] | code ADDRESS | logout | status"
-            :session nil
-            :complete 'complete-command))
+            :description "Sign in to Snowflake Cortex in the browser, or out"
+            :session nil))

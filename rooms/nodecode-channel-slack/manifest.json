@@ -16,8 +16,7 @@
     "slash_commands": [
       {
         "command": "/nodecode",
-        "description": "Run a Nodecode command",
-        "usage_hint": "help | models | stop",
+        "description": "Every Nodecode command, a press away",
         "should_escape": false
       }
     ]

@@ -14,8 +14,9 @@ Then ask nodecode to "check my site for the latest breaches", or:
 (security:show "php2shell")                                  ; the fix, the stopgap, the signs
 ```
 
-`/security`, `/security check /var/www/site example.com`, `/security show ID` do the same
-from any shell or chat room.
+`/security` does the same from any shell or chat room: a row per advisory opens
+its fix, **Check this machine** checks it, **Check a site or a server** asks for
+a folder like `/var/www/site`, a host like `example.com`, or both.
 
 ## What it checks
 

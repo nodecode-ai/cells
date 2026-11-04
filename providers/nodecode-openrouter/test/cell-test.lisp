@@ -252,4 +252,18 @@ model omp bundles no row for.")
 (deftest openrouter-cell-without-a-sign-in-a-paste-says-so ()
   (with-cell-stop ((openrouter-start))
     (is (search "No sign-in" (nodecode-openrouter::run-command "code abc" "s1")))
-    (is (search "Usage" (nodecode-openrouter::run-command "frobnicate" "s1")))))
+    (is (search "not one of its choices" (nodecode-openrouter::run-command "frobnicate" "s1")))))
+
+;;; --- /openrouter typed alone --------------------------------------------------------------
+
+(deftest OPENROUTER-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((openrouter-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-openrouter" "openrouter" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/openrouter login" "/openrouter logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
+          (is (equal '("/openrouter code")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-openrouter" "openrouter" "frobnicate"))))))
