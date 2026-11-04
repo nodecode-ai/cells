@@ -229,8 +229,9 @@ in someone else's thread answers."
 
 (defun slack-command-candidate (payload)
   "A slash command PAYLOAD -- the app's one command, /nodecode, and what was
-typed after it -- as the candidate for the command line it spells: `/nodecode
-models grok' is `/models grok', a bare `/nodecode' is `/help'."
+typed after it -- as the candidate for the command it names: `/nodecode
+models' is `/models', and a bare `/nodecode' is `/help', whose card names
+every command."
   ;; Addressed by construction: the person picked this app's command. The
   ;; source carries the response_url, the return path the platform's
   ;; PLAN-RESPOND answers through; a command is not a message and has no id.
@@ -313,10 +314,57 @@ which Slack hands back only as rich text (NCS:PRESSED-WORDS)."
           "pressed" t
           "press_data" (getf press :data)
           "response_url" (nlk:json-value payload :string "response_url")
+          ;; what opens a modal, for three seconds: a row that asks (ASK-MODAL-PLAN)
+          "trigger_id" (nlk:json-value payload :string "trigger_id")
           ;; a private answer's card: what answers a press on it stays private
           "card_ephemeral" (nlk:json-value payload :boolean "container" "is_ephemeral")
           "reply_to_message_id" (getf press :message-id)
           "card_text" (or card-text (nlk:json-value payload :string "message" "text"))
+          "addressed" t
+          "is_bot" nil))))))
+
+(defparameter +ask-callback+ "nck-ask"
+  "The callback_id of the modal a row that asks for its text opens
+(ASK-MODAL-PLAN), by which its submit is known.")
+
+(defun slack-ask-candidate (payload &aux (view (nlk:json-value payload :object "view"))
+                                         (kept (ignore-errors
+                                                (nlk:decode-json (nlk:json-value view :string "private_metadata")))))
+  "A view_submission PAYLOAD -- the modal a press on a row that asks for its
+text opened (ASK-MODAL-PLAN), submitted -- as the candidate it is: the
+presser saying the row's line with what they typed after it (ASKED-LINE),
+where the card was pressed, answered in place of it as the press would
+have been, and asking nothing again. NIL for any other view, or one
+submitted empty."
+  ;; The modal is no message: where the card was, and its return path, ride
+  ;; in the view's private_metadata, which the press wrote.
+  (when (and (equal "view_submission" (nlk:json-value payload :string "type"))
+             (equal +ask-callback+ (nlk:json-value view :string "callback_id"))
+             (hash-table-p kept))
+    (let* ((data (nlk:json-value kept :string "data"))
+           (line (asked-line data (nlk:json-value view :string "state" "values" "ask" "text" "value")))
+           (channel (nlk:json-value kept :string "channel"))
+           (thread (nlk:json-value kept :string "thread"))
+           (kind (and channel (slack-chat-kind nil channel))))
+      (when (and line channel)
+        (nlk:json-object
+         "text" line
+         "source"
+         (nlk:json-object
+          "platform" "slack"
+          "chat_kind" (if (and thread (not (equal kind "direct_message"))) "thread" kind)
+          "workspace_id" (or (nlk:json-value payload :string "team" "id")
+                             (nlk:json-value payload :string "user" "team_id"))
+          "channel_id" channel
+          "user_id" (nlk:json-value payload :string "user" "id")
+          "user_name" (or (nlk:json-value payload :string "user" "username")
+                          (nlk:json-value payload :string "user" "name"))
+          "pressed" t
+          "asked" t
+          "press_data" data
+          "response_url" (nlk:json-value kept :string "response_url")
+          "card_ephemeral" (nlk:json-value kept :boolean "card_ephemeral")
+          "reply_to_message_id" (nlk:json-value kept :string "card")
           "addressed" t
           "is_bot" nil))))))
 
