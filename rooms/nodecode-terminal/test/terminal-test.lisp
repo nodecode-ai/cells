@@ -51,8 +51,8 @@
     (is (eql 7 (await-exit watched)) "the sink is told the exit code")
     (is (eql 7 (nodecode-terminal:terminal-exit terminal)))
     (is (not (pid-alive-p pid)) "the shell is reaped, not left a zombie")
-    (is (null (nodecode-terminal:find-terminal (nodecode-terminal:terminal-id terminal)))
-        "an ended terminal leaves the list")))
+    (let ((id (nodecode-terminal:terminal-id terminal)))
+      (is (null (nodecode-terminal:find-terminal id)) "an ended terminal leaves the list"))))
 
 (deftest terminal-cell-shell-inherits-only-its-stdio ()
   (with-test-terminal (watched)
@@ -70,8 +70,8 @@
     (with-test-terminal (watched :cwd folder)
       (type-line (watched-terminal watched) "echo \"term=$TERM/$COLORTERM pwd=$(pwd -P)/\"")
       (is (await-text watched "term=xterm-256color/truecolor"))
-      (is (await-text watched (format nil "pwd=~a" (namestring (truename folder))))
-          "the shell starts in the folder asked for"))))
+      (let ((pwd (format nil "pwd=~a" (namestring (truename folder)))))
+        (is (await-text watched pwd) "the shell starts in the folder asked for")))))
 
 (deftest terminal-cell-backlog-replays-and-is-bounded ()
   (with-test-terminal (watched)
@@ -134,13 +134,13 @@
 
 (deftest terminal-cell-socket-refuses-a-foreign-origin (with-temp-gateway (port))
   (with-cell-stop ((terminal-start))
-    (is (= 403 (raw-gateway-status port "/api/terminal/socket"
-                                   (format nil "Host: 127.0.0.1:~d" port)
-                                   "Origin: https://evil.example"
-                                   "Upgrade: websocket" "Connection: Upgrade"
-                                   "Sec-WebSocket-Version: 13"
-                                   "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ=="))
-        "another site's page cannot open the socket")))
+    (let ((status (raw-gateway-status port "/api/terminal/socket"
+                                      (format nil "Host: 127.0.0.1:~d" port)
+                                      "Origin: https://evil.example"
+                                      "Upgrade: websocket" "Connection: Upgrade"
+                                      "Sec-WebSocket-Version: 13"
+                                      "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==")))
+      (is (= 403 status) "another site's page cannot open the socket"))))
 
 (deftest terminal-cell-socket-opens-types-and-reads (with-temp-gateway (port))
   (with-cell-stop ((terminal-start))

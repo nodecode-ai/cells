@@ -1,0 +1,62 @@
+// drive.mjs --- a real headless Chrome on /terminal/, driven over CDP.
+import { spawn } from "node:child_process";
+import { mkdirSync, writeFileSync } from "node:fs";
+const { PROFILE, PORT, TOKEN, CWD, SHOTS } = process.env;
+mkdirSync(PROFILE, { recursive: true });
+const chrome = spawn("google-chrome", ["--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+  `--user-data-dir=${PROFILE}`, "--remote-debugging-port=0", "--window-size=1100,640", "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
+const wsUrl = await new Promise((resolve, reject) => {
+  let buf = "";
+  chrome.stderr.on("data", (d) => { buf += d; const m = buf.match(/DevTools listening on (ws:\S+)/); if (m) resolve(m[1]); });
+  setTimeout(() => reject(new Error("chrome did not start")), 20000);
+});
+const browser = new WebSocket(wsUrl);
+await new Promise((r) => browser.addEventListener("open", r));
+let nextId = 1; const pending = new Map();
+browser.addEventListener("message", (e) => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); } });
+const cdp = (method, params = {}, sessionId) => new Promise((resolve) => { const id = nextId++; pending.set(id, resolve); browser.send(JSON.stringify({ id, method, params, sessionId })); });
+const { result: { targetId } } = await cdp("Target.createTarget", { url: "about:blank" });
+const { result: { sessionId } } = await cdp("Target.attachToTarget", { targetId, flatten: true });
+const page = (m, p) => cdp(m, p, sessionId);
+await page("Page.enable");
+await page("Emulation.setDeviceMetricsOverride", { width: 1100, height: 640, deviceScaleFactor: 1, mobile: false });
+const evaluate = async (expr) => (await page("Runtime.evaluate", { expression: expr, returnByValue: true })).result?.result?.value;
+const screenText = () => evaluate(`(() => { const t = window.nodecodeTerminal?.term; if (!t) return ""; const b = t.buffer.active; let s = ""; for (let i = 0; i < b.length; i++) s += b.getLine(i).translateToString(true) + "\\n"; return s; })()`);
+const waitFor = async (needle, ms = 8000) => { const end = Date.now() + ms; while (Date.now() < end) { if ((await screenText()).includes(needle)) return true; await new Promise((r) => setTimeout(r, 100)); } return false; };
+const check = (name, ok, detail) => console.log(`${ok ? "ok  " : "FAIL"} ${name}${!ok && detail ? ` (${detail})` : ""}`);
+const type = async (text) => { await page("Input.insertText", { text }); };
+const enter = async () => { await page("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" }); await page("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 }); };
+const shot = async (name) => { const { result } = await page("Page.captureScreenshot", { format: "png" }); writeFileSync(`${SHOTS}/${name}.png`, Buffer.from(result.data, "base64")); };
+
+const url = `http://127.0.0.1:${PORT}/terminal/#cwd=${encodeURIComponent(CWD)}&t=${TOKEN}`;
+await page("Page.navigate", { url });
+check("the page shows a login shell's prompt in the folder asked for", await waitFor("@e2e:~/project$"), (await screenText()).slice(0, 200));
+await type("echo hello-$((6*7)) $(stty size)"); await enter();
+const sizeOk = await waitFor("hello-42 ");
+const text = await screenText();
+const m = text.match(/hello-42 (\d+) (\d+)/);
+check("typed keys run in the shell and its output is drawn", sizeOk);
+check("the pty is the size xterm fitted to the window", !!m && Number(m[2]) > 80 && Number(m[1]) > 20, m ? `${m[1]}x${m[2]}` : text.slice(-200));
+const hashAfter = await evaluate("location.hash");
+check("the token leaves the address bar once read", !String(hashAfter).includes("t="), hashAfter);
+await type("printf '\\033[1;32mgreen\\033[0m ✓ 日本\\n'"); await enter();
+check("colours and UTF-8 draw", await waitFor("green ✓ 日本"));
+await shot("terminal-1100x640");
+console.log("corner:", await evaluate(`(() => { const e = document.elementFromPoint(1090, 638); const s = e && getComputedStyle(e); return e ? e.tagName + '.' + e.className + ' bg=' + s.backgroundColor + ' ' + JSON.stringify(e.getBoundingClientRect()) : 'none'; })()`));
+await page("Page.reload");
+check("after a reload the same shell comes back with its screen", await waitFor("hello-42"));
+await page("Emulation.setDeviceMetricsOverride", { width: 700, height: 420, deviceScaleFactor: 1, mobile: false });
+await new Promise((r) => setTimeout(r, 600));
+await type("echo now-$(stty size | tr ' ' x)"); await enter();
+{ const end = Date.now() + 8000; while (Date.now() < end && !/now-\d+x\d+/.test(await screenText())) await new Promise((r) => setTimeout(r, 100)); }
+const after = (await screenText()).match(/now-(\d+)x(\d+)/);
+check("a smaller window resizes the pty", !!after && m && Number(after[2]) < Number(m[2]), after ? after[0] : "");
+await type("sleep 30; echo never-$((1+1))"); await enter();
+await new Promise((r) => setTimeout(r, 500));
+await page("Input.dispatchKeyEvent", { type: "keyDown", key: "c", code: "KeyC", modifiers: 2, windowsVirtualKeyCode: 67 });
+await page("Input.dispatchKeyEvent", { type: "keyUp", key: "c", code: "KeyC", modifiers: 2, windowsVirtualKeyCode: 67 });
+await type("echo rc-$?"); await enter();
+check("ctrl+c from the keyboard interrupts the job", await waitFor("rc-130", 4000) && !(await screenText()).includes("never-2"));
+await shot("terminal-700x420");
+browser.close(); chrome.kill();
+process.exit(0);
