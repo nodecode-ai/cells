@@ -1041,9 +1041,9 @@ holds, and one lane of it in room 123, torn down after BODY."
 
 (deftest channel-host-models-aux-in-a-room-answers-the-auxiliary-model (with-temp-store ())
   ;; /models aux in a room is the organism's, as on a shell: it answers the
-  ;; auxiliary model with how to change it — never the room's own pick nor
-  ;; the session summary the bare /models line prints — and `default' takes
-  ;; the organism's auxiliary model out, not the room's pick.
+  ;; auxiliary model — never the room's own pick, the session summary the bare
+  ;; /models line prints, nor a line to spell — and `default' takes the
+  ;; organism's auxiliary model out, not the room's pick.
   (with-saved-globals (nle::*auxiliary-model*)
     (setf nle::*auxiliary-model* '(:provider "zeta" :model "z-model" :effort "low"))
     (with-digest-host (host nil :name "aux-command" :host-keys (:owners '("mike")))
@@ -1052,7 +1052,7 @@ holds, and one lane of it in room 123, torn down after BODY."
       (is (posted 1) "the command answers once")
       (is-carrying (content (plan-content (first (plans))))
         (is (uiop:string-prefix-p "auxiliary model: zeta/z-model (low)" content))
-        "/models aux <provider> <model> changes it" (:absent "provider: "))
+        (:absent "/models aux <") (:absent "provider: "))
       (say "/models aux default" "mike" "m2")
       (is (posted 2) "the clear answers too")
       (is (uiop:string-prefix-p "auxiliary model: same as main"

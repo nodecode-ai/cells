@@ -151,8 +151,8 @@ whole; typed alone, /channels, /sethome and /agent answer their panels too."
                       (declare (ignore args))
                       (nth-value 1 (stop-room-turn session-id)))
              "Stop the newest turn running in this room")
-    (command "sethome" 'sethome-entry
+    (command "sethome" 'sethome-command
              "Make this channel the bot's home: restarts, pairing requests and refusals are said here")
-    (command "agent" 'agent-entry
+    (command "agent" 'agent-command
              "Which agent answers here, and handing this room to another")
     (command "threads" 'board-command "Every open thread, by who moves next")))
