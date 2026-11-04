@@ -205,11 +205,25 @@ Runs *DECIDER* through the organism's own side call, so the key is the one
                              (github-advisories (format nil "type=reviewed&severity=~a" severity) since)))
          (mapcar (lambda (a) (github-item a :malware)) (github-advisories "type=malware" since))))
 
+(defparameter *claude-search-url* "https://api.anthropic.com/v1/messages"
+  "Claude's own web search: Anthropic's Messages API, asked to use its native
+`web_search' server tool.")
+
+(defparameter *claude-search-model* "claude-haiku-4-5"
+  "The model that runs Claude's search turn: the cheapest Claude that searches.")
+
 (defparameter *deepseek-search-url* "https://api.deepseek.com/anthropic/v1/messages"
   "DeepSeek's own web search: its Anthropic-format Messages endpoint, asked to use
 the native `web_search' server tool (as DeepSeek's harness does).")
 
 (defparameter *deepseek-search-model* "deepseek-v4-flash" "The model that runs DeepSeek's search turn.")
+
+(defun claude-key ()
+  "This image's Anthropic API key (provider `anthropic'), or NIL. A Claude Code
+subscription token (sk-ant-oat...) is not an API key: it answers NIL."
+  (let ((k (getf (ignore-errors (nle::resolve-provider-credential "anthropic")) :key)))
+    (and (stringp k) (> (length k) 7) (string= "sk-ant-" k :end2 7)
+         (not (search "sk-ant-oat" k)) k)))
 
 (defun deepseek-key ()
   "This image's DeepSeek API key (provider `deepseek'), or NIL."
@@ -227,12 +241,13 @@ the native `web_search' server tool (as DeepSeek's harness does).")
         (when url
           (setf (gethash url h) (list (or (str (gethash "date" o)) "") (or (str (gethash "summary" o)) ""))))))))
 
-(defun deepseek-results (body)
-  "BODY, DeepSeek's Messages answer, as ((:url :title :date :text) ...). Only
-URLs its web_search_result blocks returned are kept, so nothing it wrote from
-memory gets in; when its answer lists results (one JSON object per line:
-url, date, summary) only those are kept -- the ones it dated inside the
-window -- with its date and summary. Signals when the turn ran no search."
+(defun deepseek-results (body &optional (engine "DeepSeek"))
+  "BODY, an Anthropic-format Messages answer (Claude's or DeepSeek's), as
+((:url :title :date :text) ...). Only URLs its web_search_result blocks
+returned are kept, so nothing it wrote from memory gets in; when its answer
+lists results (one JSON object per line: url, date, summary) only those are
+kept -- the ones it dated inside the window -- with its date and summary.
+Signals when the turn ran no search; ENGINE names the search in that error."
   (let* ((obj (shasht:read-json body))
          (blocks (coerce (or (and (hash-table-p obj) (gethash "content" obj)) #()) 'list))
          (listed (deepseek-listed (format nil "~{~a~^~%~}"
@@ -241,7 +256,7 @@ window -- with its date and summary. Signals when the turn ran no search."
                                                   collect (or (str (gethash "text" b)) "")))))
          (seen (make-hash-table :test 'equal)))
     (unless (some (lambda (b) (equal (gethash "type" b) "web_search_tool_result")) blocks)
-      (error "DeepSeek ran no web search for this query"))
+      (error "~a ran no web search for this query" engine))
     (loop for b in blocks
           when (equal (gethash "type" b) "web_search_tool_result")
             nconc (loop for r across (let ((c (gethash "content" b))) (if (vectorp c) c #()))
@@ -255,35 +270,47 @@ window -- with its date and summary. Signals when the turn ran no search."
                                                          (str (gethash "page_age" r)) "")
                                                :text (or (second mine) "")))))))
 
+(defun messages-search (engine url key model query since)
+  "News about QUERY since SINCE through ENGINE's own web search: one
+Anthropic-format Messages turn at URL on MODEL with the native `web_search'
+server tool. KEY rides as x-api-key."
+  (multiple-value-bind (body status)
+      (nlk:http "POST" url
+                :headers `(("x-api-key" . ,key) ("anthropic-version" . "2023-06-01")
+                           ("content-type" . "application/json"))
+                :content (shasht:write-json
+                          (json-object
+                           `(("model" . ,model)
+                             ("max_tokens" . 4096)
+                             ("messages" . ,(vector (json-object
+                                                     `(("role" . "user")
+                                                       ("content" . ,(format nil "Search the web for news published on or after ~a about: ~a. Then answer with one line per result your search returned that was published on or after ~a, each line one JSON object: {\"url\": the result's URL exactly, \"date\": its publication date, \"summary\": one sentence on what happened and what to patch or rotate}. No other text." (day since) query (day since)))))))
+                             ("tools" . ,(vector (json-object '(("type" . "web_search_20250305")
+                                                                ("name" . "web_search")
+                                                                ("max_uses" . 3)))))
+                             ("thinking" . (("type" . "disabled")))))
+                          nil)
+                :timeout 120)
+    (unless (eql status 200)
+      (error "~a search answered ~a: ~a" engine status (clip (princ-to-string body) 200)))
+    ;; its own dates are not to be trusted to honour the window: one it wrote
+    ;; as a day before SINCE drops the result
+    (remove-if (lambda (r) (let ((d (getf r :date)))
+                             (and (>= (length d) 10) (digit-char-p (char d 0)) (char= (char d 4) #\-)
+                                  (string< (subseq d 0 10) (day since)))))
+               (deepseek-results body engine))))
+
+(defun claude-search (query since)
+  "News about QUERY since SINCE through Claude's own web search."
+  (let ((key (claude-key)))
+    (unless key (error "no anthropic API key"))
+    (messages-search "Claude" *claude-search-url* key *claude-search-model* query since)))
+
 (defun deepseek-search (query since)
   "News about QUERY since SINCE through DeepSeek's own web search."
   (let ((key (deepseek-key)))
     (unless key (error "no deepseek key"))
-    (multiple-value-bind (body status)
-        (nlk:http "POST" *deepseek-search-url*
-                  :headers `(("x-api-key" . ,key) ("anthropic-version" . "2023-06-01")
-                             ("content-type" . "application/json"))
-                  :content (shasht:write-json
-                            (json-object
-                             `(("model" . ,*deepseek-search-model*)
-                               ("max_tokens" . 4096)
-                               ("messages" . ,(vector (json-object
-                                                       `(("role" . "user")
-                                                         ("content" . ,(format nil "Search the web for news published on or after ~a about: ~a. Then answer with one line per result your search returned that was published on or after ~a, each line one JSON object: {\"url\": the result's URL exactly, \"date\": its publication date, \"summary\": one sentence on what happened and what to patch or rotate}. No other text." (day since) query (day since)))))))
-                               ("tools" . ,(vector (json-object '(("type" . "web_search_20250305")
-                                                                  ("name" . "web_search")
-                                                                  ("max_uses" . 3)))))
-                               ("thinking" . (("type" . "disabled")))))
-                            nil)
-                  :timeout 120)
-      (unless (eql status 200)
-        (error "DeepSeek search answered ~a: ~a" status (clip (princ-to-string body) 200)))
-      ;; its own dates are not to be trusted to honour the window: one it wrote
-      ;; as a day before SINCE drops the result
-      (remove-if (lambda (r) (let ((d (getf r :date)))
-                               (and (>= (length d) 10) (digit-char-p (char d 0)) (char= (char d 4) #\-)
-                                    (string< (subseq d 0 10) (day since)))))
-                 (deepseek-results body)))))
+    (messages-search "DeepSeek" *deepseek-search-url* key *deepseek-search-model* query since)))
 
 (defun exa-search (query since)
   "News about QUERY since SINCE through Exa's search, when this image has it through MCP."
@@ -299,41 +326,69 @@ window -- with its date and summary. Signals when the turn ran no search."
             collect (list :url url :title (or (str (gethash "title" r)) url)
                           :date (or (str (gethash "publishedDate" r)) "") :text (or (str (gethash "text" r)) "")))))
 
+(defun news-searches ()
+  "Every news search this image has, best first, as ((FUNCTION . NAME) ...),
+each FUNCTION taking (QUERY SINCE) and answering ((:url :title :date :text)
+...): Claude's own web search when an Anthropic API key resolves, DeepSeek's
+when a deepseek key does, Exa's when this image has it through MCP."
+  (append (and (claude-key) (list (cons #'claude-search "claude")))
+          (and (deepseek-key) (list (cons #'deepseek-search "deepseek")))
+          (let ((f (find-symbol "EXA/WEB-SEARCH-ADVANCED-EXA" "NODECODE-MCP")))
+            (and f (fboundp f) (list (cons #'exa-search "exa"))))))
+
 (defun news-search ()
-  "The news search this image has => (VALUES FUNCTION NAME), FUNCTION taking
-(QUERY SINCE) and answering ((:url :title :date :text) ...): DeepSeek's own web
-search when a deepseek key resolves, else Exa's through MCP, else NIL."
-  (cond ((deepseek-key) (values #'deepseek-search "deepseek"))
-        ((let ((f (find-symbol "EXA/WEB-SEARCH-ADVANCED-EXA" "NODECODE-MCP"))) (and f (fboundp f)))
-         (values #'exa-search "exa"))))
+  "The news search this image has => (VALUES FUNCTION NAME FALLBACKS): the first
+of NEWS-SEARCHES, and the rest, ((FUNCTION . NAME) ...), to try in order when
+every query fails on it; NIL when it has none."
+  (let ((all (news-searches)))
+    (when all (values (car (first all)) (cdr (first all)) (rest all)))))
 
 (defparameter *news-search* 'news-search
-  "(funcall *NEWS-SEARCH*) => (VALUES FUNCTION NAME) as NEWS-SEARCH, or NIL; tests stub it.")
+  "(funcall *NEWS-SEARCH*) => (VALUES FUNCTION NAME FALLBACKS) as NEWS-SEARCH, or
+NIL; tests stub it.")
 
 (defvar *news-engine* nil "The news search the last scan used, by name.")
 
+(defun news-with (search since)
+  "News since SINCE for each of *NEWS-QUERIES* through SEARCH => (VALUES ITEMS
+NIL), or (VALUES NIL WHY) when every query failed. A query that fails is
+passed over."
+  (let ((seen (make-hash-table :test 'equal)) (failures '()) (items '()))
+    (dolist (query *news-queries*)
+      (handler-case
+          (dolist (r (funcall search query since))
+            (let ((url (getf r :url)))
+              (unless (gethash url seen)
+                (setf (gethash url seen) t)
+                (push (item :news url (getf r :title) url
+                            (format nil "News, ~a: ~a. ~a" (getf r :date) (getf r :title) (clip (getf r :text) 1200))
+                            :ids (list url))
+                      items))))
+        (error (e) (push (princ-to-string e) failures))))
+    (if (= (length failures) (length *news-queries*))
+        (values nil (format nil "every news query failed: ~a" (clip (first failures) 160)))
+        (values (nreverse items) nil))))
+
 (defun news-items (since)
   "News since SINCE for each of *NEWS-QUERIES*, or :SKIPPED with no search. A
-query that fails is passed over; every query failing signals."
-  (multiple-value-bind (search name) (funcall *news-search*)
+search on which every query fails hands over to the next one; *NEWS-ENGINE*
+names the one that answered, and the ones that failed before it. Every search
+failing signals."
+  (multiple-value-bind (search name fallbacks) (funcall *news-search*)
     (setf *news-engine* name)
     (if (null search)
         :skipped
-        (let ((seen (make-hash-table :test 'equal)) (failures '()) (items '()))
-          (dolist (query *news-queries*)
-            (handler-case
-                (dolist (r (funcall search query since))
-                  (let ((url (getf r :url)))
-                    (unless (gethash url seen)
-                      (setf (gethash url seen) t)
-                      (push (item :news url (getf r :title) url
-                                  (format nil "News, ~a: ~a. ~a" (getf r :date) (getf r :title) (clip (getf r :text) 1200))
-                                  :ids (list url))
-                            items))))
-              (error (e) (push (princ-to-string e) failures))))
-          (when (= (length failures) (length *news-queries*))
-            (error "~a: every news query failed: ~a" name (first failures)))
-          (nreverse items)))))
+        (let ((failed '()))
+          (loop for (fn . engine) in (cons (cons search name) fallbacks)
+                do (multiple-value-bind (items why) (news-with fn since)
+                     (if why
+                         (push (format nil "~a ~a" engine why) failed)
+                         (progn (setf *news-engine*
+                                      (if failed
+                                          (format nil "~a (after ~{~a~^; ~})" engine (reverse failed))
+                                          engine))
+                                (return items))))
+                finally (error "~{~a~^; ~}" (reverse failed)))))))
 
 ;;; ---------------------------------------------------------------- malware: a count, not a model
 
