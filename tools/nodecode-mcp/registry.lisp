@@ -223,7 +223,7 @@ sign-in and keep what a call takes up again."
                                :id (awaits-sign-in-request-id condition)
                                :until (+ (now-seconds) *sign-in-wait-seconds*))
           server.state :error
-          server.error-text (format nil "~a needs a sign-in in a browser: /mcp login ~a" name name)))
+          server.error-text (format nil "~a needs a sign-in in a browser: sign ~a in from /mcp" name name)))
   (refresh-primer))
 
 (defun pending-sign-in-p (server &aux (pending server.sign-in) (client server.client))
@@ -239,7 +239,7 @@ sign-in and keep what a call takes up again."
   "What a call held on SERVER's sign-in says: the address to open, whole."
   (format nil "~a needs a sign-in in a browser: open ~a and approve it. Its command waits for the answer at ~a~
 ~:[~;, and the call it held goes through once it is signed in~]. From a browser on another machine, paste the ~
-address it lands on: /mcp login ~a ADDRESS"
+address it lands on in /mcp, under ~a's Paste where the browser landed"
           name (getf pending :url) (or (getf pending :redirect) "its own listener")
           (eq (getf pending :held) :call) name))
 

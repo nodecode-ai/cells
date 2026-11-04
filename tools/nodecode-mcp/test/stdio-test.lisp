@@ -122,7 +122,7 @@ code and URL's state (or STATE)."
       (is (< (mcp-seconds-since start) 10) "long before its 30 s deadline"))
     (let ((server (mcp-server "pay")) (url (mcp-sign-in-url "pay")))
       (is (search "pay needs a sign-in" (or server.error-text "")) "the error says what it waits for")
-      (is (search "/mcp login pay" (or server.error-text "")) "and the verb that answers it")
+      (is (search "sign pay in from /mcp" (or server.error-text "")) "and where it is answered")
       (is (uiop:string-prefix-p "https://auth.invalid/authorize?" (or url "")) "the address its command printed is kept")
       (is (and server.client (nlk:pid-live-p (mcp-probe-process "pay"))) "the command is kept: it is the one the browser answers")
       (is (search (or url "none") (mcp:status)) "status names the address whole")
