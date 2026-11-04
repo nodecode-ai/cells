@@ -4,7 +4,7 @@ A Nodecode cell for [OpenRouter](https://openrouter.ai). models.dev already
 makes OpenRouter usable on the chat lane; this cell keeps that and adds what
 oh-my-pi does:
 
-- `/openrouter login` signs in from the browser and saves the key OpenRouter
+- `/openrouter` signs in from the browser and saves the key OpenRouter
   hands back where `/connect` saves keys (`api_keys.openrouter`)
 - `/models` lists omp's bundled OpenRouter rows beside models.dev's
 - every request names the app it comes from (`HTTP-Referer`,
@@ -25,7 +25,7 @@ provider. See [NOTICE](NOTICE).
 ## Sign in
 
 ```
-/openrouter login
+/openrouter → Sign in
 ```
 
 answers at once with the address to open, and listens on
@@ -40,12 +40,12 @@ On another machine, paste the address the browser ended on, the code in it,
 or a key you made by hand:
 
 ```
-/openrouter code <address, code or sk-or-... key>
+/openrouter → Paste where the browser landed  the address the browser landed on
 ```
 
 A pasted key is checked against `/api/v1/auth/key` before it is saved. The
-key does not expire. `/openrouter status` says whether a key is saved,
-`/openrouter logout` forgets it.
+key does not expire. `/openrouter` says whether a key is saved,
+**Sign out** in `/openrouter` forgets it.
 
 Without the sign-in: make a key at <https://openrouter.ai/settings/keys>
 and save it with `/connect`, or set `OPENROUTER_API_KEY`. A saved key wins

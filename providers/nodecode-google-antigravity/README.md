@@ -3,7 +3,7 @@
 A Nodecode cell for [Antigravity](https://antigravity.google), Google's agent
 IDE, whose backend serves Gemini 3, Claude and GPT-OSS to a Google account on
 its free tier. With it, `/models` lists the models under
-`google-antigravity/`, `/google-antigravity login` signs in, and a turn on one
+`google-antigravity/`, `/google-antigravity` signs in, and a turn on one
 of them goes to `https://daily-cloudcode-pa.googleapis.com` the way omp sends
 it, as the real Antigravity client does.
 
@@ -46,17 +46,17 @@ Ported from [oh-my-pi](https://github.com/can1357/oh-my-pi)'s
 ## Sign-in
 
 ```
-/google-antigravity login                open Google's consent page
-/google-antigravity code ADDRESS         the address the browser landed on
-/google-antigravity status
-/google-antigravity logout
+/google-antigravity → Sign in                         open Google's consent page
+/google-antigravity → Paste where the browser landed  the address the browser landed on
+/google-antigravity                                   where the sign-in stands, over its rows
+/google-antigravity → Sign out
 ```
 
 `login` answers at once with Google's consent page (Antigravity's own OAuth
 client), and listens at `http://127.0.0.1:51121/oauth-callback` (another free
 port when that one is taken) for the browser to come back. When the browser
 runs on another machine than Nodecode, paste the address it lands on with
-`/google-antigravity code`. Nodecode exchanges the code, finds the account's
+**Paste where the browser landed** in `/google-antigravity`. Nodecode exchanges the code, finds the account's
 project (provisioning the free tier first when the account has none, and
 saying Google's own reason when the account cannot have it) and says once how
 it went. A failure stands as a notice until a sign-in succeeds.
@@ -71,7 +71,7 @@ The sign-in is kept in `~/.nodecode/auth.json` under
 
 `expires_at` is Google's expiry less five minutes, as omp keeps it. A round
 whose token expires within a minute refreshes it first and writes it back; a
-refresh Google refuses stands as a notice naming `/google-antigravity login`.
+refresh Google refuses stands as a notice naming `/google-antigravity`.
 No other provider's key (`GOOGLE_API_KEY` among them) is ever sent to
 Antigravity.
 

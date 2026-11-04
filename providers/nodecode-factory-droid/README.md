@@ -1,7 +1,7 @@
 # nodecode-factory-droid
 
 A Nodecode cell for [Factory Droid](https://factory.ai), Factory's model
-subscription. With it, `/factory-droid login` signs in with a WorkOS device
+subscription. With it, `/factory-droid` signs in with a WorkOS device
 code, `/models` lists Factory's roster (Claude, GPT, Grok, Gemini, Kimi,
 GLM, DeepSeek, Qwen, MiniMax, ...), and a turn on `factory-droid/<model>`
 goes to Factory's LLM proxy the way oh-my-pi sends it, which is the way the
@@ -60,9 +60,9 @@ Ported from [oh-my-pi](https://github.com/can1357/oh-my-pi)'s
 ## Sign-in
 
 ```
-/factory-droid login     answers at once with the address to open and the code to enter
-/factory-droid status    signed in, as whom, the org, and when the token expires
-/factory-droid logout    forgets the sign-in
+/factory-droid → Sign in   answers at once with the address to open and the code to enter
+/factory-droid             signed in, as whom, the org, and when the token expires
+/factory-droid → Sign out  forgets the sign-in
 ```
 
 The device code is asked of WorkOS (`api.workos.com/user_management`) with
