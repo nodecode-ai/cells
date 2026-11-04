@@ -186,7 +186,7 @@ WORDS PANEL CONTROLS)."
     (is (not (nck::setup-owner-p host "999")) "a team owns the app, not its placeholder owner"))
   (let ((said (ncd::discord-setup-card (test-host) nil '() (nlk:json-object "user_id" "300"))))
     (is (search "Run /channels setup in a channel of the server" said) "a direct message has no server to pick from"))
-  (is (search "runs in a room of the channel" (nck::channels-command "setup" nil)))
+  (is (search "a channel is set up from a room of its own" (nck::channels-command "setup" nil)))
   (is (search "setup |" (nck::channels-command "nope" nil)) "the usage names it"))
 
 (deftest channel-discord-setup-passes-the-gate-for-operators-alone ()

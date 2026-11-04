@@ -88,15 +88,10 @@ adapter and the fake gateway have stopped."
                           \"member\":{\"user\":{\"id\":\"42\",
                                                 \"username\":\"kim\"}}}}")
         (control-json
-          "{\"op\":0,\"t\":\"INTERACTION_CREATE\",\"s\":4,\"d\":{\"id\":\"i9\",\"token\":\"tok\",\"type\":3,\"guild_id\":\"g1\",\"channel_id\":\"123\",\"data\":{\"custom_id\":\"nck:stop:discord-123-m404\",\"component_type\":2},\"member\":{\"user\":{\"id\":\"42\",\"username\":\"kim\"}},\"message\":{\"id\":\"55\"}}}")
-        (completion-json
-          "{\"op\":0,\"t\":\"INTERACTION_CREATE\",\"s\":5,\"d\":{\"id\":\"i20\",\"token\":\"tok\",\"type\":4,\"guild_id\":\"g1\",\"channel_id\":\"123\",\"data\":{\"name\":\"models\",\"options\":[{\"name\":\"args\",\"type\":3,\"value\":\"grok\",\"focused\":true}]},\"member\":{\"user\":{\"id\":\"42\",\"username\":\"kim\"}}}}")
-        (completion-aux-json
-          "{\"op\":0,\"t\":\"INTERACTION_CREATE\",\"s\":6,\"d\":{\"id\":\"i21\",\"token\":\"tok\",\"type\":4,\"guild_id\":\"g1\",\"channel_id\":\"123\",\"data\":{\"name\":\"models\",\"options\":[{\"name\":\"args\",\"type\":3,\"value\":\"\",\"focused\":true}]},\"member\":{\"user\":{\"id\":\"42\",\"username\":\"kim\"}}}}"))
+          "{\"op\":0,\"t\":\"INTERACTION_CREATE\",\"s\":4,\"d\":{\"id\":\"i9\",\"token\":\"tok\",\"type\":3,\"guild_id\":\"g1\",\"channel_id\":\"123\",\"data\":{\"custom_id\":\"nck:stop:discord-123-m404\",\"component_type\":2},\"member\":{\"user\":{\"id\":\"42\",\"username\":\"kim\"}},\"message\":{\"id\":\"55\"}}}"))
     (with-fake-discord-lane (:reply "channel reply"
                              :scripts (list message-json message-json
-                                            interaction-json control-json completion-json
-                                            completion-aux-json)
+                                            interaction-json control-json)
                              :after ((is (adapter-threads-stopped-p "channel-discord"))))
       (is (await (:timeout 10) (car identify-box)))
       (is-present (identify (first (car identify-box))) "identify payload recorded"
@@ -149,17 +144,9 @@ adapter and the fake gateway have stopped."
         (is-plan menu :path "/applications/app1/commands")
         (is (wire-row "help" (nck:request-plan-body menu) "name"))
         (is (null (wire-row "model-aux" (nck:request-plan-body menu) "name")) "the auxiliary model is /models' own")
-        (let ((models (wire-row "models" (nck:request-plan-body menu) "name")))
-          (is-present models "/models carries the auxiliary model's form"
-            ;; Core's own usage, as the menu clips it to Discord's 100:
-            ;; a copy of the text here goes stale when core's grows.
-            (is (equal (nlk:clip (getf (find "models" (nle:slash-catalog)
-                                             :key (lambda (entry) (getf entry :name))
-                                             :test #'equal)
-                                       :usage)
-                                 100 :ellipsis "")
-                       (gethash "description"
-                                (aref (gethash "options" models) 0)))))))
+        (is (wire-row "models" (nck:request-plan-body menu) "name"))
+        (is (notany (lambda (command) (gethash "options" command)) (nck:request-plan-body menu))
+            "a command is its name: none takes an option"))
       (is-present (defer (await-plan executor :label "interaction_defer" :timeout 15))
         "held open first, so a slow command still lands"
         (is-plan defer :path "/interactions/i1/tok/callback" "type" 5))
@@ -175,30 +162,7 @@ adapter and the fake gateway have stopped."
       ;; exists, so nothing is stopped).
       (is-present (defer (await-plan executor :label "interaction_ack" :timeout 15))
         "through the press's own callback"
-        (is-plan defer :path "/interactions/i9/tok/callback" "type" 6))
-      ;; An autocomplete interaction — a slash option
-      ;; completed while it is typed — is answered on its own
-      ;; callback with the catalog's choices (the operator
-      ;; gate, and the empty answer, are the kit's own test).
-      (is-present (completed (await-plan executor :path "/interactions/i20/tok/callback"
-                                         :timeout 15))
-        "through the request's own callback"
-        (is-plan completed "type" 8)
-        (is (<= (length (nlk:json-value
-                         (nck:request-plan-body completed)
-                         :array "data" "choices"))
-                25)))
-      ;; The auxiliary model is /models' own: an empty /models argument
-      ;; offers `aux' as a choice, on its own callback.
-      (is-present (aux-menu (await-plan executor :path "/interactions/i21/tok/callback"
-                                        :timeout 15))
-        "an empty /models argument answers on its own callback"
-        (let* ((body (nck:request-plan-body aux-menu))
-               (choices (nlk:json-value body :array "data" "choices")))
-          (is (= 8 (nlk:json-value body :integer "type")))
-          (is (some (lambda (choice)
-                      (equal "aux" (nlk:json-value choice :string "value")))
-                    (coerce choices 'list)) "aux is offered while the tail could still be it"))))))
+        (is-plan defer :path "/interactions/i9/tok/callback" "type" 6)))))
 
 (deftest channel-discord-edit-answers-end-to-end ()
   ;; Without this, a message edited to involve the bot would be dropped on
@@ -364,8 +328,8 @@ adapter and the fake gateway have stopped."
 
 (deftest channel-discord-dispatch-hands-a-reaction-to-the-kit ()
   ;; The wiring, which neither the route nor the kit handler sees on its
-  ;; own: a reaction dispatch falls past the message, interaction, control
-  ;; and autocomplete routes and reaches REACTION-NOTICED as the candidate
+  ;; own: a reaction dispatch falls past the message, interaction and
+  ;; control routes and reaches REACTION-NOTICED as the candidate
   ;; the reaction route built. Left on a message no lane of ours holds, it
   ;; costs nothing — which is also why this needs no delivery pool.
   (let* ((host (nck:make-channel-host

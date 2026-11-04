@@ -51,8 +51,8 @@
    ;; ingress normalization
    #:route-discord-message #:route-discord-message-update #:route-discord-thread-restatement
    #:route-discord-interaction #:route-discord-control
-   #:route-discord-autocomplete #:route-discord-reaction
-   #:interaction-autocomplete-plans #:discord-inbound-policy
+   #:route-discord-reaction
+   #:interaction-modal-plan #:discord-inbound-policy
    ;; what addresses the bot: its user id, and the roles it itself holds
    #:discord-self-role-ids #:note-self-roles #:*self-role-ids*
    ;; ...kept in step with the gateway, and which roles reach which bots
