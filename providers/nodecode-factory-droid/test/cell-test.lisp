@@ -123,7 +123,7 @@ the credential is the sign-in AUTH (auth.json text) holds."
                                    (values "{\"error\":{\"type\":\"authentication_error\"}}" 401))
           (multiple-value-bind (verdict words) (nle::provider-key-check "factory-droid" "fk-wrong")
             (is (eq :unchecked verdict))
-            (is (search "/factory-droid login" words)))
+            (is (search "/factory-droid" words)))
           (is (null asked) "nothing was asked")
           (multiple-value-bind (rows reason) (nle::list-provider-models "factory-droid")
             (is rows)
@@ -143,7 +143,7 @@ the credential is the sign-in AUTH (auth.json text) holds."
     (with-temp-auth (auth "{}")
       (let ((nle::*provider* "factory-droid") (nle::*model* "kimi-k3") (nle::*api-key* nil)
             (nle::*auth-file-path* (pathname auth)))
-        (is (search "Run /factory-droid login"
+        (is (search "/factory-droid signs in"
                     (princ-to-string (signals-error nle::provider-error (nle::call-provider (user-context))))))))))
 
 (deftest factory-droid-cell-chat-round-carries-factory-identity ()
@@ -511,3 +511,20 @@ each poll interval the flow would have slept."
                 (cell-entry "nodecode-factory-droid" "factory-droid" "")))
     (is (search "signed out" (cell-entry "nodecode-factory-droid" "factory-droid" "logout")))
     (is (null (nlk:json-value (nle::read-auth-file nle::*auth-file-path*) :object "oauth_tokens" "factory-droid")))))
+
+;;; --- /factory-droid typed alone --------------------------------------------------------------
+
+(deftest FACTORY-DROID-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((factory-droid-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-factory-droid" "factory-droid" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/factory-droid login" "/factory-droid logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)))
+              "a row runs each line")
+          (is (equal 'NIL
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows)))
+              "a row asks for the text a line takes")))
+      (is (search "not one of its choices" (cell-entry "nodecode-factory-droid" "factory-droid" "frobnicate"))
+          "a word it does not know answers the panel, not a usage line"))))

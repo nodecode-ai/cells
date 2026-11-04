@@ -244,7 +244,7 @@ reason and usage, and the end-of-stream trailer."
         (is (null (cell-notice "nodecode-devin")))
         (is (signals-error nle::credential-error
               (nle::resolve-provider-credential "devin" :auth-path auth :endpoint "https://server.codeium.com")))
-        (is (search "/devin login" (or (second (cell-notice "nodecode-devin")) ""))))
+        (is (search "/devin" (or (second (cell-notice "nodecode-devin")) ""))))
       (with-stubbed-fdefinition (nle::credential-env (name) (and (equal name "DEVIN_API_KEY") "dk-env"))
         (is (equal "dk-env" (nle:credential-key (nle::resolve-provider-credential
                                                  "devin" :auth-path auth :endpoint "https://server.codeium.com"))))))))
@@ -545,7 +545,7 @@ answer (values BODY STATUS) instead."
             (nle::*auth-file-path* auth))
         (with-stubbed-fdefinition (dex:post (url &rest args) (error "no exchange may happen: ~a" url))
           (let ((condition (signals-error nle::provider-config-error (dv-lane-round (user-context)))))
-            (is (search "/devin login" (nle::provider-error-detail condition)))))))))
+            (is (search "/devin" (nle::provider-error-detail condition)))))))))
 
 ;;; --- the roster ------------------------------------------------------------------------
 
@@ -678,3 +678,20 @@ model, a router, an internal slot and a disabled model."
                    200))
         (nle::call-provider-streaming (user-context)))
       (is (equal "swe-1-6" (nlk:json-value body :string "model"))))))
+
+;;; --- /devin typed alone --------------------------------------------------------------
+
+(deftest DEVIN-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((devin-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-devin" "devin" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/devin login" "/devin logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)))
+              "a row runs each line")
+          (is (equal '("/devin code")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows)))
+              "a row asks for the text a line takes")))
+      (is (search "not one of its choices" (cell-entry "nodecode-devin" "devin" "frobnicate"))
+          "a word it does not know answers the panel, not a usage line"))))

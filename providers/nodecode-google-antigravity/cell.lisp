@@ -78,10 +78,10 @@ with its project, else nothing to send."
                             (signin-failed (refusal)
                               ;; stands until a sign-in succeeds: the model
                               ;; keeps seeing why its rounds cannot go
-                              (nle:notice (format nil "~a: the sign-in could not be refreshed (~a); run /~a login"
+                              (nle:notice (format nil "~a: the sign-in could not be refreshed (~a); /~a signs in again"
                                                   +provider+ refusal +provider+)
                                           :level :warning :key +key+)
-                              (nle::credential-fail "~a; run /~a login" refusal +provider+)))
+                              (nle::credential-fail "~a; /~a signs in again" refusal +provider+)))
                           entry)))
           (nle:make-credential (nlk:json-value entry :text "access_token") :oauth
                                (list :project-id (nlk:json-value entry :text "project_id")
@@ -321,7 +321,7 @@ finish reason. => (values MESSAGE USAGE FINISH-REASON REQUEST-JSON)"
       (unless (and token project)
         (error 'nle::provider-config-error
                :status 401
-               :detail (format nil "Antigravity is not signed in: run /~a login" +provider+)))
+               :detail (format nil "Antigravity is not signed in: /~a signs in again" +provider+)))
       ;; the backend gates newer models on the client version
       (ensure-version)
       (let ((*round* (make-round :provider (nle::effective-provider-config-provider config)
@@ -393,7 +393,7 @@ never read as one that works."
                                     :display (nlk:json-value row :string "name")
                                     :context-window (nlk:json-value row :integer "context")))
               (and (getf keys :key)
-                   (format nil "~a signs in with Google, so a key is not checked: run /~a login"
+                   (format nil "~a signs in with Google, so a key is not checked: /~a signs in again"
                            +provider+ +provider+)))
       (apply next provider keys)))
 
@@ -407,7 +407,7 @@ never read as one that works."
                    +provider+ (nlk:json-value entry :text "email")
                    (nlk:json-value entry :text "project_id") *flow*))
           (*flow* (format nil "~a: a sign-in is in progress" +provider+))
-          (t (format nil "~a: not signed in; /~a login signs in with Google" +provider+ +provider+)))))
+          (t (format nil "~a: not signed in; /~a signs in with Google" +provider+ +provider+)))))
 
 (defun logout ()
   "Forget the kept sign-in."
@@ -416,25 +416,30 @@ never read as one that works."
   (nle:notice nil :key +key+)
   (format nil "~a: signed out" +provider+))
 
+(defun panel (summary)
+  "The dialog bare /google-antigravity answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "Antigravity" :summary summary
+   :rows (list (nle:run-row "Sign in" "/google-antigravity login" :detail "in the browser, with a Google account")
+               (nle:ask-row "Paste where the browser landed" "Address" "/google-antigravity code"
+                            :placeholder "the address the browser landed on" :verb "sign in"
+                            :detail "when the browser cannot reach this machine")
+               (nle:run-row "Sign out" "/google-antigravity logout" :detail "forget the kept sign-in, or end one in progress"))))
+
 (defun run-slash (args session-id)
-  "/google-antigravity login | code ADDRESS | logout | status"
+  "/google-antigravity typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let* ((trimmed (nlk:trimmed (or args "")))
          (space (position-if (lambda (char) (member char '(#\Space #\Tab))) trimmed))
-         (verb (string-downcase (if (plusp (length trimmed)) (subseq trimmed 0 space) "status")))
+         (verb (string-downcase (if (plusp (length trimmed)) (subseq trimmed 0 space) "")))
          (rest (if space (nlk:trimmed (subseq trimmed space)) "")))
-    (cond ((equal verb "login") (login nle::*auth-file-path*))
+    (cond ((equal verb "") (let ((text (status))) (values text (panel text))))
+          ((equal verb "login") (values (login nle::*auth-file-path*) (panel (status))))
           ((equal verb "code") (paste rest))
           ((equal verb "logout") (logout))
           ((equal verb "status") (status))
-          (t (format nil "usage: /~a login | code ADDRESS | logout | status" +provider+)))))
-
-(defun complete-slash (text session-id)
-  "The verbs /google-antigravity takes, those that start with TEXT."
-  (declare (ignore session-id))
-  (loop for verb in '("login" "code" "logout" "status")
-        when (uiop:string-prefix-p (string-downcase (nlk:trimmed (or text ""))) verb)
-          collect (list :name verb :value verb)))
+          (t (values (format nil "google-antigravity: ~a is not one of its choices" verb) (panel (status)))))))
 
 (defun start ()
   "Register the lane; on the way down, take it out, end a sign-in in progress
@@ -447,7 +452,7 @@ and clear what it said."
 
 (nle:define-cell google-antigravity
   (:section ("google-antigravity")
-    (:guide "sign in with /google-antigravity login (a Google account on Antigravity's free tier); base_url is where Antigravity's Cloud Code Assist is served, endpoint_mode which of its hosts a round uses")
+    (:guide "sign in from /google-antigravity (a Google account on Antigravity's free tier); base_url is where Antigravity's Cloud Code Assist is served, endpoint_mode which of its hosts a round uses")
     ("base_url" :string :default +base+
      :doc "the Cloud Code Assist base the lane appends /v1internal:streamGenerateContent to")
     ("endpoint_mode" :choice :options '("auto" "production" "sandbox") :default "auto"
@@ -460,6 +465,4 @@ and clear what it said."
   (:hook 'nle::list-provider-models #'listing)
   (:command "google-antigravity" 'run-slash
    :description "Sign in to Antigravity, or out"
-   :argument-hint "login | code ADDRESS | logout | status"
-   :session nil
-   :complete 'complete-slash))
+   :session nil))

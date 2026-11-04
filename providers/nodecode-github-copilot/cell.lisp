@@ -236,7 +236,7 @@ goes to the account's host."
         (when (member key '(nil "" "public") :test #'equal)
           (error 'nle::provider-config-error
                  :status 401
-                 :detail "GitHub Copilot is not signed in: run /github-copilot login, or set COPILOT_GITHUB_TOKEN to a GitHub token"))
+                 :detail "GitHub Copilot is not signed in: /github-copilot signs in, or set COPILOT_GITHUB_TOKEN to a GitHub token"))
         (multiple-value-bind (token envelope-enterprise envelope-endpoint) (parse-api-key key)
           (let* ((lane (nle::effective-provider-config-lane config))
                  (enterprise (or envelope-enterprise (nle::credential-attribute config :copilot-enterprise)))
@@ -309,7 +309,7 @@ host with Copilot's headers. => (values ROWS ERROR), never a signal."
                              (ignore-errors (nle::resolve-provider-credential provider :endpoint asked))))
              (token (parse-api-key (nle:credential-key credential))))
         (if (member token '(nil "" "public") :test #'equal)
-            (values nil "not signed in: /github-copilot login")
+            (values nil "not signed in: /github-copilot signs in")
             (multiple-value-bind (text status)
                 (handler-case (exchange :get (or (getf (nle:credential-attributes credential) :endpoint) asked)
                                         :headers (discovery-headers token)
@@ -336,7 +336,7 @@ host with Copilot's headers. => (values ROWS ERROR), never a signal."
           ((env-key)
            (format nil "github-copilot: using the GitHub token in COPILOT_GITHUB_TOKEN~:[~;; a sign-in is in progress~]" *flow*))
           (*flow* "github-copilot: a sign-in is in progress")
-          (t "github-copilot: not signed in; /github-copilot login signs in at github.com, /github-copilot login DOMAIN at a GitHub Enterprise instance"))))
+          (t "github-copilot: not signed in; /github-copilot signs in at github.com or at a GitHub Enterprise instance"))))
 
 (defun logout ()
   "Forget the kept sign-in."
@@ -345,23 +345,28 @@ host with Copilot's headers. => (values ROWS ERROR), never a signal."
   (nle:notice nil :key +key+)
   "github-copilot: signed out")
 
+(defun panel (summary)
+  "The dialog bare /github-copilot answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "GitHub Copilot" :summary summary
+   :rows (list (nle:run-row "Sign in" "/github-copilot login" :detail "at github.com, with a device code")
+               (nle:ask-row "Sign in at a GitHub Enterprise instance" "Domain" "/github-copilot login"
+                            :placeholder "the instance's domain, like github.example.com" :verb "sign in"
+                            :detail "with a device code, at your company's GitHub")
+               (nle:run-row "Sign out" "/github-copilot logout" :detail "forget the kept sign-in, or end one in progress"))))
+
 (defun run-slash (args session-id)
-  "/github-copilot login [ENTERPRISE-DOMAIN] | logout | status"
+  "/github-copilot typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let* ((words (remove "" (uiop:split-string (nlk:trimmed (or args "")) :separator '(#\Space #\Tab))
                         :test #'string=))
-         (verb (string-downcase (or (first words) "status"))))
-    (cond ((equal verb "login") (login (second words) nle::*auth-file-path*))
+         (verb (string-downcase (or (first words) ""))))
+    (cond ((equal verb "") (let ((text (status))) (values text (panel text))))
+          ((equal verb "login") (login (second words) nle::*auth-file-path*))
           ((equal verb "logout") (logout))
           ((equal verb "status") (status))
-          (t "usage: /github-copilot login [ENTERPRISE-DOMAIN] | logout | status"))))
-
-(defun complete-slash (text session-id)
-  "The verbs /github-copilot takes, those that start with TEXT."
-  (declare (ignore session-id))
-  (loop for verb in '("login" "logout" "status")
-        when (uiop:string-prefix-p (string-downcase (nlk:trimmed (or text ""))) verb)
-          collect (list :name verb :value verb)))
+          (t (values (format nil "github-copilot: ~a is not one of its choices" verb) (panel (status)))))))
 
 (defun start ()
   "Forget the last catalog; on the way down, end a sign-in in progress and
@@ -372,7 +377,7 @@ clear what it said."
 
 (nle:define-cell github-copilot
   (:section ("github-copilot")
-    (:guide "sign in with /github-copilot login (login DOMAIN for GitHub Enterprise), or set COPILOT_GITHUB_TOKEN to a GitHub token; base_url is where Copilot is served")
+    (:guide "sign in from /github-copilot (at github.com or a GitHub Enterprise instance), or set COPILOT_GITHUB_TOKEN to a GitHub token; base_url is where Copilot is served")
     ("base_url" :string :default +base+
      :doc "the Copilot API base: chat appends /chat/completions, Responses /responses, Messages /v1/messages"))
   (:start #'start)
@@ -385,6 +390,4 @@ clear what it said."
   (:hook 'nle::list-provider-models #'listing)
   (:command "github-copilot" 'run-slash
    :description "Sign in to GitHub Copilot, or out"
-   :argument-hint "login [ENTERPRISE-DOMAIN] | logout | status"
-   :session nil
-   :complete 'complete-slash))
+   :session nil))

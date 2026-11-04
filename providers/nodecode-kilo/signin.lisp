@@ -227,16 +227,24 @@ again, its page and code unchanged."
   "What /kilo status says of the sign-in kept at PATH."
   (let ((entry (stored-entry (ignore-errors (nle::read-auth-file path)))))
     (cond ((null entry)
-           (format nil "kilo: not signed in; /kilo login signs in with a device code~@[, ~a holds a key~]"
+           (format nil "kilo: not signed in; /kilo signs in with a device code~@[, ~a holds a key~]"
                    (some (lambda (name) (and (nle::credential-env name) name)) +env+)))
           ((expired-p entry)
-           "kilo: the sign-in has expired; /kilo login signs in again")
+           "kilo: the sign-in has expired; /kilo signs in again")
           (t (let ((expiry (nlk:json-value entry :integer "expires_at")))
                (format nil "kilo: signed in~@[; the token is good for ~d more days~]"
                        (and expiry (floor (- expiry (unix-seconds)) 86400))))))))
 
+(defun panel (summary)
+  "The dialog bare /kilo answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "Kilo Gateway" :summary summary
+   :rows (list (nle:run-row "Sign in" "/kilo login" :detail "with a device code, at Kilo")
+               (nle:run-row "Sign out" "/kilo logout" :detail "forget the kept sign-in, or end one in progress"))))
+
 (defun run-command (args session-id)
-  "/kilo login | logout | status."
+  "/kilo typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let* ((args (string-trim " " (or args "")))
          (space (position #\Space args))
@@ -248,6 +256,7 @@ again, its page and code unchanged."
                (cancel-login)
                (bt2:with-lock-held (*store-lock*) (save-entry path nil))
                "kilo: signed out; the kilo token is gone from auth.json")
-              ((member verb '("" "status") :test #'equal) (status-text path))
-              (t "usage: /kilo login | logout | status"))
+              ((equal verb "") (let ((text (status-text path))) (values text (panel text))))
+              ((string-equal verb "status") (status-text path))
+              (t (values (format nil "kilo: ~a is not one of its choices" verb) (panel (status-text path)))))
       (kilo-error (condition) (format nil "kilo: ~a" condition)))))

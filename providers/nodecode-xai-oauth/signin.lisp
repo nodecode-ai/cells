@@ -210,7 +210,7 @@ discovered token endpoint, then userinfo."
   (let ((token (nlk:json-value entry :text "refresh_token")))
     (unless token
       (error 'nle:credential-error
-             :detail "the xAI sign-in expired and holds no refresh token; run /xai-oauth login"))
+             :detail "the xAI sign-in expired and holds no refresh token; /xai-oauth signs in again"))
     (multiple-value-bind (body status)
         (exchange (token-url)
                   `(("grant_type" . "refresh_token")
@@ -219,7 +219,7 @@ discovered token endpoint, then userinfo."
                   '())
       (unless (ok-p status)
         (error 'nle:credential-error
-               :detail (format nil "xai-oauth token refresh failed: ~a ~a; run /xai-oauth login"
+               :detail (format nil "xai-oauth token refresh failed: ~a ~a; /xai-oauth signs in again"
                                status (excerpt body))))
       (with-userinfo (token-entry body entry)))))
 
@@ -393,22 +393,25 @@ on a thread of its own."
                      (or (nlk:json-value entry :string "email")
                          (nlk:json-value entry :string "account_id"))
                      (and (plusp left) (ceiling left 60)))))
-          (t "xAI Grok: not signed in; /xai-oauth login starts the sign-in"))))
+          (t "xAI Grok: not signed in; /xai-oauth starts the sign-in"))))
+
+(defun panel (summary)
+  "The dialog bare /xai-oauth answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "xAI Grok" :summary summary
+   :rows (list (nle:run-row "Sign in" "/xai-oauth login" :detail "with a device code, with SuperGrok or X Premium+")
+               (nle:run-row "Sign out" "/xai-oauth logout" :detail "forget the kept sign-in, or end one in progress"))))
 
 (defun run-command (args session-id)
-  "/xai-oauth ARGS: login, logout or status."
+  "/xai-oauth typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let ((verb (string-downcase (or (first (uiop:split-string (nlk:trimmed (or args ""))
                                                              :separator '(#\Space #\Tab)))
                                    ""))))
     (cond ((equal verb "login") (login))
           ((equal verb "logout") (logout))
-          ((member verb '("" "status") :test #'equal) (status))
-          (t "usage: /xai-oauth login | logout | status"))))
+          ((equal verb "") (let ((text (status))) (values text (panel text))))
+          ((string-equal verb "status") (status))
+          (t (values (format nil "xai-oauth: ~a is not one of its choices" verb) (panel (status)))))))
 
-(defun complete-command (text session-id)
-  "What /xai-oauth's argument completes to while TEXT is typed."
-  (declare (ignore session-id))
-  (loop for verb in '("login" "logout" "status")
-        when (uiop:string-prefix-p (string-downcase (nlk:trimmed (or text ""))) verb)
-          collect (list :name verb :value verb)))

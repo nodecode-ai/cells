@@ -440,3 +440,20 @@ call; the tool's result with the answer and FINISHED."
                 (is (eql (+ now 7200 -300) (nlk:json-value entry :integer "expires_at"))))
               (is (await (:timeout 10) (assoc "claude_opus_4_8" nodecode-gitlab-duo-agent::*discovered* :test #'equal)))
               (is (search "Signed out" (nodecode-gitlab-duo-agent::run-command "logout" "s1"))))))))))
+
+;;; --- /gitlab-duo-agent typed alone --------------------------------------------------------------
+
+(deftest GITLAB-DUO-AGENT-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((gitlab-duo-agent-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-gitlab-duo-agent" "gitlab-duo-agent" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/gitlab-duo-agent login" "/gitlab-duo-agent models" "/gitlab-duo-agent logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)))
+              "a row runs each line")
+          (is (equal '("/gitlab-duo-agent code")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows)))
+              "a row asks for the text a line takes")))
+      (is (search "not one of its choices" (cell-entry "nodecode-gitlab-duo-agent" "gitlab-duo-agent" "frobnicate"))
+          "a word it does not know answers the panel, not a usage line"))))

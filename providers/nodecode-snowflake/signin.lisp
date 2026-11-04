@@ -144,11 +144,11 @@ none stands until it expires (omp's refreshSnowflakeToken)."
     (when (zerop (length refresh))
       (if (> (or (nlk:json-value entry :integer "expires_at") 0) (unix-seconds))
           (return-from refresh-entry entry)
-          (fail "Snowflake did not issue a refresh token; run /snowflake login again or use ~
+          (fail "Snowflake did not issue a refresh token; /snowflake signs in again or use ~
                  SNOWFLAKE_ACCOUNT and SNOWFLAKE_PAT")))
     (let ((account-url (handler-case (normalize-account-url (nlk:json-value entry :string "account_url"))
                          (snowflake-error ()
-                           (fail "Invalid Snowflake account; run /snowflake login again")))))
+                           (fail "Invalid Snowflake account; /snowflake signs in again")))))
       (multiple-value-bind (json status)
           (post-form (format nil "~a/oauth/token-request" account-url)
                      (form "grant_type" "refresh_token" "refresh_token" refresh "client_id" +client-id+))
@@ -176,7 +176,7 @@ keeps a token that has not expired yet, and is a credential error once it has."
                   (progn
                     (nle:notice (format nil "snowflake: ~a" condition) :level :warning :key +key+)
                     (error 'nle:credential-error
-                           :detail (format nil "snowflake: ~a; sign in again with /snowflake login"
+                           :detail (format nil "snowflake: ~a; sign in again from /snowflake"
                                            condition))))))))))
 
 ;;; --- PKCE ----------------------------------------------------------------------------
@@ -403,14 +403,14 @@ does next; the rest of the sign-in runs on a thread of its own."
           (format nil "Open this address in a browser, sign in to Snowflake and approve access:~%~%~a~%~%~
                        This machine waits ~d minutes for the browser to return to ~a. ~
                        If the browser runs elsewhere, copy the address it ends on (a page that does ~
-                       not load) and send /snowflake code ADDRESS."
+                       not load) and paste it in /snowflake."
                   (login-url login) (floor +login-seconds+ 60) redirect))))))
 
 (defun paste-code (text)
   "Hand the waiting sign-in the code the operator pasted."
   (let ((login *login*))
     (unless login
-      (fail "no sign-in is waiting; start one with /snowflake login ACCOUNT"))
+      (fail "no sign-in is waiting; start one from /snowflake"))
     (multiple-value-bind (code state) (parse-callback-input text)
       (cond ((null code) (fail "no authorization code in that; paste the whole address the browser ended on"))
             ((and state (string/= state (login-state login)))
@@ -424,7 +424,7 @@ does next; the rest of the sign-in runs on a thread of its own."
   "What /snowflake status says of the sign-in kept at PATH."
   (let ((entry (stored-entry (ignore-errors (nle::read-auth-file path)))))
     (if (null entry)
-        (format nil "snowflake: not signed in; /snowflake login ACCOUNT signs in with a browser~@[, ~a holds a PAT~]"
+        (format nil "snowflake: not signed in; /snowflake signs in with a browser~@[, ~a holds a PAT~]"
                 (and (env-key) (first +env+)))
         (let ((expiry (nlk:json-value entry :integer "expires_at")))
           (format nil "snowflake: signed in to ~a~@[; ~a~]"
@@ -436,8 +436,22 @@ does next; the rest of the sign-in runs on a thread of its own."
                                       (plusp (length (or (nlk:json-value entry :string "refresh_token") "")))))
                              (t "the token has expired and refreshes at the next round"))))))))
 
+(defun panel (summary)
+  "The dialog bare /snowflake answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "Snowflake Cortex" :summary summary
+   :rows (list (nle:run-row "Sign in" "/snowflake login" :detail "in the browser, to the account the section names")
+               (nle:ask-row "Sign in to another account" "Account" "/snowflake login"
+                            :placeholder "orgname-accountname, or the account's URL" :verb "sign in"
+                            :detail "in the browser, to the account you name")
+               (nle:ask-row "Paste where the browser landed" "Address" "/snowflake code"
+                            :placeholder "the address the browser landed on" :verb "sign in"
+                            :detail "when the browser cannot reach this machine")
+               (nle:run-row "Sign out" "/snowflake logout" :detail "forget the kept sign-in, or end one in progress"))))
+
 (defun run-command (args session-id)
-  "/snowflake login [ACCOUNT] | code ADDRESS | logout | status."
+  "/snowflake typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let* ((args (string-trim " " (or args "")))
          (space (position #\Space args))
@@ -445,21 +459,15 @@ does next; the rest of the sign-in runs on a thread of its own."
          (rest (if space (string-trim " " (subseq args space)) ""))
          (path nle::*auth-file-path*))
     (handler-case
-        (cond ((equal verb "login") (start-login rest path))
+        (cond ((equal verb "login") (values (start-login rest path) (panel (status-text path))))
               ((equal verb "code") (paste-code rest))
               ((equal verb "logout")
                (cancel-login)
                (bt2:with-lock-held (*store-lock*) (save-entry path nil))
                (nle:notice nil :key +key+)
                "snowflake: signed out; the token is gone from auth.json")
-              ((member verb '("" "status") :test #'equal) (status-text path))
-              (t "usage: /snowflake login [ACCOUNT] | code ADDRESS | logout | status"))
+              ((equal verb "") (let ((text (status-text path))) (values text (panel text))))
+              ((string-equal verb "status") (status-text path))
+              (t (values (format nil "snowflake: ~a is not one of its choices" verb) (panel (status-text path)))))
       (snowflake-error (condition) (format nil "snowflake: ~a" condition)))))
 
-(defun complete-command (text session-id)
-  "What /snowflake's argument completes to while it is typed."
-  (declare (ignore session-id))
-  (let ((typed (string-left-trim " " (or text ""))))
-    (loop for verb in '("login" "code" "logout" "status")
-          when (uiop:string-prefix-p typed verb)
-            collect (list :name verb :value verb))))

@@ -94,7 +94,7 @@ credential and a round is refused with what to do."
                (entry-credential (nlk:json-object "access_token" (some #'nle::credential-env +env+)) :env))
               ((getf op :endpoint)
                (error 'nle:credential-error
-                      :detail "openai-codex: not signed in; sign in with /openai-codex-device login"))
+                      :detail "openai-codex: not signed in; sign in from /openai-codex-device"))
               (t (nle:make-credential "public" :public))))
       (funcall next op)))
 
@@ -127,7 +127,7 @@ waiting sign-in and clear what the cell said."
 
 (nle:define-cell openai-codex-device
   (:section ("openai-codex-device")
-    (:guide "sign in with /openai-codex-device login, then type the code it shows at auth.openai.com/codex/device on any device; base_url is where the Codex backend is served; originator is the client name every request carries")
+    (:guide "sign in from /openai-codex-device, then type the code it shows at auth.openai.com/codex/device on any device; base_url is where the Codex backend is served; originator is the client name every request carries")
     ("base_url" :string :default +base+
      :doc "the Codex backend: its root, its /codex, or its /codex/responses")
     ("originator" :string :default "codex_cli_rs"
@@ -139,6 +139,5 @@ waiting sign-in and clear what the cell said."
   (:hook 'nle::walk-provider-stream #'walk)
   (:hook 'nle::note-body-wire #'note-response)
   (:command "openai-codex-device" 'run-command
-            :description "ChatGPT Plus/Pro sign-in with a device code: login, logout, status"
-            :argument-hint "login | logout | status"
+            :description "Sign in to ChatGPT Plus/Pro with a device code, or out"
             :session nil))

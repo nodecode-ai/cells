@@ -254,3 +254,20 @@
             (is (await (:timeout 10) (search "failed" (or (zai-notice) ""))))
             (is (search "missing access token" (zai-notice)))
             (is (null (nlk:json-value (nlk:decode-json (uiop:read-file-string auth)) :object "oauth_tokens")))))))))
+
+;;; --- /zai-coding-plan typed alone --------------------------------------------------------------
+
+(deftest ZAI-CODING-PLAN-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((zai-coding-plan-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-zai-coding-plan" "zai-coding-plan" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/zai-coding-plan login" "/zai-coding-plan logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)))
+              "a row runs each line")
+          (is (equal '("/zai-coding-plan code")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows)))
+              "a row asks for the text a line takes")))
+      (is (search "not one of its choices" (cell-entry "nodecode-zai-coding-plan" "zai-coding-plan" "frobnicate"))
+          "a word it does not know answers the panel, not a usage line"))))

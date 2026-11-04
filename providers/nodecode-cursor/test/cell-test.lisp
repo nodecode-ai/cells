@@ -811,7 +811,7 @@ the turn once the call is answered."
         (is (search "signed in as me@example.com" (cell-entry "nodecode-cursor" "cursor" "status")))
         (is (search "signed out" (cell-entry "nodecode-cursor" "cursor" "logout")))
         (is (null (nodecode-cursor::stored-entry (nle::read-auth-file auth))))
-        (is (search "usage: /cursor" (cell-entry "nodecode-cursor" "cursor" "bogus")))))))
+        (is (search "not one of its choices" (cell-entry "nodecode-cursor" "cursor" "bogus")))))))
 
 ;;; --- the listing and the neighbours ---------------------------------------------------------
 
@@ -874,3 +874,20 @@ the turn once the call is answered."
         (nle::call-provider-streaming (user-context)))
       (is (equal "gpt-5.4" (nlk:json-value body :string "model")))
       (is (null (cu-header headers "x-cursor-client-type"))))))
+
+;;; --- /cursor typed alone --------------------------------------------------------------
+
+(deftest CURSOR-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((cursor-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-cursor" "cursor" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/cursor login" "/cursor logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)))
+              "a row runs each line")
+          (is (equal 'NIL
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows)))
+              "a row asks for the text a line takes")))
+      (is (search "not one of its choices" (cell-entry "nodecode-cursor" "cursor" "frobnicate"))
+          "a word it does not know answers the panel, not a usage line"))))

@@ -342,7 +342,7 @@ any free port; => FLOW's redirect address."
        (handler-case
            (let ((message (sb-concurrency:receive-message (flow-mailbox flow) :timeout +login-seconds+)))
              (case (first message)
-               ((nil) (say (format nil "openrouter: the sign-in timed out after ~d minutes with no code; start again with /openrouter login"
+               ((nil) (say (format nil "openrouter: the sign-in timed out after ~d minutes with no code; start again from /openrouter"
                                    (floor +login-seconds+ 60))
                            :warning))
                (:error (say (format nil "openrouter: the sign-in failed: ~a" (second message)) :warning))
@@ -371,7 +371,7 @@ any free port; => FLOW's redirect address."
       (bt2:make-thread (lambda () (serve-callbacks flow)) :name "nodecode-openrouter callback")
       (setf (flow-thread flow)
             (bt2:make-thread (lambda () (run-flow flow)) :name "nodecode-openrouter sign-in"))
-      (format nil "Open this address and sign in to OpenRouter:~%~a~%~%The browser comes back to ~a and the sign-in finishes on its own (the same page: ~a). On another machine, paste the address the browser ends on, or a key, with~%  /openrouter code <address, code or sk-or-... key>~%The sign-in waits ~d minutes."
+      (format nil "Open this address and sign in to OpenRouter:~%~a~%~%The browser comes back to ~a and the sign-in finishes on its own (the same page: ~a). On another machine, paste the address the browser ends on, or an sk-or-... key, under Paste where the browser landed, in /openrouter.~%The sign-in waits ~d minutes."
               (flow-url flow) (flow-redirect-uri flow)
               (format nil "http://~a:~d~a" +callback-host+
                       (usocket:get-local-port (first (flow-sockets flow))) +launch-path+)
@@ -381,7 +381,7 @@ any free port; => FLOW's redirect address."
   "Hand the sign-in in flight the code (or key) TEXT carries; => what happened."
   (let ((flow *flow*))
     (if (null flow)
-        "No sign-in is waiting for a code: start one with /openrouter login, or save a key with /connect."
+        "No sign-in is waiting for a code: start one from /openrouter, or save a key with /connect."
         (let ((code (parse-callback-input text)))
           (cond ((null code)
                  "That carries no code: paste the address the browser ended on, the code in it, or an sk-or-... key.")
@@ -391,11 +391,11 @@ any free port; => FLOW's redirect address."
 (defun status ()
   "Whether OpenRouter has a key saved."
   (let ((auth (ignore-errors (nle::read-auth-file nle::*auth-file-path*))))
-    (cond (*flow* (format nil "A sign-in is waiting for the browser at ~a, or a pasted code with /openrouter code."
+    (cond (*flow* (format nil "A sign-in is waiting for the browser at ~a, or a code pasted in /openrouter."
                           (flow-redirect-uri *flow*)))
           ((nle::auth-api-key auth +provider+) "Signed in: an OpenRouter key is saved in auth.json.")
           ((env-key) "No key saved; OPENROUTER_API_KEY is set and is used.")
-          (t "Not signed in: /openrouter login, or save a key with /connect."))))
+          (t "Not signed in: /openrouter signs in, or save a key with /connect."))))
 
 (defun logout ()
   "Forget the saved key."
@@ -403,15 +403,27 @@ any free port; => FLOW's redirect address."
   (nle::save-provider-api-key +provider+ nil)
   (format nil "Signed out: the key is gone from auth.json (it stays live at OpenRouter until you delete it at ~a)." +key-page+))
 
+(defun panel (summary)
+  "The dialog bare /openrouter answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "OpenRouter" :summary summary
+   :rows (list (nle:run-row "Sign in" "/openrouter login" :detail "in the browser, for a key")
+               (nle:ask-row "Paste where the browser landed" "Key or address" "/openrouter code"
+                            :placeholder "the address the browser landed on, its code, or a key" :verb "sign in"
+                            :detail "when the browser cannot reach this machine")
+               (nle:run-row "Sign out" "/openrouter logout" :detail "forget the kept sign-in, or end one in progress"))))
+
 (defun run-command (args session-id)
-  "/openrouter login | code TEXT | logout | status."
+  "/openrouter typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let* ((text (nlk:trimmed (or args "")))
          (space (position #\Space text))
          (verb (subseq text 0 space))
          (rest (if space (nlk:trimmed (subseq text space)) "")))
-    (cond ((member verb '("" "status") :test #'string-equal) (status))
-          ((string-equal verb "login") (start-login))
+    (cond ((equal verb "") (let ((text (status))) (values text (panel text))))
+          ((string-equal verb "status") (status))
+          ((string-equal verb "login") (values (start-login) (panel (status))))
           ((string-equal verb "code") (paste rest))
           ((string-equal verb "logout") (logout))
-          (t "Usage: /openrouter login | code <address, code or key> | logout | status"))))
+          (t (values (format nil "openrouter: ~a is not one of its choices" verb) (panel (status)))))))

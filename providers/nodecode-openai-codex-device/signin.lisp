@@ -184,7 +184,7 @@ the REDIRECT it was issued for."
 refresh rule: the standard grant, form-encoded)."
   (let ((refresh (nlk:json-value entry :text "refresh_token")))
     (unless refresh
-      (fail "the saved sign-in has no refresh token; sign in again with /openai-codex-device login"))
+      (fail "the saved sign-in has no refresh token; sign in again from /openai-codex-device"))
     (multiple-value-bind (json status text)
         (post +token-url+ (form "grant_type" "refresh_token" "client_id" +client-id+
                                 "refresh_token" refresh)
@@ -219,7 +219,7 @@ keeps a token that has not expired yet, and is a credential error once it has."
               (if (> (or (entry-expiry current) 0) (unix-seconds))
                   current
                   (error 'nle:credential-error
-                         :detail (format nil "openai-codex-device: ~a; sign in again with /openai-codex-device login"
+                         :detail (format nil "openai-codex-device: ~a; sign in again from /openai-codex-device"
                                          condition)))))))))
 
 ;;; --- the device grant ------------------------------------------------------------------
@@ -308,7 +308,7 @@ keep the token, say how it went."
                                          (nlk:json-value entry :text "email")
                                          (nlk:json-value entry :text "org_name"))))
                           (return))))
-                 finally (fail "the code was not entered in time; start again with /openai-codex-device login"))
+                 finally (fail "the code was not entered in time; start again from /openai-codex-device"))
          (error (condition)
            (unless (login-cancelled login)
              (say (format nil "openai-codex-device: sign-in failed: ~a" condition) :warning))))
@@ -339,7 +339,7 @@ polling runs on a thread of its own."
   "What /openai-codex-device status says of the sign-in kept at PATH."
   (let ((entry (stored-entry (ignore-errors (nle::read-auth-file path)))))
     (if (null entry)
-        (format nil "openai-codex-device: not signed in; /openai-codex-device login signs in with a device code~@[, ~a holds a token~]"
+        (format nil "openai-codex-device: not signed in; /openai-codex-device signs in with a device code~@[, ~a holds a token~]"
                 (some (lambda (name) (and (nle::credential-env name) name)) +env+))
         (let ((expiry (entry-expiry entry)))
           (format nil "openai-codex-device: signed in~@[ as ~a~]~@[ (~a)~]~@[, workspace ~a~]~@[; ~a~]"
@@ -352,8 +352,16 @@ polling runs on a thread of its own."
                                    (floor (- expiry (unix-seconds)) 60))
                            "the token has expired and refreshes at the next round")))))))
 
+(defun panel (summary)
+  "The dialog bare /openai-codex-device answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "ChatGPT (Codex), device code" :summary summary
+   :rows (list (nle:run-row "Sign in" "/openai-codex-device login" :detail "with a device code, with a ChatGPT Plus or Pro account")
+               (nle:run-row "Sign out" "/openai-codex-device logout" :detail "forget the kept sign-in, or end one in progress"))))
+
 (defun run-command (args session-id)
-  "/openai-codex-device login | logout | status."
+  "/openai-codex-device typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let* ((args (string-trim " " (or args "")))
          (space (position #\Space args))
@@ -366,6 +374,7 @@ polling runs on a thread of its own."
                (bt2:with-lock-held (*store-lock*) (save-entry path nil))
                (say nil)
                "openai-codex-device: signed out; the openai-codex token is gone from auth.json")
-              ((member verb '("" "status") :test #'equal) (status-text path))
-              (t "usage: /openai-codex-device login | logout | status"))
+              ((equal verb "") (let ((text (status-text path))) (values text (panel text))))
+              ((string-equal verb "status") (status-text path))
+              (t (values (format nil "openai-codex-device: ~a is not one of its choices" verb) (panel (status-text path)))))
       (openai-codex-device-error (condition) (format nil "openai-codex-device: ~a" condition)))))

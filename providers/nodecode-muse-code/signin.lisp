@@ -293,22 +293,25 @@ on a thread of its own."
            (format nil "Muse Code: signed in as ~a; the key does not expire"
                    (or (nlk:json-value entry :string "email")
                        (nlk:json-value entry :string "account_id"))))
-          (t "Muse Code: not signed in; /muse-code login starts the sign-in"))))
+          (t "Muse Code: not signed in; /muse-code starts the sign-in"))))
+
+(defun panel (summary)
+  "The dialog bare /muse-code answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "Muse Code" :summary summary
+   :rows (list (nle:run-row "Sign in" "/muse-code login" :detail "with a device code, at Muse")
+               (nle:run-row "Sign out" "/muse-code logout" :detail "forget the kept sign-in, or end one in progress"))))
 
 (defun run-command (args session-id)
-  "/muse-code ARGS: login, logout or status."
+  "/muse-code typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let ((verb (string-downcase (or (first (uiop:split-string (nlk:trimmed (or args ""))
                                                              :separator '(#\Space #\Tab)))
                                    ""))))
     (cond ((equal verb "login") (login))
           ((equal verb "logout") (logout))
-          ((member verb '("" "status") :test #'equal) (status))
-          (t "usage: /muse-code login | logout | status"))))
+          ((equal verb "") (let ((text (status))) (values text (panel text))))
+          ((string-equal verb "status") (status))
+          (t (values (format nil "muse-code: ~a is not one of its choices" verb) (panel (status)))))))
 
-(defun complete-command (text session-id)
-  "What /muse-code's argument completes to while TEXT is typed."
-  (declare (ignore session-id))
-  (loop for verb in '("login" "logout" "status")
-        when (uiop:string-prefix-p (string-downcase (nlk:trimmed (or text ""))) verb)
-          collect (list :name verb :value verb)))

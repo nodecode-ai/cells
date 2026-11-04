@@ -151,7 +151,7 @@ every request pushed onto POSTS as (URL HEADERS BODY)."
            (dex:post (url &rest args) (values "{\"error\":\"invalid_grant\"}" 400)))
         (let ((refusal (handler-case (progn (nle::resolve-provider-credential "gitlab-duo" :auth-path auth) nil)
                          (nle::credential-error (condition) (princ-to-string condition)))))
-          (is (and refusal (search "/gitlab-duo login" refusal)))
+          (is (and refusal (search "/gitlab-duo" refusal)))
           (is (search "invalid_grant" refusal))
           (is (search "sign in again"
                       (or (second (assoc "nodecode-gitlab-duo" (nodecode.kernel::standing-notices) :test #'string=)) ""))))))))
@@ -319,3 +319,20 @@ every request pushed onto POSTS as (URL HEADERS BODY)."
                                  (nodecode-gitlab-duo::flow-state flow))
                          "s1")))
             (is (await (:timeout 10) (search "signed in" (or (gitlab-duo-notice) ""))))))))))
+
+;;; --- /gitlab-duo typed alone --------------------------------------------------------------
+
+(deftest GITLAB-DUO-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((gitlab-duo-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-gitlab-duo" "gitlab-duo" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/gitlab-duo login" "/gitlab-duo logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)))
+              "a row runs each line")
+          (is (equal '("/gitlab-duo code")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows)))
+              "a row asks for the text a line takes")))
+      (is (search "not one of its choices" (cell-entry "nodecode-gitlab-duo" "gitlab-duo" "frobnicate"))
+          "a word it does not know answers the panel, not a usage line"))))

@@ -141,7 +141,7 @@ newest first. ANSWER, given a URL, may answer (values BODY STATUS) instead."
         (is (signals-error nle::credential-error
               (nle::resolve-provider-credential "google-antigravity" :auth-path auth :endpoint "https://example.invalid"))))
       (is (search "invalid_grant" (or (second (cell-notice "nodecode-google-antigravity")) "")))
-      (is (search "/google-antigravity login" (or (second (cell-notice "nodecode-google-antigravity")) ""))))))
+      (is (search "/google-antigravity" (or (second (cell-notice "nodecode-google-antigravity")) ""))))))
 
 (deftest google-antigravity-cell-refreshes-with-its-own-client ()
   (with-cell-stop ((google-antigravity-start))
@@ -392,7 +392,7 @@ once they run out); POSTS and GETS collect (URL HEADERS CONTENT)."
         (with-stubbed-fdefinition (dex:post (url &rest args) (setf posted t) (values (make-truncated-sse-stream) 200))
           (let ((refusal (signals-error nle::provider-config-error (ag-lane-round (user-context)))))
             (when (typep refusal 'nle::provider-error)
-              (is (search "/google-antigravity login" (nle::provider-error-detail refusal))))))
+              (is (search "/google-antigravity" (nle::provider-error-detail refusal))))))
         (is (null posted) "nothing is sent")))))
 
 (deftest google-antigravity-cell-leaves-the-gemini-api-alone ()
@@ -427,7 +427,7 @@ once they run out); POSTS and GETS collect (URL HEADERS CONTENT)."
                                 (dex:post (url &rest args) (error "no key check may dial: ~a" url)))
       (multiple-value-bind (rows reason) (nle::list-provider-models "google-antigravity" :key "AIza-pasted")
         (is (plusp (length rows)) "the rows still")
-        (is (search "/google-antigravity login" (or reason "")))))))
+        (is (search "/google-antigravity" (or reason "")))))))
 
 (defun ag-history (answer)
   "A compiled context after one round whose answer was ANSWER, and its result."
@@ -470,3 +470,20 @@ once they run out); POSTS and GETS collect (URL HEADERS CONTENT)."
                              :key (lambda (wire) (nlk:json-value wire :string "role")) :test #'equal)))
         (is assistant "the chat lane sends the round's answer")
         (is (null (remove-if-not (lambda (key) (search "cca" key)) (alexandria:hash-table-keys assistant))))))))
+
+;;; --- /google-antigravity typed alone --------------------------------------------------------------
+
+(deftest GOOGLE-ANTIGRAVITY-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((google-antigravity-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-google-antigravity" "google-antigravity" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/google-antigravity login" "/google-antigravity logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)))
+              "a row runs each line")
+          (is (equal '("/google-antigravity code")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows)))
+              "a row asks for the text a line takes")))
+      (is (search "not one of its choices" (cell-entry "nodecode-google-antigravity" "google-antigravity" "frobnicate"))
+          "a word it does not know answers the panel, not a usage line"))))

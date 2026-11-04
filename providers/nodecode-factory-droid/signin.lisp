@@ -228,7 +228,7 @@ then whoami."
   (let ((token (nlk:json-value entry :text "refresh_token")))
     (unless token
       (error 'nle:credential-error
-             :detail "the Factory sign-in expired and holds no refresh token; run /factory-droid login"))
+             :detail "the Factory sign-in expired and holds no refresh token; /factory-droid signs in again"))
     (multiple-value-bind (body status)
         (exchange +token-url+
                   `(("grant_type" . "refresh_token")
@@ -239,7 +239,7 @@ then whoami."
                   +accept-json+)
       (unless (ok-p status)
         (error 'nle:credential-error
-               :detail (format nil "factory-droid token refresh failed: ~a ~a; run /factory-droid login"
+               :detail (format nil "factory-droid token refresh failed: ~a ~a; /factory-droid signs in again"
                                status (excerpt body))))
       (identify (token-entry body entry) body entry nil))))
 
@@ -418,22 +418,25 @@ on a thread of its own."
                          (nlk:json-value entry :string "account_id"))
                      (nlk:json-value entry :string "org_id")
                      (and (plusp left) (ceiling left 60)))))
-          (t "Factory Droid: not signed in; /factory-droid login starts the sign-in"))))
+          (t "Factory Droid: not signed in; /factory-droid starts the sign-in"))))
+
+(defun panel (summary)
+  "The dialog bare /factory-droid answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "Factory Droid" :summary summary
+   :rows (list (nle:run-row "Sign in" "/factory-droid login" :detail "with a device code, at Factory")
+               (nle:run-row "Sign out" "/factory-droid logout" :detail "forget the kept sign-in, or end one in progress"))))
 
 (defun run-command (args session-id)
-  "/factory-droid ARGS: login, logout or status."
+  "/factory-droid typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let ((verb (string-downcase (or (first (uiop:split-string (nlk:trimmed (or args ""))
                                                              :separator '(#\Space #\Tab)))
                                    ""))))
     (cond ((equal verb "login") (login))
           ((equal verb "logout") (logout))
-          ((member verb '("" "status") :test #'equal) (status))
-          (t "usage: /factory-droid login | logout | status"))))
+          ((equal verb "") (let ((text (status))) (values text (panel text))))
+          ((string-equal verb "status") (status))
+          (t (values (format nil "factory-droid: ~a is not one of its choices" verb) (panel (status)))))))
 
-(defun complete-command (text session-id)
-  "What /factory-droid's argument completes to while TEXT is typed."
-  (declare (ignore session-id))
-  (loop for verb in '("login" "logout" "status")
-        when (uiop:string-prefix-p (string-downcase (nlk:trimmed (or text ""))) verb)
-          collect (list :name verb :value verb)))

@@ -374,7 +374,7 @@ no PKCE, no scope."
        (handler-case
            (let ((message (sb-concurrency:receive-message (flow-mailbox flow) :timeout +login-seconds+)))
              (cond ((null message)
-                    (say (format nil "zai-coding-plan: the sign-in timed out after ~d minutes with no code; start again with /zai-coding-plan login"
+                    (say (format nil "zai-coding-plan: the sign-in timed out after ~d minutes with no code; start again from /zai-coding-plan"
                                  (floor +login-seconds+ 60))
                          :warning))
                    ((eq (first message) :code)
@@ -402,14 +402,14 @@ no PKCE, no scope."
     (bt2:with-lock-held (*flow-lock*) (setf *flow* flow))
     (setf (flow-thread flow)
           (bt2:make-thread (lambda () (run-flow flow)) :name "nodecode-zai-coding-plan sign-in"))
-    (format nil "Open this address and sign in to Z.AI:~%~a~%~%Z.AI then sends the browser to ~a?code=...; copy that whole address (or the code in it) and paste it here as~%  /zai-coding-plan code <address or code>~%The sign-in waits ~d minutes."
+    (format nil "Open this address and sign in to Z.AI:~%~a~%~%Z.AI then sends the browser to ~a?code=...; copy that whole address (or the code in it) and paste it under Paste where the browser landed, in /zai-coding-plan.~%The sign-in waits ~d minutes."
             (flow-url flow) redirect-uri (floor +login-seconds+ 60))))
 
 (defun paste (text)
   "Hand the sign-in in flight the code TEXT carries; => what happened."
   (let ((flow *flow*))
     (if (null flow)
-        "No sign-in is waiting for a code: start one with /zai-coding-plan login."
+        "No sign-in is waiting for a code: start one from /zai-coding-plan."
         (multiple-value-bind (code state) (parse-callback-input text)
           (cond ((null code)
                  "That carries no code: paste the whole zcode://zai-auth/callback?... address, or the code in it.")
@@ -421,11 +421,11 @@ no PKCE, no scope."
 (defun status ()
   "Whether the plan is signed in, and as whom."
   (let ((entry (stored-entry (ignore-errors (nle::read-auth-file nle::*auth-file-path*)))))
-    (cond (*flow* "A sign-in is waiting for its code: paste it with /zai-coding-plan code <address or code>.")
+    (cond (*flow* "A sign-in is waiting for its code: paste it in /zai-coding-plan.")
           ((nlk:json-value entry :text "access_token")
            (format nil "Signed in~@[ as ~a~]: the minted GLM Coding Plan key is in auth.json."
                    (nlk:json-value entry :string "email")))
-          (t "Not signed in: /zai-coding-plan login, or save a key with /connect."))))
+          (t "Not signed in: /zai-coding-plan signs in, or save a key with /connect."))))
 
 (defun logout ()
   "Forget the minted key."
@@ -433,15 +433,27 @@ no PKCE, no scope."
   (save-entry nil)
   "Signed out: the minted key is gone from auth.json (it stays live at Z.AI until you delete it there).")
 
+(defun panel (summary)
+  "The dialog bare /zai-coding-plan answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "Z.AI Coding Plan" :summary summary
+   :rows (list (nle:run-row "Sign in" "/zai-coding-plan login" :detail "in the browser, with a Z.AI account")
+               (nle:ask-row "Paste where the browser landed" "Address" "/zai-coding-plan code"
+                            :placeholder "the address the browser landed on, or its code" :verb "sign in"
+                            :detail "when the browser cannot reach this machine")
+               (nle:run-row "Sign out" "/zai-coding-plan logout" :detail "forget the kept sign-in, or end one in progress"))))
+
 (defun run-command (args session-id)
-  "/zai-coding-plan login | code TEXT | logout | status."
+  "/zai-coding-plan typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let* ((text (nlk:trimmed (or args "")))
          (space (position #\Space text))
          (verb (subseq text 0 space))
          (rest (if space (nlk:trimmed (subseq text space)) "")))
-    (cond ((member verb '("" "status") :test #'string-equal) (status))
-          ((string-equal verb "login") (start-login))
+    (cond ((equal verb "") (let ((text (status))) (values text (panel text))))
+          ((string-equal verb "status") (status))
+          ((string-equal verb "login") (values (start-login) (panel (status))))
           ((string-equal verb "code") (paste rest))
           ((string-equal verb "logout") (logout))
-          (t "Usage: /zai-coding-plan login | code <address or code> | logout | status"))))
+          (t (values (format nil "zai-coding-plan: ~a is not one of its choices" verb) (panel (status)))))))
