@@ -346,6 +346,48 @@
         (is (equal "spent" (goal-await-end "g")) "the start checked the turn it missed, and went on")))
     (is (equal '(1 2) (mapcar #'nodecode-goal::check-number (goal-facts-of "g" "goal.checked"))))))
 
+;;; --- typed alone -------------------------------------------------------------------
+
+(defun goal-rows (dialog key)
+  "DIALOG's rows' lines: KEY :run what Enter runs, :ask what an ask runs its
+text after."
+  (remove nil (mapcar (lambda (row) (if (eq key :run)
+                                        (getf (getf row :run) :enter)
+                                        (getf (getf row :ask) :line)))
+                      (getf dialog :rows))))
+
+(deftest goal-cell-typed-alone-answers-its-panel ()
+  (with-goal ("p")
+    (multiple-value-bind (text panel) (nodecode-goal::run-slash "" "p")
+      (is-carrying (text text) ("no goal on this session"))
+      (is (null (goal-rows panel :run)) "no goal, nothing to stop")
+      (is (equal '("/goal" "/goal --check" "/goal --options") (goal-rows panel :ask))
+          "a goal set in words, by a command, or with its options"))
+    (is (search "say what must hold" (nodecode-goal::run-slash "--options" "p")))
+    ;; The options panel: every row's line parses back to the goal it shows.
+    (multiple-value-bind (text panel) (nodecode-goal::run-slash "--options the tests pass" "p")
+      (is-carrying (text text) ("goal: the tests pass"))
+      (is (equal '("/goal the tests pass"
+                   "/goal --options the tests pass" "/goal --options --k 2 the tests pass"
+                   "/goal --options --k 3 the tests pass" "/goal --options --k 4 the tests pass")
+                 (goal-rows panel :run)))
+      (is (equal '("/goal --options the tests pass --k" "/goal --options the tests pass --turns"
+                   "/goal --options the tests pass --check")
+                 (goal-rows panel :ask))))
+    (let ((panel (nth-value 1 (nodecode-goal::run-slash
+                               (format nil "~a" (subseq (nle:ask-line "/goal --options --k 3 the tests pass --check" "just test") 6))
+                               "p"))))
+      (is (equal "/goal --k 3 the tests pass --check just test" (first (goal-rows panel :run)))
+          "a command set, the start carries it last")
+      (is (equal "/goal --options --k 3 the tests pass" (car (last (goal-rows panel :run))))
+          "and a row takes it back to a judge")
+      (is (equal "/goal --options the tests pass --check just test --k" (first (goal-rows panel :ask))))
+      (multiple-value-bind (condition check turns k)
+          (nodecode-goal::parse-request (subseq (nle:ask-line (second (goal-rows panel :ask)) "7") 6))
+        (is (equal '(("--options" "the" "tests" "pass") "just test" 7 3) (list (nlk:split-words condition) check turns k))
+            "a number asked after the check is taken as its option, not the check's")))
+    (is (zerop (goal-turns "p")) "no panel starts a goal")))
+
 ;;; --- refusals ----------------------------------------------------------------------
 
 (deftest goal-cell-refusals-say-why ()
