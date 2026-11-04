@@ -86,7 +86,12 @@ BODY reads it."
                                       otp-status)))
         (let ((answer (cell-entry "nodecode-perplexity" "perplexity" "login op@example.com")))
           (is (search "mailed a sign-in code to op@example.com" answer))
-          (is (search "/perplexity code CODE" answer)))
+          (is (search "Enter the code from the email" answer) "the answer names the row that takes the code")
+          (is (equal '("/perplexity login" "/perplexity code")
+                     (map 'list (lambda (row) (nle::json-value row :text "ask" "line"))
+                          (remove-if-not (lambda (row) (nle::json-value row :text "ask" "line"))
+                                         (coerce (nle::json-array (nth-value 1 (cell-entry "nodecode-perplexity" "perplexity" "")) "rows") 'list))))
+              "typed alone, rows ask for the email and the code"))
         (is (search "signed in as op@example.com" (cell-entry "nodecode-perplexity" "perplexity" "code 123456")))
         (let ((requests asked))
           (is (= 3 (length requests)) "a CSRF token, a mailed code, a verified code")
@@ -172,7 +177,7 @@ BODY reads it."
   (with-pplx (auth :config ("borrow_app_session" nil))
     (with-stubbed-fdefinitions ((nodecode-perplexity::macos-p () t)
                                 (uiop:run-program (command &rest args) "app-session"))
-      (is (search "usage: /perplexity login EMAIL" (cell-entry "nodecode-perplexity" "perplexity" "login"))))))
+      (is (search "sign in with an email from /perplexity" (cell-entry "nodecode-perplexity" "perplexity" "login"))))))
 
 ;;; --- the search ------------------------------------------------------------------
 

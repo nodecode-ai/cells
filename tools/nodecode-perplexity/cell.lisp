@@ -48,6 +48,5 @@ the problem; when it says no credential answered, tell the operator /perplexity 
   (:start #'start)
   (:help :perplexity "perplexity:search answers a question from a live Perplexity web search, with its sources" +primer+)
   (:command "perplexity" 'run-command
-            :description "Perplexity (Pro/Max) sign-in: login [EMAIL], code CODE, logout, status"
-            :argument-hint "login [EMAIL] | code CODE | logout | status"
+            :description "Sign in to Perplexity (Pro/Max), or out"
             :session nil))

@@ -26,9 +26,19 @@
   "Data over code: what a layer would rebind lives in a DEFPARAMETER.")
 
 (defun greet (args session-id)
-  "One /template invocation => the answer's text."
+  "One /template invocation => the answer's text, and typed alone the dialog
+every command answers then: a row for each thing it does, here one that
+asks for a name and runs /template with it."
   (declare (ignore session-id))
-  (format nil "~a~@[ (~a)~], ~a times" *greeting* args (setting :times)))
+  (let* ((name (nlk:trimmed (or args "")))
+         (text (format nil "~a~@[ (~a)~], ~a times" *greeting* (and (plusp (length name)) name) (setting :times))))
+    (if (plusp (length name))
+        text
+        (values text
+                (nle:list-dialog
+                 :title "Template" :summary text
+                 :rows (list (nle:ask-row "Greet someone" "Name" "/template"
+                                          :placeholder "who to greet" :verb "greet")))))))
 
 (defun observe-tool (op next)
   "A :TOOL point hook: OP is (:name TOOL-NAME :arguments HASH :call-id ID)."
@@ -49,8 +59,7 @@
     ("times" :integer :default 1 :min 1 :doc "how many times to say it"))
   (:hook :tool #'observe-tool)
   (:command "template" 'greet
-            :description "The template cell says hello"
-            :argument-hint "[NAME]")
+            :description "The template cell says hello")
   ;; Everything no clause covers — a directory, a lease, a worker — with its
   ;; own inverse recorded beside it. Something worth saying that is not a
   ;; refusal is (nle:notice text :key "nodecode-template"): every shell

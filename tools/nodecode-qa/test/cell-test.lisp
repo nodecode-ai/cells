@@ -165,7 +165,10 @@
         (is (search "sharing weekly with https://collector.test, next page in " line))
         (is (a-week-away-p line) "the next page is a week away"))
       (is (search "the next page" (qa-slash "show")))
-      (is (search "unknown subcommand bogus" (qa-slash "bogus")))
+      (is (search "bogus is not one of its choices" (qa-slash "bogus")))
+      (is (equal '("/qa show" "/qa send" "/qa notes" "/qa push" "/qa clear")
+                 (mapcar (lambda (row) (getf (getf row :run) :enter)) (getf (nth-value 1 (qa-slash "")) :rows)))
+          "typed alone, a row runs each line")
       (is (null *qa-posts*) "show and status send nothing"))))
 
 ;;; --- the post --------------------------------------------------------------

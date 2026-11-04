@@ -160,10 +160,9 @@ else a code mailed to EMAIL."
   (alexandria:if-let (token (app-session))
     (keep (make-pending :email nil :auth-path auth-path) token)
     (cond ((zerop (length email))
-           "usage: /perplexity login EMAIL -- Perplexity mails a sign-in code to EMAIL")
+           "perplexity: sign in with an email from /perplexity -- Perplexity mails a sign-in code to it")
           (t (setf *pending* (send-code email auth-path))
-             (format nil "Perplexity mailed a sign-in code to ~a. Type~%~%    /perplexity code CODE~%~%~
-                          with the code from that mail to finish signing in." email)))))
+             (format nil "Perplexity mailed a sign-in code to ~a. Enter it under Enter the code from the email, in /perplexity, to finish signing in." email)))))
 
 (defun status-text (path)
   "What /perplexity status says of the sign-in kept at PATH."
@@ -180,8 +179,21 @@ else a code mailed to EMAIL."
                        (nlk:json-value entry :text "email")
                        (and expiry (floor (- expiry (unix-seconds)) 60))))))))
 
+(defun panel (summary)
+  "The dialog bare /perplexity answers: SUMMARY, the sign-in as it stands,
+over a row for each thing to do about it."
+  (nle:list-dialog
+   :title "Perplexity" :summary summary
+   :rows (list (nle:run-row "Sign in" "/perplexity login"
+                            :detail "with the desktop app's session, where there is one")
+               (nle:ask-row "Sign in with an email" "Email" "/perplexity login"
+                            :placeholder "the account's email; Perplexity mails it a code" :verb "send")
+               (nle:ask-row "Enter the code from the email" "Code" "/perplexity code"
+                            :placeholder "the code Perplexity mailed" :verb "sign in")
+               (nle:run-row "Sign out" "/perplexity logout" :detail "forget the kept session"))))
+
 (defun run-command (args session-id)
-  "/perplexity login [EMAIL] | code CODE | logout | status."
+  "/perplexity typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let* ((args (string-trim " " (or args "")))
          (space (position #\Space args))
@@ -189,16 +201,17 @@ else a code mailed to EMAIL."
          (rest (string-trim " " (if space (subseq args space) "")))
          (path nle::*auth-file-path*))
     (handler-case
-        (cond ((equal verb "login") (start-login rest path))
+        (cond ((equal verb "login") (values (start-login rest path) (panel (status-text path))))
               ((equal verb "code")
                (cond ((null *pending*)
-                      "perplexity: no sign-in is waiting for a code; /perplexity login EMAIL first")
-                     ((zerop (length rest)) "usage: /perplexity code CODE")
+                      "perplexity: no sign-in is waiting for a code; sign in with an email from /perplexity first")
+                     ((zerop (length rest)) "perplexity: the code from the email, please")
                      (t (enter-code *pending* rest))))
               ((equal verb "logout")
                (setf *pending* nil)
                (bt2:with-lock-held (*store-lock*) (save-entry path nil))
                "perplexity: signed out; the perplexity session is gone from auth.json")
-              ((member verb '("" "status") :test #'equal) (status-text path))
-              (t "usage: /perplexity login [EMAIL] | code CODE | logout | status"))
+              ((equal verb "") (let ((text (status-text path))) (values text (panel text))))
+              ((equal verb "status") (status-text path))
+              (t (values (format nil "perplexity: ~a is not one of its choices" verb) (panel (status-text path)))))
       (perplexity-error (condition) (format nil "perplexity: ~a" condition)))))

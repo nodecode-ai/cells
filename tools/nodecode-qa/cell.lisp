@@ -21,7 +21,6 @@
 (in-package #:nodecode-qa)
 
 (defparameter +tool-name+ "report_issue")
-(defparameter +usage+ "/qa [show | send | notes | push | clear]")
 (defparameter +period-seconds+ (* 7 24 60 60)
   "How often a page goes: once a week.")
 (defparameter +retry-seconds+ (* 60 60)
@@ -298,21 +297,34 @@ turn, never on the weekly page."
 
 ;;; --- /qa ---------------------------------------------------------------
 
+(defun panel (summary)
+  "The dialog bare /qa answers: SUMMARY, sharing as it stands, over a row
+for each thing it does -- the next page shown or sent, the model's notes
+listed, shipped by hand or dropped."
+  (nle:list-dialog
+   :title "QA" :summary summary
+   :rows (list (nle:run-row "Show the next page" "/qa show" :detail "exactly as it would go")
+               (nle:run-row "Send it now" "/qa send" :detail "instead of at the week's end")
+               (nle:run-row "The model's notes" "/qa notes" :detail "what it filed through report_issue, newest first")
+               (nle:run-row "Ship the notes' text" "/qa push" :detail "by hand, after reading them")
+               (nle:run-row "Drop the notes" "/qa clear" :detail "nothing of them is sent"))))
+
 (defun run-slash (args session-id)
-  "The answer to one /qa invocation."
+  "The answer to one /qa invocation: typed alone, sharing as it stands and
+its panel."
   (declare (ignore session-id))
   (let* ((words (nlk:split-words args))
          (head (first words))
          (*operator* t))
     (nlk:with-handlers ((qa-error (condition)
                           (format nil "qa: ~a" condition)))
-      (cond ((null head) (status-line))
+      (cond ((null head) (let ((line (status-line))) (values line (panel line))))
             ((string= head "show") (show))
             ((string= head "send") (send))
             ((string= head "notes") (notes))
             ((string= head "push") (push-notes))
             ((string= head "clear") (clear-notes))
-            (t (format nil "qa: unknown subcommand ~a; usage ~a" head +usage+))))))
+            (t (values (format nil "qa: ~a is not one of its choices" head) (panel (status-line))))))))
 
 ;;; --- the entry: the one declaration -------------------------------------------
 
@@ -349,8 +361,7 @@ none, and sends only when a period has passed since the last page."
                (list* :off-by-env (env-off-p) values)))
   (:tool +tool-name+ (nlk:contract 'issue-report) 'report-issue)
   (:command "qa" 'run-slash
-            :description "What leaves this machine: the next page, the notes, the switch"
-            :argument-hint "show | send | notes | push | clear")
+            :description "What leaves this machine: the next page, the notes, the switch")
   (:start (lambda ()
             (setf *last-error* nil)
             ;; A page may go at all only when sharing is weekly and the
