@@ -50,6 +50,7 @@
                (:file "owner")
                (:file "board")
                (:file "operator")
+               (:file "panels")
                (:file "setup")
                (:file "cell"))
   :in-order-to ((test-op (test-op "nodecode-channel-kit/test"))))
@@ -80,6 +81,7 @@
                (:file "board-test")
                (:file "cell-test")
                (:file "operator-test")
+               (:file "panel-test")
                ;; LAST on purpose: placed ahead of thread-test. Without this,
                ;; CHANNEL-THREAD-ASK-INSIDE-A-THREAD-CARRIES-ITS-OWN-LINE's
                ;; ten-second AWAIT-PLAN would tip in the full suite.
