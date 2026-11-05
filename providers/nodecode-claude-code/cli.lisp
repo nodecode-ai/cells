@@ -2,7 +2,9 @@
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
-;;;; Every round starts a fresh `claude -p' speaking stream-json, the way the
+;;;; A round whose request is not kept (AUTHOR-REQUEST, below: a later round
+;;;; with the same inputs sends the last one again) starts a fresh `claude -p'
+;;;; speaking stream-json, the way the
 ;;;; Agent SDK drives it: no tools of its own (--tools ''), no settings, MCP
 ;;;; servers, CLAUDE.md or memory of the operator's, no session file, one
 ;;;; turn. Its ANTHROPIC_BASE_URL is the round's relay. The history is written
@@ -275,10 +277,10 @@ failing as not installed."
                 (sleep 1/4)
                 (error condition))))))))
 
-(defun author-request (body &key model window directory)
-  "(values HEADERS ENDPOINT OCTETS): the Messages request the claude CLI
+(defun %author-request (body &key model window directory)
+  "(values HEADERS ENDPOINT REQUEST): the Messages request the claude CLI
 writes for BODY — Nodecode's own for the round, decoded — run in DIRECTORY,
-MODEL on WINDOW's route."
+MODEL on WINDOW's route; REQUEST decoded, its messages still the CLI's."
   (let* ((frames (replay-frames body model))
          (scratch (uiop:ensure-directory-pathname
                    (merge-pathnames (format nil "nodecode-claude-code-~a" (hex-token 8))
@@ -324,12 +326,134 @@ MODEL on WINDOW's route."
                  (pump run relay deadline (lambda () (>= (run-acks run) asked))))))
            (ignore-errors (close (run-input run)))
            (pump run relay deadline (lambda () (relay-capture relay)))
-           (let* ((capture (relay-capture relay))
-                  (request (nlk:decode-json (getf capture :body))))
-             (setf (gethash "messages" request) (request-messages body))
+           (let ((capture (relay-capture relay)))
              (values (captured-headers capture)
                      (captured-endpoint capture)
-                     (nlk:encode-json-octets request))))
+                     (nlk:decode-json (getf capture :body)))))
       (when run (stop-run run))
       (when relay (close-relay relay))
       (uiop:delete-directory-tree scratch :validate t :if-does-not-exist :ignore))))
+
+;;; --- what the CLI wrote, sent again ----------------------------------------------
+
+;;; A round's request is the CLI's for everything but its messages, which are
+;;; always the round's own (REQUEST-MESSAGES). The rest the CLI writes from the
+;;; round's inputs: the system text, the members EXTRA-BODY lays over, the
+;;; --model and --effort it is started with, the folder it runs in, and the
+;;; first user message, which its billing header's fingerprint is taken from.
+;;; So a round whose inputs are a recent round's, in the same session, sends
+;;; that round's request again around its own messages and starts no CLI:
+;;; starting it is most of a round's cost before the first byte goes out
+;;; (0.8 s for claude.exe on Windows, 0.17 s on Linux, every round). Within a
+;;; session the CLI's session id then stays one, as Claude Code's own does.
+;;; Kept REUSE_SECONDS at most, well inside the CLI login's lifetime; a reused
+;;; request that fails is forgotten, and one the API refuses for its login
+;;; (401, 403) is written again by the CLI and sent once more (WALK).
+
+(defstruct (authored (:copier nil))
+  headers endpoint request (at 0 :type integer))
+
+(defvar *authored* (make-hash-table :test #'equal)
+  "Authoring key -> the AUTHORED request the CLI last wrote for it.")
+
+(defvar *authored-lock* (bt2:make-lock :name "claude-code authored"))
+
+(defparameter +authored-limit+ 64
+  "The most requests kept at once; the oldest goes first.")
+
+(defparameter +plain-block-types+ '("text" "tool_use" "tool_result" "thinking" "redacted_thinking")
+  "The block types every session carries: a history of them gets the request
+a history of text alone gets (2.1.316, but its session id).")
+
+(defun block-types (body)
+  "Every block type past +PLAIN-BLOCK-TYPES+ BODY's messages carry, a tool
+result's own blocks among them, sorted: what the CLI may answer with a beta
+of its own."
+  (let ((types nil))
+    (labels ((note (block)
+               (let ((type (block-type block)))
+                 (when (and type (not (member type +plain-block-types+ :test #'equal)))
+                   (pushnew type types :test #'equal)))
+               (let ((inner (and (hash-table-p block) (gethash "content" block))))
+                 (when (vectorp inner) (map nil #'note inner)))))
+      (loop for message across (or (nlk:json-value body :array "messages") #())
+            do (map nil #'note (content-blocks (gethash "content" message)))))
+    (sort types #'string<)))
+
+(defun authoring-key (body &key model window directory session)
+  "What the CLI's request for BODY is written from, as one digest: equal keys,
+equal requests but for the messages."
+  (let ((first-user (find "user" (or (nlk:json-value body :array "messages") #())
+                          :key (lambda (message) (nlk:json-value message :string "role"))
+                          :test #'equal)))
+    (nlk:sha256-text
+     (with-output-to-string (out)
+       (dolist (part (list session (and directory (namestring directory))
+                           (model-argument model window) (effort body)
+                           (system-text body)
+                           (sb-ext:octets-to-string (nlk:encode-json-octets (extra-body body))
+                                                    :external-format :utf-8)
+                           (and first-user
+                                (sb-ext:octets-to-string
+                                 (nlk:encode-json-octets (replay-content first-user))
+                                 :external-format :utf-8))
+                           (format nil "~{~a~^,~}" (block-types body))))
+         (format out "~a~c" (or part "") (code-char 0)))))))
+
+(defun reuse-seconds ()
+  "How long a request the CLI wrote may be sent again: the setting, 0 when
+it is off."
+  (or (ignore-errors (setting :reuse-seconds)) 0))
+
+(defun kept-authored (key)
+  "The AUTHORED request kept under KEY while it is younger than REUSE-SECONDS,
+else NIL."
+  (let ((seconds (reuse-seconds)))
+    (when (plusp seconds)
+      (bt2:with-lock-held (*authored-lock*)
+        (let ((kept (gethash key *authored*)))
+          (when (and kept (< (- (get-universal-time) (authored-at kept)) seconds))
+            kept))))))
+
+(defun keep-authored (key headers endpoint request)
+  "Keep what the CLI wrote under KEY, the messages left out, and drop what
+is past REUSE-SECONDS or past +AUTHORED-LIMIT+."
+  (let ((seconds (reuse-seconds)) (now (get-universal-time)))
+    (when (plusp seconds)
+      (bt2:with-lock-held (*authored-lock*)
+        (let ((template (nlk:copy-json-object request)))
+          ;; the messages are each round's own; their place in the request stays
+          (setf (gethash "messages" template) #())
+          (setf (gethash key *authored*)
+                (make-authored :headers (copy-alist headers) :endpoint endpoint
+                               :request template :at now)))
+        (let ((entries nil))
+          (maphash (lambda (k v)
+                     (if (>= (- now (authored-at v)) seconds) (remhash k *authored*) (push (cons k v) entries)))
+                   *authored*)
+          (when (> (length entries) +authored-limit+)
+            (loop for (k . nil) in (nthcdr +authored-limit+ (sort entries #'> :key (lambda (e) (authored-at (cdr e)))))
+                  do (remhash k *authored*))))))))
+
+(defun forget-authored (&optional key)
+  "Drop the request kept under KEY, or every one."
+  (bt2:with-lock-held (*authored-lock*)
+    (if key (remhash key *authored*) (clrhash *authored*))))
+
+(defun author-request (body &key model window directory session fresh)
+  "(values HEADERS ENDPOINT OCTETS KEY): the round's Messages request, the
+claude CLI's for BODY with BODY's own messages, run in DIRECTORY, MODEL on
+WINDOW's route. A request the CLI wrote for the same inputs in SESSION is
+sent again (KEY names it, NIL when the CLI ran) unless FRESH."
+  (let* ((key (authoring-key body :model model :window window :directory directory :session session))
+         (kept (and (not fresh) (kept-authored key))))
+    (multiple-value-bind (headers endpoint request)
+        (if kept
+            (values (copy-alist (authored-headers kept)) (authored-endpoint kept) (authored-request kept))
+            (multiple-value-bind (headers endpoint request)
+                (%author-request body :model model :window window :directory directory)
+              (keep-authored key headers endpoint request)
+              (values headers endpoint request)))
+      (values headers endpoint
+              (nlk:encode-json-octets (nlk:copy-json-object request "messages" (request-messages body)))
+              (and kept key)))))

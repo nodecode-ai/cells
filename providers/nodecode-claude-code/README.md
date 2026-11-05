@@ -60,7 +60,8 @@ This is optional. The section is on unless it says `"enabled": false`:
   "claude-code": {
     "command": "claude",
     "models": ["claude-sonnet-5", "claude-haiku-4-5"],
-    "timeout_seconds": 120
+    "timeout_seconds": 120,
+    "reuse_seconds": 600
   }
 }
 ```
@@ -69,10 +70,17 @@ See [`config.example.jsonc`](config.example.jsonc).
 
 ## What it costs in time
 
-Every round starts a fresh `claude` process, about 0.4 s. The CLI then
-replays the session's history, about 20 ms for each earlier user turn. The
-CLI writes the request's headers, system blocks and tools; the messages are
-the round's own. The per-request context the CLI adds to the newest turn
+A round the CLI writes starts a fresh `claude` process: about 0.2 s on
+Linux, 0.8 s for `claude.exe` on Windows. The CLI then replays the
+session's history, about 2 ms for each earlier user turn. The CLI writes
+the request's headers, system blocks and tools; the messages are the
+round's own. So a later round of the same session whose system text,
+tools, model, effort, output ceiling, thinking, folder and first user
+message are unchanged, and whose history carries no new kind of block,
+sends the request the CLI last wrote again around its own messages and
+starts no CLI at all. That lasts `reuse_seconds` (600 by default; 0 starts
+the CLI every round). A reused request that fails is forgotten, and one the
+API refuses for its login (401, 403) is written afresh and sent once more. The per-request context the CLI adds to the newest turn
 (the date, the account's email, an environment note) is not sent: the next
 round would replay that turn without it, and every thinking block signed
 behind it would then fail the API's prefix check and be dropped.
