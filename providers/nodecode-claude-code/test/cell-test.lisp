@@ -76,7 +76,7 @@
         "{\"type\":\"message_stop\"}")
   "One streamed call of the read tool, under its request name.")
 
-(defmacro with-cc-round ((&key (mode "") record) &body body)
+(defmacro with-cc-round ((&key (mode "") record (reuse 600)) &body body)
   "BODY with the cell started on the stand-in CLI, MODE its behavior and
 RECORD the file it writes what it saw to; the environment it inherits
 carries an API key and a Claude Code entrypoint the round must not pass on."
@@ -90,8 +90,11 @@ carries an API key and a Claude Code entrypoint the round must not pass on."
             (sb-posix:setenv "CLAUDE_CODE_ENTRYPOINT" "claude-vscode" 1)
             ;; the stand-in is a python3 script: without one there is no round to run
             (when (cc-python-p)
-              (with-cell-stop ((claude-code-start "command" (cc-fake) "timeout_seconds" 20))
+              (nodecode-claude-code::forget-authored)
+              (with-cell-stop ((claude-code-start "command" (cc-fake) "timeout_seconds" 20
+                                                  "reuse_seconds" ,reuse))
                 ,@body)))
+       (nodecode-claude-code::forget-authored)
        (loop for (name . value) in saved
              do (if value (sb-posix:setenv name value 1) (sb-posix:unsetenv name))))))
 
@@ -248,6 +251,127 @@ call: (values MESSAGE URL HEADERS CONTENT)."
           (is (notany (lambda (argument) (equal "" argument)) (nlk:json-value seen :array "argv")) "no argument is empty: nothing rests on how a Windows command line passes one")
           (is (equal "claude-haiku-4-5" (let ((argv (coerce (nlk:json-value seen :array "argv") 'list)))
                                           (second (member "--model" argv :test #'equal))))))))))
+
+;;; --- what the CLI wrote, sent again --------------------------------------------
+
+(defun cc-later (&optional (body (cc-json +cc-round+)))
+  "BODY one tool call further on: another call and its result after its
+messages, the first user message as it was."
+  (nlk:copy-json-object
+   body "messages"
+   (concatenate 'vector (nlk:json-value body :array "messages")
+                (vector (cc-json "{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_2\",\"name\":\"read\",\"input\":{\"path\":\"b\"}}]}")
+                        (cc-json "{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_2\",\"content\":\"bee\"}]}")))))
+
+(defun cc-author (record body &rest keys)
+  "Author BODY's request the way a round does, RECORD emptied first:
+(values HEADERS ENDPOINT SENT KEY RAN), SENT decoded, RAN whether the CLI
+started."
+  (with-open-file (out record :direction :output :if-exists :supersede) (declare (ignore out)))
+  (multiple-value-bind (headers endpoint octets key)
+      (apply #'nodecode-claude-code::author-request body
+             (append keys (list :model "claude-haiku-4-5" :window 200000
+                                :directory (uiop:temporary-directory) :session "s-cc")))
+    (values headers endpoint
+            (nlk:decode-json (sb-ext:octets-to-string octets :external-format :utf-8))
+            key
+            (plusp (length (uiop:read-file-string record))))))
+
+(defun cc-text (value)
+  "VALUE as JSON text, to compare."
+  (sb-ext:octets-to-string (nlk:encode-json-octets value) :external-format :utf-8))
+
+(deftest claude-code-cell-sends-again-what-the-cli-wrote ()
+  (with-temp-file (record :contents "")
+    (with-cc-round (:record (uiop:native-namestring record))
+      (nlk:bind (((headers endpoint sent key ran) (cc-author record (cc-json +cc-round+))))
+        (is ran "the first round's request is the CLI's")
+        (is (null key))
+        (let ((later (cc-later)))
+          (nlk:bind (((headers2 endpoint2 sent2 key2 ran2) (cc-author record later)))
+            (is (not ran2) "a round whose inputs did not move starts no CLI")
+            (is key2 "and says it sent a kept request")
+            (is (equal headers headers2) "the CLI's headers, its login among them")
+            (is (equal endpoint endpoint2))
+            (dolist (member '("system" "tools" "metadata" "model" "max_tokens"))
+              (is (equal (cc-text (gethash member sent)) (cc-text (gethash member sent2))) "what the CLI wrote around the messages is sent again"))
+            (is (equal (cc-text (nodecode-claude-code::request-messages later))
+                       (cc-text (gethash "messages" sent2))) "around this round's own messages")
+            (is (equal (loop for k being the hash-keys of sent collect k)
+                       (loop for k being the hash-keys of sent2 collect k)) "member for member in the CLI's order")))))))
+
+(deftest claude-code-cell-writes-afresh-when-an-input-moves ()
+  (with-temp-file (record :contents "")
+    (with-cc-round (:record (uiop:native-namestring record))
+      (let ((body (cc-json +cc-round+)))
+        (cc-author record body)
+        (flet ((ran (body &rest keys)
+                 (nth-value 4 (apply #'cc-author record body keys))))
+          (is (ran (nlk:copy-json-object body "system" "You are Nodecode, changed.")) "another system text")
+          (is (ran (nlk:copy-json-object body "output_config" (cc-json "{\"effort\":\"low\"}"))) "another effort")
+          (is (ran (nlk:copy-json-object body "max_tokens" 8000)) "another output ceiling")
+          (let ((messages (copy-seq (nlk:json-value body :array "messages"))))
+            (setf (aref messages 0) (cc-json "{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"read other notes\"}]}"))
+            (is (ran (nlk:copy-json-object body "messages" messages)) "another first message: the billing fingerprint is taken from it"))
+          (is (ran (nlk:copy-json-object
+                    body "messages"
+                    (concatenate 'vector (nlk:json-value body :array "messages")
+                                 (vector (cc-json "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"look\"}]}")
+                                         (cc-json "{\"role\":\"user\",\"content\":[{\"type\":\"image\",\"source\":{\"type\":\"base64\",\"media_type\":\"image/png\",\"data\":\"AA==\"}}]}"))))) "a block of a type the history did not carry")
+          (is (ran body :session "s-other") "another session"))))))
+
+(deftest claude-code-cell-starts-the-cli-every-round-when-reuse-is-off ()
+  (with-temp-file (record :contents "")
+    (with-cc-round (:record (uiop:native-namestring record) :reuse 0)
+      (cc-author record (cc-json +cc-round+))
+      (nlk:bind (((_ _ _ key ran) (cc-author record (cc-later))))
+        (is ran "reuse_seconds 0: the CLI writes every round")
+        (is (null key))))))
+
+(deftest claude-code-cell-writes-afresh-after-a-login-refusal ()
+  (with-temp-file (record :contents "")
+    (with-cc-round (:record (uiop:native-namestring record))
+      (cc-round)
+      (with-open-file (out record :direction :output :if-exists :supersede) (declare (ignore out)))
+      (let ((posts 0))
+        (with-stubbed-fdefinition
+            (dex:post (asked &rest args)
+             (declare (ignore asked args))
+             (if (= 1 (incf posts))
+                 (error 'dex:http-request-failed :status 401 :body "{\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"OAuth token has expired\"}}"
+                                                 :headers (make-hash-table :test #'equal) :uri "https://api.anthropic.com/v1/messages" :method :post)
+                 (values (apply #'cc-sse +cc-tool-stream+) 200)))
+          (let ((message (let ((nle::*provider* "claude-code") (nle::*model* "claude-haiku-4-5") (nle::*api-key* nil))
+                           (nle::call-anthropic-streaming (user-context "read notes")))))
+            (is (= 2 posts) "the refused request, then one the CLI wrote afresh")
+            (is (plusp (length (uiop:read-file-string record))) "the CLI ran for the second")
+            (is (equal "read" (nlk:json-value (aref (nlk:json-value message :array "tool_calls") 0) :string "function" "name")) "and the round's answer came back")))))))
+
+(deftest claude-code-cell-forgets-a-request-that-failed ()
+  (with-temp-file (record :contents "")
+    (with-cc-round (:record (uiop:native-namestring record))
+      (cc-round)
+      (is (= 1 (hash-table-count nodecode-claude-code::*authored*)) "the round's request is kept")
+      (with-stubbed-fdefinition
+          (dex:post (asked &rest args)
+           (declare (ignore asked args))
+           (error 'dex:http-request-failed :status 400 :body "{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"bad\"}}"
+                                           :headers (make-hash-table :test #'equal) :uri "https://api.anthropic.com/v1/messages" :method :post))
+        (is (handler-case (let ((nle::*provider* "claude-code") (nle::*model* "claude-haiku-4-5") (nle::*api-key* nil))
+                            (nle::call-anthropic-streaming (user-context "read notes"))
+                            nil)
+              (nle::provider-error () t)) "the failure stands: only a login refusal is sent again"))
+      (is (zerop (hash-table-count nodecode-claude-code::*authored*)) "and the next round asks the CLI again"))))
+
+(deftest claude-code-cell-relay-keeps-a-header-value-whole ()
+  (nlk:bind (((method target headers)
+              (nodecode-claude-code::parse-head
+               (format nil "POST /v1/messages HTTP/1.1~c~cX-One: true~c~cX-Two: ~ctight~c ~c~c~c~c"
+                       #\Return #\Linefeed #\Return #\Linefeed #\Tab #\Tab #\Return #\Linefeed #\Return #\Linefeed))))
+    (is (equal "POST" method))
+    (is (equal "/v1/messages" target))
+    (is (equal "true" (cc-header headers "x-one")) "a value that starts or ends in t keeps it")
+    (is (equal "tight" (cc-header headers "x-two")) "only spaces and tabs are trimmed")))
 
 (deftest claude-code-cell-looks-for-a-windows-cli-by-its-type ()
   (is (equal '("claude.exe" "claude.cmd" "claude.bat")

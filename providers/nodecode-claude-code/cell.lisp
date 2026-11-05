@@ -24,7 +24,8 @@
 ;;;; Config, a sibling top-level key next to `websearch' and `cron':
 ;;;;   "claude-code": {"command": "claude",
 ;;;;                   "models": ["claude-sonnet-5", "claude-haiku-4-5"],
-;;;;                   "timeout_seconds": 120}
+;;;;                   "timeout_seconds": 120,
+;;;;                   "reuse_seconds": 600}
 ;;;; A vetoed section ("enabled": false) installs nothing: no lane, no hook.
 
 (in-package #:nodecode-claude-code)
@@ -44,16 +45,35 @@ names; the home directory outside a turn."
 
 (defun walk (next fold &rest keys &key config request-json &allow-other-keys)
   "WALK-PROVIDER-STREAM advice: a claude-code round sends the request the
-CLI wrote for its body, and folds the answer with Nodecode's tool names."
+CLI wrote for its body, and folds the answer with Nodecode's tool names.
+A request sent again (AUTHOR-REQUEST) that fails is forgotten, and one the
+API refuses for its login is written afresh by the CLI and sent once more."
   (if (claude-code-config-p config)
-      (multiple-value-bind (headers endpoint octets)
-          (author-request (nlk:decode-json request-json)
-                          :model (nle::effective-provider-config-model config)
-                          :window (nle::effective-provider-config-context-tokens config)
-                          :directory (round-directory))
-        (apply next (unprefixed-fold fold)
-               :request-json octets :headers headers :endpoint endpoint
-               (alexandria:remove-from-plist keys :request-json :headers :endpoint)))
+      (let* ((body (nlk:decode-json request-json))
+             (turn (nle:turn))
+             (author (list :model (nle::effective-provider-config-model config)
+                           :window (nle::effective-provider-config-context-tokens config)
+                           :directory (round-directory)
+                           :session (and turn (getf turn :session-id))))
+             (rest (alexandria:remove-from-plist keys :request-json :headers :endpoint)))
+        (flet ((send (headers endpoint octets)
+                 (apply next (unprefixed-fold fold)
+                        :request-json octets :headers headers :endpoint endpoint rest)))
+          (multiple-value-bind (headers endpoint octets reused) (apply #'author-request body author)
+            (if (null reused)
+                (send headers endpoint octets)
+                (block round
+                  (handler-bind
+                      ((nle::provider-error
+                         (lambda (condition)
+                           (forget-authored reused)
+                           ;; refused before a byte of answer, so nothing was folded
+                           (when (member (nle::provider-error-status condition) '(401 403))
+                             (return-from round
+                               (multiple-value-bind (headers endpoint octets)
+                                   (apply #'author-request body :fresh t author)
+                                 (send headers endpoint octets)))))))
+                    (send headers endpoint octets)))))))
       (apply next fold keys)))
 
 (defun credential (op next)
@@ -125,7 +145,9 @@ API, as openai-codex prices its subscription models."
     ("models" :list :default (vector "claude-opus-5-5" "claude-sonnet-5" "claude-haiku-4-5" "claude-fable-5-1")
      :doc "the Anthropic model ids /models offers under claude-code/")
     ("timeout_seconds" :integer :default 120 :min 1
-     :doc "how long the CLI may take to write one round's request, its history replay included"))
+     :doc "how long the CLI may take to write one round's request, its history replay included")
+    ("reuse_seconds" :integer :default 600 :min 0
+     :doc "how long a request the CLI wrote is sent again around a later round's own messages when nothing else of the round changed; 0 starts the CLI every round"))
   (:start #'start)
   (:hook :credential #'credential)
   (:hook 'nle::walk-provider-stream #'walk)

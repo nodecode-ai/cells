@@ -16,7 +16,13 @@
     "models": ["claude-opus-5-5", "claude-sonnet-5", "claude-haiku-4-5", "claude-fable-5-1"],
 
     // How long the CLI may take to write one round's request, replaying the
-    // session's history included (about 20 ms a user turn).
-    "timeout_seconds": 120
+    // session's history included (about 2 ms a user turn).
+    "timeout_seconds": 120,
+
+    // How long the request the CLI last wrote is sent again around a later
+    // round's own messages, when the round's system text, tools, model,
+    // effort, output ceiling, thinking, folder and first user message are
+    // the same: such a round starts no CLI. 0 starts the CLI every round.
+    "reuse_seconds": 600
   }
 }
