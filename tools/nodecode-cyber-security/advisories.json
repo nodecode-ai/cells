@@ -1,8 +1,103 @@
 {
   "format": 1,
-  "updated": "2026-11-02T10:17:24Z",
-  "window": "2026-10-19 to 2026-11-02",
+  "updated": "2026-11-05T00:02:06Z",
+  "window": "2026-10-22 to 2026-11-05",
   "advisories": [
+    {
+      "id": "apt-109518",
+      "title": "APT (Debian, Ubuntu and derivatives): an on-path attacker can swap a verified package through redirect and retry hard-link handling and run code as root",
+      "date": "2026-11-04",
+      "severity": "high",
+      "exploited": false,
+      "cves": [
+        "CVE-2026-109518"
+      ],
+      "summary": "APT, the package manager of Debian, Ubuntu and their derivatives, mishandled hard links when it followed redirects and retried package downloads. An attacker who can modify traffic between a machine and its mirror (a hostile network, a compromised mirror or proxy) can trick APT into installing a package that never passed signature verification, which runs its maintainer scripts as root. Reported by Max Justicz; Debian (DSA-6607-1, DLA-4880-1) and Ubuntu (USN-8996-1) shipped fixed apt packages on November 4. No exploitation has been reported.",
+      "affected": "apt on Debian bookworm before 2.6.2, trixie before 3.0.4, unstable before 3.3.6; Ubuntu 26.10 before 3.3.3ubuntu0.1, 26.04 LTS before 3.2.1ubuntu0.1, 24.04 LTS before 2.8.4ubuntu0.1, 22.04 LTS before 2.4.15ubuntu0.1, and older LTS releases through Ubuntu Pro (2.0.12+esm1, 1.6.19+esm1, 1.2.36+esm1, 1.0.1ubuntu2.24+esm4).",
+      "fixed": [
+        "2.6.2",
+        "3.0.4",
+        "3.3.6",
+        "3.3.3ubuntu0.1",
+        "3.2.1ubuntu0.1",
+        "2.8.4ubuntu0.1",
+        "2.4.15ubuntu0.1"
+      ],
+      "checks": [],
+      "patch": [
+        "Update apt first, from a network you trust: apt update && apt install --only-upgrade apt, then confirm with dpkg-query -W apt",
+        "Then run the rest of your upgrades with the fixed apt"
+      ],
+      "mitigation": [
+        "Fetch from HTTPS mirrors where you can, and avoid running apt over untrusted networks until apt is updated"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://ubuntu.com/security/notices/USN-8996-1",
+        "https://security-tracker.debian.org/tracker/CVE-2026-109518",
+        "https://lists.debian.org/debian-security-announce/2026/msg00526.html"
+      ]
+    },
+    {
+      "id": "screenshot-desktop-malware",
+      "title": "Malware in screenshot-desktop 1.16.0 (npm): a widely used screenshot library shipped a malicious release - treat installing machines as compromised",
+      "date": "2026-11-04",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "screenshot-desktop, a long-standing npm library for taking desktop screenshots from Node and Electron apps, published a version 1.16.0 on November 4 2026 at 11:26 UTC that GitHub's advisory database flags as malware: any computer that installed or ran it should be considered fully compromised. The release has been pulled and the latest tag points back at 1.15.8, but lockfiles, caches and CI images that resolved 1.16.0 during the window still carry it.",
+      "affected": "screenshot-desktop 1.16.0 (npm). 1.15.8 and earlier are not affected.",
+      "fixed": [
+        "1.15.8"
+      ],
+      "checks": [
+        {
+          "kind": "npm",
+          "label": "screenshot-desktop",
+          "package": "screenshot-desktop",
+          "bad": [
+            "1.16.0"
+          ]
+        }
+      ],
+      "patch": [
+        "Pin screenshot-desktop to 1.15.8, delete 1.16.0 from lockfiles, node_modules, npm caches and CI images, and reinstall",
+        "On any machine that installed 1.16.0: rotate every secret and key from a different computer and consider rebuilding - removing the package may not remove what it installed"
+      ],
+      "mitigation": [
+        "Search lockfiles across your repositories for screenshot-desktop 1.16.0, including transitive pulls through Electron tooling"
+      ],
+      "iocs": [
+        "screenshot-desktop@1.16.0"
+      ],
+      "sources": [
+        "https://github.com/advisories/GHSA-q2mc-9hgr-vmx2"
+      ]
+    },
+    {
+      "id": "kernel-sh-breach-2026-11",
+      "title": "Kernel (browser infrastructure for AI agents): leaked API key led to stolen logs holding customer API keys and app deployments' third-party secrets",
+      "date": "2026-11-04",
+      "severity": "high",
+      "exploited": true,
+      "cves": [],
+      "summary": "Kernel (kernel.sh), a hosted browser platform for AI agents, disclosed on November 4 that an attacker used a compromised Kernel API key from October 24, reached a staff login at its logging provider on October 27 and downloaded logs that contained a small number of Kernel API keys and app deployments' third-party secrets. On November 3 the same actor used a stolen hosting-provider credential to reach four GPU servers, three of which ran customer browser sessions, and started cryptominers. Kernel says 0.28% of customers were affected and were notified directly; it attributes the attack to a financially motivated cryptomining campaign.",
+      "affected": "Kernel customers, in particular those Kernel notified: Kernel API keys and any third-party secrets passed into app deployments; credentials held in browser sessions on the affected servers.",
+      "fixed": [],
+      "checks": [],
+      "patch": [
+        "Rotate your Kernel API keys and every third-party secret configured in Kernel app deployments, from a clean machine",
+        "Re-authenticate accounts whose sessions or cookies lived in Kernel browser sessions, and review those accounts for activity since October 24"
+      ],
+      "mitigation": [
+        "Move to scoped Kernel API keys and restrict where keys can be used",
+        "Ask security@kernel.sh for the attacker's technical fingerprint to search your own logs"
+      ],
+      "iocs": [],
+      "sources": [
+        "https://www.kernel.sh/blog/public-notice-of-security-incident-nov-4-2026"
+      ]
+    },
     {
       "id": "bil-rgb-baileys-malware",
       "title": "Malware in @bil-rgb/baileys (npm): a WhatsApp-library lookalike whose install clones attacker-controlled code from a personal GitHub repo",
@@ -36,6 +131,37 @@
       "sources": [
         "https://vulnerability.circl.lu/vuln/mal-2026-18441",
         "https://osv.dev/vulnerability/MAL-2026-18441"
+      ]
+    },
+    {
+      "id": "cpguard-update-channel-2026-11",
+      "title": "cPGuard (OpsShield Linux server security agent) 5.88.12-5.88.19: update channel hijacked, a fake update ran as root and stole /etc/shadow, MySQL root config, shell history and SSH files",
+      "date": "2026-11-02",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [],
+      "summary": "On 2 November 2026 an attacker who had broken into OpsShield's billing and licensing server (manage.opsshield.com, via a customer account registered under a false identity) used a stolen key to publish a fake cPGuard update through the product's own update channel. cPGuard agents installed it automatically from 02:08 to 03:20 UTC; it ran as root and collected /etc/shadow and /etc/passwd, the root MariaDB/MySQL configuration (my.cnf), root shell history and root SSH authorized_keys and known_hosts, uploading them to OpsShield's licensing server under a compromised account, from which OpsShield confirms the attacker retrieved some of the data. The script also left a backdoor. cPGuard is a firewall and malware scanner for cPanel, Plesk and other Linux hosting servers, so the affected machines are web hosting servers.",
+      "affected": "cPGuard servers that installed any of versions 5.88.12 through 5.88.19 (check /opt/cpguard/logs/install_log); OpsShield says no matching log line does not by itself prove a server unaffected.",
+      "fixed": [
+        "5.88.25"
+      ],
+      "checks": [],
+      "patch": [
+        "Update every cPGuard server now: cpgcli update --start, then cpgcli --version must report 5.88.25 or later (5.88.25+ removes the known backdoor and the staged files; OpsShield published clean 5.88.26)",
+        "If the log shows an affected version, treat the server as compromised even after updating: reset every local account password, change the MySQL/MariaDB root password and any credentials that appeared in root shell history, and replace root SSH keys and review authorized_keys",
+        "Contact OpsShield support for an individual assessment if the server's integrity is in doubt - a rebuild may be appropriate"
+      ],
+      "mitigation": [
+        "Check which versions a server installed: grep 'Successfully updated' /opt/cpguard/logs/install_log - any 5.88.12-5.88.19 line means it took the malicious update",
+        "Review root SSH authorized_keys for keys you did not add and outbound connections from the server since 2 November"
+      ],
+      "iocs": [
+        "cPGuard versions 5.88.12-5.88.19 in /opt/cpguard/logs/install_log (updates installed 2 Nov 2026 02:08-03:20 UTC)"
+      ],
+      "sources": [
+        "https://opsshield.com/notice/cpguard-update-channel-compromise.html",
+        "https://opsshield.com/notice/security-incident-disclosure-servermanage.html",
+        "https://www.securityweek.com/malicious-cpguard-updates-served-in-opsshield-supply-chain-attack/"
       ]
     },
     {
@@ -965,15 +1091,16 @@
     },
     {
       "id": "keycloak-uri-bypass-2026-10",
-      "title": "Keycloak before 26.6.4: XSS via case-insensitive URI validation bypass, and authorization bypass via incorrect URI comparison",
+      "title": "Keycloak before 26.6.4: XSS via case-insensitive URI validation bypass, authorization bypass via incorrect URI comparison, and JWT algorithm confusion that forges access tokens",
       "date": "2026-10-29",
       "severity": "high",
       "exploited": false,
       "cves": [
         "CVE-2026-9086",
-        "CVE-2026-9800"
+        "CVE-2026-9800",
+        "CVE-2026-11800"
       ],
-      "summary": "Two URI-comparison flaws in Keycloak. The URI validation for redirect and content checks is case-insensitive where the parser is not, so a mixed-case URI slips past validation and delivers cross-site scripting (CVE-2026-9086). And an incorrect URI comparison in the policy enforcer lets a request pass an authorization check it should fail (CVE-2026-9800). Both fixed in 26.6.4 (the policy enforcer also in 26.0.10).",
+      "summary": "Two URI-comparison flaws in Keycloak. The URI validation for redirect and content checks is case-insensitive where the parser is not, so a mixed-case URI slips past validation and delivers cross-site scripting (CVE-2026-9086). And an incorrect URI comparison in the policy enforcer lets a request pass an authorization check it should fail (CVE-2026-9800). Both fixed in 26.6.4 (the policy enforcer also in 26.0.10). A third flaw fixed in 26.6.4, CVE-2026-11800 (high), is a JWT algorithm confusion in the JWT Authorization Grant flow: an attacker with valid client credentials can forge an assertion past signature verification, mint access tokens and impersonate any federated user linked to the affected identity provider.",
       "affected": "org.keycloak:keycloak-services below 26.6.4, and org.keycloak:keycloak-policy-enforcer below 26.0.10.",
       "fixed": [
         "26.6.4",
@@ -989,7 +1116,8 @@
       "iocs": [],
       "sources": [
         "https://github.com/advisories/GHSA-v3f7-2p4r-mwfw",
-        "https://github.com/advisories/GHSA-f5p5-6xmx-p252"
+        "https://github.com/advisories/GHSA-f5p5-6xmx-p252",
+        "https://github.com/keycloak/keycloak/security/advisories/GHSA-j97h-3f8r-mrjr"
       ]
     },
     {
@@ -1696,12 +1824,14 @@
     },
     {
       "id": "wordpress-core-7-1-4",
-      "title": "WordPress 4.7-7.1.3: RCE through the upgrade unpack race - installer files land web-reachable, 60,000 attacks a day",
+      "title": "WordPress 4.7-7.1.3: RCE through the upgrade unpack race (CVE-2026-119977) - in CISA KEV since November 3, 60,000 attacks a day",
       "date": "2026-10-28",
       "severity": "high",
       "exploited": true,
-      "cves": [],
-      "summary": "A remote code execution in WordPress core itself (CVSS 8.1): during full-package core upgrades the updater unpacks files, including the installer, into a predictable web-reachable folder under wp-content/upgrade, and an attacker who wins the seconds-long race - polling installer paths and setup-config.php until an upgrade starts - runs code. Wordfence blocked 60,471 attempts in one 24-hour window (62,969 in a wider count), the biggest sources hammering small sets of sites for about 14.5 hours; auto-updates make the timing more predictable than it sounds. No CVE has been assigned; WordPress shipped the fix in the 7.1.4 security release of October 28.",
+      "cves": [
+        "CVE-2026-119977"
+      ],
+      "summary": "A remote code execution in WordPress core itself (CVSS 8.1): during full-package core upgrades the updater unpacks files, including the installer, into a predictable web-reachable folder under wp-content/upgrade, and an attacker who wins the seconds-long race - polling installer paths and setup-config.php until an upgrade starts - runs code. Wordfence blocked 60,471 attempts in one 24-hour window (62,969 in a wider count), the biggest sources hammering small sets of sites for about 14.5 hours; auto-updates make the timing more predictable than it sounds. It is tracked as CVE-2026-119977 (reported by Picus Security's Umut Bayram). CISA added it to its Known Exploited Vulnerabilities catalog on November 3 with a November 6 deadline for US federal agencies. WordPress shipped the fix in the 7.1.4 security release of October 28.",
       "affected": "WordPress 4.7 through 7.1.3 - any site that runs full-package core upgrades with wp-content/upgrade reachable from the web.",
       "fixed": [
         "7.1.4"
@@ -1735,7 +1865,9 @@
       "sources": [
         "https://wordpress.org/news/2026/10/wordpress-7-1-4/",
         "https://tsecurity.de/de/4310630/sicherheitsluecken-cve/over-60000-attacks-target-wordpress-rce-vulnerability-within-24-hours/",
-        "https://briandeitch.com/blog/drupal-commerce-exploited-wordpress-core-rce-race"
+        "https://briandeitch.com/blog/drupal-commerce-exploited-wordpress-core-rce-race",
+        "https://www.cisa.gov/news-events/alerts/2026/11/03/cisa-adds-one-known-exploited-vulnerability-catalog",
+        "https://nvd.nist.gov/vuln/detail/CVE-2026-119977"
       ]
     },
     {
@@ -3986,228 +4118,6 @@
       ]
     },
     {
-      "id": "virtualenv-2026-10",
-      "title": "virtualenv before 21.14.9: generated activate scripts and pip launchers run commands from an attacker-named path",
-      "date": "2026-10-21",
-      "severity": "high",
-      "exploited": false,
-      "cves": [
-        "CVE-2026-113722",
-        "CVE-2026-113725",
-        "CVE-2026-113726",
-        "CVE-2026-113732",
-        "CVE-2026-113776"
-      ],
-      "summary": "virtualenv writes the environment's directory name and path into every script it generates, and five bugs let that text run as shell code. The attacker's input is a directory name: a cloned repository, an unpacked archive, or a CI path built from a branch or job name. In bash, activate escapes the name for only one of bash's two PS1 passes, so a name like a\\$(touch pwned) runs at every prompt; under zsh with PROMPT_SUBST on (oh-my-zsh's default) the raw name is expanded the same way; activate.fish quotes with POSIX sh rules that fish reads differently, so a backslash before a quote escapes out of the literal; a path containing a placeholder name such as __VIRTUAL_NAME__ is rewritten after quoting and breaks out into code; and the POSIX console launchers (bin/pip and friends) hand the interpreter path to distlib's #!/bin/sh wrapper unescaped, which expands the payload when the user runs the launcher. Nothing runs when the environment is created - the user must source activate or run a generated script from an environment an attacker named. Per bug: launchers CVE-2026-113722 (21.14.8 only, fixed 21.14.9), bash PS1 CVE-2026-113725 (up to 21.14.6, fixed 21.14.7), zsh PROMPT_SUBST CVE-2026-113726 (up to 21.14.3, fixed 21.14.4), fish quoting CVE-2026-113732 (up to 21.14.1, fixed 21.14.2), placeholder rewrite CVE-2026-113776 (20.26.6-21.14.1, fixed 21.14.2).",
-      "affected": "virtualenv up to 21.14.8, per vector: console launchers 21.14.8, bash activate up to 21.14.6, zsh up to 21.14.3, activate.fish and the template rewrite up to 21.14.1 (the rewrite bug only since 20.26.6). Windows exe launchers are not affected. A dev-machine and CI bug: build hosts that create environments under paths named after a branch, project or job are the exposure.",
-      "fixed": [
-        "21.14.9"
-      ],
-      "checks": [
-        {
-          "kind": "version",
-          "label": "virtualenv",
-          "command": [
-            "sh",
-            "-c",
-            "virtualenv --version 2>/dev/null || python3 -c \"import importlib.metadata as m; print(m.version('virtualenv'))\""
-          ],
-          "line": 1,
-          "fixed": [
-            "21.14.9"
-          ]
-        }
-      ],
-      "patch": [
-        "pip install --upgrade 'virtualenv>=21.14.9' wherever environments are created (pipx upgrade virtualenv, your distro package, or the CI image)",
-        "Recreate environments whose path or prompt was not fully trusted: the generated activate and launcher scripts carry the bug and upgrading virtualenv does not rewrite them"
-      ],
-      "mitigation": [
-        "Do not create an environment under a path someone else named: check a cloned repository's or unpacked archive's directory names before running virtualenv there",
-        "VIRTUAL_ENV_DISABLE_PROMPT=1 before sourcing activate (bash, zsh), or shopt -u promptvars (bash) / unsetopt prompt_subst (zsh) when the prompt needs no expansion; inspect activate.fish and the bin/ scripts before running one you did not create",
-        "pip's vendored distlib can write the vulnerable launcher wrapper again on a later pip install or upgrade inside an environment - the virtualenv fix does not patch pip's copy, so keep pip current"
-      ],
-      "iocs": [],
-      "sources": [
-        "https://github.com/pypa/virtualenv/security/advisories/GHSA-c978-59m8-c77v",
-        "https://github.com/pypa/virtualenv/security/advisories/GHSA-vxj4-q4g9-crj7",
-        "https://github.com/pypa/virtualenv/security/advisories/GHSA-5vjq-rrrf-7h2q",
-        "https://github.com/pypa/virtualenv/security/advisories/GHSA-c947-3pg5-gm8q",
-        "https://github.com/pypa/virtualenv/security/advisories/GHSA-8rjx-v5ww-45pp"
-      ]
-    },
-    {
-      "id": "openchoreo-workflowrun-authz",
-      "title": "OpenChoreo before 1.0.6 / 1.1.7 / 1.2.5: WorkflowRun update authorization bypass lets one project take over another's runs",
-      "date": "2026-10-21",
-      "severity": "high",
-      "exploited": false,
-      "cves": [
-        "CVE-2026-113727"
-      ],
-      "summary": "The OpenChoreo API server authorized PUT .../workflowruns/{runName} against the openchoreo.dev/project and openchoreo.dev/component labels supplied in the request body, while the run it mutated is the one named in the URL. A caller holding workflowrun:update on one component could name a run of another project or component in the URL, send their own labels, pass the check, and rewrite the victim run's ownership labels. Every other WorkflowRun permission - view, logs, events, status, delete - derives from those stored labels, so after the write the attacker legitimately reads the victim's build logs (raw pod logs that routinely carry source paths, registry destinations and credentials a build step echoed), deletes the run, or overwrites a pending run's parameters. Needs an authenticated caller with an AuthzRoleBinding or ClusterAuthzRoleBinding for workflowrun:update in the same namespace plus the run's name; anonymous callers cannot reach it; cross-project and cross-component inside one namespace, not cross-tenant.",
-      "affected": "OpenChoreo 1.0.0-1.0.5, 1.1.0-1.1.6, 1.2.0-1.2.4.",
-      "fixed": [
-        "1.0.6",
-        "1.1.7",
-        "1.2.5"
-      ],
-      "checks": [],
-      "patch": [
-        "Upgrade to the patched release on your line: 1.0.6, 1.1.7 or 1.2.5; no configuration change is needed after upgrading (the fix also makes the two ownership labels immutable on update)"
-      ],
-      "mitigation": [
-        "Until upgraded: restrict who holds workflowrun:update - audit AuthzRole and ClusterAuthzRole definitions for that action and drop it from any role held by principals you would not trust with write access to every workflow run in the namespace",
-        "Among the shipped roles only workload-publisher lists workflowrun:update (admin holds it through its * wildcard), and custom roles in your own values file may too: treat any credential bound to workload-publisher, typically a CI token, as privileged"
-      ],
-      "iocs": [],
-      "sources": [
-        "https://github.com/openchoreo/openchoreo/security/advisories/GHSA-46r4-q7wv-32fc",
-        "https://github.com/openchoreo/openchoreo/releases/tag/v1.2.5"
-      ]
-    },
-    {
-      "id": "apostrophe-import-export-dos",
-      "title": "ApostropheCMS before 4.33.0: unauthenticated big-upload processing drains the server (@apostrophecms/import-export)",
-      "date": "2026-10-21",
-      "severity": "high",
-      "exploited": false,
-      "cves": [
-        "CVE-2026-113711"
-      ],
-      "summary": "The chunked import routes (importExportImport on pages and piece types) run bigUploadMiddleware() before the import handler's own req.user check and pass it no authorize callback, so an unauthenticated request drives the whole aposBigUpload start / chunk / end flow first: the server creates upload state, writes attacker chunk data into big-uploads, processes temporary files, and loops cleanup over an attacker-declared chunk count - only then does the import handler reject the caller. An anonymous remote attacker burns storage, filesystem I/O and CPU at will (CWE-400 denial of service) and gets arbitrary file content written to the server before any authentication. Reported by Kai Zhi; no exploitation known.",
-      "affected": "@apostrophecms/import-export 3.6.2 (confirmed) and likely earlier 3.x with the big-upload import implementation, paired with apostrophe up to 4.32.x.",
-      "fixed": [
-        "4.33.0",
-        "3.7.0"
-      ],
-      "checks": [
-        {
-          "kind": "npm",
-          "label": "apostrophe",
-          "package": "apostrophe",
-          "line": 1,
-          "fixed": [
-            "4.33.0"
-          ]
-        },
-        {
-          "kind": "npm",
-          "label": "@apostrophecms/import-export",
-          "package": "@apostrophecms/import-export",
-          "line": 1,
-          "fixed": [
-            "3.7.0"
-          ]
-        }
-      ],
-      "patch": [
-        "npm install apostrophe@^4.33.0 @apostrophecms/import-export@^3.7.0 (or update package.json and reinstall), then restart the app"
-      ],
-      "mitigation": [
-        "Until upgraded: block unauthenticated POSTs to /api/v1/@apostrophecms/*/importExportImport at the reverse proxy, or remove @apostrophecms/import-export if nobody imports",
-        "Watch the big-uploads and temp directories for growth you did not cause and clean up orphaned chunk files"
-      ],
-      "iocs": [],
-      "sources": [
-        "https://github.com/apostrophecms/apostrophe/security/advisories/GHSA-86wm-68pq-5jwq",
-        "https://github.com/apostrophecms/apostrophe/releases/tag/apostrophe@4.33.0"
-      ]
-    },
-    {
-      "id": "pillow-13-0-0",
-      "title": "Pillow before 13.0.0: Ghostscript argument injection to RCE, and a heap overflow saving TIFF",
-      "date": "2026-10-21",
-      "severity": "critical",
-      "exploited": false,
-      "cves": [
-        "CVE-2026-112900",
-        "CVE-2026-112393"
-      ],
-      "summary": "Two critical bugs in Python's image library. When the file name passed to Image.open() for an EPS is attacker-influenced (an upload stored under its own name), Pillow hands it to Ghostscript unchecked: a leading - or @ injects Ghostscript arguments, verified to run commands even with -dSAFER. Re-saving an uploaded image as TIFF to an in-memory target (BytesIO, an HTTP response, a storage stream) overflows the heap and copies stale heap bytes into the output. 13.0.0 also fixes about a dozen high-severity crash and memory bugs published the same day.",
-      "affected": "Pillow 2.0.0 up to 13.0.0 (TIFF save to a non-file target), Pillow 2.6.0 up to 13.0.0 (EPS via Ghostscript, needs Ghostscript installed). Saves to real file paths are not affected by the TIFF bug.",
-      "fixed": [
-        "13.0.0"
-      ],
-      "checks": [
-        {
-          "kind": "version",
-          "label": "Pillow",
-          "command": [
-            "python3",
-            "-c",
-            "import importlib.metadata as m; print(m.version('Pillow'))"
-          ],
-          "fixed": [
-            "13.0.0"
-          ],
-          "line": 1
-        }
-      ],
-      "patch": [
-        "pip install --upgrade 'Pillow>=13.0.0' in every virtualenv that handles user images (pin it in requirements / lock files), then restart the app workers",
-        "Docker: rebuild images with Pillow 13.0.0 or newer and redeploy"
-      ],
-      "mitigation": [
-        "Until upgraded: never pass a user-chosen file name to Image.open(); store uploads under generated names or open them from a file object",
-        "Where EPS is not needed, keep it from reaching Ghostscript (Image.open(f, formats=[...]) with only the formats you accept, or no Ghostscript on the host)",
-        "Save TIFFs to a real file path, not io.BytesIO or a stream"
-      ],
-      "iocs": [],
-      "sources": [
-        "https://github.com/python-pillow/Pillow/security/advisories/GHSA-w889-685w-c8fh",
-        "https://github.com/python-pillow/Pillow/security/advisories/GHSA-332p-7hrc-92wf",
-        "https://github.com/python-pillow/Pillow/releases/tag/13.0.0"
-      ]
-    },
-    {
-      "id": "storybook-dev-server-2026-10",
-      "title": "Storybook dev server: a malicious website can change project files (CVE-2026-114125)",
-      "date": "2026-10-21",
-      "severity": "critical",
-      "exploited": false,
-      "cves": [
-        "CVE-2026-114125"
-      ],
-      "summary": "While storybook dev runs, a website open in the developer's browser can reach the dev server on localhost and change files in the project; under further conditions a changed file is then run with the developer's privileges. Built Storybooks, and dev servers never opened in a browser (headless automation, MCP clients), are not affected. Storybook knows of no exploitation.",
-      "affected": "storybook (and @storybook/core, @storybook/core-server, @storybook/experimental-addon-test, @storybook/addon-vitest, @storybook/addon-mcp) 8.0.0 before 8.6.19, 9.x before 9.1.21, 10.x before 10.6.2, 11.0.0-alpha before 11.0.0-alpha.6.",
-      "fixed": [
-        "8.6.19",
-        "9.1.21",
-        "10.6.2",
-        "11.0.0-alpha.6"
-      ],
-      "checks": [
-        {
-          "kind": "npm",
-          "label": "storybook",
-          "package": "storybook",
-          "min": "8.0.0",
-          "fixed": [
-            "8.6.19",
-            "9.1.21",
-            "10.6.2"
-          ],
-          "line": 1
-        }
-      ],
-      "patch": [
-        "Upgrade storybook and every @storybook/* package to 10.6.2 (9.1.21 on 9.x, 8.6.19 on 8.x, 11.0.0-alpha.6 on the 11 alpha) and commit the lockfile before running storybook dev again",
-        "Read the advisory's list of changed network defaults: the fix changes how the dev server accepts connections, also on 8.x and 9.x"
-      ],
-      "mitigation": [
-        "Do not run an affected storybook dev server until it is upgraded",
-        "Deny the browser's permission prompt for a website to connect to localhost unless you trust the site"
-      ],
-      "iocs": [
-        "Project file changes you did not make while storybook dev was running (git status / git diff)"
-      ],
-      "sources": [
-        "https://github.com/storybookjs/storybook/security/advisories/GHSA-f2ph-cmg5-wxc8",
-        "https://github.com/storybookjs/storybook/releases/tag/v10.6.2"
-      ]
-    },
-    {
       "id": "php2shell",
       "title": "PHP2Shell: unauthenticated remote code execution in PHP core",
       "date": "2026-10-21",
@@ -4274,121 +4184,6 @@
       ]
     },
     {
-      "id": "nodejs-2026-10",
-      "title": "Node.js October security release: Brotli decoder RCE and 9 more",
-      "date": "2026-10-21",
-      "severity": "high",
-      "exploited": false,
-      "cves": [
-        "CVE-2026-111497",
-        "CVE-2026-105483",
-        "CVE-2026-106069",
-        "CVE-2026-105482",
-        "CVE-2026-105481",
-        "CVE-2026-106072",
-        "CVE-2026-106074",
-        "CVE-2026-106070",
-        "CVE-2026-106071",
-        "CVE-2026-106073"
-      ],
-      "summary": "An out-of-bounds write in Node's Brotli decoder can run code when a server decompresses attacker data; the same release fixes TLS hostname-check bypasses and a dns.resolve truncation, and drops the eMudhra CA from Node's bundled store.",
-      "affected": "Node.js 22.x, 24.x and 26.x before the fixed releases, and every end-of-life line.",
-      "fixed": [
-        "22.23.4",
-        "24.22.1",
-        "26.12.1"
-      ],
-      "checks": [
-        {
-          "kind": "version",
-          "label": "node",
-          "command": [
-            "node",
-            "-v"
-          ],
-          "line": 1,
-          "fixed": [
-            "22.23.4",
-            "24.22.1",
-            "26.12.1"
-          ]
-        }
-      ],
-      "patch": [
-        "nvm: nvm install 24.22.1 (or 22.23.4 / 26.12.1) && nvm alias default 24.22.1",
-        "Debian/Ubuntu (NodeSource): sudo apt update && sudo apt install --only-upgrade nodejs",
-        "Docker: rebuild on node:22.23.4 / 24.22.1 / 26.12.1 (or newer) and redeploy",
-        "Restart every Node process after upgrading"
-      ],
-      "mitigation": [
-        "Until patched: refuse Content-Encoding: br request bodies at the reverse proxy and do not decompress untrusted Brotli in app code (Vercel's WAF already blocks known patterns for Vercel deployments)"
-      ],
-      "iocs": [],
-      "sources": [
-        "https://nodejs.org/en/blog/vulnerability/october-2026-security-releases",
-        "https://x.com/vercel_dev/status/2113048861526852004"
-      ]
-    },
-    {
-      "id": "gitlab-110264",
-      "title": "GitLab: unauthenticated RCE through the regex compiler (CVSS 10)",
-      "date": "2026-10-21",
-      "severity": "critical",
-      "exploited": false,
-      "cves": [
-        "CVE-2026-110264",
-        "CVE-2026-97229"
-      ],
-      "summary": "An integer overflow in GitLab's regex compiler lets anyone reach code execution on a self-managed server; it spans 12 years of releases. The same fixed releases supersede the October 12 fix for CVE-2026-97229 (CI/CD regex RCE, also CVSS 10). GitLab.com and Dedicated are already patched.",
-      "affected": "GitLab CE/EE self-managed 7.0 up to 18.11.12, 19.0 before 19.0.10, 19.1 before 19.1.9, 19.2 before 19.2.9, 19.3 before 19.3.6, 19.4 before 19.4.3, 19.5 before 19.5.1.",
-      "fixed": [
-        "19.5.1",
-        "19.4.3",
-        "19.3.6",
-        "19.2.9",
-        "19.1.9",
-        "19.0.10",
-        "18.11.13"
-      ],
-      "checks": [
-        {
-          "kind": "version",
-          "label": "gitlab",
-          "command": [
-            "cat",
-            "/opt/gitlab/embedded/service/gitlab-rails/VERSION"
-          ],
-          "min": "7.0",
-          "fixed": [
-            "19.5.1",
-            "19.4.3",
-            "19.3.6",
-            "19.2.9",
-            "19.1.9",
-            "19.0.10",
-            "18.11.13"
-          ]
-        }
-      ],
-      "patch": [
-        "Omnibus (Debian/Ubuntu): sudo apt update && sudo apt install gitlab-ee (or gitlab-ce) to 19.5.1 or the fixed patch of your minor",
-        "Omnibus (RHEL): sudo dnf upgrade gitlab-ee (or gitlab-ce)",
-        "Docker: pull gitlab/gitlab-ee:19.5.1-ee.0 (or your minor's fixed tag) and recreate the container",
-        "Then: sudo gitlab-ctl reconfigure && sudo gitlab-ctl restart"
-      ],
-      "mitigation": [
-        "None published; take the instance off the public internet until upgraded"
-      ],
-      "iocs": [
-        "GitLab published detections for CVE-2026-97229 (e.g. Onigmo native worker crashes) in its 19.4.2 release post"
-      ],
-      "sources": [
-        "https://docs.gitlab.com/releases/patches/patch-release-gitlab-19-5-1-released/",
-        "https://docs.gitlab.com/releases/patches/patch-release-gitlab-19-4-2-released/",
-        "https://x.com/TheHackersNews/status/2112981939984671090"
-      ]
-    },
-    {
       "id": "onamae-desktop-cloud-2026-10",
       "title": "Onamae.com Desktop Cloud: malware planted in customer servers, stored credentials may have been viewed (GMO Internet, 26,739 systems)",
       "date": "2026-10-21",
@@ -4413,46 +4208,6 @@
         "https://internet.gmo/en/news/article/247/",
         "https://internet.gmo/en/news/article/246/",
         "https://www.bleepingcomputer.com/news/security/japans-onamae-desktop-cloud-hacked-up-to-27-000-servers-affected/"
-      ]
-    },
-    {
-      "id": "yootheme-pro-5-0-53",
-      "title": "YOOtheme Pro before 5.0.53: unauthenticated remote code execution via the image handler (CVE-2026-102785)",
-      "date": "2026-10-21",
-      "severity": "critical",
-      "exploited": false,
-      "cves": [
-        "CVE-2026-102785"
-      ],
-      "summary": "YOOtheme Pro, the website builder for WordPress and Joomla, fixes an unauthenticated remote code execution flaw in its image handler in 5.0.53: an attacker who can reach the site runs code without logging in. YOOtheme pre-announced the critical update to customers on October 20 and shipped it October 21, with the changelog naming the CVE. Image handling is reachable on every site that runs the builder, so every YOOtheme Pro 5 site should take the update immediately.",
-      "affected": "YOOtheme Pro 5 below 5.0.53, on WordPress and Joomla.",
-      "fixed": [
-        "5.0.53"
-      ],
-      "checks": [
-        {
-          "kind": "wp-plugin",
-          "label": "yootheme-pro",
-          "slugs": [
-            "yootheme-pro"
-          ],
-          "line": 1,
-          "fixed": [
-            "5.0.53"
-          ]
-        }
-      ],
-      "patch": [
-        "Update YOOtheme Pro to 5.0.53 through the theme's own updater, or install the package from your YOOtheme account, on every WordPress and Joomla site that runs it"
-      ],
-      "mitigation": [
-        "Until updated: block unauthenticated access to the image handling endpoints at the proxy or WAF where you can identify them",
-        "Watch for unexpected PHP execution and new files under the yootheme directories"
-      ],
-      "iocs": [],
-      "sources": [
-        "https://yootheme.com/changelog",
-        "https://yootheme.com/support/question/175883"
       ]
     },
     {
@@ -5211,57 +4966,6 @@
       ]
     },
     {
-      "id": "emudhra-ca",
-      "title": "eMudhra CA: weak keys let anyone forge TLS certificates",
-      "date": "2026-10-20",
-      "severity": "critical",
-      "exploited": false,
-      "cves": [
-        "CVE-2026-111943"
-      ],
-      "summary": "Eight eMudhra intermediate CA keys were generated with weak entropy (one key was the number 4), so certificates for any domain could be forged. Chrome blocked them on Oct 17 and removes the emSign ECC Root CA - G3 on Oct 27.",
-      "affected": "Sites whose certificate chains to eMudhra/emSign (they stop working in Chrome on Oct 27); servers, apps and Python environments whose trust store still holds the emSign ECC Root CA - G3 (OS ca-certificates, certifi, pip's and uv's bundled copies, container images).",
-      "fixed": [],
-      "checks": [
-        {
-          "kind": "command",
-          "label": "site certificate issuer",
-          "needs": "host",
-          "match": "(?i)emsign|emudhra",
-          "command": [
-            "sh",
-            "-c",
-            "echo | openssl s_client -connect '{host}:443' -servername '{host}' 2>/dev/null | openssl x509 -noout -issuer"
-          ]
-        },
-        {
-          "kind": "command",
-          "label": "trust store still has emSign ECC Root CA - G3",
-          "command": [
-            "sh",
-            "-c",
-            "ls /etc/ssl/certs 2>/dev/null | grep -i 'emSign_ECC_Root_CA_-_G3' | sed 's|^|system trust store: /etc/ssl/certs/|'; trust list 2>/dev/null | grep -q 'emSign ECC Root CA - G3' && echo 'system trust store: emSign ECC Root CA - G3'; python3 -c \"import certifi; p=certifi.where(); print('certifi ' + certifi.__version__ + ': ' + p) if 'emSign ECC Root CA - G3' in open(p).read() else None\" 2>/dev/null; true"
-          ]
-        }
-      ],
-      "patch": [
-        "If your certificate is issued by eMudhra/emSign: get a new one from another CA (e.g. Let's Encrypt: certbot --nginx -d {host}) before Oct 27",
-        "Update OS ca-certificates, language runtimes (Node 22.23.4/24.22.1/26.12.1, Go's crypto/x509 fix GO-2026-6809) and bundled trust stores; rebuild images; restart",
-        "Python: certifi 2026.10.19, pip 26.2.2, uv 0.13.4, conda 26.9.4 in every virtualenv and tool install (pipx, uv tool); pip and uv carry their own copy, so upgrade them too",
-        "Never fix new certificate errors by turning verification off"
-      ],
-      "mitigation": [],
-      "iocs": [],
-      "sources": [
-        "https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/",
-        "https://blog.cloudflare.com/emudhra-certificate-compromise",
-        "https://pkg.go.dev/vuln/GO-2026-6809",
-        "https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576",
-        "https://github.com/certifi/python-certifi/security/advisories/GHSA-6q48-6c7w-9gw2",
-        "https://x.com/AFpost/status/2112926349891412345"
-      ]
-    },
-    {
       "id": "railway-2026-10-21",
       "title": "Railway: customer environment variables accessed",
       "date": "2026-10-21",
@@ -5372,6 +5076,47 @@
       "sources": [
         "https://jvn.jp/en/jp/JVN88474777/",
         "https://www.eg-secure.co.jp/siteguard/news/alert-202610-1"
+      ]
+    },
+    {
+      "id": "metabase-72898",
+      "title": "Metabase: unauthenticated SQL injection into the application database gives admin (CVSS 10) - actively exploited, public PoC",
+      "date": "2026-08-06",
+      "severity": "critical",
+      "exploited": true,
+      "cves": [
+        "CVE-2026-72898"
+      ],
+      "summary": "A critical flaw in Metabase lets an unauthenticated remote attacker inject arbitrary SQL into the Metabase application database and take administrator access to the instance, through the password-reset endpoint. From there the attacker can change configuration, steal the stored credentials for every connected database, read anything those connections reach and export data. Metabase confirms active exploitation in its advisory, and on November 4 Singapore's Cyber Security Agency warned that the flaw is being exploited with a public proof-of-concept and urged immediate patching.",
+      "affected": "Metabase OSS 0.58.0-0.58.23, 0.59.0-0.59.20, 0.60.0-0.60.16, 0.61.0-0.61.10, 0.62.0-0.62.8, 0.63.0-0.63.4 and Enterprise 1.58.0-1.58.23, 1.59.0-1.59.20, 1.60.0-1.60.16, 1.61.0-1.61.10, 1.62.0-1.62.8, 1.63.0-1.63.4.",
+      "fixed": [
+        "0.58.24",
+        "0.59.21",
+        "0.60.17",
+        "0.61.11",
+        "0.62.9",
+        "0.63.5",
+        "1.58.24",
+        "1.59.21",
+        "1.60.17",
+        "1.61.11",
+        "1.62.9",
+        "1.63.5"
+      ],
+      "checks": [],
+      "patch": [
+        "Upgrade to the patch release of your Metabase major version: OSS 0.58.24, 0.59.21, 0.60.17, 0.61.11, 0.62.9, 0.63.5 (Enterprise 1.x same numbers) or later",
+        "If /api/session/reset_password was reachable from the internet, after upgrading: delete all rows in the core_session table, delete unrecognized API keys, review admin accounts, rotate credentials for every connected database, and review warehouse logs and Metabase query history"
+      ],
+      "mitigation": [
+        "Until you can upgrade, block the /api/session/reset_password endpoint at the proxy"
+      ],
+      "iocs": [
+        "Unexpected administrator accounts or API keys; unexplained requests to /api/session/reset_password"
+      ],
+      "sources": [
+        "https://github.com/metabase/metabase/security/advisories/GHSA-vwf4-m7j8-wcjf",
+        "https://www.csa.gov.sg/alerts-and-advisories/alerts/al-2026-158"
       ]
     }
   ]
