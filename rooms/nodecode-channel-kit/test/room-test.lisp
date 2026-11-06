@@ -776,6 +776,26 @@ alice [m9 uu1]: fix it"
     (is (null (nck:write-back lane "an answer")))
     (is (zerop (count-session-events "chat-100" "turn.started")))))
 
+(deftest channel-room-write-back-never-records-an-empty-ask (with-temp-store ())
+  ;; An answer no new message asked for still settles in the room: an exit
+  ;; wake's turn starts on "", and so does a turn a bare mention opened. Its
+  ;; user half is a line saying so, never "": the room's record is the
+  ;; history of every lane forked off it, and a strict chat endpoint refuses a
+  ;; request carrying an empty user message, so one such answer failed every
+  ;; new thread of the room until it was evicted by hand. A thread lane's
+  ;; answer lands so in both rooms.
+  (nlk:create-session :id "chat-100")
+  (nlk:create-session :id "chat-100-t9" :parent "chat-100")
+  (let ((lane (forked-lane (nck:make-lane-table "wb") "chat-100-t9-m1" "chat-100-t9" "")))
+    (nck:write-back lane "the build finished: green")
+    (nck:write-back lane "the tests are green too" :prompt "  ")
+    (dolist (room '("chat-100" "chat-100-t9"))
+      (let ((asks (mapcar (lambda (input) (nlk:json-value input :string "message"))
+                          (nlk:events :session-id room :kind "turn.input_committed" :as :payloads))))
+        (is (= 2 (length asks)))
+        (is (notany (lambda (ask) (zerop (length (nlk:trimmed ask)))) asks))
+        (is (every (lambda (ask) (search "follows on from the exchange above" ask)) asks))))))
+
 (deftest channel-thread-room-write-back-reaches-the-channel-room (with-temp-store ())
   ;; A thread is a room forked off a room. Its settled exchange lands in the
   ;; thread room AND in the channel room the thread hangs in — so a lane
