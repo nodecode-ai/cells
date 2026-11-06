@@ -558,6 +558,11 @@ once it holds more than BUDGET; NIL or 0 bounds nothing."
                                                :keep (floor budget 2)
                                                :reason "room_budget")))
 
+(defparameter +unasked-prompt+
+  "[no new message: this answer follows on from the exchange above]"
+  "The user half a room records for an answer whose turn began on no words:
+an exit wake's, or one a bare mention opened.")
+
 (defun write-back (lane answer &key prompt (room lane.parent-session-id) budget)
   "Fold LANE's settled exchange into ROOM — the lane's own room, unless the
 caller names another room the same answer surfaced in — as one turn, and
@@ -579,8 +584,17 @@ hold every room it lands in to BUDGET (BOUND-ROOM)."
   ;; completion order — the room reads as the channel read. The lane cannot
   ;; see its own exchange come back either: its fork anchor was frozen below
   ;; it.
+  ;;
+  ;; A turn that began on no words still answered, so its answer settles
+  ;; like any other, but its user half says so instead of standing empty: the
+  ;; room is the history of every lane forked off it, and a strict chat
+  ;; endpoint refuses a request carrying an empty user message (Moonshot: 400
+  ;; `must not be empty'), so one such answer failed every new thread of the
+  ;; room.
   (let ((prompt (or prompt lane.prompt))
         (own lane.parent-session-id))
+    (when (and (stringp prompt) (zerop (length (nlk:trimmed prompt))))
+      (setf prompt +unasked-prompt+))
     (when (and room (stringp prompt) (stringp answer)
                (plusp (length (nlk:trimmed answer))))
       (nlk:with-handlers ((error (condition)
