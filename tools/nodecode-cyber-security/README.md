@@ -72,7 +72,7 @@ known-exploited list, GitHub's reviewed advisories, vendor and news posts), edit
 pass. [`UPDATING.md`](UPDATING.md) is the procedure it follows.
 
 Each scan starts cheap: `(security:scan-report)` collects the window's items with no
-model and has **Decide v1**, nodecode's decider model (`foresight-decide-v1` on
+model and has **Decide v1**, nodecode's decider model (`nodecode-decide-v1` on
 https://api.nodecode.ai/v1), sort them; the agent then reads only what it kept. News comes
 from Claude's own web search (Claude Haiku with Anthropic's native `web_search` tool, on the
 machine's `anthropic` API key), then DeepSeek's own web search, then Exa's: the first one the

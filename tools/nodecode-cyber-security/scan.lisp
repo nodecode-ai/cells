@@ -7,7 +7,7 @@
 ;;;; model at all -- CISA's exploited list, GitHub's reviewed and malware
 ;;;; advisories, and a news search when this image has one -- drops what the
 ;;;; feed already holds or an earlier scan already sorted, and asks Decide v1,
-;;;; nodecode's decider model (`foresight-decide-v1' on the `nodecode'
+;;;; nodecode's decider model (`nodecode-decide-v1' on the `nodecode'
 ;;;; provider, https://api.nodecode.ai/v1), what kind of item each one is.
 ;;;; Only what it keeps goes on to the agent, which still takes every fact
 ;;;; from the vendor's own page.
@@ -20,7 +20,7 @@
 
 (in-package #:nodecode-cyber-security)
 
-(defparameter *decider* '(:provider "nodecode" :model "foresight-decide-v1")
+(defparameter *decider* '(:provider "nodecode" :model "nodecode-decide-v1")
   "The model that sorts scan items: nodecode's Decide v1.")
 
 (defparameter *keep-at* 0.5
