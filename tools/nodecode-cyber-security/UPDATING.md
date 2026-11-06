@@ -28,7 +28,7 @@ advisories, and news through Claude's own web search (Claude Haiku with Anthropi
 key), else Exa's; a search on which every query fails hands over to the next. The report
 names which search answered, and any that failed before it. It drops what the feed
 already carries and what an earlier scan already sorted (the `:seen` ledger), and sorts
-the rest with **Decide v1, nodecode's decider model** (`foresight-decide-v1` on provider
+the rest with **Decide v1, nodecode's decider model** (`nodecode-decide-v1` on provider
 `nodecode`, https://api.nodecode.ai/v1, the key `nodecode login` saved). Never sort these
 items with another model.
 

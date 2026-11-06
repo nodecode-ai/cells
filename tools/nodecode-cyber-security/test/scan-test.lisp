@@ -89,7 +89,7 @@
       (is (search "UNAVAILABLE" (nodecode-cyber-security:scan-report :since "2026-10-20T00:00:00Z" :entries '())) "the report the agent reads says the decider did not answer"))))
 
 (deftest cyber-security-the-decider-is-nodecode-decide-v1 ()
-  (is (equal '(:provider "nodecode" :model "foresight-decide-v1") nodecode-cyber-security:*decider*))
+  (is (equal '(:provider "nodecode" :model "nodecode-decide-v1") nodecode-cyber-security:*decider*))
   (let* ((req (shasht:read-json (nodecode-cyber-security::decision-request "item" '(("acme" . "Acme")))))
          (qs (gethash "questions" req)))
     (is (equal "item" (gethash "state" req)))
