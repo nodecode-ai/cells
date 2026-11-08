@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "letsfg": {
+    "enabled": true,
+    "server": "https://letsfg.co/mcp",   // the hosted endpoint; the default
+    "token_file": "~/.secrets/letsfg",   // or "token_env": "LETSFG_TOKEN", not both
+    "timeout_seconds": 60                // one call's ceiling; a hotel search can take half a minute
+  }
+}
