@@ -1,0 +1,34 @@
+nodecode-delegation is a rewrite of NousResearch's NousResearch/hermes-official-plugins:
+
+  https://github.com/NousResearch/hermes-official-plugins
+  commit 13b2c1c9c8204bf333df240b2aacf98c3e6250b7
+  MIT License, Copyright (c) 2026 Nous Research (LICENSE)
+
+Rewritten: the plugin's `model_map` delegation backend — `model_map.py`,
+plus the reading, validation and display of its settings in `store.py`
+(MODES, routes, validate_route, route_summary, describe) and the
+`/delegation` command of `slash.py` — as one Nodecode cell. A route is still
+a name and a line the model reads over a provider, a model and an optional
+reasoning effort it never sees; a task that names none still runs on the
+mode's default, else on the parent's model; `/delegation` still shows the
+mode with its routes and switches between them; a malformed or repeated
+route is still skipped with a warning rather than guessed at. The mechanism
+differs because the harness does: Hermes core owns the subagent and asks a
+provider which route a task takes, while here the cell runs the subagent
+itself — a fresh detached session whose model selection is the route's —
+behind a `delegate` tool, and `delegation.backend` still decides whether
+the model is offered the choices at all.
+
+Left out, and why: the `profile_routes` backend and `hermes delegation
+config`'s interactive editor. Profile routes exist to run a subagent as
+another Hermes profile, where a profile is a config within one process; a
+Nodecode profile is a separate home with its own organism, so a subagent
+cannot become one in this image. The editor is replaced by the section
+itself (`/settings`, the config file) and by `/delegation` for the mode;
+`hermes config set delegation.backends.model_map.options` has no analogue
+because the routes are the section. Also left out: Daybreak
+(`daybreak: true`, OpenAI's access program), `service_tier`/`fallback_providers`/
+`api_key`/`api_mode` on a route, per-route `base_url` (a Nodecode provider
+section carries its endpoint), and the `delegation.model`/`delegation.provider`
+keys — the parent's own model is the default, which is what those keys mean
+in the mode that replaces them.
