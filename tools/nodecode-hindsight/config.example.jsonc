@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for the Hindsight cell --
+// documentation, not config: the declaration in status.lisp is the authority,
+// and a secret pasted in /settings is kept in a 0600 file under the home.
+// "enabled": false vetoes the whole cell, its tools with it. Without a key the
+// cell still installs and every verb says what to set.
+{
+  "hindsight": {
+    "api_key": "",                                   // or name HINDSIGHT_API_KEY in the environment
+    "api_url": "https://api.hindsight.vectorize.io",  // a hindsight-api of your own here
+    "bank_id": "nodecode",                           // the partition every session of this home shares
+    "budget": "mid",                                  // low | mid | high: how hard a search works
+    "recall_max_tokens": 4096,
+    "auto_recall": true,                             // inject what each turn's input recalls
+    "auto_retain": true,                             // write the operator's words, once a turn
+    "tags": [],                                       // tags every memory this cell writes carries
+    "timeout": 20
+  }
+}
