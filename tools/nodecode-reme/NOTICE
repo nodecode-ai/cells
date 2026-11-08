@@ -1,0 +1,27 @@
+nodecode-reme is a rewrite of agentscope-ai's agentscope-ai/ReMe:
+
+  https://github.com/agentscope-ai/ReMe
+  commit 5231f3970c550bb0bc5d1bc7fbc85534274ca530
+  Apache-2.0, Copyright 2025 Alibaba Group (LICENSE)
+
+The original is a Hermes Agent memory provider in Python: a provider that
+fetched recall from a ReMe service's HTTP action API (`health_check`, `search`,
+`auto_memory`) and queued each completed turn to `auto_memory` on a writer
+thread, over a loopback-default endpoint, and validated the service's health
+snapshot rather than trusting a 200.
+
+client.lisp and cell.lisp rewrite that against Nodecode's cell contract:
+nlk:http instead of urllib, the :FRAME point instead of Hermes' prefetch and
+sync_turn callbacks, advice on the harness-section read instead of injecting
+recall text into a provider, `reme_recall` and `/reme` where Hermes had no
+model-visible tool, the same three actions and the same scoped, filename-safe
+session id (a slug and a digest of the harness and session, as the original's
+`_scoped_session_id`).
+
+Left out: embedded mode, which imports the Python `reme` SDK in process and
+means running Python beside Nodecode -- the cell speaks to the same service
+over HTTP instead, so `mode`, `workspace_dir` and `reme_config` have no
+counterpart here; the terminal setup wizard, whose job the `reme` section and
+`/settings` do; and Hermes' own config file (`~/.hermes/reme/config.json`),
+which becomes the section. Sub-second timeouts became whole seconds because the
+section types integers.

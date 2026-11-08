@@ -1,0 +1,13 @@
+// The `reme` section of ~/.nodecode/config.jsonc: commented, and what a
+// fresh install would write. A present section is an enabled one; set
+// "enabled": false to veto it without taking the section away.
+"reme": {
+  "endpoint": "http://127.0.0.1:2333",  // the ReMe action service, required
+  "recall": true,                        // ask before each turn, and put what it finds in the request
+  "record": true,                        // send each completed turn back for extraction
+  "recall_limit": 5,                     // the most notes one recall may carry
+  "recall_timeout": 5,                   // seconds one search may take before the turn goes on
+  "request_timeout": 60,                 // seconds one recording or start may take
+  "health_timeout": 2,                   // seconds one health check may take
+  "retry_seconds": 30                    // how long a service that just failed is left alone
+}
