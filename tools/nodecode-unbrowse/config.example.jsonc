@@ -1,0 +1,23 @@
+{
+  // The hosted Unbrowse service: read pages, run website tasks, drive a cloud
+  // browser. A key is the one thing a call needs — create one at
+  // https://unbrowse.ai/app.
+  "unbrowse": {
+    // Unbrowse API key (ub_live_...) or OAuth access token. Kept out of this
+    // file when it is pasted into /settings or the settings page: the section
+    // then names a file under ~/.nodecode/secrets/ instead.
+    "api_key": "ub_live_...",
+
+    // The hosted MCP endpoint every call goes to. Empty means the default
+    // https://unbrowse.ai/mcp.
+    "mcp_url": "https://unbrowse.ai/mcp",
+
+    // Org keys only: the user each call is made for (X-Unbrowse-End-User).
+    // UNBROWSE_END_USER is read when this is empty.
+    "end_user": "",
+
+    // The ceiling on one Unbrowse call, in seconds. A cloud browser session
+    // can take most of it.
+    "timeout_seconds": 180
+  }
+}

@@ -1,0 +1,28 @@
+nodecode-unbrowse is a rewrite of unbrowse-ai's unbrowse-ai/unbrowse:
+
+  https://github.com/unbrowse-ai/unbrowse
+  commit a82c59dfb05583836ecfa21fdc3f8a2ea73bfb76
+  MIT License, Copyright (c) 2025 Unbrowse AI (LICENSE)
+
+Rewritten: the Hermes plugin's plugins/hermes folder — client.py (the hosted
+MCP's JSON-RPC 2.0 client: the bearer key, the protocol-version header, a body
+that is either JSON or the last event of an SSE stream, the server's own error
+code carried through), tools.py (the 24 core tools of the shipped
+tools.json, one handler between them, the dotted names, the isError rule and
+the browser_capacity / unauthorized hints) and the operating guidance of
+skills/unbrowse/SKILL.md, which became the manual topic the model reads. The
+Python is not bundled: mcp.lisp speaks the same wire with nlk:http, and each
+tool is a Lisp verb in the unbrowse package (unbrowse.scrape is
+(unbrowse:scrape ...)), with unbrowse:call-tool reaching any tool the
+workspace's tools/list carries and unbrowse:tools listing them.
+
+Left out: the pre_tool_call browser guard and the web_extract backend, which
+route Hermes' own built-in browser and extractor to Unbrowse — Nodecode ships
+neither, so there is nothing to redirect and the manual tells the model to
+read public pages with unbrowse:scrape. The Hermes settings file and env-var
+layering became one section (the key is the section's api_key, with
+UNBROWSE_API_KEY read when it is empty); the 24 model-facing tool
+registrations became verbs taught by (help :unbrowse), Nodecode's vocabulary,
+plus /unbrowse for the account's balance. The dynamic tools a workspace
+learns stay reachable through unbrowse:call-tool rather than appearing as
+tools of their own.
