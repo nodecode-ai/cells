@@ -590,7 +590,7 @@
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "4d71a5f6d6961e11bc38a7b682b1e6d6e65a30d8",
       "path": "tools/nodecode-weknora",
-      "description": "WeKnora Retrieval: hybrid search, whole-document reading and cited answers from your own WeKnora knowledge bases",
+      "description": "WeKnora knowledge bases as four tools: hybrid search, document reading, cited answers",
       "license": "MIT",
       "depends_on": [
         "nodecode"
