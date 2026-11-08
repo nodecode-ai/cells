@@ -95,6 +95,23 @@
       ]
     },
     {
+      "name": "nodecode-camofox",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "a3188b8279f286254bc192b8b82d8f3fd03af43e",
+      "path": "tools/nodecode-camofox",
+      "description": "Camofox: drive a self-hosted Camoufox browser server with browser tools",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "NousResearch",
+        "repo": "NousResearch/hermes-official-plugins",
+        "commit": "e7a218f26db88426ab3e7376f0e000b6e356f5e7",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-channel-email",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "c1b170265854186172ad92863b73468e8552d5b9",
@@ -242,6 +259,40 @@
       ]
     },
     {
+      "name": "nodecode-deja",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "040556c6d8aba695d55292785e31308f940cf798",
+      "path": "tools/nodecode-deja",
+      "description": "deja: memory from the coding sessions every agent on this machine already wrote",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "vshulcz",
+        "repo": "vshulcz/deja-vu",
+        "commit": "910d490f6b1909fa7a469c3adf95c0ec5d5187c5",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-delegation",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "d63d8eeb2a85562e5289d9e6b8298cad0741ba82",
+      "path": "tools/nodecode-delegation",
+      "description": "Named model routes for subagents: one delegate tool and /delegation",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "NousResearch",
+        "repo": "NousResearch/hermes-official-plugins",
+        "commit": "13b2c1c9c8204bf333df240b2aacf98c3e6250b7",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-devin",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
@@ -379,6 +430,23 @@
       ]
     },
     {
+      "name": "nodecode-hindsight",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "60a370d97bdb6566841b7fe0270fc2ee1aa41fe5",
+      "path": "tools/nodecode-hindsight",
+      "description": "Hindsight long-term memory: recall, retain and reflect over a memory bank, cloud or local",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "vectorize-io",
+        "repo": "vectorize-io/hindsight",
+        "commit": "f14cc1eb5624b0374cb4d82768eb2e0b9c21ae24",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-kilo",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
@@ -415,6 +483,23 @@
       ]
     },
     {
+      "name": "nodecode-letsfg",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "677ed27a65aa3b9fc363f0d3000fb71e544258e7",
+      "path": "tools/nodecode-letsfg",
+      "description": "LetsFG flights and hotels: search and book real flights and hotel rooms through the hosted LetsFG service",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "LetsFG",
+        "repo": "LetsFG/LetsFG",
+        "commit": "7c0e7b5122725baacd446585306770fce4fc7d52",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-local",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
@@ -435,6 +520,23 @@
       "depends_on": [
         "nodecode"
       ]
+    },
+    {
+      "name": "nodecode-mem0",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "ef1df23518e4a8678a4fe5755c39105edf43d2ec",
+      "path": "tools/nodecode-mem0",
+      "description": "Mem0 memory: semantic recall and durable facts, through Mem0's cloud or a self-hosted server",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "mem0ai",
+        "repo": "mem0ai/mem0",
+        "commit": "43849c6e9d4d773b83a8144b6373aedc67241a5d",
+        "license": "Apache-2.0"
+      }
     },
     {
       "name": "nodecode-muse-code",
@@ -542,6 +644,23 @@
       ]
     },
     {
+      "name": "nodecode-reme",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "fbffe4f20b7b221f135e229de4f69cd64e255962",
+      "path": "tools/nodecode-reme",
+      "description": "Long-term memory from a ReMe service: recalls notes before each turn, records each completed turn",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "agentscope-ai",
+        "repo": "agentscope-ai/ReMe",
+        "commit": "5231f3970c550bb0bc5d1bc7fbc85534274ca530",
+        "license": "Apache-2.0"
+      }
+    },
+    {
       "name": "nodecode-security-audit",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "8050c414cbec466b9876009afc5a7adc10660f2f",
@@ -551,6 +670,23 @@
       "depends_on": [
         "nodecode"
       ]
+    },
+    {
+      "name": "nodecode-sem",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "1d1a0d7808af64bbd08e87e09df4dc7e1aaf68ba",
+      "path": "tools/nodecode-sem",
+      "description": "Sem and Weave: entity-level code discovery and review, and branch merge previews, through the local CLIs",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Ataraxy-Labs",
+        "repo": "Ataraxy-Labs/sem",
+        "commit": "631138c691817f2aa11cecdde3c400e6a0b910aa",
+        "license": "MIT"
+      }
     },
     {
       "name": "nodecode-snowflake",
@@ -573,6 +709,23 @@
       "depends_on": [
         "nodecode"
       ]
+    },
+    {
+      "name": "nodecode-unbrowse",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "43a70c18db9b5e73d7df5400a98dbe1179960408",
+      "path": "tools/nodecode-unbrowse",
+      "description": "Unbrowse: read pages, run website tasks and drive a cloud browser through the hosted Unbrowse MCP",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "unbrowse-ai",
+        "repo": "unbrowse-ai/unbrowse",
+        "commit": "a82c59dfb05583836ecfa21fdc3f8a2ea73bfb76",
+        "license": "MIT"
+      }
     },
     {
       "name": "nodecode-web-provider",
