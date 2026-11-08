@@ -1,0 +1,49 @@
+// The `weknora` section this cell reads. Copy what you need into
+// ~/.nodecode/config.jsonc, or set it in /settings, then
+// (restart-cells "nodecode-weknora").
+{
+  "weknora": {
+    // The one required member: your WeKnora's API root. A bare origin gains
+    // /api/v1, so both lines below reach the same deployment.
+    "base_url": "http://localhost:8080",
+    // "base_url": "https://kb.example.com/api/v1",
+
+    // Sent as X-API-Key. Unset is an unauthenticated deployment. A key
+    // pasted here is kept in a 0600 file under the home by /settings.
+    "api_key": "sk-...",
+
+    // X-Tenant-ID, for a platform-scoped key that must pick a workspace.
+    // "tenant_id": "tenant-1",
+
+    // The default scope for search and ask. Empty means every knowledge
+    // base the credential can see, resolved once and shared.
+    // "knowledge_base_ids": ["kb-1", "kb-2"],
+
+    // A custom agent id sends ask to WeKnora's ReAct pipeline, which
+    // resolves its own scope; without one the RAG pipeline answers.
+    // "agent_id": "agent-1",
+
+    "max_results": 8,
+    "max_chunk_chars": 1200,
+    "request_timeout": 30,
+    "chat_timeout": 300,
+
+    // public returns directly loadable file URLs in citations; handle keeps
+    // internal resource:// refs. A knowledge-base-restricted key answers
+    // public with 403, and the cell falls back to handle by itself.
+    "resource_urls": "public",
+
+    // The prefix the four tools take, so two deployments can sit side by
+    // side: kb_search and public_search.
+    "tool_prefix": "weknora",
+
+    // Register fewer tools to spend fewer prompt tokens. Every one is on
+    // unless it says false here.
+    "tools": {
+      "list_knowledge_bases": true,
+      "search": true,
+      "read_document": true,
+      "ask": true
+    }
+  }
+}

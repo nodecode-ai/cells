@@ -1,0 +1,32 @@
+nodecode-weknora is a rewrite of Tencent's Tencent/WeKnora:
+
+  https://github.com/Tencent/WeKnora
+  commit e3fb2335bf3f8cadd32142380c60b2677a27bf99
+  MIT, Copyright (C) 2026 Tencent (LICENSE)
+
+The rewritten part is that repository's dsh plugin,
+packages/dsh-weknora: its four model-facing tools - list_knowledge_bases,
+search, read_document and ask - and the WeKnora REST and event-stream calls
+they make (GET /knowledge-bases, POST /knowledge-search, GET /knowledge/search,
+GET /chunks/:id, GET /knowledge/:id, POST /sessions, and POST
+/knowledge-chat/:id or /agent-chat/:id), with the same scope fallbacks, the
+same per-passage clip, the same public-to-handle fallback for a
+knowledge-base-restricted key, and the same refusal that names the status and
+WeKnora's own reason but never the key. All of it is Common Lisp over the
+image's own HTTP call; no Node, no TypeScript, and none of the original's
+JavaScript runs here.
+
+What was left out is what belonged to the harness the plugin was written for:
+the ctx.tools.register() contract around each tool (a Nodecode cell declares
+one :tool clause per tool), the cordis.patch.yml layer and its WEKNORA_*
+environment variables (the cell's own `weknora` config section replaces both,
+and a test stubs the wire instead of the environment), the npm packaging and
+its TypeScript types, and the plugin's own node --test and dsh end-to-end
+suites (the cell's test slice covers the same four calls offline). The
+original also exposed the four tools in Code Mode as `await tools.weknora_search(...)`;
+here they are the same four verbs in the WEKNORA package, callable from eval,
+and the model calls the tools directly.
+
+The four tool toggles, the tool_prefix rename, the agent_id pipeline choice
+and every documented default are kept: a WeKnora deployment that worked with
+the plugin is reached by the same addresses with the same answers.
