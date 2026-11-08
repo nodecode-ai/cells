@@ -586,6 +586,23 @@
       ]
     },
     {
+      "name": "nodecode-weknora",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "4d71a5f6d6961e11bc38a7b682b1e6d6e65a30d8",
+      "path": "tools/nodecode-weknora",
+      "description": "WeKnora Retrieval: hybrid search, whole-document reading and cited answers from your own WeKnora knowledge bases",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Tencent",
+        "repo": "Tencent/WeKnora",
+        "commit": "e3fb2335bf3f8cadd32142380c60b2677a27bf99",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-xai-oauth",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
