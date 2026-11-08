@@ -1,0 +1,30 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. Nothing here is required: both CLIs are looked
+// for on PATH, and a present empty section is enough. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "sem": {
+    "enabled": true,
+
+    // The Sem executable, found on PATH. Ataraxy Labs' Sem, 0.27.0 or later:
+    // GNU Parallel also ships an unrelated executable named `sem'.
+    "sem_path": "sem",
+
+    // The Weave executable, found on PATH. Only branch merge previews need it.
+    "weave_path": "weave",
+
+    // The repository the CLIs run in. Empty: the directory of the session
+    // that made the call.
+    "directory": "",
+
+    // Run both CLIs with SEM_NO_NETWORK=1 SEM_NO_TELEMETRY=1, so neither
+    // reaches the cloud from this cell.
+    "offline": true,
+
+    // Seconds one CLI call may take before its whole process tree is killed.
+    "timeout": 120,
+
+    // How much of one answer the model is given, in characters.
+    "max_chars": 30000
+  }
+}

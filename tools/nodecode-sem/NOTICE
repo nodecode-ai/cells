@@ -1,0 +1,22 @@
+nodecode-sem is a rewrite of Ataraxy-Labs's Ataraxy-Labs/sem:
+
+  https://github.com/Ataraxy-Labs/sem
+  commit 631138c691817f2aa11cecdde3c400e6a0b910aa
+  MIT License, Copyright (c) 2026 Ataraxy Labs (LICENSE)
+
+Rewritten: the repository's integrations/agent-plugin, two prose skills for a
+host agent -- sem-code-review and weave-merge-preview -- became one Nodecode
+tool cell. Where the skills told a model to type shell commands at Sem and Weave
+and prefix each one with SEM_NO_NETWORK=1 SEM_NO_TELEMETRY=1, the cell builds
+the arguments of `sem find', `sem diff', `sem impact' and `weave preview'
+itself, lays that prefix on every call (offline is a setting), runs the CLIs in
+the asking session's repository through nlk:run-bounded, and hands back what
+they printed. Their prose survives: the smallest-query advice, the caveats
+that static callers and tests can be incomplete, that a clean merge preview is
+not verification, and that nothing here edits, stages, commits or merges are
+the tools' descriptions and the (help :sem) topic. Left out: `sem check'
+(which runs a repository's own build, linter and tests), and Weave's setup and
+land verbs -- the plugin's skills were preview-only and said so; also the
+plugin's Python smoke test, whose two cases are now Lisp tests with every CLI
+call stubbed. The CLIs themselves are not bundled: the user installs Sem and,
+optionally, Weave, exactly as before.
