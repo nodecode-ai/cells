@@ -1,0 +1,29 @@
+nodecode-deja is a rewrite of vshulcz's vshulcz/deja-vu:
+
+  https://github.com/vshulcz/deja-vu
+  commit 910d490f6b1909fa7a469c3adf95c0ec5d5187c5
+  MIT License, Copyright (c) 2026 Vladislav Shulcz (LICENSE)
+
+The rewrite is extensions/hermes, the plugin's Hermes memory provider, as a
+Nodecode cell. What it keeps: the three tools with their names and their
+descriptions (deja_recall, deja_fix, deja_blame); the argv each one builds —
+the query after `--` when it names one of deja's own flags, `--framed` for
+fix and blame, `--offset` only past the first page, and the "this deja cannot
+page" answer when a paging request comes back empty; the automatic recall,
+split as the plugin split it — the session digest at a session's first
+request, the relevance pass over the turn's own prompt, nothing at all on a
+cron run; deja's own JSON hook reply split by reader, with the
+hookSpecificOutput context riding the request the model reads and the
+systemMessage reaching the operator; and the standing paragraph that tells
+the model when to reach for the history and that what comes back is data.
+
+What the plugin got from Hermes and Nodecode has no seam for is left out: the
+compression recovery packet (on_pre_compress with on_session_switch's
+compression reason), the session-end stamp (on_session_end), and the
+mirroring of MEMORY.md / USER.md entries into deja's index
+(on_memory_write). Hermes's own recall line, and its rules for when a
+platform shows one, are gone with it: the cell puts deja's line for the
+person up as a notice instead.
+
+Nothing of the original's Python is bundled. The cell runs the same deja
+program the plugin ran, on PATH, and its own code is Common Lisp.
