@@ -1,0 +1,32 @@
+nodecode-camofox is a rewrite of NousResearch's NousResearch/hermes-official-plugins:
+
+  https://github.com/NousResearch/hermes-official-plugins
+  commit e7a218f26db88426ab3e7376f0e000b6e356f5e7
+  MIT License, Copyright (c) 2026 Nous Research (LICENSE)
+
+The camofox plugin's eleven browser tools (browser_navigate, browser_snapshot,
+browser_click, browser_type, browser_scroll, browser_back, browser_press,
+browser_get_images, browser_vision, browser_console, browser_import_cookies)
+are rewritten in Common Lisp against the Camofox REST API: the same routes,
+the same `camofox` toolset names and arguments, the tab-per-session model,
+the Camofox identity rules (an externally named userId, else a
+profile-scoped one under managed persistence, else a random one per session),
+the navigation policy (a key-shaped secret or a cloud metadata endpoint in a
+URL is refused before the request), the Docker loopback rewrite, the
+snapshot threshold with the whole tree written to a file, the masking of a
+key-shaped typed value, Netscape cookie import confined to a cookies
+directory with its five-megabyte and five-hundred-cookie caps, and the
+five-step scroll. The plugin's own plumbing took the other direction: its
+`hermes camofox setup|status` command, its `.env` writes, its
+`browser_vault` page backend and its on_session_end hooks are gone, because
+Nodecode's section declaration, `/settings` and `(cells)` are where a cell
+is configured and checked, and Nodecode fills no saved passwords.
+
+Left out: the auxiliary vision model browser_vision called (the tool still
+screenshots the tab and answers the PNG's path, and the model looks at it
+with (look PATH)); the screenshot's numbered-label overlay, which Camofox
+does not serve; console log and JavaScript-error capture, which the Camofox
+REST API exposes no route for, so browser_console evaluates JavaScript
+instead; the user's website blocklist in the navigation policy, which is a
+guard cell's business here; and the cold-start retry on the first tab create,
+replaced by a sixty-second timeout on that one request.

@@ -1,0 +1,32 @@
+// The section ~/.nodecode/config.jsonc may carry for the camofox cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it and takes
+// every browser tool out of the catalog.
+{
+  "camofox": {
+    "enabled": true,
+    // where your camofox-browser server answers; it is yours to run
+    "url": "http://localhost:9377",
+    // the bearer token, only when the server was started with CAMOFOX_API_KEY
+    "api_key": "",
+    // one browser profile across restarts, instead of a new one per session
+    "managed_persistence": false,
+    // drive a browser another app owns: that app's Camofox userId
+    "user_id": "",
+    // the key tabs are opened under, matched when adopting an open tab
+    "session_key": "",
+    "adopt_existing_tab": false,
+    // where browser_import_cookies reads Netscape cookie files
+    "cookies_dir": "~/.camofox/cookies",
+    // a longer snapshot is cut at a line boundary and the rest written to a file
+    "snapshot_threshold": 15000,
+    "timeout_seconds": 30,
+    // refuse browser_console expressions that name cookies, storage or the network
+    "restrict_evaluate": false,
+    // a Camofox in Docker opens page URLs inside the container: rewrite
+    // loopback page URLs to the host it can reach
+    "rewrite_loopback_urls": false,
+    "loopback_host_alias": "host.docker.internal"
+  }
+}
