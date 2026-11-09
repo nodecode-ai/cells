@@ -1,0 +1,30 @@
+nodecode-memlock is a rewrite of Sahil-SS9's Sahil-SS9/hermes-memlock:
+
+  https://github.com/Sahil-SS9/hermes-memlock
+  commit 123b9fd252d6fc2c9c7c4f254164915874aa54d5
+  MIT License, Copyright (c) 2026 Sahil Saghir (LICENSE)
+
+What was rewritten: the plugin's core promise, kept in the same words -- a pin
+is one standing instruction the operator wants to outlive the conversation, it
+carries a text, a one-line reminder and a priority, and it comes back in front
+of the model when the conversation no longer carries it. The guard_pin tool
+becomes the pin tool with the same pin/update/unpin/list actions over the same
+fields; /guard becomes /pins; the durable pin file and its JSON shape are the
+rewrite's own, one file with a pins array instead of one file per pin plus a
+manifest. The pinned text is flattened to one line and the reminder trimmed
+to its first sentence, as the original did, so a pin cannot spoof a second
+reminder item.
+
+What was left out, and why: the original watched the host's conversation for
+a compaction marker, audited each anchor with keyword probes (or sentence
+embeddings) and re-injected only the anchors that had drifted out of the live
+region. This image folds, thins and edits the conversation itself, so the pins
+ride the first request of every turn instead: always in front of the model,
+never aged out, no marker to detect and no audit to configure -- the drift
+thresholds, probe lists, semantic detection and the sentence-transformers
+dependency all go. Also left out: per-session pin scope (a pin here is the
+organism's, read by every session, which is the original's global scope made
+the default), pin version history and rollback, the alert script and
+integrity score, the static anchor tier read from config, the reverse-audit
+preference adapters (Severian, Mnemosyne, an MCP command), the setup wizard
+and the Claude Code shim.
