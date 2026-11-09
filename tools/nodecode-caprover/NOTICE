@@ -1,0 +1,24 @@
+nodecode-caprover is a rewrite of fmercurio's fmercurio/hermes-caprover-operator:
+  https://github.com/fmercurio/hermes-caprover-operator
+  commit 1d813b6e23c88c8641f8c891b46c2ae3f065e890
+  MIT, Copyright (c) 2026 Felippe Mercurio; Copyright (c) 2026 Felippe M. and contributors (LICENSE)
+
+Rewritten: the five model-facing tools (caprover_doctor, caprover_plan,
+caprover_apply, caprover_reconcile, caprover_status) in Common Lisp against
+Nodecode's cell contract; the read-only CapRover v2 client (app definitions,
+app data, the optional fixed health URL); the state-bound plan with its
+baseline version, image, replicas and definition fingerprint; the preflight
+drift check; the durable claim that keeps one unresolved plan per app; the
+"one POST, then reconcile, never retry" discipline; the ledger of plans and
+dated observations; and the separate reporting of deployment metadata and HTTP
+evidence.
+
+Left out, and why: Hermes' native approval hooks and execution middleware,
+because in Nodecode the operator approves by typing /caprover approve ID and
+that approval is a one-shot file the apply tool consumes — the same guarantee
+(a fresh human act bound to one plan, never a model argument) with the host
+machinery the cell actually has. Also left out: the SQLite ledger (JSON files
+under the home, one per plan), the keyed HMAC fingerprint (a plain sha256 of
+the app definition), the operation cards and their HTML/CSP preview, the
+runtime task endpoint (so the strongest receipt here is metadata_http_observed,
+never verified), and the demo/lab scripts.
