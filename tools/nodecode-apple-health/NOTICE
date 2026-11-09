@@ -1,0 +1,30 @@
+nodecode-apple-health is a rewrite of davidmosiah's davidmosiah/apple-health-mcp:
+
+  https://github.com/davidmosiah/apple-health-mcp
+  commit 94c31b8545e0d82a2d2e0eb1cb43da0e470b6d1f
+  MIT License, Copyright (c) 2026 David Mosiah (LICENSE)
+
+Rewritten: the connector's model-facing tools and the shapes they answer with -
+connection status, data inventory, the daily and the weekly summary with their
+per-day numbers (steps, distance, active energy, heart-rate average/min/max,
+resting heart rate, HRV, sleep hours, the day's workouts), the bounded record
+list with a type filter, a day window and a truncation note, the bounded
+workout list, and the privacy audit - plus the privacy modes (structured and
+raw) and the HealthKit type prefixes the export writes. The original is an MCP
+server in TypeScript served over stdio to the agent; here the export is parsed
+in Common Lisp, one XML element at a time, so the cell needs neither Node, nor
+npm, nor a subprocess, and the tool arguments are declared once as contracts so
+the schema the model is shown and the body that runs are one shape. One thing
+the original did not have: a /health slash command that answers the same
+numbers as text.
+
+Left out: the connector's setup and cache half, which has no file of its own to
+work on here - `setup --auto-import`, which scans the usual download, desktop
+and document folders for an export and copies it under a private directory,
+`--watch-path`, which re-imports a newer export dropped in a folder, the
+incremental parsed cache and the tool that clears it, `reimport`, the shared
+wellness profile at ~/.delx-wellness/profile.json and the tool that updates it,
+the synthetic demo answer, and the connection check that reads the agent's own
+config file. Also left out: reading a .zip export (unzip it first), and the
+timezone conversion of each timestamp into a requested zone - the cell groups
+by the local day the export itself wrote.
