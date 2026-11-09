@@ -1,0 +1,37 @@
+nodecode-windows-eventlog is a rewrite of Yicheng-Mark's Yicheng-Mark/hermes-windows-plugins:
+
+  https://github.com/Yicheng-Mark/hermes-windows-plugins
+  commit 5bad3fb2baf04ce6befecfefce6d14f4c9c98934
+  MIT License, Copyright (c) 2026 Yicheng-Mark (LICENSE)
+
+Rewritten: the three model-facing tools (win_crash_events,
+win_shutdown_events, win_eventlog_query) with their arguments and their
+JSON answer shapes; the Application log's crash family (Application Error
+1000, Application Hang 1002, Windows Error Reporting 1001, .NET Runtime
+1023/1026) and the provider check that keeps another provider's reuse of
+those ids from being reported as a crash; the System log's machine-level
+family (Kernel-Power 41, WER-SystemErrorReporting 1001, EventLog 6008,
+User32 1074 and the 6005/6006/12/13 markers); the exception-code and
+bugcheck-code tables with the decoding the original did (a decimal 159 and
+a hex 0x9f both landing on DRIVER_POWER_STATE_FAILURE); the grouping of
+repeated crashes by application and signature, busiest first; the window
+walk that reads newest first and stops at the window's start or the scan
+cap; the XPath the query is built from, with the channel and provider name
+checks; the truncation limits and the case-blind field lookup that
+tolerates the casing Windows builds disagree on; and the error shapes
+(an ok=false answer rather than an exception, the exit code kept). The
+Python is Common Lisp here: nlk:define-contract carries each tool's
+arguments, nlk:run-bounded runs the read, and xml.lisp is a small XML
+reader. Added, with no counterpart in the original: /windows-eventlog and
+the manual topic, which read one channel into the lines an operator wants
+first.
+
+Left out: ctypes and the in-process evtapi calls (EvtQuery, EvtNext,
+EvtRender, EvtClose) and the streaming iteration over them, replaced by one
+wevtutil call per read, capped at scan_cap records, and the XML reader
+that parses what it renders; the plugin's manifest and packaging
+(plugin.yaml, pip/entry-point wiring), since a cell is a folder; and its
+Hermes-specific tool-context arguments, which a Nodecode tool body does not
+take. The String-versus-locale behaviour of provider text and the read-only
+posture are unchanged: this queries, it never writes, clears or configures
+a log.
