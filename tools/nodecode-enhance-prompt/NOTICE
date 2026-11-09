@@ -1,0 +1,27 @@
+nodecode-enhance-prompt is a rewrite of tuancookiez-hub's tuancookiez-hub/hermes-enhance-prompt:
+
+  https://github.com/tuancookiez-hub/hermes-enhance-prompt
+  commit 8417827ff80db2335e18742c1f5317aeb4b036cb
+  MIT License, Copyright (c) 2026 tuancookiez-hub (LICENSE)
+
+Rewritten: the rewrite itself - the system prompt and the user-message template
+from prompts.py, character for character, and the three stage hints from the
+Desktop half's plugin.js (clarify, detail, horizon), which are what makes a
+second click a different transformation rather than a longer text. With them:
+the `enhance_prompt` tool and its arguments (the draft, a stage, the eight
+character floor), the `/enhance` command, and strip_wrappers - the thinking
+blocks, the fullwidth channel tags, the code fence and the outer quotes a
+serving backend puts around an answer, stripped in the same order. The Python
+is Common Lisp here: one side call, NLE:COMPLETE, in place of ctx.llm.complete
+and the Desktop's llm.oneshot, and a draft effect in place of host.composer, so
+the command writes its answer back into the shell's own composer where the
+runtime offers that: the command is registered as reading the draft when it
+can be, and takes the draft as its argument everywhere else.
+
+Left out: the Desktop chrome, which a cell cannot draw - the sparkle button
+beside Send, the before/after score it prints, the click-while-spinning cancel,
+the keybinding, and the backup draft the button held. The score was a second
+model call per click, so it is gone with the button; `/enhance undo` is the
+discard it replaced, kept per chat in memory rather than in a component. Also
+left out: the plugin's own catalogue and validation files, which are Hermes's
+packaging rather than the plugin's behaviour.
