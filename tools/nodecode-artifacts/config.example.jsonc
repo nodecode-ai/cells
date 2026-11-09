@@ -1,0 +1,16 @@
+{
+  "artifacts": {
+    // The artifact service's own origin. https, or plain http on this machine.
+    "base_url": "http://127.0.0.1:8080",
+
+    // Where the machine credential lives: the variable's name, or a file.
+    "token_env": "HERMES_ARTIFACTS_TOKEN",
+    // "token_file": "~/secrets/artifacts-token",
+
+    // The attribution label a publish carries. A label and a filter, never an owner.
+    "source_profile": "nodecode",
+
+    // One request's ceiling, in seconds.
+    "timeout_seconds": 20
+  }
+}

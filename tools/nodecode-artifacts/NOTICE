@@ -1,0 +1,25 @@
+nodecode-artifacts is a rewrite of dmmeteo's dmmeteo/hermes-artifacts:
+
+  https://github.com/dmmeteo/hermes-artifacts
+  commit 57b61fca2872d15060d8a9b30b9e51242e9cb357
+
+  MIT, Copyright (c) 2026 dmmeteo (LICENSE)
+
+What was rewritten: the six agent tools (artifact_publish, artifact_list,
+artifact_get, artifact_download, artifact_share, artifact_revoke_share)
+against the same /internal/v1 machine API of a self-hosted artifact service,
+with the same rules -- publish is private and makes no link, a guest link is
+created only when asked, its URL is shown once, links expire and are revoked
+by share id, a publish takes a path or inline text and a kind from its
+extension, and a download writes the original bytes in one atomic replace.
+The original's prose skill is (help :artifacts) here, one line of which
+rides every request, and its Hermes profile name became the section's
+source_profile label.
+
+What was left out, and why: the Hermes dashboard tab (a React panel and a
+FastAPI adapter under the dashboard host) has no counterpart in a Nodecode
+cell, so the library's private address is reported as the service's own
+/artifacts/<slug> path instead of a dashboard path; Hermes's own read and
+write policy hooks are replaced by the section the operator sets; and the
+service itself -- a separate application in the same repository -- is not
+bundled, as the original did not bundle it either.
