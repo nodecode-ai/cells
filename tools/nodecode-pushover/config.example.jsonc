@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "pushover": {
+    // The two names, never the two secrets: export each in the shell that
+    // starts Nodecode.
+    "app_token_env": "PUSHOVER_APP_TOKEN",
+    "user_key_env": "PUSHOVER_USER_KEY",
+    // Events that push by themselves. Empty (the default) pushes nothing on
+    // its own; the tool and /pushover test still work.
+    "notify_on": ["turn-end", "turn-failed", "questions"],
+    "title": "Nodecode",
+    "device": "",
+    "priority": 0,
+    "timeout": 8
+  }
+}
