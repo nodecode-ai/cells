@@ -1,0 +1,36 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. Keys belong in the environment (TYPESAFE_API_KEY,
+// OPENROUTER_API_KEY, OPENCODE_API_KEY) or in api_key, never in a page.
+{
+  "nerve": {
+    "enabled": true,
+
+    // auto reads the environment: TypeSafe when only its key is set, else
+    // OpenRouter. Name one of typesafe, openrouter, opencode to pin it.
+    "provider": "auto",
+
+    // The key itself, for a provider whose environment variable is not set.
+    "api_key": "",
+
+    // A System One server of your own (http://127.0.0.1:8080, say); empty
+    // uses the provider's published root.
+    "base_url": "",
+
+    // The model label to ask for; empty uses the provider's own default.
+    "model": "",
+
+    "timeout_seconds": 10,
+
+    // off: never ask. advisory: ask, say the verdict, run the call.
+    // enforce: refuse anything but a confident ALLOW.
+    "gate_mode": "off",
+
+    // Tool names always put to the model, and names never put to it.
+    "gate_tools": [],
+    "gate_skip": [],
+
+    // The p(ALLOW) an ALLOW verdict needs in enforce mode.
+    "min_allow_percent": 90
+  }
+}
