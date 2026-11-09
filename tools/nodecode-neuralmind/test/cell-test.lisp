@@ -29,20 +29,16 @@
 
 (deftest neuralmind-cell-a-section-with-no-program-refuses ()
   (is (signals-error nlk:config-refusal
-        (nodecode-neuralmind:start-cell (nlk:json-object "neuralmind" (nlk:json-object))))
-      "an empty section names no program, so the cell refuses at start"))
+        (nodecode-neuralmind:start-cell (nlk:json-object "neuralmind" (nlk:json-object)))) "an empty section names no program, so the cell refuses at start"))
 
 ;;; --- what a reply adds --------------------------------------------------------------
 
 (deftest neuralmind-cell-a-reply-s-context-is-the-block-and-nothing-else ()
   (is (equal "recall body"
-             (nodecode-neuralmind::context-of (json-context "recall body")))
-      "additionalContext is the block, as the plugin read it")
+             (nodecode-neuralmind::context-of (json-context "recall body"))) "additionalContext is the block, as the plugin read it")
   (is (equal "" (nodecode-neuralmind::context-of "")) "an empty reply adds nothing")
-  (is (equal "" (nodecode-neuralmind::context-of "not JSON at all"))
-      "and neither does a reply outside the hook protocol")
-  (is (equal "" (nodecode-neuralmind::context-of "{\"hookSpecificOutput\":{}}"))
-      "nor a reply that carries no context"))
+  (is (equal "" (nodecode-neuralmind::context-of "not JSON at all")) "and neither does a reply outside the hook protocol")
+  (is (equal "" (nodecode-neuralmind::context-of "{\"hookSpecificOutput\":{}}")) "nor a reply that carries no context"))
 
 ;;; --- the turn's blocks -------------------------------------------------------------
 
@@ -57,8 +53,7 @@
             "the turn's first request carried one block"
             (is (search "the previous session in this project" text) "the recap")
             (is (search "add_discount" text) "and what the prompt matched")
-            (is (< (search "the previous session" text) (search "add_discount" text))
-                "the recap first, as the plugin ordered them"))
+            (is (< (search "the previous session" text) (search "add_discount" text)) "the recap first, as the plugin ordered them"))
           (let ((start (neuralmind-payload "session-start"))
                 (prompt (neuralmind-payload "prompt-submit")))
             (is-present (entry start) "session-start was asked"
@@ -66,8 +61,7 @@
               (is (equal "n1" (gethash "session_id" entry)) "for the session")
               (is (equal "startup" (gethash "source" entry)) "as a startup"))
             (is-present (entry prompt) "prompt-submit was asked"
-              (is (equal "where is the discount code applied" (gethash "prompt" entry))
-                  "with the turn's own words, as tool_input the plugin sent")
+              (is (equal "where is the discount code applied" (gethash "prompt" entry)) "with the turn's own words, as tool_input the plugin sent")
               (is (equal "n1" (gethash "session_id" entry)))))
           (neuralmind-round "n1" turn 1)
           (is (= 1 (length (neuralmind-told "n1"))) "a later round of the same turn adds nothing")
@@ -77,8 +71,7 @@
             (is (= 2 (length told)) "the next turn carries its own match")
             (is (search "add_discount" (second told)))
             (is (not (search "the previous session" (second told))) "the recap is given once a session")
-            (is (equal "and the tax" (gethash "prompt" (neuralmind-payload "prompt-submit")))
-                "with that turn's words")))))))
+            (is (equal "and the tax" (gethash "prompt" (neuralmind-payload "prompt-submit"))) "with that turn's words")))))))
 
 (deftest neuralmind-cell-a-project-nothing-has-built-carries-nothing ()
   (with-temp-store ()
@@ -160,8 +153,7 @@
         (is (null *calls*) "status runs nothing"))
       (let ((answer (nodecode-neuralmind::run-slash "recall discount code" "n7")))
         (is (search "add_discount" answer) "a query answers with what matched")
-        (is (equal "discount code" (gethash "prompt" (neuralmind-payload "prompt-submit")))
-            "asking the program for the words typed"))
+        (is (equal "discount code" (gethash "prompt" (neuralmind-payload "prompt-submit"))) "asking the program for the words typed"))
       (let ((answer (nodecode-neuralmind::run-slash "recap" "n7")))
         (is (search "the previous session" answer) "recap answers with the recap")
         (is-present (entry (neuralmind-payload "session-start")) "asked as a startup"
@@ -170,8 +162,6 @@
 (deftest neuralmind-cell-the-verbs-say-so-where-nothing-is-built ()
   (with-cell-stop ((neuralmind-start "project" (namestring (neuralmind-unbuilt))))
     (with-run-stub ()
-      (is (equal nodecode-neuralmind:*no-project* (neuralmind:recall "anything"))
-          "a query with no built project names the fix")
-      (is (equal nodecode-neuralmind:*no-project* (neuralmind:recap))
-          "and so does the recap")
+      (is (equal nodecode-neuralmind:*no-project* (neuralmind:recall "anything")) "a query with no built project names the fix")
+      (is (equal nodecode-neuralmind:*no-project* (neuralmind:recap)) "and so does the recap")
       (is (null *calls*) "without running the program"))))

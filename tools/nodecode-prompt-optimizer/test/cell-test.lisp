@@ -17,8 +17,7 @@
 (define-cell-lifecycle-tests "prompt-optimizer"
   (:help :prompt-optimizer)
   (:command "optimize")
-  (:running (is (equal "auto" (nodecode-prompt-optimizer::setting :family))
-                 "auto is the family unless the section says otherwise")
+  (:running (is (equal "auto" (nodecode-prompt-optimizer::setting :family)) "auto is the family unless the section says otherwise")
             (is (eq t (nodecode-prompt-optimizer::setting :record)) "a record is kept by default")
             (is (= 3 (nodecode-prompt-optimizer::setting :min-words)) "three words is the floor"))
   (:refused ("max_tokens" 8) ("family" "cobol"))
@@ -43,8 +42,7 @@
   (with-cell-stop ((prompt-optimizer-start))
     (with-stubbed-fdefinition (nle:complete (system user &key session-id max-tokens fallback-p)
                                 (error "the model was asked about a two-word prompt"))
-      (is (search "2 words already" (nodecode-prompt-optimizer:rewrite-prompt "fix it"))
-          "a two-word prompt stands as it is, and no model was asked"))))
+      (is (search "2 words already" (nodecode-prompt-optimizer:rewrite-prompt "fix it")) "a two-word prompt stands as it is, and no model was asked"))))
 
 (deftest prompt-optimizer-cell-the-target-picks-the-tactics ()
   (with-cell-stop ((prompt-optimizer-start))
@@ -56,8 +54,7 @@
         (nodecode-prompt-optimizer:rewrite-prompt *draft*))
       (is (search "claude model" (third asked)) "a claude target is written for claude")
       (is (search "openai model" (second asked)) "an openai target for openai")
-      (is (not (search "write for that family" (first asked)))
-          "a prompt with no target gets the plain rule")
+      (is (not (search "write for that family" (first asked))) "a prompt with no target gets the plain rule")
       (is (search "imperative verb" (first asked)) "which is still the rewriting rule"))))
 
 (deftest prompt-optimizer-cell-the-tool-answers-through-its-contract ()
@@ -70,11 +67,9 @@
                (answer (funcall (third entry)
                                 (nlk:contract-decode schema (nlk:make-json-object
                                                              "prompt" *draft*)))))
-          (is (search "Explain Python generators." answer)
-              "the body's answer is the tool's answer"))
+          (is (search "Explain Python generators." answer) "the body's answer is the tool's answer"))
         (is (signals-error nlk:contract-refusal
-              (nlk:contract-decode (second entry) (nlk:make-json-object "prompt" "")))
-            "a blank prompt is refused before the body runs")))))
+              (nlk:contract-decode (second entry) (nlk:make-json-object "prompt" ""))) "a blank prompt is refused before the body runs")))))
 
 (deftest prompt-optimizer-cell-the-record-is-what-the-stats-read ()
   (with-cell-stop ((prompt-optimizer-start))
@@ -83,11 +78,9 @@
                                   "Explain Python generators.")
         (nodecode-prompt-optimizer:rewrite-prompt *draft*)
         (nodecode-prompt-optimizer:rewrite-prompt *draft*))
-      (is (= (+ 2 before) (length (nodecode-prompt-optimizer::history-rows)))
-          "each rewrite is one recorded line")
+      (is (= (+ 2 before) (length (nodecode-prompt-optimizer::history-rows))) "each rewrite is one recorded line")
       (let ((text (nodecode-prompt-optimizer:history)))
-        (is (search (format nil "~d rewrites recorded" (+ 2 before)) text)
-            "the stats count what was recorded")
+        (is (search (format nil "~d rewrites recorded" (+ 2 before)) text) "the stats count what was recorded")
         (is (search "average score" text) "and say what it gained")
         (is (search "words" text) "and how long it was")))))
 
@@ -99,7 +92,5 @@
         (let ((condition (handler-case (nodecode-prompt-optimizer:rewrite-prompt *draft*)
                            (nodecode-prompt-optimizer:prompt-optimizer-error (condition)
                              condition))))
-          (is (search "the model call failed" (princ-to-string condition))
-              "the refusal names the failure")))
-      (is (= before (length (nodecode-prompt-optimizer::history-rows)))
-          "and nothing was recorded for a rewrite that did not happen"))))
+          (is (search "the model call failed" (princ-to-string condition)) "the refusal names the failure")))
+      (is (= before (length (nodecode-prompt-optimizer::history-rows))) "and nothing was recorded for a rewrite that did not happen"))))

@@ -13,8 +13,7 @@
 (define-cell-lifecycle-tests "cacheguard"
   (:command "cacheguard")
   (:hooks 'nodecode.evolved::call-provider)
-  (:running (is (stringp (nodecode-cacheguard::settings-text))
-                "the settings are read once, at start"))
+  (:running (is (stringp (nodecode-cacheguard::settings-text)) "the settings are read once, at start"))
   (:refused ("mode" "shout")))
 
 ;;; --- helpers ----------------------------------------------------------------
@@ -57,8 +56,7 @@
         (is (null (second answer)) "no usage is invented")
         (is (null (third answer)) "and no finish reason")
         (is (search "BLOCKED" (notice-text (first notices))) "the operator is told, too")
-        (is (< (or (nodecode-cacheguard::session-pause "s1") 999) 1)
-            "and the pause clock restarted, so sending it again goes out")))))
+        (is (< (or (nodecode-cacheguard::session-pause "s1") 999) 1) "and the pause clock restarted, so sending it again goes out")))))
 
 (deftest cacheguard-lets-a-small-prompt-through
   (with-cell-stop ((cacheguard-start "mode" "block"))
@@ -89,8 +87,7 @@
       (is (search "cache lost" (notice-text (first notices))) "it says the cache was lost")
       (is (search "48k rebilled" (notice-text (first notices))) "with what was rebilled")
       (is (eq :warning (second (first notices))) "as a warning")
-      (is (search "5-15m" (nodecode-cacheguard::table-text))
-          "and the journal learned the pause"))))
+      (is (search "5-15m" (nodecode-cacheguard::table-text)) "and the journal learned the pause"))))
 
 (deftest cacheguard-kept-cache-is-quiet-unless-asked
   (with-cell-stop ((cacheguard-start "mode" "warn"))
@@ -113,12 +110,8 @@
     (let ((status (nodecode-cacheguard::run-slash "" nil)))
       (is (search "mode" status) "the status names the settings")
       (is (search "no observations yet" status) "and the empty table"))
-    (is (search "pause_minutes 10 -> 5" (nodecode-cacheguard::run-slash "set pause_minutes 5" nil))
-        "a setting changes")
+    (is (search "pause_minutes 10 -> 5" (nodecode-cacheguard::run-slash "set pause_minutes 5" nil)) "a setting changes")
     (is (= 5 (nodecode-cacheguard::option :pause)) "and is the value the hooks run on")
-    (is (search "off, warn or block" (nodecode-cacheguard::run-slash "set mode shout" nil))
-        "a value outside the choices refuses")
-    (is (search "not a cacheguard setting" (nodecode-cacheguard::run-slash "set bogus 1" nil))
-        "an unknown setting refuses")
-    (is (search "history cleared" (nodecode-cacheguard::run-slash "reset" nil))
-        "reset clears what it learned")))
+    (is (search "off, warn or block" (nodecode-cacheguard::run-slash "set mode shout" nil)) "a value outside the choices refuses")
+    (is (search "not a cacheguard setting" (nodecode-cacheguard::run-slash "set bogus 1" nil)) "an unknown setting refuses")
+    (is (search "history cleared" (nodecode-cacheguard::run-slash "reset" nil)) "reset clears what it learned")))

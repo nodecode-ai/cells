@@ -27,8 +27,7 @@
             (is (nle::find-tool "fluxer_pin"))
             (is (equal "https://fluxer.test/v1" (nodecode-fluxer::base)) "the section's base")
             (is (equal "Bot app.secret" (cdr (assoc "authorization" (nodecode-fluxer::headers)
-                                                     :test #'equal)))
-                "the section's token, as a bot token")
+                                                     :test #'equal))) "the section's token, as a bot token")
             (is (= 20 (nodecode-fluxer::setting :read-limit)) "the default read limit"))
   (:stopped (is (null (nle::find-tool "fluxer_send_message")) "stop unregisters the tools")
             (is (null (nle::find-tool "fluxer_pin")))
@@ -39,8 +38,7 @@
 (deftest fluxer-cell-a-missing-token-refuses-and-installs-nothing ()
   (is (signals-error nlk:config-refusal
         (nodecode-fluxer:start-cell
-         (nlk:json-object "fluxer" (nlk:make-json-object "base_url" "https://fluxer.test/v1"))))
-      "no bot token is a refusal naming the member")
+         (nlk:json-object "fluxer" (nlk:make-json-object "base_url" "https://fluxer.test/v1")))) "no bot token is a refusal naming the member")
   (is (null (nle::find-tool "fluxer_send_message")) "a refused start installed nothing"))
 
 ;;; --- the send --------------------------------------------------------------------
@@ -68,11 +66,9 @@
       (is (equal "Bot app.secret" (fluxer-header request "authorization")) "the section's token")
       (is (equal "application/json" (fluxer-header request "content-type")))
       (is (search "release is up @" sent) "the words are the operator's")
-      (is (search (format nil "@~aeveryone" (string (code-char #x200B))) sent)
-          "but the ping is broken by a zero-width space")
+      (is (search (format nil "@~aeveryone" (string (code-char #x200B))) sent) "but the ping is broken by a zero-width space")
       (is (not (search "@everyone" sent)) "so the literal ping is gone")
-      (is (= 0 (length (nlk:json-value body :array "allowed_mentions" "parse")))
-          "and nothing may be parsed as a mention")
+      (is (= 0 (length (nlk:json-value body :array "allowed_mentions" "parse"))) "and nothing may be parsed as a mention")
       (is (null (nlk:json-value body :object "message_reference")) "a plain message carries no reply"))))
 
 (deftest fluxer-cell-a-reply-names-the-message-it-answers ()
@@ -97,8 +93,7 @@
     (let* ((body (fluxer-body (first (fluxer-requests))))
            (sent (nlk:json-value body :string "content")))
       (is (equal "hi @everyone" sent) "an allowed mention goes as written")
-      (is (= 3 (length (nlk:json-value body :array "allowed_mentions" "parse")))
-          "and every kind may be parsed"))))
+      (is (= 3 (length (nlk:json-value body :array "allowed_mentions" "parse"))) "and every kind may be parsed"))))
 
 ;;; --- the read --------------------------------------------------------------------
 
@@ -126,8 +121,7 @@
                (fluxer-tool "fluxer_read_messages" (nlk:json-object "channel" "987" "limit" 5))))
     (let ((request (first (fluxer-requests))))
       (is (equal "GET" (first request)))
-      (is (equal "https://fluxer.test/v1/channels/987/messages?limit=5" (second request))
-          "the call's own limit"))))
+      (is (equal "https://fluxer.test/v1/channels/987/messages?limit=5" (second request)) "the call's own limit"))))
 
 (deftest fluxer-cell-an-empty-channel-says-so ()
   (with-fluxer ()
@@ -164,11 +158,9 @@
                                           (fluxer-channel "8" "builds")))
                                  200)))
     (is (equal (format nil "7  #general~%8  #builds")
-               (fluxer-tool "fluxer_list_channels" (nlk:json-object "guild" "42")))
-        "one guild's channels, with the id a send takes")
+               (fluxer-tool "fluxer_list_channels" (nlk:json-object "guild" "42"))) "one guild's channels, with the id a send takes")
     (is (equal (format nil "7  #general  (Lab)~%8  #builds  (Lab)")
-               (fluxer-tool "fluxer_list_channels" (nlk:json-object)))
-        "every guild's, each naming its guild")))
+               (fluxer-tool "fluxer_list_channels" (nlk:json-object))) "every guild's, each naming its guild")))
 
 ;;; --- reaction and pin -------------------------------------------------------------
 
@@ -179,13 +171,11 @@
                (fluxer-tool "fluxer_react"
                             (nlk:json-object "channel" "987" "message" "m1" "emoji" "👍"))))
     (is (equal "https://fluxer.test/v1/channels/987/messages/m1/reactions/%F0%9F%91%8D/@me"
-               (second (fluxer-latest)))
-        "the emoji as the UTF-8 octets it is")
+               (second (fluxer-latest))) "the emoji as the UTF-8 octets it is")
     (is (equal "Pinned message m1 in channel 987."
                (fluxer-tool "fluxer_pin" (nlk:json-object "channel" "987" "message" "m1"))))
     (is (equal "PUT" (first (fluxer-latest))))
-    (is (equal "https://fluxer.test/v1/channels/987/pins/m1" (second (fluxer-latest)))
-        "a pin is the PUT on the channel's pins")
+    (is (equal "https://fluxer.test/v1/channels/987/pins/m1" (second (fluxer-latest))) "a pin is the PUT on the channel's pins")
     (is (equal "Unpinned message m1 in channel 987."
                (fluxer-tool "fluxer_pin"
                             (nlk:json-object "channel" "987" "message" "m1" "remove" t))))
@@ -205,10 +195,8 @@
       (is (search "home channel 555" status) "the home channel")
       (is (search "mentions neutralized" status) "the mention switch"))
     (is (equal "Sent message msg12 to channel 555."
-               (nodecode-fluxer::run-slash "send release is up" nil))
-        "a bare send goes to home_channel")
+               (nodecode-fluxer::run-slash "send release is up" nil)) "a bare send goes to home_channel")
     (is (equal "Sent message msg12 to channel 555."
-               (nodecode-fluxer::run-slash "send #555 hello" nil))
-        "and #CHANNEL names one")
+               (nodecode-fluxer::run-slash "send #555 hello" nil)) "and #CHANNEL names one")
     (is (search "not one of its choices"
                 (nodecode-fluxer::run-slash "fly" nil)))))

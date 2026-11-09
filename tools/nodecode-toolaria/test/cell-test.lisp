@@ -18,16 +18,14 @@
   (:hooks :tool)
   (:command "rescuer")
   (:running (is (plusp (length (nodecode-toolaria:status))))
-            (is (uiop:directory-exists-p (nodecode-toolaria:store-dir))
-                "the store folder is made at start"))
+            (is (uiop:directory-exists-p (nodecode-toolaria:store-dir)) "the store folder is made at start"))
   (:refused ("max_result_chars" 10)
             ("store_path" 42)))
 
 ;;; --- the spill ---------------------------------------------------------------
 
 (deftest toolaria-cell-small-result-is-left-alone (with-cell-stop ((toolaria-start)))
-  (is (equal "ok" (run-tool-call "web_extract" "ok"))
-      "a result under the threshold goes to the model unchanged"))
+  (is (equal "ok" (run-tool-call "web_extract" "ok")) "a result under the threshold goes to the model unchanged"))
 
 (deftest toolaria-cell-oversized-result-becomes-a-handle (with-cell-stop ((toolaria-start)))
   (let* ((text (sample-text))
@@ -39,15 +37,12 @@
     (is (search "mode=..." handle) "and says how to fetch more")
     (let ((id (handle-id handle)))
       (is (plusp (length (or id ""))) "and carries one blob handle")
-      (is (equal text (nodecode-toolaria:fetch id :mode "full"))
-          "which reads the whole result back"))))
+      (is (equal text (nodecode-toolaria:fetch id :mode "full")) "which reads the whole result back"))))
 
 (deftest toolaria-cell-a-kept-out-tool-is-never-spilled (with-cell-stop ((toolaria-start)))
   (let ((text (sample-text)))
-    (is (equal text (run-tool-call "eval" text))
-        "eval's result is the operator's, and stays as it was")
-    (is (equal text (run-tool-call "rescuer_fetch" text))
-        "and the fetch tool's own answers are never re-spilled")))
+    (is (equal text (run-tool-call "eval" text)) "eval's result is the operator's, and stays as it was")
+    (is (equal text (run-tool-call "rescuer_fetch" text)) "and the fetch tool's own answers are never re-spilled")))
 
 (deftest toolaria-cell-one-text-is-one-blob (with-cell-stop ((toolaria-start)))
   (let* ((text (sample-text))
@@ -86,11 +81,9 @@
 
 (deftest toolaria-cell-a-missing-or-bad-handle-is-an-error-line (with-cell-stop ((toolaria-start)))
   (is (search "Error: no rescued blob"
-              (nodecode-toolaria:fetch "000000000000" :mode "stat"))
-      "a swept blob is an error line, not a condition")
+              (nodecode-toolaria:fetch "000000000000" :mode "stat")) "a swept blob is an error line, not a condition")
   (is (search "Error: invalid blob id"
-              (nodecode-toolaria:fetch "../../etc/passwd" :mode "stat"))
-      "a handle that is not 12 hex characters is refused"))
+              (nodecode-toolaria:fetch "../../etc/passwd" :mode "stat")) "a handle that is not 12 hex characters is refused"))
 
 ;;; --- /rescuer ------------------------------------------------------------------
 

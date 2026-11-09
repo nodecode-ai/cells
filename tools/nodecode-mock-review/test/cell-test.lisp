@@ -172,12 +172,10 @@
     (let ((one-option (nlk:decode-json
                         "{\"decisions\":[{\"question\":\"Which?\",\"options\":[{\"label\":\"only\"}]}]}")))
       (is (signals-error nodecode-mock-review:mock-review-error
-                         (mock-review-create "One option only" one-option))
-          "a decision with one option is refused")
+                         (mock-review-create "One option only" one-option)) "a decision with one option is refused")
       (is (search "needs two to six"
                   (handler-case (mock-review-create "One option only" one-option)
-                    (error (e) (princ-to-string e))))
-          "and says how many it wants")))))
+                    (error (e) (princ-to-string e)))) "and says how many it wants")))))
 
 (deftest mock-review-cell-a-second-round-keeps-the-first (with-fresh-reviews ()
   (let* ((said (mock-review-create "Pricing page"))

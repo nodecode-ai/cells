@@ -104,13 +104,10 @@
       (is (and path (probe-file path)) "the frame was written")
       (is (png-magic-p path) "and it opens as a PNG")
       (multiple-value-bind (width height) (png-size path)
-        (is (equal (nlk:json-value (aref frames 0) :integer "width") width)
-            "the width the frame names is the file's")
-        (is (equal (nlk:json-value (aref frames 0) :integer "height") height)
-            "so is the height")
+        (is (equal (nlk:json-value (aref frames 0) :integer "width") width) "the width the frame names is the file's")
+        (is (equal (nlk:json-value (aref frames 0) :integer "height") height) "so is the height")
         (is (< width 2000) "a page of a hundred columns stays inside one screen"))
-      (is (equal (visible-chars text) (nlk:json-value object :integer "chars"))
-          "every visible character of the text is on the page")
+      (is (equal (visible-chars text) (nlk:json-value object :integer "chars")) "every visible character of the text is on the page")
       (is (search "(look" (nlk:json-value object :string "guide")) "the answer says how to read it back")
       (is (search path (nlk:json-value object :string "guide")) "and names the frame to look at"))))
 
@@ -118,13 +115,11 @@
   (with-snapcompact ()
     (let* ((text (snapcompact-lines 130))
            (object (snapcompact-object "sc-2" (nlk:encode-json-object (nlk:json-object "text" text)))))
-      (is (equal 3 (nlk:json-value object :integer "frame_count"))
-          "130 rows at sixty to a page are three frames")
+      (is (equal 3 (nlk:json-value object :integer "frame_count")) "130 rows at sixty to a page are three frames")
       (let ((frames (nlk:json-value object :array "frames")))
         (is (equal (visible-chars text)
                    (reduce #'+ frames :key (lambda (frame)
-                                             (nlk:json-value frame :integer "chars"))))
-            "and every line is in one of them, once")))))
+                                             (nlk:json-value frame :integer "chars")))) "and every line is in one of them, once")))))
 
 (deftest snapcompact-cell-renders-a-file ()
   (with-snapcompact ()
@@ -135,11 +130,9 @@
       (let ((object (snapcompact-object
                       "sc-3" (nlk:encode-json-object (nlk:json-object "file" (namestring path))))))
         (is (equal 1 (nlk:json-value object :integer "frame_count")) "a file renders like a text")
-        (is (equal (visible-chars text) (nlk:json-value object :integer "chars"))
-            "with the file's own characters")
+        (is (equal (visible-chars text) (nlk:json-value object :integer "chars")) "with the file's own characters")
         (is (search "transcript" (nlk:json-value (aref (nlk:json-value object :array "frames") 0)
-                                                 :string "path"))
-            "and the file names the archive")))))
+                                                 :string "path")) "and the file names the archive")))))
 
 (deftest snapcompact-cell-drops-the-oldest-pages-past-the-cap ()
   (with-snapcompact (:max-frames 1)
@@ -164,8 +157,7 @@
     (let* ((text (snapcompact-lines 60))
            (object (snapcompact-object "sc-7" (nlk:encode-json-object (nlk:json-object "text" text)))))
       (is (< (nlk:json-value object :integer "image_tokens")
-             (nlk:json-value object :integer "text_tokens"))
-          "a dense page costs fewer tokens than its words do as text"))))
+             (nlk:json-value object :integer "text_tokens")) "a dense page costs fewer tokens than its words do as text"))))
 
 ;;; --- /snapcompact -----------------------------------------------------------------
 

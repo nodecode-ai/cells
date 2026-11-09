@@ -33,10 +33,8 @@
   (let ((parts '()))
     (with-agy-round (parts)
         (format nil "~a~%~a~%" (agy-step "hel") (agy-step "lo"))
-      (is (find :text-delta parts :key #'nle::stream-part-kind)
-          "the answer streams as text deltas")
-      (is (find :finish parts :key #'nle::stream-part-kind)
-          "the stream is closed once"))))
+      (is (find :text-delta parts :key #'nle::stream-part-kind) "the answer streams as text deltas")
+      (is (find :finish parts :key #'nle::stream-part-kind) "the stream is closed once"))))
 
 (deftest antigravity-cli-cell-answers-the-rounds-message ()
   (with-cell-stop ((antigravity-cli-start))
@@ -53,11 +51,9 @@
             (is (equal "hi" (nlk:json-value message :string "content")))
             (is (equal "stop" finish))
             (is (equal "gemini-3.8-flash"
-                       (second (member "--model" (second asked) :test #'equal)))
-                "the model reaches the CLI's argv")
+                       (second (member "--model" (second asked) :test #'equal))) "the model reaches the CLI's argv")
             (is (search "hello" (third asked)) "the prompt reaches the CLI's stdin")
-            (is (member "stream-json" (second asked) :test #'equal)
-                "the CLI is asked for stream-json events")))))))
+            (is (member "stream-json" (second asked) :test #'equal) "the CLI is asked for stream-json events")))))))
 
 (deftest antigravity-cli-cell-parses-a-tool-block ()
   (let ((parts '()))
@@ -72,8 +68,7 @@
         (is (equal "I will  done"
                    (nlk:json-value (nodecode-antigravity-cli:call-agy-streaming
                                      (user-context "hello") :on-part nil)
-                                   :string "content"))
-            "the block itself is not the answer's text")))))
+                                   :string "content")) "the block itself is not the answer's text")))))
 
 (deftest antigravity-cli-cell-closes-on-a-native-tool-step ()
   (let ((parts '()))
@@ -86,8 +81,7 @@
                  (nlk:json-value
                   (nodecode-antigravity-cli:call-agy-streaming
                    (user-context "hello") :on-part nil)
-                  :string "content"))
-          "the round ends at the native tool step; what came after is not the answer"))))
+                  :string "content")) "the round ends at the native tool step; what came after is not the answer"))))
 
 (deftest antigravity-cli-cell-lists-its-models ()
   (with-cell-stop ((antigravity-cli-start))

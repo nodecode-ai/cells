@@ -63,11 +63,9 @@
   (multiple-value-bind (calls prose)
       (nodecode-opencode-free::parse-tool-calls +of-answer+ (of-tools) "auto")
     (is (= 1 (length calls)) "one call")
-    (is (equal "read_file" (nlk:json-value (aref calls 0) :string "function" "name"))
-        "named as the round advertised it")
+    (is (equal "read_file" (nlk:json-value (aref calls 0) :string "function" "name")) "named as the round advertised it")
     (is (equal "{\"path\":\"notes.txt\"}"
-               (nlk:json-value (aref calls 0) :string "function" "arguments"))
-        "its arguments as the chat wire carries them")
+               (nlk:json-value (aref calls 0) :string "function" "arguments")) "its arguments as the chat wire carries them")
     (is (equal "Let me read it." prose) "and the prose around it is the answer")))
 
 (deftest opencode-free-cell-refuses-an-unadvertised-call ()
@@ -76,13 +74,11 @@
                              "\"function\":{\"name\":\"shell\",\"arguments\":\"{}\"}}"
                              "</hermes_tool_call>")))
     (is (signals-error nodecode-opencode-free::opencode-free-error
-          (nodecode-opencode-free::parse-tool-calls answer (of-tools) "auto"))
-        "a tool the round did not advertise dispatches nothing")))
+          (nodecode-opencode-free::parse-tool-calls answer (of-tools) "auto")) "a tool the round did not advertise dispatches nothing")))
 
 (deftest opencode-free-cell-refuses-an-uncurated-model ()
   (is (signals-error nodecode-opencode-free::opencode-free-error
-        (nodecode-opencode-free::exchange "gpt-5-paid" "hello"))
-      "a model outside the curated list never reaches the CLI"))
+        (nodecode-opencode-free::exchange "gpt-5-paid" "hello")) "a model outside the curated list never reaches the CLI"))
 
 ;;; --- a whole round --------------------------------------------------------
 

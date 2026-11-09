@@ -65,8 +65,7 @@ The pairs CONFIG gives override the section's defaults."
             (is (nle::find-tool "mem_status"))
             (is (= 8 (nodecode-memtomem::setting :max-results)) "the default page")
             (is (search "memories" (uiop:native-namestring
-                                     (nodecode-memtomem::notes-directory)))
-                "the notes default under the store"))
+                                     (nodecode-memtomem::notes-directory))) "the notes default under the store"))
   (:refused ("root" "relative/store")))
 
 (deftest memtomem-cell-a-notes-directory-may-be-named-aside ()
@@ -75,8 +74,7 @@ The pairs CONFIG gives override the section's defaults."
          (with-cell-stop ((memtomem-start "root" (concatenate 'string root "store/")
                                            "notes_dir" (concatenate 'string root "notes/")))
            (is (equal (uiop:ensure-directory-pathname (concatenate 'string root "notes/"))
-                      (nodecode-memtomem::notes-directory))
-               "notes_dir is where the cell reads"))
+                      (nodecode-memtomem::notes-directory)) "notes_dir is where the cell reads"))
       (ignore-errors
         (uiop:delete-directory-tree (uiop:ensure-directory-pathname root) :validate t)))))
 
@@ -124,8 +122,7 @@ The pairs CONFIG gives override the section's defaults."
       (is (search "(score " answer) "and the score it ranked it by")
       (is (null (search "Espresso" answer)) "the unrelated note is not a match"))
     (is (search "No memtomem note matched"
-                (memtomem-tool "mem_search" (nlk:json-object "query" "kubernetes cluster")))
-        "a topic the store has nothing on says so")))
+                (memtomem-tool "mem_search" (nlk:json-object "query" "kubernetes cluster"))) "a topic the store has nothing on says so")))
 
 (deftest memtomem-cell-search-reads-what-another-agent-wrote ()
   (with-memtomem-store ()
@@ -158,8 +155,7 @@ The pairs CONFIG gives override the section's defaults."
 
 (deftest memtomem-cell-status-reports-the-store-it-reads ()
   (with-memtomem-store ()
-    (is (search "no notes directory yet" (memtomem-tool "mem_status" (nlk:json-object)))
-        "an empty store says what will happen, not that it is broken")
+    (is (search "no notes directory yet" (memtomem-tool "mem_status" (nlk:json-object))) "an empty store says what will happen, not that it is broken")
     (memtomem-tool "mem_add" (nlk:json-object "content" "Prefers dark mode."))
     (let ((answer (memtomem-tool "mem_status" (nlk:json-object))))
       (is (search "1 note file" answer) "the file count")
@@ -177,8 +173,7 @@ The pairs CONFIG gives override the section's defaults."
       (is (search "Scanned 1 file" answer) "the directory the user named is read")
       (is (search "1 entry" answer) "and counted"))
     (is (search "must be absolute"
-                (memtomem-tool "mem_index" (nlk:json-object "path" "notes/")))
-        "a relative path is refused, as the original's skills require")))
+                (memtomem-tool "mem_index" (nlk:json-object "path" "notes/"))) "a relative path is refused, as the original's skills require")))
 
 ;;; --- /memtomem ---------------------------------------------------------------------
 

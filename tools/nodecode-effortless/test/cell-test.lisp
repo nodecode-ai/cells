@@ -70,10 +70,8 @@ the cell sent, oldest first, and PICKED each (EFFORT SESSION) it set."
   (is (nodecode-effortless::follow-up-p "ok"))
   (is (nodecode-effortless::follow-up-p "go on"))
   (is (not (nodecode-effortless::follow-up-p "review the entire repository")))
-  (is (equal "max" (nodecode-effortless::apply-bounds "xhigh" "low" "max" 1))
-      "bias tips one rung up, ceiling holds")
-  (is (equal "high" (nodecode-effortless::nearest-rung "xhigh" '("low" "high")))
-      "an off-ladder rung falls to the nearest one below"))
+  (is (equal "max" (nodecode-effortless::apply-bounds "xhigh" "low" "max" 1)) "bias tips one rung up, ceiling holds")
+  (is (equal "high" (nodecode-effortless::nearest-rung "xhigh" '("low" "high"))) "an off-ladder rung falls to the nearest one below"))
 
 ;;; --- the judges ---------------------------------------------------------------
 
@@ -93,8 +91,7 @@ the cell sent, oldest first, and PICKED each (EFFORT SESSION) it set."
         (let ((body (nlk:decode-json (getf args :content))))
           (is (equal "jev-latest" (nlk:json-value body :string "model")))
           (is (equal "Refactor the entire auth system"
-                     (nlk:json-value body :string "state" "next_message"))
-              "the next message is what the judge reads")
+                     (nlk:json-value body :string "state" "next_message")) "the next message is what the judge reads")
           (is (equal "choice" (nlk:json-value body :string "questions" "effort" "type")))))
       (is (equal '(("high" "eff-s1")) picked) "the verdict was written to the session"))))
 

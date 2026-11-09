@@ -19,8 +19,7 @@
    (is (nle::find-tool "optchat_zoom") "the zoom tool is registered")
    (is (nle::find-tool "optchat_date") "the date tool is registered")
    (is (eq (nlk:contract 'nodecode-optchat::zoom-line)
-           (second (nle::find-tool "optchat_zoom")))
-       "registered against its declaration"))
+           (second (nle::find-tool "optchat_zoom"))) "registered against its declaration"))
   (:stopped
    (is (null (nle::find-tool "optchat_zoom")) "stop unregisters the zoom tool")
    (is (null (nle::find-tool "optchat_date")) "and the date tool"))
@@ -78,8 +77,7 @@
     (with-cell-stop ((optchat-start "store_dir" "optchat-cell-restart" "compact_enabled" nil))
       (is (= 1 (nodecode-optchat:remembered)) "the log outlives the start")
       (nodecode-optchat::pump-once)
-      (is (search "ASK BEFORE RESTART" (cell-section "s1" "optchat"))
-          "and the next session reads it without asking"))))
+      (is (search "ASK BEFORE RESTART" (cell-section "s1" "optchat")) "and the next session reads it without asking"))))
 
 ;;; --- the tree: a free node, then a summarized one ------------------------------------
 
@@ -133,6 +131,5 @@
         (is (search "optchat:" text) "the command answers its status")
         (is (search "1 messages remembered" text))
         (is (not (null dialog)) "and a panel to act from"))
-      (is (search "ASK ONE" (cell-entry "nodecode-optchat" "optchat" "zoom 0 1"))
-          "a line opens from the command")
+      (is (search "ASK ONE" (cell-entry "nodecode-optchat" "optchat" "zoom 0 1")) "a line opens from the command")
       (is (search "not one of its choices" (cell-entry "nodecode-optchat" "optchat" "wibble"))))))

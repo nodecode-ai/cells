@@ -167,11 +167,9 @@
                (body (mpp-json text)))
           (is (= 200 (nlk:json-value body :integer "status")) "the retry's answer")
           (is (nlk:json-value body :boolean "paid") "the answer says it was paid")
-          (is (equal "100" (nlk:json-value (nlk:json-value body :object "payment") :string "amount"))
-              "the payment repeats the price")
+          (is (equal "100" (nlk:json-value (nlk:json-value body :object "payment") :string "amount")) "the payment repeats the price")
           (is (= 2 (length (mpp-asked))) "one paid retry, no more")
-          (is (equal "Payment token-1" (mpp-header-of (second (mpp-asked)) "authorization"))
-              "the retry carries the payer's Authorization"))))))
+          (is (equal "Payment token-1" (mpp-header-of (second (mpp-asked)) "authorization")) "the retry carries the payer's Authorization"))))))
 
 (deftest mpp-cell-an-origin-outside-the-allowlist-is-not-paid ()
   (with-mpp-wire
@@ -181,12 +179,10 @@
       (let* ((text (mpp-tool (nlk:json-object "url" "https://api.test/paid")))
              (body (mpp-json text)))
         (is (= 402 (nlk:json-value body :integer "status")) "the 402 comes back as it was")
-        (is (search "not in allowed_origins" (nlk:json-value body :string "refusal"))
-            "the refusal says why")
+        (is (search "not in allowed_origins" (nlk:json-value body :string "refusal")) "the refusal says why")
         (is (= 1 (length (mpp-asked))) "no retry")
         (is (equal "100" (nlk:json-value (aref (nlk:json-value body :array "challenges") 0)
-                                           :string "amount"))
-            "the price the model may choose to pay")))))
+                                           :string "amount")) "the price the model may choose to pay")))))
 
 (deftest mpp-cell-an-amount-over-the-cap-is-not-paid ()
   (with-mpp-wire
@@ -194,8 +190,7 @@
       (mpp-paid-answer "{}" 402)
       (let* ((text (mpp-tool (nlk:json-object "url" "https://api.test/paid")))
              (body (mpp-json text)))
-        (is (search "over max_amount" (nlk:json-value body :string "refusal"))
-            "the cap refuses it")
+        (is (search "over max_amount" (nlk:json-value body :string "refusal")) "the cap refuses it")
         (is (= 1 (length (mpp-asked))) "no retry")))))
 
 (deftest mpp-cell-a-private-url-is-refused-before-any-request ()

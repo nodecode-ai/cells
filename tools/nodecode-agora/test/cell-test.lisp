@@ -26,8 +26,7 @@
      (is (nle::find-tool name) (format nil "the ~a tool is registered" name)))
    (is (= 40 (nodecode-agora::setting :max-speeches)) "a transcript holds forty speeches")
    (is (equal "agora/ledger.sexp" (nodecode-agora::setting :ledger)) "the ledger's default path")
-   (is (equal '("architect" "developer" "reviewer") (nodecode-agora::setting :roles))
-       "the roles the section names"))
+   (is (equal '("architect" "developer" "reviewer") (nodecode-agora::setting :roles)) "the roles the section names"))
   (:stopped
    (dolist (name '("agora_raise_motion" "agora_speak" "agora_vote" "agora_close_motion"
                    "agora_get_motion" "agora_list_motions" "agora_create_task"
@@ -52,8 +51,7 @@
     (is (search "round 1" (agora:speak "m-1" "developer" "Agreed for the first year."
                                         :stance "support")))
     (is (search "round 1" (agora:speak "m-1" "reviewer" "Only if backups exist.")))
-    (is (search "round 2" (agora:speak "m-1" "architect" "Then a migration path."))
-        "a new round starts once every role has spoken")
+    (is (search "round 2" (agora:speak "m-1" "architect" "Then a migration path.")) "a new round starts once every role has spoken")
     (is (search "5 words in all" (agora:speak "m-1" "developer" "It does.")))
     (let ((transcript (agora:get-motion "m-1")))
       (is (search "round 2  architect (propose): Then a migration path." transcript))
@@ -133,11 +131,9 @@
     (is (search "m-1 raised: Where does the ledger live?"
                 (agora-tool "agora_raise_motion" "{\"title\":\"Where does the ledger live?\"}")))
     (is (signals-error nlk:contract-refusal
-          (agora-tool "agora_raise_motion" "{\"title\":42}"))
-        "a title that is not text is refused before the body")
+          (agora-tool "agora_raise_motion" "{\"title\":42}")) "a title that is not text is refused before the body")
     (is (signals-error nlk:contract-refusal
-          (agora-tool "agora_speak" "{\"motion_id\":\"m-1\",\"role\":\"architect\",\"text\":\"hi\",\"stance\":\"shrug\"}"))
-        "a stance outside its options is refused")
+          (agora-tool "agora_speak" "{\"motion_id\":\"m-1\",\"role\":\"architect\",\"text\":\"hi\",\"stance\":\"shrug\"}")) "a stance outside its options is refused")
     (is (search "m-1 round 1: architect (oppose) spoke"
                 (agora-tool "agora_speak" "{\"motion_id\":\"m-1\",\"role\":\"architect\",\"text\":\"against it\",\"stance\":\"oppose\"}")))
     (is (search "1 for, 0 against" (agora-tool "agora_vote" "{\"motion_id\":\"m-1\",\"role\":\"architect\",\"choice\":\"for\"}")))
@@ -172,11 +168,9 @@
         (is (equal "Agora" (nle::json-value dialog :text "title")) "typed alone, its panel")
         (is (equal '("/agora motion" "/agora task")
                    (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line"))
-                                    (nle::json-array dialog "rows"))))
-            "two rows raise, two run")))
+                                    (nle::json-array dialog "rows")))) "two rows raise, two run")))
     (is (search "m-1 raised" (nodecode-agora::run-slash "motion Shall the board be the ledger?" "s-1")))
-    (is (search "Shall the board be the ledger?" (nodecode-agora::run-slash "show m-1" "s-1"))
-        "show reads it back")
+    (is (search "Shall the board be the ledger?" (nodecode-agora::run-slash "show m-1" "s-1")) "show reads it back")
     (is (search "1 open motion" (nodecode-agora::run-slash "" "s-1")) "the overview counts what is open")
     (is (search "m-1" (nodecode-agora::run-slash "list" "s-1")))
     (is (search "m-1 has no votes yet" (refusal (lambda () (nodecode-agora::run-slash "close m-1" "s-1")))))))

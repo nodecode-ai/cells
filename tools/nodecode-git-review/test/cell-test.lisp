@@ -84,8 +84,7 @@
 ;;; --- lifecycle ----------------------------------------------------------------------
 
 (define-cell-lifecycle-tests "git-review"
-  (:running (is (= 60000 (nodecode-git-review::setting :max-chars))
-                "the patch ceiling defaults to 60000 characters")
+  (:running (is (= 60000 (nodecode-git-review::setting :max-chars)) "the patch ceiling defaults to 60000 characters")
             (is (eq t (nodecode-git-review::setting :new-files)) "new files are shown")
             (is (string= "" (nodecode-git-review::setting :base)) "and no base is named"))
   (:refused ("max_chars" 10))
@@ -181,8 +180,7 @@ new
                        (commit-request "repo" repo "message" "fix the totals"))))
           (is (search "staged everything" report) "the first step is reported")
           (is (search "committed: [main 1a2b3c4] fix the totals" report) "and the commit")
-          (is (some-call "commit --no-verify -m fix the totals")
-              "hooks are off on the commit the cell makes"))))))
+          (is (some-call "commit --no-verify -m fix the totals") "hooks are off on the commit the cell makes"))))))
 
 (deftest git-review-cell-read-only-refuses-before-git-runs ()
   (with-cell-stop ((git-review-start "read_only" t))

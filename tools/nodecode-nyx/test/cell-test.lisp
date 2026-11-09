@@ -70,8 +70,7 @@
    (is (nle::find-tool "nyx_forget"))
    (is (nle::find-tool "nyx_restore"))
    (is (equal (namestring *nyx-folder*)
-              (namestring (nodecode-nyx::data-directory)))
-       "the section's data_dir is where memory lives")
+              (namestring (nodecode-nyx::data-directory))) "the section's data_dir is where memory lives")
    (is (= 8 (nodecode-nyx::setting :recall-limit)) "the default recall budget")
    (is (= 7 (nodecode-nyx::setting :forget-days)) "the default quarantine window"))
   (:stopped (is (null (nle::find-tool "nyx_remember")) "stop unregisters the tools"))
@@ -92,8 +91,7 @@
         (is (= 1 (length lines)) "one entry, one line")
         (is (search "[hidden: GitHub token]" (first lines))
             (format nil "the token became its label: ~a" (first lines)))
-        (is (null (search "ghp_0123456789abcdef0123456789abcdef0123" (first lines)))
-            "the token itself never reaches the disk")
+        (is (null (search "ghp_0123456789abcdef0123456789abcdef0123" (first lines))) "the token itself never reaches the disk")
         (is (search "I drink oolong" (first lines)) "the rest is written verbatim")
         (is (search " | user | " (first lines)) "with its source and its stamp"))
       (let ((answer (nyx-tool "nyx_recall" (nlk:json-object "query" "oolong"))))
@@ -101,8 +99,7 @@
         (is (search "I drink oolong" answer))
         (is (search " | user | " answer) "each hit is dated"))
       (is (search "No memory matched \"coffee\"."
-                  (nyx-tool "nyx_recall" (nlk:json-object "query" "coffee")))
-          "a miss says so"))))
+                  (nyx-tool "nyx_recall" (nlk:json-object "query" "coffee"))) "a miss says so"))))
 
 (deftest nyx-cell-forget-quarantines-and-restore-returns-it ()
   (with-nyx-store
@@ -116,20 +113,16 @@
           (is (search id forgotten) "the id is named, to restore from"))
         (is (= 1 (length (nyx-journal-lines))) "the journal lost it")
         (is (= 1 (length (nyx-quarantine-rows))) "the quarantine holds it")
-        (is (search "never coffee" (nlk:encode-json-object (first (nyx-quarantine-rows))))
-            "with its text, whole")
+        (is (search "never coffee" (nlk:encode-json-object (first (nyx-quarantine-rows)))) "with its text, whole")
         (is (search "No memory matched \"coffee\"."
-                    (nyx-tool "nyx_recall" (nlk:json-object "query" "coffee")))
-            "and recall no longer finds it")
+                    (nyx-tool "nyx_recall" (nlk:json-object "query" "coffee"))) "and recall no longer finds it")
         (is (equal (format nil "Restored ~a." id)
                    (nyx-tool "nyx_restore" (nlk:json-object "mem_id" id))))
         (is (= 2 (length (nyx-journal-lines))) "it is back in the journal")
         (is (null (nyx-quarantine-rows)) "and out of the quarantine")
-        (is (search "never coffee" (nyx-tool "nyx_recall" (nlk:json-object "query" "coffee")))
-            "recall finds it again")
+        (is (search "never coffee" (nyx-tool "nyx_recall" (nlk:json-object "query" "coffee"))) "recall finds it again")
         (is (search "Forgotten 1 memory"
-                    (nyx-tool "nyx_forget" (nlk:json-object "contains" "Oslo")))
-            "contains names an entry too")))))
+                    (nyx-tool "nyx_forget" (nlk:json-object "contains" "Oslo"))) "contains names an entry too")))))
 
 (deftest nyx-cell-forget-needs-something-to-match ()
   (with-nyx-store
@@ -147,8 +140,7 @@
   (with-nyx-store
     (with-cell-stop ((nyx-start "data_dir" (namestring *nyx-folder*) "filter_secrets" nil))
       (nyx-tool "nyx_remember" (nlk:json-object "text" "the key is sk-abcdefghijklmnopqrstuvwx"))
-      (is (search "sk-abcdefghijklmnopqrstuvwx" (first (nyx-journal-lines)))
-          "filter_secrets off writes the text as it came"))))
+      (is (search "sk-abcdefghijklmnopqrstuvwx" (first (nyx-journal-lines))) "filter_secrets off writes the text as it came"))))
 
 ;;; --- /nyx ---------------------------------------------------------------------
 
@@ -160,8 +152,7 @@
         (is (search (namestring *nyx-folder*) answer) "and where it is"))
       (nyx-tool "nyx_remember" (nlk:json-object "text" "lives in Oslo"))
       (is (search "Nyx memory: 1 entry in " (cell-entry "nodecode-nyx" "nyx" "")))
-      (is (search "lives in Oslo" (cell-entry "nodecode-nyx" "nyx" "Oslo"))
-          "with an argument it searches"))))
+      (is (search "lives in Oslo" (cell-entry "nodecode-nyx" "nyx" "Oslo")) "with an argument it searches"))))
 
 ;;; --- a data_dir it cannot write ----------------------------------------------------
 
@@ -176,6 +167,5 @@
                   (refusal-text nlk:config-refusal
                                  (nyx-start "data_dir" (namestring (merge-pathnames
                                                                      "inner/"
-                                                                     (uiop:ensure-directory-pathname file))))))
-          "the refusal names the member the operator fixes")
+                                                                     (uiop:ensure-directory-pathname file)))))) "the refusal names the member the operator fixes")
       (is (null (nle::find-tool "nyx_remember")) "and a refused start installed nothing"))))

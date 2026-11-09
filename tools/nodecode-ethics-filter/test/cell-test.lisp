@@ -24,8 +24,7 @@
   (:help :ethics)
   (:command "ethics")
   (:running (is (equal "small-business-ethical"
-                       (nodecode-ethics-filter::setting :default-constitution))
-                "the section's own default constitution")
+                       (nodecode-ethics-filter::setting :default-constitution)) "the section's own default constitution")
             (let ((entry (nle::find-tool "ethics_evaluate")))
               (is-present entry "the tool is registered under the original's name"
                 (is (equal "ethics_evaluate" (first entry))))))
@@ -74,8 +73,7 @@
       (is (search "fairness" text) "a factory move affects people, so fairness applies")
       (is (search "0-25" text) "the rubric bands are in the brief, so a score can be anchored")
       (is (search "GREEN" text) "and the thresholds are named")
-      (is (null (search "conscious-leadership" text))
-          "a module the decision does not touch is left out of the brief"))))
+      (is (null (search "conscious-leadership" text)) "a module the decision does not touch is left out of the brief"))))
 
 (deftest ethics-filter-brief-honours-the-constitution ()
   (with-ethics
@@ -105,8 +103,7 @@
       (is (search "Requires human review." text) "a red verdict needs a person")
       (let ((record (first (ethics-trail))))
         (is (equal "red" (nlk:json-value record :string "decision")) "the trail records the veto")
-        (is (equal '("compliance") (coerce (nlk:json-value record :array "flags") 'list))
-            "and names the module that blocked it")))))
+        (is (equal '("compliance") (coerce (nlk:json-value record :array "flags") 'list)) "and names the module that blocked it")))))
 
 (deftest ethics-filter-tension-between-modules-is-flagged ()
   (with-ethics
@@ -130,16 +127,14 @@
   (with-ethics
     (let ((contract (second (nle::find-tool "ethics_evaluate"))))
       (is (signals-error nlk:contract-refusal
-            (nlk:contract-decode contract (nlk:make-json-object "scores" (ethics-scores))))
-          "the action is required, so a call without it never reaches the engine")
+            (nlk:contract-decode contract (nlk:make-json-object "scores" (ethics-scores)))) "the action is required, so a call without it never reaches the engine")
       (is (null (ethics-trail)) "and nothing was written to the trail"))))
 
 (deftest ethics-filter-a-missing-score-is-refused ()
   (with-ethics
     (is (signals-error nodecode-ethics-filter:ethics-filter-error
           (ethics-tool "action" *decision* "constitution" "minimal-safe"
-                       "scores" (ethics-scores "fairness" 90)))
-        "an enabled module with no score is refused, not guessed")
+                       "scores" (ethics-scores "fairness" 90))) "an enabled module with no score is refused, not guessed")
     (is (null (ethics-trail)) "and no half-scored record is kept")))
 
 ;;; --- the command ------------------------------------------------------------------

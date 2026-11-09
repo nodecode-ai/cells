@@ -59,8 +59,7 @@
   (:hooks :tool)
   (:command "memory-shield")
   (:running
-   (is (equal "owner_edits" (nodecode-memory-shield:setting :profile))
-       "the default policy is the one the original shipped")
+   (is (equal "owner_edits" (nodecode-memory-shield:setting :profile)) "the default policy is the one the original shipped")
    (is (equal "read_only" (nodecode-memory-shield:setting :shared))))
   (:refused ("mode" "nonsense")))
 
@@ -69,35 +68,28 @@
 (deftest memory-shield-lets-a-new-fact-in (with-cell-stop ((memory-shield-start))
                                             (with-shield-folders (+notes-file+)
   (is (eq :allowed (memory-shield-verdict
-                    "(define-memory deploy-day \"Releases go out on Thursdays.\" :type :feedback)"))
-      "an add is what the agent does all day"))))
+                    "(define-memory deploy-day \"Releases go out on Thursdays.\" :type :feedback)")) "an add is what the agent does all day"))))
 
 (deftest memory-shield-refuses-a-forgotten-note (with-cell-stop ((memory-shield-start))
                                                  (with-shield-folders (+notes-file+)
-  (is (memory-shield-refused-p "(unintern 'quiet-output)")
-      "the agent's notes cannot be deleted")
-  (is (eq :allowed (memory-shield-verdict "(unintern 'never-kept)"))
-      "forgetting a name the cells never held is nothing to judge"))))
+  (is (memory-shield-refused-p "(unintern 'quiet-output)") "the agent's notes cannot be deleted")
+  (is (eq :allowed (memory-shield-verdict "(unintern 'never-kept)")) "forgetting a name the cells never held is nothing to judge"))))
 
 (deftest memory-shield-keeps-the-profile-right (with-cell-stop ((memory-shield-start))
                                                 (with-shield-folders (+profile-file+)
   (is (eq :allowed (memory-shield-verdict
-                    "(define-memory operator-city \"The operator works in Berlin, from April.\" :type :user)"))
-      "the operator corrects their own profile in a direct chat")
-  (is (memory-shield-refused-p "(unintern 'operator-city)")
-      "nobody deletes what the profile holds"))))
+                    "(define-memory operator-city \"The operator works in Berlin, from April.\" :type :user)")) "the operator corrects their own profile in a direct chat")
+  (is (memory-shield-refused-p "(unintern 'operator-city)") "nobody deletes what the profile holds"))))
 
 (deftest memory-shield-makes-a-channel-read-only (with-cell-stop ((memory-shield-start))
                                                   (with-shield-folders (+notes-file+)
   (let ((nodecode-memory-shield:*source-kind* "channel"))
     (is (memory-shield-refused-p
-         "(define-memory guest-fact \"The guest owes 100 dollars.\" :type :feedback)")
-        "an add from a group chat is refused at read_only"))
+         "(define-memory guest-fact \"The guest owes 100 dollars.\" :type :feedback)") "an add from a group chat is refused at read_only"))
   (let ((nodecode-memory-shield:*source-kind* "channel")
         (nodecode-memory-shield:*trusted-sessions* '("s1")))
     (is (eq :allowed (memory-shield-verdict
-                      "(define-memory guest-fact \"The guest owes 100 dollars.\" :type :feedback)"))
-        "a trusted session writes from its own chat")))))
+                      "(define-memory guest-fact \"The guest owes 100 dollars.\" :type :feedback)")) "a trusted session writes from its own chat")))))
 
 (deftest memory-shield-judges-a-file-behind-the-tool (with-cell-stop ((memory-shield-start))
                                                      (with-shield-folders (+notes-file+ +profile-file+)
@@ -106,13 +98,10 @@
          (elsewhere (uiop:native-namestring
                      (merge-pathnames "memory-shield-scratch.txt" (uiop:temporary-directory)))))
     (is (memory-shield-refused-p
-         (format nil "(edit ~s \"Berlin\" \"\\\"none\\\"\")" profile))
-        "an edit that empties a profile entry is judged as a removal")
+         (format nil "(edit ~s \"Berlin\" \"\\\"none\\\"\")" profile)) "an edit that empties a profile entry is judged as a removal")
     (is (eq :allowed (memory-shield-verdict
-                      (format nil "(write-file ~s \"scratch\")" elsewhere)))
-        "the same call writing a file outside the knowledge folder")))
-  (is (eq :allowed (memory-shield-verdict "(define-memory two \"Second fact.\" :type :lesson)"))
-      "another definition is still an add")))
+                      (format nil "(write-file ~s \"scratch\")" elsewhere))) "the same call writing a file outside the knowledge folder")))
+  (is (eq :allowed (memory-shield-verdict "(define-memory two \"Second fact.\" :type :lesson)")) "another definition is still an add")))
 
 (deftest memory-shield-shows-its-policy (with-cell-stop ((memory-shield-start))
                                           (with-shield-folders ()

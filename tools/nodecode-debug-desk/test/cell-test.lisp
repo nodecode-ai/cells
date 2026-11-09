@@ -22,8 +22,7 @@
   (:hooks :tool)
   (:help :debug-desk)
   (:command "debug-desk")
-  (:running (is (= 120 (nodecode-debug-desk::setting :debounce-seconds))
-                "a repeat of the same failure inside two minutes is one failure"))
+  (:running (is (= 120 (nodecode-debug-desk::setting :debounce-seconds)) "a repeat of the same failure inside two minutes is one failure"))
   (:refused ("debounce_seconds" -1))
   (:idle nodecode-debug-desk:debug-desk-error
          (nodecode-debug-desk:today)
@@ -55,8 +54,7 @@
 (deftest debug-desk-cell-a-failed-shell-call-is-kept-with-its-exit-code ()
   (with-desk
     (is (search "no failed shell command captured yet"
-                (nodecode-debug-desk:last-failure))
-        "nothing is captured before the agent fails")
+                (nodecode-debug-desk:last-failure)) "nothing is captured before the agent fails")
     (desk-answer "make: *** [test] Error 2
 [exit 2]"
                  :command "make test" :cwd "project")
@@ -80,8 +78,7 @@
 [exit 2]" :command "make test")
     (desk-answer "boom
 [exit 2]" :command "make test")
-    (is (search "seen 2 times" (nodecode-debug-desk:last-failure))
-        "the repeat is counted, not a second failure")))
+    (is (search "seen 2 times" (nodecode-debug-desk:last-failure)) "the repeat is counted, not a second failure")))
 
 (deftest debug-desk-cell-a-call-that-succeeded-leaves-the-desk-alone ()
   (with-desk
@@ -101,10 +98,8 @@
                              :call-id "call-2")
                        (lambda (op) (declare (ignore op)) (error "the form signalled")))
               nil)
-          (error () t))
-        "the call's own error still reaches the engine")
-    (is (search "(car nil)" (nodecode-debug-desk:last-failure))
-        "a body that signalled is kept as the last failure")))
+          (error () t)) "the call's own error still reaches the engine")
+    (is (search "(car nil)" (nodecode-debug-desk:last-failure)) "a body that signalled is kept as the last failure")))
 
 ;;; --- the tools, and the summary -------------------------------------------------------
 
@@ -113,14 +108,11 @@
     (with-desk
       (is (second (desk-tool-entry "debug_daily_report")) "the digest tool is registered")
       (is (second (desk-tool-entry "debug_last_failure")) "and so is the failure tool")
-      (is (search "commits: 1" (desk-call "debug_daily_report" "cwd" (namestring repo)))
-          "the digest tool answers for a folder")
+      (is (search "commits: 1" (desk-call "debug_daily_report" "cwd" (namestring repo))) "the digest tool answers for a folder")
       (desk-answer "npm ERR! test failed
 [exit 1]" :command "npm test")
-      (is (search "command: npm test" (desk-call "debug_last_failure"))
-          "the failure tool answers with what was kept")
-      (is (search "command: npm test" (desk-call "debug_last_failure" "summarize" nil))
-          "and a false summarize still answers the failure"))))
+      (is (search "command: npm test" (desk-call "debug_last_failure")) "the failure tool answers with what was kept")
+      (is (search "command: npm test" (desk-call "debug_last_failure" "summarize" nil)) "and a false summarize still answers the failure"))))
 
 (deftest debug-desk-cell-a-summary-asks-the-model-once ()
   (with-desk
@@ -134,8 +126,7 @@ ValueError: x
                 (incf asked)
                 "the test died on an undefined name")))
         (is (search "summary: the test died on an undefined name"
-                    (nodecode-debug-desk:last-failure :summarize t))
-            "the summary rides the answer")
+                    (nodecode-debug-desk:last-failure :summarize t)) "the summary rides the answer")
         (nodecode-debug-desk:last-failure :summarize t)
         (is (= 1 asked) "and the kept summary answers the second read")))
     (desk-answer "TypeError: y is not callable
@@ -145,8 +136,7 @@ ValueError: x
               (declare (ignore system user))
               (error "no model here"))))
       (is (search "summary: none"
-                  (nodecode-debug-desk:last-failure :summarize t))
-          "a model that does not answer costs the failure nothing"))))
+                  (nodecode-debug-desk:last-failure :summarize t)) "a model that does not answer costs the failure nothing"))))
 
 ;;; --- /debug-desk -----------------------------------------------------------------------
 

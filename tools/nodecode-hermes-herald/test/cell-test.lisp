@@ -86,8 +86,7 @@ STATUS), as NLK:HTTP does. ASKED collects (METHOD URL OPTIONS), oldest first."
         (setf rows (nlk:json-array ledger "runs"))
         (is (plusp (nlk:json-value ledger :integer "count")) "the local record kept the run")
         (is (find "4f2a9c" rows :test #'equal
-                  :key (lambda (row) (nlk:json-value row :string "run_id")))
-            "under the run id the target answered")))))
+                  :key (lambda (row) (nlk:json-value row :string "run_id"))) "under the run id the target answered")))))
 
 (deftest hermes-herald-cell-sends-the-configured-model-alias ()
   (with-cell-stop ((hermes-herald-start "model" "reviewer-fast"))
@@ -167,8 +166,7 @@ STATUS), as NLK:HTTP does. ASKED collects (METHOD URL OPTIONS), oldest first."
                                  (values "{\"choices\":[{\"message\":{\"content\":\"again\"}}]}" 200)))
         (hermes-herald-object "hh-9" "hermes_chat" "{\"message\":\"and again\"}")
         (is (equal "sess-1" (cdr (assoc "x-hermes-session-id" (getf (third (first asked)) :headers)
-                                         :test #'string-equal)))
-            "the saved session rides the next turn")))))
+                                         :test #'string-equal))) "the saved session rides the next turn")))))
 
 ;;; --- the command -------------------------------------------------------------------------
 

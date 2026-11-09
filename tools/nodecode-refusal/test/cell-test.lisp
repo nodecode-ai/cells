@@ -124,8 +124,7 @@ gateway publishes it."
                      ;; in place: the default mode disarms the session, and
                      ;; one declined answer is asked again only once.
                      (nodecode-refusal::inspect-session "s1")
-                     (is (= 0 (nodecode-refusal::level-of "s1"))
-                         "a refusal with the preprompt in place disarms it")
+                     (is (= 0 (nodecode-refusal::level-of "s1")) "a refusal with the preprompt in place disarms it")
                      (nodecode-refusal::inspect-session "s1"))))))
       (is (= 1 (length said)) "one retry, not one per reading")
       (is (equal "s1" (first (first said))) "into the session that declined")
@@ -176,8 +175,7 @@ gateway publishes it."
 
 (deftest refusal-cell-the-command-answers-every-word ()
   (with-cell-stop ((refusal-start "preprompt" "be brief"))
-    (is (search "direct_refusal" (nodecode-refusal::run-slash "check I cannot help with that." "s1"))
-        "check reads a text")
+    (is (search "direct_refusal" (nodecode-refusal::run-slash "check I cannot help with that." "s1")) "check reads a text")
     (is (search "not a refusal" (nodecode-refusal::run-slash "check the file is here" "s1")))
     (is (search "retry on" (nodecode-refusal::run-slash "" "s1")) "status names the settings")
     (is (search "armed at level 1" (nodecode-refusal::run-slash "on" "s1")) "on arms")

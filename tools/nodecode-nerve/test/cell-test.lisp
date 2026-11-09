@@ -115,8 +115,7 @@ REQUESTS each (METHOD URL HEADERS CONTENT) it was sent, oldest first."
              (criteria (nlk:json-value questions :object "decision" "criteria"))
              (labels '()))
         (maphash (lambda (label rubric) (declare (ignore rubric)) (push label labels)) criteria)
-        (is (equal '("ESCALATE" "PASS" "REPLAN" "RETRY") (sort labels #'string<))
-            "the ladder is the original's, and each rung carries its rubric")))))
+        (is (equal '("ESCALATE" "PASS" "REPLAN" "RETRY") (sort labels #'string<)) "the ladder is the original's, and each rung carries its rubric")))))
 
 (deftest nerve-cell-redacts-secrets-before-they-leave ()
   (with-nerve (requests)

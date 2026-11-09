@@ -159,20 +159,17 @@ key always present."
     (with-cell-stop ((start-mermail))
       (let ((text (tool-text "mermail_emails" "mailbox_id" "mb-1" "limit" 5)))
         (is (search "Inbox: 2 messages" text) "the server's answer reaches the model"))
-      (is (equal '("initialize" "notifications/initialized" "tools/call") (methods))
-          "one session, then the call")
+      (is (equal '("initialize" "notifications/initialized" "tools/call") (methods)) "one session, then the call")
       (destructuring-bind (name arguments) (first (tool-calls))
         (is (equal "list_emails" name) "the cell speaks the server's own tool name")
-        (is (equal "mb-1" (nlk:json-value arguments :string "mailboxId"))
-            "the path id stays top-level")
+        (is (equal "mb-1" (nlk:json-value arguments :string "mailboxId")) "the path id stays top-level")
         (let ((query (nlk:json-value arguments :object "query")))
           (is (eql 5 (nlk:json-value query :integer "limit")) "the limit rides in query")
           (is (eql t (nlk:json-value query :boolean "metadata_only")) "and a listing asks for metadata")
           (is (equal "inbox" (nlk:json-value query :string "folder")) "with the defaulted folder")))
       (let ((first-request (first (reverse *requests*))))
         (is (equal "test-key" (header-value first-request "x-api-key")) "the key rides as x-api-key")
-        (is (equal "sess-1" (header-value (first *requests*) "mcp-session-id"))
-            "and every later request carries the session the server handed back")))))
+        (is (equal "sess-1" (header-value (first *requests*) "mcp-session-id")) "and every later request carries the session the server handed back")))))
 
 (deftest mermail-cell-a-search-and-a-read-shape-their-own-envelopes ()
   (with-mermail-server (:answer "{\"id\":\"e-1\"}")
@@ -187,13 +184,11 @@ key always present."
       (tool-text "mermail_read" "mailbox_id" "mb-1" "email_id" "e-1")
       (destructuring-bind (name arguments) (second (tool-calls))
         (is (equal "get_email" name))
-        (is (equal "e-1" (nlk:json-value arguments :string "emailId"))
-            "the message id stays top-level")
+        (is (equal "e-1" (nlk:json-value arguments :string "emailId")) "the message id stays top-level")
         (let ((query (nlk:json-value arguments :object "query")))
           (is (eql t (nlk:json-value query :boolean "agent_safe_content")) "a body is read agent-safe")
           (is (equal "clean" (nlk:json-value query :string "require_scan_status")) "and scan-gated")
-          (is (eql 10000 (nlk:json-value query :integer "max_body_chars"))
-              "with the defaulted cap"))))))
+          (is (eql 10000 (nlk:json-value query :integer "max_body_chars")) "with the defaulted cap"))))))
 
 (deftest mermail-cell-a-send-says-exactly-what-it-will-deliver ()
   (with-mermail-server (:answer "{\"status\":\"queued\"}")
@@ -206,8 +201,7 @@ key always present."
         (let ((body (nlk:json-value arguments :object "body")))
           (is (equal "me@mermail.app" (nlk:json-value body :string "from")))
           (is (equal "them@example.test" (nlk:json-value body :string "to")))
-          (is (equal "Hi there" (nlk:json-value body :string "text"))
-              "a send carries text, not body"))))))
+          (is (equal "Hi there" (nlk:json-value body :string "text")) "a send carries text, not body"))))))
 
 ;;; --- refusals and recoveries ----------------------------------------------------
 
@@ -234,8 +228,7 @@ key always present."
   ;; call must read either, or a server that streams answers nothing.
   (with-mermail-server (:sse t :answer "streamed answer")
     (with-cell-stop ((start-mermail))
-      (is (search "streamed answer" (tool-text "mermail_mailboxes"))
-          "the event's data reaches the model"))))
+      (is (search "streamed answer" (tool-text "mermail_mailboxes")) "the event's data reaches the model"))))
 
 ;;; --- the command ---------------------------------------------------------------
 
@@ -256,5 +249,4 @@ key always present."
       (let ((text (nodecode-mermail::run-slash "check" "s1")))
         (is (search "3 tools" text) "the catalog size")
         (is (search "list_emails" text) "and the names it carries"))
-      (is (equal '("initialize" "notifications/initialized" "tools/list") (methods))
-          "a read-only check, one session deep"))))
+      (is (equal '("initialize" "notifications/initialized" "tools/list") (methods)) "a read-only check, one session deep"))))

@@ -19,8 +19,7 @@
   (:help :umt)
   (:command "umt")
   (:running (is (equal nodecode-umt::+manual+ (nle:help :umt)) "(help :umt) is the manual")
-            (is (equal "https://hacker-news.firebaseio.com/v0" (nodecode-umt::hn-api-base))
-                "the section's default base")
+            (is (equal "https://hacker-news.firebaseio.com/v0" (nodecode-umt::hn-api-base)) "the section's default base")
             (is (equal "cs.AI" (nodecode-umt::setting :default-category)))
             (is (third (nle::find-tool "hn_top_stories")) "the ranking tool is registered")
             (is (third (nle::find-tool "arxiv_paper")))
@@ -161,10 +160,8 @@ nothing the test did not route answered."
                  (umt-answer (hn-story-object 1 "title" "Only one"))))
     (let ((tool (third (nle::find-tool "hn_top_stories")))
           (contract (nlk:contract 'nodecode-umt::hn-top-stories)))
-      (is (search "1. Only one" (funcall tool (nlk:contract-decode contract (nlk:make-json-object "limit" 1))))
-          "the tool reads its contract and answers the verb's text")
-      (is (search "1. Only one" (funcall tool (nlk:contract-decode contract (nlk:make-json-object))))
-          "a call that names no limit takes the contract's default"))))
+      (is (search "1. Only one" (funcall tool (nlk:contract-decode contract (nlk:make-json-object "limit" 1)))) "the tool reads its contract and answers the verb's text")
+      (is (search "1. Only one" (funcall tool (nlk:contract-decode contract (nlk:make-json-object)))) "a call that names no limit takes the contract's default"))))
 
 ;;; --- arXiv ----------------------------------------------------------------------------
 
@@ -210,8 +207,7 @@ nothing the test did not route answered."
                (lambda (url) (declare (ignore url)) (values "<feed></feed>" 200)))
     (is (search "arXiv has no paper \"2405.99999\""
                 (umt-reported (handler-case (nodecode-umt::paper "2405.99999")
-                                (umt:umt-error (condition) condition))))
-        "an empty feed is a refusal naming the identifier")))
+                                (umt:umt-error (condition) condition)))) "an empty feed is a refusal naming the identifier")))
 
 ;;; --- npm ---------------------------------------------------------------------------------
 
@@ -239,8 +235,7 @@ nothing the test did not route answered."
       (is (search "dist-tags: latest=4.19.2, next=5.0.0" text))
       (is (search "repository: git+https://example.com/express.git" text))
       (is (search "maintainers: one, two" text)))
-    (is (equal "https://registry.npmjs.org/express" (second (first (umt-requested))))
-        "the section's registry, the name as one path segment")))
+    (is (equal "https://registry.npmjs.org/express" (second (first (umt-requested)))) "the section's registry, the name as one path segment")))
 
 (deftest umt-cell-npm-versions-newest-first ()
   (with-umt ()
@@ -291,8 +286,7 @@ nothing the test did not route answered."
     (multiple-value-bind (text dialog) (nodecode-umt::run-slash "" nil)
       (is (search "umt: Hacker News at" text) "bare /umt says where the bases point")
       (is dialog))
-    (is (search "umt: search npm for what?" (nodecode-umt::run-slash "npm" nil))
-        "a verb with nothing after it asks without dialing")
+    (is (search "umt: search npm for what?" (nodecode-umt::run-slash "npm" nil)) "a verb with nothing after it asks without dialing")
     (is (search "is not one of its choices" (nodecode-umt::run-slash "spotify x" nil)))))
 
 (deftest umt-cell-a-failed-status-answers-a-failure-the-model-reads ()

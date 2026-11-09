@@ -100,7 +100,7 @@ minus nothing, plus Nodecode's own host-fetch name.")
 (defun normalize-url (raw)
   "RAW as a URL the tray keeps, or NIL: http or https, a host, one line, at
 most 500 characters, its host lowercased, its fragment dropped and its path
-"/" when it names none."
+\"/\" when it names none."
   (let ((text (and (stringp raw)
                    (string-trim '(#\Space #\Tab #\Newline #\Return) raw))))
     (when (and text (plusp (length text)))

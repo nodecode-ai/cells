@@ -133,14 +133,10 @@
   (with-cell-stop ((lfg-alarm-start "token_env" "LFG_ALARM_TOKEN"))
     (let ((entry (nle::find-tool "set_time_alarm")))
       (is entry "the server's own tool name is in the table")
-      (is (search "Set an alarm" (getf (second entry) :description))
-          "with the server's own description")
-      (is (equal "object" (nlk:json-value (getf (second entry) :parameters) :string "type"))
-          "and its input schema, as the model is shown it"))
-    (is (= 1 (count "initialize" *wire-asked* :key #'first :test #'equal))
-        "one handshake, not one per listed page")
-    (is (find "notifications/initialized" *wire-asked* :key #'first :test #'equal)
-        "and the client's half of it")))
+      (is (search "Set an alarm" (getf (second entry) :description)) "with the server's own description")
+      (is (equal "object" (nlk:json-value (getf (second entry) :parameters) :string "type")) "and its input schema, as the model is shown it"))
+    (is (= 1 (count "initialize" *wire-asked* :key #'first :test #'equal)) "one handshake, not one per listed page")
+    (is (find "notifications/initialized" *wire-asked* :key #'first :test #'equal) "and the client's half of it")))
 
 (deftest lfg-alarm-cell-calls-a-tool (with-lfg-wire)
   (with-cell-stop ((lfg-alarm-start "token_env" "LFG_ALARM_TOKEN"))
@@ -150,10 +146,8 @@
       (is (search "Alarm set for 07:00" answer) "the server's words are the answer"))
     (let* ((sent (find "tools/call" *wire-asked* :key #'first :test #'equal))
            (message (nlk:decode-json (second sent))))
-      (is (equal "set_time_alarm" (nlk:json-value message :string "params" "name"))
-          "the call carries the server's tool name")
-      (is (equal "Airport" (nlk:json-value message :string "params" "arguments" "title"))
-          "and the arguments the model passed, unchanged"))))
+      (is (equal "set_time_alarm" (nlk:json-value message :string "params" "name")) "the call carries the server's tool name")
+      (is (equal "Airport" (nlk:json-value message :string "params" "arguments" "title")) "and the arguments the model passed, unchanged"))))
 
 (deftest lfg-alarm-cell-reads-a-streamed-reply (with-lfg-wire)
   (setf *wire-sse* t)
@@ -161,8 +155,7 @@
     (is (nle::find-tool "ring_alarm") "a handshake and a list over the event stream are read")
     (setf *wire-call-text* "streamed answer")
     (is (search "streamed answer"
-                (nle::message-content (execute-wire-call "lfg-2" "ring_alarm" "{}")))
-        "and so is a tool's")))
+                (nle::message-content (execute-wire-call "lfg-2" "ring_alarm" "{}"))) "and so is a tool's")))
 
 (deftest lfg-alarm-cell-reports-a-tool-error (with-lfg-wire)
   (with-cell-stop ((lfg-alarm-start "token_env" "LFG_ALARM_TOKEN"))
@@ -177,8 +170,7 @@
       (is (search "3 tools" text) "the command counts what the server offers")
       (is (search "set_time_alarm" text) "and names them")
       (is (search "Ring an alarm now"
-                  (cell-entry "nodecode-lfg-alarm" "lfg-alarm" "ring_alarm"))
-          "naming one answers what it does"))))
+                  (cell-entry "nodecode-lfg-alarm" "lfg-alarm" "ring_alarm")) "naming one answers what it does"))))
 
 (deftest lfg-alarm-cell-a-refused-key-is-said (with-lfg-wire)
   (with-cell-stop ((lfg-alarm-start "token_env" "LFG_ALARM_TOKEN"))

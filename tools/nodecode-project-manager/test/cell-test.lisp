@@ -112,8 +112,7 @@
     (multiple-value-bind (text dialog) (nodecode-project-manager::run-slash "" nil)
       (is (search "2 projects" text) "the same list the tool answers")
       (is (equal '("api" "web")
-                 (mapcar (lambda (row) (getf row :label)) (getf dialog :rows)))
-          "a row a project, in path order")
+                 (mapcar (lambda (row) (getf row :label)) (getf dialog :rows))) "a row a project, in path order")
       (is (stringp (getf (first (getf dialog :rows)) :value)) "each row carrying its path"))))
 
 (deftest project-manager-cell-the-command-keeps-what-its-search-names ()

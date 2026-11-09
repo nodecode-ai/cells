@@ -89,8 +89,7 @@
       (is (equal "r0" (nlk:json-value (aref roots 0) :string "id")) "with their ids"))
     (let* ((object (cloud-files-object "cf-list-2" "files_list" "{\"root\":\"r0\",\"path\":\"docs\"}"))
            (paths (entry-paths object)))
-      (is (equal '("docs/notes.txt" "docs/readme.md") (sort paths #'string-lessp))
-          "a folder lists its entries, directories first"))
+      (is (equal '("docs/notes.txt" "docs/readme.md") (sort paths #'string-lessp)) "a folder lists its entries, directories first"))
     (let* ((object (cloud-files-object "cf-list-3" "files_list" "{\"root\":\"r0\"}"))
            (paths (entry-paths object)))
       (is (member "docs" paths :test #'equal) "the top level names its folder")
@@ -123,16 +122,13 @@
                     (format nil "{\"root\":\"r0\",\"path\":\"docs/readme.md\",\"text\":\"# hello again\",\"base_sha256\":\"~a\"}"
                             digest))))
         (is (eq t (nlk:json-value saved :boolean "ok")) "a save with the sha256 just read goes through")
-        (is (equal (nlk:sha256-text "# hello again") (nlk:json-value saved :string "sha256"))
-            "and answers the new sha256"))
+        (is (equal (nlk:sha256-text "# hello again") (nlk:json-value saved :string "sha256")) "and answers the new sha256"))
       (let ((conflict (cloud-files-object
                        "cf-save-2" "files_save"
                        (format nil "{\"root\":\"r0\",\"path\":\"docs/readme.md\",\"text\":\"stale\",\"base_sha256\":\"~a\"}"
                                digest))))
-        (is (eq t (nlk:json-value conflict :boolean "conflict"))
-            "a save against the sha256 from before is a conflict, not an overwrite")
-        (is (equal "# hello again" (nlk:json-value conflict :string "text"))
-            "and it carries the file as it is now"))
+        (is (eq t (nlk:json-value conflict :boolean "conflict")) "a save against the sha256 from before is a conflict, not an overwrite")
+        (is (equal "# hello again" (nlk:json-value conflict :string "text")) "and it carries the file as it is now"))
       (let ((refused (cloud-files-call "cf-save-3" "files_save"
                                         (format nil "{\"root\":\"r0\",\"path\":\"docs/readme.md\",\"text\":\"x\",\"base_sha256\":\"\"}"))))
         (is (search "exists" refused) "an existing file without a base sha256 is refused"))
@@ -151,15 +147,12 @@
     (let* ((object (cloud-files-object "cf-search-2" "files_search" "{\"root\":\"r0\",\"query\":\"*.js\"}"))
            (paths (map 'list (lambda (entry) (nlk:json-value entry :string "path"))
                        (nlk:json-array object "results"))))
-      (is (not (search "node_modules" (format nil "~{~a~}" paths)))
-          "heavy folders are skipped, so a glob inside one does not match"))))
+      (is (not (search "node_modules" (format nil "~{~a~}" paths))) "heavy folders are skipped, so a glob inside one does not match"))))
 
 (deftest cloud-files-cell-creates-a-folder ()
   (with-cell-stop ((cloud-files-start "roots" (vector *fixture-root*)))
     (let ((object (cloud-files-object "cf-mkdir-1" "files_mkdir" "{\"root\":\"r0\",\"path\":\"inbox/2026\"}")))
-      (is (equal '("inbox" "2026") (coerce (nlk:json-array object "created") 'list))
-          "every missing folder is created and named")
-      (is (uiop:directory-exists-p (merge-pathnames "inbox/2026/" *fixture-root*))
-          "and it is on disk"))
+      (is (equal '("inbox" "2026") (coerce (nlk:json-array object "created") 'list)) "every missing folder is created and named")
+      (is (uiop:directory-exists-p (merge-pathnames "inbox/2026/" *fixture-root*)) "and it is on disk"))
     (let ((object (cloud-files-object "cf-mkdir-2" "files_mkdir" "{\"root\":\"r0\",\"path\":\"inbox\"}")))
       (is (eq t (nlk:json-value object :boolean "exists")) "a folder that is there already says so"))))

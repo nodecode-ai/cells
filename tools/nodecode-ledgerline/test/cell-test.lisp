@@ -81,8 +81,7 @@ was asked."
                             :input 5000 :cached 95000 :write 1000 :output 700 :cost 0.50))
       (let ((text (nodecode-ledgerline:receipt "s-a")))
         (is (search "session s-a: $0.50 over 1 call" text) "the session and its spend")
-        (is (search "94% of 101,000 input tokens read from cache, 1,000 written" text)
-            "input is split into cache reads, fresh input and writes")
+        (is (search "94% of 101,000 input tokens read from cache, 1,000 written" text) "input is split into cache reads, fresh input and writes")
         (is (search "700 out" text) "output is its own line")
         (is (search "$0.50 of $2.00 for the session (25%)" text) "and the per-session budget"))
       (is (equal "s-a" (getf (last-asked) :session)) "a receipt reads one session"))))
@@ -119,19 +118,16 @@ was asked."
               (is (search (cdr pair) (first where)) (format nil "~a narrows the read" (car pair)))
               (is (null where) "all of it narrows nothing")))))
     (is (signals-error nodecode-ledgerline:ledgerline-error
-                       (nodecode-ledgerline:spend "yesterday"))
-        "a range no word names refuses")))
+                       (nodecode-ledgerline:spend "yesterday")) "a range no word names refuses")))
 
 (deftest ledgerline-cell-a-call-missing-its-required-member-refuses ()
   (with-cell-stop ((ledgerline-start))
     (let ((schema (second (nle::find-tool "ledger_session"))))
       (is (hash-table-p (nlk:contract-schema schema)) "the tool advertises its contract's schema")
       (is (signals-error nlk:contract-refusal
-                         (nlk:contract-decode schema (nlk:make-json-object)))
-          "a call with no session_id refuses before the body runs")
+                         (nlk:contract-decode schema (nlk:make-json-object))) "a call with no session_id refuses before the body runs")
       (is (signals-error nlk:contract-refusal
-                         (nlk:contract-decode schema (nlk:make-json-object "session_id" 7)))
-          "and a number where a session id goes refuses rather than coerces"))))
+                         (nlk:contract-decode schema (nlk:make-json-object "session_id" 7))) "and a number where a session id goes refuses rather than coerces"))))
 
 ;;; --- the store, really read --------------------------------------------------------
 
@@ -139,13 +135,10 @@ was asked."
   (with-temp-store ()
     (with-cell-stop ((ledgerline-start))
       (ensure-durable-session "ledgerline-cell-real")
-      (is (equal '() (nodecode-ledgerline::store-rounds :where (nodecode-ledgerline::range-where "all")))
-          "the read is one statement the store accepts: an empty log answers no rounds")
-      (is (search "nothing ran" (nodecode-ledgerline:spend "all"))
-          "and the summary says so rather than inventing a figure")
+      (is (equal '() (nodecode-ledgerline::store-rounds :where (nodecode-ledgerline::range-where "all"))) "the read is one statement the store accepts: an empty log answers no rounds")
+      (is (search "nothing ran" (nodecode-ledgerline:spend "all")) "and the summary says so rather than inventing a figure")
       (is (equal 0 (nodecode-ledgerline::usage-round-input
-                    (nodecode-ledgerline::make-usage-round)))
-          "a round starts at zero tokens"))))
+                    (nodecode-ledgerline::make-usage-round))) "a round starts at zero tokens"))))
 
 ;;; --- the command -------------------------------------------------------------------
 
@@ -157,5 +150,4 @@ was asked."
         (is (search "ledger today" text) "the operator gets the summary")
         (is (search "costliest sessions" text) "with its sessions")
         (is dialog "and a panel to choose another window"))
-      (is (search "date(occurred_at" (first (getf (last-asked) :where)))
-          "the range typed is the range the reader was given"))))
+      (is (search "date(occurred_at" (first (getf (last-asked) :where))) "the range typed is the range the reader was given"))))

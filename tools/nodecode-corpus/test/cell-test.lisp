@@ -24,8 +24,7 @@
    (is (nle::find-tool "law_coverage") "law_coverage is registered")
    (is (nle::find-tool "corpus_account") "corpus_account is registered")
    (is (nle::find-tool "corpus_call") "corpus_call is registered")
-   (is (equal "https://corpuslaw.us/api/mcp" (nodecode-corpus::endpoint))
-       "the section's address is what the client dials"))
+   (is (equal "https://corpuslaw.us/api/mcp" (nodecode-corpus::endpoint)) "the section's address is what the client dials"))
   (:stopped
    (is (null (nle::find-tool "law_search")) "stop unregisters law_search")
    (is (null (nle::find-tool "corpus_call")) "stop unregisters corpus_call"))
@@ -45,10 +44,8 @@
       (is (equal "law.search" (getf call :tool)))
       (is (equal "food truck from a driveway in Austin"
                  (nlk:json-value arguments :string "query")))
-      (is (null (nlk:json-value arguments :string "jurisdiction"))
-          "no jurisdiction anywhere means none is sent")
-      (is (equal "sess-1" (header-of call "mcp-session-id"))
-          "the session the initialize handed out rides the call"))))
+      (is (null (nlk:json-value arguments :string "jurisdiction")) "no jurisdiction anywhere means none is sent")
+      (is (equal "sess-1" (header-of call "mcp-session-id")) "the session the initialize handed out rides the call"))))
 
 (deftest corpus-cell-the-section-s-jurisdiction-answers-when-a-call-names-none
     (with-corpus ("jurisdiction" "Austin, TX")
@@ -57,8 +54,7 @@
                                              :string "jurisdiction")))
   (corpus-call-tool "law_search" "{\"query\":\"food truck\",\"jurisdiction\":\"Travis County, TX\"}")
   (is (equal "Travis County, TX" (nlk:json-value (arguments-of (first (calls-of "tools/call")))
-                                                   :string "jurisdiction"))
-      "a call's own jurisdiction wins")))
+                                                   :string "jurisdiction")) "a call's own jurisdiction wins")))
 
 (deftest corpus-cell-one-session-serves-every-call (with-corpus ()
     (corpus-call-tool "law_search" "{\"query\":\"one\"}")
@@ -101,8 +97,7 @@
 (deftest corpus-cell-a-configured-key-rides-as-a-bearer (with-corpus ()
     (is (null (header-of (progn (corpus-call-tool "law_coverage" "{}")
                                  (first (calls-of "tools/call")))
-                        "authorization"))
-        "no key, no header")))
+                        "authorization")) "no key, no header")))
 
 (deftest corpus-cell-the-variable-the-section-names-supplies-the-key
     (with-corpus ("api_key_env" "CORPUS_TEST_KEY")

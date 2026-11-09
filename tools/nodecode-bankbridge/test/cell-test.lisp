@@ -98,8 +98,7 @@
 (deftest bankbridge-cell-the-19-money-reviews-are-commands-while-it-runs (with-bankbridge)
   (with-cell-stop ((bankbridge-start))
     (is (= 19 (loop for entry in nodecode-bankbridge::*prompts*
-                           when (nle::find-registered-command (first entry)) count entry))
-        "every one of the original's 19 slash commands is registered")
+                           when (nle::find-registered-command (first entry)) count entry)) "every one of the original's 19 slash commands is registered")
     (is (equal "nodecode-bankbridge"
                (nle::slash-command-owner (nle::find-registered-command "subscriptions")))))
   (is (null (nle::find-registered-command "subscriptions")) "and a stop takes them out"))
@@ -114,18 +113,15 @@
       (let ((message (call-message)))
         (is (equal "get_spending_summary" (nlk:json-value (nlk:json-value message :object "params") :string "name"))))
       (let ((params (nlk:json-value (call-message) :object "params")))
-        (is (equal "2026-03" (nlk:json-value (nlk:json-value params :object "arguments") :string "month"))
-            "the argument reaches the server unchanged"))
+        (is (equal "2026-03" (nlk:json-value (nlk:json-value params :object "arguments") :string "month")) "the argument reaches the server unchanged"))
       (let ((headers (second (first *requests*))))
-        (is (equal "Bearer bbk-test" (cdr (assoc "authorization" headers :test #'equal)))
-            "the key rides the one endpoint's request")
+        (is (equal "Bearer bbk-test" (cdr (assoc "authorization" headers :test #'equal))) "the key rides the one endpoint's request")
         (is (equal "https://bankbridge.money/api/mcp" (first (first *requests*))))))))
 
 (deftest bankbridge-cell-a-server-error-is-a-failed-call (with-bankbridge-wire)
   (with-cell-stop ((bankbridge-start))
     (setf *answers* '("the bank needs reconnecting" . :error))
-    (is (search "ERROR:" (tool-answer "call-2" "bankbridge_list_accounts" "{}"))
-        "an isError result is a failed call, not an answer")))
+    (is (search "ERROR:" (tool-answer "call-2" "bankbridge_list_accounts" "{}")) "an isError result is a failed call, not an answer")))
 
 (deftest bankbridge-cell-a-refused-key-says-which-variable (with-bankbridge)
   (with-cell-stop ((bankbridge-start))
@@ -170,6 +166,5 @@
 (deftest bankbridge-cell-a-verb-refuses-while-not-running ()
   (with-bankbridge-wire
     (setf nodecode-bankbridge::*bankbridge* nil)
-    (is (search "not running" (bankbridge:call "list_accounts"))
-        "the refusal says the cell is not on")
+    (is (search "not running" (bankbridge:call "list_accounts")) "the refusal says the cell is not on")
     (is (null *requests*) "and nothing left the machine")))

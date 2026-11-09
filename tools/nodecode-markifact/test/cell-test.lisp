@@ -115,8 +115,7 @@
          (markifact:call-tool "find_operations" (nlk:make-json-object))))
 
 (deftest markifact-cell-section-needs-its-endpoint ()
-  (is (signals-error nodecode-markifact:markifact-error (markifact-start "access_token" "t"))
-      "a section without endpoint refuses at start, naming the value to write")
+  (is (signals-error nodecode-markifact:markifact-error (markifact-start "access_token" "t")) "a section without endpoint refuses at start, naming the value to write")
   (is (search "set markifact.endpoint to https://api.markifact.com/mcp"
               (refusal-text nodecode-markifact:markifact-error (markifact-start "access_token" "t")))))
 
@@ -131,13 +130,10 @@
       (is (search "list campaigns" answer) "with the arguments it was given")
       (let ((initialize (sent "initialize"))
             (call (sent "tools/call")))
-        (is (equal "Bearer tok-1" (sent-header initialize "Authorization"))
-            "the section's token rides as a bearer")
-        (is (equal "https://api.markifact.com/mcp" (getf initialize :url))
-            "one endpoint, the section's")
+        (is (equal "Bearer tok-1" (sent-header initialize "Authorization")) "the section's token rides as a bearer")
+        (is (equal "https://api.markifact.com/mcp" (getf initialize :url)) "one endpoint, the section's")
         (is (null (sent-header initialize "Mcp-Session-Id")) "no session before initialize")
-        (is (equal "sess-1" (sent-header call "Mcp-Session-Id"))
-            "the session id initialize answered is sent back")
+        (is (equal "sess-1" (sent-header call "Mcp-Session-Id")) "the session id initialize answered is sent back")
         (let ((body (wire-request (getf call :content))))
           (is (equal "2.0" (gethash "jsonrpc" body)))
           (is (equal "find_operations" (gethash "name" (gethash "params" body)))))))
@@ -176,21 +172,17 @@
 
 (deftest markifact-cell-command-answers-status-and-a-workflow ()
   (with-wire ()
-    (is (search "Signed in" (cell-entry "nodecode-markifact" "markifact" ""))
-        "bare /markifact says where the sign-in stands")
-    (is (search "negative-keyword-sweep" (cell-entry "nodecode-markifact" "markifact" "workflow negative-keyword-sweep"))
-        "a workflow prints its steps")
+    (is (search "Signed in" (cell-entry "nodecode-markifact" "markifact" "")) "bare /markifact says where the sign-in stands")
+    (is (search "negative-keyword-sweep" (cell-entry "nodecode-markifact" "markifact" "workflow negative-keyword-sweep")) "a workflow prints its steps")
     (is (search "1. *_list_report_fields"
                 (cell-entry "nodecode-markifact" "markifact" "workflow negative-keyword-sweep")))
     (is (search "find_operations answered"
                 (cell-entry "nodecode-markifact" "markifact"
-                            "call find_operations {\"query\": \"list campaigns\"}"))
-        "/markifact call reaches the server")
+                            "call find_operations {\"query\": \"list campaigns\"}")) "/markifact call reaches the server")
     (is (search "is not one of" (cell-entry "nodecode-markifact" "markifact" "nonsense")))))
 
 (deftest markifact-cell-logs-out ()
   (with-wire ()
     (is (search "Signed out" (cell-entry "nodecode-markifact" "markifact" "logout")))
     (is (search "the markifact section carries an access token"
-                (cell-entry "nodecode-markifact" "markifact" "status"))
-        "and the status line names the token the section still carries")))
+                (cell-entry "nodecode-markifact" "markifact" "status")) "and the status line names the token the section still carries")))

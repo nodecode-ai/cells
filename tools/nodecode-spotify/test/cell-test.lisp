@@ -14,8 +14,7 @@
   (:config "client_id" "cid")
   (:help :spotify)
   (:command "spotify")
-  (:running (is (equal nodecode-spotify::+primer+ (nle:help :spotify))
-                 "(help :spotify) is the primer"))
+  (:running (is (equal nodecode-spotify::+primer+ (nle:help :spotify)) "(help :spotify) is the primer"))
   (:refused ("client_id" nil)))
 
 ;;; --- fixtures --------------------------------------------------------------------
@@ -75,8 +74,7 @@ TEXT STATUS). ASKED collects (METHOD URL HEADERS CONTENT), oldest first."
           (is (search "q=blue%20monday" url) "the query goes out escaped")
           (is (search "type=track" url))
           (is (search "limit=5" url)))
-        (is (equal "Bearer acc-1" (header (third (first asked)) "Authorization"))
-            "the stored access token is the bearer")))
+        (is (equal "Bearer acc-1" (header (third (first asked)) "Authorization")) "the stored access token is the bearer")))
     (with-wire (asked
                 ("/search" (values "{}" 200)))
       (let ((answer (nodecode-spotify:spotify-search (nlk:json-object "query" "x"))))
@@ -105,8 +103,7 @@ TEXT STATUS). ASKED collects (METHOD URL HEADERS CONTENT), oldest first."
         (is (search "grant_type=refresh_token" (fourth (first asked))))
         (is (search "refresh_token=ref-1" (fourth (first asked))))
         (is (equal "Bearer acc-2" (header (third (second asked)) "Authorization"))))
-      (is (equal "acc-2" (nodecode-spotify::token-value (nodecode-spotify::token-store) "access_token"))
-          "the renewed token is kept"))))
+      (is (equal "acc-2" (nodecode-spotify::token-value (nodecode-spotify::token-store) "access_token")) "the renewed token is kept"))))
 
 (deftest spotify-cell-a-401-refreshes-and-retries-once ()
   (with-spotify ("client_id" "cid")
@@ -130,8 +127,7 @@ TEXT STATUS). ASKED collects (METHOD URL HEADERS CONTENT), oldest first."
         (is (search "Invalid limit" answer))))
     (with-wire (asked ("/me/player/seek" (values "" 204)))
       (is (search "position_ms is required"
-                  (nodecode-spotify:spotify-playback (nlk:json-object "action" "seek")))
-          "a missing argument is named")
+                  (nodecode-spotify:spotify-playback (nlk:json-object "action" "seek"))) "a missing argument is named")
       (is (null asked) "and nothing is sent"))))
 
 (deftest spotify-cell-plays-a-bare-track-list-inside-its-album ()
@@ -152,12 +148,10 @@ TEXT STATUS). ASKED collects (METHOD URL HEADERS CONTENT), oldest first."
   (is (equal "5x" (nodecode-spotify::spotify-id "spotify:track:5x" "track")))
   (is (equal "5x" (nodecode-spotify::spotify-id "5x" "track")))
   (is (equal "7z" (nodecode-spotify::spotify-id
-                    "https://open.spotify.com/intl-de/track/7z?si=abc" "track"))
-      "a localized link, its share query and all")
+                    "https://open.spotify.com/intl-de/track/7z?si=abc" "track")) "a localized link, its share query and all")
   (signals-error nodecode-spotify:spotify-error (nodecode-spotify::spotify-id "spotify:album:9" "track"))
   (is (equal '("spotify:track:a" "spotify:track:b")
-             (nodecode-spotify::spotify-uris (list "a" "spotify:track:b" "a") "track"))
-      "duplicates go, order stays"))
+             (nodecode-spotify::spotify-uris (list "a" "spotify:track:b" "a") "track")) "duplicates go, order stays"))
 
 ;;; --- the sign-in ----------------------------------------------------------------
 
@@ -166,8 +160,7 @@ TEXT STATUS). ASKED collects (METHOD URL HEADERS CONTENT), oldest first."
     (let ((started (cell-entry "nodecode-spotify" "spotify" "login")))
       (is (search "code_challenge_method=S256" started) "PKCE, no client secret")
       (is (search "client_id=cid" started))
-      (is (search "redirect_uri=http%3A%2F%2F127.0.0.1%3A43827" started)
-          "the loopback redirect the app registers"))
+      (is (search "redirect_uri=http%3A%2F%2F127.0.0.1%3A43827" started) "the loopback redirect the app registers"))
     (with-wire (asked
                 ("/api/token" (values "{\"access_token\":\"acc-9\",\"refresh_token\":\"ref-9\",\"expires_in\":3600,\"token_type\":\"Bearer\",\"scope\":\"user-read-private\"}" 200))
                 ("/me" (values "{\"display_name\":\"someone\"}" 200)))

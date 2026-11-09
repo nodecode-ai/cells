@@ -74,18 +74,15 @@ project's own tool would."
     (is (equalp (vector "1" "x, y" "say \"hi\"") (first rows)) "a comma and a doubled quote inside quotes")
     (is (equalp (vector "2" #.(format nil "two~%lines") "3") (second rows)) "a line break inside quotes")
     (is (equalp (vector "9" "") (nodecode-tabular::parse-delimited "9," #\,)) "an empty last field"))
-  (is (equalp (vector "9" "8") (nodecode-tabular::parse-delimited "9,8" #\,))
-      "a file with no trailing newline ends its row")
+  (is (equalp (vector "9" "8") (nodecode-tabular::parse-delimited "9,8" #\,)) "a file with no trailing newline ends its row")
   (let* ((dir (tabular-temp-dir))
          (table (nodecode-tabular::read-table (tabular-fixture dir)))
          (back (merge-pathnames "back.csv" dir)))
     (nodecode-tabular::write-table back table (nodecode-tabular::table.rows table))
     (let* ((again (nodecode-tabular::read-table back)))
       (is (equalp (nodecode-tabular::table.columns table)
-                  (nodecode-tabular::table.columns again))
-          "the header round-trips")
-      (is (equalp (nodecode-tabular::table.rows table) (nodecode-tabular::table.rows again))
-          "and every row with it"))
+                  (nodecode-tabular::table.columns again)) "the header round-trips")
+      (is (equalp (nodecode-tabular::table.rows table) (nodecode-tabular::table.rows again)) "and every row with it"))
     (uiop:delete-directory-tree dir :validate t)))
 
 ;;; --- the profile ----------------------------------------------------------------
@@ -109,20 +106,16 @@ project's own tool would."
              (is (search "roc_auc (primary)" text) "the metric the policy names for the task")
              (is (search "never report training performance" text) "and the one rule every report keeps"))
            ;; A relative path resolves against the section's workspace.
-           (is (search "churn.csv" (tabular:profile-file "churn.csv" :target "churn"))
-               "a relative path is read from workspace")
+           (is (search "churn.csv" (tabular:profile-file "churn.csv" :target "churn")) "a relative path is read from workspace")
            ;; No target named: the shape still comes, the task does not.
            (let ((text (tabular:profile-file (namestring file))))
              (is (search "undecided" text) "no target, no task")
              (is (search "no target named" text) "and the note says why"))
            ;; A target that is not a column is said, not guessed.
-           (is (search "is not one of the columns" (tabular:profile-file (namestring file) :target "sold"))
-               "an absent target is named")
+           (is (search "is not one of the columns" (tabular:profile-file (namestring file) :target "sold")) "an absent target is named")
            (is (search "no file at" (refusal-text tabular:tabular-error
-                                                  (tabular:profile-file (namestring (merge-pathnames "nope.csv" dir)))))
-               "an absent file refuses with the path it looked for")
-           (is (search "small: 1,000 to 50,000" (tabular:profile-file (namestring (tabular-fixture dir :rows 1500))))
-               "a bigger file reads as the next band up"))
+                                                  (tabular:profile-file (namestring (merge-pathnames "nope.csv" dir))))) "an absent file refuses with the path it looked for")
+           (is (search "small: 1,000 to 50,000" (tabular:profile-file (namestring (tabular-fixture dir :rows 1500)))) "a bigger file reads as the next band up"))
       (uiop:delete-directory-tree dir :validate t))))
 
 ;;; --- the split ------------------------------------------------------------------
@@ -147,27 +140,20 @@ project's own tool would."
                   (test-ids (map 'list (lambda (row) (aref row 0)) test)))
              (is (= 96 (length train)) "the train file holds 96 rows")
              (is (= 24 (length test)) "the test file holds 24 rows")
-             (is (= 120 (length (remove-duplicates (append train-ids test-ids) :test #'equal)))
-                 "no row is in both halves")
-             (is (equal (mapcar (lambda (row) (aref row 0)) again) test-ids)
-                 "the same seed writes the same test rows")
-             (is (= 7 (count "1" test :key (lambda (row) (aref row 3)) :test #'equal))
-                 "the minority class keeps its share exactly")
-             (is (uiop:string-prefix-p "id,age,plan,churn,score" (uiop:read-file-string (merge-pathnames "churn.train.csv" one)))
-                 "and the header comes back with the rows"))
+             (is (= 120 (length (remove-duplicates (append train-ids test-ids) :test #'equal))) "no row is in both halves")
+             (is (equal (mapcar (lambda (row) (aref row 0)) again) test-ids) "the same seed writes the same test rows")
+             (is (= 7 (count "1" test :key (lambda (row) (aref row 3)) :test #'equal)) "the minority class keeps its share exactly")
+             (is (uiop:string-prefix-p "id,age,plan,churn,score" (uiop:read-file-string (merge-pathnames "churn.train.csv" one))) "and the header comes back with the rows"))
            (tabular:split-file (namestring file) :target "churn" :seed 8 :out-dir (namestring other))
            (is (not (equal (mapcar (lambda (row) (aref row 0))
                                    (tabular-cells (merge-pathnames "churn.test.csv" other)))
                            (mapcar (lambda (row) (aref row 0))
-                                   (tabular-cells (merge-pathnames "churn.test.csv" one)))))
-               "another seed picks other rows")
+                                   (tabular-cells (merge-pathnames "churn.test.csv" one))))) "another seed picks other rows")
            (is (search "is not one of" (refusal-text tabular:tabular-error
-                                                     (tabular:split-file (namestring file) :target "sold")))
-               "a target that is not a column refuses")
+                                                     (tabular:split-file (namestring file) :target "sold"))) "a target that is not a column refuses")
            (is (search "outside 0.05 to 0.5"
                        (refusal-text tabular:tabular-error
-                                     (tabular:split-file (namestring file) :test-fraction 2.0)))
-               "a fraction past half refuses"))
+                                     (tabular:split-file (namestring file) :test-fraction 2.0))) "a fraction past half refuses"))
       (uiop:delete-directory-tree dir :validate t))))
 
 ;;; --- the saved profile ----------------------------------------------------------
@@ -181,8 +167,7 @@ project's own tool would."
            (with-tabular ("workspace" (namestring dir))
              (is (search "artifacts_dir is not set"
                          (refusal-text tabular:tabular-error
-                                        (tabular:save-profile (namestring file))))
-                 "no directory, no artifact: the one required setting refuses"))
+                                        (tabular:save-profile (namestring file)))) "no directory, no artifact: the one required setting refuses"))
            (with-tabular ("workspace" (namestring dir) "artifacts_dir" (namestring artifacts))
              (let* ((said (tabular:save-profile (namestring file) :target "churn" :name "run-1"))
                     (written (merge-pathnames "run-1.profile.json" artifacts)))
@@ -191,8 +176,7 @@ project's own tool would."
                (let ((json (shasht:read-json (uiop:read-file-string written))))
                  (is (= 120 (gethash "rows" json)) "the row count is in it")
                  (is (= 5 (length (gethash "columns" json))) "one object a column")
-                 (is (equal "binary classification" (gethash "task" (gethash "task" json)))
-                     "the task the profile decided")
+                 (is (equal "binary classification" (gethash "task" (gethash "task" json))) "the task the profile decided")
                  (is (equal "very-small" (gethash "band" json)) "and the band")))))
       (uiop:delete-directory-tree dir :validate t))))
 

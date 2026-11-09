@@ -20,8 +20,7 @@
   (:help :files)
   (:command "files")
   (:refused ("max_items" 0) ("max_items" "many"))
-  (:running (is (= 40 (nodecode-file-tray::setting :max-items))
-                 "the default cap is the original's 40")))
+  (:running (is (= 40 (nodecode-file-tray::setting :max-items)) "the default cap is the original's 40")))
 
 (defmacro with-tray ((session &rest config) &body body)
   "BODY in SESSION's evaluation, over a temp store, the cell started on
@@ -57,8 +56,7 @@ CONFIG."
       (nle:write-file path "alpha beta")
       (is (equal '("first.txt" "write")
                  (list (first (tray-names "file-tray-verbs"))
-                       (getf (first (tray-of "file-tray-verbs")) :action)))
-          "a write lands on the tray as the path it wrote")
+                       (getf (first (tray-of "file-tray-verbs")) :action))) "a write lands on the tray as the path it wrote")
       (nle:edit path "alpha" "gamma")
       (let ((items (tray-of "file-tray-verbs")))
         (is (= 1 (length items)) "one path, touched twice, is one entry")
@@ -71,8 +69,7 @@ CONFIG."
         (is (search "1. `" json) "whose first line is the entry"))
       (let ((arguments (make-hash-table :test #'equal)))
         (setf (gethash "markdown" arguments) nil)
-        (is (not (search "\"markdown\"" (call-list arguments)))
-            "a call that says markdown false gets the items alone")))))
+        (is (not (search "\"markdown\"" (call-list arguments))) "a call that says markdown false gets the items alone")))))
 
 ;;; --- a tool call's arguments -------------------------------------------------
 
@@ -83,28 +80,24 @@ CONFIG."
                  (nlk:call-hooked :tool
                                   (list :name "read_file" :arguments arguments
                                         :call-id "call-1")
-                                  (lambda (op) (declare (ignore op)) "done")))
-          "the call itself answers as it would unadvised")
+                                  (lambda (op) (declare (ignore op)) "done"))) "the call itself answers as it would unadvised")
       (let ((items (tray-of "file-tray-tool")))
         (is (= 1 (length items)) "its path is on the tray")
         (is (equal "notes/todo.md" (getf (first items) :path)))
-        (is (equal "read_file" (getf (first items) :action))
-            "and the tool that ran is the action")))
+        (is (equal "read_file" (getf (first items) :action)) "and the tool that ran is the action")))
     (nlk:call-hooked :tool
                      (list :name "eval"
                            :arguments (nlk:make-json-object "form" "(+ 1 2)")
                            :call-id "call-2")
                      (lambda (op) (declare (ignore op)) "3"))
-    (is (= 1 (length (tray-of "file-tray-tool")))
-        "a call naming no path leaves the tray as it was")
+    (is (= 1 (length (tray-of "file-tray-tool"))) "a call naming no path leaves the tray as it was")
     (nlk:call-hooked :tool
                      (list :name "multi"
                            :arguments (nlk:make-json-object
                                        "paths" (vector "a/one.lisp" "b/two.lisp"))
                            :call-id "call-3")
                      (lambda (op) (declare (ignore op)) "ok"))
-    (is (equal '("todo.md" "one.lisp" "two.lisp") (tray-names "file-tray-tool"))
-        "a paths array records each string in it, after what was there")))
+    (is (equal '("todo.md" "one.lisp" "two.lisp") (tray-names "file-tray-tool")) "a paths array records each string in it, after what was there")))
 
 ;;; --- the cap and one path's place ---------------------------------------------
 
@@ -113,16 +106,12 @@ CONFIG."
     (is (= 3 (nodecode-file-tray::setting :max-items)) "the section's cap is the one read")
     (dotimes (index 5)
       (nle:write-file (namestring (nlk:home (format nil "tray/f~d.txt" index))) "x"))
-    (is (equal '("f2.txt" "f3.txt" "f4.txt") (tray-names "file-tray-cap"))
-        "past the cap the oldest paths leave, newest last")
+    (is (equal '("f2.txt" "f3.txt" "f4.txt") (tray-names "file-tray-cap")) "past the cap the oldest paths leave, newest last")
     (nle:edit (namestring (nlk:home "tray/f2.txt")) "x" "y")
     (let ((items (tray-of "file-tray-cap")))
-      (is (equal '("f2.txt" "f3.txt" "f4.txt") (tray-names "file-tray-cap"))
-          "a path already on the tray keeps its place")
-      (is (equal "edit" (getf (first items) :action))
-          "and takes the newer action, as the original did"))
-    (is (= 3 (nodecode-file-tray:clear-paths "file-tray-cap"))
-        "clearing answers how many paths went")))
+      (is (equal '("f2.txt" "f3.txt" "f4.txt") (tray-names "file-tray-cap")) "a path already on the tray keeps its place")
+      (is (equal "edit" (getf (first items) :action)) "and takes the newer action, as the original did"))
+    (is (= 3 (nodecode-file-tray:clear-paths "file-tray-cap")) "clearing answers how many paths went")))
 
 ;;; --- /files and the two tools ------------------------------------------------
 
@@ -132,10 +121,8 @@ CONFIG."
     (multiple-value-bind (text dialog) (file-tray:run-files "" "file-tray-clear")
       (is (search "second.txt" text) "bare /files answers the list")
       (is (not (null dialog)) "and the panel whose row clears it"))
-    (is (search "second.txt" (file-tray:run-files "list" "file-tray-clear"))
-        "/files list answers it too")
-    (is (search "Usage" (file-tray:run-files "wat" "file-tray-clear"))
-        "an unknown word answers the usage")
+    (is (search "second.txt" (file-tray:run-files "list" "file-tray-clear")) "/files list answers it too")
+    (is (search "Usage" (file-tray:run-files "wat" "file-tray-clear")) "an unknown word answers the usage")
     (is (search "cleared" (file-tray:run-files "clear" "file-tray-clear")))
     (is (null (tray-of "file-tray-clear")) "and the tray is empty")
     (nle:write-file (namestring (nlk:home "tray/third.txt")) "one")
@@ -148,10 +135,7 @@ CONFIG."
 (deftest file-tray-cell-normalizes-a-path ()
   (is (equal "/a/b.txt" (nodecode-file-tray:normalize-path "  \"/a//b.txt\"  ")))
   (is (equal "/a/b.txt" (nodecode-file-tray:normalize-path "\\a\\b.txt")))
-  (is (null (nodecode-file-tray:normalize-path "https://example.com/a.txt"))
-      "a URL is no path")
+  (is (null (nodecode-file-tray:normalize-path "https://example.com/a.txt")) "a URL is no path")
   (is (null (nodecode-file-tray:normalize-path "")) "nor is nothing")
-  (is (null (nodecode-file-tray:normalize-path (make-string 501 :initial-element #\a)))
-      "nor one past 500 characters")
-  (is (equal "b.txt" (nodecode-file-tray:display-name "/a/b.txt"))
-      "the label is the last segment"))
+  (is (null (nodecode-file-tray:normalize-path (make-string 501 :initial-element #\a))) "nor one past 500 characters")
+  (is (equal "b.txt" (nodecode-file-tray:display-name "/a/b.txt")) "the label is the last segment"))

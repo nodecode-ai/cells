@@ -73,8 +73,7 @@
                        "call-1" "otel_mark"
                        "{\"name\":\"first\",\"detail\":\"a marker\"}")))
           (is (equal "tool" (gethash "role" answer)) "a tool message comes back")
-          (is (search "marked" (princ-to-string (nle::message-content answer)))
-              "and it says the mark was kept"))
+          (is (search "marked" (princ-to-string (nle::message-content answer))) "and it says the mark was kept"))
         (is (= 2 nodecode-otel::*recorded*) "the mark and the call that made it")
         (nodecode-otel::flush-spans)
         (is (plusp (length *posts*)) "the spans went out")
@@ -85,8 +84,7 @@
           (is (search "mark first" body) "the mark is a span in the request")
           (is (search "tool otel_mark" body) "and so is the call that made it")
           (is (search "stringValue" body) "an OTLP attribute")
-          (is (equal "application/json" (cdr (assoc "content-type" headers :test #'string=)))
-              "posted as JSON"))))))
+          (is (equal "application/json" (cdr (assoc "content-type" headers :test #'string=))) "posted as JSON"))))))
 
 ;;; --- the tool hook -------------------------------------------------------------
 
@@ -108,8 +106,7 @@
             (is (search "(+ 1 1)" arguments) "with the arguments it was called on")
             (is (search "form" arguments) "as the call wrote them"))
           (is (= 11 (cdr (assoc "nodecode.tool.result_chars"
-                                 (nodecode-otel::span-attrs span) :test #'string=)))
-              "and how much came back"))))))
+                                 (nodecode-otel::span-attrs span) :test #'string=))) "and how much came back"))))))
 
 ;;; --- a turn's durable facts -----------------------------------------------------
 
@@ -132,8 +129,7 @@
       (let ((usage (find "usage a-provider/a-model" nodecode-otel::*pending*
                          :key #'nodecode-otel::span-name :test #'equal)))
         (is (= 12 (cdr (assoc "gen_ai.usage.input_tokens"
-                               (nodecode-otel::span-attrs usage) :test #'string=)))
-            "with the token counts the turn loop recorded"))
+                               (nodecode-otel::span-attrs usage) :test #'string=))) "with the token counts the turn loop recorded"))
       ;; An ordinary frame, and a durable one this cell does not trace, add nothing.
       (cell-publish "nodecode-otel" (cell-frame-op "item_delta") nil)
       (cell-publish "nodecode-otel" (cell-frame-op "turn.tool_result") nil)
@@ -155,13 +151,11 @@
         (let ((answer (execute-wire-call "call-2" "otel_spans"
                                         "{\"limit\":2,\"match\":\"mark\"}")))
           (is (equal "tool" (gethash "role" answer)) "the query tool answers through dispatch")
-          (is (search "mark m4" (princ-to-string (nle::message-content answer)))
-              "with the newest marked span, read off the local file"))
+          (is (search "mark m4" (princ-to-string (nle::message-content answer))) "with the newest marked span, read off the local file"))
         (let ((status (nodecode-otel::otel-status)))
           (is (search "keeping spans locally" status) "status says where the spans stay")
           (is (search "capture preview" status) "and how much text rides along"))
-        (is (search "cleared 3 spans" (nodecode-otel::run-otel "clear" "s1"))
-            "/otel clear empties the file")
+        (is (search "cleared 3 spans" (nodecode-otel::run-otel "clear" "s1")) "/otel clear empties the file")
         (is (null (nodecode-otel::read-store)) "and it is empty")))))
 
 (deftest otel-cell-a-missing-sink-refuses-the-start ()
@@ -169,6 +163,5 @@
     (is (search "would go nowhere"
                 (handler-case
                     (progn (otel-start "endpoint" "" "local_store" nil) "")
-                  (nlk:config-refusal (condition) (nlk:config-refusal-detail condition))))
-        "no endpoint and no local file is a refusal, in words that name the keys")
+                  (nlk:config-refusal (condition) (nlk:config-refusal-detail condition)))) "no endpoint and no local file is a refusal, in words that name the keys")
     (is (null (nle::find-tool "otel_mark")) "and nothing was installed")))

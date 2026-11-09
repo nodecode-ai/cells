@@ -136,8 +136,7 @@ Goal: ship it.
       (declare (ignore dialog))
       (is (search "Restored" text))
       (is (equal "make the parser faster pls" (getf (first effects) :draft)) "the discard puts the original back"))
-    (is (search "nothing to undo" (nodecode-enhance-prompt::run-slash "undo" "s-enh-3"))
-        "a second undo says so"))))
+    (is (search "nothing to undo" (nodecode-enhance-prompt::run-slash "undo" "s-enh-3")) "a second undo says so"))))
 
 (deftest enhance-prompt-cell-asks-for-a-draft-of-its-own (with-cell-stop ((enhance-prompt-start))
   (with-model ("never asked")
@@ -154,12 +153,9 @@ Goal: ship it.
         (gt (string (code-char #x3E))))
     (is (equal "Goal: y."
                (nodecode-enhance-prompt:strip-wrappers
-                (format nil "~athinklet me think~a~cthink~a Goal: y." lt lt #\/ gt)))
-        "a thinking block is not part of the brief")
+                (format nil "~athinklet me think~a~cthink~a Goal: y." lt lt #\/ gt))) "a thinking block is not part of the brief")
     (is (equal "Goal: w."
                (nodecode-enhance-prompt:strip-wrappers
-                (format nil "~a~cchannel~c~aGoal: w." lt (code-char #xFF5C) (code-char #xFF5C) gt)))
-        "and neither is the channel tag a serving backend emits")
-    (is (equal "Goal: z." (nodecode-enhance-prompt:strip-wrappers "\"Goal: z.\""))
-        "quotes around the brief are not the brief")
+                (format nil "~a~cchannel~c~aGoal: w." lt (code-char #xFF5C) (code-char #xFF5C) gt))) "and neither is the channel tag a serving backend emits")
+    (is (equal "Goal: z." (nodecode-enhance-prompt:strip-wrappers "\"Goal: z.\"")) "quotes around the brief are not the brief")
     (is (equal "" (nodecode-enhance-prompt:strip-wrappers nil)))))

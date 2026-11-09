@@ -132,11 +132,9 @@ otherwise; a method no route names is an error."
       ("Push a structured workout" "with its own description"))
     (let ((request (first (athletedata-asked))))
       (is (= 1 (length (athletedata-asked))) "one tools/list, and the copy is kept")
-      (is (equal "Bearer sk_soma_test" (athletedata-header request "authorization"))
-          "the key rides the header")
+      (is (equal "Bearer sk_soma_test" (athletedata-header request "authorization")) "the key rides the header")
       (is (equal "application/json" (athletedata-header request "content-type")))
-      (is (search "text/event-stream" (athletedata-header request "accept"))
-          "and a stream is accepted as an answer")
+      (is (search "text/event-stream" (athletedata-header request "accept")) "and a stream is accepted as an answer")
       (is (equal "2025-06-18" (athletedata-header request "mcp-protocol-version"))))
     (athletedata-tools (nlk:json-object))
     (is (= 1 (length (athletedata-asked))) "a second listing asks nothing")))
@@ -156,8 +154,7 @@ otherwise; a method no route names is an error."
     (let* ((calls (athletedata-asked :rpc "tools/call"))
            (request (first calls)))
       (is (= 1 (length calls)) "one call")
-      (is (equal "push_workout_to_watch" (nlk:json-value (athletedata-body request) :string "params" "name"))
-          "the tool's name rides the params"))))
+      (is (equal "push_workout_to_watch" (nlk:json-value (athletedata-body request) :string "params" "name")) "the tool's name rides the params"))))
 
 (deftest athletedata-cell-a-reading-tool-asks-nothing ()
   (with-athletedata-wire ("tools/list" (athletedata-reply id (nlk:json-object "tools" +two-tools+))
@@ -167,8 +164,7 @@ otherwise; a method no route names is an error."
       ("readiness 71" "a reading tool needs no confirm"))
     (let ((request (first (athletedata-asked :rpc "tools/call"))))
       (is (equal "2026-11-08" (nlk:json-value (athletedata-body request)
-                                               :string "params" "arguments" "date"))
-          "its arguments ride through untouched"))))
+                                               :string "params" "arguments" "date")) "its arguments ride through untouched"))))
 
 ;;; --- the session, and what a server that will not answer says ------------------------
 
@@ -183,8 +179,7 @@ otherwise; a method no route names is an error."
     (is-carrying (answer (athletedata-tools (nlk:json-object)))
       ("get_readiness_today" "an event stream's reply is read whole"))
     (let ((request (first (athletedata-asked))))
-      (is (equal "s-1" (athletedata-header request "mcp-session-id"))
-          "the session the stream issued is echoed on the next request"))))
+      (is (equal "s-1" (athletedata-header request "mcp-session-id")) "the session the stream issued is echoed on the next request"))))
 
 (deftest athletedata-cell-a-refused-key-says-so ()
   (with-athletedata-wire ("tools/list" (values "" 401 (athletedata-headers)))

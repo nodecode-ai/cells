@@ -17,8 +17,7 @@
         (is (not (null (nle::find-tool "mcp_creator_introspect"))) "the introspect tool is registered")
         (is (not (null (nle::find-tool "mcp_creator_review"))) "and the last one")
         (is (mc-command-named "mcp-creator") "/mcp-creator is in the one slash catalog")
-        (is (search "a skill a later session reads" nodecode-mcp-creator::+primer+)
-            "the manual is on its topic")
+        (is (search "a skill a later session reads" nodecode-mcp-creator::+primer+) "the manual is on its topic")
         (is (not (null (nle::find-tool "mcp_creator_servers"))) "the first tool is registered"))
       (is (null (nle::find-tool "mcp_creator_introspect")) "stop takes the tools back out")
       (is (null (mc-command-named "mcp-creator")) "and the command")
@@ -68,8 +67,7 @@
                           (nodecode-mcp-creator:decode-introspect-arguments
                            (nlk:json-object "server" "files"))))
                (text (nodecode-mcp-creator::json-string snapshot)))
-          (is (= 2 (gethash "tool_count" (nodecode-mcp-creator::decode text)))
-              "two tools were listed, to a number")
+          (is (= 2 (gethash "tool_count" (nodecode-mcp-creator::decode text))) "two tools were listed, to a number")
           (is (search "read_file" text) "and named")
           (is (probe-file (nodecode-mcp-creator::snapshot-path "files")) "the snapshot is on disk"))
         ;; scaffold: a knowledge cell, and the skill proves every tool
@@ -93,17 +91,14 @@
           ;; install: copied into the cells folder, and refused twice over
           (let ((installed (nodecode-mcp-creator::install-package
                             (merge-pathnames "files-mcp/" (nodecode-mcp-creator::builds-root)))))
-            (is (probe-file (merge-pathnames "skill.lisp" (merge-pathnames "files-mcp/" cells)))
-                "the build is in the cells folder")
+            (is (probe-file (merge-pathnames "skill.lisp" (merge-pathnames "files-mcp/" cells))) "the build is in the cells folder")
             (is (gethash "installed" (nodecode-mcp-creator::decode
-                                              (nodecode-mcp-creator::json-string installed)))
-                "and says so"))
+                                              (nodecode-mcp-creator::json-string installed))) "and says so"))
           ;; drift: unchanged against itself, additive against a bigger catalog
           (let ((same (nodecode-mcp-creator:run-drift
                        (nodecode-mcp-creator:decode-drift-arguments
                         (nlk:json-object "server" "files")))))
-            (is (search "\"unchanged\"" (nodecode-mcp-creator::json-string same))
-                "the same catalog drifts nowhere"))
+            (is (search "\"unchanged\"" (nodecode-mcp-creator::json-string same)) "the same catalog drifts nowhere"))
           (let ((nodecode-mcp-creator::*connect*
                  (mc-connect (list (mc-tool "read_file" :description "read one file")
                                    (mc-tool "list_dir" :description "list a folder")
@@ -111,16 +106,14 @@
             (let ((drift (nodecode-mcp-creator:run-drift
                           (nodecode-mcp-creator:decode-drift-arguments
                            (nlk:json-object "server" "files")))))
-              (is (search "\"additive\"" (nodecode-mcp-creator::json-string drift))
-                  "a new tool is additive, not a recompile")
+              (is (search "\"additive\"" (nodecode-mcp-creator::json-string drift)) "a new tool is additive, not a recompile")
               (is (search "write_file" (nodecode-mcp-creator::json-string drift)) "and it is named"))))
         ;; review: no drift, and the reasons say why
         (let ((review (nodecode-mcp-creator:run-review
                        (nodecode-mcp-creator:decode-review-arguments
                         (nlk:json-object "plugin" "files-mcp")))))
           (is (search "files-mcp" (nodecode-mcp-creator::json-string review)) "a build is reviewable")
-          (is (search "\"reasons\"" (nodecode-mcp-creator::json-string review))
-              "and says why a refresh is or is not worth it"))))))
+          (is (search "\"reasons\"" (nodecode-mcp-creator::json-string review)) "and says why a refresh is or is not worth it"))))))
 
 ;;; --- mining and the call log --------------------------------------------------------
 
@@ -129,8 +122,7 @@
     (with-creator ((mc-config "data_dir" (namestring directory) "log_calls" t))
       (is (equal '("files/read_file" "files/list_dir")
                  (nodecode-mcp-creator::mcp-calls-in
-                  "(progn (mcp:files/read_file :path \"x\") (mcp:files/list_dir :path \".\"))"))
-          "an eval form's MCP calls are read, in order")
+                  "(progn (mcp:files/read_file :path \"x\") (mcp:files/list_dir :path \".\"))")) "an eval form's MCP calls are read, in order")
       (nodecode-mcp-creator::note-call "files/read_file" :ok t :detail "content")
       (nodecode-mcp-creator::note-call "files/read_file" :ok nil
                                         :detail "ERROR: no such file /home/someone/secret")
@@ -150,8 +142,7 @@
        (lambda (op) (declare (ignore op)) "listed"))
       (is (search "list_dir" (nodecode-mcp-creator::json-string
                                (nodecode-mcp-creator:run-mine
-                                (nodecode-mcp-creator:decode-mine-arguments (nlk:make-json-object)))))
-          "the hook's line is what mining reads"))))
+                                (nodecode-mcp-creator:decode-mine-arguments (nlk:make-json-object))))) "the hook's line is what mining reads"))))
 
 ;;; --- refusals ---------------------------------------------------------------------
 
@@ -163,6 +154,5 @@
         (is (search "nope" (nle::message-content result)) "and it names the server asked for"))
       (let ((result (mc-tool-text "mcp_creator_scaffold"
                                    "{\"plugin_name\": \"nothing\", \"server\": \"files\"}")))
-        (is (search "introspect first" (nle::message-content result))
-            "a build with no snapshot says what to run first"))))
+        (is (search "introspect first" (nle::message-content result)) "a build with no snapshot says what to run first"))))
 )

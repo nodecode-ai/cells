@@ -111,8 +111,7 @@
       (with-steward-running
         (signals-error nodecode-steward:steward-error
           (steward-tool "steward_open" "project" "beta" "autonomy" "benevolent-dictator"))
-        (is (null (nodecode-steward::find-project (nodecode-steward::registry) "beta"))
-            "a refused open leaves no half a project")))))
+        (is (null (nodecode-steward::find-project (nodecode-steward::registry) "beta")) "a refused open leaves no half a project")))))
 
 ;;; --- a cycle -------------------------------------------------------------------------
 
@@ -129,8 +128,7 @@
                        ("alpha: healthy"))
           (is (and *steward-directories*
                    (every (lambda (one) (string= (namestring one) directory))
-                          *steward-directories*))
-              "each check ran in the project's own directory")
+                          *steward-directories*)) "each check ran in the project's own directory")
           (setf *steward-exits* '(("make" . 0) ("flake" . 1)))
           (is-carrying (watch (steward-tool "steward_cycle" "project" "alpha"))
                        ("alpha: watch"))

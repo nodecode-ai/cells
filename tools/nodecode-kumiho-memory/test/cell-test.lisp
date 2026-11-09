@@ -290,14 +290,11 @@ sends it -- the contract decoded, the hooks run; => the result text."
     (with-cell-stop ((kumiho-memory-start "api_key" "k-test"))
       (kumiho-wire :text "/CognitiveMemory/decisions, /CognitiveMemory/preferences")
       (is (search "/CognitiveMemory/preferences"
-                  (kumiho-tool "kumiho_spaces" (nlk:json-object)))
-          "the spaces come back as the workspace lists them")
+                  (kumiho-tool "kumiho_spaces" (nlk:json-object))) "the spaces come back as the workspace lists them")
       (let* ((params (kumiho-called))
              (arguments (nlk:json-value params :object "arguments")))
-        (is (equal "kumiho_get_spaces" (nlk:json-value params :string "name"))
-            "spaces is the original's get_spaces tool")
-        (is (null (nlk:json-value arguments :string "project_kref"))
-            "no project named, none sent")))))
+        (is (equal "kumiho_get_spaces" (nlk:json-value params :string "name")) "spaces is the original's get_spaces tool")
+        (is (null (nlk:json-value arguments :string "project_kref")) "no project named, none sent")))))
 
 (deftest kumiho-memory-cell-one-memory-reads-the-latest-tag-by-default ()
   (with-kumiho-wire
@@ -305,22 +302,17 @@ sends it -- the contract decoded, the hooks run; => the result text."
       (kumiho-wire :text "the full text of the decision")
       (is (search "full text"
                   (kumiho-tool "kumiho_one_memory"
-                               (nlk:json-object "item_kref" "kref://CognitiveMemory/decisions/planning")))
-          "the revision's text comes back")
+                               (nlk:json-object "item_kref" "kref://CognitiveMemory/decisions/planning"))) "the revision's text comes back")
       (let* ((params (kumiho-called))
              (arguments (nlk:json-value params :object "arguments")))
-        (is (equal "kumiho_get_revision_by_tag" (nlk:json-value params :string "name"))
-            "one memory is the original's get_revision_by_tag tool")
-        (is (equal "latest" (nlk:json-value arguments :string "tag"))
-            "tag latest, which every item has")
+        (is (equal "kumiho_get_revision_by_tag" (nlk:json-value params :string "name")) "one memory is the original's get_revision_by_tag tool")
+        (is (equal "latest" (nlk:json-value arguments :string "tag")) "tag latest, which every item has")
         (is (equal "kref://CognitiveMemory/decisions/planning"
-                   (nlk:json-value arguments :string "item_kref"))
-            "by the item kref"))
+                   (nlk:json-value arguments :string "item_kref")) "by the item kref"))
       (kumiho-tool "kumiho_one_memory"
                     (nlk:json-object "item_kref" "kref://CognitiveMemory/decisions/planning"
                                      "tag" "r=2"))
-      (is (equal "r=2" (nlk:json-value (kumiho-arguments-of 1) :string "tag"))
-          "a named tag is what is asked for"))))
+      (is (equal "r=2" (nlk:json-value (kumiho-arguments-of 1) :string "tag")) "a named tag is what is asked for"))))
 
 (defun kumiho-session-wire ()
   "Answer the handshake, then session_required to a buffer call that carries no
@@ -358,18 +350,14 @@ session_id, and a save to the retry that does -- as the hosted server behaves."
                                                    "type" "decision"))))
         (is (search "stored" answer) "the retry's save is what the model reads")
         (is (= 2 (length (kumiho-tool-calls))) "one refused call, then the same call again")
-        (is (null (nlk:json-value (kumiho-arguments-of 0) :string "session_id"))
-            "the first ask carries no session id, as the original's skills do")
+        (is (null (nlk:json-value (kumiho-arguments-of 0) :string "session_id")) "the first ask carries no session id, as the original's skills do")
         (let ((retried (kumiho-arguments-of 1)))
-          (is (equal "km1_abc_001" (nlk:json-value retried :string "session_id"))
-              "the retry carries the id the server issued, not an invented one")
-          (is (equal "Planning on Monday" (nlk:json-value retried :string "response"))
-              "and is the same call, not a second memory")))
+          (is (equal "km1_abc_001" (nlk:json-value retried :string "session_id")) "the retry carries the id the server issued, not an invented one")
+          (is (equal "Planning on Monday" (nlk:json-value retried :string "response")) "and is the same call, not a second memory")))
       (kumiho-wire :text "stored again")
       (kumiho-tool "kumiho_remember"
                     (nlk:json-object "title" "Another" "content" "Second save." "type" "fact"))
-      (is (equal "km1_abc_001" (nlk:json-value (kumiho-arguments-of 2) :string "session_id"))
-          "and the id is kept for the conversation's later saves"))))
+      (is (equal "km1_abc_001" (nlk:json-value (kumiho-arguments-of 2) :string "session_id")) "and the id is kept for the conversation's later saves"))))
 
 (deftest kumiho-memory-cell-summary-consolidates-with-the-session ()
   (with-kumiho-wire
@@ -380,12 +368,9 @@ session_id, and a save to the retry that does -- as the hosted server behaves."
         (is (search "success" answer) "the workspace's answer comes back")
         (let* ((params (kumiho-called))
                (arguments (nlk:json-value params :object "arguments")))
-          (is (equal "kumiho_memory_consolidate" (nlk:json-value params :string "name"))
-              "a summary is the original's consolidate tool")
-          (is (equal "We planned Monday." (nlk:json-value arguments :string "summary"))
-              "with the summary the model wrote, so no server-side model is needed")
-          (is (equal "km1_abc_002" (nlk:json-value arguments :string "session_id"))
-              "and this conversation's id"))))))
+          (is (equal "kumiho_memory_consolidate" (nlk:json-value params :string "name")) "a summary is the original's consolidate tool")
+          (is (equal "We planned Monday." (nlk:json-value arguments :string "summary")) "with the summary the model wrote, so no server-side model is needed")
+          (is (equal "km1_abc_002" (nlk:json-value arguments :string "session_id")) "and this conversation's id"))))))
 
 ;;; --- /kumiho --------------------------------------------------------------------
 
