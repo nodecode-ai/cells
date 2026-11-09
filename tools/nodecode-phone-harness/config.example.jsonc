@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "phone-harness": {
+    "enabled": true,
+    "command": "phone-harness",          // or "uvx phone-harness", "python3 -m phone_harness.run"
+    "platform": "auto",                  // auto, ios, android
+    "workspace": "phone-harness/agent-workspace",  // relative to ~/.nodecode
+    "ask": false,                        // question before each script; needs a page that answers
+    "telemetry": false,                  // phone-harness's own telemetry, off unless on
+    "timeout_seconds": 300               // 5 to 1800; a call may ask for less
+  }
+}
