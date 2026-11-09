@@ -1,0 +1,26 @@
+nodecode-priors is a rewrite of priors-agents's priors-agents/priors:
+
+  https://github.com/priors-agents/priors
+  commit 17d3e1fd9b4348bb8baf1e3983d14d07dedd39c5
+  MIT, Copyright (c) 2026 Priors contributors (LICENSE)
+
+What was rewritten: the Hermes plugin at integrations/hermes, which declared
+two MCP servers -- the hosted read-only one at https://mcp.priors.trade/mcp
+and the local `priors-mcp` command -- plus one skill. This cell speaks both
+MCP wires in Common Lisp: streamable HTTP (initialize, the
+Mcp-Session-Id header, JSON or SSE bodies) for the hosted server's seven
+read tools, and JSON-RPC over a child command's stdin for the wallet's five
+(credit_status, wallet_balance, pay_url, borrow, repay), passing the
+command the same PRIORS_* environment the plugin's mcp.json declared. The
+skill became (help :priors), the manual topic the model reads. The tool
+names keep their server-side spelling, prefixed priors_.
+
+What was left out and why: the plugin's install-time wiring -- npm, Hermes's
+plugin catalog, and the `trust: untrusted` approval that asked the user
+before every write. None of it exists in a cell. The command is instead the
+user's own (the section names it, default priors-mcp), and the approval is
+the section's bounds: pay_hosts, max_price_usd, and what the model
+confirms. The harness's own per-call prompt has no counterpart here, which
+the README says plainly. Also left out: the long-lived wallet server, which
+a cell cannot own, so each wallet call is one child run; and the plugin's
+demo, tests and release plumbing, which belong to the original repository.
