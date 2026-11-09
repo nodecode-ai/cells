@@ -1,0 +1,15 @@
+{
+  // Aurora is offline: the catalogue ships in data/censo.json, so nothing
+  // here is a key or an endpoint. A present section is an enabled one.
+  "aurora": {
+    // families a lookup answers with when the call names none (1 to 20)
+    "limit": 5,
+    // the channel (or pinned release) the pages a lookup builds should link
+    "channel": "v10",
+    // the attribution a page must carry, verbatim; the design system writes
+    // a heart where <3 stands
+    "footer": "Hecho con <3 por David Antizar",
+    // whether a page without that attribution fails aurora_validate
+    "require_footer": true
+  }
+}
