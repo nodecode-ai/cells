@@ -1,0 +1,10 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell — documentation,
+// not config. The declaration in cell.lisp is the authority; this illustrates
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "windows-apps": {
+    "enabled": true,
+    "reg": ["reg"],
+    "timeout_seconds": 30
+  }
+}
