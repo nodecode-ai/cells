@@ -1,0 +1,31 @@
+nodecode-trove is a rewrite of misterdas's misterdas/hermes-trove:
+
+  https://github.com/misterdas/hermes-trove
+  commit 69c673eeb2fcbaf12e9b88451ad1f627a88bc930
+  MIT, Copyright (c) 2026 Stephen Schoettler (LICENSE)
+
+Rewritten: the original's model-facing reads, as six tools over a log this
+image already keeps. trove_grep and semantic trove_recall became
+trove_search (one query, every session at once, newest first, each row
+cited by [session seq]); trove_recent and trove_load_session became
+trove_read (one session in order, paged by before=); trove_expand became
+trove_entry (one seq, body whole); trove_describe became trove_sessions;
+trove_compile_evidence and trove_evidence_pack became trove_evidence (the
+matched rows as one digest, duplicates dropped, cut to a character budget);
+trove_status and trove_doctor became trove_status; and the original's
+slash command became /trove with a panel.
+
+Left out, and why: the original's own store. It keeps every message in a
+SQLite DAG of its own, with FTS, summaries, embeddings and a compaction
+policy. Nodecode's durable event log already holds the same facts and its
+eviction only moves a visibility floor, so a second store would duplicate
+what the read is for; the cell reads the log through Nodecode's own recall
+seams and keeps nothing. With that store went semantic recall (query
+embeddings, vector search, reranking, and the optional call to an embedding
+provider), the summary and rollup DAG, assertion extraction and the AMR
+evidence compiler, the externalized sidecar payloads, presets and the
+model-routing table, session patterns and time-range filters, and the
+doctor's schema-integrity checks - a JSON-shaped index and a SQLite schema
+are not things this read has. What survives is the part a user notices: a
+message is never lost, a row is exact, and the seq it cites still opens the
+body later.
