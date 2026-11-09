@@ -194,6 +194,77 @@ url contains, else DEFAULT."
           (is (equal "basic" (nlk:json-value body :text "include_answer")) "include_answer basic"))
         (is (equal (format nil "Tavily answer~%~%1. R — c (2025-12-31)~%   https://r/1") text) "answer, then the dated hit")))))
 
+(defun deepseek-body (closing &rest results)
+  "DeepSeek's Messages answer: a preamble, one search returning RESULTS
+(TITLE URL PAGE-AGE) and CLOSING as the text after it."
+  (json-body "type" "message" "role" "assistant"
+             "content" (vector (nlk:json-object "type" "text" "text" "I'll search the web.")
+                               (nlk:json-object "type" "server_tool_use" "id" "s1" "name" "web_search"
+                                                "input" (nlk:json-object "query" "q"))
+                               (nlk:json-object "type" "web_search_tool_result" "tool_use_id" "s1"
+                                                "content" (coerce (loop for (title url age) in results
+                                                                        collect (apply #'nlk:make-json-object
+                                                                                       "type" "web_search_result"
+                                                                                       "title" title "url" url
+                                                                                       "encrypted_content" "x"
+                                                                                       (and age (list "page_age" age))))
+                                                                  'vector))
+                               (nlk:json-object "type" "text" "text" closing))))
+
+(deftest websearch-cell-deepseek-request-and-answer ()
+  (with-websearch ("providers" (websearch-providers "brave" "b-key" "deepseek" "ds-key")
+                   "provider" "deepseek")
+    (with-scripted-http (calls :body (deepseek-body
+                                      (format nil "ANSWER: Bitvavo leads.~%~
+{\"url\": \"https://b/2\", \"summary\": \"Second page.\", \"date\": \"2026-10-01\"}~%~
+{\"url\": \"https://made/up\", \"summary\": \"From memory.\", \"date\": \"\"}")
+                                      '("B1" "https://b/1" nil)
+                                      '("B2" "https://b/2" nil)
+                                      '("B3" "https://b/3" "2026-09-30")
+                                      '("B4" "https://b/4" nil)))
+      (let ((text (web:search "crypto exchange netherlands" :n 3)))
+        (is (= 1 (length calls)) "the named keyed provider answered alone")
+        (let* ((call (first calls))
+               (body (shasht:read-json (http-call-content call))))
+          (is (eq :post (http-call-method call)) "POST")
+          (is (equal "https://api.deepseek.com/anthropic/v1/messages" (http-call-url call)) "DeepSeek's Messages URL")
+          (is (equal "ds-key" (call-header call "x-api-key")) "the deepseek key rides in x-api-key")
+          (is (equal "2023-06-01" (call-header call "anthropic-version")) "anthropic-version header")
+          (is (equal "deepseek-v4-flash" (nlk:json-value body :text "model")) "the flash model")
+          (is (equal "web_search_20250305" (nlk:json-value (aref (nlk:json-array body "tools") 0) :text "type"))
+              "the native web_search server tool")
+          (is (contains-p (nlk:json-value (aref (nlk:json-array body "messages") 0) :string "content")
+                          "crypto exchange netherlands")
+              "the query is the ask")
+          (is (not (contains-p (http-call-url call) "ds-key")) "key never in the URL"))
+        (is (equal (format nil "Bitvavo leads.~%~%1. B2 — Second page. (2026-10-01)~%   https://b/2~%~%~
+2. B1~%   https://b/1~%~%3. B3 (2026-09-30)~%   https://b/3")
+                   text)
+            "answer, the listed result first with its summary, the rest in search order, n caps")
+        (is (not (contains-p text "made/up")) "a url the search never returned is not a hit")))))
+
+(deftest websearch-cell-deepseek-without-a-search-advances-to-the-floor ()
+  (with-websearch ("providers" (websearch-providers "deepseek" "ds-key"))
+    (with-scripted-http (calls :body (by-url "" "deepseek.com"
+                                             (json-body "content" (vector (nlk:json-object "type" "text" "text" "From memory.")))
+                                             "duckduckgo" (ddg-page '("D" "https://d/" "from duckduckgo"))
+                                             "firecrawl" (firecrawl-body)
+                                             "exa.ai" (exa-sse "nothing parseable")))
+      (let ((text (web:search "q")))
+        (is (equal "deepseek.com" (find-if (lambda (needle) (contains-p (http-call-url (first calls)) needle))
+                                           '("deepseek.com")))
+            "the only key leads: deepseek is asked first")
+        (is (uiop:string-prefix-p "[deepseek: ran no web search]" text) "a turn without a search is a note")
+        (is (contains-p text (format nil "1. D — from duckduckgo~%   https://d/")) "and the floor answers")))
+    (with-scripted-http (calls :status (by-url 200 "deepseek.com" 401)
+                               :body (by-url "" "deepseek.com" "bad key ds-key"
+                                             "duckduckgo" (ddg-page '("D" "https://d/" "d"))
+                                             "firecrawl" (firecrawl-body)
+                                             "exa.ai" (exa-sse "nothing parseable")))
+      (let ((text (web:search "q")))
+        (is (uiop:string-prefix-p "[deepseek: HTTP 401: bad key [redacted]]" text) "a refusal is a note, the key redacted")
+        (is (not (contains-p text "ds-key")) "the key is absent")))))
+
 (deftest websearch-cell-render-clips-lines-not-pages (with-websearch ())
   (with-scripted-http (calls :body (brave-body (list "T" "https://a" (format nil "  a~%~%b~C~Cc   d " #\Tab #\Tab))))
     (is (contains-p (web:search "q") (format nil "1. T — a b c d~%   https://a")) "whitespace collapsed to one line"))
@@ -275,7 +346,7 @@ url contains, else DEFAULT."
                                                 :firecrawl (firecrawl-body '("F" "https://f/" "f"))
                                                 :exa (exa-sse (exa-blocks '("E" "https://e/" "e")))))
     (let ((bing (signals-error web:websearch-error (web:search "q" :provider "bing"))))
-      (is (contains-p (princ-to-string bing) "brave, exa, tavily, duckduckgo, firecrawl, arxiv") "unknown names the known")
+      (is (contains-p (princ-to-string bing) "brave, exa, tavily, deepseek, duckduckgo, firecrawl, arxiv") "unknown names the known")
       (is (null calls) "no call was made"))
     (let ((text (web:search "q" :provider "tavily")))
       (is (equal (format nil "[tavily has no api_key (websearch.providers.tavily.api_key); answered without it]~%~%1. B — b~%   https://b/")
