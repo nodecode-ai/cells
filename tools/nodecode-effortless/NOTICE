@@ -1,0 +1,28 @@
+nodecode-effortless is a rewrite of ivcained's ivcained/effortless-hermes:
+
+  https://github.com/ivcained/effortless-hermes
+  commit 5444e7b130a74e1c03e826f224da65789abdffb5
+
+  MIT, Copyright (c) 2026 ivcained (LICENSE)
+
+What was rewritten: the effort ladder and its bounds, the "a named level in the
+message wins" and "a short follow-up keeps the effort" heuristics, the TypeSafe
+Jev system-one request and its answer, the plain OpenAI-compatible judge with
+its fallback chain, and the key handling (the section's own, else the
+environment). All of it is Common Lisp in this folder; no plugin code is
+bundled and nothing of it runs.
+
+The original was an llm_request middleware that rewrote each request's
+reasoning effort. Nodecode has the knob as a session setting, so the rewrite
+reaches the model as the pick_effort tool and the operator as /effortless, and
+applies the verdict with nlk:select-effort.
+
+What was left out, and why: the per-turn model_map (a Nodecode session picks
+its model through select-model, and the plugin's cache argument does not
+carry over); the failure-feedback loop that raised a session's effort after a
+failed turn (it read the plugin host's per-request hook payload, which has no
+counterpart here, so a verdict is not silently re-tuned); the per-turn token
+and context-fill stats (the plugin's post_api_request observer recorded them;
+this keeps verdicts, not spend); and the per-provider wire vocabularies for
+routes the original named — the rewrite walks Nodecode's own ladder down
+instead.
