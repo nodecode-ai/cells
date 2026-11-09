@@ -1,0 +1,30 @@
+nodecode-command-tray is a rewrite of aydnOktay's aydnOktay/hermes-command-tray:
+
+  https://github.com/aydnOktay/hermes-command-tray
+  commit f28afd1e21dd9ac18756a4ec8d48e8a0f6889ce2
+  MIT, Copyright (c) 2026 aydnOktay (LICENSE)
+
+Rewritten: what the plugin kept, this cell keeps as data. The Hermes plugin
+recorded every `terminal` tool call in a post_tool_call hook — the command,
+the exit code, the working directory, a 160-character redacted output preview,
+one row per unique command, the last 40 — and answered two tools
+(command_tray_list, command_tray_clear), a /commands slash entry and a
+state.json file under the plugin-data directory. Here the seam is Nodecode's
+own shell, the eval verb (sh ...): one piece of advice around
+NODECODE.EVOLVED:SH records the same row (command, ok or fail with its exit
+code, the directory, the last non-empty output line, run count, timestamp),
+with the same GitHub, OpenAI-shaped, AWS and `key = value` redaction, the same
+40-row default and the same two tool names, now also reachable as
+(command-tray:runs) and (command-tray:clear) through eval. The state file
+moves to command-tray/state.json under the Nodecode home, and the settings are
+a `command-tray` config section (max_items, preview_chars, redact).
+
+Left out: the Hermes Desktop pane (desktop/plugin.js) and its dashboard API
+(plugin_api.py) — a right-hand pane, a status-bar chip and the
+hermes:composer-insert event that pasted a command back into the composer.
+Those are Hermes's own web and desktop surfaces and have no Nodecode
+counterpart; the data they showed is here, as the list, /commands and the
+manual on (help :command-tray). Also left out: the per-row `tool` field (this
+cell watches the one shell verb), and the pane's insert/copy clicks, which
+existed so a person could reuse a command without running it; nothing here runs
+a command either, so that property survives without the button.
