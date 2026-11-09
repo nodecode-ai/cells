@@ -447,6 +447,23 @@
       }
     },
     {
+      "name": "nodecode-home-assistant",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "f01d33fe4ff9fdfe600e8c892191c3926af96812",
+      "path": "tools/nodecode-home-assistant",
+      "description": "Home Assistant: list entities, read a state, list services, call a service",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "NousResearch",
+        "repo": "NousResearch/hermes-official-plugins",
+        "commit": "e7a218f26db88426ab3e7376f0e000b6e356f5e7",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-kilo",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
@@ -481,6 +498,23 @@
           "sign_in": "/kimi-code login"
         }
       ]
+    },
+    {
+      "name": "nodecode-langfuse",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "9d401fad9068f065a7e26aea35fe1b677c0c45a7",
+      "path": "tools/nodecode-langfuse",
+      "description": "Langfuse: one trace per turn, one generation per model call, one span per tool call",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "NousResearch",
+        "repo": "NousResearch/hermes-official-plugins",
+        "commit": "e7a218f26db88426ab3e7376f0e000b6e356f5e7",
+        "license": "MIT"
+      }
     },
     {
       "name": "nodecode-letsfg",
@@ -644,6 +678,23 @@
       ]
     },
     {
+      "name": "nodecode-rea",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "69b91fd59dac356e3a1dc0e68394d319a7d0d688",
+      "path": "tools/nodecode-rea",
+      "description": "Reverse engineer binaries, apps and core dumps through REA's MCP server",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "NousResearch",
+        "repo": "NousResearch/hermes-official-plugins",
+        "commit": "1690b63a4790cb821fb6a319ba524815d4e09411",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-reme",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "fbffe4f20b7b221f135e229de4f69cd64e255962",
@@ -698,6 +749,40 @@
       "depends_on": [
         "nodecode"
       ]
+    },
+    {
+      "name": "nodecode-snyk",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "53bcdc14f6f62f037183a9a691b784bea99924ec",
+      "path": "tools/nodecode-snyk",
+      "description": "Snyk vulnerability scans of code, dependencies, containers and IaC, as tools the model calls",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "NousResearch",
+        "repo": "NousResearch/hermes-official-plugins",
+        "commit": "abec9e822a23089943dd1d476a104bf746f19f86",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-sound-effects",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "78f7b76dce6257f2c54584f4382db6dbf27b7ca8",
+      "path": "tools/nodecode-sound-effects",
+      "description": "ElevenLabs sound effects: a described sound becomes an audio file, kept in this profile's library",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "NousResearch",
+        "repo": "NousResearch/hermes-official-plugins",
+        "commit": "e7a218f26db88426ab3e7376f0e000b6e356f5e7",
+        "license": "MIT"
+      }
     },
     {
       "name": "nodecode-typesafe",
