@@ -1,0 +1,14 @@
+{
+  // Agent Batch: a task list phased into parallel groups and dispatched to
+  // GitHub Actions agents. The token is named, never written: token_env names
+  // the environment variable that holds it (GITHUB_TOKEN is read either way),
+  // token_file names a file holding it (`gh auth token > FILE` writes one).
+  "agent-batch": {
+    "repo": "owner/name",
+    "workflow": "agent-batch.yml",
+    "base_branch": "main",
+    "model": "",
+    "token_env": "GITHUB_TOKEN",
+    "timeout_seconds": 30
+  }
+}

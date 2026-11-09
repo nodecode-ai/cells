@@ -1,0 +1,25 @@
+nodecode-agent-batch is a rewrite of raaaas's raaaas/hermes-agent-batch:
+
+  https://github.com/raaaas/hermes-agent-batch
+  commit 064afc5dba8869df703ba055aa2760730c0d30dc
+  MIT, Copyright (c) 2026 raaaas (LICENSE)
+
+The original was a Hermes desktop panel plus two agent tools over one shared
+plan: the panel stored the task list, dispatched a phase on a click and read
+the repository's runs and pull requests, and the tools read the plan and
+wrote the phasing decision. This cell keeps the plan document and its rules
+unchanged -- plan.json with tasks, phases, a pending status per phase, and
+the same refusals for a task that lands in two phases, none, or one the plan
+does not hold -- and reimplements every call in Common Lisp against
+NLK:HTTP, with the user's own GitHub token, to the same two endpoints and
+with the original's three dispatch inputs (a newline-joined task list, a
+context paragraph, a model and a base branch).
+
+What was left out: the desktop panel (a cell has no window; the same five
+routes are five tools and the /agent-batch command), the FastAPI backend and
+the JS/plugin manifest that served it, and the repository-side agent workflow
+-- orchestrator.py, lifecycle/agent.py and agent-batch.yml, which run inside
+the user's own repository and install the coding-agent CLIs there. This cell
+dispatching is all; what an agent does is that workflow's business. The
+agent_batch_reset route became /agent-batch reset rather than a tool, so a
+model cannot wipe a plan by accident.
