@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "cjk-sanitizer": {
+    "enabled": true,
+    "strip_chinese": true,
+    "strip_cyrillic": true,
+    "strip_punctuation": true,
+    "collapse_space": true,
+    "blank_lines": 2,
+    "strip_reasoning": false
+  }
+}
