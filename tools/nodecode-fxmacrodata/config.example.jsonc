@@ -1,0 +1,13 @@
+{
+  // nodecode-fxmacrodata. Nothing here is required: the USD catalogue,
+  // indicator history and release calendar are public. A key lifts the
+  // ceiling on protected datasets and is read from api_key, else from the
+  // environment variable api_key_env names. It rides an X-API-Key header on
+  // REST and a Bearer header on MCP, never a URL or a tool argument.
+  "fxmacrodata": {
+    "api_key_env": "FXMACRODATA_API_KEY",
+    "base_url": "https://api.fxmacrodata.com",
+    "mcp_url": "https://mcp.fxmacrodata.com/mcp",
+    "timeout_seconds": 30
+  }
+}
