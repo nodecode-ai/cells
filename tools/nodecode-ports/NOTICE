@@ -1,0 +1,22 @@
+nodecode-ports is a rewrite of Yicheng-Mark's Yicheng-Mark/hermes-windows-plugins:
+
+  https://github.com/Yicheng-Mark/hermes-windows-plugins
+  commit 5bad3fb2baf04ce6befecfefce6d14f4c9c98934
+  MIT, Copyright (c) 2026 Yicheng-Mark (LICENSE)
+
+Rewritten: the plugin's `windows-ports` folder -- its one read-only
+port-owner lookup. The tool keeps its name (win_port_owners), its filters
+(port, ports, process, protocol, state, include_ipv6, limit) and its answer
+field for field (ok, matched, listeners, total_endpoints, entries,
+by_process, notes), and the Windows path is the same two calls the Python
+made: GetExtendedTcpTable / GetExtendedUdpTable on iphlpapi, and
+QueryFullProcessImageName with PROCESS_QUERY_LIMITED_INFORMATION for the
+image behind a PID; the Python became Common Lisp over sb-alien, and the
+JSON answer is built from the same fields. Left out: the plugin's Python
+packaging, its pytest suite and its plugin.yaml manifest, which have no
+meaning outside Hermes. Added, because a Nodecode cell runs on more than one
+platform and is called more than one way: the same question answered from
+/proc/net/{tcp,tcp6,udp,udp6} joined on the socket inode to /proc/<pid> on
+Linux, and from lsof's field output on macOS; a /ports command that prints
+the rows as lines; (help :ports); and two section settings, limit and
+show_paths.
