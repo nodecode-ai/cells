@@ -1,0 +1,26 @@
+nodecode-gensyn-ree is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-gensyn-plugins:
+
+  https://github.com/TakeshiTGAL/hermes-gensyn-plugins
+  commit 9325a7b15d815ca05983885ddd6615eae5f2b7a6
+  MIT License, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+Rewritten: the three tools `ree_validate_receipt`, `ree_verify_receipt` and
+`ree_infer`, in Common Lisp against Nodecode's cell contract. The same pinned
+image by digest (`gensynai/ree:v0.8.0`), started with `--pull never`; the same
+three docker argv (validate with `--network none` and one receipt read-only;
+verify with the two weight caches, one receipt and one tasks folder; run-all
+for infer, CPU only); the same reading of the official validate's four hash
+lines against its exit status; the same comparison of the seven hashes and
+the five readable fields, and the same levels and their names.
+
+Left out, and why: the Hermes approval machinery (cron, yolo, single-query,
+unattended and host-isolation refusals) is Hermes runtime, so the operator is
+asked through Nodecode's own question instead, every time, and only for verify
+and infer. The `docker_context` setting, the image-missing message and the
+"never pull" rule are kept. The full receipt-schema validator (receipt v2 is
+checked on its version, its model name and its hashes, not field by field),
+the weight-size estimate from the Hugging Face cache (only the model name is
+read), the receipt kept beside a returned one under `~/.cache/hermes-ree`,
+and the exact JSON envelopes (`retryable`, `fields`, `next`, `elapsed`) are
+replaced by the text block a Nodecode tool answers with. The two skills are
+the manual `(help :gensyn-ree)`.
