@@ -1,0 +1,28 @@
+nodecode-cacheguard is a rewrite of AIverflow's AIverflow/hermes-cacheguard:
+
+  https://github.com/AIverflow/hermes-cacheguard
+  commit 4648bc056c28b9453d92089ffd9db09f11dc3392
+  MIT, Copyright (c) 2026 AIverflow (LICENSE)
+
+What was rewritten: the whole guard, in Common Lisp, inside Nodecode's own
+seams. The original is a Hermes plugin that registers two LLM middlewares and
+two hooks (a pre-call veto and a post-call result line). Here one function is
+advised — the call Nodecode makes to its provider, once per round — so the
+pause clock, the prompt size, the block and the result line all come from the
+same place: a saved call time and prompt size per session, the usage the round
+brings back, and a small journal of pauses. The block is the round's answer
+rather than a withheld message: the provider is never called, the operator
+reads the BLOCKED line, and sending again goes out on a restarted clock. The
+settings are one declared section, and /cacheguard reports and changes them
+(in memory, and in the shared config where it can be written).
+
+What was left out and why: the per-surface groups (cli, desktop, gateway) and
+the per-model overrides are one mode and one pair of thresholds here, because a
+Nodecode cell has one section and Nodecode does not tell a provider call which
+surface it came from. The learned journal, the "lost 4 of 10 similar pauses"
+line and the block history are live-only: they are counts kept in memory, so a
+restart begins empty rather than reading the original's observations file. The
+result line is a Nodecode notice, not a message appended to the transcript,
+because a cell does not write into a session's log. Skipped too: the
+tiny_block short form, the image special case, the restarted-gateway advice,
+the compatibility scripts and the image handling of the original repository.
