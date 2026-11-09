@@ -117,20 +117,17 @@ once BODY reads it."
         (is (= 1 (nlk:json-value object :integer "count")) "the per-call max wins")
         (is (eq t (nlk:json-value object :boolean "truncated")))
         (is (search "of 2 matching entities"
-                    (nlk:json-value object :string "truncated_note"))
-            "and the note says how many there were")))))
+                    (nlk:json-value object :string "truncated_note")) "and the note says how many there were")))))
 
 (deftest home-assistant-cell-filters-by-area-and-name (with-ha-token)
   (with-cell-stop ((home-assistant-start))
     (with-ha-wire (asked ("/api/states" (values +states+ 200)))
       (is (= 1 (length (nlk:json-array
                          (ha-object "ha-list-3" "ha_list_entities" "{\"area\":\"kitchen\"}")
-                         "entities")))
-          "an area matches the room word in a friendly name")
+                         "entities"))) "an area matches the room word in a friendly name")
       (is (= 1 (length (nlk:json-array
                          (ha-object "ha-list-4" "ha_list_entities" "{\"name\":\"kettle\"}")
-                         "entities")))
-          "a name matches a friendly name or an entity id"))))
+                         "entities"))) "a name matches a friendly name or an entity id"))))
 
 ;;; --- ha_get_state --------------------------------------------------------------------
 
@@ -139,12 +136,9 @@ once BODY reads it."
     (with-ha-wire (asked ("/api/states/light.kitchen" (values +kitchen+ 200)))
       (let ((object (ha-object "ha-state-1" "ha_get_state" "{\"entity_id\":\"light.kitchen\"}")))
         (is (equal "on" (nlk:json-value object :string "state")))
-        (is (= 180 (nlk:json-value object :integer "attributes" "brightness"))
-            "every attribute comes through")
-        (is (equal "2026-01-01T10:00:00+00:00" (nlk:json-value object :string "last_changed"))
-            "the timestamp is Home Assistant's own"))
-      (is (equal "http://ha.test:8123/api/states/light.kitchen" (second (first asked)))
-          "the entity id rides the path"))))
+        (is (= 180 (nlk:json-value object :integer "attributes" "brightness")) "every attribute comes through")
+        (is (equal "2026-01-01T10:00:00+00:00" (nlk:json-value object :string "last_changed")) "the timestamp is Home Assistant's own"))
+      (is (equal "http://ha.test:8123/api/states/light.kitchen" (second (first asked))) "the entity id rides the path"))))
 
 (deftest home-assistant-cell-refuses-a-state-it-may-not-read (with-ha-token)
   (with-cell-stop ((home-assistant-start "entity_denylist" (vector "light.*")))
@@ -175,8 +169,7 @@ once BODY reads it."
     (with-ha-wire (asked ("/api/services" (values +services+ 200)))
       (let ((object (ha-object "ha-svc-1" "ha_list_services" "{\"domain\":\"light\"}")))
         (is (= 1 (nlk:json-value object :integer "count")) "the domain filter kept one domain")
-        (is (search "Turn the light on" (nlk:encode-json-object object))
-            "the service and its field descriptions come through")))))
+        (is (search "Turn the light on" (nlk:encode-json-object object)) "the service and its field descriptions come through")))))
 
 ;;; --- ha_call_service -------------------------------------------------------------------
 
@@ -190,14 +183,11 @@ once BODY reads it."
         (is (equal "light.turn_on" (nlk:json-value object :string "service")))
         (is (equal "light.kitchen"
                    (nlk:json-value (aref (nlk:json-array object "affected_entities") 0)
-                                   :string "entity_id"))
-            "the answer names the entity that changed"))
+                                   :string "entity_id")) "the answer names the entity that changed"))
       (let ((payload (nlk:decode-json (third (first asked)))))
         (is (equal :post (first (first asked))))
-        (is (equal "light.kitchen" (nlk:json-value payload :string "entity_id"))
-            "entity_id rides the payload Home Assistant reads")
-        (is (= 255 (nlk:json-value payload :integer "brightness"))
-            "and the caller's own data with it")))))
+        (is (equal "light.kitchen" (nlk:json-value payload :string "entity_id")) "entity_id rides the payload Home Assistant reads")
+        (is (= 255 (nlk:json-value payload :integer "brightness")) "and the caller's own data with it")))))
 
 (deftest home-assistant-cell-refuses-a-code-running-service-domain (with-ha-token)
   (with-cell-stop ((home-assistant-start))
@@ -218,6 +208,5 @@ once BODY reads it."
       (let ((object (ha-object "ha-call-3" "ha_call_service"
                                 "{\"domain\":\"switch\",\"service\":\"turn_on\",\"entity_id\":\"light.kitchen\"}")))
         (is (eq t (nlk:json-value object :boolean "nothing_changed")))
-        (is (search "in the 'light' domain" (nlk:json-value object :string "error"))
-            "the answer names the domain that would work")
+        (is (search "in the 'light' domain" (nlk:json-value object :string "error")) "the answer names the domain that would work")
         (is (= 2 (length asked)) "the service, then the read that explains it")))))

@@ -57,8 +57,7 @@
     (with-cell-stop ((sem-start))
       (let ((answer (nodecode-sem:sem-find (find-op "names" (vector "parse_config" "load_config")))))
         (is (search "parse_config" answer) "the CLI's own answer, passed through")
-        (is (equal '("sem" "find" "parse_config" "load_config" "--json") (first (first *calls*)))
-            "one argv, no shell, --json asked for by the cell")))))
+        (is (equal '("sem" "find" "parse_config" "load_config" "--json") (first (first *calls*))) "one argv, no shell, --json asked for by the cell")))))
 
 (deftest sem-cell-find-passes-callers-context-and-narrowing ()
   (with-cli ((values "{}" "" 0))
@@ -67,8 +66,7 @@
                                       "callers" t "context" t "budget" 900 "in" "src/"))
       (is (equal '("sem" "find" "parse_config" "--callers" "--context" "--budget" "900"
                    "--in" "src/" "--json")
-                 (first (first *calls*)))
-          "the flags the call asked for, in one argv"))))
+                 (first (first *calls*))) "the flags the call asked for, in one argv"))))
 
 (deftest sem-cell-diff-is-entities-not-lines ()
   (with-cli ((values "{\"changed\":[\"parse_config\"]}" "" 0))
@@ -76,8 +74,7 @@
       (is (search "parse_config" (nodecode-sem:sem-diff (diff-op))) "no range is the working tree")
       (is (equal '("sem" "diff" "--json") (first (first *calls*))) "a bare diff")
       (nodecode-sem:sem-diff (diff-op "range" "main..HEAD"))
-      (is (equal '("sem" "diff" "main..HEAD" "--json") (first (first *calls*)))
-          "a named range is one argument"))))
+      (is (equal '("sem" "diff" "main..HEAD" "--json") (first (first *calls*))) "a named range is one argument"))))
 
 (deftest sem-cell-impact-asks-for-tests-and-a-file ()
   (with-cli ((values "{\"callers\":[]}" "" 0))
@@ -95,14 +92,11 @@
                      (nodecode-sem:decode-weave-preview-query
                       (nlk:make-json-object "branch" "feature-a" "file" "config.py")))))
         (is (search "config.py" answer) "what the preview showed")
-        (is (equal '("weave" "preview" "feature-a" "--file" "config.py") (first (first *calls*)))
-            "preview only: no setup, no land, no merge")))))
+        (is (equal '("weave" "preview" "feature-a" "--file" "config.py") (first (first *calls*))) "preview only: no setup, no land, no merge")))))
 
 (deftest sem-cell-a-missing-argument-refuses ()
-  (is (signals-error nlk:contract-refusal (nodecode-sem:decode-sem-find-query (nlk:make-json-object)))
-      "sem_find without a name")
-  (is (signals-error nlk:contract-refusal (nodecode-sem:decode-weave-preview-query (nlk:make-json-object)))
-      "weave_preview without a branch"))
+  (is (signals-error nlk:contract-refusal (nodecode-sem:decode-sem-find-query (nlk:make-json-object))) "sem_find without a name")
+  (is (signals-error nlk:contract-refusal (nodecode-sem:decode-weave-preview-query (nlk:make-json-object))) "weave_preview without a branch"))
 
 (deftest sem-cell-an-absent-cli-is-the-prerequisite ()
   (with-cli ((error "run-program: sem: No such file or directory"))
@@ -137,8 +131,7 @@
       (with-cell-stop ((sem-start "directory" "/tmp/a-repo"))
         (let ((answer (nodecode-sem:call "sem" '("sem" "--version"))))
           (is (equal "out" answer) "stdout, trimmed")
-          (is (equal '("SEM_NO_NETWORK=1" "SEM_NO_TELEMETRY=1") (third seen))
-              "the caution the skill typed by hand, on every call")
+          (is (equal '("SEM_NO_NETWORK=1" "SEM_NO_TELEMETRY=1") (third seen)) "the caution the skill typed by hand, on every call")
           (is (equal "/tmp/a-repo" (second seen)) "in the repository the section names")
           (is (eql 120 (fourth seen)) "bounded by the timeout setting"))))))
 
@@ -154,5 +147,4 @@
         (is (search "weave: weave 9.9" status) "and Weave's"))
       (let ((answer (nodecode-sem::run-command "find parse_config --json" "s1")))
         (is (search "entities" answer) "typed arguments go to sem")
-        (is (equal '("sem" "find" "parse_config" "--json") (first (first *calls*)))
-            "split on whitespace, never through a shell")))))
+        (is (equal '("sem" "find" "parse_config" "--json") (first (first *calls*))) "split on whitespace, never through a shell")))))

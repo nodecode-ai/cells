@@ -99,22 +99,18 @@
       (is (= 1 (length android)) "a word narrows to the tools that name it")
       (is (equal "inspect_android_package" (getf (first android) :name))))
     (is (null (nodecode-rea:tools :search "frida")) "and to nothing when nothing matches")
-    (is (equal "tools/list" (first (first (rea-stub-calls *stub*))))
-        "the list came from the server, not from the cell")))
+    (is (equal "tools/list" (first (first (rea-stub-calls *stub*)))) "the list came from the server, not from the cell")))
 
 (deftest rea-cell-calls-one-tool ()
   (with-rea-cell
-    (is (search "opened /tmp/parser" (nodecode-rea:call "open_binary" :file-path "/tmp/parser"))
-        "a tool's text is the answer")
+    (is (search "opened /tmp/parser" (nodecode-rea:call "open_binary" :file-path "/tmp/parser")) "a tool's text is the answer")
     (let* ((call (find "tools/call" (rea-stub-calls *stub*) :key #'first :test #'equal))
            (arguments (and call (gethash "arguments" (second call)))))
       (is (string= "open_binary" (gethash "name" (second call))) "named as the model named it")
-      (is (string= "/tmp/parser" (gethash "file_path" arguments))
-          "a keyword folds to the schema's own spelling"))
+      (is (string= "/tmp/parser" (gethash "file_path" arguments)) "a keyword folds to the schema's own spelling"))
     (is (search "open a binary before"
                 (refusal-text nodecode-rea::rea-error
-                              (nodecode-rea:call "analyze_function" :name "main")))
-        "a tool that failed says so in its own words")))
+                              (nodecode-rea:call "analyze_function" :name "main"))) "a tool that failed says so in its own words")))
 
 (deftest rea-cell-schema-answers-for-a-tool ()
   (with-rea-cell
@@ -122,8 +118,7 @@
       (is (hash-table-p schema) "the input schema comes back as the server wrote it")
       (is (equal "object" (gethash "type" schema))))
     (is (search "no tool named"
-                (refusal-text nodecode-rea::rea-error (nodecode-rea:schema "frida")))
-        "an unknown tool is a refusal that says so")))
+                (refusal-text nodecode-rea::rea-error (nodecode-rea:schema "frida"))) "an unknown tool is a refusal that says so")))
 
 ;;; --- what the model calls -------------------------------------------------------------
 
@@ -142,8 +137,7 @@
     (is (search "opened /tmp/parser"
                 (nodecode-rea::tool-call
                  (nodecode-rea::decode-rea-call-request
-                  (rea-stub-answer "{\"tool\":\"open_binary\",\"arguments\":{\"path\":\"/tmp/parser\"}}"))))
-        "rea_call runs one tool with its JSON arguments")))
+                  (rea-stub-answer "{\"tool\":\"open_binary\",\"arguments\":{\"path\":\"/tmp/parser\"}}")))) "rea_call runs one tool with its JSON arguments")))
 
 (deftest rea-cell-result-is-capped ()
   (with-rea-cell
@@ -166,23 +160,18 @@
         (is (search "inspect_android_package" tools) "/rea tools lists the server's tools")
         (is (not (search "open_binary" tools))))
       (is (search "restarted" (cell-entry "nodecode-rea" "rea" "restart")) "restart reconnects")
-      (is (search "is not a verb" (cell-entry "nodecode-rea" "rea" "frobnicate"))
-          "an unknown verb says what it takes"))))
+      (is (search "is not a verb" (cell-entry "nodecode-rea" "rea" "frobnicate")) "an unknown verb says what it takes"))))
 
 ;;; --- what the original forwarded, and what it did not ----------------------------------
 
 (deftest rea-cell-forwards-the-plugins-environment ()
   (is (equal '("REA_GHIDRA_STARTUP_TIMEOUT_MS" . "900000")
-             (first (nodecode-rea::server-env '(:ghidra-startup-timeout-ms 900000))))
-      "Ghidra's deadline rides as the plugin's mcp.json forwarded it")
+             (first (nodecode-rea::server-env '(:ghidra-startup-timeout-ms 900000)))) "Ghidra's deadline rides as the plugin's mcp.json forwarded it")
   (is (equal '("REA_PWNTOOLS_PYTHON" . "/opt/venv/bin/python")
              (second (nodecode-rea::server-env '(:ghidra-startup-timeout-ms 900000
-                                                  :pwntools-python "/opt/venv/bin/python"))))
-      "and the pwntools Python, when the operator named one")
+                                                  :pwntools-python "/opt/venv/bin/python")))) "and the pwntools Python, when the operator named one")
   (is (equal '("npx" "-y" "rea-agents@6.7.0" "mcp")
-             (nodecode-rea::command-line '(:npx "npx" :server "rea-agents@6.7.0")))
-      "the launch is the plugin's own, pinned")
+             (nodecode-rea::command-line '(:npx "npx" :server "rea-agents@6.7.0"))) "the launch is the plugin's own, pinned")
   (is (search "names no server"
               (refusal-text nodecode-rea::rea-error
-                            (nodecode-rea::command-line '(:npx "npx" :server ""))))
-      "and a section without one refuses, naming the setting"))
+                            (nodecode-rea::command-line '(:npx "npx" :server "")))) "and a section without one refuses, naming the setting"))

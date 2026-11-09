@@ -19,8 +19,7 @@
   (:running
    (is (nle::find-tool "reme_recall") "the recall tool is registered")
    (is (eq (nlk:contract 'nodecode-reme::recall-note)
-           (second (nle::find-tool "reme_recall")))
-       "registered against its declaration"))
+           (second (nle::find-tool "reme_recall"))) "registered against its declaration"))
   (:stopped
    (is (null (nle::find-tool "reme_recall")) "stop unregisters the tool"))
   (:refused ("endpoint" "") ("recall_limit" 0))
@@ -136,6 +135,5 @@ FORM answering (values TEXT STATUS) for that request. LOG collects
 
 (deftest reme-cell-refuses-without-an-endpoint ()
   (is (signals-error nlk:config-refusal
-        (nodecode-reme:start-cell (nlk:json-object "reme" (nlk:make-json-object))))
-      "an absent endpoint is a config refusal, not a silent no-op")
+        (nodecode-reme:start-cell (nlk:json-object "reme" (nlk:make-json-object)))) "an absent endpoint is a config refusal, not a silent no-op")
   (is (null (nle::find-tool "reme_recall")) "and nothing was installed"))
