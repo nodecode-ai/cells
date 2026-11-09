@@ -1,0 +1,36 @@
+nodecode-ai-usage is a rewrite of lvabarajithan's lvabarajithan/hermes-ai-usage-tracker:
+
+  https://github.com/lvabarajithan/hermes-ai-usage-tracker
+  commit 14e844f6ced5e0d618c767d726330a78c5cadadd
+  MIT License, Copyright (c) 2026 Abarajithan (LICENSE)
+
+The original is a Hermes desktop plugin: a page and a status-bar chip in the
+Hermes desktop app, plus a FastAPI backend mounted at
+/api/plugins/ai-usage-tracker/. What was rewritten: the seven quota probes
+that backend answers itself, in Common Lisp against the same endpoints the
+plugin dials -- api.github.com/copilot_internal/user,
+api.opencode.ai and opencode.ai for OpenCode Zen and Go, api.z.ai's quota
+limit, api.kimi.com/coding/v1/usages, MiniMax's coding-plan remains and
+api.deepseek.com/user/balance -- with the plugin's own parsing of each
+answer (its windows, percentages computed from counts, unlimited plans,
+plan and overage lines, balances), its 60-second per-provider cache, and its
+words for a missing credential, a rejected one, an endpoint the account's
+tier does not offer, and a provider with no quota API. The plugin's
+configuration surface (which providers, a timeout) is the cell's :section;
+the page and the chip are one text report, shown by the ai_usage tool, by
+/quotas and by (ai-usage:report), with (ai-usage:windows) answering the
+same data as a plist for a caller in Lisp.
+
+What was left out, and why: the per-profile switching (Hermes's
+hermes_constants home override and the profile picker) -- Nodecode's keys
+live in the environment variables the section names, so the cell follows one
+home rather than binding another profile's HERMES_HOME per request; the four
+providers the plugin delegated to Hermes's agent.account_usage helper
+(Anthropic, ChatGPT/Codex, OpenRouter, Nous Portal), whose endpoints are
+Hermes internals the plugin never spells out -- the cell reads the seven
+plans whose endpoints the plugin queries itself; Hermes's credential store
+and credential pool (hermes_cli.auth), replaced by the *_env members; the
+Swift-free desktop page, the status-bar chip, the hidden-providers
+preference and the manual refresh control, since the report is a text; and
+the SQLite read of Hermes's state.db that decided which providers were
+"active", which Nodecode has no equivalent of.
