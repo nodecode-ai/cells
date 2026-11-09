@@ -1,0 +1,25 @@
+nodecode-patsnap is a rewrite of NousResearch's NousResearch/hermes-labs-plugins:
+
+  https://github.com/NousResearch/hermes-labs-plugins
+  commit a6c7854f6fbd8ec8109199d5ded0c9c871c069d6
+  MIT, Copyright (c) 2026 Nous Research (LICENSE)
+
+The original ships no code at all: a manifest points a harness's own MCP client
+at Patsnap's hosted Streamable-HTTP server (one endpoint, one `apikey` header),
+and a skill file says when to use which of the nine tools, how a search strategy
+binds to its parameters, how to keep credit use down, and which mistakes to
+avoid. Both are rewritten here: mcp.lisp is the small MCP client the manifest
+implied (initialize, notifications/initialized, tools/list, tools/call over one
+HTTP POST), tools.lisp registers the server's nine tools under a configurable
+prefix and forwards every call's arguments whole, and cell.lisp carries the
+skill as one manual topic plus the workflow each tool description states. The
+server, its tool names, its arguments and its data are Patsnap's, unchanged.
+
+What was left out, and why: the original's Hermes-only packaging (plugin.json,
+the Desktop settings page, the profile `.env` plumbing) is replaced by the
+cell's own config section, which is how a Nodecode cell declares its settings,
+and the key may also come from the environment variable the section names. The
+skill's advice to discover tool names with the harness's own search/describe
+verbs is replaced by one extra tool, <prefix>_tools, which answers the server's
+own descriptions and argument schemas. Nothing else of the original was
+dropped.
