@@ -1,0 +1,10 @@
+{
+  // The Grey Ridge token-safety cell: a Base ERC-20 pre-trade check.
+  // No key, no token, no signup: the free preview is metered per address.
+  "token-safety": {
+    "api_base": "https://x402-data-api.sigrunner.workers.dev",  // required: the API root the report is asked from
+    "timeout_seconds": 20,          // seconds one report may take
+    "default_notional_usd": 500,    // the size swap_gate sizes when a call names none
+    "max_result_chars": 6000        // the longest answer; a longer report is clipped with a note
+  }
+}
