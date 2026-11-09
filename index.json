@@ -2071,7 +2071,7 @@
     {
       "name": "nodecode-claude-code",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "592aee9df0baa66f6fa1a8a64eac095968e77d81",
+      "commit": "af0641ccc7f7a13dc308c9200ced7ea98c146fd2",
       "path": "providers/nodecode-claude-code",
       "description": "Claude Code's own login as a provider lane: the claude CLI writes each request, Nodecode sends it",
       "license": "MIT",
