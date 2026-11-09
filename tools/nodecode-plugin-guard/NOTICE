@@ -1,0 +1,30 @@
+nodecode-plugin-guard is a rewrite of mauricemohr88-debug's
+mauricemohr88-debug/hermes-plugin-guard:
+
+  https://github.com/mauricemohr88-debug/hermes-plugin-guard
+  commit 857d881be77249c192c5fefa8254db186a7abbca
+  MIT License, Copyright (c) 2026 Maurice Mohr (LICENSE)
+
+Rewritten: the plugin's subject -- a local static review of a plugin or cell
+folder before it is trusted, where the target's files are read as data and
+never imported or executed -- as one read-only model tool, one command and
+one manual topic over a folder of any plugin or cell. The rule catalog keeps
+the original's subjects and severities under a PG prefix (its HPG ids): a
+missing declaration, license, security policy or tests; dynamic execution,
+unsafe deserialization, process execution, sensitive paths, a disabled TLS
+check, network clients and concrete egress, undeclared secret environment
+reads, destructive filesystem calls, privileged registration surfaces;
+committed credentials; unpinned, unbounded and piped-to-shell dependencies.
+The matching was rewritten from a Python AST walk to literal patterns over
+the lowercased text of one file, so a finding is one line, not one node.
+
+Left out, and why: the Python package and its setuptools build; PyYAML and
+the YAML manifest parser; the JSON, SARIF and GitHub-actions reporters,
+their fingerprints and the --fail-on exit codes (the report's FAIL line and
+the operator's shell are enough here); the subprocess worker with resource
+limits and the opaque location-id projection that kept absolute paths out of
+the model's context (a scan here runs in one image, in one bounded walk,
+and already reports in-tree names only); the known-hook and entry-point
+checks, which describe Hermes' own registration surface rather than a
+Nodecode cell's; and the enabled/disabled activation state of a Hermes
+install, which a cell folder does not have.
