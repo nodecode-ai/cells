@@ -1,0 +1,26 @@
+nodecode-advisor is a rewrite of ljubomirj's ljubomirj/hermes-advisor-plugin:
+
+  https://github.com/ljubomirj/hermes-advisor-plugin
+  commit 37e55975611d38212cf082029ece504f207df656
+  MIT, Copyright (c) 2026 Ljubomir Josifovski (LICENSE)
+
+Rewritten: the reviewer's whole instruction (advisor_prompt.py), the tagged
+[NIT] / [CONCERN] / [BLOCKER] parsing with the hold-and-reconfirm rule and
+the malformed-note filter (models.py), and the review half of runtime.py --
+the transcript it builds from a turn, the side call, the WATCHDOG.md
+guidance, the one-worker background queue, /advisor's verbs, and the
+provider/model override.
+
+Left out, and why: the Hermes-specific surfaces have no Nodecode
+counterpart. post_llm_call and on_session_finalize became one :FRAME
+observer over the terminal turn facts, so the grace period at shutdown and
+the effort to bound hook latency have nothing to bound; ctx.inject_message
+became a standing notice under the cell's key, since a cell cannot append a
+user message to a session; register_status_segment (the footer badge)
+became a line in /advisor's own answer and the notices; the interactive
+provider/model picker (ctx.request_model_selection) became the section's
+model and provider with /advisor model and /advisor provider for this run;
+and the per-session state files became one held-note file per session under
+the home. The reviewer itself is now a Nodecode side call (nle:complete),
+the same seam the organism uses for side work, so no HTTP, credentials or
+client of its own are carried.
