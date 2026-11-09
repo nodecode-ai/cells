@@ -1,0 +1,32 @@
+nodecode-dashscope-video is a rewrite of rriggs's rriggs/hermes-plugin-dashscope-video:
+
+  https://github.com/rriggs/hermes-plugin-dashscope-video
+  commit 229b5c93d498dfa25aab31f0bef47f32fccde69f
+  MIT, Copyright (c) 2026 Colorado Rob (LICENSE)
+
+What was rewritten: the plugin's one job -- DashScope (Qwen Cloud) video
+generation on Alibaba Cloud's HappyHorse models -- is the cell's one tool,
+video_generate, and the verb (dashscope-video:generate ...) called through
+eval. The mode routing the original did from its inputs is kept as it wrote
+it (a prompt alone is text-to-video, an image_url is image-to-video,
+reference_image_urls are reference-to-video), as is its model-id resolution
+order (explicit model, then the per-mode override, then the family plus
+-t2v/-i2v/-r2v, then the default family), its aspect-ratio-to-pixel-size
+table, its 3-to-10-second clamp, its async submit with X-DashScope-Async,
+its poll of GET /api/v1/tasks/<id> to a terminal status under a ten-minute
+default deadline, the three shapes it looks for the finished video's url in,
+its 10 MB cap on inlining a local image as a base64 data uri, and its habit
+of caching the clip locally because DashScope's own urls expire. The key it
+read from the environment is the section's api_key or the variable key_env
+names, QWEN_API_KEY by default and by default's name; the base url it
+defaulted to is the section's api. Its Hermes plumbing -- the provider class,
+the registry entry, the setup panel, the per-user config.yaml -- is the
+cell's section and its one declaration instead.
+
+What was left out, and why: the generate() arguments the family does not
+support (negative_prompt, audio, seed, resolution), which the original
+accepted and never sent; the Hermes video_generate tool itself, which this
+agent does not have, so the cell registers that one tool under its name; and
+the caching it did through Hermes's own save_url_video helper, done here with
+nlk:http and a write under this home. LICENSE is the original repository's
+LICENSE, unchanged.

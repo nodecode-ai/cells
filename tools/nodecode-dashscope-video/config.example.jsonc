@@ -1,0 +1,16 @@
+// The dashscope-video section of ~/.nodecode/config.jsonc, as /settings writes it.
+// A key comes from Alibaba Cloud Model Studio's console: sk-sp-* is the token plan,
+// sk-ws-* is pay-as-you-go (and answers on https://dashscope-intl.aliyuncs.com).
+{
+  "dashscope-video": {
+    "api_key": "sk-sp-...",          // or leave it out and export QWEN_API_KEY
+    "key_env": "QWEN_API_KEY",       // the variable holding the key
+    "api": "https://token-plan.ap-southeast-1.maas.aliyuncs.com",
+    "model_family": "happyhorse-1.1", // -t2v, -i2v and -r2v are appended per mode
+    "duration": 5,                    // seconds one call asks for unless it says; 3 to 10
+    "poll_interval": 5,               // seconds between two looks at a running task
+    "poll_deadline": 600,            // seconds a task may run before the call gives up
+    "request_timeout": 30,           // one HTTP request's ceiling
+    "max_video_mb": 256              // how large a downloaded clip may be
+  }
+}
