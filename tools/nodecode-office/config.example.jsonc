@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell -
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "office": {
+    "enabled": true,
+    // The folders on the desk: the cell reads and writes inside these and
+    // refuses everything else. ~ is accepted. Required: a start with no
+    // folder refuses, and /cells shows the folder as REFUSED until one is
+    // added.
+    "folders": ["~/Documents", "~/Desktop"],
+    // The author name Word tracked changes carry.
+    "author": "Nodecode",
+    // How many blocks office_inspect previews by default.
+    "preview": 12
+  }
+}
