@@ -1123,6 +1123,23 @@
       ]
     },
     {
+      "name": "nodecode-bilinc",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "d9390f119999b12c03850455905922e6a8344f0d",
+      "path": "tools/nodecode-bilinc",
+      "description": "Bilinc memory: versioned long-term facts with recall, remember, revise and forget",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ReARCLabs",
+        "repo": "ReARCLabs/bilinc-hermes-plugin",
+        "commit": "1ad81b4aaef8632ba5d6438384f3f063f46a0ebd",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-birkin",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "59f3c8a01a3634105f394e6710f8cce664223352",
@@ -1136,6 +1153,23 @@
         "author": "ashmoonori-afk",
         "repo": "ashmoonori-afk/birkin-mnemosyne",
         "commit": "63a34526973fc9ad0e5a030a474c67a5fca873e7",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-birta",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "63c5b91d3078b9f8cdd28e96f5b05ecf306d78ae",
+      "path": "tools/nodecode-birta",
+      "description": "Birta: publish pages, sites and documents at a link, read the feedback left on them, and call every Birta tool the connected server offers",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "birtadev",
+        "repo": "birtadev/plugins",
+        "commit": "fd2485de51401db9dd9b25f0bc495bd36e9752c8",
         "license": "MIT"
       }
     },
@@ -1171,6 +1205,58 @@
         "author": "TakeshiTGAL",
         "repo": "TakeshiTGAL/hermes-plugin-author-feed",
         "commit": "d3c9497d3f62b7f49aa0fa6131a7cd30278d80a8",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-booking",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "9cfe44f0a4673fd1ae05e2f6667153f73fcfdb03",
+      "path": "tools/nodecode-booking",
+      "description": "Google Calendar booking: free slots, upcoming events, book, move, cancel",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "kyle-bartlett",
+        "repo": "kyle-bartlett/booking-bridge",
+        "commit": "8d013fcd7500f5b9e3b98588a6c32826f25c8252",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-bot-chat",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "c84a1588452f9dbe82dee437227773d11752f57f",
+      "path": "tools/nodecode-bot-chat",
+      "description": "Bot chat: a concise bot style and a block-only safety guard, per session",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "Tormen28",
+        "repo": "Tormen28/hermes-bot-chat-agent",
+        "commit": "2bc1ba3a6543255c7cdda2cb03eee040f917649d",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-botsee",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "5c60c949f4285377699af177e9d0c3124263c5e1",
+      "path": "tools/nodecode-botsee",
+      "description": "BotSee: AI-visibility research through its hosted MCP server, with your own key",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "sidekickjanet",
+        "repo": "sidekickjanet/hermes-product-plugins",
+        "commit": "f79c213703b600a48a1d4f949bbd82c113d117f0",
         "license": "MIT"
       }
     },
@@ -1243,6 +1329,40 @@
       }
     },
     {
+      "name": "nodecode-bulkpublish",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "2f2efae17a21ba277b1fb93f3fc4346f78981065",
+      "path": "tools/nodecode-bulkpublish",
+      "description": "Publish, schedule and measure social posts on 15 networks through BulkPublish",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "bulkpublish",
+        "repo": "bulkpublish/hermes-bulkpublish",
+        "commit": "530589907c6f791aacd35e1f708dbe8949e7e87f",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-bunny-space",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "ae20cbe43f6c6c3d885c03131875d4d6d257259c",
+      "path": "rooms/nodecode-bunny-space",
+      "description": "Bunny Space: talk to nodecode through a Bunny Space bot",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "jasm001",
+        "repo": "jasm001/hermes-plugin-bunny-space",
+        "commit": "c28e7985599c03a323ebb06f8ca28ac7cd5b05d6",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-by2kb",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "51e53eced064742c8decfe67ff3ed9c7f798dcc0",
@@ -1294,6 +1414,23 @@
       }
     },
     {
+      "name": "nodecode-calling-mom",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "e63f6252e3dbe1af66eeaed1676c6c9c271f78a1",
+      "path": "tools/nodecode-calling-mom",
+      "description": "A cheap advisor answers a stuck or risky tool call; a rare escalation reaches an expensive one",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "SlyBase",
+        "repo": "SlyBase/calling-mom",
+        "commit": "e0daf7f1b293cdf41b685f856b02120f82c144d9",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-camel-guard",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "c7314979d161b1d678f03a193e5fe5596f3ee90a",
@@ -1328,6 +1465,23 @@
       }
     },
     {
+      "name": "nodecode-canary-trap",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "4acd7e385b8e81a49b3302aa3e1a286bdd3e7f57",
+      "path": "tools/nodecode-canary-trap",
+      "description": "Canary Trap: a decoy credential each turn; a tool call carrying it is blocked and its session locked",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Tarekkharsa",
+        "repo": "Tarekkharsa/hermes-canary-trap",
+        "commit": "cbef2f98aee69cfacf59402e3d4fe98427d10b84",
+        "license": "Apache-2.0"
+      }
+    },
+    {
       "name": "nodecode-canvas",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "143fb76705a2b752bbb23bf5791eb07aec864fdc",
@@ -1341,6 +1495,23 @@
         "author": "skk2010",
         "repo": "skk2010/hermes-board-plugin",
         "commit": "feb66592881bf76198cd8d790fd1dae25e5057f6",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-caprover",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "68991f2e26ade6bbaeb75450466e61ecc08c0c53",
+      "path": "tools/nodecode-caprover",
+      "description": "Plan, approve and deploy one immutable image to a CapRover app",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "fmercurio",
+        "repo": "fmercurio/hermes-caprover-operator",
+        "commit": "1d813b6e23c88c8641f8c891b46c2ae3f065e890",
         "license": "MIT"
       }
     },
@@ -1375,6 +1546,23 @@
         "author": "anthony-maio",
         "repo": "anthony-maio/cartograph",
         "commit": "e2e06db1c79f3de60760d9045ae6908ddf4e4b21",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-cash-desk",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "28da6591642711233e8a95047690a1a6ba5fd291",
+      "path": "tools/nodecode-cash-desk",
+      "description": "Chase overdue invoices from CSV exports: match payments, draft reminders, and send only after a person approves",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "FutureInvoked",
+        "repo": "FutureInvoked/cash-desk",
+        "commit": "26d5fabe5f50f250e5dc72c0751adbdb3625f732",
         "license": "MIT"
       }
     },
@@ -1590,6 +1778,23 @@
       }
     },
     {
+      "name": "nodecode-chmod-ref",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "13db6b914d9f6107344959f6773e8759db575e00",
+      "path": "tools/nodecode-chmod-ref",
+      "description": "Explain a file mode, a chmod change or a umask in octal, ls -l and plain words",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "olric3015",
+        "repo": "olric3015/hermes-plugins",
+        "commit": "d2f543a0979eee73202a3fe06bb2c722b04d5765",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-chorepilot",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "43a580b6eff4559195d9246086d2c38d537d5892",
@@ -1620,6 +1825,23 @@
         "author": "indigokarasu",
         "repo": "indigokarasu/chronicle-agent-context-and-memory",
         "commit": "92e4351a852117a11542210d06e8e5bfb61c3f1a",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-citation-guard",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "1007961f63104b998d3edc2ab0169081274f745e",
+      "path": "tools/nodecode-citation-guard",
+      "description": "Citation check: every DOI, PMID, arXiv id and reference entry checked against Crossref, PubMed and arXiv",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ChienNguyen23",
+        "repo": "ChienNguyen23/hermes-citation-guard",
+        "commit": "6916b2ae7f561765883c57b32441db049e246113",
         "license": "MIT"
       }
     },
@@ -1725,6 +1947,47 @@
         "commit": "75961d77109b185bdaeef650cc9f945df0aa0551",
         "license": "MIT"
       }
+    },
+    {
+      "name": "nodecode-cloudflare-web-search",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "97ca1db53d8ae4618056a7e144f4e2009376fe5e",
+      "path": "tools/nodecode-cloudflare-web-search",
+      "description": "Cloudflare Web Search: Ceramic, Exa or Linkup through your own Cloudflare account, as one model tool",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Adolanium",
+        "repo": "Adolanium/hermes-cloudflare-web-search",
+        "commit": "259783bf335cfffbfe16e2ef16efa301beb6db14",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-cloudflare-workers-ai",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "6a34a7e32d62bdf4072dca783b3d241a13ae7e66",
+      "path": "providers/nodecode-cloudflare-workers-ai",
+      "description": "Cloudflare Workers AI: its models, context windows and per-model reasoning effort",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "AhmetArif0",
+        "repo": "AhmetArif0/hermes-cloudflare-workers-ai-provider",
+        "commit": "f6821d058d504ee6324b0d3217564b93124c09f9",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Cloudflare Workers AI",
+          "provider": "cloudflare-workers-ai",
+          "sign_in": "key"
+        }
+      ]
     },
     {
       "name": "nodecode-codex-auth",
@@ -6492,6 +6755,23 @@
         "author": "thetasigmaio",
         "repo": "thetasigmaio/hermes-t3-control",
         "commit": "aeb5493e30e744b414cbfe88a70adb1acd59a1c8",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-tab-watchdog",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "2d8af91add186006ea208e8ca8811b7f2f6d9dd2",
+      "path": "tools/nodecode-tab-watchdog",
+      "description": "Close stale blank, idle and duplicate Chrome tabs",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "web3blind",
+        "repo": "web3blind/hermes-chrome-tab-watchdog",
+        "commit": "15b873f13df8275c59a18cbe4a9a2ec71266af50",
         "license": "MIT"
       }
     },
