@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "booking": {
+    "enabled": true,
+    "calendar": "primary",
+    "client_id": "<the OAuth Desktop app client id>",
+    "client_secret_env": "GOOGLE_CALENDAR_CLIENT_SECRET",
+    "refresh_token_env": "GOOGLE_CALENDAR_REFRESH_TOKEN",
+    "utc_offset": "-06:00",
+    "duration_minutes": 30,
+    "timeout": 20
+  }
+}
