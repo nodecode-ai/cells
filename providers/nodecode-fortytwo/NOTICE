@@ -1,0 +1,27 @@
+nodecode-fortytwo is a rewrite of Fortytwo-Network's Fortytwo-Network/fortytwo-hermes:
+
+  repository: https://github.com/Fortytwo-Network/fortytwo-hermes
+  commit: 91c8f521ab357530c91a9660bd8f2db37571c1c8
+  MIT, Copyright (c) 2026 Fortytwo (LICENSE)
+
+What was rewritten: the Hermes plugin in that repository (plugin.yaml and
+__init__.py), which registered one provider profile with Hermes - the base
+https://api.fortytwo.network/v1, the chat-completions wire, the model
+qwen/qwen3.8-27b with text and image input, streaming, tool calls, reasoning
+and a 262,144-token context window, two attribution headers (HTTP-Referer and
+X-Title), and a table that rounded Hermes's wider reasoning-effort ladder down
+onto Fortytwo's own four rungs. Here that becomes a Nodecode provider cell: a
+catalog row naming Fortytwo, its base and its one model; a credential hook
+that reads FORTYTWO_API_KEY and no other variable; one advice on the request
+body that rounds a wider effort rung down and leaves an unset one out; and one
+advice on the shared streaming walk that appends the same attribution
+headers. X-Title names Nodecode, the application this round runs in, where the
+original named Hermes.
+
+What was left out: Hermes's provider-profile API itself (a Nodecode cell
+declares the same facts as a catalog row instead), the `signup_url` the
+profile carried (the cell's setup guide names the platform's key page), and the
+plugin's unit test, whose two cases are the ladder table and the capability
+row this cell's own tests cover. No line of the original's code is bundled or
+run: the plugin's Python is not a dependency of this folder, which is Common
+Lisp against the Nodecode core alone.
