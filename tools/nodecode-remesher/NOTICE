@@ -1,0 +1,40 @@
+nodecode-remesher is a rewrite of remesher's remesher/remesher:
+
+  https://github.com/remesher/remesher
+  commit 5f48a067722e10f0c08d368698fc03b05855bb89
+  Apache-2.0, the repository's LICENSE unchanged (the plugin manifest names its
+  author as Remesher)
+  The plugin folder rewritten is integrations/hermes.
+
+Rewritten: the plugin's four model-facing tools — remesher_health,
+remesher_generate, remesher_job and remesher_assets — with their arguments
+and answer shapes; the job receipt that outlives one call (queued, running,
+succeeded, failed, timed_out, interrupted), kept as one JSON state file per
+job under the profile's home; the one-active-job rule; the per-call deadline
+of 1 to 1800 seconds, enforced by the bounded runner that kills the whole
+process group; the artifact manifest with its SHA-256 and the GLB
+header-and-length check, re-read and rehashed so a receipt whose files are
+gone, changed or unreadable answers integrity_error instead of an artifact;
+the environment scrub that keeps activation scripts, provider keys and
+ambient CUDA/HF/Torch variables out of the child; and the three backends —
+comfy3d passed through the CLI's config and workflow, native against a
+numeric-loopback server, native-local with the CLI's own python and checkout
+— with the loopback-origin check on the server setting. The Python
+(subprocess, threading, hashlib) is Common Lisp here: nlk:run-bounded starts
+the CLI, one section declaration for the settings, four nlk:define-contract
+declarations for the tools' arguments, and nlk:sha256-text for the manifest.
+
+Left out: the detached supervisor. The plugin forks a second interpreter per
+job that survives the harness, consumes only queued receipts and holds the
+deadline itself; here the job runs on a thread of the same image, so a
+Nodecode that exits mid-job leaves a receipt saying running which a later
+read reports as it stands, and the remote ComfyUI run is not cancelled by the
+local deadline either way — the same caveat the original states. Also left
+out, for scope rather than trouble: the native preset resolved into explicit
+flags here becomes the CLI's own --native-preset, the per-call arguments the
+original offers for native shape, atlas, camera angle and mesh repair
+(remesher_generate keeps image, timeout_seconds, target_face_num and
+native_preset), the REMESHER_SETTINGS file and REMESHER_* environment
+settings (the config section is the one authority), the per-job native setup
+snapshot, and the setup skill's walk through the CLI's native-setup
+plan/check/apply — the README documents that step instead.

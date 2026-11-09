@@ -1,0 +1,23 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "remesher": {
+    "enabled": true,
+    // the Remesher CLI you installed; the cell installs nothing
+    "cli": "/opt/remesher/.venv/bin/comfy-prompt-cli",
+    // comfy3d | native | native-local
+    "backend": "comfy3d",
+    // comfy3d: the CLI's config.json and the Comfy3D workflow it submits
+    "config": "/opt/remesher/config.json",
+    "workflow": "/opt/remesher/workflows/comfy3d.json",
+    // native: a numeric loopback origin only
+    "native_server": "http://127.0.0.1:8188",
+    "native_model": "trellis2",
+    // native-local: the checkout's own interpreter, and the directory with main.py
+    "native_python": "/opt/trellis/.venv/bin/python",
+    "native_checkout": "/opt/trellis",
+    "native_device": "cuda"
+  }
+}
