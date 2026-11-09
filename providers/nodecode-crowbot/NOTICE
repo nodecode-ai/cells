@@ -1,0 +1,20 @@
+nodecode-crowbot is a rewrite of AgileIndustrialComplex's AgileIndustrialComplex/hermes-crowbot:
+https://github.com/AgileIndustrialComplex/hermes-crowbot
+commit 47975dce1bf2eadce761941be094934413279502
+MIT, Copyright (c) 2026 Adam Jedrzejewski (LICENSE)
+
+Rewritten for Nodecode: the provider profile (its id, display name, base URL,
+key variables, signup page and fallback model list), its rule that a
+reasoning model is offered the relay's whole OpenAI-compatible wire vocabulary
+rather than a per-model subset, and its rule that a round nobody set an effort
+on is sent medium instead of inheriting the relay's ceiling - here the
+section's `default_effort`, which an operator may move or set to "endpoint".
+The model list is read on demand by the `/crowbot` command rather than at
+load: GET /models names ids only, so each one is offered with the section's
+context window and the whole ladder, and nothing is cached across keys beyond
+the one last read. Left out: the Hermes ProviderProfile class and the
+reasoning-config object it answers, whose `enabled`/`effort` pair Nodecode
+spells as the effort rung itself (`off` or a rung); the provider aliases,
+because Nodecode's picker reads one provider id; and the legacy
+`HERMES_CUSTOM_API_CROWBOT_SH_API_KEY` variable, which is still read here so
+an existing install keeps working.
