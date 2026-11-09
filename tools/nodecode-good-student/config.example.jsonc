@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "good-student": {
+    "enabled": true,
+    "data_dir": "",         // empty: this home's good-student folder
+    "pass_percent": 80,     // the accuracy an independent reassessment must reach
+    "review_days": 14,      // how long a mastered knowledge point stands
+    "candidate_hours": 24   // how long an unconfirmed candidate waits
+  }
+}
