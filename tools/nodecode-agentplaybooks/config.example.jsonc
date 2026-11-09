@@ -1,15 +1,36 @@
 // The section ~/.nodecode/config.jsonc may carry for this cell --
-// documentation, not config: the folder gets pushed and holds no secret.
-// The declaration in cell.lisp is the authority. A present section is
-// enabled; "enabled": false vetoes it.
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. Secrets never belong here: the CLI keeps its own login, and a
+// playbook key lives in the environment the target profile runs with.
 {
   "agentplaybooks": {
-    "playbook_guid": "the private playbook's GUID, from its AgentPlaybooks URL",
-    "api_key_env": "AGENTPLAYBOOKS_MEMORY_API_KEY",  // the variable holding the key, or "api_key" inline
-    "base_url": "https://agentplaybooks.ai",          // http:// only for a local instance
-    "shared_playbooks": [],                           // read-only GUIDs, each with AGENTPLAYBOOKS_SHARED_<GUID>_API_KEY
-    "team_playbooks": [],                             // writable team GUIDs, each with AGENTPLAYBOOKS_TEAM_<GUID>_API_KEY
-    "recall": true,                                    // search memory before each model request
-    "timeout_seconds": 15
+    "enabled": true,
+
+    // The guid of the playbook you work with. Required: the tools use it
+    // whenever a call names no playbook of its own.
+    "playbook": "",
+
+    // The AgentPlaybooks CLI executable, found on PATH
+    // (npm install -g @agentplaybooks/cli, Node.js 20 or later).
+    "binary": "apb",
+
+    // The harness the CLI writes for: `apb TARGET setup` and --target=TARGET.
+    "target": "hermes",
+
+    // The profile the CLI writes, as --profile=NAME. Empty: its default.
+    "profile": "",
+
+    // The installation directory the CLI writes into, as --hermes-home=DIR.
+    // Empty: its default.
+    "hermes_home": "",
+
+    // The project the CLI runs in. Empty: the asking session's directory.
+    "directory": "",
+
+    // Seconds one CLI call may take before its whole process tree is killed.
+    "timeout": 180,
+
+    // How much of one answer the model is given, in characters.
+    "max_chars": 20000
   }
 }

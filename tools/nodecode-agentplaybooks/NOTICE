@@ -2,29 +2,16 @@ nodecode-agentplaybooks is a rewrite of matebenyovszky's matebenyovszky/agentpla
 
   https://github.com/matebenyovszky/agentplaybooks
   commit f31e9c3af6520cebda1c0712447b4b487ffc12a7
-  MIT, Copyright (c) 2026 Máté Benyovszky (LICENSE)
+  MIT, Copyright (c) 2026 AgentPlaybooks (LICENSE)
 
-The rewritten plugin is packages/hermes-memory/agentplaybooks of that
-commit. Its six tools keep their names, descriptions and parameters
-(apb_memory_search, apb_memory_read, apb_memory_write, apb_memory_archive,
-apb_memory_delete, apb_memory_history); its wire keeps its shapes (GET
-/api/playbooks/<guid>/memory with search=, key= and history_key=; PUT and
-DELETE on /api/playbooks/<guid>/memory/<key>; X-API-Key; the anonymous
-metadata GET that a private playbook answers 404 to); and its behaviour is
-carried over: the fail-closed visibility check before every write, the
-visibility and URL rules (https only, http only on localhost, no credentials
-or query in the base URL, the GUID validated as hex), the tier set, the
-provenance a write carries, the archive that preserves value and memory time,
-the read-only shared playbooks and writable team playbooks each with their
-own key, and the bounded recall (four keywords, eight playbooks, four
-seconds, eight records, 8,000 characters) whose result is injected as
-reference data.
-
-What was left out, and why: mirroring of the harness's own memory files,
-because Hermes's MEMORY.md and USER.md have no Nodecode twin to mirror;
-the primary-agent write gate and the session-switch/author bookkeeping of a
-gateway's participants, which a Nodecode session does not have; and the
-plugin's hermes memory setup/status commands, whose answers the section,
-/settings and /agentplaybooks give. The recall runs as one sequential pass
-under the same four-second budget instead of the plugin's four workers.
-LICENSE is the plugin folder's LICENSE, unchanged.
+The original is one Hermes Agent plugin folder -- plugin.json, a README and the
+skills/agentplaybooks-tools/SKILL.md prose skill -- holding no code of its own.
+This rewrite keeps that skill's guidance as its (help :agentplaybooks) topic and
+turns the commands the skill asks a host agent to type by hand into four tools
+(apb_doctor, apb_setup, apb_connect, apb_project) and a /apb command, so the
+cell builds the argv, keeps the profile selection on every call, defaults to a
+preview and writes nothing without apply. It shells out to the same
+AgentPlaybooks CLI, which the user installs themselves; the JSON manifest, the
+README and the skill's frontmatter are prose with nothing to run, so they are
+not carried. The CLI's own behaviour -- the writes into a harness profile and
+the hosted calls -- stays in the CLI, exactly as in the original.

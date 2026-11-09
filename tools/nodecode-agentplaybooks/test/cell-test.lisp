@@ -1,232 +1,164 @@
-;;;; cell-test.lisp --- lifecycle, the six tools, /agentplaybooks, and the recall.
+;;;; cell-test.lisp --- the agentplaybooks cell against its own seams.
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
-;;;; What is proved here is the cell's own wiring: the section (a healthy
-;;;; start, a wrong GUID, a non-https address and an integer under its floor
-;;;; refused, a start with no key refused), the six tools through the seam the
-;;;; model calls them by -- their URL, their headers, their body and their
-;;;; answer -- /agentplaybooks with and without a query, the visibility check
-;;;; that refuses a write to a playbook anyone may read, and the bounded block
-;;;; a round carries. Every request is a stubbed NLK:HTTP, so nothing reaches
-;;;; AgentPlaybooks or the network.
+;;;; Every apb call is stubbed: RUN-CLI answers a scripted text and every call
+;;;; is recorded, so nothing spawns a process, reads a project or reaches
+;;;; agentplaybooks.ai.
 
 (in-package #:nodecode.test)
 
-;;; --- fixtures -----------------------------------------------------------------
+(define-test-slice "agentplaybooks" "AGENTPLAYBOOKS-CELL-"
+  :start nodecode-agentplaybooks:start-cell)
 
-(defparameter +guid+ "4c1f9a2b-3d4e-4f60-8a71-9b2c3d4e5f60"
-  "The playbook every test but the refusals runs against.")
+(defparameter +playbook+ "3f6a1c2e-0000-4000-8000-00000000cafe"
+  "The guid every test names, standing in for the operator's own.")
 
-(defvar *requests* '()
-  "Every stubbed request of the test, (METHOD URL . ARGS), newest first.")
+(defvar *calls* '()
+  "Every (ARGV DIRECTORY SECONDS) a stubbed RUN-CLI was handed this test, newest first.")
 
-(defvar *answer-fn* nil
-  "What the stubbed NLK:HTTP answers: a function of METHOD, URL, ARGS => (values TEXT STATUS).")
-
-(defmacro with-apb-wire (&body body)
-  "BODY with NLK:HTTP stubbed: a request is logged in *REQUESTS* and answered
-by *ANSWER-FN*, so no test dials AgentPlaybooks."
-  `(let ((*requests* '())
-         (*answer-fn* (lambda (method url args)
-                        (declare (ignore method url args))
-                        (error "unexpected AgentPlaybooks request"))))
-     (with-stubbed-fdefinition (nlk:http (method url &rest args)
-                                (push (list* method url args) *requests*)
-                                (funcall *answer-fn* method url args))
+(defmacro with-cli ((answer) &body body)
+  "BODY with RUN-CLI stubbed: ANSWER, a form with ARGV bound, answers
+ (values OUT ERR STATUS) and every call is recorded in *CALLS*."
+  `(let ((*calls* '()))
+     (with-stubbed-fdefinition (nodecode-agentplaybooks::run-cli (argv &key directory seconds)
+                                  (push (list argv directory seconds) *calls*)
+                                  ,answer)
        ,@body)))
 
-(defun apb-asked ()
-  "The stubbed requests, oldest first."
-  (reverse *requests*))
+(defmacro with-apb-cli (&body body)
+  "BODY with the version probe and every other call answered: the fixture that
+ lets the cell start without the CLI on the machine."
+  `(with-cli ((if (member "--version" argv :test #'equal)
+                  (values (format nil "~a 0.7.0" (first argv)) "" 0)
+                  (values "plan: 2 files, 1 profile member" "" 0)))
+     ,@body))
 
-(defun apb-request-body (request)
-  "REQUEST's JSON body, decoded."
-  (nlk:decode-json (getf (cddr request) :content)))
+(defun argv-is (&rest expected)
+  "Whether the newest stubbed call was made with EXPECTED, in order."
+  (equal expected (first (first *calls*))))
 
-(defun apb-request-header (request name)
-  "REQUEST's header NAME, case-insensitively."
-  (cdr (assoc name (getf (cddr request) :headers) :test #'string-equal)))
+(defun doctor-op (&rest pairs)
+  "A DOCTOR-QUERY from PAIRS."
+  (nodecode-agentplaybooks:decode-doctor-query (apply #'nlk:make-json-object pairs)))
 
-(defun apb-answer (text &optional (status 200))
-  (setf *answer-fn* (lambda (method url args)
-                      (declare (ignore method url args))
-                      (values text status))))
+(defun setup-op (&rest pairs)
+  "A SETUP-QUERY from PAIRS."
+  (nodecode-agentplaybooks:decode-setup-query (apply #'nlk:make-json-object pairs)))
 
-(defun apb-tool (name arguments)
-  "Run the registered tool NAME with the JSON object ARGUMENTS, as dispatch does."
-  (let ((entry (nle::find-tool name)))
-    (assert entry () "no tool named ~a" name)
-    (funcall (third entry) arguments)))
+(defun connect-op (&rest pairs)
+  "A CONNECT-QUERY from PAIRS."
+  (nodecode-agentplaybooks:decode-connect-query (apply #'nlk:make-json-object pairs)))
 
-(defun apb-start (&rest pairs)
-  "The cell started against the test playbook, with PAIRS over it."
-  (apply #'agentplaybooks-start
-         (append (list "playbook_guid" +guid+ "api_key" "k-test" "base_url" "https://apb.test")
-                 pairs)))
+(defun project-op (&rest pairs)
+  "A PROJECT-QUERY from PAIRS."
+  (nodecode-agentplaybooks:decode-project-query (apply #'nlk:make-json-object pairs)))
 
-;;; --- lifecycle ----------------------------------------------------------------
-
-(define-test-slice "agentplaybooks" "AGENTPLAYBOOKS-CELL-" :start nodecode-agentplaybooks:start-cell)
+;;; --- the cell's own life ---------------------------------------------------
 
 (define-cell-lifecycle-tests "agentplaybooks"
-  (:fixture with-apb-wire)
-  (:config "playbook_guid" +guid+ "api_key" "k-test" "base_url" "https://apb.test")
-  (:hooks :round)
+  (:fixture with-apb-cli)
+  (:config "playbook" "3f6a1c2e-0000-4000-8000-00000000cafe")
   (:help :agentplaybooks)
-  (:command "agentplaybooks")
-  (:running (is (nle::find-tool "apb_memory_search") "apb_memory_search is registered")
-            (is (nle::find-tool "apb_memory_read"))
-            (is (nle::find-tool "apb_memory_write"))
-            (is (nle::find-tool "apb_memory_archive"))
-            (is (nle::find-tool "apb_memory_delete"))
-            (is (nle::find-tool "apb_memory_history"))
-            (is (equal "https://apb.test" (nodecode-agentplaybooks::root)))
-            (is (equal +guid+ (nodecode-agentplaybooks::source-guid
-                                nodecode-agentplaybooks::*personal*)) "the personal playbook")
-            (is (= 1 (length nodecode-agentplaybooks::*sources*)) "and no other source")
-            (is (= 15 (nodecode-agentplaybooks::setting :timeout-seconds))))
-  (:stopped (is (null (nle::find-tool "apb_memory_search")) "stop unregisters the tools")
-            (is (null nodecode-agentplaybooks::*sources*) "and forgets the playbooks")
-            (is (null nodecode-agentplaybooks::*personal*)))
-  (:refused ("playbook_guid" +guid+)
-            ("playbook_guid" "not-a-guid" "api_key" "k-test")
-            ("playbook_guid" +guid+ "api_key" "k-test" "base_url" "http://agentplaybooks.example")
-            ("playbook_guid" +guid+ "api_key" "k-test" "timeout_seconds" 0))
-  (:idle nodecode-agentplaybooks:agentplaybooks-error
-         (nodecode-agentplaybooks::run-command "" nil)))
+  (:command "apb")
+  (:running
+   (is (equal "apb" (nodecode-agentplaybooks::setting :binary)) "the default CLI")
+   (is (equal "hermes" (nodecode-agentplaybooks::setting :target)) "the documented target")
+   (is (equal 180 (nodecode-agentplaybooks::setting :timeout)) "the default bound"))
+  (:refused ("playbook" "") ("timeout" 1)))
 
-(deftest agentplaybooks-cell-a-keyless-section-is-refused ()
-  (with-apb-wire
-    (with-stubbed-fdefinition (uiop:getenv (name) nil)
-      (is-carrying (answer (refusal-text nlk:config-refusal (agentplaybooks-start "playbook_guid" +guid+)))
-                   ("needs a playbook-scoped memory key") ("AGENTPLAYBOOKS_MEMORY_API_KEY"))
-      (is (null (nle::find-tool "apb_memory_search")) "a refused start installed nothing"))))
+(deftest agentplaybooks-cell-a-section-without-a-playbook-is-a-refusal ()
+  ;; The section is present and enabled but names no playbook: the one
+  ;; setting the tools cannot invent.
+  (let ((section (nlk:json-object "agentplaybooks" (nlk:make-json-object "enabled" t))))
+    (is (signals-error nlk:config-refusal (nodecode-agentplaybooks:start-cell section)) "refused"))
+  (is (null nodecode-agentplaybooks::*agentplaybooks*) "and leaves no settings behind"))
 
-;;; --- the tools ------------------------------------------------------------------
+;;; --- apb_doctor ------------------------------------------------------------
 
-(deftest agentplaybooks-cell-search-answers-what-the-playbook-holds ()
-  (with-apb-wire
-    (with-cell-stop ((apb-start))
-      (apb-answer "[{\"key\":\"notes.tea\",\"value\":\"drinks green tea\",\"tier\":\"longterm\",\"summary\":\"what the operator drinks\"},{\"key\":\"notes.oslo\",\"value\":\"lives in Oslo\"}]")
-      (let ((answer (apb-tool "apb_memory_search" (nlk:json-object "query" "tea" "limit" 3))))
-        (is (search "2 found for \"tea\"" answer))
-        (is (search "notes.tea [longterm] — what the operator drinks" answer))
-        (is (search "notes.oslo" answer)))
-      (let ((request (first (apb-asked))))
-        (is (= 1 (length (apb-asked))) "one request")
-        (is (eq :get (first request)))
-        (is (equal (format nil "https://apb.test/api/playbooks/~a/memory?search=tea&limit=3&offset=0" +guid+)
-                   (second request)))
-        (is (equal "k-test" (apb-request-header request "x-api-key")))
-        (is (equal "application/json" (apb-request-header request "accept"))))
-      (apb-answer "[]")
-      (is (equal "No memory matched \"nothing\"."
-                 (apb-tool "apb_memory_search" (nlk:json-object "query" "nothing")))))))
+(deftest agentplaybooks-cell-doctor-probes-then-checks ()
+  (with-cli ((if (member "--version" argv :test #'equal)
+                  (values "apb 0.7.0" "" 0)
+                  (values "ok: node 20, writable, key present" "" 0)))
+    (with-cell-stop ((agentplaybooks-start "playbook" +playbook+))
+      (let ((answer (nodecode-agentplaybooks:apb-doctor (doctor-op))))
+        (is (search "apb 0.7.0" answer) "the CLI's version is answered first")
+        (is (search "writable" answer) "and the preflight's own words"))
+      (is (argv-is "apb" "hermes" "doctor" +playbook+ ".") "the playbook and the project")
+      (nodecode-agentplaybooks:apb-doctor (doctor-op "check" t "playbook" "other-guid"))
+      (is (argv-is "apb" "hermes" "doctor" "other-guid" "." "--check") "check comes last"))))
 
-(deftest agentplaybooks-cell-a-failed-answer-is-a-repair-not-a-crash ()
-  (with-apb-wire
-    (with-cell-stop ((apb-start))
-      (apb-answer "{\"message\":\"Invalid API key\"}" 401)
-      (is-carrying (answer (apb-tool "apb_memory_search" (nlk:json-object "query" "x")))
-                   ("ERROR: agentplaybooks:") ("HTTP 401") ("Invalid API key")))))
+(deftest agentplaybooks-cell-a-missing-cli-is-the-prerequisite ()
+  (with-cli ((error "run-program: apb: No such file or directory"))
+    (with-cell-stop ((agentplaybooks-start "playbook" +playbook+))
+      (let ((answer (nodecode-agentplaybooks:apb-doctor (doctor-op))))
+        (is (search "could not be started" answer) "the tool says so, quietly")
+        (is (search "@agentplaybooks/cli" answer) "and names the package to install")))))
 
-(deftest agentplaybooks-cell-a-write-checks-visibility-first ()
-  (with-apb-wire
-    (with-cell-stop ((apb-start))
-      (setf *answer-fn*
-            (lambda (method url args)
-              (declare (ignore args))
-              (cond ((equal (format nil "https://apb.test/api/playbooks/~a" +guid+) url)
-                     (values "" 404))
-                    ((eq :put method) (values "{}" 200))
-                    (t (values "[]" 200)))))
-      (is (equal "Stored notes.deploy in personal memory; earlier contents stay in its history."
-                 (apb-tool "apb_memory_write"
-                           (nlk:json-object "key" "notes.deploy" "tier" "longterm"
-                                            "summary" "how a deploy runs"
-                                            "value" (nlk:json-object "steps" (vector "build" "ship"))))))
-      (let ((asked (apb-asked)))
-        (is (= 4 (length asked)) "visibility, the key check, the old entry, the write")
-        (is (search (format nil "/api/playbooks/~a" +guid+) (second (first asked))))
-        (is (null (apb-request-header (first asked) "x-api-key")) "the metadata read is anonymous")
-        (is (eq :put (first (car (last asked))))))
-      (let* ((put (car (last (apb-asked))))
-             (body (apb-request-body put)))
-        (is (equal (format nil "https://apb.test/api/playbooks/~a/memory/notes.deploy" +guid+)
-                   (second put)))
-        (is (equal "longterm" (nlk:json-value body :string "tier")))
-        (is (equal "how a deploy runs" (nlk:json-value body :string "summary")))
-        (is (equal "build" (aref (nlk:json-value body :array "value" "steps") 0)) "the value is the JSON it was given")
-        (is (equal "nodecode" (nlk:json-value body :string "metadata" "source")))
-        (is (not (nlk:json-value body :boolean "is_archived"))))
-      ;; a playbook anyone may read is refused, and nothing is written
-      (setf *requests* '())
-      (apb-answer "{\"name\":\"a public playbook\"}")
-      (is-carrying (answer (apb-tool "apb_memory_write"
-                                      (nlk:json-object "key" "notes.tea" "value" "oolong")))
-                   ("private playbook"))
-      (is (null (find :put (apb-asked) :key #'first)) "only the visibility read happened"))))
+;;; --- apb_setup -------------------------------------------------------------
 
-(deftest agentplaybooks-cell-read-archive-delete-and-history ()
-  (with-apb-wire
-    (with-cell-stop ((apb-start))
-      (setf *answer-fn*
-            (lambda (method url args)
-              (declare (ignore args))
-              (cond ((equal (format nil "https://apb.test/api/playbooks/~a" +guid+) url)
-                     (values "" 404))
-                    ((search "history_key=" url)
-                     (values "[{\"key\":\"notes.tea\",\"history_id\":\"h1\",\"value\":\"oolong\",\"summary\":\"before the correction\"}]" 200))
-                    ((search "/memory/notes.tea" url)
-                     (case method
-                       (:get (values "[{\"key\":\"notes.tea\",\"value\":\"green\",\"tier\":\"longterm\",\"summary\":\"what the operator drinks\",\"memory_at\":\"2026-01-02T00:00:00Z\"}]" 200))
-                       (:put (values "{}" 200))
-                       (:delete (values "{}" 200))))
-                    (t (values "[]" 200)))))
-      (let ((answer (apb-tool "apb_memory_read" (nlk:json-object "key" "notes.tea"))))
-        (is (search "key: notes.tea" answer))
-        (is (search "value: green" answer))
-        (is (search "memory_at: 2026-01-02T00:00:00Z" answer)))
-      (is (search "1 earlier version of notes.tea" (apb-tool "apb_memory_history" (nlk:json-object "key" "notes.tea"))))
-      (is (search "Archived notes.tea" (apb-tool "apb_memory_archive" (nlk:json-object "key" "notes.tea"))))
-      (let ((put (car (last (apb-asked)))))
-        (is (eq :put (first put)))
-        (is (nlk:json-value (apb-request-body put) :boolean "is_archived") "archived, not deleted")
-        (is (equal "green" (nlk:json-value (apb-request-body put) :string "value")) "the content is kept")
-        (is (equal "2026-01-02T00:00:00Z" (nlk:json-value (apb-request-body put) :string "memory_at")) "and its memory time"))
-      (is (search "Deleted notes.tea" (apb-tool "apb_memory_delete" (nlk:json-object "key" "notes.tea"))))
-      (is (eq :delete (first (car (last (apb-asked)))))))))
+(deftest agentplaybooks-cell-setup-previews-then-applies ()
+  (with-apb-cli
+    (with-cell-stop ((agentplaybooks-start "playbook" +playbook+ "profile" "work"))
+      (let ((preview (nodecode-agentplaybooks:apb-setup (setup-op))))
+        (is (search "plan: 2 files" preview) "the plan the CLI printed")
+        (is (search "preview only" preview) "and that it wrote nothing"))
+      (is (argv-is "apb" "hermes" "setup" +playbook+ "." "--profile=work") "the selection rides")
+      (nodecode-agentplaybooks:apb-setup (setup-op "tools_only" t "apply" t))
+      (is (argv-is "apb" "hermes" "setup" +playbook+ "." "--profile=work" "--tools-only" "--apply") "apply is last")
+      (let ((applied (nodecode-agentplaybooks:apb-setup (setup-op "apply" t))))
+        (is (null (search "preview only" applied)) "an applied call says no such thing")))))
 
-;;; --- /agentplaybooks ---------------------------------------------------------------
+;;; --- apb_connect -----------------------------------------------------------
 
-(deftest agentplaybooks-cell-the-command-shows-the-playbook-or-searches-it ()
-  (with-apb-wire
-    (with-cell-stop ((apb-start))
-      (let ((answer (cell-entry "nodecode-agentplaybooks" "agentplaybooks" "")))
-        (is (search (format nil "private playbook ~a at https://apb.test" +guid+) answer))
-        (is (search "/agentplaybooks QUERY searches" answer))
-        (is (null (apb-asked)) "a status read asks the service nothing"))
-      (apb-answer "[{\"key\":\"notes.tea\",\"value\":\"green\"}]")
-      (is (search "notes.tea" (cell-entry "nodecode-agentplaybooks" "agentplaybooks" "tea")))
-      (is (equal (format nil "/api/playbooks/~a/memory?search=tea&limit=20" +guid+)
-                 (let ((url (second (first (apb-asked)))))
-                   (subseq url (length "https://apb.test"))))))))
+(deftest agentplaybooks-cell-connect-is-scoped-or-account-wide ()
+  (with-apb-cli
+    (with-cell-stop ((agentplaybooks-start "playbook" +playbook+))
+      (nodecode-agentplaybooks:apb-connect (connect-op))
+      (is (argv-is "apb" "connect" +playbook+ "--target=hermes") "one playbook, one target")
+      (nodecode-agentplaybooks:apb-connect (connect-op "account" t "apply" t))
+      (is (argv-is "apb" "connect" "--account" "--target=hermes" "--apply") "account-wide"))))
 
-;;; --- the recall --------------------------------------------------------------------
+;;; --- apb_project -----------------------------------------------------------
 
-(deftest agentplaybooks-cell-the-recall-is-bounded-and-framed ()
-  (with-apb-wire
-    (with-cell-stop ((apb-start))
-      (setf *answer-fn*
-            (lambda (method url args)
-              (declare (ignore method args))
-              (cond ((search "search=deploy" url)
-                     (values "[{\"key\":\"notes.deploy\",\"value\":\"the deploy runs on fridays\",\"summary\":\"deploy day\"},{\"key\":\"notes.old\",\"value\":\"deploy\",\"is_archived\":true}]" 200))
-                    (t (values "[]" 200)))))
-      (let ((block (nodecode-agentplaybooks::recall-block "when is the deploy window?")))
-        (is (search "AgentPlaybooks recalled memory" block) "the block says what it is")
-        (is (search "notes.deploy — deploy day" block))
-        (is (null (search "notes.old" block)) "an archived entry is not injected"))
-      (is (null (nodecode-agentplaybooks::recall-block "a is of the")) "a query of stop words recalls nothing")
-      (is (null (nodecode-agentplaybooks::recall-block "nothing matches this")) "and so does a miss"))))
+(deftest agentplaybooks-cell-project-pulls-syncs-and-pushes ()
+  (with-apb-cli
+    (with-cell-stop ((agentplaybooks-start "playbook" +playbook+))
+      (nodecode-agentplaybooks:apb-project (project-op "command" "pull"))
+      (is (argv-is "apb" "pull" +playbook+ ".") "pull takes the playbook and the project")
+      (nodecode-agentplaybooks:apb-project (project-op "command" "sync" "apply" t))
+      (is (argv-is "apb" "sync" "." "--target=hermes" "--apply") "sync registers into the target")
+      (nodecode-agentplaybooks:apb-project (project-op "command" "push"))
+      (is (argv-is "apb" "push" ".") "push uploads the project, never its secrets"))))
+
+(deftest agentplaybooks-cell-a-command-outside-the-set-refuses ()
+  (let ((decoded (lambda (&rest pairs)
+                   (nodecode-agentplaybooks:decode-project-query
+                    (apply #'nlk:make-json-object pairs)))))
+    (is (signals-error nlk:contract-refusal (funcall decoded "command" "install")) "three verbs")
+    (is (signals-error nlk:contract-refusal (funcall decoded)) "and needs the command")))
+
+;;; --- /apb and the bound ----------------------------------------------------
+
+(deftest agentplaybooks-cell-command-probes-then-runs-apb ()
+  (with-apb-cli
+    (with-cell-stop ((agentplaybooks-start "playbook" +playbook+))
+      (let ((status (nodecode-agentplaybooks::run-command "" "s1")))
+        (is (search "apb: apb 0.7.0" status) "the CLI's version")
+        (is (search "apb_doctor" status) "and the tools' names"))
+      (let ((answer (nodecode-agentplaybooks::run-command "login" "s1")))
+        (is (search "plan: 2 files" answer) "typed arguments go to the CLI itself"))
+      (is (argv-is "apb" "login") "one argv, no shell in between"))))
+
+(deftest agentplaybooks-cell-a-failing-cli-keeps-its-status ()
+  (with-cli ((values "" "playbook key rejected" 2))
+    (with-cell-stop ((agentplaybooks-start "playbook" +playbook+))
+      (let ((answer (nodecode-agentplaybooks:apb-setup (setup-op "apply" t))))
+        (is (search "exited 2" answer) "the status is the verdict")
+        (is (search "playbook key rejected" answer) "and stderr is not swallowed")))))
+
+(deftest agentplaybooks-cell-a-loud-plan-is-cut ()
+  (with-cli ((values (make-string 4000 :initial-element #\x) "" 0))
+    (with-cell-stop ((agentplaybooks-start "playbook" +playbook+ "max_chars" 1000))
+      (let ((answer (nodecode-agentplaybooks:apb-connect (connect-op "apply" t))))
+        (is (search "[cut at 1000 of 4000 characters]" answer) "the cut says where")))))
