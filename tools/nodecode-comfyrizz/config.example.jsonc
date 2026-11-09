@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "comfyrizz": {
+    "enabled": true,
+    "engine_url": "http://127.0.0.1:4319",
+    // the loopback URL of the running Comfyrizz engine; 127.0.0.1,
+    // localhost and ::1 are the only hosts it may name
+    "token_env": "COMFYRIZZ_TOKEN",
+    // the environment variable holding the engine's token, when it asks for
+    // one; leave it out when it does not
+    "timeout_seconds": 120,
+    // one engine request's ceiling; a brief proposal may take a minute
+    "answer_chars": 6000
+    // how much of an engine answer one tool result carries
+  }
+}
