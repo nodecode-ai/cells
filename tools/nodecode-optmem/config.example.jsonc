@@ -1,0 +1,17 @@
+{
+  // The OptMem cell's section of ~/.nodecode/config.jsonc. Every member is
+  // optional: with none of them the store is ~/.nodecode/optmem/ and reads
+  // with a 96-line digest.
+  "optmem": {
+    // The folder holding LOG.txt and TREE/. Empty means <home>/optmem/.
+    "store": "",
+    // How optmem_recall searches by default: "auto" keeps the regex for
+    // patterns and routes prose to token search; "regex" and "bm25" force one.
+    "recall_mode": "auto",
+    // How much the digest every request carries prints. Smaller means older
+    // memories arrive compressed sooner.
+    "wake_lines": 96,
+    // Compress one pending block every ten finished turns, with no model call.
+    "auto_nap": false
+  }
+}

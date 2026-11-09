@@ -1,0 +1,31 @@
+nodecode-optmem is a rewrite of rarf's rarf/optmem-hermes-plugin:
+
+  https://github.com/rarf/optmem-hermes-plugin
+  commit 2868af6620bf07958f833ca354fbeecf2a56b265
+  MIT, Copyright (c) 2026 OptMem Hermes Plugin contributors (LICENSE)
+
+What was rewritten: the plugin's memory engine, as Common Lisp in engine.lisp
+and cell.lisp — the store's fixed-width on-disk format (LOG.txt records of
+320 bytes, TREE/<size> summaries of 288 bytes, in the layout Victor Taelin's
+`memo` tool and this plugin share), the binary decay tree and its cover, the
+naps that write one-line compressions, the wake digest with its completeness
+report, the regex / BM25 / auto recall modes with accent folding and the
+literal-substring fallback, the per-store size knobs, the model-facing import
+of dated lines, and the deterministic local summarizer. The eight tools keep
+their names, descriptions, parameters and JSON answers (optmem_note,
+optmem_recall, optmem_wake, optmem_nap, optmem_zoom, optmem_forget,
+optmem_config, optmem_import), and the words the model is given about them
+keep the original's warnings: one atomic fact a line, compress when asked,
+never edit the store by hand.
+
+What was left out, and why: the optional LLM summary through the host's
+auxiliary task (the local extractor is the original's default path and needs
+no model, no key and no egress, which is what a cell with no provider of its
+own can promise); the Hermes CLI verbs (status, migrate, mode, rollback,
+check, init) — the cell's config section, /optmem and the tools give the
+same surface, and a cell has no command line of its own; the Hybrid versus
+OptMem-only mode switch that rewrites a host's config.yaml after migrating
+native MEMORY.md files, which is Hermes's memory layout and not Nodecode's;
+and the optmem_init tool, because the store is created when the cell starts.
+The Python package, its tests and its Desktop config-panel schema are not
+carried over; the rewrite is Lisp against Nodecode's cell contract.
