@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key itself lives in auth.json (/connect) or IMPOSSIBL_API_KEY.
+{
+  "impossibl": {
+    "enabled": true,
+
+    // Where Impossibl is served. The chat lane appends /chat/completions.
+    "base_url": "https://api.impossibl.com/v1",
+
+    // A turn always offers tools, so only the models the catalogue routes
+    // through /v1/chat/completions that take tool calls are listed. false
+    // lists every model it serves.
+    "chat_only": true,
+
+    // One catalogue read's ceiling, in seconds.
+    "timeout_seconds": 8
+  }
+}
