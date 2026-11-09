@@ -1,0 +1,18 @@
+{
+  // The degeneracy guard asks before a tool call whose argument looks like a
+  // repetition loop, records what it saw under the Nodecode home, and says
+  // when a session has grown long. No key: nothing leaves the machine.
+  "degeneracy-guard": {
+    // ask: the person at the page answers Allow once or Deny, and no answer
+    // refuses; refuse: such a call never runs; warn: it runs, and is recorded.
+    "mode": "ask",
+    // Tools never judged, as they are called. degeneracy_check is always exempt.
+    "allow_tools": [],
+    // How long a question waits for an answer, in seconds.
+    "ask_seconds": 120,
+    // How many incident files to keep, newest first.
+    "incidents": 200,
+    // Model requests in one session before the long-session notice; 0 never.
+    "max_rounds": 500
+  }
+}
