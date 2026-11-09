@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "understudy": {
+    "enabled": true,
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "judge_model": "anthropic/claude-sonnet-5",
+    "sample": 8,
+    "days": 14,
+    "timeout_seconds": 120,
+    "budget_usd": "1.50",
+    "prices": ["moonshotai/kimi-k3=0.6/2.5"]
+  }
+}
