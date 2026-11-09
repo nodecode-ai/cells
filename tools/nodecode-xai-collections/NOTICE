@@ -1,0 +1,32 @@
+nodecode-xai-collections is a rewrite of Julientalbot's Julientalbot/hermes-xai:
+
+  https://github.com/Julientalbot/hermes-xai
+  commit 8fd9bf8ecef1f8e9cb2cb7921fc86527acd9ede3
+  MIT, Copyright (c) 2026 Julien Talbot (LICENSE)
+
+The rewritten part is that plugin's collections module: the
+xai_collections_search tool in __init__.py, with its name, its description
+and its five parameters, over hermes_xai/collections_search.py. The two REST
+calls are the original's and go to the same origin — GET
+https://api.x.ai/v1/collections and POST https://api.x.ai/v1/documents/search
+with Authorization: Bearer <key> — as are its behaviour and limits: the
+collection_<uuid> shape a passed id must have, a default of 5 passages and a
+cap of 20, the 2000-character clip on each passage, the fallback from the
+call's ids to the section's default ids to every collection of the team
+(asking the listing first), a passage's title read from fields.title and
+falling back to its file_id, and an empty query or a badly shaped id refused
+before any request is made. The key is read from the profile's environment
+(the original reads it through the host's secret scope) and is sent only to
+api.x.ai.
+
+What was left out, and why: the plugin's other half, the Grok Voice module
+(hermes_xai/voice.py, dashboard/plugin_api.py and desktop/plugin.js), is a
+full-duplex WebSocket call driven by a button in Hermes Desktop's composer,
+minting a 300-second client secret from the backend and streaming microphone
+audio to wss://api.x.ai/v1/realtime. That is a desktop window and a realtime
+transport, not a wire a tool cell can carry, so the cell serves the tool and
+a /collections command instead of the voice button. The plugin's own install
+path and settings page are replaced by the cell's config section and
+/settings.
+
+LICENSE is the original repository's LICENSE, unchanged.
