@@ -1,0 +1,23 @@
+nodecode-openalex is a rewrite of Adolanium's Adolanium/hermes-plugin-openalex:
+
+  https://github.com/Adolanium/hermes-plugin-openalex
+  commit d38a1ee2fb04df0f7ad136bd30bff5f2136fe0cd
+  MIT, Copyright (c) 2026 Adolanium (LICENSE)
+
+Rewritten: the ten tools and their argument names, the /openalex command, the
+cost model they are built around (an id lookup is free, a list call $0.0001, a
+search $0.001, a text classification or a full-text download $0.01), the
+per-run spend ledger that refuses a call before it is sent, the server-side
+select lists and the local trimming of records, the inversion of an abstract
+back into prose, cursor paging, the free-then-confirm full-text download, and
+the local field vocabulary. The two skills became one manual topic.
+
+Left out, and why: the Python client's TTL response cache (Nodecode has no
+shared cache for a cell, so a repeated call is simply billed again); the
+`core`/`full` tool profiles, because a cell registers what it declares rather
+than what a config field switches on, so all ten tools are always present and
+only classification is gated; the retry-with-backoff loop, which the original
+needed because it kept one long-lived client and this cell sends one request at
+a time; the `hermes openalex setup` CLI, whose job the section and /settings
+do; and the JSON envelopes, because a Nodecode tool answers text the model can
+read rather than a structure it must parse.
