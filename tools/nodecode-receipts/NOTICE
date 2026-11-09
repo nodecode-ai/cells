@@ -1,0 +1,24 @@
+nodecode-receipts is a rewrite of iket72183-collab's iket72183-collab/hermes-receipts:
+
+  https://github.com/iket72183-collab/hermes-receipts
+  commit ec4894ef57c4d344dd84d2343cf66f5772d4196c
+  MIT, Copyright (c) 2026 BDT Talent Group (LICENSE)
+
+What was rewritten: the four tools (begin, check, get, export) and the
+/receipts command, in Common Lisp against Nodecode's cell contract, with the
+same spec -- one workspace and 1-20 file, test and website checks -- the same
+states (verified, failed, unverified, a later success never overwriting an
+earlier failure), the same criteria digest over the canonical spec, file
+evidence with size and SHA-256, a 1 MiB read cap, a public export that drops
+paths, command lines and raw output, and the JSON and HTML exports.
+
+What was left out, and why: the original captures test evidence by observing
+the harness's own terminal tool calls through pre/post hooks, memoized in
+SQLite. Nodecode has no per-command hook, so a test check runs the command it
+declares here -- bounded by the section's command_timeout and the check's own
+timeout, in its declared workdir -- and the receipt says so. The freshness
+window, the host task/session identity binding, the `hermes receipts` CLI
+subcommands, descriptor-relative symlink-proof reads, DNS-pinned fetching and
+the strict chunk-framing of the HTTP client are left out; the port keeps the
+workspace containment, the scheme/userinfo/local-target url refusal, the read
+cap, the append-only per-attempt files and the disclosures.
