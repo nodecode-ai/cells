@@ -1,0 +1,27 @@
+nodecode-financial-datasets is a rewrite of financial-datasets's financial-datasets/hermes-plugin:
+
+  https://github.com/financial-datasets/hermes-plugin
+  commit 6745cb6261f86895364579d897be2b6067f117f1
+  MIT, Copyright (c) 2026 Financial Datasets, Inc. (LICENSE)
+
+The original is a Python plugin for a harness: a manifest declaring 28 tools
+(fd_ prefixed, so they cannot collide), a JSON schema for each, one handler per
+tool over the Financial Datasets REST API, and a standard-library HTTP client
+that sends the key in an X-API-KEY header, follows the API's next_page_url
+paging, and normalizes the arguments the API reads (a ticker upper-cased, a
+filer CIK zero-padded, a true flag spelled true). All of that is rewritten here
+in Common Lisp: api.lisp is that client and the query it builds, its tool table
+carries the same 28 names, routes, arguments, defaults and enumerations, and
+cell.lisp declares the config section, the registrations, the /financial
+command and one manual topic. The API, its routes, its arguments and its data
+are Financial Datasets', unchanged.
+
+What was left out, and why: the harness-specific packaging (the plugin
+manifest, the install-time prompt that writes the key into an .env file, the
+Python test suite) is replaced by the cell's own config section, which is how a
+Nodecode cell declares its settings, and the key may also come from the
+environment variable the section names. The tool descriptions are kept but
+shortened to the guidance a model needs, since each one rides every request;
+the JSON schemas keep every argument name, type, default, range and
+enumeration the original declared. Nothing else of the original was dropped: no
+tool, no route and no argument is missing.
