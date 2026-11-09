@@ -1,0 +1,34 @@
+nodecode-image-studio is a rewrite of phdigital01's phdigital01/imagegen-hermes:
+
+  https://github.com/phdigital01/imagegen-hermes
+  commit f00dbf81e3b7c1a821086a508048a93eb5dc12b1
+  MIT, Copyright (c) 2026 Paulo Henrique Tavares (LICENSE)
+
+Rewritten: the plugin's image generation surface as two Nodecode tools and
+one command. The FAL wire is the original's queue (submit to
+queue.fal.run/<model> with the key in an Authorization header, poll the
+status URL, fetch the response URL, read the images out of the result, keep
+the answer on FAL's own host), its prompt/aspect-ratio/num_images body, its
+reference images passed as image_url and reference_image_urls, and its
+default model fal-ai/flux-2-pro. From vertex_api.py: the generateContent
+call with the key in x-goog-api-key, the optional project segment on the
+model path, inlineData parts for the reference images, responseModalities
+IMAGE with an imageConfig of imageSize and aspectRatio, the four Nano
+Banana models and gemini-nano-banana-2.1 as the default, and the finish
+reason quoted when a candidate carries no picture. The gallery, the
+per-call file naming and the error text (status, the provider's own message,
+a hint per status) follow the original's studio.
+
+Left out: the desktop studio (FastAPI routes, the TypeScript frontend and the
+bundled desktop plugin), because a Nodecode cell is its tools, its command
+and its manual, not a window; the Hermes image_gen provider registration and
+the `hermes imagegen` CLI, which the two tools and /image-studio replace; the
+prompt builder and the host-LLM prompt writer, since the model calling the
+tool already writes the prompt; Magnific (upscale, relight, background
+removal) and the Hermes-native providers (OpenAI, xAI, Krea, DeepInfra,
+OpenRouter, Nous Portal), which need that harness's registries - FAL and
+Vertex AI are the two whose wire is public and small; the spend ledger and
+the job queue with cancellation, replaced by one gallery index; and the
+FAL upload endpoint the original uses to publish local reference files,
+so a FAL reference here is an https URL while Vertex AI also takes local
+paths.
