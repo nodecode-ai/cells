@@ -1,0 +1,34 @@
+nodecode-godot is a rewrite of Tormen28's Tormen28/argos:
+
+  https://github.com/Tormen28/argos
+  commit ab194154310cf4a44cee932d7c33f7fefb42c95d
+  MIT, Copyright (c) 2026 Tormen28 (LICENSE)
+
+The rewritten plugin is the repository root of that commit: a plugin
+manifest, an mcp.json naming a Python MCP server, the argos addon for the
+Godot editor (addons/argos), and one skill (skills/argos/SKILL.md). The
+rewrite keeps the editor side as it is -- the addon still runs inside the
+user's Godot project, still publishes .argos/port and .argos/token, and still
+answers {id, token, action, ...} with {ok, id, result|error, detail} on a
+loopback WebSocket -- and replaces the Python MCP server with Lisp. Nodecode
+reads the published port and token (or the ones the `godot` section pins),
+opens the bridge once per call, sends one action, reads one answer, and closes
+it. Every argos_* tool of the original has a Nodecode tool under a godot_*
+name with the same arguments: ping, status, scene tree/open/save/reload/new,
+node create/instantiate/reparent/get_prop/set_prop/delete, action_batch,
+undo, redo, anim list/get/play/stop, run play/stop, capture (the 2D editor
+viewport and a rendered scene), fs_scan and raw. The skill becomes the tool
+descriptions, the (help :godot) page and /godot, which reports the bridge and
+what the editor says of itself.
+
+What was left out, and why: the original's process tools -- editor_launch,
+editor_stop, editor_quit and check (which runs the Godot binary with
+--check-only over .gd files) -- because they need a launcher and the Godot
+executable rather than the addon's bridge, so the editor is started by the
+user; the runtime tools (runtime_info and runtime_capture), which watch a
+game in play through a second script rather than the addon's request/answer
+wire; the operation history (history, .argos/history.json), which the Python
+server writes; and the tool-permission prompts and ARGOS_PROJECT /
+ARGOS_ALLOWED_PROJECTS allowlist of the MCP server, because a cell's tools are
+the user's own and none of the verbs left here starts a project. LICENSE is
+the repository's LICENSE, unchanged.
