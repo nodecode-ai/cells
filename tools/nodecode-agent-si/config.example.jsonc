@@ -1,0 +1,14 @@
+// The agent-si section: every member is optional.
+{
+  "agent-si": {
+    // Where the brain is kept; empty keeps it under the Nodecode home.
+    "brain_dir": "",
+    // Index the past agent sessions on this machine (Claude Code, Codex, Grok).
+    "index_sessions": true,
+    // Other folders of session files; empty reads the ones that exist.
+    "session_roots": [],
+    // Put a compact recall block in front of each turn.
+    "recall": true,
+    "prefetch_hits": 5
+  }
+}
