@@ -225,10 +225,27 @@ subscription token (sk-ant-oat...) is not an API key: it answers NIL."
     (and (stringp k) (> (length k) 7) (string= "sk-ant-" k :end2 7)
          (not (search "sk-ant-oat" k)) k)))
 
-(defun deepseek-key ()
-  "This image's DeepSeek API key (provider `deepseek'), or NIL."
-  (let ((k (getf (ignore-errors (nle::resolve-provider-credential "deepseek")) :key)))
+(defparameter *search-key-seam* '("NODECODE-WEBSEARCH" . "PROVIDER-KEY")
+  "(PACKAGE . FUNCTION): the websearch cell's reader of a search key, called
+with an engine's name. That cell is where a machine's search keys are
+configured (websearch.providers.NAME.api_key); this one only asks it.")
+
+(defun search-key (engine)
+  "The search key the websearch cell holds for ENGINE, or NIL when that cell is
+not running here or holds none. A search key pays for searches only, apart
+from the key the models run on."
+  (let* ((package (find-package (car *search-key-seam*)))
+         (reader (and package (find-symbol (cdr *search-key-seam*) package)))
+         (k (and reader (fboundp reader) (ignore-errors (funcall reader engine)))))
     (and (stringp k) (plusp (length k)) k)))
+
+(defun deepseek-key ()
+  "The key DeepSeek's news search runs on, or NIL: the search key
+(websearch.providers.deepseek.api_key) when one is configured, else this
+image's DeepSeek API key (provider `deepseek')."
+  (or (search-key "deepseek")
+      (let ((k (getf (ignore-errors (nle::resolve-provider-credential "deepseek")) :key)))
+        (and (stringp k) (plusp (length k)) k))))
 
 (defun deepseek-listed (text)
   "The JSON-object lines of TEXT, DeepSeek's answer, as a table url => (DATE SUMMARY)."
@@ -330,7 +347,8 @@ server tool. KEY rides as x-api-key."
   "Every news search this image has, best first, as ((FUNCTION . NAME) ...),
 each FUNCTION taking (QUERY SINCE) and answering ((:url :title :date :text)
 ...): Claude's own web search when an Anthropic API key resolves, DeepSeek's
-when a deepseek key does, Exa's when this image has it through MCP."
+when a DeepSeek search key or API key does, Exa's when this image has it
+through MCP."
   (append (and (claude-key) (list (cons #'claude-search "claude")))
           (and (deepseek-key) (list (cons #'deepseek-search "deepseek")))
           (let ((f (find-symbol "EXA/WEB-SEARCH-ADVANCED-EXA" "NODECODE-MCP")))

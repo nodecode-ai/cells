@@ -243,6 +243,15 @@ url contains, else DEFAULT."
             "answer, the listed result first with its summary, the rest in search order, n caps")
         (is (not (contains-p text "made/up")) "a url the search never returned is not a hit")))))
 
+(deftest websearch-cell-provider-key-is-the-search-key-another-cell-reads ()
+  (is (null (web:provider-key "deepseek")) "no key while the cell is not running")
+  (with-websearch ("providers" (websearch-providers "brave" "b-key" "deepseek" "ds-key"))
+    (is (equal "ds-key" (web:provider-key "deepseek")) "the configured search key")
+    (is (equal "b-key" (web:provider-key "brave")) "each engine answers its own key")
+    (is (null (web:provider-key "tavily")) "an engine with no key answers NIL")
+    (is (null (web:provider-key nil)) "a name that is not a string answers NIL"))
+  (is (null (web:provider-key "deepseek")) "and none again once the cell has stopped"))
+
 (deftest websearch-cell-deepseek-without-a-search-advances-to-the-floor ()
   (with-websearch ("providers" (websearch-providers "deepseek" "ds-key"))
     (with-scripted-http (calls :body (by-url "" "deepseek.com"

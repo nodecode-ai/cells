@@ -13,6 +13,10 @@
 ;;;; "ERROR: WEBSEARCH-ERROR: <detail>", the text the primer tells the model to
 ;;;; act on. The detail has been through REDACT: a configured api key never
 ;;;; reaches the model, whichever library's message carried it.
+;;;;
+;;;; PROVIDER-KEY is the one export that is not model vocabulary: it is the seam
+;;;; another cell reads a search key through, so a search key has one place it
+;;;; is configured and one place it is read.
 
 (defpackage #:nodecode-websearch
   (:use #:cl)
@@ -21,6 +25,8 @@
   (:export
    ;; model-facing vocabulary (see the primer in cell.lisp)
    #:search #:fetch
+   ;; the seam another cell reads a search key through
+   #:provider-key
    ;; the one condition
    #:websearch-error))
 
@@ -50,3 +56,18 @@ through REDACT."
      (error (condition)
        (fail "~a" (or (ignore-errors (princ-to-string condition))
                       (type-of condition))))))
+
+
+;;; --- the seam another cell searches through ---------------------------------
+;;; A search key is spent on searching and nothing else. A cell that runs its
+;;; own search turn on one of these engines asks here for the key, so the key a
+;;; machine searches on is configured once, under websearch.providers, and
+;;; stays apart from the key its models run on.
+
+(defun provider-key (name)
+  "The api key configured for search engine NAME -- websearch.providers.NAME.api_key
+-- while the cell runs, else NIL. For a search request to that engine, never a
+model call."
+  (let ((key (and *websearch* (stringp name)
+                  (cdr (assoc name (getf *websearch* :keys) :test #'string=)))))
+    (and (stringp key) (plusp (length key)) key)))

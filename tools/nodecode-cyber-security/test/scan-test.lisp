@@ -134,6 +134,36 @@
                                     (values *sp-deepseek-answer* 200))
           (is (equal '("https://a.example/breach") (mapcar (lambda (x) (getf x :url)) (nodecode-cyber-security::deepseek-search "q" "2026-10-20T00:00:00Z"))) "a result dated before the window is dropped"))))))
 
+(defun sp-provider-key (engine)
+  "A stand-in for the websearch cell's reader: a search key for deepseek alone."
+  (and (equal engine "deepseek") "search-key"))
+
+(deftest cyber-security-search-key-is-read-through-the-websearch-cells-seam ()
+  (with-saved-globals (nodecode-cyber-security::*search-key-seam*)
+    (setf nodecode-cyber-security::*search-key-seam* '("NO-SUCH-PACKAGE" . "PROVIDER-KEY"))
+    (is (null (nodecode-cyber-security::search-key "deepseek")) "no websearch cell here: no search key")
+    (setf nodecode-cyber-security::*search-key-seam* (cons (package-name (symbol-package 'sp-provider-key)) "NO-SUCH-READER"))
+    (is (null (nodecode-cyber-security::search-key "deepseek")) "a cell without the reader: no search key")
+    (setf nodecode-cyber-security::*search-key-seam* (cons (package-name (symbol-package 'sp-provider-key)) "SP-PROVIDER-KEY"))
+    (is (equal "search-key" (nodecode-cyber-security::search-key "deepseek")) "the key that cell holds for the engine")
+    (is (null (nodecode-cyber-security::search-key "brave")) "an engine it holds no key for answers NIL")))
+
+(deftest cyber-security-deepseek-search-runs-on-the-search-key-first ()
+  (with-stubbed-fdefinition (nle::resolve-provider-credential (name) (list :key "model-key"))
+    (with-saved-globals (nodecode-cyber-security::*search-key-seam*)
+      (setf nodecode-cyber-security::*search-key-seam* (cons (package-name (symbol-package 'sp-provider-key)) "SP-PROVIDER-KEY"))
+      (is (equal "search-key" (nodecode-cyber-security::deepseek-key)) "a configured search key is the one DeepSeek's search runs on")
+      (with-stubbed-security
+        (with-saved-globals (nodecode-cyber-security::*deepseek-search-url*)
+          (let ((sent nil))
+            (with-stubbed-fdefinition (nlk:http (method url &key headers content timeout)
+                                        (setf sent (cdr (assoc "x-api-key" headers :test #'string=)))
+                                        (values *sp-deepseek-answer* 200))
+              (nodecode-cyber-security::deepseek-search "q" "2026-10-20T00:00:00Z")
+              (is (equal "search-key" sent) "and it is the key the search request carries")))))
+      (setf nodecode-cyber-security::*search-key-seam* '("NO-SUCH-PACKAGE" . "PROVIDER-KEY"))
+      (is (equal "model-key" (nodecode-cyber-security::deepseek-key)) "with no search key, the image's DeepSeek API key"))))
+
 (deftest cyber-security-claude-search-is-the-same-messages-turn-on-anthropic ()
   (with-stubbed-security
     (let ((asked nil))

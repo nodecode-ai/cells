@@ -45,6 +45,11 @@ Firecrawl, then Exa. `:reader` picks one: `http` (that chain), `firecrawl`,
 Keys sit inline, as in the core `providers` block, and are redacted from any
 text the model sees. An empty section works too.
 
+A key here is a search key: it pays for searches and nothing else, apart from
+the key the machine's models run on. Another cell that searches on one of these
+engines reads it through `(web:provider-key "deepseek")`, which answers the
+configured key while this cell runs, else `NIL`.
+
 A fetch that falls through to a second reader can take a minute, so the primer
 tells the model to pass `yield_time_ms 60000`. Failures read
 `ERROR: WEBSEARCH-ERROR: <detail>`.

@@ -76,7 +76,9 @@ model and has **Decide v1**, nodecode's decider model (`nodecode-decide-v1` on
 https://api.nodecode.ai/v1), sort them; the agent then reads only what it kept. News comes
 from Claude's own web search (Claude Haiku with Anthropic's native `web_search` tool, on the
 machine's `anthropic` API key), then DeepSeek's own web search, then Exa's: the first one the
-machine has a key for, and the next when every query fails on it. Items on
+machine has a key for, and the next when every query fails on it. DeepSeek's search runs on
+the search key (`websearch.providers.deepseek.api_key`, read through the websearch cell)
+when one is set, and on the machine's `deepseek` API key otherwise. Items on
 CISA's exploited list always go on, malware advisories go on when the package has real
 downloads, and when the decider cannot answer the scan says so and the agent scans in
 full.
