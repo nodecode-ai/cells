@@ -1,0 +1,23 @@
+nodecode-zerosignal is a rewrite of TxnLab's TxnLab/hermes-zerosignal-provider:
+https://github.com/TxnLab/hermes-zerosignal-provider
+commit ce1ba1f1603b4f191d3cd1aad284879df51a9f4a
+MIT, Copyright (c) 2026 TxnLab (LICENSE)
+
+Rewritten: the provider profile itself (its default base of
+http://127.0.0.1:9376/v1, its placeholder key variable, its curated fallback
+model list, and its chat-completions wire) as a Nodecode catalog row, a
+credential hook and one request-body hook; and the reasoning-effort clamp,
+which reads the local proxy's own GET /models catalog for each model's
+reasoning.supported and reasoning.allowed_efforts and never sends a level a
+serving node did not declare.
+
+Left out, and why: Hermes' private seams the original imported
+(agent.reasoning_effort, providers.base, hermes_cli.urllib_security) have no
+place here, so the effort ladder is Nodecode's own -- which spells the
+disabled tier `off' and always offers it, where Hermes had `none' only where a
+node declared it (the hook still says `none' on the wire for a node that
+declares it). The original's synchronous cold-cache seed with a 2-second
+timeout and its 30-second post-failure backoff become one bounded read at
+start plus a worker that asks again every five minutes, keeping the last map
+through a failure; and its per-provider default auxiliary model has no
+per-provider home in Nodecode, so it is not carried over.
