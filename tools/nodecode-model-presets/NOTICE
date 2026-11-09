@@ -1,0 +1,22 @@
+nodecode-model-presets is a rewrite of will-lynas's will-lynas/hermes-model-presets:
+https://github.com/will-lynas/hermes-model-presets
+commit 27eec57bc17d92d931a025ed333b330dd17636e5
+MIT, Copyright (c) 2026 will-lynas (LICENSE)
+
+What was rewritten: the plugin's one idea, kept whole. It read a table of aliases out of its
+own settings and turned a short `/model <alias>` into a full `/model <model> --provider
+<provider> --reasoning <rung>` line at the harness gateway, failing open on anything it did
+not recognise. This cell keeps the same table, the same words for it (a preset's model, its
+provider, its reasoning effort, with "aliases" and "reasoning_effort" read too), and the same
+overrides and fail-open posture; what it changes is where the pick lands. Nodecode already
+owns the meaning of a model pick (SELECT-MODEL and SELECT-EFFORT: resolve the lane, check
+the rung against that model's ladder, pin the session, move the default, tell every shell),
+so the cell calls those two instead of rewriting a line someone has to retype, and puts the
+table behind one slash command, /preset, and one model tool, model_presets.
+
+What was left out: the Hermes gateway hook itself (pre_gateway_dispatch), which has no
+Nodecode counterpart and nothing to do without a gateway command line to rewrite; the
+`--global`, `--session` and `--refresh` flags, of which a Nodecode pick already does what
+--global and --session meant, so they are accepted and ignored, and there is no provider
+catalogue to refresh. Nothing else of the original was code: its parser, its validation and
+its typed protocols came to one table read and one call.

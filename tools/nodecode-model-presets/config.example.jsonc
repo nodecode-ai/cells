@@ -1,0 +1,22 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it.
+{
+  "model-presets": {
+    "enabled": true,
+
+    // One object a preset: the model id a /models pick would take, the
+    // provider that serves it, and, when it matters, a reasoning rung --
+    // off, minimal, low, medium, high, xhigh or max. A model whose own
+    // ladder is narrower refuses the rung and says which ones it takes.
+    "presets": {
+      "fast": { "model": "claude-haiku-4.5", "provider": "anthropic" },
+
+      "deep": { "model": "gpt-5.4", "provider": "openai", "effort": "high" },
+
+      // The original plugin's words are read too: "aliases" instead of
+      // "presets", and "reasoning_effort" instead of "effort".
+      "careful": { "model": "claude-sonnet-4.5", "provider": "anthropic", "reasoning_effort": "xhigh" }
+    }
+  }
+}
