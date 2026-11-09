@@ -1,0 +1,15 @@
+// The astro cell: exact Western and Vedic charts and planetary timing.
+// Add this member to ~/.nodecode/config.jsonc, or set the same values in
+// /settings. endpoint is the only required one; there is no account and no
+// API key.
+{
+  "astro": {
+    "endpoint": "https://astro-agent.dev/mcp",
+    // Optional: a prepaid credits token, or a file holding one. It is sent
+    // as the X-Credits-Token header and pays for the paid tools; without it
+    // the cheap tools have one free call each.
+    "credits_token_file": "~/.nodecode/secrets/astro-credits",
+    "timeout_seconds": 60,
+    "max_chars": 8000
+  }
+}

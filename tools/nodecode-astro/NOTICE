@@ -1,0 +1,24 @@
+nodecode-astro is a rewrite of aidatatools-dev's aidatatools-dev/astro-agents-mcp:
+
+  https://github.com/aidatatools-dev/astro-agents-mcp
+  commit 105be9ce7c01edebf73dd8de1ac7431853c58a3e
+  MIT License, Copyright (c) 2026 aidatatools-dev (LICENSE)
+
+The plugin was a portable Agent Plugins v1 package with no code of its own:
+plugin.json, mcp.json declaring the hosted MCP server (Streamable HTTP, no
+auth), and one skill, astrology, that taught a model when to use it and how
+to ask. This rewrite speaks that server's MCP wire itself, in Common Lisp
+over nlk:http -- initialize, notifications/initialized, then tools/call, one
+JSON-RPC POST per message, an answer that is either a JSON object or a
+one-event stream, and the Mcp-Session-Id echoed when the server hands one
+out. Three tools carry the charts people ask for (astro_chart,
+astro_kundli, astro_sky) and one, astro_call, reaches the other 21 by the
+server's own names, so the whole surface is kept. The skill's rules, its
+pitfalls and its verification note are the cell's manual topic,
+(help :astro), and its one-line summary in every request. What was left
+out: plugin.json and mcp.json as manifests, which the cell contract
+replaces with a section and a declaration; the deferred tool-search
+indirection, which four tools and one enum replace; and the x402 wallet
+payment, which the server still performs, since a paid tool's answer states
+its price and a prepaid credits token in the section pays for it. Nothing of
+the original is vendored: there was no code to vendor.
