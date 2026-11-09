@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority.
+{
+  "axioma": {
+    "enabled": true,
+    "palette": "default",
+    "words": "always",
+    "max_spans": 3,
+    "max_whispers": 2,
+    "max_span_words": 16,
+    "cards": true,
+    "risky_tools": ["eval"]
+  }
+}
