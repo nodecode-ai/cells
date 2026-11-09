@@ -1,0 +1,23 @@
+nodecode-culture is a rewrite of pswong661-eng's pswong661-eng/hermes-global-business-culture:
+
+  https://github.com/pswong661-eng/hermes-global-business-culture
+  commit 49218a35f670ceae6f79dc07d40536b19da23cc6
+  MIT, Copyright (c) 2026 Eric Wong (pswong661-eng) (LICENSE)
+
+The original is a Hermes Agent plugin: three Python tools (culture_brief,
+culture_gap_analysis, culture_countries) computed from two bundled JSON data
+files, a /culture command and a practitioner skill. The rewrite keeps the data
+(the 57 economies, their Meyer and Hofstede positions, GLOBE cluster and Lewis
+type, the highlights, and the 11 regional playbooks) and the arithmetic
+unchanged, and reimplements the tools as one Lisp system over the same tables:
+the same three tool names, the same /culture command, the same task weights,
+misread risks, adaptation moves, aliases and name resolution (exact, alias,
+containment, close spelling). The answers are text rather than JSON, since a
+model reads the line and a person can too; every field the original's JSON
+carried is one of those lines.
+
+Left out: the bundled skill became the cell's manual topic (help :culture),
+which every request already knows how to carry, so its doctrine is present
+without a second file to load; the Python packaging (plugin.yaml, schemas.py,
+pytest suite) and the original's CI drift check have no counterpart, because
+the loader, the contracts and the test slice are the host's own.
