@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "agentplaybooks": {
+    "playbook_guid": "the private playbook's GUID, from its AgentPlaybooks URL",
+    "api_key_env": "AGENTPLAYBOOKS_MEMORY_API_KEY",  // the variable holding the key, or "api_key" inline
+    "base_url": "https://agentplaybooks.ai",          // http:// only for a local instance
+    "shared_playbooks": [],                           // read-only GUIDs, each with AGENTPLAYBOOKS_SHARED_<GUID>_API_KEY
+    "team_playbooks": [],                             // writable team GUIDs, each with AGENTPLAYBOOKS_TEAM_<GUID>_API_KEY
+    "recall": true,                                    // search memory before each model request
+    "timeout_seconds": 15
+  }
+}
