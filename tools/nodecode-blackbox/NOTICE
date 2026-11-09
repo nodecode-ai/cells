@@ -1,0 +1,39 @@
+nodecode-blackbox is a rewrite of umanitek's umanitek/agent-blackbox:
+
+  https://github.com/umanitek/agent-blackbox
+  commit f9224a3cda4a784ccac46576bb4f1b4fa02f5440
+  MIT License, Copyright (c) 2025 Nous Research and portions
+  Copyright (c) 2025-2026 UMANITEK AG (LICENSE)
+
+The rewrite is the plugin's local detection engine as a Nodecode cell. What it
+keeps, rule for rule and from the plugin's own tables: the seven built-in
+prompt-injection heuristics with their severities and OWASP categories
+(detection/content_scanners.py); the secret-VALUE shapes -- private-key
+blocks, the provider keys, a labelled wallet key, a service-account file, a
+JWT (kernel/redaction.py); the shell shapes that stand on their own -- a
+download piped into a shell, rm -rf of a root or home, chmod 777, a fetch with
+certificate checks off, sudo (detection/shell_shapes.py); the closed severity
+scale and the audit/block wording; the default protected paths and the idea
+that reading one is a finding of its own (kernel/config.py); and the egress
+rule that makes a secret in a command that sends data the worst case
+(detection/secrets_handled/sending.py). The model-facing tool descriptions
+and the manual keep the plugin's own vocabulary: never the prompt text, only
+the pattern's identifier and the matched phrase.
+
+What is left out is the half that needs the network: the threat graph the
+plugin syncs from a local OriginTrail DKG node, the curated and community
+rules it adds to the built-in ones, the OSV lookup of an installed package,
+the optional LLM second opinion, and the community report the plugin shares
+(with its signing keys, keep-alive epochs and dashboards). A cell cannot sync
+a graph it does not have, and a detection engine that is honest about what it
+knows is more useful than one that claims a graph it cannot reach. The finer
+crypto-wallet shapes (Solana seed halves, Bitcoin WIF, seed phrases proven by
+checksum) are left out with them: what remains is the labelled-hex shape.
+
+The plugin hooks every tool call and model request and can block; this cell
+is called on purpose, by the model through two tools and by the operator
+through /blackbox, and it blocks nothing. The `mode` setting keeps the
+plugin's two words for what a finding means.
+
+Nothing of the original's Python is bundled: the rules are data in cell.lisp
+and the cell's own code is Common Lisp.
