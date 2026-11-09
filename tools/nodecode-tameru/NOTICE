@@ -1,0 +1,30 @@
+nodecode-tameru is a rewrite of 0xWhiteMage's 0xWhiteMage/hermes-tameru-plugin:
+
+  https://github.com/0xWhiteMage/hermes-tameru-plugin
+  commit 9f80514ec93cf1973601e39811980b823cb2a766
+  MIT, Copyright (c) 2026 Benjamin Ang (LICENSE)
+
+What was rewritten: the reduction itself, in Common Lisp — the head and the
+tail of a result, the first line of every distinct error template with its
+volatile parts masked, a run of one repeated template collapsed to one
+exemplar and its count, a kept line folded in its middle when it is too long,
+and a result carrying a probable credential shortened but never kept. The
+ref-addressed store and the tameru_expand tool (whole original, line range,
+case-insensitive regex, a character cap) are the original's own contract, and
+so is the [tameru: … ref=…] header a shortened result opens with. The
+operator's side is one command, /tameru.
+
+What was left out, and why: the original is a context engine, not a tool. It
+subclasses another agent's ContextCompressor, overrides its private
+prune/demote methods, prunes results already in the history on a trigger
+scaled to the model's context window, keeps a re-prune runway, and reads a
+pruned original back out of that agent's session archive after a restart.
+Nodecode has no compressor to subclass — a model there drops and recalls its
+own context blocks — so the same reduction runs where a tool result enters
+the context instead, and the store is this cell's own memory, bounded by
+store_limit and forgotten on restart. Also left out: the optional
+summariser pass that queries a local OpenAI-compatible endpoint, the render
+log, the per-model window scaling, and the Unicode/CJK line-weighting
+profiles — each is either the host's job here or off by default there.
+
+MIT-licensed. See LICENSE.
