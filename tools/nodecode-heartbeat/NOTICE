@@ -1,0 +1,32 @@
+nodecode-heartbeat is a rewrite of electricsheephq's electricsheephq/heartbeat2:
+
+  https://github.com/electricsheephq/heartbeat2
+  commit 8a1fc6efe9ad340941d92d7bf39583e8dc2dc8bc
+  Apache-2.0, Copyright (c) Electric Sheep (LICENSE)
+
+LICENSE here is that repository's LICENSE file, unchanged: the plain Apache
+License 2.0 text, whose appendix still carries its placeholder. The plugin
+declares `author: Electric Sheep` and `license: Apache-2.0` in plugin.yaml,
+which is where that holder comes from; the LICENSE names no year.
+
+What was rewritten: the pulse tool's five trigger kinds and its seven
+actions, reimplemented in Common Lisp as one cell. The trigger kinds are
+kept -- a clock ("every", "after"), and the file, url and command probes,
+with the original's fire-on change/failure/success rule and its baseline
+semantics (a watcher's first look is a baseline, except a break, which speaks
+once). The wake is the session that armed it, as before: there is no
+destination argument. The three probes, the registry written as JSON in the
+home, the tool's refusal of an action it does not carry, and the operator's
+slash command are the rewrite's.
+
+What was left out: Hermes's own runtime. The original's SQLite store, its
+governor (daily caps, quiet hours, the unanswered mute, interval stretching
+and self-pausing), its "respond" outcome protocol inside a wake turn, its
+proposed/confirm flow for wakes the agent wants the owner to approve, the
+`process` probe (a command watch running `pgrep` does the same), the Hermes
+event triggers (kanban, subagent, reaction), the owner-silence check-in, and
+the plugins settings surface are not here; the Nodecode config section takes
+the three bounds the ticker needs, and the agent arms and forgets watches
+with the same tool in the same chat. Hermes's multi-platform delivery
+ladder (DMs, quiet hours, urgent wakes) is the harness's own in Nodecode: a
+wake is a prompt into one session.
