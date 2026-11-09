@@ -1,0 +1,39 @@
+nodecode-telegram-notify is a rewrite of madpower2000's madpower2000/hermes-telegram-notify:
+
+  https://github.com/madpower2000/hermes-telegram-notify
+  commit d7cab7dfb154425118129b0086032e873a832576
+  MIT License, Copyright (c) 2026 Hermes Agent community (LICENSE)
+
+Rewritten: the Bot API exchange itself — one HTTPS POST to
+https://api.telegram.org/bot<token>/sendMessage with a token and a chat id, the
+4096-character ceiling, the JSON body, and the API's own words for a chat it
+cannot reach — as one tool the model calls, one /telegram-notify command that
+says what a message would use, sends a test one and lists the chats the bot has
+heard from (the original's discover-chat-id), and a manual topic
+(help :telegram-notify) in place of the plugin's lifecycle prompts. The
+lifecycle messages are kept and now read off the organism's own frames: a turn
+that started, a turn that ended, a turn that failed, and a question waiting
+for an answer (the original's approval-request alert), each gated on the event
+list the original spelled notify_on_start, notify_on_completion and
+notify_on_approval, and each off until the section names it. A turn's end
+carries the turn's final answer, bounded by answer_max_chars exactly as the
+original bounded it by final_response_max_chars, and the duplicate suppression
+the original kept in a locked state file is here one claim per turn id, held in
+the cell. The Python is Common Lisp: nlk:http for the one HTTPS exchange in
+place of urllib, the JSON reader and writer in nlk in place of json, one
+section declaration for the settings in place of the environment-variable
+ladder, and nlk:define-contract for the tool's arguments, so the schema the
+model is shown and the body that runs are one shape. The state store, its
+flock, its retention and its 0600 files are gone with the state file: one turn
+is one message, and a restart does not need to remember yesterday's.
+
+Left out: the plugin's audit log and its six logger files, its credentials
+file (the token is read from the variable the section names), the platform
+suppression rules that only made sense beside a Hermes Telegram gateway
+(subagent, Telegram-origin sessions and their approval copies), the
+HISTORICAL CODEX_* environment aliases, the profile-multiplexing rules for
+the chat destination, and the per-surface approval bookkeeping (smart, cli,
+transport) — surfaces this harness does not have. The original also released
+its approval requests through the core Telegram adapter's in-chat card; here a
+question is a frame the cell reads, and the answer stays where the person
+answers it.
