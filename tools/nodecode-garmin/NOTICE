@@ -1,0 +1,11 @@
+nodecode-garmin is a rewrite of adrianlaborda's adrianlaborda/hermes-garmin:
+
+  https://github.com/adrianlaborda/hermes-garmin
+  commit 1077ef6c02547cee8ed3ef90e5ae304979fd6cf2
+  MIT License, Copyright (c) 2026 adrianlaborda (LICENSE)
+
+LICENSE here is that repository's, unchanged.
+
+Rewritten in Common Lisp against the cell contract: the fourteen read-only tools and the data they reach, unchanged in the endpoints they call (the daily summary, the sleep, HRV, Body Battery, stress, steps, heart-rate, weight, hydration, activity, fitness-age and activity-file paths of Garmin's Personal API), the key-to-token exchange with one retry when a token is revoked, the same metric definitions for the trend baselines (a flag needs both the percentage change and |z| >= 1, on a spread floored at 2% of the baseline mean), the /garmin command and the guidance that was the garmin skill, now the (help :garmin) topic. Answers are labelled lines of numbers rather than the original's JSON, and a date window is one request rather than a page of windows.
+
+Left out, being Hermes surfaces a cell does not have: the Desktop readiness panel and its dashboard API, the opt-in one-line daily context hook, and the morning-readiness automation blueprint. Also left out: the JWT expiry read (a token is reused for half an hour instead), heart-rate zone distribution inside garmin_training_load (zone minutes are summed from the activity feed it already asks for), and the incremental type-search fallback beyond the newest hundred activities.
