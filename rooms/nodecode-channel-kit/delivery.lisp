@@ -503,22 +503,46 @@ a directory, a missing path, or anything unreadable."
       (when (sb-posix:s-isreg (sb-posix:stat-mode stat))
         (sb-posix:stat-size stat)))))
 
-(defun collect-answer-files (lane turn-id &aux (files '()))
+(defun riding-answer-files (paths &aux (files '()) (refusals '()))
+  "(values FILES REFUSALS) for PATHS handed to one answer, in the order
+handed: FILES the ones its message carries, and a (PATH KIND WHY) in REFUSALS
+for each one it does not -- KIND :GONE, :SIZE or :COUNT."
+  ;; The one judge of what rides: ANSWER-FILE asks it before it takes a file,
+  ;; so its receipt never names a file the delivery then drops, and the
+  ;; delivery asks it again for a file that changed in between. Existing
+  ;; regular files only, never more than one message's practical cap; a file
+  ;; handed twice rides once.
+  (dolist (path paths)
+    (let* ((probe (ignore-errors (probe-file path)))
+           (size (and probe (attachable-file-size probe))))
+      (cond ((null size)
+             (push (list path :gone "is gone or names no file") refusals))
+            ((> size +answer-file-byte-cap+)
+             (push (list path :size (format nil "is ~:d bytes, over the ~:d one answer attaches"
+                                            size +answer-file-byte-cap+))
+                   refusals))
+            ((member probe files :test #'equal) nil)
+            ((>= (length files) +answer-file-count-cap+)
+             (push (list path :count (format nil "would be one past the ~d files one answer carries"
+                                             +answer-file-count-cap+))
+                   refusals))
+            (t (setf files (append files (list probe)))))))
+  (values files (nreverse refusals)))
+
+(defun handed-answer-files (lane turn-id &aux (entry (gethash lane.session-id *answer-files*)))
+  "The files LANE's TURN-ID handed to its answer so far, left in place —
+what TAKE-ANSWER-FILES would take."
+  (and entry (equal turn-id (getf entry :turn-id)) (getf entry :files)))
+
+(defun collect-answer-files (lane turn-id)
   "The files one answer carries: what the turn handed with ANSWER-FILE —
 the model's explicit choice, in the order handed."
-  ;; TAKEN, so an answer carries its files once; existing regular files only,
-  ;; never more than one message's practical cap.
-  (dolist (path (take-answer-files lane turn-id))
-    (when (< (length files) +answer-file-count-cap+)
-      (let* ((probe (ignore-errors (probe-file path)))
-             (size (and probe (attachable-file-size probe))))
-        (cond ((null size) (warn "~a answer file ~a is gone or names no file" lane.session-id path))
-              ((> size +answer-file-byte-cap+)
-               (warn "~a answer file ~a is ~:d bytes, over the attach cap"
-                     lane.session-id probe size))
-              ((member probe files :test #'equal) nil)
-              (t (setf files (append files (list probe))))))))
-  files)
+  ;; TAKEN, so an answer carries its files once. ANSWER-FILE refused at the
+  ;; hand-over what would not ride; a file that changed since is warned of.
+  (multiple-value-bind (files refusals) (riding-answer-files (take-answer-files lane turn-id))
+    (loop for (path nil why) in refusals
+          do (warn "~a answer file ~a ~a" lane.session-id path why))
+    files))
 
 ;;; A lane is a fork frozen at its room's head, so a head move on the room — a
 ;;; /new, an /undo, a rewind from a shell — leaves it composing a record the

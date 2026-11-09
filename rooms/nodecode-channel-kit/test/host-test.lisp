@@ -1433,6 +1433,28 @@ LANE, as the one running channel."
     ("no turn is running" "123")
     ("no lane answers" "999")))
 
+(deftest channel-answer-file-refuses-a-file-the-answer-would-not-carry (with-file-host (host "answer-file-refused"))
+  ;; A receipt names only a file the answer carries. One over the attach cap,
+  ;; gone, or past the count cap is refused at the hand-over, why named, and
+  ;; nothing is handed -- never a receipt naming a file the delivery then drops.
+  (setf (nck:lane-active-turn-id lane) "t9")
+  (let ((nck::+answer-file-byte-cap+ 32))
+    (let ((refusal (refusal-text error (nck:answer-file *pea-path* :platform "test" :channel "123"))))
+      (is (search "is 64 bytes, over the 32 one answer attaches" refusal) "an oversize file is refused, its size named")
+      (is (search "nck:post-file" refusal) "and the call that posts it as its own message")))
+  (let ((gone (refusal-text error (nck:answer-file #p"/nonexistent/pea.png" :platform "test" :channel "123"))))
+    (is (search "is gone or names no file" gone) "a missing file is refused"))
+  (is (null (nck::take-answer-files lane "t9")) "a refused file is never handed")
+  (let ((nck::+answer-file-count-cap+ 1)
+        (bean (merge-pathnames "bean.png" *pea-path*)))
+    (alexandria:write-byte-vector-into-file (test-png-octets) bean :if-exists :supersede)
+    (nck:answer-file *pea-path* :platform "test" :channel "123")
+    (let ((past (refusal-text error (nck:answer-file bean :platform "test" :channel "123")))
+          (again (getf (nck:answer-file *pea-path* :platform "test" :channel "123") :files)))
+      (is (search "one past the 1 files one answer carries" past) "a file past the count cap is refused")
+      (is (equal (list *pea-path* *pea-path*) again) "a file handed again rides once, so it is no new file"))
+    (is (equal (list (truename *pea-path*)) (nck::collect-answer-files lane "t9")) "and the delivery carries what the receipt named")))
+
 (deftest channel-answer-carries-its-files ()
   ;; The answer's own message carries the picture: the plan the terminal
   ;; delivery posts names the file the turn handed over, on its first chunk.
