@@ -1,0 +1,27 @@
+nodecode-federated-search is a rewrite of kumaxs's kumaxs/hermes-federated-search:
+
+  https://github.com/kumaxs/hermes-federated-search
+  commit 566b3ccc6aeff7e39c19dcfd779ade107827043c
+  Apache-2.0, Copyright (c) 2026 kumaxs (LICENSE; its appendix placeholder is unfilled)
+
+The original was a Hermes web-search provider named `federated', selected with
+`web.search_backend: federated', plus a settings card in the Hermes desktop app.
+Its provider read a `backends' list out of the config and asked each line -- a
+registered provider, or any HTTP endpoint taking the query as a parameter -- in
+parallel under one deadline, merged what came back, deduplicated it by url,
+ranked it by keyword score (optionally by an auxiliary LLM), and answered the
+top of it, honouring `required' lines and `min_backends'. A line could carry
+several keys, listed by environment variable name, and rotate or fail over
+between them with a cooldown. All of that semantic is kept here: the same
+`backends' array of line objects, the same `timeout', `max_results',
+`min_backends' and `pool_strategy' keys, the same three response shapes
+(organic / data.web / results), the same keyword ranking, the same dedupe and
+the same failover and cooldown times. What changed is the surface: Nodecode's
+websearch cell keeps its engines in a fixed list a cell cannot add one to, so
+the fan-out is this cell's own tool, `federated_search', and `/federated-search'
+is the operator's way in. What was left out: the LLM re-ranking (a cell would
+have to drive a model of its own, and keyword ranking is the original's own
+default and its fallback), the health-check HEAD probes (a line that is down
+now costs its own timeout, as it did with the probes off), the Hermes desktop
+card editor, and the `k' alias for the line count, which the array's own
+length now says. Nothing of the original is vendored.
