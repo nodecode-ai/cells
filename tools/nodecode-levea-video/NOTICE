@@ -1,0 +1,33 @@
+nodecode-levea-video is a rewrite of brajendrak00068's brajendrak00068/agentic-ai-video-production:
+
+  https://github.com/brajendrak00068/agentic-ai-video-production
+  commit 0f11f14511c8b9a030689d1541c28752c1d60a59
+  MIT License, Copyright (c) 2026 brajendrak00068 (LICENSE)
+
+Rewritten: the five tools and their whole call path -- levea_video_edit
+(POST /execute), levea_queue_edit (POST /queue-edit), levea_job_status
+(GET /jobs/{id}, with its wait loop up to ten minutes), levea_task_status
+(GET /task-status/{id}) and levea_active_task (GET
+/projects/{id}/active-task, whose answer signals a running edit with a
+typed `active` flag instead of a success flag); the request fields the
+plugin read out of its edit_contract.json, declared here as two boundary
+contracts (the full edit, and the queued one that requires a project), so
+the schema the model reads and the body the backend receives come off one
+declaration; the params / projectId / top-level placement of those
+fields; the read of the outcome from the backend's own `success`,
+`partial`, `verificationPassed` and status rather than from HTTP 200; the
+which-states-are-pending and which-are-terminal tables; the per-profile
+settings for the key (an inline secret or the environment variable it
+names), the API host with its path normalisation, the default project and
+the timeouts; and the skill's edit -> poll -> follow-up guidance, kept as
+the :levea manual topic and the tool descriptions.
+
+Left out: the bundled SKILL.md file as a separate registered skill, because
+a cell's prose guidance is its manual topic and its tool descriptions (the
+words survive, the file loader does not); and the plugin's Hermes-only
+registration surface -- the toolset, emoji and secret-scope plumbing --
+which is the cell declaration's own job here. The Hermes per-profile
+plugin-data directory and plugin.yaml settings became the cell's
+levea-video config section, and the tools answer text led by the state and
+the ids instead of the bare JSON object the plugin returned, because a
+model reads the state first.

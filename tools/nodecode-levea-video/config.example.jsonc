@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "levea-video": {
+    "enabled": true,
+    "api_key": "(paste a Levea key, or leave it empty and use api_key_env)",
+    "api_key_env": "LEVEA_API_KEY",
+    "api_url": "https://api.livecore.ai",
+    "project_id": "",
+    "timeout_seconds": 600,
+    "poll_seconds": 4
+  }
+}
