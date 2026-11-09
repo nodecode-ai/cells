@@ -1,0 +1,28 @@
+nodecode-langfuse is a rewrite of NousResearch's NousResearch/hermes-official-plugins:
+
+  https://github.com/NousResearch/hermes-official-plugins
+  commit e7a218f26db88426ab3e7376f0e000b6e356f5e7
+  MIT License, Copyright (c) 2026 Nous Research (LICENSE)
+
+Rewritten: the plugin's langfuse/ folder, whose job was to trace one Hermes
+turn as one Langfuse trace, one generation per model call (usage and cost from
+Hermes's own pricing) and one observation per tool call, with content capture
+sanitized by default. The rewrite keeps that shape on Nodecode's seams: the
+:frame point, where every durable fact arrives (turn.usage carries the
+provider, the model, the eight token counts and the priced cost; the turn's
+terminal fact says the turn is over), and the :tool around hook for a call's
+arguments, result, wall time and failure. The langfuse SDK is gone: batches go
+to <base_url>/api/public/ingestion as plain JSON over HTTP, with the project's
+keys as basic auth, one batch per turn, and a batch the server refuses stays
+held for /langfuse send.
+
+Left out, and why: the subagent_* hooks (Nodecode's durable facts do not carry
+a subagent span, so a delegated turn traces as its own trace); the end-user
+attribution switch (userId) (a tool or frame fact carries no platform sender
+id); the SDK's background queue and process-exit flush (a batch is posted when
+the turn ends, and /langfuse send is the retry); the read_file head-and-tail
+summarizing and the metadata/full per-field raw mode of the original (one
+capture mode applies to the whole batch, and truncation says how much it cut);
+and the bundled-SDK version pin, since no SDK is bundled.
+
+SPDX-License-Identifier: MIT
