@@ -1,0 +1,24 @@
+nodecode-bharatcode is a rewrite of thenabbu's thenabbu/bharatcode-hermes:
+
+  https://github.com/thenabbu/bharatcode-hermes
+  commit f4cc1d1f2977963173b23b9ac6a19c3ca8851050
+
+  MIT, Copyright (c) 2026 Navya Gupta (LICENSE)
+
+What was rewritten: the provider profile itself — its OpenAI-compatible base
+of https://bharatcode.ai/api/model/v1, its API-key auth and the key variable
+it reads (BHARATCODE_API_KEY), its display name and description, its
+sign-up page, its two fallback models, and its supports_vision=True claim —
+as a Nodecode catalog row, a credential hook, and one bounded read of the
+provider's own GET /models (kept, refreshed every ten minutes, and serving the
+last good answer through a failure) so the picker offers the models the
+account may actually use. Every row the picker offers is marked as taking
+images, as the original declares of every model of this provider.
+
+What was left out, and why: the original's provider aliases (bharat-code,
+bharatcode-ai) have no place in Nodecode's catalog, which keys a provider by
+one id. Its default_max_tokens of 32768 has no provider-level home in a
+catalog row, so a turn's own ceiling stands. And the live catalog the
+original's README promises is Hermes asking /models on its own; here the cell
+makes that read itself, with the same shape, since Nodecode's catalog is
+static otherwise.
