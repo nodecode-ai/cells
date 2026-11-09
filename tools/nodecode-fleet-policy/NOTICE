@@ -1,0 +1,26 @@
+nodecode-fleet-policy is a rewrite of Julientalbot's Julientalbot/hermes-fleet-policy:
+
+  https://github.com/Julientalbot/hermes-fleet-policy
+  commit 7d36874a5a625fc2a0c24ee280e34872e5259800
+
+MIT, Copyright (c) 2026 Julien Talbot (LICENSE)
+
+Written from scratch in Common Lisp, from the behaviour of the original's
+`fleet_policy/watch.py`, `store.py` and `extract.py`: one tool call on one MCP
+server over streamable HTTP, the id field searched at any depth of the answer
+(embedded JSON documents included), the envelope's failure rule, the baseline
+on the first run, the gate line when nothing is new, the bounded set of seen
+ids written whole through a temp file and a rename, and a corrupt state that
+refuses rather than start over.
+
+Left out, because Nodecode already answers them or cannot use them: the
+managed-scope comparison (`status`, the sha256 of a managed config.yaml, the
+effective dotted keys) and the observation hooks that record the model,
+reasoning effort and served service tier per role, which read Hermes's own
+hook and middleware surfaces and its log store; the cron audit of model and
+effort pins; and the per-job cost report (`crons --cost`), which reads Hermes's
+`state.db` and `executions.db` for runs, empty shares and dollars. The two
+bundled skills (administering a managed policy, setting up watches) are folded
+into this README and the cell's manual topic instead of being registered as
+skills. What remains is the watch, reimplemented as one verb the model calls,
+one tool on the wire, and one operator command.
