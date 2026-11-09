@@ -1,0 +1,35 @@
+nodecode-bluesky-feed is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-author-feed:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-author-feed
+  commit d3c9497d3f62b7f49aa0fa6131a7cd30278d80a8
+  MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+What was rewritten: the reading and the watch. The plugin's three tools
+(`profile_get`, `author_feed`, `author_watch`) are `bluesky_profile`,
+`bluesky_feed` and `bluesky_watch` here, and they send the same two reads to
+the same public AppView, `app.bsky.actor.getProfile` and
+`app.bsky.feed.getAuthorFeed`, with `limit=10` and `filter=posts_no_replies`,
+no key and no `Authorization` header. The profile fields it kept and the
+fields it dropped (avatar, banner, description, pinned post) are the same; a
+repost still says so and keeps the original author; a pin is still not a new
+post. The watch is the same design: one saved account, its post addresses
+kept in one file, the first check a baseline that announces nothing, at most
+three pages per check, and the possible-miss note when every row read was new
+and the feed still offered more. The plugin's `hermes author-feed
+schedule|unschedule|status` becomes `/bluesky watch|check|status|forget`, and
+its interval, deliver-target and cron-job bookkeeping become the shipped
+`cron` cell's.
+
+What was left out, and why: the plugin started its watch from a generated
+Python script that Hermes cron ran, and that script proved its own job id
+against `cron/executions.db` and `cron/jobs.json` before it advanced what it
+had seen. A cell runs inside Nodecode, which has a scheduler of its own, so
+the script, the job-id proof, the `--no-agent --script` cron plumbing and the
+delivery allowlist (Hermes platforms, `bot-chat`, `origin`/`local`/`all`)
+stay with the plugin: `/bluesky watch HANDLE` saves the account and `cron`
+runs `bluesky_watch` on whatever schedule the operator wants. The plugin's
+state file keeps the same facts (DID, handle, seen post addresses, baseline
+flag) but lives in one file under the Nodecode home rather than in the Hermes
+plugin-data folder, and the split between "the saved cron job may advance
+what was seen" and "a manual call may not" is gone: in a cell the watch verb
+is the only thing that advances it.
