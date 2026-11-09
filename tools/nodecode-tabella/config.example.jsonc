@@ -1,0 +1,18 @@
+// nodecode-tabella's section of ~/.nodecode/config.jsonc, as data. Every
+// member is documented in /settings; none of them is a secret.
+{
+  "tabella": {
+    // Required: the only folder this cell writes documents into.
+    "output_dir": "~/Documents",
+
+    // The programs, by name on PATH or by path. Install pandoc
+    // (apt install pandoc, brew install pandoc); poppler's pdftotext reads
+    // PDFs; a PDF as output needs xelatex or pdflatex (texlive).
+    "pandoc": "pandoc",
+    "pdftotext": "pdftotext",
+    "pdf_engine": "",          // empty: whichever of xelatex and pdflatex is there
+
+    // The cap on the text doc_read answers when the call names none.
+    "max_chars": 200000
+  }
+}

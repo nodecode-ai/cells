@@ -1,0 +1,38 @@
+nodecode-tabella is a rewrite of dyiapanis's dyiapanis/tabella:
+
+  https://github.com/dyiapanis/tabella
+  commit 4922d16c9d20ff7b4c2a3b4fbd0aa797f7be8d76
+  MIT License, Copyright (c) 2026 D Yiapanis (LICENSE)
+
+Rewritten: the plugin's four document tools -- doc_read, doc_read_meta,
+doc_convert and doc_create_document -- with their argument schemas and answer
+shapes, the read lane's dispatch by file type (plain text read directly,
+office and marked-up formats converted to Markdown, a PDF's text layer read by
+a text extractor, an image refused for want of OCR), the convert lane's
+pandoc argv with the format-name grammar that keeps a ".lua" reader from being
+executed and the extra_args allowlist (--toc, --number-sections, -Vkey=value,
+so no --filter, --lua-filter or --pdf-engine reaches pandoc), the PDF-as-input
+lane that extracts text first because pandoc cannot read a PDF, the choice of a
+LaTeX engine for a PDF target, the output-directory resolution with its
+category subfolder and its warning when a file lands outside it, and the
+content-to-document rendering (a Markdown or HTML string, or the block list of
+headings, paragraphs, bullets, quotes, code, tables and page breaks). The
+Python is Common Lisp here: uiop's run-program runs the same programs the
+person already has, one section declaration gives the settings, and four
+nlk:define-contract declarations give the tools' arguments, so the schema the
+model is shown and the body that runs are one shape.
+
+Left out: the Python document libraries and what they alone could do --
+python-docx, openpyxl, python-pptx, odfpy and WeasyPrint built .docx, .xlsx,
+.pptx, .odt, .ods and .odp files directly, so spreadsheets and slide decks are
+not written here (pandoc writes documents, not workbooks), and a PDF is written
+through LaTeX rather than WeasyPrint's HTML renderer. anydoc and LiteParse are
+gone with them: reading falls back to pandoc and poppler's pdftotext, which
+means images and scanned pages are refused instead of OCR'd, and a document's
+metadata is what the filesystem knows (format, size, modification time) rather
+than what LiteParse extracted. doc_edit_pdf is not here at all: it redacted
+and re-inserted text through PyMuPDF, and no CLI the cell already has can do
+that. The plugin's other surfaces -- its MCP server over stdio, its optional
+loopback HTTP lane with a bearer token, its first-run virtualenv bootstrap and
+its setup scripts -- are packaging for another harness; a Nodecode cell is
+loaded by the organism, so it needs none of them.
