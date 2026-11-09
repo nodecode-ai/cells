@@ -1,0 +1,22 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "empiriolabs-media": {
+    "enabled": true,
+    // A key written inline is kept in a 0600 file under the home; naming the
+    // variable instead keeps it in your environment. EMPIRIOLABS_API_KEY is
+    // read either way, so neither member is needed when it is exported.
+    "api_key_env": "EMPIRIOLABS_API_KEY",
+    "base_url": "https://api.empiriolabs.ai/v1",
+    // EmpirioLabs AI's release defaults; any model id its catalog lists works.
+    "image_model": "flux-2-klein-4b",
+    "video_model": "hunyuan-video-1-5",
+    "tts_model": "tts-2-flash",
+    "voice": "Sarah",
+    "timeout_seconds": 300,
+    // A video job keeps running past this; the answer then carries its id.
+    "video_timeout_seconds": 900
+  }
+}
