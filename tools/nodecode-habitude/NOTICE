@@ -1,0 +1,26 @@
+nodecode-habitude is a rewrite of legott-ai's legott-ai/habitude-agent-integrations:
+
+  https://github.com/legott-ai/habitude-agent-integrations
+  commit 5802d0c9680f93a56440439bbfba189c80f1ec3f
+  MIT License, Copyright (c) 2026 Habitude (LICENSE)
+
+Rewritten: the four read-only Vault tools the plugin gave a model --
+search_journal, read_excerpt, index_status and refresh_index -- and the scope
+they ran in, one Markdown folder the user names. In the plugin those tools
+were a Python MCP server the skill's setup reference started, with an SQLite
+FTS5 cache, a small JSON config file and a Korean character-ngram tokenizer.
+This cell declares the same four tools in Nodecode's own contract, walks the
+folder's .md files itself, keeps the index in memory for the running process,
+reads the vault folder from its own config section, and issues the same kind
+of expiring reference so a citation is still checked against the note it came
+from. Nothing is installed, nothing is executed, and no note is written.
+
+Left out: the MCP stdio launcher and its JSON-RPC server (a cell registers
+its tools in-process, so there is no server to start or handshake), the SQLite
+FTS5 index (this one is rebuilt in memory, bounded by refresh_seconds), the
+Korean character-ngram tokenizer and the journal-versus-derived-document
+heuristics that ranked daily entries above generated reports -- matching here
+is plainer word overlap over every note in the folder -- the skill's prose
+procedure (the same guidance is the manual at (help :habitude)), the setup
+helper that copied files into a harness skills directory, and the plugin's
+other-harness packaging, which was not part of the hermes folder.
