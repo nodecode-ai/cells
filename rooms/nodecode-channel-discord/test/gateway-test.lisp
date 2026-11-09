@@ -51,12 +51,12 @@ reaches the router."
   (dgw-reduce (ncd:initial-gateway-session)
               "{\"op\": 10, \"d\": {\"heartbeat_interval\": 41250}}"
               :token "tok-abc" :intents 46593)
-(is (equal "identifying" (ncd:dgw-session-connection session)))
-(is-shape actions (length = 2) (first '(:start-heartbeat 41250)))
-(is (eq :send (first (second actions))))
-(is-shape (second (second actions)) ("op" = 2 "HELLO without resume identifies")
-  ((:string "d" "token") "tok-abc") ((:integer "d" "intents") = 46593)
-  ((:integer "d" "large_threshold") = 50) ((:string "d" "properties" "os") "nodecode")))
+  (is (equal "identifying" (ncd:dgw-session-connection session)))
+  (is-shape actions (length = 2) (first '(:start-heartbeat 41250)))
+  (is (eq :send (first (second actions))))
+  (is-shape (second (second actions)) ("op" = 2 "HELLO without resume identifies")
+    ((:string "d" "token") "tok-abc") ((:integer "d" "intents") = 46593)
+    ((:integer "d" "large_threshold") = 50) ((:string "d" "properties" "os") "nodecode")))
 
 (deftest channel-discord-hello-resumes-when-requested ()
   (multiple-value-bind (session actions)
@@ -114,11 +114,11 @@ reaches the router."
                     \"d\": {\"session_id\": \"sess-9\",
                             \"resume_gateway_url\":
                             \"wss://resume.example/\"}}")
-(is-shape session (ncd:dgw-session-connection "ready") (ncd:dgw-session-session-id "sess-9")
-  (ncd:dgw-session-resume-gateway-url "wss://resume.example/")
-  (ncd:dgw-session-sequence = 1 "sequence tracks from s"))
-(is (equal '(:ready "sess-9" nil) (first actions)))
-(is (eq :dispatch (first (second actions)))))
+  (is-shape session (ncd:dgw-session-connection "ready") (ncd:dgw-session-session-id "sess-9")
+    (ncd:dgw-session-resume-gateway-url "wss://resume.example/")
+    (ncd:dgw-session-sequence = 1 "sequence tracks from s"))
+  (is (equal '(:ready "sess-9" nil) (first actions)))
+  (is (eq :dispatch (first (second actions)))))
 
 (deftest channel-discord-resumed-is-connected-again ()
   ;; A resume is connected again: the lap sets /channels back to connected,
@@ -138,12 +138,12 @@ reaches the router."
                     \"d\": {\"session_id\": \"sess-9\",
                             \"application\": {\"id\": \"app1\",
                                               \"flags\": 0}}}")
-(is (equal "app1" (ncd:dgw-session-application-id session)))
-(is (equal '(:ready "sess-9" "app1") (first actions)))
-(is-values (next actions)
-    (dgw-reduce session "{\"op\": 0, \"t\": \"READY\", \"s\": 2,
+  (is (equal "app1" (ncd:dgw-session-application-id session)))
+  (is (equal '(:ready "sess-9" "app1") (first actions)))
+  (is-values (next actions)
+      (dgw-reduce session "{\"op\": 0, \"t\": \"READY\", \"s\": 2,
                               \"d\": {\"session_id\": \"sess-10\"}}")
-  (next.application-id "app1") ((first actions) '(:ready "sess-10" "app1"))))
+    (next.application-id "app1") ((first actions) '(:ready "sess-10" "app1"))))
 
 (deftest channel-discord-sequence-tracking (let ((session (ncd:make-dgw-session :sequence 5))))
   ;; s: null keeps the tracked sequence; s: N advances it.

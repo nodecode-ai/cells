@@ -61,20 +61,20 @@ threads: the request, platform and seam tests drive it directly."
              "soul_file" soul-path)
    :plans (bt2:with-lock-held (lock) (reverse recorded))
    :after ((is (adapter-threads-stopped-p "channel-telegram"))))
-(is (await (:timeout 15) (plan-matching (plans) :label "send_rich_message")))
-(let ((all (plans)))
-  (is-typing-before-reply all "send_rich_message")
-  (is-present (send (plan-matching all :label "send_rich_message")) "send plan recorded"
-    (is-plan send (:string "rich_message" "markdown") "tg reply"
-             "chat_id" "555" "disable_notification" nil (:any "reply_parameters" "message_id") 1)))
-(is-lane-carrying "telegram" "telegram-555" "telegram-555-m1" "telegram-chat"
-                  "(Telegram user id 42)" "(nct:request \"POST\" PATH")
-(is (wire-row "kim (operator) [m1 u42]: hi bot" (first messages-seen) "content"))
-(is-exchange-written-back-once
- "telegram-555" "telegram-555-m1"
- "the redelivered update admitted no second turn")
-(is (await (:timeout 10) (find 8 (plans-matching (plans) :label "get_updates")
-                               :key (lambda (plan) (plan-field plan "offset"))))))
+  (is (await (:timeout 15) (plan-matching (plans) :label "send_rich_message")))
+  (let ((all (plans)))
+    (is-typing-before-reply all "send_rich_message")
+    (is-present (send (plan-matching all :label "send_rich_message")) "send plan recorded"
+      (is-plan send (:string "rich_message" "markdown") "tg reply"
+               "chat_id" "555" "disable_notification" nil (:any "reply_parameters" "message_id") 1)))
+  (is-lane-carrying "telegram" "telegram-555" "telegram-555-m1" "telegram-chat"
+                    "(Telegram user id 42)" "(nct:request \"POST\" PATH")
+  (is (wire-row "kim (operator) [m1 u42]: hi bot" (first messages-seen) "content"))
+  (is-exchange-written-back-once
+   "telegram-555" "telegram-555-m1"
+   "the redelivered update admitted no second turn")
+  (is (await (:timeout 10) (find 8 (plans-matching (plans) :label "get_updates")
+                                 :key (lambda (plan) (plan-field plan "offset"))))))
 
 (deftest channel-telegram-conflict-is-loud-and-slow (with-temp-gateway (port))
   (is (integerp port))

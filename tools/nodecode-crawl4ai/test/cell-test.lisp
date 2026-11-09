@@ -188,7 +188,7 @@ The nested text."
             (cell-entry "nodecode-crawl4ai" "crawl" "https://example.com/cmd")
           (is (search "From the command" text) "the page is the answer")
           (is (null dialog) "and no dialog when the address was typed"))
-        (is (equal 1 (length (requests-to "/md"))) "one request"))))
+        (is (equal 1 (length (requests-to "/md"))) "one request")))))
 
 (deftest crawl4ai-cell-slash-crawl-alone-asks-for-the-page ()
   (with-session-store ("crawl4ai-command-ask")
@@ -197,6 +197,5 @@ The nested text."
         (multiple-value-bind (text dialog)
             (cell-entry "nodecode-crawl4ai" "crawl" "")
           (is (search "/crawl" text) "the answer says how to call it")
-          (is (consp dialog) "and a dialog asks for the address")
+          (is (equal 1 (length (and dialog (nle::json-array dialog "rows")))) "and a dialog asks for the address")
           (is (null *requests*) "nothing is sent yet"))))))
-)
