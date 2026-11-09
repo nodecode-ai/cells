@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell -- documentation,
+// not config: the declaration in cell.lisp is the authority. A present section
+// is enabled; "enabled": false vetoes it.
+{
+  "workflow-record": {
+    "enabled": true,
+    // the debugging endpoint of the Chromium to record in; the default
+    "cdp_url": "http://127.0.0.1:9222",
+    // where recordings are written; recordings/ under the Nodecode home when unset
+    "dir": "~/.nodecode/recordings",
+    // the most steps one recording keeps; the oldest drop past it
+    "max_steps": 500,
+    // how long attaching to the browser and taking the recorder may take
+    "timeout_seconds": 15
+  }
+}

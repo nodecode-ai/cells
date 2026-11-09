@@ -1,0 +1,25 @@
+nodecode-workflow-record is a rewrite of NousResearch's NousResearch/hermes-labs-plugins:
+
+  https://github.com/NousResearch/hermes-labs-plugins
+  commit 4987918a068fcf4b3efbb584db5dd05e5f57c669
+  MIT, Copyright (c) 2026 Nous Research (LICENSE)
+
+The original is a Hermes Agent plugin: a `hermes record` subcommand that attaches
+to a Chromium over the Chrome DevTools Protocol, injects an in-page recorder and
+writes one JSON file of steps under the Hermes home, plus a bundled skill that
+tells /learn how to turn such a recording into a skill that replays it. The
+rewrite keeps the recording model -- the same step types, the same
+{SECRET:<field name>} masking done both in the page and again from the field's
+type and autocomplete hint, the same sorting and rebasing, the same
+recordings/<slug>-<stamp>.json file written 0600 in a 0700 directory -- and
+reimplements it in Common Lisp against Nodecode's cell contract: the verbs are
+the `record` tool and /record, the recorder JS is rewritten for the same three
+DOM events, and the skill's guidance is the (help :record) primer, which the
+model reads before writing the skill itself. Left out: the `--manual` stdin loop
+(a `step` action does the same during a recording), the `--list` flag (the
+`list` action and /record list), the BROWSER_CDP_URL and Hermes-config endpoint
+precedence (one `cdp_url` setting), and attachment to the browser target with
+Target.attachToTarget with flattened sessions (the page target from /json/list
+is attached directly; the events and the masking are unchanged). No Puppeteer,
+Playwright or npm is involved, here or there: both speak CDP over the socket
+directly.
