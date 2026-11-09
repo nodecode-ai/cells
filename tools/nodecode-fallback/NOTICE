@@ -1,0 +1,24 @@
+nodecode-fallback is a rewrite of tomkubik's tomkubik/hermes-fallback:
+
+  https://github.com/tomkubik/hermes-fallback
+  commit ce150572ea10de682a2c67902b314590b55683b3
+  MIT License, Copyright (c) 2026 Tom Kubik (LICENSE)
+
+Rewritten: the heuristic itself. The original's filters and ranking strategies
+(parameter count, context window, release recency, flash tier, free tier, tool
+calls, provider preference and order) are reimplemented in Common Lisp over the
+models Nodecode's own catalog and providers name, and its writing of Hermes'
+`fallback_providers` entries became writing Nodecode's `failover.chain`, the key
+the engine already walks after a failed round. `fallback_resolve`,
+`fallback_apply`, `fallback_status` and `/fallback` are the rewrite of its four
+tools and its slash command.
+
+Left out, and why: the interactive first-launch wizard and its live scan of
+which providers offer free models (a conversation in Nodecode already does
+that, and the cell answers `fallback:providers` without needing one); the
+OpenRouter and Nous Portal catalog fetches (Nodecode's own models.dev cache is
+the catalog here, and an id's own numbers answer first); the per-request
+middleware that rewrote a Hermes request's model mid-flight (Nodecode moves the
+whole round onto a chain entry, so there is nothing per-request to rewrite);
+and the `switch` verb that rewrote the primary model in Hermes' config, since
+this cell picks a fallback and leaves the primary alone.

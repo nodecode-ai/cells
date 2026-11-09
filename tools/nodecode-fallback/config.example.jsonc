@@ -1,0 +1,24 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "fallback": {
+    "enabled": true,
+    "sort_by": "largest_parameter_count",
+    "provider": "auto",
+    "providers": [],
+    "exclude_providers": [],
+    "free_only": false,
+    "flash_only": false,
+    "require_tools": true,
+    "min_context": 128000,
+    "min_params": 0,
+    "vendor": "",
+    "name_filter": "",
+    "prefer_current_provider": false,
+    "allow_provider_switch": true,
+    "max_candidates": 3,
+    "auto_sync": true
+  }
+}
