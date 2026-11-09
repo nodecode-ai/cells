@@ -1,0 +1,25 @@
+nodecode-fleetkeep is a rewrite of jlucwright's jlucwright/fleetkeep-agent-plugin:
+
+  https://github.com/jlucwright/fleetkeep-agent-plugin
+  commit 67c7334d21895cf38586d110d3dcc3c4e6cedeb9
+  MIT, Copyright (c) 2026 Studea Limited (LICENSE)
+
+The original was one Agent Plugins v1 package with a single skill,
+skills/fleetkeep-import-review/SKILL.md: prose that told a model to map a
+vehicle spreadsheet onto Fleetkeep's six import columns, keep unknown dates
+blank, flag ambiguous dates, duplicates, missing registrations and cells a
+spreadsheet might run. Its rules, in the same order and with the same
+cautions, are fleetkeep.lisp here: the same six columns, the same refusal to
+guess a date that reads both ways, the same "keep the row and flag it" for a
+registration, the same formula guard, the same "a column the six do not take
+is named, not pretended in". The skill's prose is kept as (help :fleetkeep),
+which is where the parts no arithmetic decides still live.
+
+What the rewrite adds is the arithmetic: a CSV reader and writer that follow
+RFC 4180, a review that answers with counts and one line per row, a tool the
+model calls with the CSV text, and /fleetkeep for a file named at a shell.
+What it left out is the original's packaging: the Agent Plugins manifest and
+the duplicated .plugin/plugin.json a directory indexer read, its product
+links and its README, which the cell's own README replaces. Nothing of the
+original is bundled here, and nothing of it runs: the review is Lisp over
+the text it is handed, with no key, no network and no account.

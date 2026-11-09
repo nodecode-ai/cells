@@ -1,0 +1,10 @@
+// nodecode-fleetkeep's section of ~/.nodecode/config.jsonc. Secrets go by
+// reference; nothing here is one.
+{
+  "fleetkeep": {
+    "output_dir": "~/data/fleetkeep",   // where NAME.import.csv and NAME.review.md are written
+    "date_order": "day-first",          // "day-first" or "month-first": named first, never chosen
+    "formula_guard": true,             // a formula-like cell holds its row out of the import
+    "max_rows": 5000                    // how many rows one review reads
+  }
+}
