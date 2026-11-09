@@ -16,7 +16,8 @@
         "repo": "0bull/agent-plugin",
         "commit": "240890a71715375bc877b238491e414517e9d902",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-abstract",
@@ -40,7 +41,8 @@
           "provider": "abstract",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-acedatacloud",
@@ -64,7 +66,8 @@
           "provider": "acedatacloud",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-acedatacloud-media",
@@ -81,7 +84,8 @@
         "repo": "AceDataCloud/AceDataCloudMediaHermes",
         "commit": "8eaebfb86152d754061375de881548bfa096dd2d",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-acp",
@@ -102,7 +106,8 @@
           "provider": "acp",
           "name": "Agents (Claude Code, Codex, Gemini CLI, any ACP agent)"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-actvox",
@@ -119,7 +124,8 @@
         "repo": "ActVox/actvox-plugins",
         "commit": "76e394d381c3cf56632d7fd6c91d442c68b181f2",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-adaptive-effort",
@@ -136,7 +142,8 @@
         "repo": "atostivint/hermes-adaptive-effort",
         "commit": "c84f1389670cdd5ec4607b13bd32c4809878c415",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-adextract",
@@ -153,7 +160,8 @@
         "repo": "ad-vertly/adextract-mcp-server",
         "commit": "02c08407abe21b4af76b6f066e5edf9490fb231e",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-advisor",
@@ -170,7 +178,8 @@
         "repo": "ljubomirj/hermes-advisor-plugin",
         "commit": "37e55975611d38212cf082029ece504f207df656",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-adwave",
@@ -187,7 +196,8 @@
         "repo": "AdwaveInc/adwave-agent-plugin",
         "commit": "0b5ab18aa6ebcde1a33f7dcd399a8c07cebf342c",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-afterforge",
@@ -204,7 +214,8 @@
         "repo": "ussyverse/afterforge",
         "commit": "067a739e5ab64097140c5200bde2cc5d52662ea5",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-agent-batch",
@@ -221,7 +232,8 @@
         "repo": "raaaas/hermes-agent-batch",
         "commit": "064afc5dba8869df703ba055aa2760730c0d30dc",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-agent-mail",
@@ -238,7 +250,8 @@
         "repo": "dominikamann/agent-mail-gateway",
         "commit": "90c444bd7c0d2bf1955b8844ba3cf68d95f7f7fb",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-agent-router",
@@ -255,7 +268,8 @@
         "repo": "Pinutss/jev-agent-router",
         "commit": "8cb6d67a81d4545502750c4599b427d98acf3120",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-agent-si",
@@ -272,7 +286,8 @@
         "repo": "joelbrilliant/hermes-agent-si",
         "commit": "adf7abc1d89b1e1ea686ac2fd29e2b95b454f4fe",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-agentplaybooks",
@@ -289,7 +304,8 @@
         "repo": "matebenyovszky/agentplaybooks",
         "commit": "f31e9c3af6520cebda1c0712447b4b487ffc12a7",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-agentpurse",
@@ -306,7 +322,8 @@
         "repo": "maaz-bin-hassan/agentpurse",
         "commit": "84a1ed7cc9dbac462a5bde8b65f6d105cc56b20b",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-agentvault",
@@ -323,7 +340,8 @@
         "repo": "synnada-ai/agentvault-plugins",
         "commit": "6e0e3ded804cefb19b362736e5818c99cc061d48",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-agentwallet",
@@ -340,7 +358,8 @@
         "repo": "openclawcash/agentwalletapi-hermes",
         "commit": "ae547a9c51dfc6060fe2441411f9ec846250ef75",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-agora",
@@ -357,7 +376,8 @@
         "repo": "yzy806806/agora",
         "commit": "3ddd556e542b826498a90cc383c9020ae55897a9",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-ai-usage",
@@ -374,7 +394,8 @@
         "repo": "lvabarajithan/hermes-ai-usage-tracker",
         "commit": "14e844f6ced5e0d618c767d726330a78c5cadadd",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-aihubmix",
@@ -398,7 +419,8 @@
           "provider": "aihubmix",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-aistupidlevel",
@@ -422,7 +444,8 @@
           "provider": "aistupidlevel",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-aixy",
@@ -446,7 +469,8 @@
           "provider": "aixy",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-alans-way",
@@ -463,7 +487,8 @@
         "repo": "capthvnsen/alans-way-agents",
         "commit": "23cce292c867a42ccf9853b99d798add028788f0",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-alibaba-coding-plan",
@@ -481,7 +506,8 @@
           "name": "Alibaba Coding Plan",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-alibaba-token-plan",
@@ -499,7 +525,8 @@
           "name": "QwenCloud Token Plan",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-alice-voice",
@@ -516,7 +543,8 @@
         "repo": "bablobanov/hermes-alice-voice",
         "commit": "e31f2c8e65bb861c6806bd19e8f57a1e89726450",
         "license": "MIT"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-amazon-bedrock",
@@ -527,7 +555,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-ando",
@@ -544,7 +573,8 @@
         "repo": "Ando-Corporation/hermes-ando",
         "commit": "1bfde877e1ed194ebf461d64e0468605d7e21a87",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-android-emulator",
@@ -561,7 +591,8 @@
         "repo": "PIR8-Software/hermes-android-emulator",
         "commit": "3b5cb61e8bd6c4600f797a44c44234a6371bd59a",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-anki",
@@ -578,7 +609,8 @@
         "repo": "suhas-svg/hermes_anki",
         "commit": "bc89df834fb104b8d69c6444f35a5ae6b3764dd7",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-antidote",
@@ -595,7 +627,8 @@
         "repo": "GroveMinting/llmAntidote",
         "commit": "c7f6a5428abbdba2b48f8b5fd3494b7ae2e3c5e8",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-antigravity-agy",
@@ -618,7 +651,8 @@
           "name": "Antigravity (agy CLI)",
           "provider": "antigravity-agy"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-antigravity-cli",
@@ -642,7 +676,8 @@
           "provider": "antigravity-cli",
           "sign_in": "cli"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-anyapi",
@@ -666,7 +701,8 @@
           "provider": "anyapi",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-anyrouter",
@@ -690,7 +726,8 @@
           "provider": "anyrouter",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-anysearch",
@@ -707,7 +744,8 @@
         "repo": "vollegrewar/hermes-plugin-anysearch",
         "commit": "43c1757a5d12d4d7adb4e74326c99182f4957b6f",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-apify",
@@ -724,7 +762,8 @@
         "repo": "apify/apify-hermes-agent-plugin",
         "commit": "a3a7af0c0dda9fdac79d67fb0a7a50b7a39cd91d",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-apple",
@@ -738,7 +777,8 @@
       ],
       "platforms": [
         "macos"
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-apple-health",
@@ -755,7 +795,8 @@
         "repo": "davidmosiah/apple-health-mcp",
         "commit": "94c31b8545e0d82a2d2e0eb1cb43da0e470b6d1f",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-approval-ledger",
@@ -772,7 +813,8 @@
         "repo": "olric3015/hermes-plugins",
         "commit": "4a2ef866a51f1c99ed1d77e423136450340d901b",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-approvals",
@@ -789,7 +831,8 @@
         "repo": "anpicasso/hermes-jev-approvals",
         "commit": "28be98a19539b29768398fb400f4c62f41337c26",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-archytan-lite",
@@ -806,7 +849,8 @@
         "repo": "High-ArchyTech-Solutions/hermes-archytan-lite",
         "commit": "38748165b089f776acf9d6119eaeafdb76eed83e",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-arena",
@@ -823,7 +867,8 @@
         "repo": "J182Razor/hermes-arena-skill",
         "commit": "0fdb521220f0d4507044e97a56eadee1cea9b65e",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-artifact-relay",
@@ -840,7 +885,8 @@
         "repo": "eloktev/hermes-artifact-relay",
         "commit": "c91fa9229121dd616a275a45447301eacca45e6f",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-artifacts",
@@ -857,7 +903,8 @@
         "repo": "dmmeteo/hermes-artifacts",
         "commit": "57b61fca2872d15060d8a9b30b9e51242e9cb357",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-artil",
@@ -874,7 +921,8 @@
         "repo": "artilai/plugins",
         "commit": "8dce90c47a7b0d9e9c5edcb3dd2dd09227fe6fea",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-aside",
@@ -891,7 +939,8 @@
         "repo": "leonphull/hermes-aside-browser",
         "commit": "ffd4e0e0de4b3a8624f3d83f98c378b88d6f9581",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-astro",
@@ -908,7 +957,8 @@
         "repo": "aidatatools-dev/astro-agents-mcp",
         "commit": "105be9ce7c01edebf73dd8de1ac7431853c58a3e",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-athena",
@@ -925,7 +975,8 @@
         "repo": "athenaforhermes/athena",
         "commit": "3ef0dbddf18545f2a2d5b2e192dada16e3b0eda8",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-athletedata",
@@ -942,7 +993,8 @@
         "repo": "athletedata-health/mcp",
         "commit": "1ca2fa8d129c6b7c80a8af516a6653b7aa250679",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-aurora",
@@ -959,7 +1011,8 @@
         "repo": "Ntizar/hermes-aurora",
         "commit": "dcf5b271e76bb541e7822b029b6de08fa2244582",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-aux-ledger",
@@ -976,7 +1029,8 @@
         "repo": "olric3015/hermes-plugins",
         "commit": "aee39a67b4ffb1ff786c417fb92f997a8c7663b7",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-azure",
@@ -987,7 +1041,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-b64",
@@ -1004,7 +1059,8 @@
         "repo": "olric3015/hermes-plugins",
         "commit": "89b15726e6f44bc072bd6af5fc6a1402e50aafa3",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-bankbridge",
@@ -1021,7 +1077,8 @@
         "repo": "bankbridge-money/bankbridge-plugin",
         "commit": "c7fcda435eeaeee94cf4479983d646027befb467",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-basekit",
@@ -1038,7 +1095,8 @@
         "repo": "D0xedDevi0/hermes-basekit",
         "commit": "142bd48ea7755bda6a7c2aff707106bdfbf25ee6",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-beam",
@@ -1055,7 +1113,8 @@
         "repo": "Beam-Network/beam-hermes",
         "commit": "d41448cb3f08bacbc368a4948ecbe310e5f6964c",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-belive-aihub",
@@ -1079,7 +1138,8 @@
           "provider": "belive-aihub",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-bento",
@@ -1096,7 +1156,8 @@
         "repo": "shagghiesuperstar/hermes-plugin-bento",
         "commit": "f490ed02c0e377acc9112bf57192bacedbbcd9b1",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-bharatcode",
@@ -1120,7 +1181,8 @@
           "provider": "bharatcode",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-bilinc",
@@ -1137,7 +1199,8 @@
         "repo": "ReARCLabs/bilinc-hermes-plugin",
         "commit": "1ad81b4aaef8632ba5d6438384f3f063f46a0ebd",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-birkin",
@@ -1154,7 +1217,8 @@
         "repo": "ashmoonori-afk/birkin-mnemosyne",
         "commit": "63a34526973fc9ad0e5a030a474c67a5fca873e7",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-birta",
@@ -1171,7 +1235,8 @@
         "repo": "birtadev/plugins",
         "commit": "fd2485de51401db9dd9b25f0bc495bd36e9752c8",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-blackbox",
@@ -1189,7 +1254,8 @@
         "repo": "umanitek/agent-blackbox",
         "commit": "f9224a3cda4a784ccac46576bb4f1b4fa02f5440",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-bluesky-feed",
@@ -1206,7 +1272,8 @@
         "repo": "TakeshiTGAL/hermes-plugin-author-feed",
         "commit": "d3c9497d3f62b7f49aa0fa6131a7cd30278d80a8",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-booking",
@@ -1223,7 +1290,8 @@
         "repo": "kyle-bartlett/booking-bridge",
         "commit": "8d013fcd7500f5b9e3b98588a6c32826f25c8252",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-bot-chat",
@@ -1241,7 +1309,8 @@
         "repo": "Tormen28/hermes-bot-chat-agent",
         "commit": "2bc1ba3a6543255c7cdda2cb03eee040f917649d",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-botsee",
@@ -1258,7 +1327,8 @@
         "repo": "sidekickjanet/hermes-product-plugins",
         "commit": "f79c213703b600a48a1d4f949bbd82c113d117f0",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-boxcompute",
@@ -1275,7 +1345,8 @@
         "repo": "boxcompute/hermes-plugin",
         "commit": "de27f5719372905686474f8a7650c591c63e899c",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-brave-search",
@@ -1292,7 +1363,8 @@
         "repo": "rabilrbl/hermes-brave-search-plugin",
         "commit": "4134cbef910c14c63e6b284b0820b30f3811ab47",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-browser-profiles",
@@ -1309,7 +1381,8 @@
         "repo": "anpicasso/hermes-plugin-chrome-profiles",
         "commit": "03d24e95e7b14125c5227797a3a6682c3d890c84",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-browserless",
@@ -1326,7 +1399,8 @@
         "repo": "browserless/browserless-mcp",
         "commit": "600a5d689fa3f5bdcb5676ffc063b56d18e9bd7c",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-bulkpublish",
@@ -1343,7 +1417,8 @@
         "repo": "bulkpublish/hermes-bulkpublish",
         "commit": "530589907c6f791aacd35e1f708dbe8949e7e87f",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-bunny-space",
@@ -1360,7 +1435,8 @@
         "repo": "jasm001/hermes-plugin-bunny-space",
         "commit": "c28e7985599c03a323ebb06f8ca28ac7cd5b05d6",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-by2kb",
@@ -1377,7 +1453,8 @@
         "repo": "Charlesmpc/by2kb",
         "commit": "5983ca8a479feb87321f5c37f59cf8ae28818451",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-cacheguard",
@@ -1394,7 +1471,8 @@
         "repo": "AIverflow/hermes-cacheguard",
         "commit": "4648bc056c28b9453d92089ffd9db09f11dc3392",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-call-me",
@@ -1411,7 +1489,8 @@
         "repo": "radres/hermes-plugin-call-me",
         "commit": "970952e72d633ebdbed20d8c60c327cc45475140",
         "license": "MIT"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-calling-mom",
@@ -1428,7 +1507,8 @@
         "repo": "SlyBase/calling-mom",
         "commit": "e0daf7f1b293cdf41b685f856b02120f82c144d9",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-camel-guard",
@@ -1445,7 +1525,8 @@
         "repo": "nativ3ai/hermes-camel-guard-plugin",
         "commit": "4cbfca3a5f1d46f5d152280cccc496d0df14d097",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-camofox",
@@ -1462,7 +1543,8 @@
         "repo": "NousResearch/hermes-official-plugins",
         "commit": "e7a218f26db88426ab3e7376f0e000b6e356f5e7",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-canary-trap",
@@ -1479,7 +1561,8 @@
         "repo": "Tarekkharsa/hermes-canary-trap",
         "commit": "cbef2f98aee69cfacf59402e3d4fe98427d10b84",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-canvas",
@@ -1496,7 +1579,8 @@
         "repo": "skk2010/hermes-board-plugin",
         "commit": "feb66592881bf76198cd8d790fd1dae25e5057f6",
         "license": "MIT"
-      }
+      },
+      "category": "desktop"
     },
     {
       "name": "nodecode-caprover",
@@ -1513,7 +1597,8 @@
         "repo": "fmercurio/hermes-caprover-operator",
         "commit": "1d813b6e23c88c8641f8c891b46c2ae3f065e890",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-carbonvoice",
@@ -1530,7 +1615,8 @@
         "repo": "PhononX/hermes-plugin-carbonvoice",
         "commit": "55867dba9c6645ce493fd955970302e59a4548ea",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-cartograph",
@@ -1547,7 +1633,8 @@
         "repo": "anthony-maio/cartograph",
         "commit": "e2e06db1c79f3de60760d9045ae6908ddf4e4b21",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-cash-desk",
@@ -1564,7 +1651,8 @@
         "repo": "FutureInvoked/cash-desk",
         "commit": "26d5fabe5f50f250e5dc72c0751adbdb3625f732",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-cell-generator",
@@ -1581,7 +1669,8 @@
         "repo": "iruzen-dono/hermes-plugin-gen",
         "commit": "75899f960d8358731255172add8232344c9084b8",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-certarc",
@@ -1598,7 +1687,8 @@
         "repo": "CertArc/certarc-mcp",
         "commit": "bdb74db3ddc7c5d14ecda710e6af077d71f415b2",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-channel-email",
@@ -1609,7 +1699,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode-channel-kit"
-      ]
+      ],
+      "category": "platform"
     },
     {
       "name": "nodecode-channel-imessage",
@@ -1620,7 +1711,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode-channel-kit"
-      ]
+      ],
+      "category": "platform"
     },
     {
       "name": "nodecode-channel-matrix",
@@ -1631,7 +1723,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode-channel-kit"
-      ]
+      ],
+      "category": "platform"
     },
     {
       "name": "nodecode-channel-pidgeon",
@@ -1648,7 +1741,8 @@
         "repo": "pidgeon-ai/pidgeon-python",
         "commit": "d4448663b39ae0280a247bb3ea4cab7ef0a4e080",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-channel-whatsapp",
@@ -1659,7 +1753,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode-channel-kit"
-      ]
+      ],
+      "category": "platform"
     },
     {
       "name": "nodecode-channel-whatsapp-agent",
@@ -1677,7 +1772,8 @@
         "repo": "ahtishamdilawar/hermes-whatsapp-agent-platform",
         "commit": "3a57b1da04499279d1af6c7d979c9c2d8b658ce0",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-channel-x",
@@ -1689,7 +1785,8 @@
       "depends_on": [
         "nodecode-channel-kit",
         "sb-concurrency"
-      ]
+      ],
+      "category": "platform"
     },
     {
       "name": "nodecode-channel-xchat",
@@ -1707,7 +1804,8 @@
         "repo": "NousResearch/hermes-official-plugins",
         "commit": "e7a218f26db88426ab3e7376f0e000b6e356f5e7",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-chat-length",
@@ -1724,7 +1822,8 @@
         "repo": "MadeByBrain/hermes-chat-length",
         "commit": "1759b26a66c7b4d54703186cc867a5869baa4f12",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-chatto",
@@ -1741,7 +1840,8 @@
         "repo": "jrimmer/hermes-chatto-plugin",
         "commit": "aab0a20635cb578253a8014bc8d93e1b32f020fc",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-checkin",
@@ -1758,7 +1858,8 @@
         "repo": "capthvnsen/alans-way-agents",
         "commit": "0f65549ac1353f6b74b8ac6a22d58f3eb6dea0a3",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-checkup",
@@ -1775,7 +1876,8 @@
         "repo": "iap/hermes-guide",
         "commit": "9690c41665c2de09043fa12f19c7c081247ab831",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-chmod-ref",
@@ -1792,7 +1894,8 @@
         "repo": "olric3015/hermes-plugins",
         "commit": "d2f543a0979eee73202a3fe06bb2c722b04d5765",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-chorepilot",
@@ -1809,7 +1912,8 @@
         "repo": "WestWaters/ChorePilot",
         "commit": "9b1843ac0a0c467c7ccc0fb3ae355f1bb5f70434",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-chronicle",
@@ -1826,7 +1930,8 @@
         "repo": "indigokarasu/chronicle-agent-context-and-memory",
         "commit": "92e4351a852117a11542210d06e8e5bfb61c3f1a",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-citation-guard",
@@ -1843,7 +1948,8 @@
         "repo": "ChienNguyen23/hermes-citation-guard",
         "commit": "6916b2ae7f561765883c57b32441db049e246113",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-cjk-sanitizer",
@@ -1860,7 +1966,8 @@
         "repo": "evanyudis/cjk_sanitizer",
         "commit": "47d2a95c89e827fef6ea0bacbff433c6dc980351",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-claude-code",
@@ -1882,7 +1989,8 @@
           "provider": "claude-code",
           "name": "Claude Pro/Max (Claude Code)"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-cline-pass",
@@ -1900,7 +2008,8 @@
           "name": "ClinePass",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-cloud-files",
@@ -1918,7 +2027,8 @@
         "repo": "electricsheephq/hermes-cloud-file-manager",
         "commit": "9db37a6575852cc7bd4aa23b212ec6a52b915ac5",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-cloudflare-ai-gateway",
@@ -1929,7 +2039,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-cloudflare-sandbox",
@@ -1946,7 +2057,8 @@
         "repo": "kiyo-e/hermes-cloudflare-sandbox",
         "commit": "75961d77109b185bdaeef650cc9f945df0aa0551",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-cloudflare-web-search",
@@ -1963,7 +2075,8 @@
         "repo": "Adolanium/hermes-cloudflare-web-search",
         "commit": "259783bf335cfffbfe16e2ef16efa301beb6db14",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-cloudflare-workers-ai",
@@ -1987,7 +2100,8 @@
           "provider": "cloudflare-workers-ai",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-codex-auth",
@@ -1998,7 +2112,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-codex-truly",
@@ -2015,7 +2130,8 @@
         "repo": "kyssta-exe/hermes-codex-truly",
         "commit": "1913d2a0a4b2dd3e4283af5c78241de4d3a2995e",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-cognee",
@@ -2032,7 +2148,8 @@
         "repo": "topoteretes/cognee-integrations",
         "commit": "b132740960181e712f15c76ee80519cbd15fdb5d",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-comfyrizz",
@@ -2049,7 +2166,8 @@
         "repo": "mojomast/comfyrizz-hermes",
         "commit": "756feefcca4bee415b3bc950ad7fb40eff60c60d",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-command-tray",
@@ -2066,7 +2184,8 @@
         "repo": "aydnOktay/hermes-command-tray",
         "commit": "f28afd1e21dd9ac18756a4ec8d48e8a0f6889ce2",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-commandcode",
@@ -2090,7 +2209,8 @@
           "provider": "commandcode",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-corpus",
@@ -2107,7 +2227,8 @@
         "repo": "teakesdev/corpus-agent-kit",
         "commit": "53db664236201a885a3a7133ffe62476293faace",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-costguard",
@@ -2124,7 +2245,8 @@
         "repo": "Whydiriki700/costguard",
         "commit": "967e2b7ac9fed33698d430906bd6feba0339a6fe",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-crawl4ai",
@@ -2141,7 +2263,8 @@
         "repo": "mblauser/hermes-plugin-crawl4ai",
         "commit": "6eb0842a39e2d89fb02ca85512945700dbebdc86",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-crew",
@@ -2158,7 +2281,8 @@
         "repo": "macd2/Crew",
         "commit": "ffb0e0c1d11a5fb3d36c3e34671bbd4c2cc02b6f",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-cursor",
@@ -2176,7 +2300,8 @@
           "name": "Cursor",
           "sign_in": "/cursor login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-custodian",
@@ -2193,7 +2318,8 @@
         "repo": "indigokarasu/hermes-custodian-plugin",
         "commit": "d5b4ebfd2353a29380a51c8bcba84d4682cf4c91",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-cyber-security",
@@ -2204,7 +2330,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "tools"
     },
     {
       "name": "nodecode-dangerous-patterns",
@@ -2221,7 +2348,8 @@
         "repo": "scross01/hermes-custom-dangerous-patterns-plugin",
         "commit": "256ff08d0be04baf1916f5e7d841b1c2718aa1e4",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-dashscope-image",
@@ -2238,7 +2366,8 @@
         "repo": "rriggs/hermes-plugin-dashscope-image",
         "commit": "f13665c97eb852b3ef90e30e020dbdcf0c9dc38b",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-davinci-resolve",
@@ -2255,7 +2384,8 @@
         "repo": "wassermanproductions/hermes-davinci-resolve-plugin",
         "commit": "bbd5b207f823f16a20e756bfa80f44ad34790a3f",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-deadbolt",
@@ -2272,7 +2402,8 @@
         "repo": "seanebones-lang/deadbolt-hermes-plugin",
         "commit": "177fff79a8b6308f8d182146ed8a6e21dc84c565",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-debug-desk",
@@ -2289,7 +2420,8 @@
         "repo": "aydnOktay/hermes-debug-desk",
         "commit": "57cbd4d23eba978dc9a53ab6387a84c336992b74",
         "license": "MIT"
-      }
+      },
+      "category": "desktop"
     },
     {
       "name": "nodecode-decisions",
@@ -2306,7 +2438,8 @@
         "repo": "eve-ai-dev/hermes-decisions-plugin",
         "commit": "eeac2eac98a3d1f566dc020912bb378aece431f8",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-deepgram-voice",
@@ -2323,7 +2456,8 @@
         "repo": "jaysonsantos/hermes-deepgram-voice-plugin",
         "commit": "2d31b885ec873ed6693edd7ad1a80f7023439ac0",
         "license": "MIT"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-defuddle",
@@ -2340,7 +2474,8 @@
         "repo": "annalinneajohansson82/hermes-defuddle",
         "commit": "d28bd52eed30c397a45f0b2aba869a28ca4789c4",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-degeneracy-guard",
@@ -2358,7 +2493,8 @@
         "repo": "simin-yuan/hermes-degeneracy-guard",
         "commit": "ffc28d0ab9ac6b6c0cbb118ed5fb0c06909a3dc1",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-deja",
@@ -2375,7 +2511,8 @@
         "repo": "vshulcz/deja-vu",
         "commit": "910d490f6b1909fa7a469c3adf95c0ec5d5187c5",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-delegation",
@@ -2392,7 +2529,8 @@
         "repo": "NousResearch/hermes-official-plugins",
         "commit": "13b2c1c9c8204bf333df240b2aacf98c3e6250b7",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-devin",
@@ -2410,7 +2548,8 @@
           "name": "Devin",
           "sign_in": "/devin login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-diff-review",
@@ -2427,7 +2566,8 @@
         "repo": "sprmn24/hermes-plugin-diff-review",
         "commit": "ba7bb0e1c5c1e7cfc36bf627b960910c816cc697",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-disciplined-vibe-coding",
@@ -2444,7 +2584,8 @@
         "repo": "bmtrnavsky/disciplined-vibe-coding",
         "commit": "ac4de52dc8baf9ece90e3a2bab749152ae93a91b",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-discord-presence",
@@ -2461,7 +2602,8 @@
         "repo": "DarRahman/hermes-discord-presence",
         "commit": "fb49ff562015b4ae3ed88b2306f2c1de518bfb8b",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-doctorpack",
@@ -2478,7 +2620,8 @@
         "repo": "godhiraj-code/hermes-doctorpack",
         "commit": "ac00ace14ea9210e2e02a7b978cf4bc51eec2d8f",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-document-ocr",
@@ -2495,7 +2638,8 @@
         "repo": "lEWFkRAD/hermes-document-reader",
         "commit": "f3a0bed28e6c289942b899924d9e7cf8b93045e8",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-doppler-geo",
@@ -2512,7 +2656,8 @@
         "repo": "mojomast/hermes-aircraft-doppler-geolocation",
         "commit": "14b4b0c841de0a77c0eb405a311acc540d3a1b58",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-dreaming",
@@ -2529,7 +2674,8 @@
         "repo": "itpartypattaya/hermes-dreaming",
         "commit": "21878d3ec8752283dd7ee69a803c63bb989c1740",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-dsers",
@@ -2546,7 +2692,8 @@
         "repo": "dsers/dsers-agent-plugin",
         "commit": "58174bb9d9fdd8941eda76a9b898424852c6407e",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-duet-queue",
@@ -2563,7 +2710,8 @@
         "repo": "benfirad/hermes-plugin-antigravity-duet",
         "commit": "b68fe4bacf0145f7ab30b9a6b08597b442922278",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-effort-router",
@@ -2580,7 +2728,8 @@
         "repo": "AlphaPerseii3000/jev-effort-router",
         "commit": "6fd9f2ec1c53cb99b5e6c7043c25bbd37938d4a5",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-effortless",
@@ -2597,7 +2746,8 @@
         "repo": "ivcained/effortless-hermes",
         "commit": "5444e7b130a74e1c03e826f224da65789abdffb5",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-elevenlabs-music",
@@ -2614,7 +2764,8 @@
         "repo": "NousResearch/hermes-official-plugins",
         "commit": "1e326ddd28ae261821d7714d106fe114999a0bba",
         "license": "MIT"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-enchant",
@@ -2631,7 +2782,8 @@
         "repo": "noxius-studium/enchanted-composer",
         "commit": "b91e684c78d8a43a5346339a5091a1109424a28c",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-enhance-prompt",
@@ -2648,7 +2800,8 @@
         "repo": "tuancookiez-hub/hermes-enhance-prompt",
         "commit": "8417827ff80db2335e18742c1f5317aeb4b036cb",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-epistemic",
@@ -2665,7 +2818,8 @@
         "repo": "quangphucqp/epistemic-harness",
         "commit": "5abd0dc482096c3f64379115fc79cc96e4e7203a",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-ethics-filter",
@@ -2682,7 +2836,8 @@
         "repo": "RegeneratusLabs/ethics-filter",
         "commit": "f117850d99c9dbcac0aab84625f50cc7a6853108",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-evalroute",
@@ -2699,7 +2854,8 @@
         "repo": "keppy/hermes-plugin-evalroute",
         "commit": "12fc0397e47ae60bcf45eba4c1529971b3e032a9",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-eventforge",
@@ -2717,7 +2873,8 @@
         "repo": "sinequix/eventforge",
         "commit": "1b556629b6a20d1f8194beaab8c38253cd837c64",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-fabric",
@@ -2734,7 +2891,8 @@
         "repo": "esaradev/icarus-plugin",
         "commit": "e46cba30fb95a0b54b7c4d6c26169a424283d72b",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-factory-droid",
@@ -2752,7 +2910,8 @@
           "name": "Factory Droid",
           "sign_in": "/factory-droid login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-fallback",
@@ -2769,7 +2928,8 @@
         "repo": "tomkubik/hermes-fallback",
         "commit": "ce150572ea10de682a2c67902b314590b55683b3",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-fatetell",
@@ -2786,7 +2946,8 @@
         "repo": "RussGuo/fatetell-mcp",
         "commit": "5d81776071ddf897abaf3a65ed9f203ca87372a5",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-field-notes",
@@ -2803,7 +2964,8 @@
         "repo": "itpartypattaya/hermes-field-notes",
         "commit": "74b566dd49ce6a9f249b7d1e5e12d25895592d42",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-file-tray",
@@ -2820,7 +2982,8 @@
         "repo": "aydnOktay/hermes-file-tray",
         "commit": "275f040af145b6b3f9660487b7d35821d33d5aca",
         "license": "MIT"
-      }
+      },
+      "category": "desktop"
     },
     {
       "name": "nodecode-financial-datasets",
@@ -2837,7 +3000,8 @@
         "repo": "financial-datasets/hermes-plugin",
         "commit": "6745cb6261f86895364579d897be2b6067f117f1",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-fish-audio",
@@ -2854,7 +3018,8 @@
         "repo": "100yenadmin/fish-audio-hermes",
         "commit": "606afb54aa1a354cc8eac0b17f3da3a105ac55a7",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-fluxer",
@@ -2871,7 +3036,8 @@
         "repo": "elkimek/hermes-fluxer-plugin",
         "commit": "6d2ef9767d0a0811a3ae26a76290b9b1e4636d4c",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-fmsg",
@@ -2888,7 +3054,8 @@
         "repo": "markmnl/hermes-fmsg",
         "commit": "562f45a48a6b10504c8d6ff5c677f1ec990e6b7b",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-followups",
@@ -2905,7 +3072,8 @@
         "repo": "xiaok/hermes-autonomous",
         "commit": "431c5fa31eceb5341504ef71db5b4bdb8d493036",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-fortytwo",
@@ -2929,7 +3097,8 @@
           "provider": "fortytwo",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-frihet",
@@ -2946,7 +3115,8 @@
         "repo": "Frihet-io/hermes-frihet",
         "commit": "72493236b16c5e1e2b6a5ada3674781a6da180a1",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-fusion",
@@ -2963,7 +3133,8 @@
         "repo": "BoredSexyJordan/hermes-fusion",
         "commit": "edab6a6d17838d4d9a1525a2a7d3500c62694e17",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-gemini-live",
@@ -2980,7 +3151,8 @@
         "repo": "skappafrost/hermes-gemini-live",
         "commit": "cf549e7f8af858568936ccb434c7e1104eb200e9",
         "license": "MIT"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-genesispay",
@@ -2997,7 +3169,8 @@
         "repo": "GenesisTechAT/genesispay-agent-skill",
         "commit": "e10a628540aea384b6f12f9cea60c6d5bf76fe8a",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-ghost-call",
@@ -3014,7 +3187,8 @@
         "repo": "winchxyz/hermes-ghost-call",
         "commit": "b670ff8a930a02aff8afe2c39994bcf4645654ac",
         "license": "MIT"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-git-review",
@@ -3031,7 +3205,8 @@
         "repo": "mister-ideas/git-review",
         "commit": "a1944377c3f8d5699668b67379be9bf63ca0cee7",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-github-copilot",
@@ -3049,7 +3224,8 @@
           "name": "GitHub Copilot",
           "sign_in": "/github-copilot login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-github-mentions",
@@ -3066,7 +3242,8 @@
         "repo": "luantak/hermes-github-mentions",
         "commit": "d8a88220a547180663fcec76a069c8fbbf63bff9",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-github-refs",
@@ -3083,7 +3260,8 @@
         "repo": "EloquentBrush0x/hermes-context-refs",
         "commit": "bb0001012c5b213ce5a09b5905d859635c440c17",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-github-repos",
@@ -3100,7 +3278,8 @@
         "repo": "tomekdot/hermes-my-github-plugin",
         "commit": "639f0cf0eb580d209b8bc55bbb05d316501ca77c",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-gitlab-duo",
@@ -3118,7 +3297,8 @@
           "name": "GitLab Duo",
           "sign_in": "/gitlab-duo login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-gitlab-duo-agent",
@@ -3136,7 +3316,8 @@
           "name": "GitLab Duo Agent",
           "sign_in": "/gitlab-duo-agent login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-glasser",
@@ -3153,7 +3334,8 @@
         "repo": "glasser-ai/hermes-plugin-glasser",
         "commit": "79a2f5a343735548d270f87309a44ad4d32c2ecc",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-godot",
@@ -3170,7 +3352,8 @@
         "repo": "Tormen28/argos",
         "commit": "ab194154310cf4a44cee932d7c33f7fefb42c95d",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-gondola",
@@ -3194,7 +3377,8 @@
           "provider": "gondola",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-google-antigravity",
@@ -3212,7 +3396,8 @@
           "name": "Google Antigravity",
           "sign_in": "/google-antigravity login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-google-gemini-cli",
@@ -3230,7 +3415,8 @@
           "name": "Google Gemini CLI",
           "sign_in": "/google-gemini-cli login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-google-vertex",
@@ -3241,7 +3427,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-gowa",
@@ -3258,7 +3445,8 @@
         "repo": "anpicasso/hermes-go-whatsapp",
         "commit": "a48546353fe79456bc193402905b17b3e1cd1be6",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-hades-coding-workflows",
@@ -3275,7 +3463,8 @@
         "repo": "singhguri/hades-coding-workflows",
         "commit": "b68546d66fe684a49633a9174e44362eff77cbfc",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-handflow",
@@ -3292,7 +3481,8 @@
         "repo": "DECRUX9812/hermes-handflow",
         "commit": "6526ef75ffeb133d66472bc1899c87f34dcf9556",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-hardlight",
@@ -3309,7 +3499,8 @@
         "repo": "nosliwhtes/hardlight-ui",
         "commit": "2254efe3ba6df2fa5962cd8ed352b5fad80306d4",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-harnmem",
@@ -3326,7 +3517,8 @@
         "repo": "ys118/harnmem",
         "commit": "20c644ef4276284494519ed96305bb371ff05dc3",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-hashference",
@@ -3350,7 +3542,8 @@
           "provider": "hashference",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-hass-statistics",
@@ -3367,7 +3560,8 @@
         "repo": "goncami/hermes-homeassistant-statistics",
         "commit": "c6a64211c5411eeb4a15d912f9640906bc7c6ee3",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-health-data",
@@ -3384,7 +3578,8 @@
         "repo": "Infinite-Labs-AI/hermes-health-apollo",
         "commit": "9f2db670a2669c9f3401fecb3b547ed52bcb2c3b",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-health-insights",
@@ -3401,7 +3596,8 @@
         "repo": "mwdearing/hermes-health-insights",
         "commit": "d6d09c1f17ada6ca60368a1e0c7a7b5bd4efefc6",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-heartbeat",
@@ -3418,7 +3614,8 @@
         "repo": "electricsheephq/heartbeat2",
         "commit": "8a1fc6efe9ad340941d92d7bf39583e8dc2dc8bc",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-hermes-band",
@@ -3435,7 +3632,8 @@
         "repo": "RegeneratusLabs/hermes-band",
         "commit": "c9dec797d9bf29fd5e09be538952c7db9bace8c8",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-hermes-herald",
@@ -3452,7 +3650,8 @@
         "repo": "bennybuoy/hermes-herald",
         "commit": "1d185a9e0f4fbfa141447be401903cc80407e1cb",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-hindsight",
@@ -3469,7 +3668,8 @@
         "repo": "vectorize-io/hindsight",
         "commit": "f14cc1eb5624b0374cb4d82768eb2e0b9c21ae24",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-holographic",
@@ -3486,7 +3686,8 @@
         "repo": "itpartypattaya/hermes-plugin-holographic",
         "commit": "f75c636a2865459600e0a5d8470108032d8f8860",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-home-assistant",
@@ -3503,7 +3704,8 @@
         "repo": "NousResearch/hermes-official-plugins",
         "commit": "e7a218f26db88426ab3e7376f0e000b6e356f5e7",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-hud-teach",
@@ -3520,7 +3722,8 @@
         "repo": "iamlukethedev/hermes-hud-teach",
         "commit": "41741e4a970a8b32545ddd303f3fc4d0b965bd5f",
         "license": "MIT"
-      }
+      },
+      "category": "desktop"
     },
     {
       "name": "nodecode-hwiki",
@@ -3537,7 +3740,8 @@
         "repo": "ottosulin/hwiki",
         "commit": "d1961956eaafbd64fef71cb7135d475efcc8f954",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-hyatlas",
@@ -3554,7 +3758,8 @@
         "repo": "tuancookiez-hub/HyAtlas-Memory",
         "commit": "0428086c382456d9afaf55ba166c107f6f30759d",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-hydradb",
@@ -3571,7 +3776,8 @@
         "repo": "hydra-db/hydradb-hermes-plugin",
         "commit": "056d684f7e7f71b1086d975a9b78c52674a960e5",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-image-utils",
@@ -3588,7 +3794,8 @@
         "repo": "MazenMkhinini/hermes-image-plugin",
         "commit": "c4123fbdb315137b40e4c5b4b5fd3eb2298dae66",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-imagegen",
@@ -3605,7 +3812,8 @@
         "repo": "duu261/hermes-imagegen-openai-compatible",
         "commit": "65851c2f6985c5e193a5498493ecb2971450de7b",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-inbox",
@@ -3622,7 +3830,8 @@
         "repo": "NousResearch/hermes-labs-plugins",
         "commit": "4987918a068fcf4b3efbb584db5dd05e5f57c669",
         "license": "MIT"
-      }
+      },
+      "category": "desktop"
     },
     {
       "name": "nodecode-index-network",
@@ -3639,7 +3848,8 @@
         "repo": "indexnetwork/hermes-plugin",
         "commit": "1214c6179d00ccc5f6e27454385f3fd0abbaf845",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-innernet",
@@ -3656,7 +3866,8 @@
         "repo": "your-innernet/innernet-mcp",
         "commit": "9da4f24e04dffc526129c11546eb4bb2ef60ef81",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-insight",
@@ -3673,7 +3884,8 @@
         "repo": "BrokeSkill/Hermes-Insight",
         "commit": "a61cdf643621ae106958f99078a17d94f9ea5289",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-iris-chat",
@@ -3690,7 +3902,8 @@
         "repo": "irislib/iris-chat-rs",
         "commit": "43a1066894f1948adb3febc1e3a91a31ccccef14",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-iroh",
@@ -3707,7 +3920,8 @@
         "repo": "rahlquist/hermes-iroh-interconnect",
         "commit": "c7d13769715f25d410696800a538d746952da50e",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-iwork",
@@ -3724,7 +3938,8 @@
         "repo": "Arkanji/iwork-studio",
         "commit": "551107ae937960c785d3bf8b180c573515b6d359",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-jet-browser",
@@ -3741,7 +3956,8 @@
         "repo": "masakaai/jet-browser",
         "commit": "1b0b10feb70e52bde844ba4e1cb7c35600af4b35",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-jev",
@@ -3758,7 +3974,8 @@
         "repo": "ourines/hermes-jev",
         "commit": "28a4ea390f80d97fcdc8c20d6b630dfe2de645de",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-jev-curator",
@@ -3775,7 +3992,8 @@
         "repo": "anpicasso/hermes-jev-curator",
         "commit": "4e8626c7d394a9cbef8594993ec4b208ffb3395f",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-jev-routing",
@@ -3792,7 +4010,8 @@
         "repo": "apoapostolov/hermes-agent-awesome-plugins",
         "commit": "06a53646587c33174a0fbfbb3713eca90bbb8586",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-job-search",
@@ -3809,7 +4028,8 @@
         "repo": "agent-data/job-search",
         "commit": "dba0c0992e9d7fc6533dd1be3003df7a311168f0",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-jot",
@@ -3826,7 +4046,8 @@
         "repo": "Totoro-qaq/hermes-jot",
         "commit": "b65b550108c8e742cc5737055213da947dc54e0f",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-kame-rotate",
@@ -3843,7 +4064,8 @@
         "repo": "Kame696/kame-api-rotation-for-hermes",
         "commit": "5e4a12f249f679ae5dcbf0d22e4ffbfeba4e5e2b",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-keenable",
@@ -3860,7 +4082,8 @@
         "repo": "keenableai/keenable-hermes-plugin",
         "commit": "ffa97c924415f7b6e3517d900694272efac8af41",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-kilo",
@@ -3878,7 +4101,8 @@
           "name": "Kilo Gateway",
           "sign_in": "/kilo login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-kimi-code",
@@ -3896,7 +4120,8 @@
           "name": "Kimi Code",
           "sign_in": "/kimi-code login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-kimi-code-delegate",
@@ -3913,7 +4138,8 @@
         "repo": "s-a-s-k-i-a/hermes-kimi-code",
         "commit": "72c741cc166ec1db2aec4cd5316f7b7281a74b40",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-kinocut",
@@ -3930,7 +4156,8 @@
         "repo": "KyaniteLabs/kinocut",
         "commit": "31ddab08a99e09fb50e0855c61e1627d02050ac1",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-kokpit",
@@ -3947,7 +4174,8 @@
         "repo": "sahindemirbas/kokpit",
         "commit": "21112512fcb8d5fa24efc1558e9b50195eb031a0",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-kumiho-memory",
@@ -3964,7 +4192,8 @@
         "repo": "KumihoIO/kumiho-plugins",
         "commit": "d4811200fa22225ae245d2778b938a793d6d5af6",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-langfuse",
@@ -3981,7 +4210,8 @@
         "repo": "NousResearch/hermes-official-plugins",
         "commit": "e7a218f26db88426ab3e7376f0e000b6e356f5e7",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-laso",
@@ -3998,7 +4228,8 @@
         "repo": "LasoFinance/hermes-plugin",
         "commit": "8a046544307af690f04277bcb04929e5d1d58970",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-lcm-x",
@@ -4015,7 +4246,8 @@
         "repo": "electricsheephq/lcm-x",
         "commit": "984a40045372f1f24a87d060194786f4d1843b90",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-ledgerline",
@@ -4032,7 +4264,8 @@
         "repo": "Adolanium/hermes-ledgerline",
         "commit": "a89efceab1ff5eb0cc3f58c0482c0f1d368a6d1b",
         "license": "MIT"
-      }
+      },
+      "category": "desktop"
     },
     {
       "name": "nodecode-letsfg",
@@ -4049,7 +4282,8 @@
         "repo": "LetsFG/LetsFG",
         "commit": "7c0e7b5122725baacd446585306770fce4fc7d52",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-levea-video",
@@ -4066,7 +4300,8 @@
         "repo": "brajendrak00068/agentic-ai-video-production",
         "commit": "0f11f14511c8b9a030689d1541c28752c1d60a59",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-lfg-alarm",
@@ -4083,7 +4318,8 @@
         "repo": "lfg-gm/lfg-alarm-mcp",
         "commit": "ba7b6afb27ef9a737986a3e5a57b4b2b66482d91",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-lightkeeper",
@@ -4100,7 +4336,8 @@
         "repo": "Light5566/claude-lightkeeper",
         "commit": "5126b570feb4a4365e9b3308bcb1029e4822f972",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-live-time",
@@ -4117,7 +4354,8 @@
         "repo": "chenfeijiang95-ui/hermes-live-time",
         "commit": "f5e4edcefb19f68f11c0e3faf5f6983577500c75",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-live-voice",
@@ -4134,7 +4372,8 @@
         "repo": "Synero/hermes-live-voice",
         "commit": "0578e0cc35022a9dcb469cb9fbfc4d8afc93fc65",
         "license": "MIT"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-local",
@@ -4145,7 +4384,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-local-knowledge",
@@ -4162,7 +4402,8 @@
         "repo": "stepanov1975/hermes-local-knowledge",
         "commit": "c13a1a357eb110fe62d6d4f8a715187079766541",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-lsp",
@@ -4173,7 +4414,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "tools"
     },
     {
       "name": "nodecode-machine-library",
@@ -4190,7 +4432,8 @@
         "repo": "SpaceFrontiers/hermes-machine-library",
         "commit": "99a1bb70dd4992d4d0274e9af2ed3b6ab2a5922f",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-magi",
@@ -4207,7 +4450,8 @@
         "repo": "MarcosAlves90/magi",
         "commit": "3c08b45466c6d4c5f0047a24175c6734accb9c7e",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-maqami-travel",
@@ -4224,7 +4468,8 @@
         "repo": "negm17111995/mcp-server",
         "commit": "6478de2d093fcf9bdd3c5dbff6d6ef267dcb56ae",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-markdown-new",
@@ -4241,7 +4486,8 @@
         "repo": "nosliwhtes/hermes-markdown-new",
         "commit": "dab049e0fd338ab8f7159c120fe55490410d0a6e",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-markifact",
@@ -4258,7 +4504,8 @@
         "repo": "markifact/markifact-mcp",
         "commit": "9a873931b6138970888d2a9102a8037dbbd174a5",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-mcp-creator",
@@ -4276,7 +4523,8 @@
         "repo": "tonbistudio/hermes-mcp-plugin-creator",
         "commit": "0bcd7023ce9764a01551753a3b6800c4fe695047",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-mcp-router",
@@ -4293,7 +4541,8 @@
         "repo": "Pinutss/jev-mcp-router",
         "commit": "6a7b3baf45af62def86c3d824b06c85569d14298",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-mcp-serve",
@@ -4310,7 +4559,8 @@
         "repo": "NousResearch/hermes-official-plugins",
         "commit": "e7a218f26db88426ab3e7376f0e000b6e356f5e7",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-md-search",
@@ -4327,7 +4577,8 @@
         "repo": "kuehnberger/hermes-qdrant-memory",
         "commit": "5241e51274c657251776659bfb651aae4ba4bf1d",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-mediarag",
@@ -4344,7 +4595,8 @@
         "repo": "dyiapanis/mediarag",
         "commit": "29d47c34f53340eb3a4267792c61f38c34ee8e03",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-mem0",
@@ -4361,7 +4613,8 @@
         "repo": "mem0ai/mem0",
         "commit": "43849c6e9d4d773b83a8144b6373aedc67241a5d",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-membase",
@@ -4378,7 +4631,8 @@
         "repo": "unibaseio/membase",
         "commit": "8733b537da62192aa088e65ed127340969e0f680",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-memlock",
@@ -4395,7 +4649,8 @@
         "repo": "Sahil-SS9/hermes-memlock",
         "commit": "123b9fd252d6fc2c9c7c4f254164915874aa54d5",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-memoria",
@@ -4412,7 +4667,8 @@
         "repo": "matrixorigin/memoria",
         "commit": "3a5c5065b2820d56dd3d8ac8bb259a9424b1476e",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-memory-shield",
@@ -4429,7 +4685,8 @@
         "repo": "churnast/hermes-memory-shield",
         "commit": "347ab18408da52937f7e808a6e88a52b74184225",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-memos",
@@ -4446,7 +4703,8 @@
         "repo": "Markgatcha/memos",
         "commit": "af8fa31e01078e4d5e38210b61acdf90f6d70581",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-memtomem",
@@ -4463,7 +4721,8 @@
         "repo": "memtomem/memtomem",
         "commit": "b440f108ad42e349a1518c0dcf67bb23f0240936",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-mermail",
@@ -4480,7 +4739,8 @@
         "repo": "Nudgen-Marketing/mermail-skills",
         "commit": "269a711bf683845d75009df4984bf25eee83b0bd",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-metamask",
@@ -4497,7 +4757,8 @@
         "repo": "akugone/hermes-metamask-wallet",
         "commit": "b56d6bbf575391d172280016abf778d31c5ca8bd",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-mind-kit",
@@ -4514,7 +4775,8 @@
         "repo": "ousiaresearch/biomimetic-brain",
         "commit": "efbf72d0afc4dff0ab212542eed584114f88d70d",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-minecraft",
@@ -4535,7 +4797,8 @@
         "repo": "kyssta-exe/hermes-minecraft-gateway",
         "commit": "8ff37a626439caecb9ceb724b5da7718eb77a8b1",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-minimax-video",
@@ -4552,7 +4815,8 @@
         "repo": "rriggs/hermes-plugin-minimax-video",
         "commit": "759bec0f124c50e868facc8da5e6cf054403d761",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-minimizer",
@@ -4569,7 +4833,8 @@
         "repo": "nosliwhtes/hermes-minimizer",
         "commit": "d209ed0824e2787cd6454bd4b060dbf0381b7b79",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-mistral-vibe",
@@ -4593,7 +4858,8 @@
           "provider": "mistral-vibe",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-mock-review",
@@ -4610,7 +4876,8 @@
         "repo": "apelabs-dev/hermes-mock-review",
         "commit": "1c933e7417faf8e72d9b7f195fb24c7fb2fb7502",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-model-presets",
@@ -4627,7 +4894,8 @@
         "repo": "will-lynas/hermes-model-presets",
         "commit": "27eec57bc17d92d931a025ed333b330dd17636e5",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-model-router",
@@ -4644,7 +4912,8 @@
         "repo": "Pinutss/jev-model-router",
         "commit": "b977dc3ef07738aab005c433d08c1da3fa949e8d",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-money-magnet",
@@ -4661,7 +4930,8 @@
         "repo": "Whydiriki700/money-magnet",
         "commit": "e9c7c72567d9b5a5d6d7d7b74634d2960e793b74",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-monid",
@@ -4678,7 +4948,8 @@
         "repo": "monid-ai/hermes-plugin",
         "commit": "cdf26de6da51a04c5ffccaa48bee0a2d51f7c35c",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-morning-briefing",
@@ -4695,7 +4966,8 @@
         "repo": "drkpxl/morning-briefing",
         "commit": "347ce44a1e71173285b2943a7a97bbdece8327b2",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-mpp",
@@ -4712,7 +4984,8 @@
         "repo": "tempoxyz/hermes-mpp",
         "commit": "a0782b7024ad0256cceede338754b466ded1df06",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-mqtt",
@@ -4729,7 +5002,8 @@
         "repo": "JasonSwindle/hermes-mqtt",
         "commit": "103ec28e9e2f68b080fd8e8074d0e5a98750e06e",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-muse",
@@ -4746,7 +5020,8 @@
         "repo": "xiaohei-info/hermes-muse",
         "commit": "0dade28130b6901dfa2dd81a067856441948d33c",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-muse-code",
@@ -4764,7 +5039,8 @@
           "name": "Muse Code",
           "sign_in": "/muse-code login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-muse-harness",
@@ -4781,7 +5057,8 @@
         "repo": "SnoobieJunes/hermes-muse-harness",
         "commit": "5cc2d060dee651345c75a75e4a52abb2272462be",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-myradio",
@@ -4798,7 +5075,8 @@
         "repo": "newjordan/myradio",
         "commit": "66d611bad24f069a41b136b0672b39b9ab3cde12",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-nats",
@@ -4815,7 +5093,8 @@
         "repo": "atbrace/hermes-jetstream",
         "commit": "4508957d1889ddb625c8bfb1eef7c822f2761349",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-nerve",
@@ -4832,7 +5111,8 @@
         "repo": "keeltrace/hermes-nerve",
         "commit": "76320ec5d764d588d9042baac60702f333896b1a",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-neuralmind",
@@ -4849,7 +5129,8 @@
         "repo": "dfrostar/neuralmind",
         "commit": "e66f5010e3a2f5fcf9e18663e353a6cbf87a966d",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-nexus",
@@ -4866,7 +5147,8 @@
         "repo": "Neboy72/nexus-memory",
         "commit": "783488328eee1a9ae29ea6ae62bdb63be5dfade3",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-ngrok-ai-gateway",
@@ -4890,7 +5172,8 @@
           "provider": "ngrok",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-nowstamp",
@@ -4907,7 +5190,8 @@
         "repo": "zakiyys/hermes-nowstamp",
         "commit": "26148cca897f0798ca2cfc035e9eb2e00349bcf8",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-ntfy-approval",
@@ -4924,7 +5208,8 @@
         "repo": "AhmetArif0/hermes-ntfy-approval",
         "commit": "95d3a4b838073d6908c578ca1a9f04154349a2cf",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-nvidia-app",
@@ -4941,7 +5226,8 @@
         "repo": "NousResearch/hermes-nvidia",
         "commit": "de75692b479dc88b95e428a9cb25091d3fb0e327",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-nvidia-broadcast",
@@ -4958,7 +5244,8 @@
         "repo": "NousResearch/hermes-nvidia",
         "commit": "de75692b479dc88b95e428a9cb25091d3fb0e327",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-nyx",
@@ -4976,7 +5263,8 @@
         "repo": "sixgodgit/nyx",
         "commit": "101a64d308281f75ba200e28c1c73c4d6e1887ce",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-office",
@@ -4993,7 +5281,8 @@
         "repo": "DECRUX9812/hermes-office",
         "commit": "b53630cd0f0edc10645d63899a5a2515f8015fc5",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-ollama-cloud",
@@ -5011,7 +5300,8 @@
           "name": "Ollama Cloud",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-ollama-search",
@@ -5028,7 +5318,8 @@
         "repo": "rriggs/hermes-plugin-ollama-cloud-search",
         "commit": "9c739a9ea5985e0ba86c20d7160af06382c2198e",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-omnivoice",
@@ -5045,7 +5336,8 @@
         "repo": "ThaungThanHan/hermes-omnivoice",
         "commit": "21d2900c392247dc52d706fee956f08dbfc3c5ea",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-openai-codex",
@@ -5063,7 +5355,8 @@
           "name": "ChatGPT Plus/Pro (Codex)",
           "sign_in": "/openai-codex login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-openai-codex-device",
@@ -5074,7 +5367,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-openalex",
@@ -5091,7 +5385,8 @@
         "repo": "Adolanium/hermes-plugin-openalex",
         "commit": "d38a1ee2fb04df0f7ad136bd30bff5f2136fe0cd",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-opencode-free",
@@ -5115,7 +5410,8 @@
           "provider": "opencode-free",
           "sign_in": "external"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-opencode-go",
@@ -5133,7 +5429,8 @@
           "name": "OpenCode Go",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-opencode-shepherd",
@@ -5150,7 +5447,8 @@
         "repo": "okazakee/opencode-shepherd",
         "commit": "207a1443a5daa20e20824d13776794c0057cd539",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-openltm",
@@ -5167,7 +5465,8 @@
         "repo": "RohiRIK/OpenLtm",
         "commit": "8ee2a8e4f9de60fcf16b37e0ea9c02c4d389ba35",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-openmail",
@@ -5184,7 +5483,8 @@
         "repo": "openmailsh/hermes-plugin",
         "commit": "4035b7d1f8775304443f60f67bcd636acb1a325d",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-openrouter",
@@ -5195,7 +5495,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-openrouter-voice",
@@ -5212,7 +5513,8 @@
         "repo": "esketids/hermes-openrouter-voice",
         "commit": "3f2478ab6e795da54547e7a4b162dd207d73079a",
         "license": "MIT"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-openspec",
@@ -5229,7 +5531,8 @@
         "repo": "FelineStateMachine/hermes-openspec",
         "commit": "493b42cd95d2a30f967ede5a53eb22d1bd248fb9",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-optchat",
@@ -5246,7 +5549,8 @@
         "repo": "aska-digital/optchat-memory",
         "commit": "7b0f3abd65b95996366d0495787c95af981ea587",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-optmem",
@@ -5263,7 +5567,8 @@
         "repo": "rarf/optmem-hermes-plugin",
         "commit": "2868af6620bf07958f833ca354fbeecf2a56b265",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-orcaslicer",
@@ -5280,7 +5585,8 @@
         "repo": "mazzanfar/hermes-orcaslicer",
         "commit": "8fc3a5a40ef4e0c639b76cefd90ad9a48a1a51ec",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-ordaprompt",
@@ -5297,7 +5603,8 @@
         "repo": "aska-digital/protean-ordaprompt",
         "commit": "60e89af2853072c7801c465f30999f3c6ceb35b2",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-orquehelx",
@@ -5314,7 +5621,8 @@
         "repo": "TicoraX/OrqueHelx",
         "commit": "964896e44979b29755dd880c5eb2557909e88bf6",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-osint-map",
@@ -5331,7 +5639,8 @@
         "repo": "Adolanium/hermes-osint-map",
         "commit": "8254b9e872c2718e5ea228168db3f75fb77955de",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-osv",
@@ -5348,7 +5657,8 @@
         "repo": "EloquentBrush0x/hermes-context-refs",
         "commit": "43ab2b75e660db5edcfe2f215776294c45408b40",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-otel",
@@ -5365,7 +5675,8 @@
         "repo": "briancaffey/hermes-otel",
         "commit": "d234865b13e997e0b3a50dc18aaad7c7d7b1b1fe",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-parallel-search",
@@ -5382,7 +5693,8 @@
         "repo": "parallel-web/search-mcp",
         "commit": "12f721b2b7ad29e63315884c008b5d77c2a4d7e4",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-pass-secrets",
@@ -5399,7 +5711,8 @@
         "repo": "dyiapanis/pass-secrets",
         "commit": "485f105150e09dad28461b26b9eca9ffc511b15d",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-patsnap",
@@ -5416,7 +5729,8 @@
         "repo": "NousResearch/hermes-labs-plugins",
         "commit": "a6c7854f6fbd8ec8109199d5ded0c9c871c069d6",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-pep",
@@ -5433,7 +5747,8 @@
         "repo": "EloquentBrush0x/hermes-context-refs",
         "commit": "20c7a0e1f56d6fea9761077f6994ab7b3d174b99",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-perplexity",
@@ -5444,7 +5759,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "web"
     },
     {
       "name": "nodecode-pethost",
@@ -5461,7 +5777,8 @@
         "repo": "pethost-dev/plugin",
         "commit": "33f6947d88c60b6e84a8d9a646e96d25100f1c26",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-pii",
@@ -5478,7 +5795,8 @@
         "repo": "lukefx/hermes-pii",
         "commit": "bd6c8e5dea1d709ff3182cb78ceb141e7c06ab5c",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-plan-mode",
@@ -5495,7 +5813,8 @@
         "repo": "100yenadmin/hermes-plan-mode",
         "commit": "ee4a245fbc2b2d874f3a5021963bef6c358d17fb",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-plugin-guard",
@@ -5512,7 +5831,8 @@
         "repo": "mauricemohr88-debug/hermes-plugin-guard",
         "commit": "857d881be77249c192c5fefa8254db186a7abbca",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-pocket-watch",
@@ -5529,7 +5849,8 @@
         "repo": "indigokarasu/hermes-pocket-watch-plugin",
         "commit": "b05178ab1f2d8a39a377581c3dc7562ec8f0c2dc",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-pr-studio",
@@ -5546,7 +5867,8 @@
         "repo": "Murali-lns/hermes-pr-studio",
         "commit": "b9ba1c6bb567a8aeeff60fb4cfd17abebc0fa95f",
         "license": "MIT"
-      }
+      },
+      "category": "desktop"
     },
     {
       "name": "nodecode-print3d",
@@ -5563,7 +5885,8 @@
         "repo": "mfranzon/print3d",
         "commit": "ff98a8c07253a90f5e4afefa42c2ffd893797eec",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-priors",
@@ -5580,7 +5903,8 @@
         "repo": "priors-agents/priors",
         "commit": "17d3e1fd9b4348bb8baf1e3983d14d07dedd39c5",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-privacy-xray",
@@ -5597,7 +5921,8 @@
         "repo": "MadeByBrain/hermes-extensions",
         "commit": "aa2bf92140016d7cf2ce855d0fff98f46badbc94",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-project-manager",
@@ -5614,7 +5939,8 @@
         "repo": "AiSolve-me/hermes-project-manager",
         "commit": "2de4269baafc7399b7d4f92ad71b1d39205caf7b",
         "license": "MIT"
-      }
+      },
+      "category": "desktop"
     },
     {
       "name": "nodecode-prompt-enhance",
@@ -5631,7 +5957,8 @@
         "repo": "apoapostolov/hermes-agent-awesome-plugins",
         "commit": "953732a9fb52b6fd89e73fc96d910aab63163e07",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-prompt-optimizer",
@@ -5648,7 +5975,8 @@
         "repo": "Sahil-SS9/hermes-multichannel-prompt-optimizer",
         "commit": "e83eba9a8e102ed255a5bfd20cc88ea50e3af28f",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-prompt-studio",
@@ -5665,7 +5993,8 @@
         "repo": "bwoliveira/prompt-studio",
         "commit": "ecead76f0b2ff4f46c09341c871e234eb1692a1a",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-proofgate",
@@ -5682,7 +6011,8 @@
         "repo": "Whydiriki700/proofgate",
         "commit": "b07f2fe5ee019a5d6e3fd24ad3b61dbce6302fec",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-protonmail",
@@ -5702,7 +6032,8 @@
         "repo": "Maytrella007/hermes-proton",
         "commit": "3e0612848cf20116294f9ff58e74aadf34bc858e",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-protonpass",
@@ -5719,7 +6050,8 @@
         "repo": "lucas-nicolas/hermes-protonpass",
         "commit": "b17cc05a92494aa1d6481c3f1b6ff14a241f7375",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-provenance",
@@ -5737,7 +6069,8 @@
         "repo": "simin-yuan/hermes-provenance-gate",
         "commit": "d8ded75deef198694639d8653c1834a26f3b0372",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-pstack",
@@ -5754,7 +6087,8 @@
         "repo": "Cloeille/pstack",
         "commit": "d9454cc1ecba5f28b136deacdfe2df959cf7cdec",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-pulldown",
@@ -5771,7 +6105,8 @@
         "repo": "anthony-maio/pulldown",
         "commit": "ca16dc479714e59f8b361e8dd1c3714110b9da75",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-pushary",
@@ -5788,7 +6123,8 @@
         "repo": "Pushary/hermes-plugin-pushary",
         "commit": "af29cb4ac34354c12ad5054eba82dc1ff3d0f7e2",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-pushover",
@@ -5805,7 +6141,8 @@
         "repo": "lightx/pushover-hermes-plugin",
         "commit": "967fe2d476b384d51773529a7b34ab52e3fdebf1",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-qdrant-memory",
@@ -5822,7 +6159,8 @@
         "repo": "cnkang/hermes-plugin-qdrant-memory",
         "commit": "6ddf7215479692e7882f3065885931f01908c0ac",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-rea",
@@ -5839,7 +6177,8 @@
         "repo": "NousResearch/hermes-official-plugins",
         "commit": "1690b63a4790cb821fb6a319ba524815d4e09411",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-readonly-guard",
@@ -5856,7 +6195,8 @@
         "repo": "mciocchi/hermes-readonly-guard",
         "commit": "1f2d12e215fe95c7b2ecf743ef06e12f07a0ff68",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-refusal",
@@ -5873,7 +6213,8 @@
         "repo": "0ldev/refusal",
         "commit": "b1bd080caeba423309d437f7df6ee564bd5d27dd",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-reme",
@@ -5890,7 +6231,8 @@
         "repo": "agentscope-ai/ReMe",
         "commit": "5231f3970c550bb0bc5d1bc7fbc85534274ca530",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-remesher",
@@ -5907,7 +6249,8 @@
         "repo": "remesher/remesher",
         "commit": "5f48a067722e10f0c08d368698fc03b05855bb89",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-requesty",
@@ -5931,7 +6274,8 @@
           "provider": "requesty",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-rex",
@@ -5948,7 +6292,8 @@
         "repo": "kshitijk4poor/hermes-rex-plugin",
         "commit": "ee19fe921d8dd0c2f1cec14d8cb080a4126b0754",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-rocketchat",
@@ -5965,7 +6310,8 @@
         "repo": "HalfbitStudio/hermes-plugin-rocketchat",
         "commit": "989a04cd5f09e57bdd88997940cd18e4d58415b2",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-rss",
@@ -5982,7 +6328,8 @@
         "repo": "apoapostolov/hermes-agent-awesome-plugins",
         "commit": "30d6dc6311bfce951c10ed120c878dc3f28a7ced",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-rtk",
@@ -5999,7 +6346,8 @@
         "repo": "kerrz2020/hermes-rtk-rewrite",
         "commit": "4c5f8a5abdfd7980cba5ef02df86b8efe52c00d6",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-rtk-backends",
@@ -6016,7 +6364,8 @@
         "repo": "petertaras/hermes-rtk-rewrite-with-docker-support",
         "commit": "61701dd6e14c2392f7cebcac68f46680f3a428ee",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-run-debugger",
@@ -6033,7 +6382,8 @@
         "repo": "Sahil-SS9/agent-run-debugger",
         "commit": "f4eefefb47372afedee56618c89c6fbc5024ca2a",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-sabi",
@@ -6056,7 +6406,8 @@
           "name": "Sabi",
           "provider": "sabi"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-scalekit",
@@ -6073,7 +6424,8 @@
         "repo": "scalekit-inc/hermes-tools",
         "commit": "35bfcedf59442377a930c4c3ed1c818ca425c11a",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-scaleway",
@@ -6097,7 +6449,8 @@
           "provider": "scaleway",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-screenrig",
@@ -6114,7 +6467,8 @@
         "repo": "screenrig/plugin",
         "commit": "37de9fcb22bd1e7e13f881643ac2328b325cb75b",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-security-audit",
@@ -6125,7 +6479,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "tools"
     },
     {
       "name": "nodecode-security-scan",
@@ -6142,7 +6497,8 @@
         "repo": "NousResearch/hermes-official-plugins",
         "commit": "65f5ad93c7dc14dc661ff2ff3ead0fda71e7bd9d",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-sem",
@@ -6159,7 +6515,8 @@
         "repo": "Ataraxy-Labs/sem",
         "commit": "631138c691817f2aa11cecdde3c400e6a0b910aa",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-sequenzy",
@@ -6176,7 +6533,8 @@
         "repo": "Sequenzy/skills",
         "commit": "a28b9f1461d3483abbafdd7b404c49fe800c4d32",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-serpapi",
@@ -6193,7 +6551,8 @@
         "repo": "serpapi/serpapi-hermes-plugin",
         "commit": "f61418cb72a2771aec7526d03bf675fefd993b14",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-severian",
@@ -6210,7 +6569,8 @@
         "repo": "Sahil-SS9/Severian",
         "commit": "bdb14b04ffa014148d4665f239688ca0856561da",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-sgme",
@@ -6227,7 +6587,8 @@
         "repo": "freehul/sgme",
         "commit": "f12c9bfa2cc9f4a59420376cb91176abb882948b",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-shipframe",
@@ -6244,7 +6605,8 @@
         "repo": "juanitourquiza/shipframe",
         "commit": "2d0a246206b7a3235c3167af5512d8dd4d8a29dd",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-shodan",
@@ -6261,7 +6623,8 @@
         "repo": "Adolanium/hermes-plugin-shodan",
         "commit": "d12828e9c90654bca598d45832cee2ef6454cf30",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-showreel",
@@ -6278,7 +6641,8 @@
         "repo": "Duffey234/hermes-showreel",
         "commit": "a8f404a0481408af8f56b514e47905dfd3565fa7",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-sigrex",
@@ -6296,7 +6660,8 @@
         "repo": "sigrexio/agent-plugin",
         "commit": "05cea6ea3fc2dce28a39e680937dd8d7cb7bfd2b",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-sketch-pad",
@@ -6320,7 +6685,8 @@
         "repo": "aydnOktay/hermes-sketch-pad",
         "commit": "de7cd07ff29666ca1bcc3897f13b39f9472fab55",
         "license": "MIT"
-      }
+      },
+      "category": "desktop"
     },
     {
       "name": "nodecode-skill-court",
@@ -6337,7 +6703,8 @@
         "repo": "saatvik333/hermes-skill-court",
         "commit": "de53842858cf41a1437eda30ff553d21cbf578f2",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-skill-lineage",
@@ -6354,7 +6721,8 @@
         "repo": "simin-yuan/hermes-skill-lineage",
         "commit": "c21178d4578680297b6100638fff59b75d1b572e",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-skill-retrieval",
@@ -6371,7 +6739,8 @@
         "repo": "moonlight-lupin/agent-skills",
         "commit": "79801c69e797f5f8efd619f8f451ca89d18c7240",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-skill-router",
@@ -6388,7 +6757,8 @@
         "repo": "DECRUX9812/typesafe-skill-router",
         "commit": "e6cdac26f9ed588b4a94b8a2f7f9f026e1b9faf3",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-slash-router",
@@ -6405,7 +6775,8 @@
         "repo": "raitoxlol/hermes-slash-router",
         "commit": "2088919f4c59927aa2d47f21bb12e639453c1a2a",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-snapcompact",
@@ -6422,7 +6793,8 @@
         "repo": "vimona3ds/hermes-snapcompact",
         "commit": "8a274ca4a501e5661f1e2762150c4c3f99e374ce",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-snowflake",
@@ -6433,7 +6805,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-snyk",
@@ -6450,7 +6823,8 @@
         "repo": "NousResearch/hermes-official-plugins",
         "commit": "abec9e822a23089943dd1d476a104bf746f19f86",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-soniox",
@@ -6467,7 +6841,8 @@
         "repo": "XimilalaXiang/hermes-soniox",
         "commit": "79f8d1dec5fcdc75e22ec34e857e5b4e2b8828bf",
         "license": "MIT"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-soul-finder",
@@ -6484,7 +6859,8 @@
         "repo": "RegeneratusLabs/Soul-Finder",
         "commit": "2d288de288f220f3a630fa41ca9bd0bc9801e992",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-sound-effects",
@@ -6501,7 +6877,8 @@
         "repo": "NousResearch/hermes-official-plugins",
         "commit": "e7a218f26db88426ab3e7376f0e000b6e356f5e7",
         "license": "MIT"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-source-tray",
@@ -6518,7 +6895,8 @@
         "repo": "aydnOktay/hermes-source-tray",
         "commit": "e64f7d2ad56f922410071e2096a40ceab421a392",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-spectator",
@@ -6535,7 +6913,8 @@
         "repo": "Sahil-SS9/spectator-mode",
         "commit": "a1467ded9802559b30061efe861701d8ec14bcae",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-speech",
@@ -6552,7 +6931,8 @@
         "repo": "allmodels-io/hermes-speech",
         "commit": "6efecc359aa4c091b41ad530575943657ee259de",
         "license": "MIT"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-spotify",
@@ -6569,7 +6949,8 @@
         "repo": "NousResearch/hermes-official-plugins",
         "commit": "e7a218f26db88426ab3e7376f0e000b6e356f5e7",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-stacktree",
@@ -6586,7 +6967,8 @@
         "repo": "stevysmith/stacktree-skill",
         "commit": "139fe05f2a03db602b6e29a4816d30ffddf99816",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-stalkchain",
@@ -6603,7 +6985,8 @@
         "repo": "StalkC/stalkchain-plugin",
         "commit": "a4db6100f1d031e5f07cd134e93600bfc70c5f78",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-starlearner",
@@ -6620,7 +7003,8 @@
         "repo": "BigBossRabbit/starlearner-nexus-hermes-skill",
         "commit": "6f47e1b5101fa65ce1f65fe3f5391dd8559615c4",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-steward",
@@ -6637,7 +7021,8 @@
         "repo": "Sahil-SS9/hermes-project-stewardship",
         "commit": "cc54a15ccb841c69b4e898ce91c98e6f5ee23444",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-storm",
@@ -6654,7 +7039,8 @@
         "repo": "bmtrnavsky/storm-fusion-research-pipeline",
         "commit": "b1a492eb9cfd41b120db8ac6d8a97128901b87d2",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-structured-aux",
@@ -6671,7 +7057,8 @@
         "repo": "trajectoire-ai/hermes-structured-aux-models",
         "commit": "e5c49b081ad04adca2ee3edc601b09ede6cee4c5",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-super-artifacts",
@@ -6688,7 +7075,8 @@
         "repo": "Super-Artifacts/plugins",
         "commit": "dce02981a179a09dad6509fe58a3a7b8cf020735",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-supermemory",
@@ -6705,7 +7093,8 @@
         "repo": "supermemoryai/hermes-supermemory",
         "commit": "91405dd00fdf2a0b3515b25c25557598f6793299",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-switchyard",
@@ -6722,7 +7111,8 @@
         "repo": "bgrablin/hermes-switchyard",
         "commit": "895c101d4228f12cbb7e56194f94d0e555256339",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-system-one",
@@ -6739,7 +7129,8 @@
         "repo": "NMTZ-z/system-one-benchmark-lab",
         "commit": "1095495019b2dff2b4231ed70ec23a3ea716e2f6",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-t3",
@@ -6756,7 +7147,8 @@
         "repo": "thetasigmaio/hermes-t3-control",
         "commit": "aeb5493e30e744b414cbfe88a70adb1acd59a1c8",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-tab-watchdog",
@@ -6773,7 +7165,8 @@
         "repo": "web3blind/hermes-chrome-tab-watchdog",
         "commit": "15b873f13df8275c59a18cbe4a9a2ec71266af50",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-tabella",
@@ -6790,7 +7183,8 @@
         "repo": "dyiapanis/tabella",
         "commit": "4922d16c9d20ff7b4c2a3b4fbd0aa797f7be8d76",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-tabular",
@@ -6807,7 +7201,8 @@
         "repo": "frankiethull/hermes-tabular",
         "commit": "c5b965086d0d5b8239703c2aa8a5df99b1eee5c3",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-talaria",
@@ -6824,7 +7219,8 @@
         "repo": "liamsmith86/talaria-webui",
         "commit": "04ebc042c43e3af07ccdc44fa30c1794f1b02c1e",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-talk",
@@ -6841,7 +7237,8 @@
         "repo": "TheSmokeDev/hermes-talk",
         "commit": "790f6d283d4720302eda21f9086d4fc01be3ec0a",
         "license": "MIT"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-tam",
@@ -6858,7 +7255,8 @@
         "repo": "vbcherepanov/hermes-tam-memory",
         "commit": "9a6e51839fb0619c6e41804ac201272e857ea825",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-tavily",
@@ -6875,7 +7273,8 @@
         "repo": "tavily-ai/tavily-hermes-plugin",
         "commit": "ac556341056dc903988f63d627d595e468f1cfa9",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-teammates",
@@ -6892,7 +7291,8 @@
         "repo": "100yenadmin/hermes-teammates",
         "commit": "bdfe621a8e5334f41002344da5bdfe49af01b693",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-telegram-business",
@@ -6909,7 +7309,8 @@
         "repo": "NousResearch/hermes-labs-plugins",
         "commit": "4987918a068fcf4b3efbb584db5dd05e5f57c669",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-telegram-notify",
@@ -6926,7 +7327,8 @@
         "repo": "madpower2000/hermes-telegram-notify",
         "commit": "d7cab7dfb154425118129b0086032e873a832576",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-telegram-stickers",
@@ -6943,7 +7345,8 @@
         "repo": "churnast/hermes-telegram-stickers",
         "commit": "210ce860a06ed24b87f34d9c418f544d2afde4f0",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-telemetry",
@@ -6960,7 +7363,8 @@
         "repo": "nujovich/hermes-telemetry",
         "commit": "872eadc4b1e6797bc72c8eed3daf54f199d2bed5",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-telnyx",
@@ -6984,7 +7388,8 @@
           "provider": "telnyx",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-tenuo",
@@ -7001,7 +7406,8 @@
         "repo": "tenuo-ai/hermes-tenuo",
         "commit": "8bce830c5df9dcd06d16688a954146d8ed0c0c562",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-tinyfish",
@@ -7018,7 +7424,8 @@
         "repo": "tinyfish-io/tinyfish-web-agent-integrations",
         "commit": "2b29d5c864d08fd9716d6f15c3eafdf487b148d3",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-tls-posture",
@@ -7035,7 +7442,8 @@
         "repo": "Pacific-Cloud-Solutions/hermes-plugins",
         "commit": "389d300cd43de459fd6f260498ba3c2e7fff95dc",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-tokenjuice",
@@ -7052,7 +7460,8 @@
         "repo": "vincentkoc/tokenjuice",
         "commit": "825eaa98214c73174156eea582042e1f8b6fdc9a",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-tool-break",
@@ -7069,7 +7478,8 @@
         "repo": "apoapostolov/hermes-agent-awesome-plugins",
         "commit": "2d72584692123172705769b9de7fcee00af6a0d7",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-tool-slimmer",
@@ -7086,7 +7496,8 @@
         "repo": "aliasocracy/hermes-tool-slimmer",
         "commit": "1b90aa592f7423233ea6cdfd44c7188e14ca7ccf",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-toolaria",
@@ -7103,7 +7514,8 @@
         "repo": "Sahil-SS9/Toolaria",
         "commit": "667df67ef5bd23160b1b87a93ebf895c122b6b17",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-town",
@@ -7120,7 +7532,8 @@
         "repo": "sxuff/hermes-town",
         "commit": "f3b89401fafde0cd3ebaaccf01ea9e658bc66ff9",
         "license": "MIT"
-      }
+      },
+      "category": "desktop"
     },
     {
       "name": "nodecode-tracekit",
@@ -7137,7 +7550,8 @@
         "repo": "Cygnux-Labs/Tracekit",
         "commit": "d41c68e335a0986100b8747729659798bcf9d949",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-tripo",
@@ -7154,7 +7568,8 @@
         "repo": "Adolanium/hermes-tripo",
         "commit": "09b26f6b3b2662a0fe86dc782283bc4cddf7a196",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-tripwire",
@@ -7171,7 +7586,8 @@
         "repo": "percyhendrux123-prog/hermes-tripwire",
         "commit": "904a4f559808c57152ebb666cd0ab7d863220b49",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-trove",
@@ -7188,7 +7604,8 @@
         "repo": "misterdas/hermes-trove",
         "commit": "69c673eeb2fcbaf12e9b88451ad1f627a88bc930",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-ttsbuddy",
@@ -7205,7 +7622,8 @@
         "repo": "ngelik/ttsbuddy-cli",
         "commit": "cb7af8ab874ab4643041a12cb6723c24ea787a66",
         "license": "MIT"
-      }
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-twenty-crm",
@@ -7222,7 +7640,8 @@
         "repo": "TREE-Ind/hermes-twenty-crm",
         "commit": "3d87c1634e4b159738b35954ac4efc15c876d46d",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-typesafe",
@@ -7233,7 +7652,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-umt",
@@ -7250,7 +7670,8 @@
         "repo": "Markgatcha/universal-mcp-toolkit",
         "commit": "b6eb997c316de472318ca658d6d7b57b62ca13d0",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-unbrowse",
@@ -7267,7 +7688,8 @@
         "repo": "unbrowse-ai/unbrowse",
         "commit": "a82c59dfb05583836ecfa21fdc3f8a2ea73bfb76",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-understudy",
@@ -7284,7 +7706,8 @@
         "repo": "stffinfcti/understudy",
         "commit": "e0920f9e3641f0e24afe6ee01b21322c070920fd",
         "license": "MIT"
-      }
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-undo",
@@ -7301,7 +7724,8 @@
         "repo": "Moodtuner997/hermes-undo-effects",
         "commit": "f02de8ca69104f44b9b3ec78155d7152412b9e97",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-upstash",
@@ -7318,7 +7742,8 @@
         "repo": "upstash/agentkit",
         "commit": "1a189315684e2458ce5514e74c1a1e1edee79518",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-upstash-box",
@@ -7335,7 +7760,8 @@
         "repo": "upstash/box",
         "commit": "da7d85ac0cb4e114a5d8adc79cfb24bfff084bfb",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-usage-guard",
@@ -7352,7 +7778,8 @@
         "repo": "mister-ideas/usage-guard",
         "commit": "d59f798e848f5310f9e3d8673c01f383207c695e",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-ux3",
@@ -7369,7 +7796,8 @@
         "repo": "cis2042/ux3-product-design-harness",
         "commit": "48965c6b501f61ebbb8130c9c2e4f9af08922b9f",
         "license": "MIT"
-      }
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-vault",
@@ -7389,7 +7817,8 @@
         "repo": "Guerilla-ops/floorvault",
         "commit": "62e41853d1d9bf4d84f3ff22d3755d9762efdd3c",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-vaultknox",
@@ -7406,7 +7835,8 @@
         "repo": "Ufonik88/Hermes-VaultKnox",
         "commit": "8aea272fd9b071615fcd0c93a38b760485673316",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-venice-web",
@@ -7423,7 +7853,8 @@
         "repo": "MnrGreg/hermes-venice-web",
         "commit": "dcc286fc40544f4489831ff246de8030fd0417fa",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-verifier",
@@ -7440,7 +7871,8 @@
         "repo": "am423/hermes-verifier",
         "commit": "514ff4a7a937e391fca763ba3c9732103f351531",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-vidiq",
@@ -7457,7 +7889,8 @@
         "repo": "vid-io/vidiq-mcp",
         "commit": "1c094797d036577519e378e3ee4856682cbe1818",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-vision-inline",
@@ -7474,7 +7907,8 @@
         "repo": "BrokeSkill/hermes-vision-inline",
         "commit": "281bce608e799834cd1b60929d3f9b44756cb7c2",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-watchline",
@@ -7491,7 +7925,8 @@
         "repo": "qordinate-ai/watchline-hermes-plugin",
         "commit": "d3d2424336af16cae94e4bbcb47e6edd07a88062",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-web-local",
@@ -7508,7 +7943,8 @@
         "repo": "enzo-adami/hermes-plugin-web-local",
         "commit": "cef74b40c3ff379a1d5c63264ef99e8f2c9c5529",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-web-provider",
@@ -7519,7 +7955,8 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
-      ]
+      ],
+      "category": "web"
     },
     {
       "name": "nodecode-web-search-plus",
@@ -7536,7 +7973,8 @@
         "repo": "robbyczgw-cla/hermes-web-search-plus",
         "commit": "4eebfd77a4572111306f4ff551be4e53ef76f450",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-webly",
@@ -7553,7 +7991,8 @@
         "repo": "Webly-AI/webly-plugin",
         "commit": "e952ff954b23a2ea564e784e9807cc274fa9ba8b",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-wechat-assistant",
@@ -7570,7 +8009,8 @@
         "repo": "harrylabsj/hermes-plugin-wechat-social-assistant",
         "commit": "fbfc1bd23fc9494ad9c4433de2574954b5f5476f",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-weknora",
@@ -7587,7 +8027,8 @@
         "repo": "Tencent/WeKnora",
         "commit": "e3fb2335bf3f8cadd32142380c60b2677a27bf99",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-whoop",
@@ -7604,7 +8045,8 @@
         "repo": "davidmosiah/whoop-mcp",
         "commit": "d15516fa2671e9749d43531fe0f1f447d5632686",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-wikipedia",
@@ -7621,7 +8063,8 @@
         "repo": "EloquentBrush0x/hermes-context-refs",
         "commit": "0154f6bfaafc837cc4af78742e6db7c087d5b5a7",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-wolfmarkdown",
@@ -7638,7 +8081,8 @@
         "repo": "WolfMarkTools/WolfMarkDown",
         "commit": "d9c1b4a7e31df41ed1e555f5d7c0a8f27e16c5ad",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-woof",
@@ -7655,7 +8099,8 @@
         "repo": "recastsystems/hermes-woof",
         "commit": "2c82b34eb386a490d25439757556f6bab84048af",
         "license": "Apache-2.0"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-workflow-record",
@@ -7672,7 +8117,8 @@
         "repo": "NousResearch/hermes-labs-plugins",
         "commit": "4987918a068fcf4b3efbb584db5dd05e5f57c669",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-workflows",
@@ -7689,7 +8135,8 @@
         "repo": "jacobhausler/hermes-workflows",
         "commit": "464b4aa304960c89522e709d6b109d0fd08fe06e",
         "license": "MIT"
-      }
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-writing-guard",
@@ -7707,7 +8154,8 @@
         "repo": "MadeByBrain/hermes-extensions",
         "commit": "c18ef190635e386a627ba921c816dceeb28c2de8",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-xai-collections",
@@ -7724,7 +8172,8 @@
         "repo": "Julientalbot/hermes-xai",
         "commit": "8fd9bf8ecef1f8e9cb2cb7921fc86527acd9ede3",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-xai-oauth",
@@ -7742,7 +8191,8 @@
           "name": "SuperGrok (xAI)",
           "sign_in": "/xai-oauth login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-xiaomi",
@@ -7760,7 +8210,8 @@
           "name": "Xiaomi MiMo",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-xmemo",
@@ -7777,7 +8228,8 @@
         "repo": "yonro/hermes-xmemo-plugin",
         "commit": "499a383778647e897d30db3e92e8c8ad4397c799",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-yandex",
@@ -7794,7 +8246,8 @@
         "repo": "akinfold/hermes-yandex-search-api",
         "commit": "a143ba11735622105d1b762e61c0211e887d4800",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-yandex-calendar",
@@ -7811,7 +8264,8 @@
         "repo": "akinfold/hermes-yandex-calendar",
         "commit": "cad2a6b8e1cad82753b9f57d4f388645210702a0",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-yandex-disk",
@@ -7828,7 +8282,8 @@
         "repo": "akinfold/hermes-yandex-disk",
         "commit": "32250084b6406169d18c9c98e985a6d53342d173",
         "license": "MIT"
-      }
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-yandex-mail",
@@ -7848,7 +8303,8 @@
         "repo": "akinfold/hermes-yandex-mail",
         "commit": "f44cf3aff9393d4dc3d420879469d1ebe4735c66",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-you",
@@ -7865,7 +8321,8 @@
         "repo": "youdotcom-oss/agent-skills",
         "commit": "08f3d80e7ca9518ccc64b38b365a78cc4a762691",
         "license": "MIT"
-      }
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-zai-coding-plan",
@@ -7883,7 +8340,8 @@
           "name": "Z.AI GLM Coding Plan",
           "sign_in": "/zai-coding-plan login"
         }
-      ]
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-zalo",
@@ -7900,7 +8358,8 @@
         "repo": "moken627-hub/hermes-plugin-zalo",
         "commit": "5a989368d0877c930e76fcc75ea125e7af7ea872",
         "license": "MIT"
-      }
+      },
+      "category": "platform"
     },
     {
       "name": "nodecode-zeromem",
@@ -7917,7 +8376,8 @@
         "repo": "ptaranat/zeromem",
         "commit": "f7e669c47cc0f6c9867829c37af8e4fc2803fe15",
         "license": "MIT"
-      }
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-zerosignal",
@@ -7941,7 +8401,8 @@
           "provider": "zerosignal",
           "sign_in": "key"
         }
-      ]
+      ],
+      "category": "models"
     }
   ]
 }
