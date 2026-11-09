@@ -1,0 +1,24 @@
+// nodecode-yandex-calendar's section of ~/.nodecode/config.jsonc.
+// A present section is an enabled one; "enabled": false turns the cell off
+// without taking it out of the home.
+{
+  "yandex_calendar": {
+    // The account the tools speak for.
+    "login": "you@yandex.ru",
+
+    // A Yandex app password for CalDAV (a mail password is refused):
+    // id.yandex.ru/security/app-passwords
+    "app_password": "the app password",
+
+    // Only an HTTPS origin is accepted, and no other one is ever dialled.
+    "base_url": "https://caldav.yandex.ru",
+
+    // Optional: an allow-list of calendars by name or href segment, the first
+    // one being the default. Empty means every calendar the account holds.
+    "calendars": ["Home"],
+
+    // Optional: which verbs to offer — all, read, write, delete, or single
+    // verb names such as create_event. Empty means all of them.
+    "actions": ["all"]
+  }
+}
