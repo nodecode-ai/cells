@@ -1,0 +1,47 @@
+nodecode-gameforge is a rewrite of DECRUX9812's DECRUX9812/hermes-plugin-gameforge:
+
+  https://github.com/DECRUX9812/hermes-plugin-gameforge
+  commit ee4a07a7fdf26139ae53ad23156b8b275e99743b
+  MIT License, Copyright (c) 2026 Ritesh Patel (LICENSE)
+
+Rewritten: the offline half of the toolkit, as six tools and a command. The
+sound-effect synthesizer is the original's sfxr algorithm carried across --
+the same parameter names and ranges, the same 8x supersampled render loop,
+the same generators (coin, laser, explosion, powerup, hit, jump, blip) and
+their aliases, the same seeded variation, and the four post-processing styles
+(retro, modern, crunchy, distant). The music composer keeps the moods, their
+modes, progressions and tempos, and their style names, and renders bass,
+arpeggio, melody and drums into a loop of exactly the bars asked for. The
+pixel-art half keeps the archetype, monster, item, palette, terrain and prop
+vocabulary; the masks are this rewrite's, drawn, shaded and outlined from the
+same kind of hue-shifted ramp. The tileset is the original's Wang corner set
+idea, drawn from one wrapping noise field so the cells meet. The project
+layout is the original's: assets/sfx, assets/music, assets/sprites and
+assets/tiles under the project, and a gameforge.json ledger at its root
+recording each asset's name, kind, files, recipe, creation time and licence,
+so a project started by either reads the other's history. The web and Godot
+engines keep the scaffold idea -- a page that plays with no build step, and a
+Godot 4 project with a scene and a player script -- and status still probes
+for godot, unity, blender, unreal, chrome and ffmpeg on PATH, import copies the
+ledger's assets in beside a manifest (game.json for web,
+assets/manifest.json for godot), and run opens the engine on the project or
+names the program it looked for. The exporter keeps the web half of
+forge_export: the PWA bundle and the zip made from it, the single
+self-contained .html, and the Capacitor project, with the same file layout
+under dist and a stored-entry zip written here instead of by a ziplib. The
+command and the section replace the plugin's /forge command and its
+config_schema.
+
+Left out: the parts that need a hosted service, a heavyweight toolchain, a
+browser or a publisher, because a cell that wrote assets offline should not
+grow a network dependency to do it -- AI text-to-3D through fal, Tripo and
+Meshy (with rigging and preset animations), ElevenLabs prompt-based sound
+effects, NPC voice synthesis, the headless-Chrome and Godot playtesters, the
+Unity, Blender and Unreal builders and their headless invocation scripts, the
+model3d .glb writers with their previews, the pixelize and sheet packers, the
+butler push to itch.io and the Godot, Unity and Capacitor platform builds
+(capacitor's project is written; building it still needs Node and a mobile
+SDK), the Hermes CLI subcommand, the skills folder, and the pre_tool_call
+approval hook. Their guidance survives in the tool descriptions and the
+(help :gameforge) topic; the assets they would have consumed are the ones
+these tools write.

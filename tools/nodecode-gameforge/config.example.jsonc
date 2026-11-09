@@ -1,0 +1,21 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. Nothing here is required and nothing here is a secret: the tools
+// synthesize their assets from arithmetic.
+{
+  "gameforge": {
+    "enabled": true,
+
+    // Where game projects are kept, under the home. A call that names an
+    // absolute project path writes there instead.
+    "directory": "gameforge/",
+
+    // The project a call writes to when it names none. Empty it, and every
+    // call must name a project.
+    "default_project": "game",
+
+    // Screen pixels a drawn pixel becomes in a saved sprite sheet: 4 turns
+    // a 16-pixel sprite into a 64-pixel frame.
+    "sprite_scale": 4
+  }
+}
