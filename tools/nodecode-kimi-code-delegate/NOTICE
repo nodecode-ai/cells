@@ -1,0 +1,25 @@
+nodecode-kimi-code-delegate is a rewrite of s-a-s-k-i-a's s-a-s-k-i-a/hermes-kimi-code:
+
+  https://github.com/s-a-s-k-i-a/hermes-kimi-code
+  commit 72c741cc166ec1db2aec4cd5316f7b7281a74b40
+  MIT, Copyright (c) 2026 Saskia Teichmann (LICENSE)
+
+Rewritten: the read-only ACP delegate itself, in Common Lisp. The JSON-RPC
+dialogue the CLI is driven through - initialize, authenticate against the
+CLI's own login, session/new, the model and thinking config options, one
+prompt whose streamed text is the answer - with the same protocol version
+check, the same identity check on the agent, the same `reject_once' answer
+to a permission request, the same errors for filesystem and terminal
+requests, the same size limits, the same bounded redaction of child output,
+and the same environment allowlist, so an unrelated key of the harness never
+reaches the CLI. The tool keeps the original's arguments (prompt, model,
+thinking) and its JSON answer; the doctor the plugin exposed as
+`hermes kimi-code doctor' is the /kimi-code command.
+
+Left out: the Python plugin's packaging and CLI registration, and its
+`config.yaml' under `plugins.entries.kimi-code-delegate' - a cell reads its
+own section of ~/.nodecode/config.jsonc instead. The original's
+`command_is_available' gate (which hides the tool when the CLI is missing)
+has no counterpart: the tool is registered and refuses with what to do. The
+fallback to the CLI's own ~/.kimi-code/bin/kimi is kept; every other
+behaviour is the original's.
