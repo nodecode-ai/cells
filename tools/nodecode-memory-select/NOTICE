@@ -1,0 +1,19 @@
+nodecode-memory-select is a rewrite of Pinutss's Pinutss/jev-memory-selector:
+
+  https://github.com/Pinutss/jev-memory-selector
+  commit 87bd9be2a67d380024be194e6d80a1a053024361
+
+MIT, Copyright (c) 2026 Pinuts (LICENSE)
+
+What was rewritten: the plugin's deterministic selector (selector.py,
+tokens.py, models.py and security/redaction.py) as Common Lisp behind one
+Nodecode tool, memory_select, with the same name, the same arguments and the
+same answer shape as the plugin's MCP tool, plus the section, the manual topic
+and the eval verb the cell contract gives it.
+
+What was left out: the optional remote judges (the JEV decision API and an
+OpenAI-compatible gateway's chat model), the single-page demo and the HTTP
+server and CLI that served them, and the MCP stdio server itself, which
+Nodecode's tool seam replaces. The default path the plugin ran when no JEV key
+was set - the local heuristic - is the one this cell implements: nothing is
+fetched at run time and no request leaves the image.
