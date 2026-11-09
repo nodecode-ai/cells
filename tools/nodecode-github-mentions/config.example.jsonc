@@ -1,0 +1,23 @@
+// The cell's section of ~/.nodecode/config.jsonc. A present section is an
+// enabled one; "enabled": false vetoes the cell and installs nothing.
+"github_mentions": {
+  // The token is named, never written here: an environment variable
+  // (token_env) or a file only you can read (token_file). Set exactly one.
+  // A classic token needs `repo`; a fine-grained one needs Issues, Pull
+  // requests and Discussions (read and write) plus Notifications (read).
+  "token_env": "GITHUB_TOKEN",
+  // "token_file": "~/.config/github-token",
+
+  // The gate: only these GitHub logins can give the agent work by
+  // mentioning it. Never empty.
+  "allowed_authors": ["your-login"],
+
+  // Optional: the most mentions one github_mentions call answers.
+  // "max_mentions": 10,
+
+  // Optional: how much of a mention's body one answer carries.
+  // "body_chars": 2000,
+
+  // How long one request to GitHub may take, in seconds.
+  "timeout": 30
+}
