@@ -1,0 +1,29 @@
+nodecode-web-local is a rewrite of enzo-adami's enzo-adami/hermes-plugin-web-local:
+
+  https://github.com/enzo-adami/hermes-plugin-web-local
+  commit cef74b40c3ff379a1d5c63264ef99e8f2c9c5529
+  MIT, Copyright (c) 2026 Enzo Adami (LICENSE)
+
+What was rewritten: the plugin was one web-extract provider for Hermes. It fetched
+each URL from the agent's machine with httpx, followed redirects by hand at most five
+hops, re-checked the SSRF rule and the website policy on every hop, capped a body at
+10MB and a URL at 60 seconds inside the caller's batch budget, and reduced the page
+with trafilatura, answering readable text, a title, a metadata mapping and one
+result per URL -- a failed page as an error item rather than an exception. This cell
+keeps that shape in Common Lisp: the same per-URL fetch with an honest product user
+agent, the same content-type gate (HTML, XML and plain text; anything else names
+itself), the same 10MB cap, the same batch deadline that spends what the caller
+allowed, the same per-page error line, and the same metadata -- title, site,
+byline, publish date -- with the description quoted under the page's own line. The
+reduction is cl-ppcre's in place of trafilatura, so headings, list items, links,
+table cells and code blocks come out as markdown rather than through a readability
+library. Hermes' extract backend registry has no Nodecode counterpart, so the same
+reader is exposed as the local_extract tool, the (web-local:extract ...) verb and
+the /web-local command.
+
+What was left out and why: trafilatura (a Python library, not vendored here, so the
+reduction is coarser on an unusual page); the plugin's `format: "html"` output (a
+page here is markdown or plain text); the check on every redirect hop, because the
+image's one HTTP exchange follows up to five redirects itself, so the private-network
+check runs on the address the caller gave; and the resolver-level part of the SSRF
+rule, so a hostname that resolves into a private network is not caught.

@@ -1,0 +1,8 @@
+// The web-local section. Nothing is required: there is no key and no service.
+{
+  "web-local": {
+    "timeout_seconds": 30,      // one page's exchange, in seconds
+    "budget_seconds": 120,      // the whole call: what is left is what the next page gets
+    "max_bytes": 10485760       // the most one page may weigh, in bytes
+  }
+}
