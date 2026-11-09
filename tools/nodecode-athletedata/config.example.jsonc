@@ -1,0 +1,11 @@
+// The athletedata cell's section of ~/.nodecode/config.jsonc. Nothing here has
+// to be written: the defaults are these, and the key is a reference to an
+// environment variable, never the key itself.
+{
+  "athletedata": {
+    "api_key_env": "ATHLETEDATA_API_KEY",
+    "url": "https://mcp.athletedata.health/mcp",
+    "timeout_seconds": 60,
+    "allow_writes": false
+  }
+}
