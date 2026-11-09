@@ -1,0 +1,30 @@
+nodecode-supermemory is a rewrite of supermemoryai's supermemoryai/hermes-supermemory:
+
+  https://github.com/supermemoryai/hermes-supermemory
+  commit 91405dd00fdf2a0b3515b25c25557598f6793299
+
+MIT, Copyright (c) 2025 Nous Research (LICENSE)
+
+What was rewritten: the plugin's memory provider -- its Supermemory client calls
+(documents.add, search.memories, profile, memories.forget), the four model tools
+and the JSON schemas they advertise, the container tag and its sanitizing, the
+entity context that steers extraction, the [role: x]...[x:end] turn layout, the
+custom_id that buckets a session's turns into one document per four hours, and
+the bounded retry buffer -- reimplemented in Common Lisp against Nodecode's
+cell contract, with nlk:http speaking the same HTTPS endpoints. The harness
+seams are Nodecode's: the plugin's config file became the cell's `supermemory`
+section, its tools are nle:register-tool registrations, and its sync_turn hook
+is an observer on the :frame point.
+
+What was left out, and why: the system-prompt block and the prefetch of a
+Supermemory block before each turn of the plugin are not carried, because
+Nodecode's recall seam reads standing sections once per turn and carries no
+per-message query -- the model calls supermemory_search instead, and (help
+:supermemory) tells it when; and the kebab-case tool aliases (supermemory-save
+and friends), because Nodecode's catalog has one name per tool and the four
+snake_case names are the original's own. Also left out: the Hermes-side
+`hermes memory setup` / `status` verbs (the section, /settings and
+/supermemory are the same surface), the custom-container whitelist (one
+container per cell section here), {identity} templates expanded from the
+harness's agent identity, and the PostHog usage events the Python client
+sends.
