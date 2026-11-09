@@ -1,0 +1,23 @@
+nodecode-soul-finder is a rewrite of RegeneratusLabs's RegeneratusLabs/Soul-Finder:
+
+  https://github.com/RegeneratusLabs/Soul-Finder
+  commit 2d288de288f220f3a630fa41ca9bd0bc9801e992
+  MIT License, Copyright (c) 2026 Josh (LICENSE)
+
+Rewritten: the plugin's two flows (a first-run offer when a home has no real
+SOUL.md, and a guided draft-or-audit interview) as one Nodecode cell. The two
+booleans the plugin kept in its own state file are two marker files of the
+cell's own under the home; `/soul new|refine|status` submits the kickoff into
+the running session as the plugin injected its kickoff message; the two tools
+and the split between a one-time offer in the system prompt and the
+`on_session_start` hook become three tools the model calls (status, guide,
+complete) and one standing notice at start, marked so it never asks twice.
+
+Left out: Hermes's own surfaces and their side effects -- a system-prompt
+section rendered once per profile, an `on_session_start` hook, and the
+per-profile SOUL.md advice in the skill (`~/.hermes/profiles/<name>`, the
+desktop app's `display.personality` key, the `.nudge-sent` marker in the
+plugin folder). Nodecode's channels read one SOUL.md per profile and take it
+from the channel's own `soul_file`, so the skill's Hermes paths stay as
+written in `skill/SKILL.md`, which is the original's file, unchanged and read
+at run time by the `soul_finder_guide` tool.
