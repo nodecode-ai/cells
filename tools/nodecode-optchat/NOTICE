@@ -1,0 +1,26 @@
+nodecode-optchat is a rewrite of aska-digital's aska-digital/optchat-memory:
+https://github.com/aska-digital/optchat-memory
+commit 7b0f3abd65b95996366d0495787c95af981ea587
+MIT, Copyright (c) 2026 aska-digital (LICENSE)
+
+The original is a Hermes Agent memory-provider plugin in Python: store.py keeps
+an append-only JSONL log of every message, tree.py a binary summary tree,
+view.py the budgeted tiling the agent reads, compact.py the background
+summarizer, and provider.py the MemoryProvider ABC that wires them to the
+harness. This rewrite carries the same four pieces as Lisp files of the same
+names -- the log and its owner-only files, the node table and zoom, the view
+and its due-pair merge, the pump and its COMPACT prompt -- and the same two
+tools, optchat_zoom and optchat_date, as Nodecode tools, with the prompt the
+cell's manual. It also adds what Nodecode has instead of a memory provider: a
+:FRAME observer that writes each turn's messages as they are published, and
+advice on the harness-section read, so the view rides every request as the
+`optchat` block.
+
+Left out, because the harness differs: the MemoryProvider ABC and its
+per-profile home keying (Nodecode has one home and the cell takes a
+`store_dir`); the POSIX/Windows file lock that keeps a second process off the
+log (one Nodecode process owns the home); the five-try size-correction loop
+around an over-long summary (the rewrite cuts at the budget); and the byte
+exactness of the budget (characters here). The compactor's model call goes
+through NLE:COMPLETE on the auxiliary target, the seam Hermes's
+call_llm(task="optchat_compact") is on the other side of.
