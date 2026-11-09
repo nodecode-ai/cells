@@ -19,7 +19,9 @@
 ;;;;                                   with the headers the CLI's login
 ;;;;                                   sends: a model the day it ships
 ;;;;   RESOLVE-MODEL-CAPABILITY        a model's window, output ceiling and
-;;;;                                   effort ladder are Anthropic's own row
+;;;;                                   effort ladder are Anthropic's own row,
+;;;;                                   a model no catalog has yet its
+;;;;                                   listing's window
 ;;;;   MODEL-PRICE                     Anthropic's API list price: a
 ;;;;                                   subscription round is not billed per
 ;;;;                                   token, so its cost is what the round
@@ -169,8 +171,17 @@ providers, its models among the configured ones."
 
 (defun capability (next model-id &optional (provider nle::*provider*))
   "RESOLVE-MODEL-CAPABILITY advice: a claude-code model is the Anthropic
-row of the same id."
-  (funcall next model-id (if (equal provider +provider+) "anthropic" provider)))
+row of the same id; one no source knows as Anthropic's yet is what the
+core makes of it under claude-code, its window the login's listing's."
+  ;; The day a model ships, models.dev has no row for it, and the core takes
+  ;; a window from the provider's own cached listing (LISTED-CONTEXT-WINDOW)
+  ;; -- claude-code's, not anthropic's, which only an API key fetches.
+  (if (equal provider +provider+)
+      (let ((row (funcall next model-id "anthropic")))
+        (if (nle::model-capability-known-p row)
+            row
+            (funcall next model-id provider)))
+      (funcall next model-id provider)))
 
 (defun price (next model-id provider)
   "MODEL-PRICE advice: a claude-code model is priced as the Anthropic row of

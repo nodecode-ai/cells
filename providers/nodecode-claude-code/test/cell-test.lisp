@@ -478,3 +478,16 @@ started."
     (nlk:bind (((rows error) (nle::list-provider-models "claude-code")))
       (is (null rows) "no CLI, no listing")
       (is (search "no /nonexistent/claude on PATH" error) "and its row says why"))))
+
+(deftest claude-code-cell-sizes-a-model-no-catalog-has-from-its-listing ()
+  (with-temp-auth (auth "{}")
+    (with-cell-stop ((claude-code-start "command" "/nonexistent/claude"))
+      (with-catalog-fixture (catalog "{\"anthropic\":{\"models\":{\"claude-haiku-4-5\":{\"limit\":{\"context\":200000,\"output\":64000}}}}}")
+        (let ((nle::*auth-file-path* auth)
+              (nle::*provider-models-memo* nil)
+              (nle::*model-capability-memo* nil))
+          (with-temp-file (nle::*provider-models-cache-path*
+                           :contents (format nil "{\"claude-code\": {\"fetched_at\": ~d, \"base_url\": ~s, \"error\": null, \"models\": [{\"id\": \"claude-new-9\", \"context_window\": 1000000}, {\"id\": \"claude-haiku-4-5\", \"context_window\": 1}]}}"
+                                             (get-universal-time) (nle::provider-listing-base "claude-code")))
+            (is (eql 1000000 (nle::model-capability-context-tokens (nle::resolve-model-capability "claude-new-9" "claude-code"))) "a model shipped today has the window its listing names")
+            (is (eql 200000 (nle::model-capability-context-tokens (nle::resolve-model-capability "claude-haiku-4-5" "claude-code"))) "Anthropic's own row still answers for one it knows")))))))
