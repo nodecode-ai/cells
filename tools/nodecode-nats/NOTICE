@@ -1,0 +1,25 @@
+nodecode-nats is a rewrite of atbrace's atbrace/hermes-jetstream:
+https://github.com/atbrace/hermes-jetstream
+commit 4508957d1889ddb625c8bfb1eef7c822f2761349
+MIT, Copyright (c) 2026 Nous Research / atbrace contributors (LICENSE)
+
+What was rewritten: the plugin's two session-facing verbs and every gate
+around them — nats_publish (a literal, allowlisted subject; a payload
+scanned for credential shapes; a thin envelope with a schema, a kind, a
+timestamp and a per-process nonce; a size cap) and nats_fetch (one bounded
+pull, acknowledged as it reads) — plus the config surface they run on
+(servers, stream, both allowlists, timeout, payload cap) and a /nats
+command that reports it and probes the server.
+
+What was left out: the platform adapter and its durable wake routes, the
+runtime route store the agent could add to, the in-session watch, and the
+lifecycle tap that mirrored Hermes events onto hermes.> subjects. Those
+need a Hermes gateway's long-lived host — a process that stays resident to
+receive turns — and this cell is a verb in a session rather than a process
+of its own, so a wake here is a durable consumer the operator runs against
+the same stream. The delivery rails that went with the adapter (rate
+buckets, coalescing, the wake-claims ledger, reconnect supervision) are
+left out for that reason.
+
+The NATS wire protocol is spoken directly over the image's socket support:
+the rewrite carries no client library and no CLI.
