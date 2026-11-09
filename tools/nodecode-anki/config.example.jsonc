@@ -1,0 +1,13 @@
+{
+  // Anki desktop with the AnkiConnect add-on (code 2055492159) listening on
+  // loopback; this whole section is optional, its defaults are the usual ones.
+  "anki": {
+    "anki_url": "http://127.0.0.1:8765",
+    "default_deck": "Default",
+    "default_model": "Basic",
+    "request_timeout": 10,
+    "max_cards": 50
+    // for an AnkiConnect told to require a key: name the variable that holds
+    // it, "api_key_env": "ANKI_BRIDGE_API_KEY", or paste it as "api_key".
+  }
+}
