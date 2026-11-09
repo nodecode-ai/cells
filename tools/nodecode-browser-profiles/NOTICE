@@ -1,0 +1,36 @@
+nodecode-browser-profiles is a rewrite of anpicasso's anpicasso/hermes-plugin-chrome-profiles:
+
+  https://github.com/anpicasso/hermes-plugin-chrome-profiles
+  commit 03d24e95e7b14125c5227797a3a6682c3d890c84
+  MIT, Copyright (c) 2026 yuqi (plugin.yaml: "license: MIT", "author: yuqi"; the
+  repository carries no LICENSE file of its own)
+
+What was rewritten: the profile model and its resolution — a named profile is a
+Chromium-family browser on its own user-data-dir and remote-debugging port, or a
+host that is already listening, with the same defaults and the same refusals
+(a port outside 1-65535, an unknown browser key, a missing executable, and a
+data_dir that is a browser's own default profile directory, whose advice points
+at the harness's real-profile setting). The launch is the same: the browser's
+binary, --user-data-dir, --remote-debugging-port, the same noise-suppression
+flags, --profile-directory when asked, a headless default on a display-less
+Unix, a log beside the data dir, a readiness poll bounded by launch_timeout, and
+every launched browser terminated on unload. The rest — one active profile, a
+listing that reports each profile's port, kind, reachability and errors, a
+switch, a disconnect — keeps the original's tool and command names, plus the
+DevTools HTTP verbs the original left to the host: version, tabs, open, activate
+and close.
+
+What was left out, and why: the original's whole purpose was to set
+BROWSER_CDP_URL so the host's other browser tools inherited the switch, and then
+to flush the host's live sessions and attach its CDP supervisor on private host
+seams (hermes_cli.browser_connect, tools.browser_tool_lifecycle,
+tools.browser_tool_cdp). Nodecode has no such variable, no such supervisor and
+no CDP consumer to redirect, so those three imports have no equivalent and the
+cell speaks CDP itself instead. Page-level driving (clicks, typing, snapshots,
+screenshots) needs a CDP WebSocket session, which this cell does not open: only
+the HTTP endpoints are used, and the verbs stop at the tab. The original's
+listing is answered as text here rather than as JSON, since that is what a tool
+answer and evaluation both read well; and the "-profile-directory does not
+escape the single-instance lock" probe, which used a private host helper and
+psutil, is not restated — Chromium's own launch failure and the log tail in the
+refusal carry it.
