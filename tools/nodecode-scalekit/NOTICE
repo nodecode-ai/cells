@@ -1,0 +1,18 @@
+nodecode-scalekit is a rewrite of scalekit-inc's scalekit-inc/hermes-tools:
+
+  https://github.com/scalekit-inc/hermes-tools
+  commit 35bfcedf59442377a930c4c3ed1c818ca425c11a
+  MIT, Copyright (c) 2026 Scalekit Inc. (LICENSE)
+
+The plugin was a Hermes tools layer of four tools over Scalekit's REST API,
+plus one skill of usage rules. This rewrite keeps the four tool names, their
+argument names and the same endpoints -- the OAuth client_credentials token,
+the connections and connected-accounts endpoints, execute_tool, and the proxy
+-- and calls them itself through nlk:http, so no Hermes runtime is needed.
+The skill's rules are the cell's manual topic, (help :scalekit), and each
+argument list is its declared schema. What was left out: Hermes's own tool
+registry and its plugin-data storage, replaced by the cell's section and one
+generated person id under the Nodecode home; the Python module loader, which
+became plain Common Lisp; and the JSON envelope around every answer, because
+the tools here answer the text the model reads. Nothing of the original is
+vendored.
