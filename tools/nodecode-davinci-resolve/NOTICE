@@ -1,0 +1,19 @@
+nodecode-davinci-resolve is a rewrite of wassermanproductions's wassermanproductions/hermes-davinci-resolve-plugin:
+
+https://github.com/wassermanproductions/hermes-davinci-resolve-plugin
+commit bbd5b207f823f16a20e756bfa80f44ad34790a3f
+MIT, Copyright (c) 2026 Sam Wasserman (LICENSE)
+
+The rewrite keeps the plugin's two halves and its vocabulary. The seven tools
+carry the same work as the original's fourteen: the live verbs (status,
+import, marker, render) speak to the running Resolve through the same
+DaVinciResolveScript module, and the interchange verbs (media scan, FCPXML
+timeline, marker CSV) write the same artifacts, with the same FCPXML 1.10
+shape, marker placement and CSV columns. The dry-run rule is the original's:
+a mutation without confirm reports its plan and changes nothing. Left out: the
+app launcher, the media-pool timeline builders (create, append, scripted rough
+cut) and the capabilities listing, which the manual now carries; and ffprobe
+duration probing, since the rewrite sizes a clip from one length for the whole
+timeline. Everything that ran in Python is Common Lisp except the scripting
+bridge itself, which is one small program the cell hands to the operator's own
+interpreter, because Resolve publishes its API in Python and nowhere else.
