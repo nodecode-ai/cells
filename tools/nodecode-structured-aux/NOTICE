@@ -1,0 +1,17 @@
+nodecode-structured-aux is a rewrite of trajectoire-ai's trajectoire-ai/hermes-structured-aux-models:
+https://github.com/trajectoire-ai/hermes-structured-aux-models
+commit e5c49b081ad04adca2ee3edc601b09ede6cee4c5
+MIT, Copyright (c) 2026 Trajectoire AI (LICENSE)
+
+Rewritten: the decision transport (the one POST to /api/alpha/decisions, with
+its bearer key and its app-attribution headers), the payload redaction applied
+before anything leaves, the three contracts (approval, MCP tool choice,
+extractive compression) with the labels, criteria and instructions the original
+states, and the segmentation and digest assembly, including the rule that a
+digest is never empty and that an unanswered block fails rather than being
+guessed. Left out: the model-provider registration and its OpenAI-shaped
+in-process client, because Nodecode has no auxiliary-task seam for a provider to
+serve (the verbs are called from eval instead), the placeholder subprocess gate
+that only existed to pass it, the Hermes credential pool read (the key comes
+from auth.json under api_keys.openrouter, else OPENROUTER_API_KEY), and the
+moving tasks list, which became four verbs.
