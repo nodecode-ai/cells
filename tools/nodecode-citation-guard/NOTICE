@@ -1,0 +1,27 @@
+nodecode-citation-guard is a rewrite of ChienNguyen23's ChienNguyen23/hermes-citation-guard:
+
+  https://github.com/ChienNguyen23/hermes-citation-guard
+  commit 6916b2ae7f561765883c57b32441db049e246113
+  MIT, Copyright (c) 2026 Chien Nguyen (LICENSE)
+
+Rewritten in Common Lisp against Nodecode's cell contract. The checks are the
+same against the same four registries (doi.org, Crossref, PubMed, arXiv),
+the verdicts are the same, and the two surfaces are the same -- the
+verify_citations tool and the /citecheck command -- now one NLE:DEFINE-CELL
+declaration with its stop derived from it. Ported from __init__.py,
+extract.py, sources.py, verify.py and render.py: reference-list and BibTeX
+parsing, DOI/PMID/arXiv extraction, identifier resolution, the title, year
+and first-author comparison, retraction and expression-of-concern lookup
+through Crossref's update notices and PubMed's publication types, and the
+report text.
+
+Left out, and why: the transform_llm_output reply guard, which appended a
+warning footer to every reply that cited a bad reference -- Nodecode's hook
+points are the tool dispatch and the live frame, so this cell tells the
+model to check a bibliography before presenting it instead, in the manual
+line every request carries; the 7-day registry cache on disk, of which this
+cell keeps an in-memory one per start; and the original's per-host rate
+gates and 10-minute backoff. Manuscripts in .docx are read through unzip
+rather than Python's zipfile. DataCite and the other DOI agencies are still
+asked when Crossref does not know an id. The optional contact address and
+NCBI key are still sent, to Crossref and NCBI and to nothing else.
