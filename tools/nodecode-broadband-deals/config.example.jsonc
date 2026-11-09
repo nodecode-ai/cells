@@ -1,0 +1,8 @@
+{
+  // FindBroadband's MCP server: keyless, read-only, and the one the original
+  // plugin's mcp.json named. A postcode and address go to it; nothing else does.
+  "broadband-deals": {
+    "endpoint": "https://www.findbroadbanddeals.com/api/mcp/standard",
+    "timeout_seconds": 45
+  }
+}
