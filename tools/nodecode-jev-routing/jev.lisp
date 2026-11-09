@@ -175,15 +175,15 @@ saved key outranks its variable; NIL when neither holds one."
                      :content (nlk:encode-json-object payload)
                      :timeout (timeout-seconds) :connect-timeout (timeout-seconds))
         (error (condition)
-          (fail "jev: TypeSafe could not be reached: ~a" condition)))
+          (fail "jev-routing: TypeSafe could not be reached: ~a" condition)))
     (declare (ignore response-headers))
     (progn
       (let ((text (and body (nlk:body-text body))))
-        (cond ((null status) (fail "jev: TypeSafe answered nothing"))
+        (cond ((null status) (fail "jev-routing: TypeSafe answered nothing"))
               ((<= 200 status 299)
                (handler-case (nlk:decode-json text)
-                 (error () (fail "jev: TypeSafe answered with something that is not JSON"))))
-              (t (fail "jev: TypeSafe API error (~d): ~a" status
+                 (error () (fail "jev-routing: TypeSafe answered with something that is not JSON"))))
+              (t (fail "jev-routing: TypeSafe API error (~d): ~a" status
                        (nlk:clip (nlk:one-line (or text "")) 300 :ellipsis "..."))))))))
 
 ;;; --- the answers --------------------------------------------------------------------
@@ -312,7 +312,7 @@ A missing key, a timeout or a bad answer signals JEV-ERROR."
 
 (define-verb judge (prompt &key history active-model context-tokens)
   "Ask Jev the four routing questions about PROMPT and answer the judgment
-alone, without picking a model: the full why behind JEV:ROUTE. => a plist
+alone, without picking a model: the full why behind JEV-ROUTING:ROUTE. => a plist
 (:kind \"implement\" :probabilities ((\"implement\" . 0.71) ...) :confidence 0.71
  :complexity 2.4 :complexity-confidence 0.5 :capability 2.2
  :capability-confidence 0.4 :reasoning 0.8 :latency-ms 120 :backend
@@ -343,7 +343,7 @@ no table, or a bad answer."
 (define-verb spend ()
   "What the spend ledger beside the routing table holds: today and this
 month, the two caps, and the pressure they put on the tier rule. The ledger
-is filled by JEV:RECORD and read by every route. => a plist
+is filled by JEV-ROUTING:RECORD and read by every route. => a plist
 (:today 0.42 :month 3.10 :daily-cap 10.0 :monthly-cap 150.0 :pressure 0.042
  :line \"spend today $0.42, this month $3.10 (4% of the cap)\")."
   (let* ((router (load-router (config-path)))

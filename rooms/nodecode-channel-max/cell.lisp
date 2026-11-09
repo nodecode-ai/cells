@@ -41,11 +41,11 @@ delivery threads read it, so it is a global rather than a binding.")
   "The live MAX adapter, or NIL when the lane is stopped.")
 
 (defparameter +max-api-primer+
-  "MAX is open to you as the bot, over its own API, from eval: (ncm:request \"me\") reads the bot; (ncm:request \"send\" :chat_id \"<id>\" :text \"...\") posts a message; (ncm:request \"chats\") lists the dialogs. A message is named by its mid; a chat by its chat_id. MAX draws Markdown and allows 4000 characters. The adapter posts your final answer: do not post it again yourself."
+  "MAX is open to you as the bot, over its own API, from eval: (channel-max:request \"me\") reads the bot; (channel-max:request \"send\" :chat_id \"<id>\" :text \"...\") posts a message; (channel-max:request \"chats\") lists the dialogs. A message is named by its mid; a chat by its chat_id. MAX draws Markdown and allows 4000 characters. The adapter posts your final answer: do not post it again yourself."
   "What the lane contract says about reaching MAX itself.")
 
 (defparameter +seams-primer+
-  "  ncm:max-candidate (update) -- every update the lap reads, on the lap
+  "  channel-max:max-candidate (update) -- every update the lap reads, on the lap
 thread: return fast."
   "The adapter's own advisable seam.")
 

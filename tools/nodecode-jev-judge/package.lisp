@@ -3,14 +3,14 @@
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
 ;;;; One package, named after the system, which is how the folder loader finds
-;;;; START-CELL in it; nicknamed JEV so an eval form reads (jev:ask ...), the
+;;;; START-CELL in it; nicknamed JEV so an eval form reads (jev-judge:ask ...), the
 ;;;; way the original plugin's jev_ask tool reached TypeSafe. The gate itself
 ;;;; -- the section, the :tool hook, /jev-judge -- is cell.lisp, which loads
 ;;;; last and reads everything here.
 
 (defpackage #:nodecode-jev-judge
   (:use #:cl)
-  (:nicknames #:jev)
+  (:nicknames #:jev-judge)
   (:export #:ask #:start-cell #:stop-cell #:setting))
 
 (in-package #:nodecode-jev-judge)

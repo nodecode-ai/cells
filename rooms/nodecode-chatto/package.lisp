@@ -10,7 +10,7 @@
 (defpackage #:nodecode-chatto
   (:documentation "Chatto (self-hosted team chat) as a Nodecode channel.")
   (:use #:cl #:nodecode-channel-kit)
-  (:nicknames #:nct)
+  (:nicknames #:chatto)
   (:export
    ;; the adapter convention
    #:start-channel #:probe-channel

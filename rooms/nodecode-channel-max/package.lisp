@@ -11,7 +11,7 @@
 (defpackage #:nodecode-channel-max
   (:documentation "MAX messenger channel adapter for the Lisp organism.")
   (:use #:cl #:nodecode-channel-kit)
-  (:nicknames #:ncm)
+  (:nicknames #:channel-max)
   (:export
    #:start-channel #:probe-channel #:max-platform
    #:message-plan #:edit-plan #:delete-plan #:typing-plan #:message-id-of

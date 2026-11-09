@@ -11,7 +11,7 @@ code, the same two modes (shadow logs, enforce asks the operator with Allow
 once / Deny), the same fail-open contract on every path with one JSONL line per
 decision and its reason, the redaction of key-shaped runs and the 12-argument,
 600-character and 65536-character caps, the per-process judgment cache, and the
-jev_ask verb, here (jev:ask state questions) in the cell's own package.
+jev_ask verb, here (jev-judge:ask state questions) in the cell's own package.
 TypeSafe's /v1/systemone and OpenRouter's alpha /decisions are carried with
 their question shapes and the original's Retry-After handling; the Python
 (urllib, stdlib only) is Common Lisp here: nlk:http for the one POST,

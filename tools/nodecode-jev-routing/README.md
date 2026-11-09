@@ -48,7 +48,7 @@ The routing table is a JSON file you write, pointed at by `config_path`:
 
 A `base_url` of your own speaks the same `POST /v1/systemone` (a local DJev
 server, say); with no key saved or set, the request goes without
-`Authorization`. `/jev` says where the table is, which chains it holds and
+`Authorization`. `/jev-routing` says where the table is, which chains it holds and
 what the ledger says, asking no one.
 
 ## The routing table
@@ -84,27 +84,27 @@ nothing. A `pricing` row is per million tokens, in dollars.
 Through `eval`, while the cell runs:
 
 ```lisp
-(jev:route "Refactor the parser into two modules.")
+(jev-routing:route "Refactor the parser into two modules.")
 ;; => (:TIER "premium" :DESIRED-TIER "premium" :PROVIDER "openai-codex" :MODEL "gpt-6-sol"
 ;;     :THINKING NIL :KIND "implement" :DEMAND 3.0 :CONFIDENCE 0.81
 ;;     :BUDGET-PRESSURE 0.0 :LOW-CONFIDENCE NIL :DOWNGRADED NIL :NOTES NIL
 ;;     :GLYPH "." :LINE "tier premium · openai-codex/gpt-6-sol · kind implement · ..."
 ;;     :LATENCY-MS 96)
 
-(jev:route "ok")                     ; => (:SKIPPED "acknowledgement") -- nothing sent
-(jev:judge "Review this diff.")       ; the four answers alone, for the why
-(jev:spend)                            ; today, this month, the caps, the pressure
-(jev:record "gpt-6-sol" :provider "openai-codex" :input 12000 :output 800)
+(jev-routing:route "ok")                     ; => (:SKIPPED "acknowledgement") -- nothing sent
+(jev-routing:judge "Review this diff.")       ; the four answers alone, for the why
+(jev-routing:spend)                            ; today, this month, the caps, the pressure
+(jev-routing:record "gpt-6-sol" :provider "openai-codex" :input 12000 :output 800)
 ```
 
 `HISTORY` (the recent conversation, at most 4000 characters go),
 `ACTIVE-MODEL` and `CONTEXT-TOKENS` are optional, and they make a short
 follow-up route on what it means rather than on its eleven characters.
 
-`/jev` says where the table is, its chains and the ledger. `/jev route TEXT`
-names the tier a text deserves; `/jev why` re-asks Jev about the last prompt
-and shows the full judgment, probabilities and all; `/jev spend` is the
-ledger. `(help :jev)` answers this manual.
+`/jev-routing` says where the table is, its chains and the ledger. `/jev-routing route TEXT`
+names the tier a text deserves; `/jev-routing why` re-asks Jev about the last prompt
+and shows the full judgment, probabilities and all; `/jev-routing spend` is the
+ledger. `(help :jev-routing)` answers this manual.
 
 **What leaves the machine.** The prompt, up to 4000 characters of the
 conversation you pass as history, the working directory, the active model,

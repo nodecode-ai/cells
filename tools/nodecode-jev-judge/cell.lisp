@@ -256,7 +256,7 @@ question), everything else runs unchanged. Nothing here may raise."
                                                 :triggered (coerce (third decision) 'vector))
                            (nle:failure (refusal-text (third decision) (second decision) why))))))))))
 
-;;; --- the model's own judgments: (jev:ask state questions) --------------------------
+;;; --- the model's own judgments: (jev-judge:ask state questions) --------------------------
 
 (define-verb ask (state questions)
   "Ask the judge typed questions about one state, as the original's jev_ask
@@ -335,12 +335,12 @@ decision; in enforce mode a triggered call is put to the operator as Allow once 
 runs only on Allow once. Thresholds live in code: destructive 0.90, exfiltration 0.70,
 impact 2.5 of 3. Any failure -- no key, a timeout, a strange body, an unanswered question --
 is fail-open: the call runs and the log says why.
-  (jev:ask STATE QUESTIONS)
+  (jev-judge:ask STATE QUESTIONS)
       Ask the judge yourself, in the same vocabulary, for a closed decision: classify, route,
       score against a rubric, check a yes/no property. STATE is the text to judge; QUESTIONS a
       JSON object of id -> {\"type\":\"bool\"|\"choice\"|\"score\", \"instructions\":\"...\",
       \"criteria\":...}, as a JSON text or a hash. => (values ANSWERS LATENCY-MS).
-      (jev:ask \"a diff\" \"{\\\"risky\\\":{\\\"type\\\":\\\"bool\\\",\\\"instructions\\\":\\\"Risky?\\\"}}\")
+      (jev-judge:ask \"a diff\" \"{\\\"risky\\\":{\\\"type\\\":\\\"bool\\\",\\\"instructions\\\":\\\"Risky?\\\"}}\")
       => (:RISKY (:PROBABILITY 0.82d0))
 /jev-judge says where the judge points and runs one check judgment. The decisions land in a
 JSONL log: one line each with the outcome (clear, flagged_shadow, escalated, refused,
@@ -375,7 +375,7 @@ fail_open) and the signals behind it."
      :doc "the JSONL decision log; empty is logs/jev-judge.log under the Nodecode home"))
   (:settings #'cell-settings)
   (:help :jev-judge
-   "jev-judge gates eval calls with one Jev judgment before they run (shadow logs, enforce asks); jev:ask asks for a typed judgment yourself"
+   "jev-judge gates eval calls with one Jev judgment before they run (shadow logs, enforce asks); jev-judge:ask asks for a typed judgment yourself"
    +manual+)
   (:hook :tool #'judge-or-run)
   (:command "jev-judge" 'run-slash

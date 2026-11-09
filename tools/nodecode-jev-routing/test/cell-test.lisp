@@ -14,15 +14,15 @@
 ;;; --- lifecycle ---------------------------------------------------------------------
 
 (define-cell-lifecycle-tests "jev-routing"
-  (:help :jev)
-  (:command "jev")
+  (:help :jev-routing)
+  (:command "jev-routing")
   (:running (is (equal "shadow" (nodecode-jev-routing::setting :mode)))
             (is (= 3500 (nodecode-jev-routing::setting :timeout-ms))))
   (:refused ("mode" "sometimes") ("timeout_ms" 5))
   (:idle nodecode-jev-routing:jev-error
-         (jev:route "a prompt long enough to route")
-         (jev:spend)
-         (jev:judge "a prompt long enough to route")))
+         (jev-routing:route "a prompt long enough to route")
+         (jev-routing:spend)
+         (jev-routing:judge "a prompt long enough to route")))
 
 ;;; --- fixtures --------------------------------------------------------------------------
 
@@ -103,7 +103,7 @@ which may be NIL -- each (METHOD URL HEADERS CONTENT) it was sent, oldest first.
 
 (deftest jev-routing-cell-asks-the-four-questions ()
   (with-jev (:requests requests)
-    (let ((decision (jev:route "Refactor the parser into two modules.")))
+    (let ((decision (jev-routing:route "Refactor the parser into two modules.")))
       (destructuring-bind (method url headers content) (first requests)
         (is (eq :post method))
         (is (equal "https://api.typesafe.ai/v1/systemone" url))
@@ -126,14 +126,14 @@ which may be NIL -- each (METHOD URL HEADERS CONTENT) it was sent, oldest first.
 
 (deftest jev-routing-cell-composes-the-tier-from-the-answers ()
   (with-jev ()
-    (let ((decision (jev:route "Explain what a closure is.")))
+    (let ((decision (jev-routing:route "Explain what a closure is.")))
       (is (equal "premium" (getf decision :desired-tier)))
       (is (equal "premium" (getf decision :tier)))
       (is (< 2.9 (getf decision :demand) 3.2) "complexity and capability compose the demand"))))
 
 (deftest jev-routing-cell-holds-a-low-confidence-pick-at-standard ()
   (with-jev (:answers (list (jev-answer :confidence 0.2 :complexity 2.6)))
-    (let ((decision (jev:route "Patch the thing that fails sometimes.")))
+    (let ((decision (jev-routing:route "Patch the thing that fails sometimes.")))
       (is (equal "premium" (getf decision :desired-tier)))
       (is (equal "standard" (getf decision :tier)) "an unsure kind never reaches premium")
       (is (equal "mid" (getf decision :model)))
@@ -145,7 +145,7 @@ which may be NIL -- each (METHOD URL HEADERS CONTENT) it was sent, oldest first.
     (jev-state-file (nodecode-jev-routing::config-path)
                     (format nil "{\"version\":1,\"days\":{\"~a\":{\"total\":0.95,\"byModel\":{}}},\"months\":{}}"
                             (nodecode-jev-routing::day-key)))
-    (let ((decision (jev:route "Refactor the parser into two modules.")))
+    (let ((decision (jev-routing:route "Refactor the parser into two modules.")))
       (is (equal "standard" (getf decision :tier))
           (format nil "tier ~a, desired ~a, pressure ~a, demand ~a"
                   (getf decision :tier) (getf decision :desired-tier)
@@ -155,15 +155,15 @@ which may be NIL -- each (METHOD URL HEADERS CONTENT) it was sent, oldest first.
 
 (deftest jev-routing-cell-skips-what-does-not-route ()
   (with-jev (:requests requests)
-    (is (equal "acknowledgement" (getf (jev:route "ok") :skipped)))
-    (is (equal "slash command" (getf (jev:route "/model gpt") :skipped)))
-    (is (equal "empty" (getf (jev:route "   ") :skipped)))
-    (is (equal "short continuation" (getf (jev:route "and then?" :history "a long talk") :skipped)))
+    (is (equal "acknowledgement" (getf (jev-routing:route "ok") :skipped)))
+    (is (equal "slash command" (getf (jev-routing:route "/model gpt") :skipped)))
+    (is (equal "empty" (getf (jev-routing:route "   ") :skipped)))
+    (is (equal "short continuation" (getf (jev-routing:route "and then?" :history "a long talk") :skipped)))
     (is (null requests) "none of them was sent")))
 
 (deftest jev-routing-cell-judges-without-picking ()
   (with-jev (:requests requests)
-    (let ((judgment (jev:judge "Review this diff for risks.")))
+    (let ((judgment (jev-routing:judge "Review this diff for risks.")))
       (is (equal "implement" (getf judgment :kind)))
       (is (equal "implement" (car (first (getf judgment :probabilities)))))
       (is (< 0.69 (cdr (first (getf judgment :probabilities))) 0.71))
@@ -176,14 +176,14 @@ which may be NIL -- each (METHOD URL HEADERS CONTENT) it was sent, oldest first.
 
 (deftest jev-routing-cell-records-and-reports-spend ()
   (with-jev ()
-    (let ((recorded (jev:record "big" :provider "front" :input 2000000 :output 0)))
+    (let ((recorded (jev-routing:record "big" :provider "front" :input 2000000 :output 0)))
       (is (getf recorded :recorded) "two million input tokens at $1/M")
       (is (< 1.99 (getf recorded :cost) 2.01)))
     (multiple-value-bind (today month)
-        (values (getf (jev:spend) :today) (getf (jev:spend) :month))
+        (values (getf (jev-routing:spend) :today) (getf (jev-routing:spend) :month))
       (is (< 1.99 today 2.01) "the ledger keeps today")
       (is (< 1.99 month 2.01) "and the month"))
-    (let ((unpriced (jev:record "mystery" :provider "nowhere" :input 100 :output 10)))
+    (let ((unpriced (jev-routing:record "mystery" :provider "nowhere" :input 100 :output 10)))
       (is (null (getf unpriced :recorded)) "an unpriced model records tokens and no dollars"))))
 
 ;;; --- the refusals ----------------------------------------------------------------------
@@ -191,7 +191,7 @@ which may be NIL -- each (METHOD URL HEADERS CONTENT) it was sent, oldest first.
 (deftest jev-routing-cell-without-a-key-says-where-to-make-one ()
   (with-jev (:requests requests :env ())
     (let ((text (refusal-text nodecode-jev-routing:jev-error
-                               (jev:route "Refactor the parser into two modules."))))
+                               (jev-routing:route "Refactor the parser into two modules."))))
       (is (search "console.typesafe.ai" text))
       (is (search "TYPESAFE_API_KEY" text)))
     (is (null requests) "and nothing was sent")))
@@ -203,14 +203,14 @@ which may be NIL -- each (METHOD URL HEADERS CONTENT) it was sent, oldest first.
         (with-stubbed-fdefinitions
             ((nle::credential-env (name) (and name "ts-env")))
           (let ((text (refusal-text nodecode-jev-routing:jev-error
-                                     (jev:route "Refactor the parser into two modules."))))
+                                     (jev-routing:route "Refactor the parser into two modules."))))
             (is (search "no routing table" text))
             (is (search "config_path" text))))))))
 
 (deftest jev-routing-cell-says-what-type-safe-answered ()
   (with-jev (:answers (list "{\"detail\":\"invalid key ts-env\"}") :status 401)
     (let ((text (refusal-text nodecode-jev-routing:jev-error
-                               (jev:route "Refactor the parser into two modules."))))
+                               (jev-routing:route "Refactor the parser into two modules."))))
       (is (search "API error (401)" text))
       (is (null (search "ts-env" text)) "the key never reaches the model")
       (is (search "[redacted]" text)))))
@@ -219,13 +219,13 @@ which may be NIL -- each (METHOD URL HEADERS CONTENT) it was sent, oldest first.
 
 (deftest jev-routing-cell-the-command-says-the-chains-and-the-spend ()
   (with-jev ()
-    (let ((text (cell-entry "nodecode-jev-routing" "jev" "")))
-      (is (search "jev: mode shadow" text))
+    (let ((text (cell-entry "nodecode-jev-routing" "jev-routing" "")))
+      (is (search "jev-routing: mode shadow" text))
       (is (search "quick fast/tiny" text) "every non-empty chain is named")
       (is (search "premium front/huge" text))
       (is (search "spend today" text)))
-    (let ((text (cell-entry "nodecode-jev-routing" "jev" "route Refactor the parser into two modules.")))
+    (let ((text (cell-entry "nodecode-jev-routing" "jev-routing" "route Refactor the parser into two modules.")))
       (is (search "tier premium" text))
       (is (search "front/huge" text)))
-    (let ((text (cell-entry "nodecode-jev-routing" "jev" "why")))
+    (let ((text (cell-entry "nodecode-jev-routing" "jev-routing" "why")))
       (is (search "jev why: kind implement" text) "why re-asks about the prompt just routed"))))

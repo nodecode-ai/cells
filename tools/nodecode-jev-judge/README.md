@@ -14,7 +14,7 @@ The gate fails open on every path: no key, a timeout, an HTTP error, a body of t
 The model can also ask Jev itself, through `eval`, as the original's `jev_ask` tool did:
 
 ```lisp
-(jev:ask "The patch renames the public function parse-config."
+(jev-judge:ask "The patch renames the public function parse-config."
          "{\"risky\":{\"type\":\"bool\",\"instructions\":\"Does this change risk breaking callers?\"}}")
 ;; => (:RISKY (:TYPE :BOOLEAN :PROBABILITY 0.82d0)), 540
 ```
@@ -67,7 +67,7 @@ jev-judge: shadow mode, typesafe backend (key from the environment), judging eva
 
 ## What leaves the machine
 
-Per gated call: one JSON payload carrying the tool name and its arguments — the first 12, each redacted (key-shaped runs masked) and clipped to 600 characters — to the backend that judges it: TypeSafe's `/v1/systemone`, or OpenRouter's alpha `/decisions`, using your own key. No conversation history, no files, no memory, no tool output. `(jev:ask ...)` sends exactly the state and questions it was given. A payload over 65536 characters is refused without sending, and a 3xx is never followed.
+Per gated call: one JSON payload carrying the tool name and its arguments — the first 12, each redacted (key-shaped runs masked) and clipped to 600 characters — to the backend that judges it: TypeSafe's `/v1/systemone`, or OpenRouter's alpha `/decisions`, using your own key. No conversation history, no files, no memory, no tool output. `(jev-judge:ask ...)` sends exactly the state and questions it was given. A payload over 65536 characters is refused without sending, and a 3xx is never followed.
 
 ## Test
 
@@ -79,6 +79,6 @@ From this repository's root, offline against a pinned Nodecode tree:
 
 ## Not ported
 
-The Vercel AI Gateway backend (`AI_GATEWAY_API_KEY`, `typesafe-ai/jev` on `ai-gateway.vercel.sh`): two backends cover the keys people have, and a third shape of request and answer is a third thing to keep honest. The rate-limit breaker and the pacing between outgoing calls: one retry after a `Retry-After` of at most 2 s remains, and the cache does the rest. The `gate_version: v2` six-signal ladder (reads_secrets × sends_outbound, blast_radius, self_advocating): the frozen triple is what most operators recognise, and the v2 signals would double the paid request for the same call. `jev_ask` is a function the model calls through `eval`, `(jev:ask state questions)`, rather than a tool of its own — Nodecode's one tool is `eval`.
+The Vercel AI Gateway backend (`AI_GATEWAY_API_KEY`, `typesafe-ai/jev` on `ai-gateway.vercel.sh`): two backends cover the keys people have, and a third shape of request and answer is a third thing to keep honest. The rate-limit breaker and the pacing between outgoing calls: one retry after a `Retry-After` of at most 2 s remains, and the cache does the rest. The `gate_version: v2` six-signal ladder (reads_secrets × sends_outbound, blast_radius, self_advocating): the frozen triple is what most operators recognise, and the v2 signals would double the paid request for the same call. `jev_ask` is a function the model calls through `eval`, `(jev-judge:ask state questions)`, rather than a tool of its own — Nodecode's one tool is `eval`.
 
 MIT licensed.

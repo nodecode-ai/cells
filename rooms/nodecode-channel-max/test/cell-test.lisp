@@ -46,7 +46,7 @@
     table))
 
 (deftest channel-max-a-dialog-message-is-a-candidate ()
-  (let ((candidate (ncm:max-candidate (max-update) :username "nodebot")))
+  (let ((candidate (channel-max:max-candidate (max-update) :username "nodebot")))
     (is (equal "hi" (gethash "text" candidate)))
     (is-source candidate "platform" "max" "chat_kind" "dm" "channel_id" "700"
                "user_id" "501" "user_name" "Kim" "message_id" "mid.1")
@@ -55,8 +55,8 @@
 (deftest channel-max-a-group-message-must-name-the-bot ()
   (let* ((update (max-rest (max-update) "recipient"
                             (nlk:json-object "chat_id" 700 "chat_type" "chat")))
-         (plain (ncm:max-candidate update :username "nodebot"))
-         (named (ncm:max-candidate (max-rest update "body"
+         (plain (channel-max:max-candidate update :username "nodebot"))
+         (named (channel-max:max-candidate (max-rest update "body"
                                               (nlk:json-object "mid" "mid.2"
                                                                "text" "@nodebot and then?"))
                                     :username "nodebot")))
@@ -70,12 +70,12 @@
                         (nlk:json-object "user_id" 900 "name" "Node Bot" "is_bot" t)))
         (edited (let ((each (max-update))) (setf (gethash "update_type" each) "message_edited") each))
         (empty (max-rest (max-update) "body" (nlk:json-object "mid" "mid.3" "text" ""))))
-    (is (null (ncm:max-candidate bot :username "nodebot")) "a bot's own message")
-    (is (null (ncm:max-candidate edited :username "nodebot")) "an edit is not a new ask")
-    (is (null (ncm:max-candidate empty :username "nodebot")) "no words, nothing to answer")))
+    (is (null (channel-max:max-candidate bot :username "nodebot")) "a bot's own message")
+    (is (null (channel-max:max-candidate edited :username "nodebot")) "an edit is not a new ask")
+    (is (null (channel-max:max-candidate empty :username "nodebot")) "no words, nothing to answer")))
 
 (deftest channel-max-a-message-plan-names-the-chat ()
-  (let ((plan (ncm:message-plan (list :channel-id "700" :message-id "mid.1")
+  (let ((plan (channel-max:message-plan (list :channel-id "700" :message-id "mid.1")
                                 "the answer"
                                 :reply-to "mid.1")))
     (is (string= "POST" (nck::request-plan-method plan)))
@@ -85,20 +85,20 @@
     (is (equal "mid.1" (gethash "mid" (gethash "link" (nck::request-plan-body plan)))) "the answer replies under the ask")))
 
 (deftest channel-max-a-send-is-read-for-its-mid ()
-  (is (equal "mid.9" (ncm:message-id-of
+  (is (equal "mid.9" (channel-max:message-id-of
                        (nlk:json-object "message"
                                         (nlk:json-object "body" (nlk:json-object "mid" "mid.9"))))))
-  (is (equal "8" (ncm:message-id-of (nlk:json-object "message_id" 8))) "a numeric id reads as its digits"))
+  (is (equal "8" (channel-max:message-id-of (nlk:json-object "message_id" 8))) "a numeric id reads as its digits"))
 
 (deftest channel-max-the-token-is-required ()
   (let ((section (max-section)))
-    (handler-case (progn (ncm:probe-channel section :executor (max-scripted (max-answer (max-me))))
+    (handler-case (progn (channel-max:probe-channel section :executor (max-scripted (max-answer (max-me))))
                          (is nil "an unnamed token must refuse"))
       (nlk:config-refusal (condition)
         (is (search "bot_token" (princ-to-string condition)) "the refusal names the key")))))
 
 (deftest channel-max-a-probe-reads-the-bot ()
-  (let ((text (ncm:probe-channel
+  (let ((text (channel-max:probe-channel
                (max-section "bot_token_file"
                             (let ((path (nlk:home "channels/max/probe-token")))
                               (ensure-directories-exist path)
@@ -119,7 +119,7 @@
          (section (max-section "bot_token_file" (uiop:native-namestring path)
                                "allowed_users" (vector "501")
                                "poll_seconds" 1))
-         (stop (ncm:start-channel
+         (stop (channel-max:start-channel
                 section
                 :executor (max-scripted (max-answer (max-me))
                                          (max-answer (nlk:json-object

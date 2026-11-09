@@ -24,7 +24,7 @@ Tell the agent "add the max channel cell", or run `nodecode add nc://nodecode-ch
 }
 ```
 
-`/channels` shows the lane's state and advice; `(ncm:probe-channel)` (`nck:probe "max"` from the page) asks MAX who the token is before anything starts.
+`/channels` shows the lane's state and advice; `(channel-max:probe-channel)` (`nck:probe "max"` from the page) asks MAX who the token is before anything starts.
 
 ## Use it
 

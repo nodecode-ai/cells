@@ -4,11 +4,11 @@
 ;;;;
 ;;;; One package, named after the system, which is how the folder loader
 ;;;; finds START-CELL in it, and nicknamed JEV so an eval form reads
-;;;; (jev:route "...").
+;;;; (jev-routing:route "...").
 
 (defpackage #:nodecode-jev-routing
   (:use #:cl)
-  (:nicknames #:jev)
+  (:nicknames #:jev-routing)
   (:export
    ;; the vocabulary the manual in cell.lisp teaches
    #:route #:judge #:spend #:record
@@ -29,7 +29,7 @@
   "The provider id: what auth.json keeps a key under (api_keys.typesafe).")
 
 (defparameter +last+ nil
-  "The last routing pass: (:prompt ... :analysis ... :decision ...), for /jev.")
+  "The last routing pass: (:prompt ... :analysis ... :decision ...), for /jev-routing.")
 
 (declaim (ftype (function (&optional t) t) api-keys))
 
