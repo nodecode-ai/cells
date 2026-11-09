@@ -1,0 +1,31 @@
+nodecode-ja-writing-guard is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-ja-writing-guard:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-ja-writing-guard
+  commit ef2bc3c2c2c3162e9c281f3d359dfaaec629d6ad
+  MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+What was rewritten: the plugin was a rule catalog (rules.py), a detector with
+masking, sentence analysis and scoring (detector.py), surface profiles
+(surfaces.py), and a registration (__init__.py) that hooked
+transform_llm_output to report every Japanese answer. The rewrite keeps the
+catalog as data with the same rule ids, categories, labels, fix hints and
+weights; the masking of code fences, inline code, URLs, quoted lines and
+HTML; the 「」 skip; the sentence split and the rhythm, register and
+list-ratio checks; the five surface profiles with their category and
+rule scales, thresholds and aliases; the 0-100 saturation curve; the report's
+Japanese summary and the finding order. The seam moved: the plugin's
+post-processing hook is now one advice on NLE::EMIT-STREAM-PART, so the line
+rides the answer itself in every shell, channel and transcript, and the
+plugin's tool, slash command and help text are the cell's tool, command and
+manual topic.
+
+What was left out, and why: the opt-in enforce mode is not reproduced -- it
+called the user's own model once or twice to rewrite an over-threshold answer
+and checked that numbers, names, weekdays, URLs and code survived. A Nodecode
+model can already rewrite what the tool reports, so the tool hands back the
+score and the hints instead of spending two calls and a time budget behind the
+answer. The post_tool_call observer that watched for MEDIA: attachment lines
+also goes: enforce mode was the only thing that read it. The rule table is
+trimmed to the catalog's most frequent rules (about seventy of the original's
+ninety); the structural checks for uniform paragraph lengths and mixed-register
+detection outside the surface rules are the original's and are kept.
