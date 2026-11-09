@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell — documentation,
+// not config: the folder gets pushed and holds no secret. The declaration in
+// cell.lisp is the authority; this is an illustration of it.
+{
+  "deadbolt": {
+    "enabled": true,
+    "workspace": "/absolute/path/to/reviewed-output",
+    "run_id": "report-001",
+    "sidecar_port": 9782,
+    // exactly one of the two: the variable's name, or the credential itself
+    "admission_token_env": "DEADBOLT_ADMISSION",
+    "admission_token": "",
+    // empty: deadbolt/requests under the nodecode home
+    "review_dir": "",
+    "request_ttl": 300,
+    "max_bytes": 32768,
+    "sidecar_timeout": 5
+  }
+}
