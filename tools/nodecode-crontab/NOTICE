@@ -1,0 +1,28 @@
+nodecode-crontab is a rewrite of olric3015's olric3015/hermes-plugins:
+
+  https://github.com/olric3015/hermes-plugins
+  commit c5a412f46ab5cc14bb82528481a46c8f8bb3fe2a
+  MIT License, Copyright (c) 2026 olric3015 (LICENSE)
+
+Rewritten: the whole reading. The plugin put a `@crontab:` reference in front of
+the model at the point a message was composed; a Nodecode cell has no such
+reference seam, so the same reading is an `explain_cron` tool the model calls
+and a `/crontab` command the operator types, both answered from one body. The
+expression grammar and its expansion, the sentence in plain words, a row per
+field, the notes (day of month OR day of week, `*` in the minute field, a step
+that does not divide the hour or the day, days 29-31, 7 as Sunday), and the
+next-runs arithmetic were carried over; croniter became masks and a day scan
+written here, and the zone is read out of the machine's own tz database (the
+TZif transitions) rather than through the host runtime. The plugin's shortcuts,
+`L` and the nth weekday `5#3`, and the optional 6th (seconds) and 7th (year)
+fields are all still read. The section -- a timezone, the tz database's folder,
+and how many runs a reading lists -- is the cell's config, which the plugin had
+in a runtime timezone setting.
+
+Left out: the line about Hermes's own `/cron` check ("Hermes /cron: accepted as
+a cron expression"), which repeats a guard in the Hermes runtime (`cron/jobs.py`'s
+field pattern) that a Nodecode cell does not have -- the cell reads the
+expression itself and says what it means, and points at the cron cell for
+actually scheduling something. Also left out: the TUI and desktop composer
+suggestions, which belonged to a Hermes front end. The `explain_cron` tool,
+`/crontab` and the `crontab` help topic are additions, not part of the original.
