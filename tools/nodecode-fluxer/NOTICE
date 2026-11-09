@@ -1,0 +1,37 @@
+nodecode-fluxer is a rewrite of elkimek's elkimek/hermes-fluxer-plugin:
+
+  https://github.com/elkimek/hermes-fluxer-plugin
+  commit 6d2ef9767d0a0811a3ae26a76290b9b1e4636d4c
+  MIT License, Copyright (c) 2025 Nous Research (LICENSE)
+
+The original is a Hermes Agent platform adapter: it connects the agent to
+Fluxer, a chat platform, as one of its gateway platforms. What was rewritten
+is the adapter's outbound half, in Common Lisp against the same bot REST API
+-- POST /channels/{channel}/messages, GET /channels/{channel}/messages,
+GET /users/@me/guilds, GET /guilds/{guild}/channels,
+PUT /channels/{channel}/messages/{message}/reactions/{emoji}/@me and
+PUT|DELETE /channels/{channel}/pins/{message} -- so the cell reaches the same
+service, the same channels and the same messages as the plugin: posting a
+message (and replying to one), reading a channel's recent history, listing the
+channel directory of a guild or of every guild the bot is in, reacting to a
+message, and pinning or unpinning one. The adapter's fail-closed mention rule
+is carried over: a message the bot posts carries allowed_mentions and has
+@everyone, role and user mentions broken with a zero-width space unless the
+section allows them. What the plugin configures through FLUXER_* environment
+variables is the cell's fluxer section, read back by /fluxer and
+(help :fluxer).
+
+What was left out, and why: the inbound half -- the Fluxer gateway websocket,
+dispatches, per-channel sessions, backlog recovery after a reconnect, typing
+beats, message edits, streaming updates, approval buttons and their
+component fallbacks, native slash-command registration, threads, media upload
+of every attachment kind, and the realtime voice lane (LiveKit, xAI realtime
+speech, the speech-to-text loop and its ElevenLabs/Groq/xAI providers) --
+because a Nodecode cell here is a tool, not a gateway platform host, and each
+of those is a channel host's work rather than a bot client's. Also left out:
+the plugin's Discord-compatibility shims (message splitting at 4,000 UTF-16
+units with read-back verification, mention patterns, home-guild fan-out), the
+Hermes profile .env layering and its setup wizard, and the self-hosted
+deployment probes for pins and threads, which here are simply the calls
+themselves: a deployment that does not support one answers an HTTP refusal
+the model reads.
