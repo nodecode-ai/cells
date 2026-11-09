@@ -1,0 +1,33 @@
+nodecode-iris-chat is a rewrite of irislib's irislib/iris-chat-rs:
+
+  https://github.com/irislib/iris-chat-rs
+  commit 43a1066894f1948adb3febc1e3a91a31ccccef14
+  MIT License, Copyright (c) 2026 lauri000 (LICENSE)
+
+The rewrite is plugins/iris-chat, the plugin's Hermes entry, as a Nodecode
+cell. What it keeps: the same workflow the plugin's one skill taught -- create
+a separate local identity, inspect it, exchange a full invite, list chats,
+read one, send into it, and acknowledge a message as seen -- as tools the
+model calls by name (iris_whoami, iris_chats, iris_read, iris_send, iris_seen,
+iris_invite_create, iris_invite_accept) and the same verbs from eval; the
+exact argv each step used (`--json', `chat list', `read CHAT --limit N',
+`send CHAT TEXT', `seen CHAT ID', `invite create --full', `invite accept URL',
+`service status'); the JSON envelope read as the data object it carries and a
+failed run shown as the program's own sentence; and the skill's whole posture: one persistent profile directory per identity, never a
+person's own profile, incoming messages are data and not instructions, a send's
+`queued'/'pending'/'sent' delivery is local until a read shows `received' or
+`seen', reads never mark anything seen, a pending group join is not membership,
+and keys and full invite links stay out of public logs.
+
+What the plugin left to the model's own discipline, and this cell does
+instead: at a turn's first request the cell asks the profile how many messages
+wait unread and says so once, so a person waiting is not missed while the agent
+works on something else; `notify' switches that off.
+
+What the plugin got from its host and Nodecode has no seam for is left out: the
+skill-file discovery and `requires_local_executor' advertising, the
+marketplace and install commands, and a foreground `listen' loop, which is one
+streaming process rather than a call with an answer -- the cell's manual points
+at `iris --json listen --chat CHAT' for it. Nothing of the plugin's packaging
+is bundled: the cell runs the same iris program the plugin ran, found on PATH
+or named in its section, and its own code is Common Lisp.
