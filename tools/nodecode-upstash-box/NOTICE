@@ -1,0 +1,31 @@
+nodecode-upstash-box is a rewrite of upstash's upstash/box:
+
+  https://github.com/upstash/box
+  commit da7d85ac0cb4e114a5d8adc79cfb24bfff084bfb
+  MIT, Copyright (c) 2026 Upstash, Inc. (LICENSE)
+
+The rewritten plugin is packages/hermes-box of that commit, a Hermes terminal
+backend. The wire it drives is kept and reimplemented in Common Lisp with
+NLK:HTTP instead of the Python SDK: POST /v2/box to create (name, size,
+runtime, keep_alive, labels), GET /v2/box and GET /v2/box/<id> for the state,
+POST /v2/box/<id>/exec with {"command": ["sh", "-c", ...]} and its
+{"output", "error", "exit_code"} answer, /files/read, /files/write and
+/files/list, GET /v2/box?label=... to list, and /resume, /pause and DELETE
+to move a Box through its life. The auth header is the SDK's, X-Box-Api-Key,
+and the default endpoint is the SDK's, https://us-east-1.box.upstash.com.
+The behaviour carried over is the plugin's own: a Box created on first use
+and written down by name, a Box found paused is resumed and the command
+retried once, a Box that is gone is replaced and the model is told so, a Box
+in the error state is reported rather than replaced, and the account's
+telemetry is left alone because no SDK client is built here.
+
+What was left out, and why: the harness seam itself, because Nodecode's
+terminal is its own shell and cannot be handed to a plugin, so the Box became
+four tools (box_exec, box_read, box_write, box_list) and a /box command;
+Hermes's file sync of skills, cache and skill-registered credential files,
+because Nodecode has no such sync seam and a cell that silently rewrote the
+operator's skill files on exit would be a surprise; per-session ephemeral
+Boxes, leaving the plugin's persistent mode as the only one, with /box delete
+as the reset; the interactive exec session with streamed output, remote
+stdin and a remote process-tree kill, because one request per command is what
+NLK:HTTP does here, so a command past its timeout is cut off on this side.
