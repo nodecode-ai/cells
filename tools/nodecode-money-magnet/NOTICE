@@ -1,0 +1,37 @@
+nodecode-money-magnet is a rewrite of Whydiriki700's Whydiriki700/money-magnet:
+
+  https://github.com/Whydiriki700/money-magnet
+  commit e9c7c72567d9b5a5d6d7d7b74634d2960e793b74
+
+MIT, Copyright (c) 2026 Levi Angel (LICENSE)
+
+Rewritten: the five tools keep the original's names, arguments and JSON
+answers -- finance_add, finance_list, finance_budget, finance_portfolio,
+finance_arbitrage -- with the same monthly budget arithmetic over UTC months,
+the same coin-id map, and the same CoinGecko-versus-Binance spread scan of
+the twenty largest coins. The original's /money command is a Nodecode slash
+command, and the module's functions are Common Lisp in the cell's own
+package, against Nodecode's tool, section and config seams.
+
+Left out, and why:
+
+- Two files became one. The original kept transactions.json and budget.json
+  side by side; here ledger.json holds both, so one atomic
+  read-modify-write can never leave the budget beside rows it was not
+  measured against, and a copy of the folder is a whole backup. The folder is
+  the section's data_dir instead of a fixed directory under the harness home.
+- finance_list sums every row the filters match and pages only the rows it
+  answers (the original summed the page it returned, so a limited list
+  reported the totals of that page). Its answer carries `matched`, the count
+  of everything filtered, beside `count`, the rows returned, and the
+  ledger's currency label.
+- finance_budget's answer adds the UTC `month` and the currency label.
+- The spread threshold is a rebindable `*spread-percent*` and is answered
+  with each scan, where the original wrote 0.5 into the scan.
+- The /money command adds `arbitrage`, which prints the scan; the original
+  pointed at the tool. `/money add`, `/money budget` and `/money status`
+  stay, and a typed amount is parsed with the reader's evaluation off, so a
+  word where a number goes can never be a form the image runs.
+- The original's Python module, its `handle_money_command` string, and
+  Hermes's plugin manifest are not carried over: a Nodecode cell declares its
+  section, tools and command in one `NLE:DEFINE-CELL` form.

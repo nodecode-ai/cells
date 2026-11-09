@@ -1,0 +1,9 @@
+{
+  // Money Magnet's section. A present section is an enabled one; "data_dir"
+  // is the only thing the cell refuses without, and it names the folder
+  // ledger.json is kept in. "currency" is a label the answers carry.
+  "money-magnet": {
+    "data_dir": "~/.nodecode/money",
+    "currency": "USD"
+  }
+}
