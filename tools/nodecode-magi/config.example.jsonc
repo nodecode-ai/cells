@@ -1,0 +1,11 @@
+// nodecode-magi: the section, as /settings writes it.
+{
+  "magi": {
+    // required: the folder holding MEMORY.md, USER.md and pending/memory
+    "store": "~/.nodecode/memory",
+    // the characters MEMORY.md may hold before it wants compacting
+    "char_limit": 4000,
+    // how many pending proposals a listing shows when a call names no limit
+    "page_size": 20
+  }
+}

@@ -1,0 +1,32 @@
+nodecode-magi is a rewrite of MarcosAlves90's MarcosAlves90/magi:
+  https://github.com/MarcosAlves90/magi
+  commit 3c08b45466c6d4c5f0047a24175c6734accb9c7e
+  MIT, Copyright (c) 2026 (LICENSE)
+
+What was rewritten: the plugin's memory workspace without its UI — a pending
+queue of memory proposals read from the same records (one JSON object a
+proposal under pending/memory/, carrying id, created_at, subsystem and a
+payload of target, action, content and old_text, with add, replace, remove
+and batch), the same MEMORY.md and USER.md entry format, and the same three
+verbs a person uses on a proposal: list it, read it with its diff, approve
+it or reject it. Approval applies the proposal to the store and removes the
+record. As a cell rather than a Desktop page, the same verbs are also five
+model tools and one slash command, and a proposal can be staged from the
+conversation; the store and the queue are files the operator names in the
+cell's section, so a Hermes profile's own queue can be reviewed as it
+stands. Batch records are read and applied as their individual operations.
+
+What was left out and why: the Desktop (React/JS) page and its dashboard
+backend, the Electron interaction tests and the CI artefacts are UI and
+build, not verbs. AI compaction, organization analysis and the second-model
+preservation check called the Hermes runtime's model with structured output
+and a schema; a cell would carry its own model plumbing and its own retry
+budgets, so the rewrite leaves compaction as an ordinary staged replace a
+person or the model writes. The profile-local Unix IPC socket existed only
+so a separate Desktop process could borrow the Agent plugin's model; with
+both halves in one image there is nothing to carry. The metadata-only
+history log, the import/export JSON, and Hermes' native memory-store
+safeguards (pinned matches, concurrent-writer recovery) are not carried
+over either: the rewrite works directly on the two files and refuses rather
+than repairs. Reading `store` from outside the profile is the operator's
+choice, declared here.
