@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "call-me": {
+    // The 10-digit numbers the agent may text and ring. Nobody else is
+    // reachable, so an agent talked into reaching a stranger is refused here.
+    "allowed_users": ["5551234567"],
+    // Optional: names the model may use in place of a number.
+    "names": "5551234567=Sam",
+    // The thread name the phone shows.
+    "label": "Nodecode",
+    "timeout": 30,
+    "call_wait": 120
+  }
+}
