@@ -1,0 +1,18 @@
+nodecode-sketch-pad is a rewrite of aydnOktay's aydnOktay/hermes-sketch-pad:
+
+  https://github.com/aydnOktay/hermes-sketch-pad
+  commit de7cd07ff29666ca1bcc3897f13b39f9472fab55
+  MIT, Copyright (c) 2026 aydnOktay (LICENSE)
+
+Rewritten in Common Lisp against Nodecode's cell contract: the drawing surface
+is a canvas page the cell serves on loopback instead of a Hermes Desktop React
+pane; the dashboard's GET /last and POST /save routes became the
+sketch_pad_last and sketch_pad_save tools plus the page's own save route; the
+store keeps sketch-<stamp>.png and last.png under the profile's home instead
+of HERMES_HOME/images; /sketch names the pad's address and the newest
+drawing; the skill's guidance became the tool descriptions and the
+(help :sketch) primer. Left out: the desktop pane's composer middleware,
+which attached the drawing to the next chat message automatically -- Nodecode
+reads images by path with (look PATH), so the tools hand over the path
+instead; the per-drawing last.json (last.png and the dated files carry the
+same facts); and the Hermes-specific skill loader.

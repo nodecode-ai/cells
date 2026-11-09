@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sketch pad</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 14px/1.4 system-ui, sans-serif; margin: 0; padding: 16px;
+         display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  canvas { background: #fff; border: 1px solid #8888; border-radius: 6px;
+           touch-action: none; max-width: 100%; height: auto; cursor: crosshair; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  button { font: inherit; padding: 5px 12px; border-radius: 6px;
+           border: 1px solid #8888; background: #8881; cursor: pointer; }
+  button.primary { background: #2b6cb0; border-color: #2b6cb0; color: #fff; }
+  label { display: flex; gap: 6px; align-items: center; }
+  #status { min-height: 1.4em; font-size: 13px; opacity: .85; max-width: 640px;
+            word-break: break-all; }
+</style>
+</head>
+<body>
+<h1>Sketch pad</h1>
+<div class="row">
+  <label>pen <input id="width" type="range" min="1" max="24" value="3"></label>
+  <label>black <input id="ink" type="color" value="#111111"></label>
+  <button id="clear" type="button">Clear</button>
+  <button id="save" class="primary" type="button">Save</button>
+</div>
+<canvas id="pad" width="720" height="480"></canvas>
+<div id="status">Draw with the mouse or a finger, then press Save.</div>
+<script>
+const pad = document.getElementById('pad');
+const ctx = pad.getContext('2d');
+const status = document.getElementById('status');
+ctx.fillStyle = '#ffffff';
+ctx.fillRect(0, 0, pad.width, pad.height);
+ctx.lineCap = 'round';
+ctx.lineJoin = 'round';
+let drawing = false, last = null;
+
+function point(event) {
+  const rect = pad.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * pad.width / rect.width,
+    y: (event.clientY - rect.top) * pad.height / rect.height
+  };
+}
+
+pad.addEventListener('pointerdown', (event) => {
+  drawing = true;
+  last = point(event);
+  pad.setPointerCapture(event.pointerId);
+  event.preventDefault();
+});
+
+pad.addEventListener('pointermove', (event) => {
+  if (!drawing) return;
+  const now = point(event);
+  ctx.strokeStyle = document.getElementById('ink').value;
+  ctx.lineWidth = Number(document.getElementById('width').value);
+  ctx.beginPath();
+  ctx.moveTo(last.x, last.y);
+  ctx.lineTo(now.x, now.y);
+  ctx.stroke();
+  last = now;
+  event.preventDefault();
+});
+
+for (const name of ['pointerup', 'pointercancel', 'pointerleave']) {
+  pad.addEventListener(name, () => { drawing = false; last = null; });
+}
+
+document.getElementById('clear').addEventListener('click', () => {
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, pad.width, pad.height);
+  status.textContent = 'Cleared. Draw, then press Save.';
+});
+
+document.getElementById('save').addEventListener('click', async () => {
+  const data = pad.toDataURL('image/png').split(',')[1];
+  status.textContent = 'Saving...';
+  try {
+    const answer = await fetch('save', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ png_base64: data })
+    });
+    const body = await answer.json();
+    if (!answer.ok || !body.ok) {
+      status.textContent = 'Not saved: ' + (body.error || answer.status);
+      return;
+    }
+    status.textContent = 'Saved ' + body.path + ' (' + body.width + 'x' + body.height +
+                         ', ' + Math.round(body.bytes / 1024) + ' KB). Tell the agent it can look.';
+  } catch (error) {
+    status.textContent = 'Not saved: ' + error;
+  }
+});
+</script>
+</body>
+</html>
