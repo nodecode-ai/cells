@@ -1,0 +1,30 @@
+nodecode-hass-statistics is a rewrite of goncami's goncami/hermes-homeassistant-statistics:
+
+  https://github.com/goncami/hermes-homeassistant-statistics
+  commit c6a64211c5411eeb4a15d912f9640906bc7c6ee3
+  MIT License, Copyright (c) 2026 Nous Research (LICENSE)
+
+Rewritten: the plugin's two model-facing tools — ha_list_statistics and
+ha_get_statistics — with their argument schemas and answer shapes, the two
+Recorder commands they run over the instance's WebSocket API
+(recorder/list_statistic_ids and recorder/statistics_during_period), the input
+validation (statistic ids, ISO-8601 timestamps that require a timezone, the
+period and value vocabularies, distinct ids and types preserved in order), the
+operator allow/deny lists with their exact, glob and family-prefix matching and
+the denylist's precedence, the three budgets (ids per query, rows estimated
+before and counted after, and the serialized answer's bytes), the
+redirect-free and cookie-free exchange with a bounded close, and the fixed
+error categories that never reflect the instance's own text. The Python
+(aiohttp, asyncio) is Common Lisp here: websocket-driver for the one
+authenticated exchange, one section declaration for the settings, and two
+nlk:define-contract declarations for the tools' arguments, so the schema the
+model is shown and the body that runs are one shape.
+
+Left out: the plugin's configuration surface, which read the values from the
+harness's environment variables; a cell has a config section instead, so the
+URL, the token's variable or file, the two lists and the three budgets are
+named there, and a token is never written inline. Also left out are the
+plugin's own 91-test suite, its VALIDATION.json and its manifest checks, which
+belong to the Hermes plugin format rather than to the tools; the cell carries
+its own tests against a stubbed socket. The two tools' behaviour, and the data
+they reach, are the same.
