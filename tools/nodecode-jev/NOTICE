@@ -1,0 +1,26 @@
+nodecode-jev is a rewrite of ourines's ourines/hermes-jev:
+
+  https://github.com/ourines/hermes-jev
+  commit 28a4ea390f80d97fcdc8c20d6b630dfe2de645de
+  MIT, Copyright (c) 2026 Ourines (LICENSE)
+
+The original is a Hermes plugin in Python: a `jev_evaluate` tool, a `hermes jev`
+command and two skills, all over one bounded judgment API. This rewrite carries
+the judgments themselves: the two fixed routes and their payload shapes (the
+TypeSafe `POST /v1/systemone` and Cloudflare's `/accounts/{id}/ai/run`, with
+its result envelopes and `success:false`), the three rubrics the original ships
+(task_triage, next_step, relevance, transcribed question for question), the
+advisory-only contract, the review heuristic over the answers under an optional
+threshold, and the strict reading of answers (a requested question missing,
+the wrong type, a choice outside its options or a level outside its rubric is a
+refusal, not a guess).
+
+Left out: the Hermes plugin surfaces, because a cell's vocabulary is its Lisp
+functions rather than a tool schema and a CLI. There is no `hermes jev setup`
+interactive wizard (the section and auth.json carry the settings and the key),
+no `status`/`test`/`guide`/`evaluate --file` subcommands (those are jev:status,
+a judgment, (help :jev) and a call through eval), no JSON-file request input,
+no byte-budget/payload-size machinery, no retries (the original has none
+either), and no skills (the manual the model reads replaces them). The 1 MiB
+request and 2 MiB response ceilings are not enforced here; nlk:http bounds
+what it reads. A gateway id is still Cloudflare-only, as the original insists.
