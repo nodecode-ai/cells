@@ -1,0 +1,20 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "live-voice": {
+    "enabled": true,
+    "api_key": "",
+    "api_key_env": "OPENAI_API_KEY",
+    "base_url": "https://api.openai.com/v1",
+    "transcribe_model": "gpt-4o-mini-transcribe",
+    "speech_model": "gpt-4o-mini-tts",
+    "voice": "alloy",
+    "audio_format": "mp3",
+    "max_seconds": 60,
+    "recorder": "",
+    "player": "",
+    "directory": "voice/"
+  }
+}
