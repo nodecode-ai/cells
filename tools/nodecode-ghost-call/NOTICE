@@ -1,0 +1,29 @@
+nodecode-ghost-call is a rewrite of winchxyz's winchxyz/hermes-ghost-call:
+
+  https://github.com/winchxyz/hermes-ghost-call
+  commit b670ff8a930a02aff8afe2c39994bcf4645654ac
+  MIT, Copyright (c) 2026 winchxyz (LICENSE)
+
+The plugin was seven Hermes tools, a /ghost slash command, a skill, and a
+FastAPI bridge that carried a live phone call: two browser pages relayed
+mu-law audio, OpenAI realtime transcription (plus a text model for hints and
+TTS for the earpiece) ran in the bridge, and Twilio legs could put the call
+through the operator's own account. The hint side of that bridge is what this
+rewrite keeps, in Common Lisp: the cheap gate that drops fillers, greetings,
+backchannels and repeats before any model call, the hint prompt with its one
+line, one action, SILENT-otherwise contract and its private-target rule, the
+four-second floor and the forty-hint cap, the cleaning of an answer that came
+back as a question or a repeat, the intervene gate the operator opens by hand
+with the AI disclosure on the first line, and the single post-call summary
+(agreed, date, amount, open items, draft follow-up) with its fallback when
+the model cannot answer. The seven tools keep their names and jobs, except
+that the lines of the call arrive as text instead of a microphone, so
+ghost_line is where the operator or the model hands the coach what was just
+said, and ghost_speak (the earpiece whisper) is gone because a cell has
+nothing to play audio on. What was left out, and why: the audio bridge,
+the browser pages, the realtime transcription, the earpiece TTS, the Twilio
+mode and its dial allowlist, the SQLite store shared by two processes (one
+process serves this rewrite, so the call is a struct in memory), the daily
+session limit, and the per-call transcript commands — none of them survive
+without a bridge and a phone line, and all of the coaching rules they served
+do. Nothing of the original is vendored.

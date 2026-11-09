@@ -1,0 +1,17 @@
+// nodecode-ghost-call: the section /settings and the page's Settings tab
+// write. Secrets as references, never values, in the folder.
+{
+  "ghost-call": {
+    // a key from platform.openai.com, or the name of the variable holding it
+    // "api_key": "...",
+    "api_key_env": "OPENAI_API_KEY",
+    // the fast model for a hint and for the summary
+    "model": "gpt-4.1-mini",
+    // one hint every four seconds at least, forty a call at most, fifteen minutes
+    "min_hint_interval_s": 4,
+    "max_hints": 40,
+    "max_duration_s": 900,
+    // the operator's name, used only in the intervene disclosure and the draft message
+    "user_name": ""
+  }
+}
