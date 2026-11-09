@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "hydradb": {
+    "enabled": true,
+    "api_key": "…",              // or api_key_env, or just HYDRADB_API_KEY in the environment
+    "database": "my-database",   // the tenant recall reads and capture writes to
+    "collection": "my-collection", // optional sub-tenant
+    "base_url": "https://api.hydradb.com",
+    "search_limit": 6,
+    "capture": true
+  }
+}
