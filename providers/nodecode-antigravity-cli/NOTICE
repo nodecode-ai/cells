@@ -1,0 +1,27 @@
+nodecode-antigravity-cli is a rewrite of soyelmismo's soyelmismo/hermes-antigravity-subscription:
+
+https://github.com/soyelmismo/hermes-antigravity-subscription
+commit 0d5a3160f69f0c3302e3f49d9d2820093a544116
+MIT, Copyright (c) 2026 soyelmismo (LICENSE)
+
+Rewritten: the provider a turn rides (the `agy' CLI on the user's own
+Antigravity subscription), the headless prompt that asks the model for
+<tool_call> blocks instead of native tool steps, the stream-json event fold
+(init, step_update text deltas and usage, a native tool step closing the
+round), the tool-block parsing with its hold-back of a partial <tool_call>
+tag, the model roster and the section that names the command, models and
+effort, and the friendly note when no CLI is installed. Reimplemented in
+Common Lisp against the Nodecode cell contract: one lane whose stream
+function spawns the CLI, one hook answering the credential, one listing the
+models, one delegating a model's window.
+
+Left out: the original's long-lived worker process with `--conversation'
+trajectory persistence (each Nodecode round starts one child), its
+per-session private HOME with the OAuth token linked in and the macOS
+keychain symlink (the CLI now runs as the user does, so it needs neither),
+the credential-scrubbing child environment and the keyring presence probes,
+the /usage quota snapshot, the verbose delivery and prompt-dump diagnostics,
+progressive streaming of a partial JSON line, and the Windows console
+suppression flags. The plugin's whole purpose -- a subscription's Gemini and
+Claude models in the harness -- is kept; the harness-specific plumbing that
+existed to isolate a Hermes-hosted child is not.
