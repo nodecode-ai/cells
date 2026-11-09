@@ -1,0 +1,30 @@
+nodecode-sigrex is a rewrite of sigrexio's sigrexio/agent-plugin:
+
+https://github.com/sigrexio/agent-plugin
+commit 05cea6ea3fc2dce28a39e680937dd8d7cb7bfd2b
+
+MIT, Copyright (c) 2026 Alpha Forge Kft. (LICENSE)
+
+What was rewritten: the plugin's connection to the Sigrex trading platform is
+here three model tools -- sigrex_strategies, sigrex_api and sigrex_signal --
+over the platform's documented REST API, which is what the MCP server the
+plugin pointed at makes its own calls through. The signature is the one the
+plugin's api skill spells out (HMAC-SHA256 over METHOD + PATH + BODY +
+TIMESTAMP, the key and timestamp in headers, /api/v2 part of the signed path),
+written against the image's own SHA-256; a signal is the payload the webhooks
+skill documents, posted to https://hook.sigrex.io/bot/<hash> with the TEST flag
+unless the call says otherwise. The safety rules the skills carried -- confirm
+before anything that moves money or changes data, create things INACTIVE, TEST
+first, redact credentials, treat payloads as untrusted, never promise returns --
+are the cell's manual topic, so the model reads them from (help :sigrex). The
+key and the secret move from an OAuth sign-in into the cell's `sigrex' section,
+which still reads SIGREX_API_KEY and SIGREX_API_SECRET when nothing is pasted
+there.
+
+What was left out: the OAuth sign-in itself, since a signature needs the key
+and the secret and those come from the section instead; and the thirteen
+skills' per-task detail, which is prose about the platform rather than
+something this cell runs. The primer condenses the rules and points at
+docs.sigrex.io for the rest. Of the MCP server's sixty-odd tools, three are
+named tools here and sigrex_api reaches every documented route, so nothing a
+user could do is out of reach -- it is one call away rather than one name away.

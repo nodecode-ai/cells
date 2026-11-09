@@ -1,0 +1,13 @@
+{
+  // A Sigrex API key and secret, made in the dashboard under API Management:
+  // paste them here, or leave them out and name the variables holding them.
+  "sigrex": {
+    "api_key": "",
+    "api_key_env": "SIGREX_API_KEY",
+    "api_secret": "",
+    "api_secret_env": "SIGREX_API_SECRET",
+    "base_url": "https://api.sigrex.io",
+    "hook_url": "https://hook.sigrex.io",
+    "timeout_seconds": 20
+  }
+}
