@@ -1,0 +1,14 @@
+// The tam section: a TAM (total-agent-memory) server this cell recalls from and saves to.
+{
+  "tam": {
+    // The MCP endpoint of a running TAM or tam-team server.
+    "url": "http://127.0.0.1:3737/mcp/",
+    // The variable holding a team server's bearer token; leave it unset for a local server.
+    "token_env": "TAM_API_TOKEN",
+    // Where a memory saved without a project lands.
+    "project": "nodecode",
+    // How many memories a recall that names no limit gets back.
+    "recall_limit": 6,
+    "timeout_seconds": 15
+  }
+}

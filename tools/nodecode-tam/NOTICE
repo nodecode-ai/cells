@@ -1,0 +1,21 @@
+nodecode-tam is a rewrite of vbcherepanov's vbcherepanov/hermes-tam-memory:
+
+  https://github.com/vbcherepanov/hermes-tam-memory
+  commit 9a6e51839fb0619c6e41804ac201272e857ea825
+  MIT, Copyright (c) 2026 Vitalii Cherepanov (LICENSE)
+
+What was rewritten: the two tools the original gave its harness (tam_recall,
+tam_save) and the MCP calls behind them -- memory_recall and memory_save, with
+the arguments the original sends and the shapes it reads back (a local server
+grouping hits by type, a team server answering a ranked list with an author) --
+as Common Lisp calling a TAM server over HTTP with the image's own HTTP call,
+plus a /tam command, a manual topic and the same two calls from eval.
+
+What was left out, and why: the original's local mode, which spawns the `tam`
+binary and speaks MCP over stdio, because a cell that reads a process's pipes is
+a second transport to carry and to test; the cell talks to the HTTP endpoint
+both server kinds already serve. Also left out: the per-turn auto-capture and
+auto-recall the original hooks into its harness's turn, which Nodecode's own
+shipped memory cell covers for its turns, and the mirroring of that harness's
+built-in memory writes, which does not exist here. Nothing of the original's
+code is bundled: this is a reimplementation against the same MCP surface.
