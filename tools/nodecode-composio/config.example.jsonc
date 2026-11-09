@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it. Nothing is required: the account
+// tools run on the `composio` CLI alone, and only the catalog asks for a key.
+{
+  "composio": {
+    "api_key_env": "COMPOSIO_USER_API_KEY",      // the variable holding the key, or "api_key" inline
+    "base_url": "https://backend.composio.dev",  // Composio's API root, for the catalog
+    "cli": "composio",                            // the composio CLI on PATH, or a path to it
+    "timeout_seconds": 30,                        // one CLI call's ceiling
+    "catalog_timeout_seconds": 45,                // one catalog page's ceiling
+    "cache_seconds": 300,                         // how long a whole catalog read is reused
+    "page_limit": 1000                            // toolkits asked for per catalog page
+  }
+}
