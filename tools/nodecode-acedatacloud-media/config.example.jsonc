@@ -1,0 +1,12 @@
+{
+  // The nodecode-acedatacloud-media section: paste a key, or name the variable holding it.
+  // Every generate call spends Ace Data Cloud credits on it, with no approval prompt.
+  "acedatacloud-media": {
+    // "api": "https://api.acedata.cloud",      // the one host every service answers on
+    // "api_key": "...",                         // pasted instead of naming a variable below
+    "api_key_env": "ACEDATACLOUD_API_KEY",
+    // "wait_seconds": 30,                      // how long a generate call waits before answering the task id, at most 60
+    // "poll_seconds": 3,                       // how long between two checks of a running task
+    // "request_timeout": 90                    // one HTTP request's ceiling, in seconds
+  }
+}

@@ -1,0 +1,18 @@
+nodecode-acedatacloud-media is a rewrite of AceDataCloud's AceDataCloud/AceDataCloudMediaHermes:
+https://github.com/AceDataCloud/AceDataCloudMediaHermes
+commit 8eaebfb86152d754061375de881548bfa096dd2d
+MIT, Copyright (c) 2026 Ace Data Cloud (LICENSE)
+
+What was rewritten: the plugin's one HTTP client against api.acedata.cloud and the seventeen
+service descriptions it carries, in Common Lisp. The service names, their generate and task
+paths, the defaults each service fills in (model, size, ratio, resolution, duration, count,
+audio and instrumental flags), the fields a call may set on each, the submit-then-retrieve task
+flow with its bounded sixty-second poll, the finished_at/success/state reading of an answer, the
+allowlist of fields an answer keeps, the bearer key on every request, and the statement that a
+call spends Ace Data Cloud credits without an approval prompt all follow the original. The
+Hermes toolset registry, the per-service enable/disable switch, and the Nano Banana
+image_generate provider lane are what the rewrite leaves out: a Nodecode cell registers its own
+tools, its own command and its own config section, so the seventeen per-service toolsets became
+five tools that name their service, a /media command, and one generic task tool. Google Search
+and face analysis keep their two endpoints, folded into one lookup tool. Nothing of the original
+code is bundled; the rewrite is Lisp, and speaks the same HTTP API.
