@@ -1,0 +1,28 @@
+nodecode-jev-judge is a rewrite of DoGMaTiiC's DoGMaTiiC/hermes-jev:
+
+  https://github.com/DoGMaTiiC/hermes-jev
+  commit 5dddbeaac5be08281e6c3b372eeaba3639971f0a
+  MIT License, Copyright (c) DoGMaTiiC (plugin.yaml)
+
+Rewritten: the pre-tool gate (__init__.py, gate.py, jev.py) as one :tool hook
+on Nodecode's eval: the same three typed questions in the same wire vocabulary
+(its boolean is the wire's noul, its impact a score), the same thresholds in
+code, the same two modes (shadow logs, enforce asks the operator with Allow
+once / Deny), the same fail-open contract on every path with one JSONL line per
+decision and its reason, the redaction of key-shaped runs and the 12-argument,
+600-character and 65536-character caps, the per-process judgment cache, and the
+jev_ask verb, here (jev:ask state questions) in the cell's own package.
+TypeSafe's /v1/systemone and OpenRouter's alpha /decisions are carried with
+their question shapes and the original's Retry-After handling; the Python
+(urllib, stdlib only) is Common Lisp here: nlk:http for the one POST,
+nlk:define-section for the settings, and nle:define-cell for what a start
+installs and a stop takes back.
+
+Left out: the Vercel AI Gateway backend (AI_GATEWAY_API_KEY), since two
+backends cover the keys people hold and a third request and answer shape is a
+third thing to keep true; the rate-limit breaker and the min_interval pacing
+between outgoing calls (one retry after a short Retry-After remains, and the
+cache carries the rest); the opt-in gate_version v2 six-signal ladder, which
+would double the paid request for a call the frozen triple already judges; and
+Hermes's tool names (terminal, write_file, patch), because Nodecode has one
+tool: the section's tools list defaults to eval.
