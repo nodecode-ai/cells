@@ -1,0 +1,42 @@
+// nodecode-dangerous-patterns: the "dangerous-patterns" section of
+// ~/.nodecode/config.jsonc. Patterns are regular expressions (case ignored),
+// and backslashes are doubled here because these are JSON strings.
+{
+  // Text no rule reads: a match this covers earns a refusal only outside it.
+  "allow": [
+    "\\brm\\s+-rf\\s+/tmp/scratch-",
+    "\\bgit\\s+push\\s+origin\\s+backup"
+  ],
+  // Stopped at once, no prompt: the model reads a refusal and hands the
+  // command to the person running it.
+  "deny": [
+    {
+      "id": "deploy",
+      "pattern": "\\bmake\\s+deploy\\b",
+      "reason": "deploy"
+    },
+    {
+      "id": "no-delete-file",
+      // "call" reads the whole call, strings included: a file being deleted
+      // through an edit is not a command, and a command rule would miss it.
+      "pattern": "\\bdelete-file\\b",
+      "reason": "file deletion",
+      "read": "call"
+    }
+  ],
+  // Asked first: Allow once runs the one call, Deny and a timeout refuse it.
+  "block": [
+    {
+      "id": "push",
+      "pattern": "\\bgit\\s+push\\b",
+      "reason": "push"
+    },
+    {
+      "id": "publish",
+      "pattern": "\\b(npm|pnpm|yarn)\\s+publish\\b",
+      "reason": "package publish"
+    }
+  ],
+  // How long a block rule's question waits, in seconds.
+  "ask_seconds": 120
+}

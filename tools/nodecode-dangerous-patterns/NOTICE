@@ -1,0 +1,20 @@
+nodecode-dangerous-patterns is a rewrite of scross01's scross01/hermes-custom-dangerous-patterns-plugin:
+
+https://github.com/scross01/hermes-custom-dangerous-patterns-plugin
+commit 256ff08d0be04baf1916f5e7d841b1c2718aa1e4
+
+MIT, Copyright (c) 2026 Stephen Cross (LICENSE)
+
+What was rewritten: the two-action rule model (a deny rule that stops a call at
+once, a block rule that escalates to a human Allow/Deny prompt), the stable
+per-rule identity that keeps one "always allow" from covering the others, and
+the pattern list/test surfaces, reimplemented in Common Lisp as one Nodecode
+cell: the rules live in the "dangerous-patterns" section of config.jsonc
+instead of a YAML file, the hook reads an eval call's spawn commands instead of
+a terminal tool's command string, and /patterns replaces the management
+subcommands. What was left out: the YAML config file with its groups and
+per-group enable/disable, the pattern "glob" dialect (regular expressions
+only), the JSONL match log and its rotation, the bulk add/remove/init
+subcommands, the bundled example rule packs, and the overlap warning against
+the host's own built-in patterns — Nodecode's native rule family is the guard
+cell, and its own ask card is the prompt a block rule raises.
