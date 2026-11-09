@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "neuralmind": {
+    "command": "neuralmind",     // the program: its name on PATH, or a path to it
+    "project": "/path/to/a/built/project",  // optional: pin one project
+    "timeout": 8,                 // seconds one call to it may take
+    "recall": true,               // add what the turn's prompt matches
+    "recap": true,                // recap the previous session on the first turn
+    "record_edits": true          // record the files a write changed
+  }
+}
