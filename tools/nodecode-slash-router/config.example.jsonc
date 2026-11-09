@@ -1,0 +1,9 @@
+{
+  // Optional. The section is on unless it says "enabled": false.
+  "slash-router": {
+    // empty: TYPESAFE_BASE_URL, else https://api.typesafe.ai
+    "base_url": "",
+    // empty: TYPESAFE_DEFAULT_MODEL, else jev-1.13.0
+    "model": ""
+  }
+}
