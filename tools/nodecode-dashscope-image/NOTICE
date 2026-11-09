@@ -1,0 +1,30 @@
+nodecode-dashscope-image is a rewrite of rriggs's rriggs/hermes-plugin-dashscope-image:
+
+  https://github.com/rriggs/hermes-plugin-dashscope-image
+  commit f13665c97eb852b3ef90e30e020dbdcf0c9dc38b
+  MIT, Copyright (c) 2026 Colorado Rob (LICENSE)
+
+Rewritten: the plugin's whole image surface, as one Nodecode tool and one
+command. The native DashScope multimodal-generation request (one user
+message whose content carries the image members and then the text one, with
+the size in its W*H form), the two Wan 2.7 models and the rule that a source
+image upgrades the fast one to the pro one, the three aspect sizes, the
+config-keyed API base and key variable (the token-plan host by default,
+dashscope-intl for a pay-as-you-go key), the local-path-to-data-URI
+inlining with its 10 MB cap, the picture cached locally from the URL the
+answer links because the OSS links expire, the API-level refusal that arrives
+inside a healthy status as a code and a message, and the fields the answer
+carries (file, bytes, model, aspect, size, decoded pixel size, mode). The
+Python `requests` call and the Hermes provider registration are not here:
+nlk:http speaks the one route directly against one section declaration, one
+nlk:define-contract declaration gives the tool its shape, and /dashscope
+gives an operator the same call with flags.
+
+Left out: the Hermes image-provider interface itself (name, list_models with
+its two display rows, get_setup_schema, the availability probe and the
+default-model call), because a Nodecode cell is not a provider lane and its
+settings panel is its own section declaration; the `image_gen.dashscope`
+config path and the `hermes tools` walk, replaced by the cell's `dashscope`
+section; the OpenAI-compatible endpoint the original never used but
+documented as unused; and Hermes's own image cache under its home, since
+output_dir is the operator's to name.
