@@ -1,0 +1,10 @@
+// The section ~/.nodecode/config.jsonc carries for this cell -- documentation,
+// not config. A present section is enabled; "enabled": false vetoes it.
+{
+  "town": {
+    "enabled": true,
+    "salt": "a word of your own",
+    "residents": 24,
+    "journal": 128
+  }
+}

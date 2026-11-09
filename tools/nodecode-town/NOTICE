@@ -1,0 +1,27 @@
+nodecode-town is a rewrite of sxuff's sxuff/hermes-town:
+
+  https://github.com/sxuff/hermes-town
+  commit f3b89401fafde0cd3ebaaccf01ea9e658bc66ff9
+  MIT License, Copyright (c) 2026 Hermes Town contributors (LICENSE)
+
+The original is a passive bridge: ten lifecycle hooks publish a bounded,
+pseudonymous event stream to a small Node server bundled in the plugin folder,
+and a prebuilt Phaser front end draws one pixel-art resident per execution
+context and walks it to a building per tool call. This rewrite keeps the idea
+and the privacy rule on Nodecode's own seams: the :frame and :tool hook
+points read turn facts and tool names from the running image, a bounded town
+in memory holds the residents, /town answers it as text, a route serves the
+page from the gateway's own port, and a snapshot route publishes the same
+JSON the page polls. A resident key is still an HMAC-shaped pseudonym of the
+session id under a per-home salt, and still the only identifier downstream.
+
+Left out, and why: the bundled Node server, its bridge token, its HTTP
+ingest, the SSE stream and the Phaser bundle (Nodecode has a gateway, an
+in-process hook seam and a route table, so no second server or build step is
+needed, and nothing is bundled); the ten Hermes hook names, collapsed to the
+two points Nodecode publishes; the cron-jobs seeding, which read the
+scheduler's own jobs file (Nodecode's sessions and turns are in the image
+already); roles read from a child agent's role tag, which Nodecode does not
+carry, replaced by the one distinction its turns have, top-level or
+delegated; and the pixel-art asset set, redrawn as a canvas of rectangles and
+figures in the served page.
