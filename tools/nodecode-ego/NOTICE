@@ -1,0 +1,32 @@
+nodecode-ego is a rewrite of loop2zero's loop2zero/hermes-ego:
+
+  https://github.com/loop2zero/hermes-ego
+  commit eb78591c94db8d817f27a28ebca9453ef4028633
+  MIT License, Copyright (c) 2026 Shawn Yuan, Copyright (c) 2026 ai-ag2026,
+  Copyright (c) 2026 the hermes-ego authors (LICENSE)
+
+Rewritten: what the plugin gave a harness - the five tools of the ego relay
+(ego_get_page_text, ego_save_page_markdown, ego_navigate, ego_list_tabs,
+ego_status) and the skill that said when to call them - in Common Lisp against
+Nodecode's cell contract. The plugin itself carried no code: it was a manifest
+naming a loopback MCP server, a Bearer header holding ${EGO_RELAY_TOKEN}, and
+that one skill. This cell speaks the same relay directly, JSON-RPC over MCP's
+streamable HTTP (initialize, notifications/initialized, tools/call, the
+Mcp-Session-Id the relay issues), and answers the same five tools natively:
+same tool names, same arguments (url, label, mode, subdir, slug, title), same
+answers, with the skill's guidance as (help :ego) and the relay's two reports
+also reachable as /ego status and /ego tabs. The bearer token comes from the
+section: a `token' secret, or the variable `token_env' names, the same value
+the relay was started with. Nothing is embedded and nothing is started: the
+relay and the Mac daemon are installed and run separately, as the original
+said.
+
+Left out: Hermes's own plugin wiring (the plugin.json config_schema, the
+mcp.json server entry and the trust: untrusted approval gate, which is the
+host's business rather than the integration's), and the skill's Hermes-specific
+sentences - the server name `ego' and the mcp__ego__<tool> spelling, the
+v0.23.0 .env interpolation, and the skills_list lookup. Nodecode's own cells
+already list, start and stop a cell, so none of that is repeated here. Nothing
+was added: no network call of the cell's own beyond the relay the plugin named,
+no credential of its own, and no write except the one the save tool asked the
+relay for.
