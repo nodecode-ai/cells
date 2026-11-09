@@ -1,0 +1,15 @@
+// Markdown memory: full-text search over the markdown folders you keep. Each
+// root is a folder, or label=path when the label an answer quotes should read
+// as something else than the folder's own name. Nothing here is a secret.
+{
+  "md-search": {
+    "roots": ["~/Documents/notes", "vault=~/Documents/vault"],
+    "skip": [".git", ".obsidian", ".trash", "node_modules", "__pycache__", ".venv", "venv"],
+    "max_results": 5,
+    "snippet_chars": 170,
+    "max_chunk_chars": 1400,
+    "max_file_kb": 5120,
+    "max_files": 5000,
+    "refresh_seconds": 300
+  }
+}
