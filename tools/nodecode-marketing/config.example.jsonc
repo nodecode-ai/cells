@@ -1,0 +1,11 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed and holds no secret.
+// Nothing here is required: the 207 skills ship with the cell.
+{
+  "marketing": {
+    "enabled": true,
+    "groups": ["strategy", "content", "social"],
+    "max_chars": 6000
+    // "skills_dir": "~/another/skills"   // a <group>/<skill>/SKILL.md tree of your own
+  }
+}
