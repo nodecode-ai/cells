@@ -1,0 +1,43 @@
+nodecode-kokpit is a rewrite of sahindemirbas's sahindemirbas/kokpit:
+
+  https://github.com/sahindemirbas/kokpit
+  commit 21112512fcb8d5fa24efc1558e9b50195eb031a0
+  MIT, Copyright (c) 2026 Sahin Demirbas (LICENSE)
+
+The rewritten plugin is integrations/hermes/kokpit of that commit: a Hermes
+Agent plugin that keeps a plain Markdown vault, captures notes, tasks and
+journal lines into it from a chat, reads Threads.md, To-Do.md and
+Last-Session.md back, writes a session card and a short receipt when a session
+produced something, and runs a night pass whose proposals each quote the vault
+line they came from.
+
+What was rewritten, in Common Lisp against Nodecode's cell contract: the vault
+formats the plugin reads and writes (Threads.md blocks with their "Open:"
+items and on you / Sende / Bende owner marks and their wiki-link sources,
+To-Do.md with its Open-style heading, its checkboxes and its due: dates,
+Last-Session.md cards split on the middle dot, inbox notes with their front
+matter, daily journal lines), the layout resolution that takes a setting, then
+a file at the vault root, then the one match found below the vault and refuses
+two, append-only capture (a note is a new file that never overwrites, a task is
+one line under the Open heading, a journal line is added at the end of the
+day's file), the session card and the receipt that point at the files the
+session wrote, a word search over the vault's Markdown, and the night pass
+with its two rule-driven proposals (a thread that has not moved for
+stale_days, a task due within three days or late), each carrying the path, the
+line and a verbatim quote, accepted only by appending a To-Do line. The
+plugin's tool names are kept (kokpit_brief, kokpit_brain_search,
+kokpit_threads, kokpit_capture, kokpit_night) and its /kokpit subcommands
+become one /kokpit command and one manual topic.
+
+What was left out, and why: everything that needs the Kokpit application's
+SQLite database read-only -- the calendar, weather, events, job listings, AI
+token usage, job health and training-log views, whose tables the original
+reads through a schema-tolerant layer -- because this cell is the vault half
+the plugin's own README says works without the app; the optional host-model
+night pass (night_model), which sends vault excerpts to the model and which
+the original keeps off by default, because the rules alone answer offline; and
+the dashboard tab, the desktop pane and the optional server module
+(disk, load, temperature and systemctl --user), all of them the app's or the
+machine's surface rather than the vault's. The demo vault the original copies
+when nothing is configured is replaced by a refusal that names the vault
+setting. See README. LICENSE is the original repository's LICENSE, unchanged.
