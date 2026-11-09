@@ -1,0 +1,20 @@
+nodecode-upstash is a rewrite of upstash's upstash/agentkit:
+
+  https://github.com/upstash/agentkit
+  commit 1a189315684e2458ce5514e74c1a1e1edee79518
+  MIT, Copyright (c) 2026 Upstash, Inc. (LICENSE)
+
+The Hermes memory provider in python/hermes-memory was rewritten in Common Lisp as a Nodecode
+cell: the same four tools (upstash_memory_save, upstash_memory_search, upstash_memory_forget,
+upstash_chat_search), the same Redis key layout and document shapes as @upstash/agentkit-sdk
+(<namespace>:memory:<user>:<id>, <namespace>:chat:<user>:<session>, one search index per
+namespace over both prefixes), the same Upstash REST calls behind them, the same recall of the
+memories nearest a user's message, and the same per-turn transcript. The Python package, its
+entry point and its dependencies are not bundled.
+
+Left out, because each one is a Hermes seam with no Nodecode counterpart: the mirroring of the
+built-in `memory` tool's add/replace/remove writes, the `/undo` transcript rewind, and the
+read-only rule for subagents and cron turns. The in-place Lua append became a read, an append
+and a write of the whole document, since a Nodecode cell writes one turn at a time anyway. The
+opt-in telemetry header survives as a setting, and the system-prompt block became the recall
+block plus the tools' own descriptions.
