@@ -1,0 +1,17 @@
+{
+  // The section of ~/.nodecode/config.jsonc the switchyard cell reads.
+  "switchyard": {
+    // auto prefers direct TypeSafe when TYPESAFE_API_KEY (or a saved
+    // api_keys.typesafe) is set, else OpenRouter.
+    "provider": "auto",
+    // The full decision URL. Empty is the resolved provider's own route:
+    // https://api.typesafe.ai/v1/systemone, or
+    // https://openrouter.ai/api/alpha/decisions on OpenRouter.
+    "endpoint": "",
+    // The Jev alias. Empty is jev-latest, or typesafe/jev-1.13 on OpenRouter.
+    "model": "",
+    // The operator's reasoning level: no answer goes above it.
+    "effort_cap": "high",
+    "timeout_seconds": 10
+  }
+}
