@@ -1,0 +1,25 @@
+nodecode-alans-way is a rewrite of capthvnsen's capthvnsen/alans-way-agents:
+
+  https://github.com/capthvnsen/alans-way-agents
+  commit 23cce292c867a42ccf9853b99d798add028788f0
+  MIT, Copyright (c) 2026 Alan's Way contributors (LICENSE)
+
+Rewritten: the alans-way-computer plugin's transport to the Alan's Workspace
+router became a Nodecode cell instead of a Hermes computer_use backend. The
+same router tools (workspace_computer_apps, workspace_computer_snapshot,
+workspace_computer_screenshot, workspace_computer_action,
+workspace_computer_launch, cua_alans_way_status) are called with the same
+arguments, and the gestural vocabulary is the original's: numbered controls
+from a capture, press/double_click/right_click by ref or by point, drag
+types/keys/scrolls, set_value for a field, focus_app to aim and launch. The
+section, the tools and their descriptions, the primer and /computer are
+Nodecode's own seams.
+
+Left out: Hermes's ComputerUseBackend API, the one long-lived router child
+multiplexed by request id (each call here starts, initializes, calls and
+closes one), the delta merge of an action's reply into the held element list
+(the reply is described and a fresh capture is asked for), the screenshot
+pixel/point conversion for element bounds, the numeric overlay coverage
+heuristic, the inferred error-code table beyond the router's own code, and
+the permission-mode plumbing, which belonged to the Hermes tool rather than
+to this backend.
