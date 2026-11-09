@@ -1,0 +1,32 @@
+nodecode-parallel-search is a rewrite of parallel-web's parallel-web/search-mcp:
+
+  https://github.com/parallel-web/search-mcp
+  commit 12f721b2b7ad29e63315884c008b5d77c2a4d7e4
+  MIT, Copyright (c) 2026 Parallel Web Systems (LICENSE)
+
+The rewritten part is the package's whole point: two model-facing tools, web_search
+and web_fetch, served by Parallel's hosted Streamable-HTTP MCP server at
+https://search.parallel.ai/mcp. The original carries no code of its own -- one
+plugin manifest, one mcp.json naming that server, and a skill teaching when to use
+it -- so the rewrite is the client the original left to the harness: a JSON-RPC
+client in Common Lisp over the image's own HTTP call, an initialize that claims the
+session the server offers, the initialized note, and tools/call, reading an answer
+whether it arrives as JSON or as an event stream. The two tools keep the same
+names, the same arguments (objective, search_queries, max_results,
+max_chars_per_result, urls) and the same answers: the server's own text, its
+excerpts and its urls, unedited. The skill's guidance is kept as the primer
+(help :parallel) prints and as the tool descriptions: search first, answer from
+the excerpts, batch a broad task's queries into one call, fetch a page only when
+it is needed, cite the urls, and expect the free tier to be rate limited. The
+anonymous endpoint stays anonymous: no key, no environment variable, no header
+the pasted config did not ask for.
+
+What was left out is what belonged to the harness the package was written for:
+the Agent Plugins manifest and the client manifests for each host (a Nodecode cell
+declares its section, its tools and its manual topic in one form), the bundled
+skill file as a file (the same words are the primer), the per-client install
+instructions, and the MCP transport library the host provided. Nothing is
+downloaded at run time and no code of the original runs here. The endpoint and
+its free tier are the original's; the section beside them adds only a result
+count, a timeout, and the address, for a user who points the cell at their own
+MCP server.
