@@ -1,0 +1,17 @@
+{
+  // The beads section of ~/.nodecode/config.jsonc. Nothing here is secret.
+  "beads": {
+    // the bd CLI: its name on PATH, or a path to it. Run `bd init' in a
+    // project to make a store; `brew install beads' installs the CLI.
+    "bd": "bd",
+    // the store directory a call that names no workspace uses -- the one
+    // holding .beads/. Absolute.
+    // "store": "/home/you/code/myproj",
+    // the actor claims and writes are recorded under when a call names none
+    // "actor": "you",
+    // how many ready beads one frontier answers, and bd's own row bound
+    "limit": 100,
+    "max_rows": 1000,
+    "timeout_seconds": 30
+  }
+}
