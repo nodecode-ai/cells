@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "channels": {
+    "zalo": {
+      "bot_token_env": "ZALO_BOT_TOKEN",   // or "bot_token_file": a 0600 file holding it, or "bot_token"
+      "allowed_users": ["1234567890123456789"],
+      "allow_all": false,
+      "api_base": "https://bot-api.zaloplatforms.com",
+      "poll_seconds": 2,
+      "poll_timeout": 25,
+      "max_length": 2000,
+      "timeout_seconds": 60
+    }
+  }
+}
