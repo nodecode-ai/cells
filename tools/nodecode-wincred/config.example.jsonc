@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell -- documentation,
+// not config: the folder gets pushed and holds no secret. The declaration in
+// cell.lisp is the authority; this is an illustration of it. A present section
+// is enabled; "enabled": false vetoes it.
+//
+// Each map entry is ENV_VAR=target, the target being the NAME of a generic
+// credential in the current user's Windows Credential Manager, bare or written
+// wincred://NAME. Nothing here is a secret: the value stays in the vault.
+{
+  "wincred": {
+    "enabled": true,
+    "map": [
+      "OPENAI_API_KEY=hermes/openai",
+      "ZAI_API_KEY=wincred://hermes/zai"
+    ],
+    "override_existing": false,
+    "max_chars": 20000
+  }
+}
