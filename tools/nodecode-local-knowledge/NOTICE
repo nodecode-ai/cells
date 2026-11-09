@@ -1,0 +1,25 @@
+nodecode-local-knowledge is a rewrite of stepanov1975's stepanov1975/hermes-local-knowledge:
+
+  https://github.com/stepanov1975/hermes-local-knowledge
+  commit c13a1a357eb110fe62d6d4f8a715187079766541
+  MIT, Copyright (c) 2026 Alex Stepanov (LICENSE)
+
+What was rewritten: the five tools and what each answers, the artifact types
+and the rule that classifies a file into one, the whole-artifact routing idea
+(a hit names the file to open, never a passage of it), the conservative
+neighbours — directory siblings, a skill's own support documents, documents
+that name an artifact — and the local feedback record behind the usage
+report. All of it is Common Lisp against the cell contract: the Python
+package, its SQLite schema and its tests are not carried.
+
+What was left out, and why: the Hermes-shaped sources are gone, because this
+cell indexes whatever directories the operator names rather than reading a
+Hermes home's `cron/jobs.json` and `config.yaml`; the cron-job and MCP-server
+artifact types went with them. The usage history is one tab-separated file
+instead of a SQLite database, since the table the original kept needs a
+database this image does not have to open for six columns. The implicit
+feedback learner, the OKF generation worker and its detached model calls are
+not carried: the original spent model tokens to write routing notes, and the
+cell keeps to what a walk can prove. The `/knowledge` command is the
+operator's side of the five tools, which the original had only through its
+CLI.
