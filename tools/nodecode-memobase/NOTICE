@@ -1,0 +1,30 @@
+nodecode-memobase is a rewrite of fred0m's fred0m/hermes-memobase-provider:
+
+https://github.com/fred0m/hermes-memobase-provider
+commit 4e8e447966acefaea372395e2db96ca0d0127f18
+
+MIT, Copyright (c) 2026 fred0m (LICENSE)
+
+What was rewritten: the plugin's recall and profile calls are here a model
+tool each, memobase_search and memobase_profile, and the same calls as Lisp
+verbs, memobase:search and memobase:profile, plus memobase:remember for the
+write the plugin made automatically after every turn. They make the same
+requests the Python did -- GET <base>/users/context/<id> with chats_str,
+max_token_size, time_range_in_days and fill_window_with_events; GET
+<base>/users/profile/<id>; POST <base>/blobs/insert/<id>?wait_process=false
+with a chat blob -- with the bearer token in the same header, and the same
+user id: uuid5(NAMESPACE_DNS, user_name + "memobase_client"), so this cell
+and the original read one store. The original's configuration moves from
+environment variables into the cell's `memobase' section, which still reads
+MEMOBASE_API_KEY when no token is pasted there. The image's own HTTP call
+replaces the requests dependency; a failure is an error carrying
+Memobase's own sentence instead of a JSON member.
+
+What was left out: the plugin's hybrid retrieval -- the local BM25, entity
+and RRF legs with the temporal boost and the optional cross-encoder rerank
+over the returned event window -- and its per-turn lifecycle. The server's
+own /users/context assembly answers the recall, and a turn is written back
+by the remember verb rather than by a memory-provider hook Nodecode does not
+have. The plugin's prefetch caching, circuit breaker and non-primary-agent
+write skipping went with it, since each guarded a hot path this cell does
+not run.
