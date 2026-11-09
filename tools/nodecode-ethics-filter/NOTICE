@@ -1,0 +1,19 @@
+nodecode-ethics-filter is a rewrite of RegeneratusLabs's RegeneratusLabs/ethics-filter:
+
+  https://github.com/RegeneratusLabs/ethics-filter
+  commit f117850d99c9dbcac0aab84625f50cc7a6853108
+  MIT License, Copyright (c) 2026 Ethics Filter Contributors (LICENSE)
+
+The plugin's engine (ethics_filter/engine.py), its six module rubrics
+(ethics_filter/modules/*.md), its constitution presets and strictness levels
+(ethics_filter/constitution/templates.json) and its Hermes tool and skill
+(__init__.py, skills/ethics-filter/SKILL.md) are rewritten here in Common Lisp
+as a Nodecode cell: the same six modules, relevance keywords, presets,
+thresholds, one-red-blocks rule, 40-point tension flag, JSONL audit trail and
+two-call brief/verdict flow, with the module rubrics carried as data. The
+markdown rubrics are condensed to their question, their criteria names and
+their four bands; the reference essays under the skill's references/ folder,
+the CLI, the MCP server and the Python SDK are not part of the cell. The
+plugin's auto_score path -- a nested call to the host's own model -- is left
+out: in Nodecode the model calling the tool is the scorer, which is the
+plugin's own default path.
