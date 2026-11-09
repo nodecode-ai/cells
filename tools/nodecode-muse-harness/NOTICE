@@ -1,0 +1,20 @@
+nodecode-muse-harness is a rewrite of SnoobieJunes's SnoobieJunes/hermes-muse-harness:
+
+  https://github.com/SnoobieJunes/hermes-muse-harness
+  commit 5cc2d060dee651345c75a75e4a52abb2272462be
+
+MIT, Copyright (c) 2026 Auston (SnoobieJunes) (LICENSE)
+
+Rewritten: the whole MSP client. What the Hermes plugin did in Python --
+start `muse serve`, speak newline-delimited JSON-RPC on its stdin and stdout,
+run initialize, session/start and turn/start, answer MSP's approval requests
+with the mode's decision, collect the agent message's deltas and read
+turn/completed -- this cell does in Lisp through the kernel's process seam,
+and the Hermes secrets store becomes one environment variable the section
+names. Left out: the plugin's JSON envelope (session id, approvals, billing
+as fields) is answered as the turn's text, with a failure line when the
+turn did not complete and a note when the retry billed pay-as-you-go; the
+plugin's provider switch (meta, local, echo) is fixed to meta, which is the
+only one its tool exposed; and the reader thread's per-frame byte cap moved
+into the frame reader itself. Nothing of the original's code, and no Python,
+is bundled.

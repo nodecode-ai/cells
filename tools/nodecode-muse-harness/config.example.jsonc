@@ -1,0 +1,24 @@
+// nodecode-muse-harness: one turn inside the local Muse Code session.
+// Every member is optional; the defaults below are what a folder with no
+// `muse` section runs on.
+{
+  "muse-harness": {
+    // the executable: a name on PATH, or a path to it
+    "binary": "muse",
+
+    // the Muse model a turn runs on when the call names none
+    "model": "muse-wonder-full-1.0",
+
+    // "denyUnmatched" | "allowAll" -- allowAll lets the Muse session run its
+    // own shell and file tools inside the session directory without asking
+    "approval_mode": "denyUnmatched",
+
+    // how long one turn waits, in seconds
+    "timeout_seconds": 600
+
+    // The variable holding a Meta Model API key, used only for the one
+    // pay-as-you-go retry after the subscription allowance is exhausted.
+    // Unset stays on the Muse login.
+    // "api_key_env": "META_API_KEY"
+  }
+}
