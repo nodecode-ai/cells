@@ -1,0 +1,19 @@
+nodecode-soniox is a rewrite of XimilalaXiang's XimilalaXiang/hermes-soniox:
+https://github.com/XimilalaXiang/hermes-soniox
+commit 79f8d1dec5fcdc75e22ec34e857e5b4e2b8828bf
+MIT, Copyright (c) 2026 Xiang (LICENSE)
+
+What was rewritten: the plugin's two providers, its Soniox REST client and its
+language and format helpers, as two Nodecode tools the model calls directly --
+one that speaks text into an audio file, one that reads a recording back as
+text -- with the same endpoints, request bodies and defaults (tts-rt-v2 with
+Adrian and English, stt-async-v6 with language detection), the same 5000
+character text limit, the same 0.7-to-1.3 speed clamp, the same format map
+(ogg and opus both ask Soniox for opus), the same status polling with its
+backoff and timeout, and the same best-effort deletion of the transcription
+and the uploaded file afterwards. The key rides as an Authorization: Bearer
+header and is redacted from every error the model reads, as the plugin did.
+What was left out: the provider registration itself (Nodecode has no voice
+provider slot), the manual page and config plumbing of the module, and the
+realtime websockets the plugin did not implement either. The original's tests
+were read for the behaviour, not translated.
