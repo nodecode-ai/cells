@@ -1,0 +1,21 @@
+nodecode-morning-briefing is a rewrite of drkpxl's drkpxl/morning-briefing:
+
+  https://github.com/drkpxl/morning-briefing
+  commit 347ce44a1e71173285b2943a7a97bbdece8327b2
+  MIT License, Copyright (c) Steven Hubert (declared in plugin.json; the repository carries no LICENSE file)
+
+What was rewritten: the plugin is a skill -- prose the harness's agent follows with Home
+Assistant, Gmail, X search, WeasyPrint, QR codes and a printer. This cell carries the part of
+it that needs no outside app of the operator's: the two reads the skill makes directly, the
+National Weather Service forecast API and each subreddit's Atom feed, the 36-hour freshness
+rule, and the newsprint design system (serif body, sans-serif section heads, real HTML tables,
+black on white, color radar), now one HTML page written from Common Lisp, offered as the
+morning_briefing tool, the /briefing command and the (help :briefing) primer.
+
+What was left out, and why: the Home Assistant weather entity, calendar and air-quality
+sensor, the Gmail newsletter scan and the X search need the operator's own accounts and
+Hermes's connectors, so the model may still add their lines to the page's story list; the
+WeasyPrint PDF, the per-story QR codes, the radar crop and the `lp` print step need Python
+packages or a printer this cell does not install, so the page is HTML a browser prints. The
+interactive onboarding interview and the 6 AM cron job are Nodecode's own concerns (the cron
+cell and /settings). The radar image is linked at full size rather than cropped.
