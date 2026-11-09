@@ -1,0 +1,30 @@
+nodecode-sgme is a rewrite of freehul's freehul/sgme:
+
+  https://github.com/freehul/sgme
+  commit f12c9bfa2cc9f4a59420376cb91176abb882948b
+  MIT, Copyright (c) 2026 freehul (LICENSE)
+
+The rewritten plugin is adapters/hermes of that commit. Its tools keep their
+names, their parameters and the endpoints they ask: sgme_memory_search,
+sgme_conversation_search and sgme_skill_search on POST /v1/search with their
+scopes; sgme_answer on POST /v1/answer; sgme_inject on POST /v1/inject;
+sgme_wiki_search and sgme_wiki_pages on GET /v1/wiki/search and
+GET /v1/wiki/pages; sgme_skill_get and sgme_skill_list on GET /v1/skills;
+sgme_signal_pull, sgme_signal_claim and sgme_signal_ack on
+GET /v1/events/pull and POST /v1/admin/care/signals/<id>/{consume,ack};
+sgme_health on GET /v1/health; sgme_stats on GET /v1/admin/stats. The
+X-API-Key header, the agent/admin key split, the loopback default at
+http://127.0.0.1:9910, the default search scopes (memory and skills), the
+# user / # assistant text of an appended turn, the asynchronous refinement
+trigger, the profile block composed from the server's title and items, and
+the role prompt's place above it are the original's too.
+
+What was left out, and why: the ~44-tool surface is carried as the fourteen
+a session actually reaches for; the original's roles, credentials, three
+pools (ideas, demands, projects), skill and wiki writes, config and refine
+administration, and its credential vault tool (off by default there) are
+reached from the SGME server's own console instead. The profile block rides
+Nodecode's :round point as a system-reminder rather than a provider's static
+system prompt, because that is the seam this harness has, and a turn's
+append is queued to a worker instead of a thread per call. LICENSE is the
+repository's LICENSE, unchanged.
