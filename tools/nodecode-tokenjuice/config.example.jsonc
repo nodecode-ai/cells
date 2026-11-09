@@ -1,0 +1,15 @@
+// The tokenjuice cell's section. Every member is optional; these are the
+// defaults, written out. There is no key and no secret.
+{
+  "tokenjuice": {
+    "min_lines": 12,
+    "head_lines": 10,
+    "tail_lines": 10,
+    "max_line_chars": 240,
+    "min_saved_chars": 200,
+    "dedupe": true,
+    "strip_ansi": true,
+    "keep_failures": true,
+    "extra_tools": []
+  }
+}
