@@ -1,0 +1,25 @@
+nodecode-protonmail is a rewrite of Maytrella007's Maytrella007/hermes-proton:
+
+  https://github.com/Maytrella007/hermes-proton
+  commit 3e0612848cf20116294f9ff58e74aadf34bc858e
+
+MIT, Copyright (c) 2026 William Wilamo (LICENSE)
+
+What was rewritten: the sign-in, the read side and the send path of the mail
+API, in Common Lisp instead of Python. The cell speaks Proton's own `/auth/v4`,
+`/core/v4` and `/mail/v4` endpoints with `nlk:http`; the SRP-6a handshake, its
+little-endian big integers and its expand-hash, and the bcrypt underneath it
+are ported from the original's `protonlite/srp.py`, with Blowfish's constants
+read from the copy ironclad already carries. Body decryption and encryption are
+handed to the machine's `gpg` on a throwaway keyring rather than to a bundled
+PGP library, so the OpenPGP framing the send API wants -- the literal packet,
+the signature, splitting gpg's output into one key packet per recipient and the
+data packet, and reading the session key back for the recipients outside Proton
+-- is in `send.lisp`; the HTML-to-prose step is much smaller than the
+original's.
+
+What was left out: drafts kept on the server, labels and moves, contacts,
+calendar and Drive, the saved session file, the CLI, inline and uploaded
+attachments on the send side, and the signature check on the server's SRP
+modulus (the cell checks its size and the ephemeral's bounds, and relies on TLS
+for the rest).

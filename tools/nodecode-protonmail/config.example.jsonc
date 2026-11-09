@@ -1,0 +1,10 @@
+{
+  // Proton Mail, read without Bridge: sign in with the account's own address.
+  "protonmail": {
+    "username": "someone@proton.me",
+    "password_env": "PROTON_PASSWORD"
+    // "password": "…",            // instead of password_env
+    // "totp_env": "PROTON_TOTP",  // when the account asks for a code
+    // "host": "https://mail.proton.me/api"
+  }
+}
