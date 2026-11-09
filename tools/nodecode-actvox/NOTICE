@@ -1,0 +1,24 @@
+nodecode-actvox is a rewrite of ActVox's ActVox/actvox-plugins:
+
+  https://github.com/ActVox/actvox-plugins
+  commit 76e394d381c3cf56632d7fd6c91d442c68b181f2
+  MIT License, Copyright (c) 2026 ActVox (LICENSE)
+
+Rewritten: the plugin's inbox read, in Common Lisp against Nodecode's cell
+contract. The `actvox` CLI's `inbox --all --json` and `auth status --json`
+are run and their JSON read, with the plugin's own rules for what counts as
+waiting - an unacknowledged mention, or a task in an owner state with a next
+action, a claimed task with a live lease being in progress - and its words for
+each answer. The first-turn note is the :ROUND hook: one line, once a turn,
+from a read the section caches. What was two MCP-side reads is here a tool
+(`actvox_inbox`) and `/actvox inbox|status`.
+
+Left out: the two prose skills (their guidance is the manual topic
+`(help :actvox)` and the tool's own documentation), the `actvox` MCP server
+itself - the CLI is the one path this cell reads through, so it needs no
+OAuth sign-in of its own and no MCP connection - and the terminal setup and
+`install-gate` commands. The cron wake gate is left out with them: its
+`wakeAgent` line and its 15m/1h/6h backoff state file are how Hermes's cron
+job skips an empty inbox, and Nodecode's cron cell schedules its own turns,
+so the gate had nothing to gate. Nothing was added: no network call of the
+cell's own, no credential, no write to ActVox.
