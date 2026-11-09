@@ -1,0 +1,22 @@
+// The section ~/.nodecode/config.jsonc may carry for the Ando cell --
+// documentation, not config: the folder gets pushed and holds no key. The
+// declaration in cell.lisp is the authority; this is an illustration of it.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "ando": {
+    "enabled": true,
+    // One-use, from the workspace's Invite members > Agent sheet. The cell
+    // redeems it on the first start and writes the key where credential_file
+    // says (mode 600); after that the link is not needed.
+    "invite": "https://agents.ando.so/invite/REPLACE-ME",
+    // Optional: the file the redemption wrote. Defaults to a private file in
+    // the Nodecode home.
+    // "credential_file": "~/.nodecode/ando/connection.json",
+    "agent_name": "Nodecode",
+    "session": "ando",
+    // "allowed_members": ["<workspace membership id>"],
+    // "allowed_conversations": ["<conversation id>"],
+    "poll_seconds": 5,
+    "reply_timeout_seconds": 300
+  }
+}
