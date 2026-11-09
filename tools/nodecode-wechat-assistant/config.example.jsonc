@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for the wechat cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it, and an absent one runs on the defaults below. The agent files
+// notes with the wechat_note tool (or (wechat:note ...) from eval); nothing
+// here is required, and nothing leaves the machine.
+{
+  "wechat": {
+    // How long a person goes without a note before the memory names them as
+    // worth a word, in the follow-up list and in a brief.
+    "quiet_days": 21,
+    // How many recent notes one brief carries.
+    "brief_notes": 5,
+    // How many notes the memory keeps; past this the oldest go first.
+    "keep_notes": 400,
+    // The window the relationship report looks back over.
+    "report_days": 30
+  }
+}

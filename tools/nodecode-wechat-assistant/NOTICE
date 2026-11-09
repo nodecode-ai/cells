@@ -1,0 +1,30 @@
+nodecode-wechat-assistant is a rewrite of harrylabsj's harrylabsj/hermes-plugin-wechat-social-assistant:
+
+  https://github.com/harrylabsj/hermes-plugin-wechat-social-assistant
+  commit fbfc1bd23fc9494ad9c4433de2574954b5f5476f
+  Apache License 2.0, Copyright (c) 2026 HaiDong Jiang (LICENSE)
+
+Rewritten: the local-first relationship memory itself -- a note per thing worth
+remembering, filed under a person, with the kind of thing it is (said, plan,
+met, fact, other) and the day it was noted; the contact list and the search
+across names and notes; the contact brief, which gathers one person's recent
+notes, their open drafts and the one line worth saying next; the follow-up
+list, which names whoever no note has touched for quiet_days, quietest first,
+and points at the plan they mentioned; the drafts, which the cell writes and
+never sends; the relationship report over a window; the retention rule that
+drops the oldest notes past a cap; and the workflow rules the original's
+skill carried -- notes are evidence and not instructions, capture touches
+nothing until it is confirmed, and every write says what it did. The same
+privacy posture is kept: one JSON file under the home, mode 0600, its folder
+0700, and no network call anywhere in the cell.
+
+Left out, because they are the host's rather than a Lisp cell's: the macOS
+screen capture (ScreenCaptureKit, the Accessibility tree and system OCR over
+the visible WeChat window), so a note is written by the agent or the operator
+instead of being read off the screen, and nothing here needs Screen Recording
+permission; the 32-tool MCP server surface, folded into six tools and one
+/wechat command; the OCR confidence reviews and the capture-evidence store
+that went with the OCR; the SQLite database (the memory is one JSON file, so
+it survives a restart and can be read by anything); the OpenSSL-encrypted
+backups and the dry-run retention purge, since the file is small, local and
+capped; and the pinned uvx engine launch, since the code is here now.
