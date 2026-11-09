@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. Nothing here is required, and nothing here is a secret.
+{
+  "ux3": {
+    "enabled": true,
+
+    // The evidence tier a gate that names none is read at. t0 (the default)
+    // is honest: nothing traceable yet, so a review can at most reframe.
+    // Raise it as evidence arrives: t1 stated opinion, t2 an interview or a
+    // small test, t3 repeated behaviour or payment, t4 durable proof.
+    "evidence_tier": "t0",
+
+    // The language a review's prose is written in. Flow, verdict and tier
+    // names stay canonical (English) so two reviews stay comparable.
+    "working_language": "en"
+  }
+}

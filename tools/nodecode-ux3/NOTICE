@@ -1,0 +1,26 @@
+nodecode-ux3 is a rewrite of cis2042's cis2042/ux3-product-design-harness:
+
+  https://github.com/cis2042/ux3-product-design-harness
+  commit 48965c6b501f61ebbb8130c9c2e4f9af08922b9f
+  MIT License, Copyright (c) 2026 Product Design Harness contributors (LICENSE)
+
+Rewritten: the decision kernel of scripts/jev_gate.py and scripts/check_review.py
+-- the route over a task prompt (routine, discovery, commitment), the three-lane
+baseline over one prompt, and the canonical reduction of three lane reviews to
+one verdict, the deterministic weakest flow, the headline evidence tier, the tier
+floor (t0 forces stop_reframe, t1 can never continue) and the self-contradicting
+execution boundary -- as Common Lisp functions in kernel.lisp, with the original's
+keyword tables, flow priority and tie-break order kept as they were. The skill
+is the help topic (help :ux3), and the original's prose rules are its opening.
+The gate is a tool (ux3_gate) and a command (/ux3) as well as the verbs.
+
+Left out, and why: the JSON Schema files, the review/context-pack/handoff
+documents, the mode and reviewer agents, and every prose document under docs/,
+prompts/, agents/ and templates/ -- they are the paperwork a skill asks a model
+to write, and Nodecode's model writes them itself; only what a validator would
+have to hold it to was ported. check_review.py's jsonschema Draft 2020-12 run is
+not reimplemented: the semantic rules it adds over the schema are, and a missing
+member is now a refusal from the declaration the tool carries. The council
+challenge round and the context-pack handoff comparison are not ported either;
+both are the original's multi-agent paperwork. The Gemini extension packaging,
+the offline validator CLIs and the static site are not ported at all.
