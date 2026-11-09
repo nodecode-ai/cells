@@ -1198,7 +1198,7 @@
     {
       "name": "nodecode-gemini-live",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "f325ad5ba4f171bc9dce9a39445379a3b4563554",
+      "commit": "84bd682201f4861e503b8cce2a952da771f42064",
       "path": "tools/nodecode-gemini-live",
       "description": "Gemini Live voice: one spoken turn per call, the reply saved as a WAV, and the work the voice model delegates named back to you",
       "license": "MIT",
@@ -1969,7 +1969,7 @@
     {
       "name": "nodecode-markifact",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "8fe91c86065c5807c13bd2df57b76a4830ba741c",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
       "path": "tools/nodecode-markifact",
       "description": "Markifact: run Google, Meta, TikTok and other ad operations through Markifact's hosted MCP server",
       "license": "MIT",
@@ -2878,7 +2878,7 @@
     {
       "name": "nodecode-source-tray",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "101a61877774afa1d169a7ee26ad7f943c4adc25",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
       "path": "tools/nodecode-source-tray",
       "description": "The URLs this session opened, in one list",
       "license": "MIT",
