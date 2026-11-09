@@ -1,0 +1,25 @@
+nodecode-hypotize is a rewrite of hypotizeai's hypotizeai/hypotize-hermes:
+
+  https://github.com/hypotizeai/hypotize-hermes
+  commit ffa7526e949ed1c36545dd64cb060383ef7aa0f1
+  MIT, Copyright (c) 2026 Hypotize (LICENSE)
+
+The original carries no code of its own: an MCP server declaration, the
+hosted Hypotize server at https://api.hypotize.ai/mcp over streamable HTTP
+with an OAuth 2.1 sign-in, and three skills that teach the method
+(hypotize-growth-experiments, hypotize-weekly-review, hypotize-backlog-import).
+Rewritten here: the server's JSON-RPC wire (initialize, the session id, one
+POST per call, a JSON or one-event-stream answer) in Common Lisp against
+nlk:http, with a section for the endpoint and the token; six purpose-named
+tools that call the server tools the skills name; the three skills distilled
+into one manual topic whose rules ride every request as a line; and a
+/hypotize command over the same reads.
+
+Left out, and why: the OAuth browser flow, because the shipped mcp cell
+already signs in to a server and keeps the token, and this cell reads that
+token instead of starting a second flow; the original's client-setup
+paragraphs for other clients, which are not about Nodecode; the weekly review
+and backlog import as separate skills, whose steps the method states and whose
+tools hypotize_call reaches; and the delete tools as anything but a named
+call, because they exist only with the delete scope and need the person's
+explicit yes.
