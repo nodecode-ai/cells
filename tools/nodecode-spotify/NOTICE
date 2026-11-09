@@ -1,0 +1,27 @@
+nodecode-spotify is a rewrite of NousResearch's NousResearch/hermes-official-plugins:
+
+  https://github.com/NousResearch/hermes-official-plugins
+  commit e7a218f26db88426ab3e7376f0e000b6e356f5e7 (the spotify/ folder)
+  MIT License, Copyright (c) 2026 Nous Research (LICENSE)
+
+The rewrite keeps what the plugin gave a user: the seven tools over Spotify's
+Web API, with the same names, actions and arguments -- playback, devices, the
+queue, search, playlists, albums and the library -- along with the id/URI/link
+normalization, the player command set, the "play a bare list of tracks inside
+its album" request Spotify's desktop client needs, the 204 that means nothing
+is playing, the friendly 401/403/404/429 sentences, and one forced token
+refresh (before a call that is about to expire, and once on a 401). Everything
+is Common Lisp over the cell contract: NLK:HTTP for the wire, NLK:DECODE-JSON
+for the bodies, and one NLE:DEFINE-CELL declaration for the section, the seven
+tools, the /spotify command and the manual.
+
+Left out, and why: the loopback callback listener, with its self-signed TLS
+pair and its private hermes_cli imports. A cell that opened a port would need
+threads, a certificate and a browser launch inside the harness, and the state
+it protects -- one code -- is in the address the browser already shows. So
+/spotify login prints the authorize URL and /spotify login <that address>
+finishes the exchange; no port is opened, and the flow works over SSH. The
+`hermes spotify login|status|logout` CLI is gone, its three verbs now the
+/spotify command's. Tokens live in a 0600 JSON file under the home
+(spotify/auth.json) rather than in Hermes's auth.json, since that store is
+Hermes's own.
