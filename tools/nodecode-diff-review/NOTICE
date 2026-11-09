@@ -1,0 +1,27 @@
+nodecode-diff-review is a rewrite of sprmn24's sprmn24/hermes-plugin-diff-review:
+
+  https://github.com/sprmn24/hermes-plugin-diff-review
+  commit ba7bb0e1c5c1e7cfc36bf627b960910c816cc697
+  MIT, Copyright (c) 2026 sprmn24 (LICENSE)
+
+Rewritten: the one tool, `diff_review`, and its three modes -- the working
+tree against a base, the commits a branch adds over a merge target, and a diff
+handed in as text. The rules it applies to added lines are the original's
+(debug prints, console calls, hardcoded secrets, bare and broad excepts, TODO
+markers), the JSON answer keeps its shape and its field names, and the limits
+it reads with are its limits: fixed git flags and a scrubbed environment, a
+bound on every git run with the child's process tree killed past it, untracked
+files read as regular files only and capped, and credential-shaped text
+masked in a message. The rules that were Python regular expressions are
+cl-ppcre scanners here, and the hunk accounting is Lisp over the same hunk
+arithmetic.
+
+Left out: the Hermes host plumbing -- the plugin's own registration, its
+`task_id` workspace lookup through Hermes's file tools, and its
+`unsupported_backend` answer for a workspace on a container or SSH backend.
+A Nodecode cell runs in the organism's own process, so the review happens on
+the machine the files are on; `path` names another directory and `diff_text`
+carries a diff from anywhere else. The result-size trimming loop that shortened
+lists to fit a host budget is replaced by the section's `max_files` and
+`max_warnings`, which cut each list once and say so in `files_truncated` and
+`warnings_truncated`.
