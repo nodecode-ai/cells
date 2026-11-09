@@ -1,0 +1,19 @@
+nodecode-dreaming is a rewrite of itpartypattaya's itpartypattaya/hermes-dreaming:
+https://github.com/itpartypattaya/hermes-dreaming
+commit 21878d3ec8752283dd7ee69a803c63bb989c1740
+MIT, Copyright (c) 2026 Anton Vaskov (LICENSE)
+
+The skill and its scheduler are gone; the pass is Common Lisp in this folder.
+Rewritten: the corroboration gate (a fact is proposed only once it was said
+on separate days), the six-signal score with the 0.55 gate, the proposal
+dossier the model acts on (verbatim text, why, nearest memory), the
+near-duplicate and still-relevant sections, memory pressure against a
+character budget, the reject list, the diary, the once-a-night worker and the
+nightly prompt's rules. Left out, and why: the fact store and the
+conversation transcripts the original mines for mentions (a Nodecode sighting
+is that mention, recorded by the model as the person speaks, so no second
+store is needed); the message screen for secrets and injected instructions
+(the organism's own memory path carries it, and nothing here republishes a
+message); the optional cloud judge, which the original ships off; and the
+three scheduled extraction and forget jobs, which have nothing to extract
+here.
