@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it. Nothing here
+// is required once `gh` is signed in (`gh auth login`): the cell holds no
+// token of its own.
+{
+  "github-repos": {
+    "enabled": true,
+    "gh": "gh",              // the GitHub CLI every read runs; its path when it is not on PATH
+    "account": "",           // empty lists the signed-in account's own repositories
+    "sort": "pushed",        // pushed | stars | forks | created | name
+    "limit": 40,             // rows one answer shows
+    "cache_seconds": 60,     // a fetched list is reused this long; 0 reads gh every time
+    "max_pages": 5,          // pages of 100 repositories one read follows
+    "timeout_seconds": 30    // one gh call's ceiling
+  }
+}
