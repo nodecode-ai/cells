@@ -1,0 +1,35 @@
+nodecode-escalation-governor is a rewrite of jusst01's jusst01/escalation-governor:
+
+  https://github.com/jusst01/escalation-governor
+  commit 50fcf38919b721fe481a60f728bf7271b15b6e82
+  MIT, Copyright (c) 2026 jusst (LICENSE)
+
+Rewritten: the whole signal engine of governor.py -- the four deterministic
+signals with their thresholds, the per-session counters, the reset on a
+successful tool result, the once-per-turn injection rule, the recovery rule,
+and the packet (trip reason, the goal, every attempt with how it ended) -- and
+the parts of __init__.py a cell can carry: the hooks that feed it, the
+/escalation-governor command with its status and its report, and the JSONL
+report file under the home. The default thresholds keep their original
+numbers (3, 3, 3, 12). The section replaces the plugin's JSON file and its
+GOVERNOR_* environment variables with typed settings the operator sets in
+/settings, and a setting of 0 turns that signal off.
+
+Left out, and why: the hooks Hermes has and Nodecode does not. Hermes'
+pre_llm_call and transform_tool_result are one seam here in each direction --
+Nodecode's :ROUND point records the packet into the round's request, and the
+:TOOL point appends it to the round's next tool result -- so the packet
+arrives at both of the moments the original chose. post_tool_call and
+api_request_error became the :TOOL point and the advice on the one provider
+call a round makes; post_api_request's token accounting is gone, because the
+packet needs no token counts and the consideration was never shown to anyone.
+subagent_start and subagent_stop have no portable seam in a cell, so a trip
+clears on the first successful tool result that follows it, which is the
+recovery the original detected too, and the report's delegation flag is
+replaced by that same recovery flag. on_session_end appended a report at the
+end of a session; a cell has no such event, so a line is appended when a
+session trips and when it recovers, and /escalation-governor report reads
+the newest of them. The goal was read from the session's first user message;
+a cell is not handed the prompt text, so the goal comes from
+/escalation-governor goal TEXT, and the packet says where to find it when
+it does not.
