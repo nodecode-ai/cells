@@ -1,0 +1,14 @@
+// The headroom section, as nodecode's config holds it. Every key has a default
+// that fits the machine, so an empty section is a working guard.
+"headroom": {
+  "mode": "enforce",          // enforce | observe | off
+  "max_heavy_jobs": 0,        // 0 = auto from RAM
+  "reserve_mb": 0,             // 0 = 15% of RAM, 256 MB to 2 GB
+  "min_start_mb": 0,           // 0 = 10% of RAM, 192 MB to 1 GB
+  "critical_mb": 0,            // 0 = 5% of RAM, 96 MB to 512 MB
+  "queue_timeout_s": 300,
+  "lighten": true,
+  "watch": true,
+  "extra_heavy": [],          // regular expressions over a command's words
+  "exclude": []                // regular expressions over the whole command
+}

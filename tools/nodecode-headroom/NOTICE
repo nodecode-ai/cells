@@ -1,0 +1,16 @@
+nodecode-headroom is a rewrite of seongj-un's seongj-un/hermes-headroom:
+
+  https://github.com/seongj-un/hermes-headroom
+  commit a98a64bfb20595c2e26d88fb0a90f4205f37db31
+  MIT, Copyright (c) 2026 seongj-un (LICENSE)
+
+Rewritten: the classifier's command families and its command-word reading, the auto
+budgets (reserve, minimum start, critical line, slots), the lighten table and its Node heap
+cap, the queue with its timeout and its refusal, the watchdog that stops the newest heavy
+job, the status picture as a tool and a slash command, and the words the model is told
+after a wait or a kill. Left out: the systemd --user scope (a hard MemoryMax, an OOM score,
+cgroup peak and OOM-kill readings) and the flock slot pool shared across processes, because
+Nodecode has no seam that hands one child to systemd and runs one image rather than several
+profiles; and the selftest, which existed to prove the scope. The Hermes-only surfaces --
+the pre-LLM hook returning context, the CLI subcommand, the plugin storage directory -- are
+carried as a :ROUND reminder, a slash command, and an in-memory event log.
