@@ -1,0 +1,33 @@
+// nodecode-ordaprompt: the section, commented. Copy what you change into
+// ~/.nodecode/config.jsonc (or use /settings) and restart the cell.
+//
+// Nothing here is required. Thresholds are integers in hundredths -- the
+// section has no float type -- so 85 is the original's tau_topic = 0.85.
+{
+  "ordaprompt": {
+    // The one switch worth knowing. Off is the original's release state:
+    // nothing routes on its own, every answer escalates or abstains with the
+    // code calibration_missing.
+    "calibration_active": true,
+
+    // Topic side.
+    "tau_topic": 85,          // a topic scores this much to route on its own
+    "mu_topic": 20,           // and beats the second candidate by this much
+    "tau_novel": 85,          // a novel-topic proposal needs this much residual
+    "mu_novel": 25,           // and this margin over the best kept topic
+    "tau_low": 60,            // under this the router abstains rather than guesses
+
+    // Session side: reuse is stricter than a topic assignment.
+    "tau_sess_sim": 90,      // a session is this similar to be reused
+    "tau_sess_util": 55,     // and carries at least this much utility
+    "mu_sess": 25,            // and beats starting fresh by this much
+    "k_block": 50,            // contamination at or above this blocks reuse
+    "w_cost": 30,             // what a session's context costs its utility
+    "w_contam": 50,           // what a session's contamination risks
+    "new_session_utility": 35, // the fixed utility of starting fresh
+    "context_cost_norm": 8000,  // tokens at which a cost counts whole
+
+    // A JSONL file of one hashes-only receipt per decision; empty keeps none.
+    "receipts_file": ""
+  }
+}

@@ -1,0 +1,26 @@
+nodecode-ordaprompt is a rewrite of aska-digital's aska-digital/protean-ordaprompt:
+
+  https://github.com/aska-digital/protean-ordaprompt
+  commit 60e89af2853072c7801c465f30999f3c6ceb35b2
+  MIT, Copyright (c) 2026 aska-digital (LICENSE)
+
+Rewritten: the routing policy of ordaprompt_router/router.py -- one batch
+comparison per surface, the three bands with their thresholds and margins, the
+novel and ambiguity sentinels, session utility with its context cost and
+contamination risk, the effective band as the more conservative of the two,
+the escalation codes, the closed contamination weights, and the decision
+values; the receipt shape and its hashes-only promise from receipts.py and
+schemas.py; and the two verbs of cli.py, as the ordaprompt_route tool and the
+/ordaprompt command.
+
+Left out, and why: the SyntheticBackend that scored a prompt by hashing it was
+the fixture backend, deterministic but blind to what the prompt said, so the
+cell scores by words instead and keeps every band above that score unchanged;
+the OpenRouter adapter (disabled by default, hashes-only taxonomy proposals)
+has no key to set and no proposal to make here, so a novel ask answers
+novel_propose and leaves the naming to the caller; the CalibrationModel and
+the eval harness existed to prove the error gate on synthetic fixtures, and the
+single calibration_active switch carries what they decided; the Hermes
+directory-plugin wrapper (__init__.py, plugin.yaml, a no-op register()) has no
+Nodecode counterpart, since a cell declares its section, tool and command in
+one form; and the argparse CLI became the tool's argument contract.
