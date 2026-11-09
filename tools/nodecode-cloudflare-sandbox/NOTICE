@@ -1,0 +1,26 @@
+nodecode-cloudflare-sandbox is a rewrite of kiyo-e's kiyo-e/hermes-cloudflare-sandbox:
+
+  https://github.com/kiyo-e/hermes-cloudflare-sandbox
+  commit 75961d77109b185bdaeef650cc9f945df0aa0551
+  MIT License, Copyright (c) 2026 kiyo-e (LICENSE)
+
+Rewritten: the client half of the plugin, in Common Lisp. Its protocol notes
+(docs/protocol.md) are what client.lisp implements: the bearer token, the
+workspace route, the NDJSON command stream with its mandatory exit event, the
+error code in a failed HTTP body, the 409 that a changed configuration is,
+the cancel/release/reset routes, and the rule that a request is never
+replayed -- with the section's validation rules (an https origin, the
+instance list, the image name, a hashed workspace identity) carried over from
+config.py. Its shape is one agent-facing tool, cf_sandbox, and eval verbs,
+instead of Hermes's terminal environment provider.
+
+Left out, and why: the Worker itself (worker/ and container/hermes-exec.py) is
+TypeScript and a container Dockerfile, and the cell does not bundle it -- it
+stays the original repository's, deployed by the operator, which is also
+where the billing and the token secret stay. Hermes's own shell wrapping (its
+cwd markers, stdin plumbing, process handles and BaseEnvironment subclass) is
+not rewritten: Nodecode's shell is its own, and the cell reaches the
+container through the tool and the verbs above. The cancel route is
+implemented only as the Worker's deadline -- the cell has no interactive
+process handle to kill. Cloudflare Access service-token headers are not
+carried; the section's token is the Worker's own bearer check.
