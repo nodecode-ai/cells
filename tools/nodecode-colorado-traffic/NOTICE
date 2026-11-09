@@ -1,0 +1,9 @@
+nodecode-colorado-traffic is a rewrite of drkpxl's drkpxl/colorado-traffic:
+
+  https://github.com/drkpxl/colorado-traffic
+  commit e7ae48527f7069ed4e311516773d4828e8453efb
+  MIT, Copyright (c) 2026 Steven Hubert (LICENSE)
+
+Rewritten: the whole query half of skills/colorado-traffic/scripts/cotrip_corridor.py -- the base host and the six layer classifications, the two shipped corridors with their mile-point boxes, the fetch and the "healthy:true is not an empty road" check, the HTML and entity strip, the mile-point and route filter, the schedule-over-active timing rule, the routePositiveBearing direction map, the Waze-versus-COtrip label, the per-layer sort, and the JSON fields the answer is built from. The skill's own rules for answering became the cell's manual, which (help :colorado-traffic) answers.
+
+Left out, and why: the Python file that the agent ran through its terminal became a Lisp verb with a tool and a command around it, so there is no script path, no interpreter requirement and no HERMES_SKILL_DIR. The plugin's optional cron watcher was documentation, not code, and it stays a separate job -- nodecode-cron's, with this cell as the step -- instead of being installed by the plugin. Its "run the script and read the JSON" step is the tool call now, so the JSON output shape is not reproduced; the answer is the text a model reads. The optional Google Routes travel-time call was never plugin code and is still not: the cell publishes no speeds, and the manual says so.
