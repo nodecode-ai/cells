@@ -1,0 +1,20 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "xmemo": {
+    "enabled": true,
+    "api_key_env": "XMEMO_KEY", // or "api_key": "…"; XMEMO_KEY is read either way
+    "base_url": "https://xmemo.dev",
+    "agent_id": "nodecode",
+    "bucket": "work",            // where new memories are written
+    "scope": "nodecode/default", // and the scope they are written in
+    "read_bucket": "%",          // "%" reads every bucket the account holds
+    "search_limit": 10,
+    "max_items": 5,
+    "max_tokens": 900,
+    "capture_timeline": false,   // true records each finished turn's request
+    "timeout_seconds": 20
+  }
+}
