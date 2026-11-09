@@ -1,0 +1,28 @@
+nodecode-source-tray is a rewrite of aydnOktay's aydnOktay/hermes-source-tray:
+
+  https://github.com/aydnOktay/hermes-source-tray
+  commit e64f7d2ad56f922410071e2096a40ceab421a392
+  MIT, Copyright (c) 2026 source-tray contributors (LICENSE)
+
+What was rewritten: the whole plugin, in Common Lisp against Nodecode's cell
+contract. The two tools keep their names and their answers (`source_tray_list`
+with its `markdown` switch, `source_tray_clear`), `/sources` keeps its words
+(bare or `list`, and `clear`, and the usage text for anything else), and the
+rules are the original's: http and https only, a host required, one line, at
+most 500 characters, the host lowercased, the fragment dropped, a URL named
+once with the newer entry in place, at most `max_items` (40 unless set), and a
+markdown list of numbered links, `(source-tray is empty)` while it holds
+nothing. In Hermes the URLs were gathered by a `post_tool_call` hook that read
+the result of five web and browser tools and kept one `state.json` for the
+whole install; here the same seam is Nodecode's `:tool` point, which runs the
+call and hands back its answer, and the list lives in each session's own
+state, so it never mixes two sessions.
+
+What was left out, and why: the desktop pane (`desktop/plugin.js`) and the
+dashboard route (`dashboard/plugin_api.py`) draw Hermes windows and HTTP
+endpoints, so the operator's view here is `/sources` and its panel, which is
+what the pane reduced to; the bundled skill
+(`skills/source-tray/SKILL.md`) became the tools' own descriptions and
+`(help :sources)`, since a cell's guidance needs no separate registry; and the
+plugin's `config_schema` `max_items` stands, with a `tools` list added, because
+Nodecode's web and browser tool names are not Hermes's five.
