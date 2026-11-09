@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "evalroute": {
+    "enabled": true,
+    // the model each lane runs on, as lane=model pairs; required
+    "models": "build=z-ai/glm-5, quick=z-ai/glm-5-air, read=<a long-context model>",
+    // the folder the ledger is kept in; empty is evalroute/ under the home
+    "data_dir": "",
+    // where a task with no keyword hit goes, at confidence 0
+    "default_lane": "read",
+    "min_hits": 1,
+    "max_routes": 200
+  }
+}
