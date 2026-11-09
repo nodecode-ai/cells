@@ -1,0 +1,9 @@
+nodecode-tool-break is a rewrite of apoapostolov's apoapostolov/hermes-agent-awesome-plugins:
+
+  https://github.com/apoapostolov/hermes-agent-awesome-plugins
+  commit 2d72584692123172705769b9de7fcee00af6a0d7
+  MIT, Copyright (c) 2026 Apostol Apostolov; Copyright (c) Adolanium (original hermes-rss, https://github.com/Adolanium/hermes-rss) (LICENSE)
+
+The rewrite keeps what the plugin gives a user: a tool call the operator stopped waiting for is marked while it runs, and its own result reaches the model as a break note -- how long it ran, do not retry, the operator's steer, and the tail of whatever the call returned -- with the three commands (/break, /again, /break-status) and /again's two-use budget on one call, scoped to the session that spent it. It is rewritten in Common Lisp against Nodecode's cell contract: one around-dispatch :TOOL hook stands in for the plugin's six hooks (pre and post tool call, transform tool result, session start, end and delete), the in-flight tables are this image's own, and the operator's verbs are ordinary slash commands.
+
+Left out: the desktop strip that draws the in-flight calls and their buttons (a Hermes web/desktop surface, not a cell's), and the process discovery and kill path -- the plugin's public edition states it never kills either, and a cell reads its own image's dispatches instead of a process table. The /again budget is kept while the cell runs instead of being cleared at each session start, which is stricter, never looser. The licence text is the repository's, unchanged.
