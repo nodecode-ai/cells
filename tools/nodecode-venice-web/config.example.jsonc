@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "venice": {
+    "api_key_env": "VENICE_API_KEY",   // the variable holding the key, or "api_key" inline
+    "base_url": "https://api.venice.ai/api/v1/augment",
+    "search_provider": "brave",        // brave (zero data retention) or google (anonymized)
+    "max_results": 10,                  // results one search asks for, at most 20
+    "max_urls": 5,                      // URLs one extract fetches, each billed
+    "timeout_seconds": 20,              // one search's ceiling
+    "scrape_timeout_seconds": 30        // one page fetch's ceiling
+  }
+}
