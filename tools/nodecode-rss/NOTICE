@@ -1,0 +1,19 @@
+nodecode-rss is a rewrite of apoapostolov's apoapostolov/hermes-agent-awesome-plugins:
+
+  https://github.com/apoapostolov/hermes-agent-awesome-plugins
+  commit 30d6dc6311bfce951c10ed120c878dc3f28a7ced
+  MIT, Copyright (c) 2026 Apostol Apostolov, Copyright (c) Adolanium (original hermes-rss, https://github.com/Adolanium/hermes-rss) (LICENSE)
+
+What was rewritten: the plugin's library half. Its `rss' tool, its /rss
+command and its subscriptions, articles, read/starred state, folders, mute
+phrases, saved searches and digest are reimplemented in Common Lisp: feeds are
+fetched with a bounded HTTP GET, RSS 2.0 and Atom are parsed by the same
+reader, and the library lives in one file under the Nodecode home instead of
+in a browser database behind a dashboard API. Its prompts, action names and
+answers keep the plugin's behavior.
+
+What was left out: the three-column desktop page (Hermes draws it; a cell
+contributes tools, not windows), the reader-mode capture of full articles,
+YouTube and Substack URL expansion, image handling and the animated ticker.
+The AI summaries are not a call of the cell's own either: a digest hands the
+model the unread headlines, and the model summarizes them.
