@@ -19,6 +19,71 @@
       }
     },
     {
+      "name": "nodecode-abstract",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "26365840fcfb36483e0041e952d014a0cc170062",
+      "path": "providers/nodecode-abstract",
+      "description": "Abstract: GLM-5.3, DeepSeek-V4-Flash and Kimi-K3 over the Responses API",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "abstractpbc",
+        "repo": "abstractpbc/hermes-abstract-provider",
+        "commit": "e322e42578586af1c376b7e836dfce437308682a",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Abstract",
+          "provider": "abstract",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
+      "name": "nodecode-acedatacloud",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "4d1c285cc1661b97e62b66be36caa87d986169d9",
+      "path": "providers/nodecode-acedatacloud",
+      "description": "Ace Data Cloud: its GPT-4.1 models, over the OpenAI chat wire, as a provider",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "AceDataCloud",
+        "repo": "AceDataCloud/AceDataCloudModelProviderHermes",
+        "commit": "568763ee21fe081562bb9bcd91e7323f8f81d6ff",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Ace Data Cloud",
+          "provider": "acedatacloud",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
+      "name": "nodecode-acedatacloud-media",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "f1b9c24e46740da04db9d9f3624984fd0c0ac774",
+      "path": "tools/nodecode-acedatacloud-media",
+      "description": "Ace Data Cloud media: acedatacloud_image, _video, _audio, _task, _lookup and /media",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "AceDataCloud",
+        "repo": "AceDataCloud/AceDataCloudMediaHermes",
+        "commit": "8eaebfb86152d754061375de881548bfa096dd2d",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-acp",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "0463692b09fdffde99aef8a55103b5ff10fa722f",
@@ -40,6 +105,23 @@
       ]
     },
     {
+      "name": "nodecode-actvox",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "6a8027eb1f27bd74d395e6ea24233e3ce160f220",
+      "path": "tools/nodecode-actvox",
+      "description": "ActVox inbox: tasks and mentions that wait for you, at the start of a turn and on demand",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ActVox",
+        "repo": "ActVox/actvox-plugins",
+        "commit": "76e394d381c3cf56632d7fd6c91d442c68b181f2",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-adaptive-effort",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "bca63954f0462f57de930693c096743fd0892b69",
@@ -57,6 +139,23 @@
       }
     },
     {
+      "name": "nodecode-adextract",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "508ac2953ecfc184a3fce61d7b505bfb46a88a9c",
+      "path": "tools/nodecode-adextract",
+      "description": "Competitor ad research across the Meta, Google, LinkedIn and TikTok ad libraries, and ad creative analysis, as five tools the model calls",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ad-vertly",
+        "repo": "ad-vertly/adextract-mcp-server",
+        "commit": "02c08407abe21b4af76b6f066e5edf9490fb231e",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-advisor",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "f1278a6974e7ab6c6635598df1486eb6f269cad9",
@@ -70,6 +169,23 @@
         "author": "ljubomirj",
         "repo": "ljubomirj/hermes-advisor-plugin",
         "commit": "37e55975611d38212cf082029ece504f207df656",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-adwave",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "68e9b48acf569274343307bf7f3df6f0f9ed4173",
+      "path": "tools/nodecode-adwave",
+      "description": "Adwave: make ads from a website and run them on TV, Meta, Google, YouTube and Reddit from one prepaid daily budget",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "AdwaveInc",
+        "repo": "AdwaveInc/adwave-agent-plugin",
+        "commit": "0b5ab18aa6ebcde1a33f7dcd399a8c07cebf342c",
         "license": "MIT"
       }
     },
@@ -108,6 +224,108 @@
       }
     },
     {
+      "name": "nodecode-agent-mail",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-agent-mail",
+      "description": "Agent Mail Gateway: read, send and answer mail, fetch attachments, and manage calendar events",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "dominikamann",
+        "repo": "dominikamann/agent-mail-gateway",
+        "commit": "90c444bd7c0d2bf1955b8844ba3cf68d95f7f7fb",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-agent-router",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "ba3a735dfe792ef3a7d7bfa8467071274c1ed20b",
+      "path": "tools/nodecode-agent-router",
+      "description": "Agent router: chooses one agent for a task, explains the choice, abstains or falls back once",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Pinutss",
+        "repo": "Pinutss/jev-agent-router",
+        "commit": "8cb6d67a81d4545502750c4599b427d98acf3120",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-agent-si",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "c7cc51a7e5143c408f7d1f6d99f562fd516a5aef",
+      "path": "tools/nodecode-agent-si",
+      "description": "Sourced memory: facts with quotes and sources, plus search over past agent sessions",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "joelbrilliant",
+        "repo": "joelbrilliant/hermes-agent-si",
+        "commit": "adf7abc1d89b1e1ea686ac2fd29e2b95b454f4fe",
+        "license": "Apache-2.0"
+      }
+    },
+    {
+      "name": "nodecode-agentplaybooks",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "292b404fd5c2e2849a7b169bf055ecd4296214d6",
+      "path": "tools/nodecode-agentplaybooks",
+      "description": "AgentPlaybooks: playbook skills, MCP servers and federated OpenAPI tools in the harness, through the apb CLI",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "matebenyovszky",
+        "repo": "matebenyovszky/agentplaybooks",
+        "commit": "f31e9c3af6520cebda1c0712447b4b487ffc12a7",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-agentpurse",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "c3d51185bb69fa6e284e88538fe973cd12326e55",
+      "path": "tools/nodecode-agentpurse",
+      "description": "Search, quote and buy inside an AgentPurse allowance, only after a person approves",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "maaz-bin-hassan",
+        "repo": "maaz-bin-hassan/agentpurse",
+        "commit": "84a1ed7cc9dbac462a5bde8b65f6d105cc56b20b",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-agentvault",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "5ed77408e3a97b241e61753fd736eaba42a81f28",
+      "path": "tools/nodecode-agentvault",
+      "description": "Agent Vault: search the archived coding conversations, and read one exact revision",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "synnada-ai",
+        "repo": "synnada-ai/agentvault-plugins",
+        "commit": "6e0e3ded804cefb19b362736e5818c99cc061d48",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-agentwallet",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "23b2a22805080480d5d80152f0f71fea69cf5398",
@@ -121,6 +339,23 @@
         "author": "openclawcash",
         "repo": "openclawcash/agentwalletapi-hermes",
         "commit": "ae547a9c51dfc6060fe2441411f9ec846250ef75",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-agora",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-agora",
+      "description": "A team that argues a motion in rounds, votes, and turns the adopted conclusion into tasks",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "yzy806806",
+        "repo": "yzy806806/agora",
+        "commit": "3ddd556e542b826498a90cc383c9020ae55897a9",
         "license": "MIT"
       }
     },
@@ -140,6 +375,78 @@
         "commit": "14e844f6ced5e0d618c767d726330a78c5cadadd",
         "license": "MIT"
       }
+    },
+    {
+      "name": "nodecode-aihubmix",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "8c7dced8ed145799c0e1abbc36b3318cc91664b6",
+      "path": "providers/nodecode-aihubmix",
+      "description": "AIHubMix: 400+ OpenAI-compatible models as a provider, filtered to tool-capable routes",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "AIhubmix",
+        "repo": "AIhubmix/hermes-provider-aihubmix",
+        "commit": "b55e916362ebd0528c5d8981d12f3b8f7268b847",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "AIHubMix",
+          "provider": "aihubmix",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
+      "name": "nodecode-aistupidlevel",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "91f0912107aecb549b422387083e8b754aaf371b",
+      "path": "providers/nodecode-aistupidlevel",
+      "description": "AI Stupid Level: its Smart Router, where a model id is a routing mode, as a Nodecode provider",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "StudioPlatforms",
+        "repo": "StudioPlatforms/aistupidlevel-sdk",
+        "commit": "ba908770f2e97b0a85cc1f5a83240cbe94c8dfa9",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "AI Stupid Level",
+          "provider": "aistupidlevel",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
+      "name": "nodecode-aixy",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "6e1d013fc1e51504560299999a13833340fe2f69",
+      "path": "providers/nodecode-aixy",
+      "description": "Aixy: an inference gateway as a Nodecode provider, with its live model catalog",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "aixy-tech",
+        "repo": "aixy-tech/aixy-hermes-plugin",
+        "commit": "38422435bb065bd6649f9d1288506b57790ab0eb",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Aixy",
+          "provider": "aixy",
+          "sign_in": "key"
+        }
+      ]
     },
     {
       "name": "nodecode-alans-way",
@@ -223,6 +530,23 @@
       ]
     },
     {
+      "name": "nodecode-ando",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "876926fadfb1fdfd22cbc0068b558d8a06a2dccd",
+      "path": "rooms/nodecode-ando",
+      "description": "Ando: answer the workspace messages your Ando agent is invited to, from a Nodecode session",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Ando-Corporation",
+        "repo": "Ando-Corporation/hermes-ando",
+        "commit": "1bfde877e1ed194ebf461d64e0468605d7e21a87",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-android-emulator",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "ecfe2feb9bea24ed6a3e419dfef01ed615e4e614",
@@ -236,6 +560,23 @@
         "author": "PIR8-Software",
         "repo": "PIR8-Software/hermes-android-emulator",
         "commit": "3b5cb61e8bd6c4600f797a44c44234a6371bd59a",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-anki",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "d23648aa20ae4c911d490c2decbede666536bab8",
+      "path": "tools/nodecode-anki",
+      "description": "Anki: cards, search and a quiz loop through a local AnkiConnect endpoint",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "suhas-svg",
+        "repo": "suhas-svg/hermes_anki",
+        "commit": "bc89df834fb104b8d69c6444f35a5ae6b3764dd7",
         "license": "MIT"
       }
     },
@@ -255,6 +596,101 @@
         "commit": "c7f6a5428abbdba2b48f8b5fd3494b7ae2e3c5e8",
         "license": "MIT"
       }
+    },
+    {
+      "name": "nodecode-antigravity-agy",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "6792ca67ba379586266bf49fe202e8c3f2f7187f",
+      "path": "providers/nodecode-antigravity-agy",
+      "description": "Antigravity (agy CLI): your Google Antigravity subscription as a Nodecode provider, answered by agy",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Realtyxxx",
+        "repo": "Realtyxxx/hermes-plugin-antigravity-agy",
+        "commit": "f85003d3ce0de3844e2d5c23174d630ff3586e5d",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Antigravity (agy CLI)",
+          "provider": "antigravity-agy"
+        }
+      ]
+    },
+    {
+      "name": "nodecode-antigravity-cli",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "providers/nodecode-antigravity-cli",
+      "description": "Antigravity CLI: Gemini and Claude models through the agy CLI on an Antigravity subscription",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "soyelmismo",
+        "repo": "soyelmismo/hermes-antigravity-subscription",
+        "commit": "0d5a3160f69f0c3302e3f49d9d2820093a544116",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Antigravity CLI",
+          "provider": "antigravity-cli",
+          "sign_in": "cli"
+        }
+      ]
+    },
+    {
+      "name": "nodecode-anyapi",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "ebef61eeb79aa539036a398f43c3060895c2aaff",
+      "path": "providers/nodecode-anyapi",
+      "description": "AnyAPI.ai: one key for many vendors' models, listed by the routes that take tool calls",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "es697",
+        "repo": "es697/hermes-provider-anyapi",
+        "commit": "e5b7b985b5aa56bc585ef1924858978696eb0c3a",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "AnyAPI.ai",
+          "provider": "anyapi",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
+      "name": "nodecode-anyrouter",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "82d433519d838a1953228fe6c1ee84e1cee9f8fa",
+      "path": "providers/nodecode-anyrouter",
+      "description": "AnyRouter: its gateway and its tool-capable model catalog, as a Nodecode provider",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "AnyRouterHQ",
+        "repo": "AnyRouterHQ/hermes-provider-anyrouter",
+        "commit": "ba9fd9c05570800dcbbf6dae4605fd4106880d27",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "AnyRouter",
+          "provider": "anyrouter",
+          "sign_in": "key"
+        }
+      ]
     },
     {
       "name": "nodecode-anysearch",
@@ -322,6 +758,74 @@
       }
     },
     {
+      "name": "nodecode-approval-ledger",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "8e5059ebfe2cfbf5e1801d4cb34366d2004bd386",
+      "path": "tools/nodecode-approval-ledger",
+      "description": "Approval Ledger: which approval questions were asked, how they ended and how long people took",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "olric3015",
+        "repo": "olric3015/hermes-plugins",
+        "commit": "4a2ef866a51f1c99ed1d77e423136450340d901b",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-approvals",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-approvals",
+      "description": "Approvals: a shell command judged APPROVE, DENY or ESCALATE by TypeSafe's Jev",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "anpicasso",
+        "repo": "anpicasso/hermes-jev-approvals",
+        "commit": "28be98a19539b29768398fb400f4c62f41337c26",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-archytan-lite",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0884bcff160de689f9ab68c2057b7074301160f3",
+      "path": "tools/nodecode-archytan-lite",
+      "description": "Archytan Lite: every tool call checked against a policy before it runs",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "High-ArchyTech-Solutions",
+        "repo": "High-ArchyTech-Solutions/hermes-archytan-lite",
+        "commit": "38748165b089f776acf9d6119eaeafdb76eed83e",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-arena",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "073077f3698661c1f115923ffa08c84d455631a6",
+      "path": "tools/nodecode-arena",
+      "description": "A knockout tournament of sub-agents over one task: attack, defend and judge until one answer wins",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "J182Razor",
+        "repo": "J182Razor/hermes-arena-skill",
+        "commit": "0fdb521220f0d4507044e97a56eadee1cea9b65e",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-artifact-relay",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "32b2863aab28b956962b6abaf3eb0ae6b51a019a",
@@ -335,6 +839,74 @@
         "author": "eloktev",
         "repo": "eloktev/hermes-artifact-relay",
         "commit": "c91fa9229121dd616a275a45447301eacca45e6f",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-artifacts",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "626f015a8733cbd40b353bcf890172bb8ce0d1b6",
+      "path": "tools/nodecode-artifacts",
+      "description": "Artifacts: a private artifact library - publish HTML, Markdown, SVG or images, and hand out expiring guest links",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "dmmeteo",
+        "repo": "dmmeteo/hermes-artifacts",
+        "commit": "57b61fca2872d15060d8a9b30b9e51242e9cb357",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-artil",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "14391867ceaf01c81bc30934e182d690c863868f",
+      "path": "tools/nodecode-artil",
+      "description": "Artil: an agent's own email address, phone number and Telegram, through the artil CLI",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "artilai",
+        "repo": "artilai/plugins",
+        "commit": "8dce90c47a7b0d9e9c5edcb3dd2dd09227fe6fea",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-aside",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "15c3da734c5b768ccee47906467b608d1b62cac3",
+      "path": "tools/nodecode-aside",
+      "description": "Aside Browser: drives the user's signed-in Aside browser through the aside CLI",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "leonphull",
+        "repo": "leonphull/hermes-aside-browser",
+        "commit": "ffd4e0e0de4b3a8624f3d83f98c378b88d6f9581",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-astro",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "77099a515b159f9b8a6853cd0c13848af888363d",
+      "path": "tools/nodecode-astro",
+      "description": "Astro Agents: exact Western and Vedic charts and planetary timing over MCP",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "aidatatools-dev",
+        "repo": "aidatatools-dev/astro-agents-mcp",
+        "commit": "105be9ce7c01edebf73dd8de1ac7431853c58a3e",
         "license": "MIT"
       }
     },
@@ -373,6 +945,40 @@
       }
     },
     {
+      "name": "nodecode-aurora",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "27f573a58456b3b58d87e912e3e570c8950446ca",
+      "path": "tools/nodecode-aurora",
+      "description": "Aurora design system: page markup looked up offline, and a page checked against the census",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Ntizar",
+        "repo": "Ntizar/hermes-aurora",
+        "commit": "dcf5b271e76bb541e7822b029b6de08fa2244582",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-aux-ledger",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "ab86207b8d654388a6296c98bb71fdda86f6a77d",
+      "path": "tools/nodecode-aux-ledger",
+      "description": "A local ledger of the auxiliary LLM calls a session makes, and /aux",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "olric3015",
+        "repo": "olric3015/hermes-plugins",
+        "commit": "aee39a67b4ffb1ff786c417fb92f997a8c7663b7",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-azure",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
@@ -382,6 +988,23 @@
       "depends_on": [
         "nodecode"
       ]
+    },
+    {
+      "name": "nodecode-b64",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "54947c5be087c508628bb81202146f46b11702c5",
+      "path": "tools/nodecode-b64",
+      "description": "Decode base64, base64url, hex and percent-encoded text, and say what it holds",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "olric3015",
+        "repo": "olric3015/hermes-plugins",
+        "commit": "89b15726e6f44bc072bd6af5fc6a1402e50aafa3",
+        "license": "MIT"
+      }
     },
     {
       "name": "nodecode-bankbridge",
@@ -401,6 +1024,23 @@
       }
     },
     {
+      "name": "nodecode-basekit",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "a101b0bc09192658b24f7a8cc7814308d11f3720",
+      "path": "tools/nodecode-basekit",
+      "description": "Read-only Base (chain 8453) intelligence: network and gas in USD, wallet portfolios, transaction receipts, token facts, transfers and approvals, as six tools",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "D0xedDevi0",
+        "repo": "D0xedDevi0/hermes-basekit",
+        "commit": "142bd48ea7755bda6a7c2aff707106bdfbf25ee6",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-beam",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "a6e14b3ae55ff59273d4e8caf1593c446192f530",
@@ -414,6 +1054,123 @@
         "author": "Beam-Network",
         "repo": "Beam-Network/beam-hermes",
         "commit": "d41448cb3f08bacbc368a4948ecbe310e5f6964c",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-belive-aihub",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0fad15afe3bdacba6cef733662df9c7154ee2430",
+      "path": "providers/nodecode-belive-aihub",
+      "description": "BeLive AI Hub: an OpenAI-compatible model gateway as a provider, its picker filled from the live catalog",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "belivetech",
+        "repo": "belivetech/hermes-belive-aihub",
+        "commit": "5d022b5a7190c673162965f4593b5a86f14e2c84",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "BeLive AI Hub",
+          "provider": "belive-aihub",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
+      "name": "nodecode-bento",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "6edf1eb9830846ff22d599c833ceb0531d14b74b",
+      "path": "tools/nodecode-bento",
+      "description": "Bento email marketing: subscribers, tags, events, broadcasts and transactional email",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "shagghiesuperstar",
+        "repo": "shagghiesuperstar/hermes-plugin-bento",
+        "commit": "f490ed02c0e377acc9112bf57192bacedbbcd9b1",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-bharatcode",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "c1c6038f2248f72ff9a7f9b6c0feb61979fdd18f",
+      "path": "providers/nodecode-bharatcode",
+      "description": "BharatCode: an OpenAI-compatible model provider with a free student tier",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "thenabbu",
+        "repo": "thenabbu/bharatcode-hermes",
+        "commit": "f4cc1d1f2977963173b23b9ac6a19c3ca8851050",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "BharatCode",
+          "provider": "bharatcode",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
+      "name": "nodecode-birkin",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "59f3c8a01a3634105f394e6710f8cce664223352",
+      "path": "tools/nodecode-birkin",
+      "description": "Birkin Mnemosyne: a local Markdown memory vault with lexical recall",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ashmoonori-afk",
+        "repo": "ashmoonori-afk/birkin-mnemosyne",
+        "commit": "63a34526973fc9ad0e5a030a474c67a5fca873e7",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-blackbox",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-blackbox",
+      "description": "Agent Blackbox, local half: scan untrusted text and shell commands for threats",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "umanitek",
+        "repo": "umanitek/agent-blackbox",
+        "commit": "f9224a3cda4a784ccac46576bb4f1b4fa02f5440",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-bluesky-feed",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "73eee706840d9f805c00bf46779b437ab69782f7",
+      "path": "tools/nodecode-bluesky-feed",
+      "description": "Bluesky: a public profile, its recent posts, and one watched account",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "TakeshiTGAL",
+        "repo": "TakeshiTGAL/hermes-plugin-author-feed",
+        "commit": "d3c9497d3f62b7f49aa0fa6131a7cd30278d80a8",
         "license": "MIT"
       }
     },
@@ -448,6 +1205,40 @@
         "author": "rabilrbl",
         "repo": "rabilrbl/hermes-brave-search-plugin",
         "commit": "4134cbef910c14c63e6b284b0820b30f3811ab47",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-browser-profiles",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-browser-profiles",
+      "description": "Drive a named Chrome, Edge or Brave profile over CDP",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "anpicasso",
+        "repo": "anpicasso/hermes-plugin-chrome-profiles",
+        "commit": "03d24e95e7b14125c5227797a3a6682c3d890c84",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-browserless",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-browserless",
+      "description": "Browserless: render pages and take screenshots in a stealth cloud browser",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "browserless",
+        "repo": "browserless/browserless-mcp",
+        "commit": "600a5d689fa3f5bdcb5676ffc063b56d18e9bd7c",
         "license": "MIT"
       }
     },
@@ -588,6 +1379,23 @@
       }
     },
     {
+      "name": "nodecode-cell-generator",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-cell-generator",
+      "description": "Scaffold a Nodecode cell from a description, and add tools and commands to one",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "iruzen-dono",
+        "repo": "iruzen-dono/hermes-plugin-gen",
+        "commit": "75899f960d8358731255172add8232344c9084b8",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-certarc",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "9a3def5484a8e19c4e007e6aefe03abcd18a8fc8",
@@ -638,6 +1446,23 @@
       ]
     },
     {
+      "name": "nodecode-channel-pidgeon",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "31df977e1e5848b4cb22ce942eb81b12935a4ba2",
+      "path": "rooms/nodecode-channel-pidgeon",
+      "description": "Talk to nodecode by email through your Pidgeon inbox",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode-channel-kit"
+      ],
+      "credits": {
+        "author": "pidgeon-ai",
+        "repo": "pidgeon-ai/pidgeon-python",
+        "commit": "d4448663b39ae0280a247bb3ea4cab7ef0a4e080",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-channel-whatsapp",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "eed9b5f39897aa8f13cd96bf02e543b5b9d2d825",
@@ -647,6 +1472,24 @@
       "depends_on": [
         "nodecode-channel-kit"
       ]
+    },
+    {
+      "name": "nodecode-channel-whatsapp-agent",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "rooms/nodecode-channel-whatsapp-agent",
+      "description": "Talk to Nodecode on WhatsApp, through Meta's WhatsApp Agent Platform API",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode-channel-kit",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "ahtishamdilawar",
+        "repo": "ahtishamdilawar/hermes-whatsapp-agent-platform",
+        "commit": "3a57b1da04499279d1af6c7d979c9c2d8b658ce0",
+        "license": "MIT"
+      }
     },
     {
       "name": "nodecode-channel-x",
@@ -659,6 +1502,24 @@
         "nodecode-channel-kit",
         "sb-concurrency"
       ]
+    },
+    {
+      "name": "nodecode-channel-xchat",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "a9f2a620a89a6044b89f2190583780e7ec519acf",
+      "path": "rooms/nodecode-channel-xchat",
+      "description": "Talk to nodecode over X Chat: X's end-to-end encrypted direct messages",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode-channel-kit",
+        "ironclad/digest/sha256"
+      ],
+      "credits": {
+        "author": "NousResearch",
+        "repo": "NousResearch/hermes-official-plugins",
+        "commit": "e7a218f26db88426ab3e7376f0e000b6e356f5e7",
+        "license": "MIT"
+      }
     },
     {
       "name": "nodecode-chat-length",
@@ -674,6 +1535,23 @@
         "author": "MadeByBrain",
         "repo": "MadeByBrain/hermes-chat-length",
         "commit": "1759b26a66c7b4d54703186cc867a5869baa4f12",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-chatto",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "rooms/nodecode-chatto",
+      "description": "Talk to nodecode through a Chatto server",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode-channel-kit"
+      ],
+      "credits": {
+        "author": "jrimmer",
+        "repo": "jrimmer/hermes-chatto-plugin",
+        "commit": "aab0a20635cb578253a8014bc8d93e1b32f020fc",
         "license": "MIT"
       }
     },
@@ -803,6 +1681,24 @@
       ]
     },
     {
+      "name": "nodecode-cloud-files",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-cloud-files",
+      "description": "Cloud Files: list, search, read, save and create folders in the folders you expose",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "sb-posix"
+      ],
+      "credits": {
+        "author": "electricsheephq",
+        "repo": "electricsheephq/hermes-cloud-file-manager",
+        "commit": "9db37a6575852cc7bd4aa23b212ec6a52b915ac5",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-cloudflare-ai-gateway",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
@@ -840,6 +1736,23 @@
       "depends_on": [
         "nodecode"
       ]
+    },
+    {
+      "name": "nodecode-codex-truly",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-codex-truly",
+      "description": "Codex Truly: the real context window of a Codex subscription, measured and written",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "kyssta-exe",
+        "repo": "kyssta-exe/hermes-codex-truly",
+        "commit": "1913d2a0a4b2dd3e4283af5c78241de4d3a2995e",
+        "license": "MIT"
+      }
     },
     {
       "name": "nodecode-cognee",
@@ -893,6 +1806,30 @@
       }
     },
     {
+      "name": "nodecode-commandcode",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "db0f15f2fe4448976e715fdd76f3ce0088990dc2",
+      "path": "providers/nodecode-commandcode",
+      "description": "Command Code: its CLI's /alpha/generate wire as a Nodecode provider lane",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "NanamiMio",
+        "repo": "NanamiMio/hermes-commandcode-oauth",
+        "commit": "e51eb61613604aefbcf3203c8fcce531706232ee",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Command Code",
+          "provider": "commandcode",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
       "name": "nodecode-corpus",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "18708de9f4b79afbc3643f1eb064b84684826efc",
@@ -941,6 +1878,23 @@
         "repo": "mblauser/hermes-plugin-crawl4ai",
         "commit": "6eb0842a39e2d89fb02ca85512945700dbebdc86",
         "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-crew",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-crew",
+      "description": "Cards with a contract that are done only when their proof command exits 0",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "macd2",
+        "repo": "macd2/Crew",
+        "commit": "ffb0e0c1d11a5fb3d36c3e34671bbd4c2cc02b6f",
+        "license": "Apache-2.0"
       }
     },
     {
@@ -1058,6 +2012,23 @@
       }
     },
     {
+      "name": "nodecode-debug-desk",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-debug-desk",
+      "description": "Today's git digest and the last failed shell command the agent ran",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "aydnOktay",
+        "repo": "aydnOktay/hermes-debug-desk",
+        "commit": "57cbd4d23eba978dc9a53ab6387a84c336992b74",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-decisions",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "344e1910c9922b62e580c8d625eada439a66b46e",
@@ -1106,6 +2077,24 @@
         "repo": "annalinneajohansson82/hermes-defuddle",
         "commit": "d28bd52eed30c397a45f0b2aba869a28ca4789c4",
         "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-degeneracy-guard",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "adbcc0c397d58cf740f58c2200d1a25d5769bd01",
+      "path": "tools/nodecode-degeneracy-guard",
+      "description": "Asks about a tool call whose argument looks like a repetition loop",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "simin-yuan",
+        "repo": "simin-yuan/hermes-degeneracy-guard",
+        "commit": "ffc28d0ab9ac6b6c0cbb118ed5fb0c06909a3dc1",
+        "license": "Apache-2.0"
       }
     },
     {
@@ -1178,6 +2167,23 @@
       }
     },
     {
+      "name": "nodecode-disciplined-vibe-coding",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "eb9281abff500d753b45c3a9c06749c97119a413",
+      "path": "tools/nodecode-disciplined-vibe-coding",
+      "description": "Disciplined vibe coding: eleven skills that run a coding task through intake, plan, build and verify",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "bmtrnavsky",
+        "repo": "bmtrnavsky/disciplined-vibe-coding",
+        "commit": "ac4de52dc8baf9ece90e3a2bab749152ae93a91b",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-discord-presence",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "92dd13040e7e50936be0c01bd4ec95df9332924c",
@@ -1242,6 +2248,23 @@
         "author": "mojomast",
         "repo": "mojomast/hermes-aircraft-doppler-geolocation",
         "commit": "14b4b0c841de0a77c0eb405a311acc540d3a1b58",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-dreaming",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-dreaming",
+      "description": "Nightly memory consolidation: a fact is kept once it comes back on separate days",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "itpartypattaya",
+        "repo": "itpartypattaya/hermes-dreaming",
+        "commit": "21878d3ec8752283dd7ee69a803c63bb989c1740",
         "license": "MIT"
       }
     },
@@ -1365,6 +2388,23 @@
       }
     },
     {
+      "name": "nodecode-epistemic",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-epistemic",
+      "description": "Records a prediction before a check, compares the result and keeps the case on this machine",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "quangphucqp",
+        "repo": "quangphucqp/epistemic-harness",
+        "commit": "5abd0dc482096c3f64379115fc79cc96e4e7203a",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-ethics-filter",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "ea83e77d510463c30ae7fbaca1c3f493a2f4c052",
@@ -1396,6 +2436,24 @@
         "repo": "keppy/hermes-plugin-evalroute",
         "commit": "12fc0397e47ae60bcf45eba4c1529971b3e032a9",
         "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-eventforge",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "b0062469df654e6aec8cb534de5ef26f8075f093",
+      "path": "tools/nodecode-eventforge",
+      "description": "EventForge: verified provider events, workspace memory, pending action approvals and workflows from one self-hosted control plane",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode",
+        "quri"
+      ],
+      "credits": {
+        "author": "sinequix",
+        "repo": "sinequix/eventforge",
+        "commit": "1b556629b6a20d1f8194beaab8c38253cd837c64",
+        "license": "Apache-2.0"
       }
     },
     {
@@ -1468,6 +2526,23 @@
       }
     },
     {
+      "name": "nodecode-field-notes",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-field-notes",
+      "description": "Field Notes: pitfalls, local patches and a read-only check that each patch survived",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "itpartypattaya",
+        "repo": "itpartypattaya/hermes-field-notes",
+        "commit": "74b566dd49ce6a9f249b7d1e5e12d25895592d42",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-file-tray",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "3ea23d6e1a0e2a4b687ddaeda93eda70a0acf966",
@@ -1481,6 +2556,23 @@
         "author": "aydnOktay",
         "repo": "aydnOktay/hermes-file-tray",
         "commit": "275f040af145b6b3f9660487b7d35821d33d5aca",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-financial-datasets",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-financial-datasets",
+      "description": "Financial Datasets: statements, prices, SEC filings, ownership, KPIs, news, macro data and a screener, as 28 tools",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "financial-datasets",
+        "repo": "financial-datasets/hermes-plugin",
+        "commit": "6745cb6261f86895364579d897be2b6067f117f1",
         "license": "MIT"
       }
     },
@@ -1519,6 +2611,23 @@
       }
     },
     {
+      "name": "nodecode-fmsg",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-fmsg",
+      "description": "fmsg: an fmsg address of the agent's own, with threaded send, inbox and thread reads",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "markmnl",
+        "repo": "markmnl/hermes-fmsg",
+        "commit": "562f45a48a6b10504c8d6ff5c677f1ec990e6b7b",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-followups",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "c908ae5e20ebeaed0918e1d4f0e91284b0a100d6",
@@ -1536,6 +2645,30 @@
       }
     },
     {
+      "name": "nodecode-fortytwo",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "a80f18371e758de792b8732d76fa0ba7ee42e390",
+      "path": "providers/nodecode-fortytwo",
+      "description": "Fortytwo: Qwen3.8 27B on Fortytwo's API as a Nodecode provider",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Fortytwo-Network",
+        "repo": "Fortytwo-Network/fortytwo-hermes",
+        "commit": "91c8f521ab357530c91a9660bd8f2db37571c1c8",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Fortytwo",
+          "provider": "fortytwo",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
       "name": "nodecode-frihet",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "3cc0a4641f1ae7f148899990037ad79ab91cb1d8",
@@ -1549,6 +2682,23 @@
         "author": "Frihet-io",
         "repo": "Frihet-io/hermes-frihet",
         "commit": "72493236b16c5e1e2b6a5ada3674781a6da180a1",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-fusion",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "517e412296048c17c2dc10d92393e2df12e1e871",
+      "path": "tools/nodecode-fusion",
+      "description": "The models this machine's agent harnesses can call, tiered into Frontier / Middle Manager / Frontier rosters, with a plan-packet validator",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "BoredSexyJordan",
+        "repo": "BoredSexyJordan/hermes-fusion",
+        "commit": "edab6a6d17838d4d9a1525a2a7d3500c62694e17",
         "license": "MIT"
       }
     },
@@ -1583,6 +2733,23 @@
         "author": "GenesisTechAT",
         "repo": "GenesisTechAT/genesispay-agent-skill",
         "commit": "e10a628540aea384b6f12f9cea60c6d5bf76fe8a",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-ghost-call",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "522ad4336b4c373a655ac0797e45c0c5094c03c8",
+      "path": "tools/nodecode-ghost-call",
+      "description": "Ghost Call: one-line hints while the operator is on a call, and a post-call summary",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "winchxyz",
+        "repo": "winchxyz/hermes-ghost-call",
+        "commit": "b670ff8a930a02aff8afe2c39994bcf4645654ac",
         "license": "MIT"
       }
     },
@@ -1705,6 +2872,64 @@
           "provider": "gitlab-duo-agent",
           "name": "GitLab Duo Agent",
           "sign_in": "/gitlab-duo-agent login"
+        }
+      ]
+    },
+    {
+      "name": "nodecode-glasser",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "9479a229c8a2398ce97ca5a6b651a9f3ea7ba007",
+      "path": "tools/nodecode-glasser",
+      "description": "Glasser: search, inspect and run 1,000+ pay-per-call data endpoints over its MCP server",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "glasser-ai",
+        "repo": "glasser-ai/hermes-plugin-glasser",
+        "commit": "79a2f5a343735548d270f87309a44ad4d32c2ecc",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-godot",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "7ba479f18b2cb8a71c45be7fe9cecdfd3fddc65b",
+      "path": "tools/nodecode-godot",
+      "description": "godot: a live Godot 4 editor - scene tree, nodes, batches, animation, play and screenshots",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Tormen28",
+        "repo": "Tormen28/argos",
+        "commit": "ab194154310cf4a44cee932d7c33f7fefb42c95d",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-gondola",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "e40e54d2a6f97b028b706c10826e018f6ee3fb3f",
+      "path": "providers/nodecode-gondola",
+      "description": "Gondola: a USDC-settled marketplace for Venice AI inference, as a provider, with its mixed catalog filtered to chat models",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Gondola-Market",
+        "repo": "Gondola-Market/hermes-gondola-provider",
+        "commit": "ad3f352b6a9814f1b550c819bee5ef2fb92a1851",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Gondola",
+          "provider": "gondola",
+          "sign_in": "key"
         }
       ]
     },
@@ -1841,6 +3066,30 @@
       }
     },
     {
+      "name": "nodecode-hashference",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "14853b1869609c5e9a2ec66e2524efaaee31602c",
+      "path": "providers/nodecode-hashference",
+      "description": "Hashference: its models as a provider, each sized by the input and output limits its catalog states",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "0xalank",
+        "repo": "0xalank/hermes-hashference-provider",
+        "commit": "82700f5377a46f0e7bd482c907ed04090b6305be",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Hashference",
+          "provider": "hashference",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
       "name": "nodecode-hass-statistics",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "945044810f757b06e9eebd01805925e5a1e3e09b",
@@ -1922,6 +3171,23 @@
         "author": "RegeneratusLabs",
         "repo": "RegeneratusLabs/hermes-band",
         "commit": "c9dec797d9bf29fd5e09be538952c7db9bace8c8",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-hermes-herald",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-hermes-herald",
+      "description": "Hermes Herald: dispatch tasks to a Hermes Agent API server, poll, cancel, chat and list its models",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "bennybuoy",
+        "repo": "bennybuoy/hermes-herald",
+        "commit": "1d185a9e0f4fbfa141447be401903cc80407e1cb",
         "license": "MIT"
       }
     },
@@ -2045,6 +3311,23 @@
       }
     },
     {
+      "name": "nodecode-image-utils",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-image-utils",
+      "description": "Inspect, resize, crop, rotate, convert and shrink local image files, in-process",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "MazenMkhinini",
+        "repo": "MazenMkhinini/hermes-image-plugin",
+        "commit": "c4123fbdb315137b40e4c5b4b5fd3eb2298dae66",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-imagegen",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "548efed290bfe74212e131634e32b1c86b7ff6b3",
@@ -2092,6 +3375,23 @@
         "author": "indexnetwork",
         "repo": "indexnetwork/hermes-plugin",
         "commit": "1214c6179d00ccc5f6e27454385f3fd0abbaf845",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-innernet",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "e5e4f9cf424317e6a3445beb1c263a9af0cc4f22",
+      "path": "tools/nodecode-innernet",
+      "description": "innernet: one hosted memory across AI tools - projects, decisions, tasks and handoffs",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "your-innernet",
+        "repo": "your-innernet/innernet-mcp",
+        "commit": "9da4f24e04dffc526129c11546eb4bb2ef60ef81",
         "license": "MIT"
       }
     },
@@ -2164,6 +3464,40 @@
       }
     },
     {
+      "name": "nodecode-jet-browser",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-jet-browser",
+      "description": "Jet Browser's acceptance check in a network-isolated container",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "masakaai",
+        "repo": "masakaai/jet-browser",
+        "commit": "1b0b10feb70e52bde844ba4e1cb7c35600af4b35",
+        "license": "Apache-2.0"
+      }
+    },
+    {
+      "name": "nodecode-jev",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-jev",
+      "description": "Jev: advisory typed judgments (triage, next step, relevance) called through eval",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ourines",
+        "repo": "ourines/hermes-jev",
+        "commit": "28a4ea390f80d97fcdc8c20d6b630dfe2de645de",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-jev-curator",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "e2e9097832fddcef9b451501ebaa1c5da227b8a0",
@@ -2228,6 +3562,23 @@
         "author": "Totoro-qaq",
         "repo": "Totoro-qaq/hermes-jot",
         "commit": "b65b550108c8e742cc5737055213da947dc54e0f",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-kame-rotate",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-kame-rotate",
+      "description": "One chat completion through a rotating pool of API keys: the healthiest key per call, the next key instead of a failed one",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Kame696",
+        "repo": "Kame696/kame-api-rotation-for-hermes",
+        "commit": "5e4a12f249f679ae5dcbf0d22e4ffbfeba4e5e2b",
         "license": "MIT"
       }
     },
@@ -2319,6 +3670,40 @@
       }
     },
     {
+      "name": "nodecode-kokpit",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-kokpit",
+      "description": "Kokpit: your own Markdown vault - brief, threads, capture, night pass",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "sahindemirbas",
+        "repo": "sahindemirbas/kokpit",
+        "commit": "21112512fcb8d5fa24efc1558e9b50195eb031a0",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-kumiho-memory",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-kumiho-memory",
+      "description": "Kumiho Cloud memory: recall, save and retire decisions, preferences and facts across sessions",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "KumihoIO",
+        "repo": "KumihoIO/kumiho-plugins",
+        "commit": "d4811200fa22225ae245d2778b938a793d6d5af6",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-langfuse",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "9d401fad9068f065a7e26aea35fe1b677c0c45a7",
@@ -2366,6 +3751,23 @@
         "author": "electricsheephq",
         "repo": "electricsheephq/lcm-x",
         "commit": "984a40045372f1f24a87d060194786f4d1843b90",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-ledgerline",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-ledgerline",
+      "description": "What every session costs, by day, model and session, with budgets",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Adolanium",
+        "repo": "Adolanium/hermes-ledgerline",
+        "commit": "a89efceab1ff5eb0cc3f58c0482c0f1d368a6d1b",
         "license": "MIT"
       }
     },
@@ -2545,6 +3947,23 @@
       }
     },
     {
+      "name": "nodecode-maqami-travel",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-maqami-travel",
+      "description": "MAQAMI travel: live hotel and flight rates, and a checkout link on book.maqami.co",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "negm17111995",
+        "repo": "negm17111995/mcp-server",
+        "commit": "6478de2d093fcf9bdd3c5dbff6d6ef267dcb56ae",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-markdown-new",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "7ee4d203d586f62f6c19d4d4eb6f9cf4efa3f659",
@@ -2575,6 +3994,24 @@
         "author": "markifact",
         "repo": "markifact/markifact-mcp",
         "commit": "9a873931b6138970888d2a9102a8037dbbd174a5",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-mcp-creator",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-mcp-creator",
+      "description": "An MCP server's tools as a portable skill: introspect, mine, scaffold, validate, install, drift, review",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "shasht"
+      ],
+      "credits": {
+        "author": "tonbistudio",
+        "repo": "tonbistudio/hermes-mcp-plugin-creator",
+        "commit": "0bcd7023ce9764a01551753a3b6800c4fe695047",
         "license": "MIT"
       }
     },
@@ -2681,6 +4118,23 @@
       }
     },
     {
+      "name": "nodecode-memlock",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-memlock",
+      "description": "Standing instructions the operator pins, re-asserted at every turn",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Sahil-SS9",
+        "repo": "Sahil-SS9/hermes-memlock",
+        "commit": "123b9fd252d6fc2c9c7c4f254164915874aa54d5",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-memoria",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "f8d5e038dc537ef4f6995c7a45af251254ca7a66",
@@ -2729,6 +4183,23 @@
         "repo": "Markgatcha/memos",
         "commit": "af8fa31e01078e4d5e38210b61acdf90f6d70581",
         "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-memtomem",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-memtomem",
+      "description": "memtomem: markdown notes the model saves, searches and recalls, shared with your other agents",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "memtomem",
+        "repo": "memtomem/memtomem",
+        "commit": "b440f108ad42e349a1518c0dcf67bb23f0240936",
+        "license": "Apache-2.0"
       }
     },
     {
@@ -2783,6 +4254,44 @@
       }
     },
     {
+      "name": "nodecode-minecraft",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "rooms/nodecode-minecraft",
+      "description": "Minecraft: talk to the agent in a server's in-game chat",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "usocket",
+        "chipz",
+        "salza2",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "kyssta-exe",
+        "repo": "kyssta-exe/hermes-minecraft-gateway",
+        "commit": "8ff37a626439caecb9ceb724b5da7718eb77a8b1",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-minimax-video",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "fa2832e3125381f14d9228595ae1909d451ffb06",
+      "path": "tools/nodecode-minimax-video",
+      "description": "MiniMax Hailuo video: generate_video, video_status and /video",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "rriggs",
+        "repo": "rriggs/hermes-plugin-minimax-video",
+        "commit": "759bec0f124c50e868facc8da5e6cf054403d761",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-minimizer",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "3a344ce063babe21d024952aa4b50821670fb9a4",
@@ -2796,6 +4305,64 @@
         "author": "nosliwhtes",
         "repo": "nosliwhtes/hermes-minimizer",
         "commit": "d209ed0824e2787cd6454bd4b060dbf0381b7b79",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-mistral-vibe",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "2bb336822ec37cbc01d5347e24779536397a204d",
+      "path": "providers/nodecode-mistral-vibe",
+      "description": "Mistral Vibe: the browser sign-in and the model lane of an unofficial Mistral Vibe client",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "nebneo",
+        "repo": "nebneo/hermes-mistral-vibe",
+        "commit": "c0d7bc8d11306e18499c84dd94cc3581de550e55",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Mistral Vibe",
+          "provider": "mistral-vibe",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
+      "name": "nodecode-mock-review",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-mock-review",
+      "description": "Review boards for UI mockups: decisions marked on a page, read back as one digest",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "apelabs-dev",
+        "repo": "apelabs-dev/hermes-mock-review",
+        "commit": "1c933e7417faf8e72d9b7f195fb24c7fb2fb7502",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-model-presets",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-model-presets",
+      "description": "Model presets: named model, provider and reasoning-effort picks, landed with /preset or one tool call",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "will-lynas",
+        "repo": "will-lynas/hermes-model-presets",
+        "commit": "27eec57bc17d92d931a025ed333b330dd17636e5",
         "license": "MIT"
       }
     },
@@ -2868,6 +4435,23 @@
       }
     },
     {
+      "name": "nodecode-mpp",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-mpp",
+      "description": "Payment-aware HTTP: answer an MPP 402 challenge and retry the request",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "tempoxyz",
+        "repo": "tempoxyz/hermes-mpp",
+        "commit": "a0782b7024ad0256cceede338754b466ded1df06",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-mqtt",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "c695bf522976e8c81f82ee3a69d9b533d945bfc3",
@@ -2920,6 +4504,23 @@
       ]
     },
     {
+      "name": "nodecode-muse-harness",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-muse-harness",
+      "description": "One Muse Code turn over MSP, from the local muse executable",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "SnoobieJunes",
+        "repo": "SnoobieJunes/hermes-muse-harness",
+        "commit": "5cc2d060dee651345c75a75e4a52abb2272462be",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-myradio",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "903ecb113b0d19812742954a49a67c39f4a32c34",
@@ -2934,6 +4535,23 @@
         "repo": "newjordan/myradio",
         "commit": "66d611bad24f069a41b136b0672b39b9ab3cde12",
         "license": "Apache-2.0"
+      }
+    },
+    {
+      "name": "nodecode-nats",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-nats",
+      "description": "NATS JetStream: publish an event, pull a batch, from a session",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "atbrace",
+        "repo": "atbrace/hermes-jetstream",
+        "commit": "4508957d1889ddb625c8bfb1eef7c822f2761349",
+        "license": "MIT"
       }
     },
     {
@@ -2988,6 +4606,30 @@
       }
     },
     {
+      "name": "nodecode-ngrok-ai-gateway",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "5773863d2c78dd276936f031eebb8d7bbfeff6ef",
+      "path": "providers/nodecode-ngrok-ai-gateway",
+      "description": "ngrok AI Gateway: one access key for every model provider, with failover",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ngrok",
+        "repo": "ngrok/hermes-ngrok",
+        "commit": "27baaa0e85e09581f05084fc318a0755774162e1",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "ngrok AI Gateway",
+          "provider": "ngrok",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
       "name": "nodecode-nowstamp",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "f1a30b992f7449f9b1a431ed69ace71a2235ad64",
@@ -3022,6 +4664,75 @@
       }
     },
     {
+      "name": "nodecode-nvidia-app",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-nvidia-app",
+      "description": "NVIDIA App: driver status, game optimisation and In-Game Overlay recording through the app's own local MCP server",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "NousResearch",
+        "repo": "NousResearch/hermes-nvidia",
+        "commit": "de75692b479dc88b95e428a9cb25091d3fb0e327",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-nvidia-broadcast",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-nvidia-broadcast",
+      "description": "NVIDIA Broadcast: camera, microphone and speaker effects, devices and file processing over its local MCP gateway",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "NousResearch",
+        "repo": "NousResearch/hermes-nvidia",
+        "commit": "de75692b479dc88b95e428a9cb25091d3fb0e327",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-nyx",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-nyx",
+      "description": "Nyx: local, single-user long-term memory on your own disk",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "sixgodgit",
+        "repo": "sixgodgit/nyx",
+        "commit": "101a64d308281f75ba200e28c1c73c4d6e1887ce",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-office",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-office",
+      "description": "Guarded Word, PowerPoint and Excel edits: inspect, search, replace, tracked changes, receipts",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "DECRUX9812",
+        "repo": "DECRUX9812/hermes-office",
+        "commit": "b53630cd0f0edc10645d63899a5a2515f8015fc5",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-ollama-cloud",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
@@ -3038,6 +4749,40 @@
           "sign_in": "key"
         }
       ]
+    },
+    {
+      "name": "nodecode-ollama-search",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "1b442d6785993404fadf9539bacca16e4a68015f",
+      "path": "tools/nodecode-ollama-search",
+      "description": "Web search and page fetch through Ollama Cloud, reusing an existing Ollama API key",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "rriggs",
+        "repo": "rriggs/hermes-plugin-ollama-cloud-search",
+        "commit": "9c739a9ea5985e0ba86c20d7160af06382c2198e",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-omnivoice",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-omnivoice",
+      "description": "OmniVoice speech on this machine: a text becomes an audio file, by voice design or a reference clip",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ThaungThanHan",
+        "repo": "ThaungThanHan/hermes-omnivoice",
+        "commit": "21d2900c392247dc52d706fee956f08dbfc3c5ea",
+        "license": "Apache-2.0"
+      }
     },
     {
       "name": "nodecode-openai-codex",
@@ -3066,6 +4811,47 @@
       "license": "MIT",
       "depends_on": [
         "nodecode"
+      ]
+    },
+    {
+      "name": "nodecode-openalex",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-openalex",
+      "description": "OpenAlex scholarly search: works, authors, sources and citation graphs, with the price of each call",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Adolanium",
+        "repo": "Adolanium/hermes-plugin-openalex",
+        "commit": "d38a1ee2fb04df0f7ad136bd30bff5f2136fe0cd",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-opencode-free",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "providers/nodecode-opencode-free",
+      "description": "OpenCode Free: OpenCode's free models through the OpenCode CLI's ACP server",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "cryptobredda",
+        "repo": "cryptobredda/hermes-opencode-free-acp",
+        "commit": "edc25305e325754b450e41daf41c6ba5c028324f",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "OpenCode Free",
+          "provider": "opencode-free",
+          "sign_in": "external"
+        }
       ]
     },
     {
@@ -3100,6 +4886,23 @@
         "author": "okazakee",
         "repo": "okazakee/opencode-shepherd",
         "commit": "207a1443a5daa20e20824d13776794c0057cd539",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-openltm",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-openltm",
+      "description": "OpenLTM memory: local long-term memory the model stores facts in, links and recalls",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "RohiRIK",
+        "repo": "RohiRIK/OpenLtm",
+        "commit": "8ee2a8e4f9de60fcf16b37e0ea9c02c4d389ba35",
         "license": "MIT"
       }
     },
@@ -3149,6 +4952,23 @@
       }
     },
     {
+      "name": "nodecode-openspec",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-openspec",
+      "description": "OpenSpec: spec-driven development over a project's openspec/ folder",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "FelineStateMachine",
+        "repo": "FelineStateMachine/hermes-openspec",
+        "commit": "493b42cd95d2a30f967ede5a53eb22d1bd248fb9",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-optchat",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "1d98cb10e8aee199ca8250e3d668bf0718733e46",
@@ -3162,6 +4982,23 @@
         "author": "aska-digital",
         "repo": "aska-digital/optchat-memory",
         "commit": "7b0f3abd65b95996366d0495787c95af981ea587",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-optmem",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-optmem",
+      "description": "OptMem memory: an append-only local log with a decay tree, recall, compression and a bounded digest",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "rarf",
+        "repo": "rarf/optmem-hermes-plugin",
+        "commit": "2868af6620bf07958f833ca354fbeecf2a56b265",
         "license": "MIT"
       }
     },
@@ -3213,6 +5050,23 @@
         "author": "TicoraX",
         "repo": "TicoraX/OrqueHelx",
         "commit": "964896e44979b29755dd880c5eb2557909e88bf6",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-osint-map",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "e4bbdbe2d786f15529b27da4b2954f47099b7992",
+      "path": "tools/nodecode-osint-map",
+      "description": "OSINT Map: public situational feeds and passive recon as five tools, with no key",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Adolanium",
+        "repo": "Adolanium/hermes-osint-map",
+        "commit": "8254b9e872c2718e5ea228168db3f75fb77955de",
         "license": "MIT"
       }
     },
@@ -3330,6 +5184,23 @@
       ]
     },
     {
+      "name": "nodecode-pethost",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "c4a19357a1329d75768df74174330a806081fd07",
+      "path": "tools/nodecode-pethost",
+      "description": "Pethost: deploy and look after Docker Compose projects on your own machine",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "pethost-dev",
+        "repo": "pethost-dev/plugin",
+        "commit": "33f6947d88c60b6e84a8d9a646e96d25100f1c26",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-pii",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "e1044cb63c271a2faa9fe6a6d334e95115a78fb0",
@@ -3360,6 +5231,23 @@
         "author": "100yenadmin",
         "repo": "100yenadmin/hermes-plan-mode",
         "commit": "ee4a245fbc2b2d874f3a5021963bef6c358d17fb",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-plugin-guard",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "63ef59b25e88d5a482088bfe4148e081879283b9",
+      "path": "tools/nodecode-plugin-guard",
+      "description": "Static review of a plugin or cell folder: nothing in it is run",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "mauricemohr88-debug",
+        "repo": "mauricemohr88-debug/hermes-plugin-guard",
+        "commit": "857d881be77249c192c5fefa8254db186a7abbca",
         "license": "MIT"
       }
     },
@@ -3449,6 +5337,23 @@
       }
     },
     {
+      "name": "nodecode-project-manager",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-project-manager",
+      "description": "The git repositories under your own folders: branches, commits and what changed",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "AiSolve-me",
+        "repo": "AiSolve-me/hermes-project-manager",
+        "commit": "2de4269baafc7399b7d4f92ad71b1d39205caf7b",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-prompt-enhance",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "b42ded33145df21de22504ef64662f5aea139241",
@@ -3483,6 +5388,23 @@
       }
     },
     {
+      "name": "nodecode-prompt-studio",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "661dcaa5e239b3c5810c4207649cc0ce223c575e",
+      "path": "tools/nodecode-prompt-studio",
+      "description": "Builds a prompt step by step for the model that will read it",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "bwoliveira",
+        "repo": "bwoliveira/prompt-studio",
+        "commit": "ecead76f0b2ff4f46c09341c871e234eb1692a1a",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-proofgate",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "b40e82ae655ee095cd2abf297a483888b055858a",
@@ -3500,6 +5422,26 @@
       }
     },
     {
+      "name": "nodecode-protonmail",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "5b00fff37b1b0ddf1eab75cbd1366cf26e44ecdf",
+      "path": "tools/nodecode-protonmail",
+      "description": "Proton Mail without Bridge: folders, inbox, a decrypted message, the read flag",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "ironclad",
+        "cl-base64",
+        "babel"
+      ],
+      "credits": {
+        "author": "Maytrella007",
+        "repo": "Maytrella007/hermes-proton",
+        "commit": "3e0612848cf20116294f9ff58e74aadf34bc858e",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-protonpass",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "a0bdc6e91deb8fadc0acc6133aa02cafb89ace75",
@@ -3513,6 +5455,41 @@
         "author": "lucas-nicolas",
         "repo": "lucas-nicolas/hermes-protonpass",
         "commit": "b17cc05a92494aa1d6481c3f1b6ff14a241f7375",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-provenance",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-provenance",
+      "description": "Provenance gate: flags or refuses a memory write that states a user decision the user's own words do not back",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "simin-yuan",
+        "repo": "simin-yuan/hermes-provenance-gate",
+        "commit": "d8ded75deef198694639d8653c1834a26f3b0372",
+        "license": "Apache-2.0"
+      }
+    },
+    {
+      "name": "nodecode-pstack",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "1199364071fb6ea1b00512cc415859e214ac6807",
+      "path": "tools/nodecode-pstack",
+      "description": "Poteto's engineering playbooks: routes a task to a playbook and loads it whole",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Cloeille",
+        "repo": "Cloeille/pstack",
+        "commit": "d9454cc1ecba5f28b136deacdfe2df959cf7cdec",
         "license": "MIT"
       }
     },
@@ -3653,6 +5630,47 @@
       }
     },
     {
+      "name": "nodecode-remesher",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-remesher",
+      "description": "Remesher: one image into a GLB through your own Remesher CLI, with persistent job state and hashed artifacts",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "remesher",
+        "repo": "remesher/remesher",
+        "commit": "5f48a067722e10f0c08d368698fc03b05855bb89",
+        "license": "Apache-2.0"
+      }
+    },
+    {
+      "name": "nodecode-requesty",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "321338b15b6e989b83aa96705413557cccdc69d9",
+      "path": "providers/nodecode-requesty",
+      "description": "Requesty: an LLM gateway with managed routing policies, as a Nodecode provider",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "requestyai",
+        "repo": "requestyai/hermes-provider-requesty",
+        "commit": "aa4e37d7f09dfc1e98b915d740d09e8b1b44c98d",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Requesty",
+          "provider": "requesty",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
       "name": "nodecode-rex",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "ddd079a3afe9c32f59249b96d448e82c0434c6fd",
@@ -3666,6 +5684,23 @@
         "author": "kshitijk4poor",
         "repo": "kshitijk4poor/hermes-rex-plugin",
         "commit": "ee19fe921d8dd0c2f1cec14d8cb080a4126b0754",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-rocketchat",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "637063fea6ad49abdded6e9ec39b564b62517fd0",
+      "path": "tools/nodecode-rocketchat",
+      "description": "Rocket.Chat: list rooms, read history and threads, search, post, upload and DM",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "HalfbitStudio",
+        "repo": "HalfbitStudio/hermes-plugin-rocketchat",
+        "commit": "989a04cd5f09e57bdd88997940cd18e4d58415b2",
         "license": "MIT"
       }
     },
@@ -3687,6 +5722,23 @@
       }
     },
     {
+      "name": "nodecode-rtk",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-rtk",
+      "description": "Rewrite shell commands through the rtk binary before they run",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "kerrz2020",
+        "repo": "kerrz2020/hermes-rtk-rewrite",
+        "commit": "4c5f8a5abdfd7980cba5ef02df86b8efe52c00d6",
+        "license": "Apache-2.0"
+      }
+    },
+    {
       "name": "nodecode-rtk-backends",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "1fe1ddfffe854c9764ba82b1c356189199bf9226",
@@ -3702,6 +5754,87 @@
         "commit": "61701dd6e14c2392f7cebcac68f46680f3a428ee",
         "license": "Apache-2.0"
       }
+    },
+    {
+      "name": "nodecode-run-debugger",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "dc8d918a8473e967b7d900ad40fa3e47c475f880",
+      "path": "tools/nodecode-run-debugger",
+      "description": "Agent Run Debugger: an imported trace's timeline, diagnosis and inert replay, offline",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Sahil-SS9",
+        "repo": "Sahil-SS9/agent-run-debugger",
+        "commit": "f4eefefb47372afedee56618c89c6fbc5024ca2a",
+        "license": "Apache-2.0"
+      }
+    },
+    {
+      "name": "nodecode-sabi",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "providers/nodecode-sabi",
+      "description": "Sabi: the local routing proxy as a Nodecode provider, with its attribution headers",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "vizuh",
+        "repo": "vizuh/sabi",
+        "commit": "b59bd21b89fca091bf9ebcfb3082a4191e511da7",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Sabi",
+          "provider": "sabi"
+        }
+      ]
+    },
+    {
+      "name": "nodecode-scalekit",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "327616077bf834825b041b754871735b87496dfa",
+      "path": "tools/nodecode-scalekit",
+      "description": "Scalekit connectors: approve a connection, call a connector's tools, and proxy its API, as four tools the model calls",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "scalekit-inc",
+        "repo": "scalekit-inc/hermes-tools",
+        "commit": "35bfcedf59442377a930c4c3ed1c818ca425c11a",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-scaleway",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "f0e7913ea6cf0a39075d150ca09f40b41cec5425",
+      "path": "providers/nodecode-scaleway",
+      "description": "Scaleway Generative APIs: its European OpenAI-compatible models as a Nodecode provider",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "scaleway",
+        "repo": "scaleway/hermes-scaleway-provider",
+        "commit": "685726e5d544f84384d619e979b7a93359bdec55",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Scaleway",
+          "provider": "scaleway",
+          "sign_in": "key"
+        }
+      ]
     },
     {
       "name": "nodecode-screenrig",
@@ -3766,6 +5899,23 @@
       }
     },
     {
+      "name": "nodecode-sequenzy",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-sequenzy",
+      "description": "Sequenzy email marketing: subscribers, audience, campaigns, delivery stats and transactional sends",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Sequenzy",
+        "repo": "Sequenzy/skills",
+        "commit": "a28b9f1461d3483abbafdd7b404c49fe800c4d32",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-serpapi",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "42f892735b9cd118245b262727452a6783fc7a5c",
@@ -3800,6 +5950,23 @@
       }
     },
     {
+      "name": "nodecode-sgme",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-sgme",
+      "description": "SGME memory: tagged long-term recall, skills, wiki and care signals from a self-hosted engine",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "freehul",
+        "repo": "freehul/sgme",
+        "commit": "f12c9bfa2cc9f4a59420376cb91176abb882948b",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-shipframe",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "d027566d787fdfd46d0a18c3c6dd2a5641525593",
@@ -3817,6 +5984,23 @@
       }
     },
     {
+      "name": "nodecode-shodan",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-shodan",
+      "description": "Shodan: host intel, search, counts, DNS, CVEs and scanning, with a session credit budget",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Adolanium",
+        "repo": "Adolanium/hermes-plugin-shodan",
+        "commit": "d12828e9c90654bca598d45832cee2ef6454cf30",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-showreel",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "29ec86ff87ac28300aefb3030e2d614c9d9795e4",
@@ -3830,6 +6014,48 @@
         "author": "Duffey234",
         "repo": "Duffey234/hermes-showreel",
         "commit": "a8f404a0481408af8f56b514e47905dfd3565fa7",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-sigrex",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "061b1a2fec97a064b0d8bc3048f578af56e5ff24",
+      "path": "tools/nodecode-sigrex",
+      "description": "Sigrex: read and run your trading automation from the conversation",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "ironclad/digest/sha256"
+      ],
+      "credits": {
+        "author": "sigrexio",
+        "repo": "sigrexio/agent-plugin",
+        "commit": "05cea6ea3fc2dce28a39e680937dd8d7cb7bfd2b",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-sketch-pad",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-sketch-pad",
+      "description": "Sketch pad: draw with the mouse in a browser tab, and the PNG is saved where the model can look at it",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "clack",
+        "clack-handler-hunchentoot",
+        "hunchentoot",
+        "flexi-streams",
+        "usocket",
+        "cl-base64",
+        "bordeaux-threads"
+      ],
+      "credits": {
+        "author": "aydnOktay",
+        "repo": "aydnOktay/hermes-sketch-pad",
+        "commit": "de7cd07ff29666ca1bcc3897f13b39f9472fab55",
         "license": "MIT"
       }
     },
@@ -3881,6 +6107,40 @@
         "author": "moonlight-lupin",
         "repo": "moonlight-lupin/agent-skills",
         "commit": "79801c69e797f5f8efd619f8f451ca89d18c7240",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-skill-router",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "9e641464bd2a474b40829b573b0ce1666963fbd1",
+      "path": "tools/nodecode-skill-router",
+      "description": "TypeSafe skill routing: name the one kept skill that fits the request, before the model call",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "DECRUX9812",
+        "repo": "DECRUX9812/typesafe-skill-router",
+        "commit": "e6cdac26f9ed588b4a94b8a2f7f9f026e1b9faf3",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-slash-router",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-slash-router",
+      "description": "Send a misspelled or shortened /command to the live command it meant",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "raitoxlol",
+        "repo": "raitoxlol/hermes-slash-router",
+        "commit": "2088919f4c59927aa2d47f21bb12e639453c1a2a",
         "license": "MIT"
       }
     },
@@ -4134,6 +6394,23 @@
       }
     },
     {
+      "name": "nodecode-structured-aux",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-structured-aux",
+      "description": "Bounded OpenRouter decisions: judge a command, pick among tools, digest context",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "trajectoire-ai",
+        "repo": "trajectoire-ai/hermes-structured-aux-models",
+        "commit": "e5c49b081ad04adca2ee3edc601b09ede6cee4c5",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-super-artifacts",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "90c9a6a23b82811d30f97e4da4ac7d0858f8a9b0",
@@ -4232,6 +6509,23 @@
         "author": "dyiapanis",
         "repo": "dyiapanis/tabella",
         "commit": "4922d16c9d20ff7b4c2a3b4fbd0aa797f7be8d76",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-tabular",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-tabular",
+      "description": "Tabular: profile and split a delimited file, and the skill pack a tabular analysis starts from",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "frankiethull",
+        "repo": "frankiethull/hermes-tabular",
+        "commit": "c5b965086d0d5b8239703c2aa8a5df99b1eee5c3",
         "license": "MIT"
       }
     },
@@ -4389,6 +6683,30 @@
       }
     },
     {
+      "name": "nodecode-telnyx",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "1c6ca9274e444be6aa0325d46acabf160f5f9cea",
+      "path": "providers/nodecode-telnyx",
+      "description": "Telnyx: OpenAI-compatible inference, hosted open models and proxied frontier routes",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "team-telnyx",
+        "repo": "team-telnyx/hermes-inference-provider",
+        "commit": "f53c20e80f84b4a880a7f2b4f1ed2f8b3fa1d11c",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "Telnyx",
+          "provider": "telnyx",
+          "sign_in": "key"
+        }
+      ]
+    },
+    {
       "name": "nodecode-tenuo",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "001bbac2c95a8edfa6573da2f4e1f2f14967e344",
@@ -4491,6 +6809,40 @@
       }
     },
     {
+      "name": "nodecode-toolaria",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-toolaria",
+      "description": "Spills oversized tool results to disk and fetches them back by slice",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Sahil-SS9",
+        "repo": "Sahil-SS9/Toolaria",
+        "commit": "667df67ef5bd23160b1b87a93ebf895c122b6b17",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-town",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-town",
+      "description": "A pixel town of the running sessions: one resident per session, a building per tool, a page to watch",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "sxuff",
+        "repo": "sxuff/hermes-town",
+        "commit": "f3b89401fafde0cd3ebaaccf01ea9e658bc66ff9",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-tracekit",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "78769a1acd50ce67f08b8f760330c8d9863b34c9",
@@ -4542,6 +6894,40 @@
       }
     },
     {
+      "name": "nodecode-trove",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-trove",
+      "description": "Lossless recall: search, read and cite every session's durable log",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "misterdas",
+        "repo": "misterdas/hermes-trove",
+        "commit": "69c673eeb2fcbaf12e9b88451ad1f627a88bc930",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-ttsbuddy",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "5d9468251720054b0c196fa1bede5fbe540c9a14",
+      "path": "tools/nodecode-ttsbuddy",
+      "description": "TTS Buddy speech: synthesize an MP3, pick a voice, recover a job",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ngelik",
+        "repo": "ngelik/ttsbuddy-cli",
+        "commit": "cb7af8ab874ab4643041a12cb6723c24ea787a66",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-twenty-crm",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "ce316971de58ab6ef0c7fb0dcd93927bf26fe285",
@@ -4570,6 +6956,23 @@
       ]
     },
     {
+      "name": "nodecode-umt",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-umt",
+      "description": "Hacker News, arXiv and npm lookups: the zero-config servers of Universal MCP Toolkit, as one cell",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Markgatcha",
+        "repo": "Markgatcha/universal-mcp-toolkit",
+        "commit": "b6eb997c316de472318ca658d6d7b57b62ca13d0",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-unbrowse",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "43a70c18db9b5e73d7df5400a98dbe1179960408",
@@ -4583,6 +6986,40 @@
         "author": "unbrowse-ai",
         "repo": "unbrowse-ai/unbrowse",
         "commit": "a82c59dfb05583836ecfa21fdc3f8a2ea73bfb76",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-understudy",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "6978d636ba3dfd9a96cd714b560c580d8cac7e03",
+      "path": "tools/nodecode-understudy",
+      "description": "Audition cheaper models on your own past decisions: takeover rate, misses, tokens",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "stffinfcti",
+        "repo": "stffinfcti/understudy",
+        "commit": "e0920f9e3641f0e24afe6ee01b21322c070920fd",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-undo",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "6f9a064c3df6adc36bce4dbe8afe7a0653023d2b",
+      "path": "tools/nodecode-undo",
+      "description": "Put back the files an agent deleted or overwrote",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Moodtuner997",
+        "repo": "Moodtuner997/hermes-undo-effects",
+        "commit": "f02de8ca69104f44b9b3ec78155d7152412b9e97",
         "license": "MIT"
       }
     },
@@ -4638,6 +7075,60 @@
       }
     },
     {
+      "name": "nodecode-ux3",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "8761b0fda581d2709f75123fc8d83282f325e7fc",
+      "path": "tools/nodecode-ux3",
+      "description": "Product judgment across user, evidence and business flows before execution",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "cis2042",
+        "repo": "cis2042/ux3-product-design-harness",
+        "commit": "48965c6b501f61ebbb8130c9c2e4f9af08922b9f",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-vault",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-vault",
+      "description": "A local secret store sealed with AES-256-GCM: hv: refs, a mapping to the environment, and a command run under it",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "ironclad",
+        "ironclad/aead/gcm",
+        "ironclad/cipher/aes"
+      ],
+      "credits": {
+        "author": "Guerilla-ops",
+        "repo": "Guerilla-ops/floorvault",
+        "commit": "62e41853d1d9bf4d84f3ff22d3755d9762efdd3c",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-vaultknox",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "ec1d0325102cca62f51614573c9009dbf255e346",
+      "path": "tools/nodecode-vaultknox",
+      "description": "API keys, tokens and passwords redacted from chat in both directions",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Ufonik88",
+        "repo": "Ufonik88/Hermes-VaultKnox",
+        "commit": "8aea272fd9b071615fcd0c93a38b760485673316",
+        "license": "Apache-2.0"
+      }
+    },
+    {
       "name": "nodecode-venice-web",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "50d4cdff993fd99f9191127030f647f5b2e85f07",
@@ -4651,6 +7142,23 @@
         "author": "MnrGreg",
         "repo": "MnrGreg/hermes-venice-web",
         "commit": "dcc286fc40544f4489831ff246de8030fd0417fa",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-verifier",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-verifier",
+      "description": "A second model reviews each turn and can veto a risky call before it runs",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "am423",
+        "repo": "am423/hermes-verifier",
+        "commit": "514ff4a7a937e391fca763ba3c9732103f351531",
         "license": "MIT"
       }
     },
@@ -4768,6 +7276,23 @@
       }
     },
     {
+      "name": "nodecode-wechat-assistant",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "91bc8bc5b46dfa8e9d61e8eb4407028d28dd2e3b",
+      "path": "tools/nodecode-wechat-assistant",
+      "description": "Local relationship memory for WeChat contacts",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "harrylabsj",
+        "repo": "harrylabsj/hermes-plugin-wechat-social-assistant",
+        "commit": "fbfc1bd23fc9494ad9c4433de2574954b5f5476f",
+        "license": "Apache-2.0"
+      }
+    },
+    {
       "name": "nodecode-weknora",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "4d71a5f6d6961e11bc38a7b682b1e6d6e65a30d8",
@@ -4782,6 +7307,74 @@
         "repo": "Tencent/WeKnora",
         "commit": "e3fb2335bf3f8cadd32142380c60b2677a27bf99",
         "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-whoop",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-whoop",
+      "description": "WHOOP: recovery, sleep, strain, workouts and profile as five tools",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "davidmosiah",
+        "repo": "davidmosiah/whoop-mcp",
+        "commit": "d15516fa2671e9749d43531fe0f1f447d5632686",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-wikipedia",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "075be7db60a7f9dee516bb321e3c071cc3f2abfb",
+      "path": "tools/nodecode-wikipedia",
+      "description": "A Wikipedia article or one section of it, as a reference the model or /wiki reads",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "EloquentBrush0x",
+        "repo": "EloquentBrush0x/hermes-context-refs",
+        "commit": "0154f6bfaafc837cc4af78742e6db7c087d5b5a7",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-wolfmarkdown",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "1ccb2958cca8d8ceb2611499fc53aee2bafebb85",
+      "path": "tools/nodecode-wolfmarkdown",
+      "description": "Check, clean and prove Markdown files: structure and lint findings, plus integrity against the untouched source",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "WolfMarkTools",
+        "repo": "WolfMarkTools/WolfMarkDown",
+        "commit": "d9c1b4a7e31df41ed1e555f5d7c0a8f27e16c5ad",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-woof",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "76129ed402964985baadc1eb941fa3b522d75bf4",
+      "path": "tools/nodecode-woof",
+      "description": "WOOF weather simulations on this machine's GPU: plan, launch, watch and show the maps",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "recastsystems",
+        "repo": "recastsystems/hermes-woof",
+        "commit": "2c82b34eb386a490d25439757556f6bab84048af",
+        "license": "Apache-2.0"
       }
     },
     {
@@ -4815,6 +7408,24 @@
         "author": "jacobhausler",
         "repo": "jacobhausler/hermes-workflows",
         "commit": "464b4aa304960c89522e709d6b109d0fd08fe06e",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-writing-guard",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "050ed436e9cd1fd29a7601fceee51608d128df95",
+      "path": "tools/nodecode-writing-guard",
+      "description": "Dashes, stock AI phrases and du/Sie, reported under the answer or fixed as it streams",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "MadeByBrain",
+        "repo": "MadeByBrain/hermes-extensions",
+        "commit": "c18ef190635e386a627ba921c816dceeb28c2de8",
         "license": "MIT"
       }
     },
@@ -4906,6 +7517,60 @@
       }
     },
     {
+      "name": "nodecode-yandex-calendar",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "ce00a57484d3e9e95a1615a31900b5f9cb7f66b2",
+      "path": "tools/nodecode-yandex-calendar",
+      "description": "Yandex Calendar over CalDAV: list, create, update, answer, move and delete events",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "akinfold",
+        "repo": "akinfold/hermes-yandex-calendar",
+        "commit": "cad2a6b8e1cad82753b9f57d4f388645210702a0",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-yandex-disk",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "bb8290226e2fccd9c8e53cdc27013de346fd452b",
+      "path": "tools/nodecode-yandex-disk",
+      "description": "Yandex Disk: browse, read, write, upload, download, share, delete and restore files, with your own OAuth token",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "akinfold",
+        "repo": "akinfold/hermes-yandex-disk",
+        "commit": "32250084b6406169d18c9c98e985a6d53342d173",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-yandex-mail",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "f9e9d8cd29f46ea92a83c4e3cb009c2215301768",
+      "path": "tools/nodecode-yandex-mail",
+      "description": "Yandex Mail: search, read, flag, move and delete mail over IMAP, save attachments, send over SMTP",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "usocket",
+        "cl+ssl",
+        "cl-base64"
+      ],
+      "credits": {
+        "author": "akinfold",
+        "repo": "akinfold/hermes-yandex-mail",
+        "commit": "f44cf3aff9393d4dc3d420879469d1ebe4735c66",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-you",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "482db9b6c596ebbaa43a781a4b5fdd4120c132ba",
@@ -4956,6 +7621,47 @@
         "commit": "5a989368d0877c930e76fcc75ea125e7af7ea872",
         "license": "MIT"
       }
+    },
+    {
+      "name": "nodecode-zeromem",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "path": "tools/nodecode-zeromem",
+      "description": "Every turn verbatim in one local file, recalled with provenance",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ptaranat",
+        "repo": "ptaranat/zeromem",
+        "commit": "f7e669c47cc0f6c9867829c37af8e4fc2803fe15",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-zerosignal",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "014295aed85e0f7aad522bdbf3bfcb8d3f9385d5",
+      "path": "providers/nodecode-zerosignal",
+      "description": "ZeroSignal: private pay-per-request inference through the local zs-proxy",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "TxnLab",
+        "repo": "TxnLab/hermes-zerosignal-provider",
+        "commit": "ce1ba1f1603b4f191d3cd1aad284879df51a9f4a",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "ZeroSignal",
+          "provider": "zerosignal",
+          "sign_in": "key"
+        }
+      ]
     }
   ]
 }
