@@ -1,0 +1,21 @@
+{
+  // nodecode-refusal: everything here is optional. With no section at all
+  // the cell still reads every answer and, when one declined the request,
+  // says so and asks again once.
+  "refusal": {
+    // Put the request to the model again when its answer declined it.
+    "retry": true,
+    // How many times one declined answer is asked again before the cell
+    // leaves it alone.
+    "retries": 1,
+    // Your own words, in your own language: appended to the retry and
+    // carried by every request of a session the cell has armed. Empty
+    // means none, and nothing is appended anywhere.
+    "preprompt": "",
+    // What an armed session carries after a second refusal, when it is set.
+    "preprompt_escalated": "",
+    // A refusal that came with your preprompt in place: stop sending it
+    // ("disarm"), move to preprompt_escalated ("escalate"), or keep it.
+    "on_preprompt_refusal": "disarm"
+  }
+}

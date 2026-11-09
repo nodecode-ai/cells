@@ -1,0 +1,31 @@
+nodecode-refusal is a rewrite of 0ldev's 0ldev/refusal:
+
+  https://github.com/0ldev/refusal
+  commit b1bd080caeba423309d437f7df6ee564bd5d27dd (2026-11-08)
+  MIT License, Copyright (c) 2026 0ldev (LICENSE)
+
+The original is a plugin for another agent harness: it is handed every model
+response by that harness's middleware, and when the response declined the
+request it rewrites the response's metadata so the harness switches the turn
+to the next model in a fallback chain. This rewrite keeps that reading of an
+answer and reimplements it in Common Lisp against Nodecode's own seams:
+detect.lisp is the pattern tables and the detector (refusal/patterns.py and
+refusal/detector.py), reduced to the phrasings that carry the decision, with
+the same order of questions -- a deflection, then a partial answer, then an
+explicit decline, then an invocation of policy -- and with the technical
+inability escape kept. cell.lisp is the plugin's two middlewares as the two
+points Nodecode already has: a :FRAME hook that queues a session when a turn
+ends, read off the publishing thread, and a :ROUND hook that puts the
+operator's preprompt into a request about to be asked.
+
+What was left out, and why: the harness-specific fallback machinery, because
+Nodecode's own turn loop already retries on the next candidate when a
+provider signals a refusal -- what it cannot see is a model that declines in
+prose, which is the whole of what this cell adds, and it asks the same route
+again rather than moving the session to another model. The response-shape
+handling (OpenAI, Anthropic, Codex payloads and their finish_reason /
+stop_reason fields) is not needed, since the cell reads a turn's answer text,
+not a provider payload. The per-provider request injection shapes in
+preprompt.py collapse to the one seam Nodecode has. The persisted arming
+table is not kept: a session's level lives in this process and is forgotten
+when the cell stops, which is what the original does by default.
