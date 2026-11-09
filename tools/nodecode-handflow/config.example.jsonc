@@ -1,0 +1,11 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config. The declaration in cell.lisp is the authority;
+// this is an illustration of it. A present section is enabled; a
+// "enabled": false vetoes it. No key, no network: nothing here is required.
+{
+  "handflow": {
+    "enabled": true,
+    "state_dir": "",
+    "show_plan": true
+  }
+}
