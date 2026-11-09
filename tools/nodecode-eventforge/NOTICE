@@ -1,0 +1,44 @@
+nodecode-eventforge is a rewrite of sinequix's sinequix/eventforge:
+
+  https://github.com/sinequix/eventforge
+  commit 1b556629b6a20d1f8194beaab8c38253cd837c64
+  Apache License 2.0, Copyright 2026 EventForge contributors (LICENSE)
+
+Rewritten: the plugin's whole client surface against one EventForge control
+plane — ef_list_events (GET /events, with a payload trusted only when its
+signature was verified and otherwise withheld or wrapped as untrusted data),
+ef_emit_event (POST /events), ef_query_memory (GET /memory), 
+ef_list_pending_actions (GET /actions, the pending proposals with their
+proposal text, risk and expiry, oldest first), ef_approve_action
+(POST /actions/{id}/decision), ef_list_workflows (GET /workflows),
+ef_spawn_subagent (POST /agent-runs), ef_forge_mcp (POST /forge),
+ef_approve_forge (POST /forge/{id}/decision) and ef_listen_for_webhook
+(POST /relay/ensure), with their argument schemas, their workspace and
+project scoping, the UUID rule on every id a request path carries, and the
+/eventforge status, events and replay command — the last a read-only view of
+one stored event with the runs, action proposals and audit lines its id
+correlates. The Python (urllib, dataclasses, a per-call settings read) is
+Common Lisp here: nlk:http for the plane's routes, one section declaration
+for the settings, ten nlk:define-contract declarations for the tools'
+arguments, and a :tool hook in place of the plugin's post_tool_call hook,
+which writes the same one-line audit record ("<tool> ok in 12ms") into the
+plane's own /audit log without the call's arguments or its answer. The base
+URL rule is the plugin's: an absolute http(s) URL, plain http only on
+loopback, no credentials inside it, and the bearer token read from one
+environment variable and sent nowhere else.
+
+Left out: pre_llm_call, the hook that pushed newly verified events into the
+next model request's context, because a cell contributes to a turn through
+:tool and :frame hooks and the frame composer, not through a Hermes hook
+named for its own request; the same facts are a call away in ef_list_events,
+which the manual tells the model to make. pre_tool_call's approval gate is
+left out too: it asked Hermes to prompt a person before the four
+irreversible tools, where a cell states the same thing in each tool's
+description and leaves the prompt to the shell's own approval flow. The
+auto_start half of bundle.py — spawning the repository's prebuilt
+eventforge-standalone.cjs with node when /health was down — is not
+reproduced, because a cell does not bundle another product's executable:
+run the control plane yourself, or point the section at one already running.
+The read-only triage skill (skills/triage/SKILL.md) is folded into the
+manual the tools carry, since it taught the model to walk the same routes
+the tools already expose.
