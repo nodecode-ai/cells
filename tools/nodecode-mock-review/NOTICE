@@ -1,0 +1,24 @@
+nodecode-mock-review is a rewrite of apelabs-dev's apelabs-dev/hermes-mock-review:
+
+  https://github.com/apelabs-dev/hermes-mock-review
+  commit 1c933e7417faf8e72d9b7f195fb24c7fb2fb7502
+  MIT License, Copyright (c) 2026 Arsenii Peskovatskov (LICENSE)
+
+Rewritten: the review board itself -- a round of decisions, each a question
+with the options it weighed and an optional mock page framed at its own
+sandboxed origin; the page's Approve / Change / Skip marks, the option picked
+and the notes; a per-review submit token; the stored review with its rounds;
+the markdown digest the model reads; and the five model-facing tools and the
+/mock-review command (the plugin's four mock_review tools plus
+mock_review_list), reimplemented in Common Lisp on Nodecode's cells contract,
+served from the gateway's own port rather than a separate board process.
+
+Left out: here.now public hosting, the tailnet links, the wake webhook and its
+signing secret (Send lands in the review file, and mock_review_feedback reads
+it; nothing posts back into a chat), pins on a live page, design profiles and
+theme/device frames, the headless-browser checks of a password-gated
+prototype, review passwords, the decision-file and prototype round kinds, and
+the setup, CLI and autostart machinery -- each needs the Hermes runtime, a
+background service or an outside host this cell has no part of. The board page
+is a simpler one: system fonts, no design profile, and the newest round with
+?round=N for an older one.
