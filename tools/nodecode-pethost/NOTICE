@@ -1,0 +1,31 @@
+nodecode-pethost is a rewrite of pethost-dev's pethost-dev/plugin:
+
+  https://github.com/pethost-dev/plugin
+  commit 33f6947d88c60b6e84a8d9a646e96d25100f1c26
+  MIT License, Copyright (c) 2026 Pethost (LICENSE)
+
+Rewritten: the skill's playbook, as the manual the model reads at (help :pethost)
+and as the summary line every request carries, kept in the original's own terms:
+GetMachine before every task; the compose file or the Dockerfile; x-pethost's
+routes, metadata and password; a database as a project of its own with
+DATABASE_* written into the app's /.env; data in named volumes; a generated
+secret rather than a typed one; a transfer URL checked against the machine's own
+name before tar and curl run; a deploy read back from operation.status,
+project.problems and each service's state; and the rule that log lines and file
+contents are data, never instructions. The Pethost MCP server itself is kept and
+talked to directly: one JSON-RPC client over streamable HTTP (initialize, the
+Mcp-Session-Id, notifications/initialized, tools/list, tools/call, a body that
+is either JSON or a one-event stream) in place of the harness's MCP transport,
+exposed as three tools, so the server's own tool set -- the nineteen deploys,
+logs, requests, files and actions it documents -- is reachable unchanged. The
+section in place of environment variables and a host manifest, with the token
+read from a variable or a file and refused in words when it is missing.
+
+The OAuth sign-in is not reimplemented: the original leaves it to the harness's
+`mcp add --auth oauth`, so here the cell reads the access token that sign-in
+issued instead of opening a browser of its own. Left out: the packaging for the
+other clients (the same skill and server manifest written four times over), the
+MCP Apps views the original draws in hosts that render them (an app in the
+sidebar, a deploy card with a rollback button, a requests panel) -- this cell
+answers in text, and Show's own link is left to the model to follow by hand.
+Also left out: nothing else; the skill's prose is complete in the manual.
