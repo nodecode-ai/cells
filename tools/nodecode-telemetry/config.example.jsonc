@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "telemetry": {
+    "enabled": true,
+    "mode": "observe",       // observe records and warns; enforce refuses past a cap
+    "daily_usd": "5",        // US dollars a UTC day; "0" turns the cap off
+    "monthly_usd": "100",    // US dollars a calendar month; "0" turns it off
+    "session_usd": "0"       // one session's own daily cap; "0" for none
+  }
+}
