@@ -1,0 +1,26 @@
+nodecode-fast-chat is a rewrite of iyoda's iyoda/hermes-fast-chat:
+
+  https://github.com/iyoda/hermes-fast-chat
+  commit e244ada6f1a8f6bf08fc82e339c0f8ba31897e93
+  MIT License, Copyright (c) 2026 iyoda, Copyright (c) 2025 Nous Research (LICENSE)
+
+What was rewritten: the original registers one Hermes CLI command that opens a
+CLI or TUI session with an explicit model, provider and speed tier, leaving the
+profile's defaults alone. The rewrite is one Nodecode slash command, /fast-chat,
+that opens a session of this organism the same way: it reads the target from the
+line (PROVIDER/MODEL:EFFORT, or --provider and --effort), records that pick on
+the new session through the fact /models itself writes, and moves no default.
+The argument line keeps the original's shape -- a required model, an optional
+provider, an optional reasoning choice, a working directory, a trusted command
+of its own -- and gains an optional first prompt, so the session can start while
+the operator goes elsewhere.
+
+What was left out, and why: the Fast and ultrafast service tiers are a
+Hermes-provider billing feature that Hermes validates before it opens the
+frontend; Nodecode has no service tier, so the model's own reasoning rung is
+what the cell names instead, and the original's gateway bootstrap (its
+`gateway attach` handshake, its loopback control socket, its single-use ticket)
+has no counterpart here, because a Nodecode cell opens a session in the
+organism it already runs in rather than in a second process. There is no CLI or
+TUI frontend to start, so the cell answers the new session's id for /sessions
+rather than launching a terminal.
