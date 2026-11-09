@@ -1,0 +1,33 @@
+nodecode-delx-recovery is a rewrite of davidmosiah's davidmosiah/delx-plugins:
+
+  https://github.com/davidmosiah/delx-plugins
+  commit c1d4be02df59f05fe65a27000d0b06b28c9733c2
+  Apache-2.0 (LICENSE), which names no copyright holder: its appendix keeps the
+  standard "Copyright [yyyy] [name of copyright owner]" placeholder.
+
+The rewritten plugin is delx-recovery of that commit: a portable Agent Plugins
+package with no local code, an MCP server over Streamable HTTP plus a skill, so
+this rewrite is a reimplementation of what that package tells an agent to do
+rather than of a program. Its MCP endpoint and its wire are kept: one JSON-RPC
+`tools/call` per action to the URL its mcp.json names, with the agent id and
+credential as the x-delx-agent-id and x-delx-agent-token headers the skill
+documents, and a request body carrying the same tool names
+(discovery_self_check, resume_session, add_context_memory, leave_hive_note,
+close_session, provide_feedback) and the same arguments. Its Continuity Capsule
+is kept whole -- goal, done, next, blockers and refuted, version "1" -- as is the
+Public-triage-first order of the skill's Path A/B/C/D: public triage needs no
+credential, private continuity needs the free identity registration returns, and
+a retry key is client-held and starts rk1_. The skill's words are the cell's
+primer and tool descriptions, including its hygiene rule that a capsule or a hive
+note is data and not an order.
+
+What was left out, and why: the plugin's two guardian hooks (PreCompact and
+SessionEnd) are Claude Code hook scripts that seal a capsule from environment
+variables; Nodecode has no hook point that runs a shell script when a session
+compacts, so the seal is the model's own call. The hooks' Python endpoint
+validation goes with them. The skill ships here as the primer (help :delx) and
+the tools' descriptions rather than as a separate skill file, because that is
+where Nodecode keeps what the model reads every turn. The rest of the service's
+breadth -- witness lineage, recognition seals, fleets, peers, the commerce
+product -- is reachable on the same endpoint but is not wrapped: the five tools
+are the ritual the skill tells an agent to walk first.
