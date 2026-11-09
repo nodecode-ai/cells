@@ -1,0 +1,30 @@
+nodecode-telegram-business is a rewrite of NousResearch's NousResearch/hermes-labs-plugins:
+
+  https://github.com/NousResearch/hermes-labs-plugins
+  commit 4987918a068fcf4b3efbb584db5dd05e5f57c669
+  MIT License, Copyright (c) 2026 Nous Research (LICENSE)
+
+Rewritten: the observe-with-approval loop the plugin is — a business connection's
+customer messages read from the Bot API, one draft per customer chat, the draft
+rendered into the owner's DM with Send, Edit and Discard buttons, the button
+presses applied (a Send delivers with the connection's business_connection_id,
+an Edit makes the owner's next DM the outgoing text, a Discard drops it), the
+owner-only authorization, the draft TTL checked where a draft is acted on, the
+one-pending-draft rule that supersedes an older draft, the muted-chat list, the
+Send button hidden without can_reply, /biz and its pause/resume/off/on
+subcommands, and the shipped secretary persona. The plugin's asyncio handlers
+and SQLite store became three tools (tg_business_poll, tg_business_draft,
+tg_business_send), one JSON state file written 0600, and nlk:http for every
+Bot API call; the model the plugin used to call for its draft is the model
+reading the poll answer, so the persona travels in the poll answer.
+
+Left out: the host plugin's asynchronous plumbing — a per-chat debounce timer,
+the Python Telegram handler registrations (business_connection,
+business_message, edited_business_message, callback_query, and the private-DM
+edit capture at handler group -1), and the inline reply rendering helpers that
+sent rather than edited where Telegram refused an edit. A cell has no such
+handlers, so the model calls the tools: the draft DM is still the approval
+surface, and the debounce's effect (a burst becomes one draft) survives as the
+superseded status. Also left out: the SQLite schema and its migrations, which
+one JSON file replaces; the plugin's Markdown status dashboard, which /biz
+renders as text; and the tests' pytest fixtures, replaced by this cell's slice.
