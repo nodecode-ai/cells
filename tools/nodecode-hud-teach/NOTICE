@@ -1,0 +1,36 @@
+nodecode-hud-teach is a rewrite of iamlukethedev's iamlukethedev/hermes-hud-teach:
+
+  https://github.com/iamlukethedev/hermes-hud-teach
+  commit 41741e4a970a8b32545ddd303f3fc4d0b965bd5f
+  MIT License, Copyright (c) 2026 Luke The Dev (LICENSE)
+
+Rewritten: the whole teaching path, in Common Lisp and macOS's own programs. The
+teach_screen tool and its six actions -- capture, draw, clear, list, status,
+check -- with every argument it took (target, shapes with their kinds,
+colours, step badges, captions, dashed outlines and rect fills, the lesson
+title, steps and current step, the legend corner, the capture id, a TTL); the
+window list through osascript and System Events, with the app, title, position
+and size of each window and the refusal that names what is visible when a
+target matches nothing; the screenshot through screencapture and its shrink to
+a 1280-pixel JPEG through sips; the rule that a capture's frame size, bounds
+and app are remembered so a draw needs no numbers from the model, that a
+capture id older than the newest capture is refused, that a window which moved
+is followed while one which was resized is refused, and that a mark outside
+the picture it claims is refused; the shape validation and its limits; the
+legend corner picked away from the marks; the marks and the step card, drawn as
+a borderless always-on-top transparent overlay with the original's colours and
+halo badges; the TTL, the click that dismisses the marks, the idle exit, and
+the permission check with the one fix for each miss; the /teach command with
+check, demo, status, clear and stop; and the manual topic the original's skill
+taught from.
+
+Left out: the Hermes-only surfaces -- the Desktop status bar chip, its palette
+commands and the JSON socket IPC between the plugin and its overlay, which
+became a scene file the overlay polls; the Python Tk runtime, replaced by a
+Tcl/Tk script the cell writes, so Tcl/Tk must be on the Mac rather than inside
+Python; the pulsing badge of the current step; and click-through. The original
+reached into its own NSWindow through ctypes to make the marks ignore the
+mouse, which Tcl/Tk cannot do without an Objective-C bridge, so here a click on
+the marks takes them off instead of passing through. The bundled SKILL.md is
+not shipped as a skill file: its guidance is the tool description and the
+:teach manual topic, which ride every request and answer (help :teach).
