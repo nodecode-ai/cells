@@ -1,0 +1,25 @@
+nodecode-undo is a rewrite of Moodtuner997's Moodtuner997/hermes-undo-effects:
+
+  https://github.com/Moodtuner997/hermes-undo-effects
+  commit f02de8ca69104f44b9b3ec78155d7152412b9e97
+
+MIT, Copyright (c) 2026 Moodtuner997 (LICENSE)
+
+What was rewritten: the Hermes plugin's one `tool_execution` middleware, its
+`/undo-effects` slash command and its `hermes undo-effects` CLI subcommand
+became a Nodecode cell -- hooks around `write-file`, `edit` and `sh` (the three
+verbs that change files in a mono-tool organism), and one `/undo` command. The
+store keeps the original's shape: an entry per call that changed something, the
+bytes content-addressed under the home, a restore that refuses a path edited
+since and forces on request, and a snapshot taken before a restore so a restore
+can itself be undone. The protection of credential-looking names (`*.pem`,
+`id_*`, `.ssh`, ...) is kept as a list of names.
+
+What was left out: Hermes's own tool arguments (its `write_file`, `patch`,
+`terminal` and `execute_code` shapes and the shell parser they needed) are
+replaced by Nodecode's three verbs and by reading one simple `rm` or `mv`;
+`execute_code`'s "may have changed files" note has no counterpart because
+Nodecode's eval is the only tool and its sh is hooked. Entries carry no session
+id and no per-file mode, directories are not snapshotted, and there is no CLI
+subcommand. The store writes s-expression manifests rather than JSON, since
+nothing outside the cell reads them.
