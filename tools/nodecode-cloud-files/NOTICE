@@ -1,0 +1,32 @@
+nodecode-cloud-files is a rewrite of electricsheephq's electricsheephq/hermes-cloud-file-manager:
+
+  https://github.com/electricsheephq/hermes-cloud-file-manager
+  commit 9db37a6575852cc7bd4aa23b212ec6a52b915ac5
+  MIT License, Copyright (c) 2026 Electric Sheep (LICENSE)
+
+Rewritten: the plugin's file API as five model-facing tools -- files_list,
+files_search, files_read, files_save and files_mkdir -- with the folder model
+(roots, their ids and labels, absolute folders only), the path guard that
+refuses an absolute path, a parent traversal, a symbolic link out of the root
+and the folder Nodecode keeps its own config in, resolved segment by segment
+before anything is touched, the listing with directories first and its sort by
+name or mtime, the name search with * and ? globs, its skipped heavy folders
+and its visit cap, the whole-file read that answers the sha256 of the bytes
+read, the conflict-checked save that refuses to overwrite a file edited since
+it was read and writes through a staging name and a rename, and folder
+creation that answers which folders it made. The Python (FastAPI over the
+gateway) is Common Lisp here: the filesystem itself, one section declaration
+for the settings, and five nlk:define-contract declarations for the tools'
+arguments, so the schema the model is shown and the body that runs are one
+shape. The "/files" command puts the same folders in front of a person.
+
+Left out: the plugin's browser -- the Hermes Desktop tab with its tree, drag
+and drop, chunked upload of whole folders, image and PDF preview, the chat
+drop target, folder notes and the Google Drive import. Those are surfaces of
+Hermes Desktop and of the agent's own Google skill, and a cell has a shell
+and a tool call rather than a window; what a person browses here, they browse
+by asking, or with /files. Also left out: the chunked upload protocol
+(4 MiB parts, resume and abort) and the 24-hour sweep of its staging
+names -- the cell's own writes are whole files, staged as .cfm-<hex>.part
+and renamed into place -- and the download of a file as bytes, which a
+person does with the tools they already have.
