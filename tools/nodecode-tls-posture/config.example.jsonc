@@ -1,0 +1,11 @@
+{
+  // The tree the audit reads: / for this host, or the path a mounted image
+  // is under. Required — the cell refuses to start without it.
+  "root": "/",
+  // Report certificates expiring within this many days. Seven days or fewer
+  // is graded higher, because it is an outage nobody can plan around.
+  "expiry_days": 30,
+  // INFO-severity observations, such as a served certificate the audit
+  // never read.
+  "include_info": false
+}
