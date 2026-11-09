@@ -1,0 +1,32 @@
+nodecode-adaptive-effort is a rewrite of atostivint's atostivint/hermes-adaptive-effort:
+
+  https://github.com/atostivint/hermes-adaptive-effort
+  commit c84f1389670cdd5ec4607b13bd32c4809878c415
+
+MIT License, Copyright (c) 2026 Alexandre Tostivint and contributors (LICENSE)
+
+What was rewritten: the plugin's one job - ask a scorer how much reasoning a
+task deserves, turn the answer into a reasoning-effort level, and set that
+level on the outgoing request - as a Nodecode cell. Its rubric and thresholds
+(rubric.py, effort.py: 0 low, 1 medium, 2 high; under 0.5 low, under 1.5
+medium, else high), its question and the operator's classification_instructions,
+its System One request to TypeSafe and its jev-latest default (jev_client.py,
+custom_client.py), its env-var keys and its `custom' scorer all carry over.
+The effort is landed with the image's own pick (select-effort, what /think
+does) instead of a rewritten request field; the plugin's four modes become
+off / once / always at the :round point, its /hae status and history become
+/adaptive and an eval verb, and its bounded SQLite decision ledger becomes an
+in-memory ledger of max_turns.
+
+What was left out, and why: the OpenAI Decisions, OpenRouter Decisions,
+Cloudflare Clef and Nace Drex scorers each need a different wire and their own
+accounts, so the cell speaks the default System One route and any endpoint
+that answers it (openai_decision_client.py, openrouter_client.py,
+cloudflare_client.py, nace_client.py). The route's own named effort levels,
+dialogue context, continuation-downgrade votes, tool-error escalation,
+cache-aware dynamic trial, the scorer pause and the retry, the per-message
+Claude path, the desktop popup and the TUI status item all depended on
+Hermes's request pipeline, session tree and cache counters, which a Nodecode
+cell does not see; the label is therefore always the plugin's three-level
+rubric, clamped onto the rungs the session's own target admits. History does
+not survive a restart.
