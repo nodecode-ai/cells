@@ -1,0 +1,26 @@
+nodecode-machine-library is a rewrite of SpaceFrontiers's SpaceFrontiers/hermes-machine-library:
+
+  https://github.com/SpaceFrontiers/hermes-machine-library
+  commit 99a1bb70dd4992d4d0274e9af2ed3b6ab2a5922f
+  MIT, Copyright (c) 2026 Space Frontiers Inc. (LICENSE)
+
+The plugin was one web search provider: a plugin.yaml declaring a
+`machine-library` backend, an __init__.py whose register() handed Hermes a
+provider object, and a provider.py that called the Machine Library API with
+the key in MACHINELIBRARY_API_KEY, so that Hermes's web_search and
+web_extract verbs answered from it. This rewrite keeps both calls and both
+answer shapes -- POST /v2/search/ with a query and a limit of at most 20,
+read as numbered sources with the title, the public /r/ page, the byline,
+the matching passage and the identifier to cite; and the document fetch by
+/r/ page, DOI, arXiv, ISBN or standard identifier, read as the document's
+title, page, identifier and stored text, one url failing on its own line --
+and gives them to the model as two tools of the cell's own,
+machine_library_search and machine_library_extract, with the operator's
+/machine-library command beside them. Every byte still goes to
+https://api.machinelibrary.ai and nowhere else, with the same headers.
+What was left out: the provider interface itself, which a cell cannot plug
+into (Nodecode's web search is a cell of its own, so tools replace the
+verb), Hermes's web.backend config switch (here the section is the switch),
+and the harness-side truncation of extracted text, which the section's
+max_chars does in this cell's own terms. Nothing of the original is
+vendored.
