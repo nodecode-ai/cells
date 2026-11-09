@@ -1,0 +1,33 @@
+nodecode-skill-lineage is a rewrite of simin-yuan's simin-yuan/hermes-skill-lineage:
+
+  https://github.com/simin-yuan/hermes-skill-lineage
+  commit c21178d4578680297b6100638fff59b75d1b572e
+  Apache-2.0, Copyright (c) 2026 simin-yuan (LICENSE)
+
+Rewritten: the whole record, in Common Lisp. The keyed hashes and the
+per-install key (textfeat.py, store.py); the operative anchors -- a URL and
+its host, an e-mail, an IP, an environment variable, a path, a shell command
+with its first operand, a package install -- and the 8-word shingles;
+the edges and the orphan count with the rule that overlap between two
+sources of one class cannot say which one it came from (edges.py); the
+prev/hash chain, its repair of a torn tail and verify's optional head check
+(chain.py, verify.py); the graph, the backward and forward walks and the URL
+lookup through its keyed hash (graph.py); and the verbs status, trace,
+descendants, report, verify and head, as two tools, /lineage and functions
+in the lineage package (cli.py, hooks.py).
+
+Left out, and why: the Hermes hooks have no Nodecode counterpart -- there is
+no skill_manage call to observe, because a Nodecode skill is a file -- so the
+write is recorded by the call that makes it, and the source texts come from
+the caller instead of from a session file. That removes sessions.py (the
+per-session source files, their retention and pruning), skills.py (locating a
+skill on disk by scanning profile and project roots, and snapshotting it) and
+the key_reset pruning they shared; the version's fingerprint is taken from
+the body it is handed. The count-min shingle sketch (edges.py) is gone, so
+boilerplate is suppressed for anchors only, not for shingles. An entry is one
+tab-separated line -- seq, prev, hash, JSON body -- rather than a JSON object
+whose hash is recomputed from a canonical re-encoding, so verification hashes
+the stored bytes and needs no canonical encoder. A torn trailing line is
+left exactly where verify can point at it, and the next write starts a fresh
+line after it rather than refusing to write again; the original's separate
+repair entry has no counterpart.
