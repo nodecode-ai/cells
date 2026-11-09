@@ -1,0 +1,8 @@
+// nodecode-command-ledger: nothing here is required. Nothing needs a key.
+{
+  "command-ledger": {
+    // How many commands the ledger keeps, newest first; the oldest rows go
+    // past this. The ledger is command-ledger/commands.jsonl under the home.
+    "rows": 5000
+  }
+}
