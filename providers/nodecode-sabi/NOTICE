@@ -1,0 +1,26 @@
+nodecode-sabi is a rewrite of vizuh's vizuh/sabi:
+
+  repository: https://github.com/vizuh/sabi
+  commit: b59bd21b89fca091bf9ebcfb3082a4191e511da7
+  MIT, Copyright (c) 2026 Vizuh (LICENSE)
+
+What was rewritten is the Hermes plugin in that repository
+(packages/adapters/hermes/plugin: __init__.py and plugin.yaml), which was one
+`llm_request` middleware: on a `sabi-code` Chat Completions round bound for the
+configured loopback Sabi base, it set X-Sabi-Client to the client's own name
+and passed on the event's opaque session and turn ids, replacing any stale copy
+of those three headers and deriving nothing from prompt text. Here that becomes
+a Nodecode provider cell: a catalog row for the alias, a public credential so
+no key is asked for and no other family's variable is sent, and one advice on
+the shared streaming walk that appends the same headers to a `sabi` round. The
+client name is `nodecode`, this client's own, never another product's.
+
+What was left out: the Hermes middleware seam itself (Nodecode advises the
+provider walk instead), X-Sabi-Turn (no per-turn id is reachable at that seam,
+so a round carries its session's id and nothing more), the setup wizard and the
+profile files it generated, and the `SABI_HERMES_BASE_URL` variable, which the
+cell's own section replaces. The original accepted only an exact loopback base
+and refused everything else; this cell takes whatever `base_url` the section
+gives, so a relay of Sabi can stand in for the proxy on the machine. No line of
+the original's code is bundled or run: the plugin's Python is not a dependency
+of this folder, which is Common Lisp against the Nodecode core alone.
