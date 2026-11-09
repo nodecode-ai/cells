@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "carbonvoice": {
+    // The name, never the token: export it in the shell that starts Nodecode.
+    "pat_env": "CARBONVOICE_PAT",
+    "base_url": "https://api.carbonvoice.app",
+    // How far back carbonvoice_recent looks when the call does not say, and
+    // how many messages it answers with at most.
+    "since_minutes": 60,
+    "limit": 25,
+    // Leave the agent's own messages out of the inbox.
+    "exclude_self": true,
+    "timeout": 20
+  }
+}
