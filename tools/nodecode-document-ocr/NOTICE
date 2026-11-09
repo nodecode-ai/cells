@@ -1,0 +1,26 @@
+nodecode-document-ocr is a rewrite of lEWFkRAD's lEWFkRAD/hermes-document-reader:
+
+  https://github.com/lEWFkRAD/hermes-document-reader
+  commit f3a0bed28e6c289942b899924d9e7cf8b93045e8
+  MIT License, Copyright (c) 2026 Jeff Robodie (LICENSE)
+
+Rewritten: the OCR wire of engine/grm_ocr.py -- an OpenAI-compatible
+multimodal endpoint called with one page image as a base64 data URL, the
+thinking flag turned off, a transcription instruction asking for
+layout-preserving Markdown (chandra's ocr_layout prompt is replaced by one
+written for this cell), the endpoint's /models probe, HTTPS unless the
+endpoint is loopback or the operator opts out, and a bounded per-call
+budget -- as the Common Lisp the model and the operator call: the tools
+document_ocr and document_ocr_probe and the command /document-ocr. A PDF is
+rendered page by page with the pdftoppm of poppler when the user has it,
+which stands in for the original's own page rendering. Everything lives in
+one Lisp file; nothing of the original's Python is bundled or run.
+
+Left out: the Windows-only profile service and its scheduled task, the
+watched inbox folder and its processed / on-hold / needs-review / quarantine
+trees, the job history and preview cache, the desktop reader window and HUD
+attachment action, the loopback HTTP API the reader talks to, the .xlsx
+workbook export (the recognized text is returned, and written as .md/.txt
+when the caller names a file), the repeat-token retry and the model-output
+HTML sanitiser, since this cell answers text to a model rather than drawing
+pages in a window.
