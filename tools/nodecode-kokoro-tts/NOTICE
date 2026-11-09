@@ -1,0 +1,32 @@
+nodecode-kokoro-tts is a rewrite of brunosouzas's brunosouzas/hermes-kokoro-tts:
+
+  https://github.com/brunosouzas/hermes-kokoro-tts
+  commit d8e8769d6997f29f98da7ceea97b4e3a76688b39
+  MIT, Copyright (c) 2026 Bruno Souza (LICENSE)
+
+The rewritten plugin is the whole repository at that commit: a Hermes
+text-to-speech provider that spoke through a Kokoro server of its own on
+127.0.0.1, with the server, an installer and a CLI beside it. Its speech wire
+is carried over unchanged: POST /v1/audio/speech with input, voice, speed and
+response_format, the voice's own first letter as lang_code unless a language
+overrides it, English loanwords handed to a non-English voice as english_words
+and english_accent, and GET /v1/voices for what the model holds. So are the
+voice id rule (a language letter, a gender letter and a name, so a voice can
+never name a file), the per-sentence language plan -- English always detected,
+Portuguese always, Italian only when it has a voice; a sentence with no clear
+signal keeps the voice before it; neighbours that would use one voice are one
+request -- the function-word and accent scoring it decides with, and the
+joining of several requests into one WAV. LICENSE is the repository's LICENSE,
+unchanged.
+
+What was left out, and why: the installer and the service manager (a uv
+environment on Python 3.11, the pinned model snapshot, a launchd plist or a
+systemd user unit, the install/status/restart/uninstall verbs), because a cell
+does not bundle Python or a virtual environment and calls the server the user
+already runs -- the README says how; the server itself (server/kokoro_server.py,
+its MLX and torch backends), for the same reason; its English-loanword
+phonemizer, which runs inside the server, so the cell forwards the words
+instead of doing the G2P; and the Hermes provider registration, because
+Nodecode's provider seam is models, not voices -- the two verbs a user reaches
+for are the cell's own tools, kokoro_speak and kokoro_voices, with /kokoro and
+(help :kokoro) beside them.
