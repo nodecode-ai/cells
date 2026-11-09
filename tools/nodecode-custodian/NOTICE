@@ -1,0 +1,34 @@
+nodecode-custodian is a rewrite of indigokarasu's indigokarasu/hermes-custodian-plugin:
+
+  https://github.com/indigokarasu/hermes-custodian-plugin
+  commit d5b4ebfd2353a29380a51c8bcba84d4682cf4c91
+  MIT License, Copyright (c) 2026 Indigo Karasu (LICENSE)
+
+The rewrite is the plugin's monitoring half as a Nodecode cell. What it keeps:
+the fingerprint table, all 35 entries with their ids, tiers, sources, matching
+patterns and the fix each one's author recorded — including the narrowings the
+original's comments argue for, so a config dump that says `enabled: false` is
+not a disabled job and a hook callback timing out is not a cron job timing out;
+the scan that reports the first line that matched, not the top of the blob;
+the two filters that keep it quiet, the echo markers (a report about a finding
+is not a finding) and the recency window (a line with no timestamp inherits
+the last dated line above it, so a stale traceback body is stale too); the
+per-scan journal under a dated directory; the issue ledger that bumps an issue
+it has seen instead of filing it twice; and the readings over it — status,
+issues list, summary, and resolve by id — as the three tools and the
+/custodian command.
+
+What the plugin got from Hermes and Nodecode has no seam for is left out: the
+four lifecycle hooks (post_tool_call, on_session_start, on_session_end,
+on_session_reset) fired at Hermes's own points and the first of them only
+logged a debug line; the `custodian_cron_health` tool, which parsed Hermes's
+jobs.json and probed the gateway process with pgrep; the cron registrar that
+installed three recurring agent jobs from /custodian init; the fix engine, which
+applied Tier 1 repairs by moving files under HERMES_HOME; the confidence model
+over fix outcomes, since nothing here applies a fix; and the storage and
+journal paths, which are now the home's own custodian/ directory. A finding
+carries its fix in words, and the model or the operator applies it.
+
+Nothing of the original's Python is bundled. The patterns are matched with
+CL-PPCRE, the same expressions the original handed to Python's `re`, and the
+cell's own code is Common Lisp.
