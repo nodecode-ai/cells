@@ -1,0 +1,34 @@
+nodecode-coder is a rewrite of perqin's perqin/hermes-plugin-coder:
+
+  https://github.com/perqin/hermes-plugin-coder
+  commit 98e023da379961702fb0ce0cf03b983176039321
+  MIT License, Copyright (c) 2026 Perqin (LICENSE)
+
+Rewritten: the plugin's terminal backend, as three tools a model calls —
+coder_workspaces, coder_workspace and coder_exec. What it did is kept whole:
+the workspace search by name (owner:me name:X), the start of a stopped
+workspace through a workspace start build followed by polling of that build's
+job, the wait for an agent whose status is connected and lifecycle_state is
+ready, the PTY websocket at /api/v2/workspaceagents/{id}/pty with the command
+in the query string and the reconnect id, the exit marker printed after the
+command and parsed back out of the terminal output, the CRLF folding of PTY
+output, the bounded capture with the omitted count in the middle, and the
+validations the original made of its own settings — an https origin with no
+credentials, path, query or fragment, a header-safe token, a forward_env list
+of environment variable names with the session token never forwarded into the
+shell. The Python (requests, websockets) is Common Lisp here: nlk:http for
+Coder's REST API, the websocket-driver client nodecode already loads for the
+PTY, two function seams (*http*, *pty-read*) a test rebinds, one section
+declaration for the settings, and three nlk:define-contract declarations for
+the tools' arguments.
+
+Left out: the plugin's other half, which is a Harness shape rather than a
+verb — it registered a TerminalEnvironmentProvider so that Hermes's own shell
+tool ran inside the workspace, with the session snapshot of forwarded
+environment variables, the per-call process handle and its interrupt, and the
+remote snapshot cleanup. A cell has no terminal-environment seam to swap, so
+the same capability is reached by naming the workspace in a tool call instead;
+forwarded environment is delivered as exports on the one command rather than
+as a snapshot kept for a session, the interrupt-by-Ctrl+C path is replaced by
+the command's own timeout, and the reconnect-until-the-marker loop is one
+socket read under a deadline.
