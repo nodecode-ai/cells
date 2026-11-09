@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// Local only: no key, no network. The declaration in cell.lisp is the
+// authority; this is an illustration of it.
+{
+  "epistemic": {
+    "enabled": true,
+    "dir": "epistemic",        // where cases.sexp lives, under the home
+    "remind": true,             // the running case in front of the model at each request
+    "remind_chars": 900,        // how much of it one request carries
+    "capture": true,            // keep the committed check's own tool result
+    "observe_chars": 600,       // how much of that result is kept
+    "case_chars": 1200,         // the longest single piece of case text
+    "keep": 50                  // closed cases kept; an active one always stays
+  }
+}
