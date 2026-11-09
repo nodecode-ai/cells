@@ -1,0 +1,26 @@
+nodecode-fashion-design is a rewrite of priticolours's priticolours/fashion-design:
+https://github.com/priticolours/fashion-design
+commit 1fef81776333f8941a800e83a0db9236e0f1d82b
+MIT, Copyright (c) 2026 priticolours (declared in plugin.yaml; the repository ships no LICENSE file)
+
+The original is a Hermes Agent plugin in Python: ten tool handlers, each a pure
+function over module-level tables that answers a JSON document, plus a bundled
+skill file with the studio knowledge (construction basics, standard
+measurements, fabric properties, grading rules, tech pack standards). This
+rewrite keeps the same ten tools under the same names, the same arguments, the
+same tables and the same JSON shapes, so a model that knew one knows the other;
+the skill's knowledge is the manual on `(help :fashion-design)`. The seams are
+Nodecode's: each tool's arguments are declared once with a contract, so the
+schema the provider reads and the record the verb takes cannot disagree, and a
+call that leaves out a required member is refused at the boundary. Four numbers
+the original hard-coded (inches, US dollars, 12 % waste, a 2.5x retail markup)
+are the cell's settings instead. Added: a `/fashion-design` command that runs
+one verb from its line, and a collection plan and size sheet that answer in the
+unit the section asks for.
+
+Left out, because the harness differs: the plugin's own exception wrapper
+around each handler, which answered `{"error": ...}` where this cell refuses an
+unsatisfied call at its declared boundary; the unused `data/standard_measurements.json`
+(the plugin's handlers read tables inline, and this cell keeps one copy of
+them); and the per-tool `toolset` name, which Nodecode files under the cell's own
+name.
