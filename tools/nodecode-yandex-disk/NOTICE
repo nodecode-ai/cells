@@ -1,0 +1,22 @@
+nodecode-yandex-disk is a rewrite of akinfold's akinfold/hermes-yandex-disk:
+https://github.com/akinfold/hermes-yandex-disk
+commit 32250084b6406169d18c9c98e985a6d53342d173
+MIT, Copyright (c) 2026 Roman Akinfeev (LICENSE)
+
+The original is a Hermes Agent plugin in Python: fifteen tools over the Yandex
+Disk REST API v1, a path module that confines every path to an optional root
+folder, an action allow-list applied at registration, and a load-time probe of
+whether the token may use Yandex's search endpoint. This rewrite keeps the
+tools, the endpoints and their query parameters, the OAuth header, the two
+request shapes (the Deferred operation polled to completion, and the two-step
+transfer that never shows the token to the transfer host), the path
+normalisation and the sandbox, the action groups, the refusal sentences and
+the guards on a download (a complete file or an older one left alone), all in
+Common Lisp over the image's own HTTP call. What changed: an answer is
+rendered as lines a model reads instead of a JSON envelope, the search
+capability probe is not run at load (the tool answers Yandex's refusal
+instead, so a token that may not search still has every other tool), and the
+action allow-list withholds a tool at start rather than at import. What was
+left out: the environment-variable plumbing of Hermes itself (the values live
+in the cell's config section), the Hermes load-time budget the probe was
+sized for, and the emoji each Hermes tool carried.
