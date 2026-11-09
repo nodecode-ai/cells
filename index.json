@@ -1729,7 +1729,7 @@
     {
       "name": "nodecode-chatto",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "commit": "b499bbec1dd174cc53ce17375e3ec70b9e8856fb",
       "path": "rooms/nodecode-chatto",
       "description": "Talk to nodecode through a Chatto server",
       "license": "MIT",
@@ -3780,7 +3780,7 @@
     {
       "name": "nodecode-jev-routing",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "bf405c142442edcdc85370d137af04b7aedc563d",
+      "commit": "b499bbec1dd174cc53ce17375e3ec70b9e8856fb",
       "path": "tools/nodecode-jev-routing",
       "description": "Jev routing: the model tier a prompt deserves, and the model your routing table names for it",
       "license": "MIT",
