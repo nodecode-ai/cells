@@ -1,0 +1,29 @@
+nodecode-myradio is a rewrite of newjordan's newjordan/myradio:
+
+  https://github.com/newjordan/myradio
+  commit 66d611bad24f069a41b136b0672b39b9ab3cde12
+  Apache-2.0, Copyright (c) 2026 Omnispace Technologies and the myradio contributors (LICENSE)
+
+The original is a Hermes Agent plugin at integrations/hermes: a Python plugin
+that starts myradio's own MCP adapter as a child process, sends one MCP
+exchange over its stdin and reads the answer, and registers twelve tools, a
+pre_tool_call hook, the /radio command, a myradio CLI command, a DJ skill and
+a DJ-shift automation blueprint.
+
+This rewrite keeps what a user of it got: the same twelve tools with the same
+names, descriptions and arguments; the station status trimmed the same way for
+a model; the library search; the same /radio words; and the rule that going
+live, going off air and deleting audio stay the owner's. It is written in
+Common Lisp and talks to the station over the same HTTP API the studio and that
+adapter use -- loopback, the control.token from the station's data folder as
+the token header -- so no Python, no adapter and no subprocess are needed. The
+boxed 58-column ansi card is a plain aligned card here, and the DJ guidance
+that was a skill is (help :myradio).
+
+Left out, and why: the pre_tool_call hook that limited what an unattended
+scheduled run could do -- Nodecode's own cron cell has no run context a cell
+can read, so the hook would have nothing to gate on; the `myradio` CLI
+command, which only reprinted the card; the automation blueprint, which is a
+scheduling feature of the other harness; and the optional model-written song
+lyrics on /radio request, which fall back to the original's own
+plain-request path (the model can write the words and call myradio_make).
