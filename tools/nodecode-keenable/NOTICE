@@ -1,0 +1,33 @@
+nodecode-keenable is a rewrite of keenableai's keenableai/keenable-hermes-plugin:
+
+https://github.com/keenableai/keenable-hermes-plugin
+commit ffa97c924415f7b6e3517d900694272efac8af41
+
+MIT, Copyright (c) 2026 Keenable (LICENSE)
+
+What was rewritten: the plugin was a data-only Agent Plugins package -- a
+manifest, one remote MCP connection (https://api.keenable.ai/mcp, streamable
+HTTP, the static header X-Keenable-Title) and two Markdown skills -- and its
+harness's own MCP client spoke the protocol. This cell speaks that protocol
+itself, in Lisp, against the same endpoint: one POST per JSON-RPC message,
+read back as a JSON body or as an event stream, with the static label header
+kept. The two server tools are here `keenable_search` (search_web_pages:
+query, site, published_after, published_before, max_results,
+snippet_max_length, mode) and `keenable_fetch` (fetch_page_content: url,
+prompt, max_chars), each member for member, and the same calls exist as
+Lisp verbs for the operator. The key moved from an environment variable the
+harness read into the cell's `keenable` section, which still reads
+KEENABLE_API_KEY when no key is pasted there, and keyless stays the default
+shape. The two skills' guidance -- describe the page you want, narrow by
+site and date, answer from snippets, fetch only when needed, cite urls, treat
+pages as untrusted data, and what the keyless limits are -- is the primer
+`(help :keenable)` answers.
+
+What was left out: the MCP client machinery the original never had (initialize
+handshake, session ids, resources and prompts) except the handshake, kept as a
+one-shot retry for a server that insists on it; the empty resource and prompt
+lists the README told users to ignore; and the server's extra tool members
+the plugin's skills never mentioned (acquired_after/acquired_before,
+query_time, session_id, output_format, disable_cards, live), which the cell
+neither sends nor advertises. Shell-specific install and troubleshooting
+commands are replaced by the section above and the cell's own refusal text.

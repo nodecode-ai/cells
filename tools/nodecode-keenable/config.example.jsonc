@@ -1,0 +1,12 @@
+{
+  // Keenable: web search and page fetch through its hosted MCP server.
+  // The cell works with no member here at all. A key, from
+  // https://app.keenable.ai/console, only lifts the shared pool's hourly cap.
+  "keenable": {
+    "max_results": 10,
+    "timeout_seconds": 30
+    // "api_key": "your-key",
+    // "api_key_env": "KEENABLE_API_KEY",
+    // "endpoint": "https://api.keenable.ai/mcp"
+  }
+}
