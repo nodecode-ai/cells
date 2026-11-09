@@ -1,0 +1,23 @@
+{
+  "channels": {
+    "minecraft": {
+      // The bot joins in offline mode, so the server needs online-mode=false.
+      "server": "play.example.net",
+      "port": 25565,
+      "username": "NodecodeBot",
+      // Either name the players who may talk, or let everyone in (they run
+      // with your machine's authority).
+      "allowed_users": ["Steve", "Alex"],
+      "allow_all": false,
+      // A trigger chat may open with, stripped before the agent sees the line.
+      "prefix": "",
+      "require_prefix": false,
+      // Answers whispered with /tell instead of spoken in public chat.
+      "private_replies": false,
+      "reply_length": 256,
+      "idle_seconds": 8,
+      "reconnect_seconds": 10,
+      "timeout_seconds": 10
+    }
+  }
+}
