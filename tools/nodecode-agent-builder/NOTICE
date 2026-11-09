@@ -1,0 +1,28 @@
+nodecode-agent-builder is a rewrite of itsflownium's itsflownium/hermes-agent-builder:
+
+  https://github.com/itsflownium/hermes-agent-builder
+  commit 6ed39da7c7054587cbe2a42e60c3e9cbe4969cf6 (2026-11-08)
+  MIT License, Copyright (c) 2026 Hermes Agent Builder contributors (LICENSE)
+
+The original is a Hermes plugin: a desktop section, two slash commands
+(build-agent, agent-builder-action) and an agent_builder tool over thirteen
+builder actions (builder.py:190), every model call going through the host's
+own credential-aware facade and the drafts living in a profile-scoped sqlite
+table. The rewrite keeps the loop a person walks: a plain-language brief
+becomes an eight-field blueprint (name, slug, description, standing
+instructions, three starters, three success checks, toolsets, skills), the
+blueprint is refined with the version it replaced kept, one task is run
+against a version and against the one it replaced, and the blueprint is
+exported as one JSON object. The model's prompt and the shape checked on the
+way back are blueprint.lisp's; the verbs are cell.lisp's; the store is one
+JSON file per draft under the Nodecode home.
+
+Left out, and why: the desktop section and its browser panel (a Nodecode cell
+is reached by its tool, its command and eval, not by a page of its own); the
+interview step, which asked the model for questions before a brief existed,
+because a conversation with the agent already does that; profile creation,
+capability pinning, companion installs and publishing, which wrote Hermes'
+own profile config and had no meaning outside that runtime; and the duplicate
+button, which is the export and a new brief. The original admitted up to six
+reference files of 60,000 characters; the rewrite keeps the six and bounds
+each brief and refinement by the section's max_brief instead.
