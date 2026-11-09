@@ -1,0 +1,34 @@
+nodecode-snapcompact is a rewrite of vimona3ds's vimona3ds/hermes-snapcompact:
+
+  https://github.com/vimona3ds/hermes-snapcompact
+  commit 8a274ca4a501e5661f1e2762150c4c3f99e374ce
+  MIT License, Copyright (c) 2026 johnytest (LICENSE)
+
+Rewritten: what the plugin does to a conversation, as one tool and one
+command. The idea is the same - old turns leave the text and become dense
+bitmap pages a vision model reads back, with the newest turns kept verbatim -
+and so are the reading rules the guide teaches the model (a grid columns
+wide and rows tall, read left to right then top to bottom, no word wrap, a
+run of spaces collapsing to one, a line continuing on the next row). The
+grid geometry is preserved as the section's columns, rows and scale
+settings; a page takes the shape the original tuned per provider only in
+its pixels, since a page here is one 5x7 font at one scale rather than the
+library's provider-aware shapes. The tool answers the paths of the frames it
+wrote, their pixel size, the characters they carry, the tokens the same
+words would have cost as text and the tokens the frames cost, which is the
+original's own accounting; pages past max_frames are dropped from the oldest
+end and counted, as the original counted dropped characters. Rendering is
+this folder's own: a 5x7 bitmap font in font.lisp and a one-bit greyscale
+PNG encoder in png.lisp, so there is no Bun, no npm package and no bridge to
+install.
+
+Left out: the Hermes context-engine interface itself - the 75% threshold,
+should_compress, the summarize mode it falls back to and the /compact-mode
+switch - because Nodecode evicts history instead of compacting it, so there
+is no engine slot to occupy: the operator or the model decides what to
+archive and calls the tool. Also left out are the Python serializer that
+turned OpenAI-format messages into the original's ¶user:/¶ai:/¶think:/¶call:
+scoped text (the tool takes the text, or a file holding it, as it is), the
+@oh-my-pi/snapcompact renderer with its provider-aware frame shapes,
+line-repeat and stopword dimming, and the automatic rewrite of the host's
+config.yaml that pointed its context.engine at the plugin.
