@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config. The declaration in cell.lisp is the authority;
+// this is an illustration of it. A present section is enabled; an
+// "enabled": false vetoes it. No key, no network: nothing here is required.
+{
+  "handoff": {
+    "enabled": true,
+    "store_dir": "",
+    "max_string_kib": 8,
+    "redact": true
+  }
+}
