@@ -1,0 +1,29 @@
+nodecode-apify is a rewrite of apify's apify/apify-hermes-agent-plugin:
+
+  https://github.com/apify/apify-hermes-agent-plugin
+  commit a3a7af0c0dda9fdac79d67fb0a7a50b7a39cd91d
+  MIT, Copyright (c) 2026 Apify (LICENSE)
+
+What was rewritten: the plugin's three tools (apify_discover, apify_start,
+apify_collect) keep their names, their parameters and their answers, and now
+speak Apify's public REST API through the cell's own HTTP call instead of the
+apify-client SDK; the web search and page-extract backends it registers with
+Hermes as web_search.py became two verbs called through eval, apify:search on
+the apify~rag-web-browser Actor (one run-sync-get-dataset-items call in place
+of the original's start-and-poll) and apify:fetch on apify/web-fetch's Standby
+endpoint; the paragraph it gives the model about the tools is the cell's
+(help :apify) topic; the APIFY_API_TOKEN it expected in the environment is
+the apify section's api_token or api_token_env, with the environment variable
+still read; and the token it wrote to a harness-owned dotenv is now the
+section. The external-untrusted-content markers around scraped dataset items,
+the ten-run batch ceiling, the terminal statuses and the 50,000-character
+answer cap are carried over as the original has them.
+
+What was left out, and why: the hermes apify-setup command, whose work the
+section (or /settings) does and whose answer /apify gives; the
+x-apify-integration-platform: hermes-agent attribution header, because this
+is not that client; and the actor-routing skill as a separate loadable file,
+whose rule (search the Store only for what the curated table does not already
+cover, and know an Actor's input schema before spending a run) is folded into
+the (help :apify) primer and the README's table. LICENSE is the original
+repository's LICENSE, unchanged.
