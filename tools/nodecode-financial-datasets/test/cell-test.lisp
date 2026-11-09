@@ -19,8 +19,7 @@
   (:help :financial-datasets)
   (:command "financial")
   (:running
-   (is (= 28 (length (nodecode-financial-datasets::registered-tools)))
-       "the original's 28 tools, no more and no fewer")
+   (is (= 28 (length (nodecode-financial-datasets::registered-tools))) "the original's 28 tools, no more and no fewer")
    (dolist (name (nodecode-financial-datasets::tool-names))
      (is (nle::find-tool name) (format nil "the ~a tool is registered" name))))
   (:stopped
@@ -78,17 +77,14 @@
       (is (equal "test-key" (header "X-API-KEY")) "the key rides the X-API-KEY header")
       (is (null (search "test-key" (newest-url))) "and never the URL")
       (is (search "https://api.test/fd/news/" (newest-url)) "the configured base URL and the route")
-      (is (equal "3" (cdr (assoc "limit" (query-of (newest-url)) :test #'string=)))
-          "and the arguments as the query")))
+      (is (equal "3" (cdr (assoc "limit" (query-of (newest-url)) :test #'string=))) "and the arguments as the query")))
 
 (deftest financial-datasets-cell-a-ticker-is-upper-cased-and-a-cik-padded
     (with-fd ("api_key" "test-key" "base_url" +endpoint+)
       (call "fd_get_company_facts" "{\"ticker\":\"aapl\"}")
-      (is (equal "AAPL" (cdr (assoc "ticker" (query-of (newest-url)) :test #'string=)))
-          "a ticker reaches the API upper-cased")
+      (is (equal "AAPL" (cdr (assoc "ticker" (query-of (newest-url)) :test #'string=))) "a ticker reaches the API upper-cased")
       (call "fd_get_beneficial_ownership" "{\"filer_cik\":\"1510281\"}")
-      (is (equal "0001510281" (cdr (assoc "filer_cik" (query-of (newest-url)) :test #'string=)))
-          "a CIK is zero-padded to ten digits")))
+      (is (equal "0001510281" (cdr (assoc "filer_cik" (query-of (newest-url)) :test #'string=))) "a CIK is zero-padded to ten digits")))
 
 (deftest financial-datasets-cell-a-false-flag-and-a-blank-value-are-dropped
     (with-fd ("api_key" "test-key" "base_url" +endpoint+)
@@ -106,10 +102,8 @@
         (is (equal "annual" (cdr (assoc "period" (query-of (newest-url)) :test #'string=)))))
       (call "fd_get_balance_sheet" "{\"ticker\":\"AAPL\",\"as_reported\":true,\"period\":\"ttm\"}")
       (is (search "financials/balance-sheets/as-reported/" (newest-url)) "the as-reported route")
-      (is (equal "annual" (cdr (assoc "period" (query-of (newest-url)) :test #'string=)))
-          "which serves annual or quarterly only, so ttm reads annual")
-      (is (null (assoc "as_reported" (query-of (newest-url)) :test #'string=))
-          "and as_reported is not a query parameter")))
+      (is (equal "annual" (cdr (assoc "period" (query-of (newest-url)) :test #'string=))) "which serves annual or quarterly only, so ttm reads annual")
+      (is (null (assoc "as_reported" (query-of (newest-url)) :test #'string=)) "and as_reported is not a query parameter")))
 
 (deftest financial-datasets-cell-a-page-link-is-followed-and-its-rows-merged
     (with-fd ("api_key" "test-key" "base_url" +endpoint+)
@@ -136,14 +130,11 @@
       (is (search "macro/inflation/snapshot/" (newest-url)) "no dates means the snapshot route")
       (call "fd_get_macro_data" "{\"dataset\":\"interest_rates\",\"start_date\":\"2025-01-01\",\"bank\":\"fed\"}")
       (is (search "macro/interest-rates/?start_date" (newest-url)) "a date means the history route")
-      (is (equal "FED" (cdr (assoc "bank" (query-of (newest-url)) :test #'string=)))
-          "and a bank code is upper-cased")
+      (is (equal "FED" (cdr (assoc "bank" (query-of (newest-url)) :test #'string=))) "and a bank code is upper-cased")
       (is (search "bank code" (call "fd_get_macro_data"
-                                    "{\"dataset\":\"interest_rates\",\"start_date\":\"2025-01-01\"}"))
-          "interest-rate history names the bank it needs")
+                                    "{\"dataset\":\"interest_rates\",\"start_date\":\"2025-01-01\"}")) "interest-rate history names the bank it needs")
       (is (search "series id" (call "fd_get_macro_data"
-                                    "{\"dataset\":\"inflation\",\"end_date\":\"2025-01-01\"}"))
-          "and inflation history names the series it needs")))
+                                    "{\"dataset\":\"inflation\",\"end_date\":\"2025-01-01\"}")) "and inflation history names the series it needs")))
 
 (deftest financial-datasets-cell-a-filing-shape-that-cannot-work-refuses-before-any-request
     (with-fd ("api_key" "test-key" "base_url" +endpoint+)
@@ -183,5 +174,4 @@
         (is (search "fd_get_income_statement" status) "it names what this start registered")
         (is (search "not a ticker" bogus)))
       (is (null *calls*) "the status command dials nothing")
-      (is (search "\"price\": 190" (nodecode-financial-datasets::run-command "aapl" "s1"))
-          "and a ticker answers its price snapshot")))
+      (is (search "\"price\": 190" (nodecode-financial-datasets::run-command "aapl" "s1")) "and a ticker answers its price snapshot")))

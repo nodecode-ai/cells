@@ -131,8 +131,7 @@ bound and answers (values TEXT STATUS), as NLK:HTTP does. ASKED collects
           (is (equal "o/r" (nlk:json-value mention :string "repo")))
           (is (= 7 (nlk:json-value mention :integer "number")))
           (is (equal "alice" (nlk:json-value mention :string "author")))
-          (is (equal "please fix the parser" (nlk:json-value mention :string "request"))
-              "the request is the mention's paragraph, the mention taken out")
+          (is (equal "please fix the parser" (nlk:json-value mention :string "request")) "the request is the mention's paragraph, the mention taken out")
           (is (search "please fix the parser" (nlk:json-value mention :string "body")))))
       (is (= 4 (length asked)) "one login read, the list, the thread and its comments"))))
 
@@ -172,8 +171,7 @@ bound and answers (values TEXT STATUS), as NLK:HTTP does. ASKED collects
       (let ((post (find-if (lambda (call) (eq (first call) :post)) asked))
             (patch (find-if (lambda (call) (eq (first call) :patch)) asked)))
         (is (equal "/repos/o/r/issues/7/comments"
-                   (and post (subseq (second post) (length "https://api.github.com"))))
-            "the answer is a comment in the mention's own thread")
+                   (and post (subseq (second post) (length "https://api.github.com")))) "the answer is a comment in the mention's own thread")
         (is (search "Fixed in 9c1." (or (and post (third post)) "")) "with the body the model wrote")
         (is (search "/notifications/threads/101" (or (and patch (second patch)) "")) "and the thread is marked read")))))
 
@@ -190,10 +188,8 @@ bound and answers (values TEXT STATUS), as NLK:HTTP does. ASKED collects
                   "{\"notification_id\":\"102\",\"body\":\"Looks right to me.\"}")
       (let ((post (find-if (lambda (call) (eq (first call) :post)) asked)))
         (is post "the answer was posted")
-        (is (search "/repos/o/r/pulls/7/comments" (second post))
-            "as an inline reply, in the review thread")
-        (is (search "\"in_reply_to\":99" (or (third post) ""))
-            "answering the review comment that mentioned the login")))))
+        (is (search "/repos/o/r/pulls/7/comments" (second post)) "as an inline reply, in the review thread")
+        (is (search "\"in_reply_to\":99" (or (third post) "")) "answering the review comment that mentioned the login")))))
 
 (deftest github-mentions-cell-dismisses-with-an-empty-body (with-github-token)
   (with-cell-stop ((github-mentions-start))

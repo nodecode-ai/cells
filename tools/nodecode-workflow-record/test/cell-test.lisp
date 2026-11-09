@@ -137,30 +137,25 @@ that records."
               (format nil "the recording is under recordings/: ~s" (saved-files)))
           (is (= 1 (nlk:json-value json :integer "version")))
           (is (equal "checkout-flow" (nlk:json-value json :string "slug")))
-          (is (equal "https://example.test/home" (nlk:json-value json :string "url"))
-              "the last navigation is the page the recording ends on")
+          (is (equal "https://example.test/home" (nlk:json-value json :string "url")) "the last navigation is the page the recording ends on")
           (is (= 5 (length steps)))
-          (is (= 0.0 (coerce (nlk:json-value (aref steps 0) :number "t") 'single-float))
-              "the first step is 0.0 seconds")
+          (is (= 0.0 (coerce (nlk:json-value (aref steps 0) :number "t") 'single-float)) "the first step is 0.0 seconds")
           (is (equal "click" (nlk:json-value (aref steps 0) :string "type")))
           (is (equal "Sign in" (nlk:json-value (aref steps 0) :string "text")))
           (is (equal "alice" (nlk:json-value (aref steps 1) :string "value")))
-          (is (equal "{SECRET:pw}" (nlk:json-value (aref steps 2) :string "value"))
-              "the password never reaches disk")
+          (is (equal "{SECRET:pw}" (nlk:json-value (aref steps 2) :string "value")) "the password never reaches disk")
           (is (equal "navigate" (nlk:json-value (aref steps 4) :string "type")))
           (is (not (search "hunter2" (uiop:read-file-string file)))
               (format nil "not anywhere in the file: ~a" (uiop:read-file-string file)))
           (is (search "checkout-flow" (call-record "list")) "list names it")
-          (is (search "{SECRET:pw}" (call-record "show" :slug "checkout-flow"))
-              "show hands the model the same JSON"))))))
+          (is (search "{SECRET:pw}" (call-record "show" :slug "checkout-flow")) "show hands the model the same JSON"))))))
 
 (deftest workflow-record-cell-a-manual-step-and-the-cap (with-stubbed-cdp)
   (page-script)
   (with-cell-stop ((workflow-record-start "max_steps" 3))
     (let ((started (call-record "start" :slug "capped")))
       (is (search "recording \"capped\"" started) (format nil "start answered: ~a" started)))
-    (is (search "the login page" (call-record "step" :note "the login page"))
-        "narration is a step of its own")
+    (is (search "the login page" (call-record "step" :note "the login page")) "narration is a step of its own")
     (let ((stopped (call-record "stop")))
       (is (search "3 step" stopped) (format nil "stop answered: ~a" stopped))
       (is (search "older steps dropped at the cap" stopped)))))
@@ -168,29 +163,24 @@ that records."
 (deftest workflow-record-cell-refuses-what-it-cannot-do (with-stubbed-cdp)
   (with-cell-stop ((workflow-record-start))
     (is (search "ERROR: WORKFLOW-RECORD-ERROR: no recording is running"
-                (call-record "stop"))
-        "stop with nothing recording")
+                (call-record "stop")) "stop with nothing recording")
     (is (search "needs a name" (call-record "start" :slug "!!!")
                 ) "a slug from nothing")
-    (is (handler-case (progn (call-record "dance") nil) (error () t))
-        "the contract refuses an action outside its list")
+    (is (handler-case (progn (call-record "dance") nil) (error () t)) "the contract refuses an action outside its list")
     (let ((nodecode-workflow-record:*discover* 'no-browser))
       (is (search "ERROR: WORKFLOW-RECORD-ERROR: could not record: nothing listens"
-                  (call-record "start" :slug "gone"))
-          "a browser that is not there is one line, not a signal"))))
+                  (call-record "start" :slug "gone")) "a browser that is not there is one line, not a signal"))))
 
 ;;; --- the recording model, function by function ---------------------------------------
 
 (deftest workflow-record-cell-the-model-is-a-function-of-its-input ()
   (is (equal "{SECRET:pw}" (nodecode-workflow-record:mask-value "hunter2" "password" "" "pw")))
-  (is (equal "{SECRET:user}" (nodecode-workflow-record:mask-value "x" "" "username current-password" "user"))
-      "a secret named among other autocomplete tokens")
+  (is (equal "{SECRET:user}" (nodecode-workflow-record:mask-value "x" "" "username current-password" "user")) "a secret named among other autocomplete tokens")
   (is (equal "alice" (nodecode-workflow-record:mask-value "alice" "text" "" "")))
   (is (nodecode-workflow-record:secret-field-p "text" "one-time-code"))
   (is (not (nodecode-workflow-record:secret-field-p "text" "username")))
   (is (null (nodecode-workflow-record:normalize-event
-             (nlk:make-json-object "type" "scroll" "t" 1)))
-      "an unknown step type is dropped")
+             (nlk:make-json-object "type" "scroll" "t" 1))) "an unknown step type is dropped")
   (let* ((recording (nodecode-workflow-record:build-recording
                       "slug" "https://example.test/" "2026-11-08T00:00:00Z"
                       (list (list :t 3000 :type "enter" :selector "input")
@@ -206,8 +196,7 @@ that records."
                   (nlk:decode-json "[{\"type\":\"page\",\"url\":\"devtools://x\",\"webSocketDebuggerUrl\":\"ws://a\"},
                                      {\"type\":\"page\",\"url\":\"https://example.test/\",\"webSocketDebuggerUrl\":\"ws://b\"},
                                      {\"type\":\"other\",\"url\":\"\"}]"))))
-    (is (equal "ws://b" (getf (nodecode-workflow-record:pick-page targets) :ws-url))
-        "the first web page, not a devtools tab")))
+    (is (equal "ws://b" (getf (nodecode-workflow-record:pick-page targets) :ws-url)) "the first web page, not a devtools tab")))
 
 ;;; --- /record ---------------------------------------------------------------------------
 
@@ -217,14 +206,11 @@ that records."
     (multiple-value-bind (text dialog) (nodecode-workflow-record:run-slash "" nil)
       (is (search "not recording" text))
       (is dialog "bare /record answers a panel"))
-    (is (search "recording \"shop\"" (nodecode-workflow-record:run-slash "start shop" nil))
-        "start names the recording")
+    (is (search "recording \"shop\"" (nodecode-workflow-record:run-slash "start shop" nil)) "start names the recording")
     (is (search "recording shop" (nodecode-workflow-record:run-slash "" nil)) "the bare line says so")
     (is (search "5 steps recorded" (nodecode-workflow-record:run-slash "stop" nil)))
-    (is (search "shop-" (nodecode-workflow-record:run-slash "list" nil))
-        "the list reads the disk")
-    (is (search "{SECRET:pw}" (nodecode-workflow-record:run-slash "show shop" nil))
-        "show hands back the JSON it saved")
+    (is (search "shop-" (nodecode-workflow-record:run-slash "list" nil)) "the list reads the disk")
+    (is (search "{SECRET:pw}" (nodecode-workflow-record:run-slash "show shop" nil)) "show hands back the JSON it saved")
     (is (search "no recording is running" (nodecode-workflow-record:run-slash "stop" nil))
         (format nil "a refusal is a line, not a signal: ~a"
                 (nodecode-workflow-record:run-slash "stop" nil)))))

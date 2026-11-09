@@ -463,9 +463,9 @@ appended to the local log."
                                  (and policy-text t) truncated)
                   (record (audit-row :ok t :verdict final :rule rule :reason reason
                                      :model answered :confidence confidence :blast-radius blast
-                     :self-advocating advocating :policy-allows policy-allows
-                     :reads-secrets reads :sends-outbound sends :truncated truncated
-                     :has-policy (and policy-text t) :flagged-as desc :command (clipped safe 600)))
+                                     :self-advocating advocating :policy-allows policy-allows
+                                     :reads-secrets reads :sends-outbound sends :truncated truncated
+                                     :has-policy (and policy-text t) :flagged-as desc :command (clipped safe 600)))
                   (list :verdict final :rule rule :reason reason
                         :confidence confidence :blast-radius blast
                         :self-advocating advocating :policy-allows policy-allows

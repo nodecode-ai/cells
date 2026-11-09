@@ -144,8 +144,7 @@ fresh token file defaulted: the section's key, never the folder's name."
           (is (= 6 (length asked)) "one request per collection")
           (is (equal :get (first (first asked))))
           (is (search "start_date=2026-01-05" (second (first asked))) "the window rides the query string")
-          (is (equal "Bearer test-token" (cdr (assoc "authorization" (third (first asked)) :test #'equal)))
-              "the token is the section's, as a bearer header")
+          (is (equal "Bearer test-token" (cdr (assoc "authorization" (third (first asked)) :test #'equal))) "the token is the section's, as a bearer header")
           (is (eq t (nlk:json-value object :boolean "ok")))
           (is (= 2 (nlk:json-value object :integer "days_synced")))
           (is (= 2 (nlk:json-value object :integer "collections" "daily_sleep")) "each collection reports what it answered"))))))
@@ -215,8 +214,7 @@ fresh token file defaulted: the section's key, never the folder's name."
     (let ((object (hd-object "hd-q-5" "health_query"
                               "{\"query_type\":\"correlate\",\"left\":\"sleep_score\",\"right\":\"readiness_score\",\"shift_days\":1}")))
       (is (= 1 (nlk:json-value object :integer "count")) "one pair, shifted by a day")
-      (is (= 81 (nlk:json-value (aref (nlk:json-array object "pairs") 0) :integer "left_value"))
-          "last night's sleep against today's readiness"))
+      (is (= 81 (nlk:json-value (aref (nlk:json-array object "pairs") 0) :integer "left_value")) "last night's sleep against today's readiness"))
     (let ((object (hd-object "hd-q-6" "health_query"
                               "{\"query_type\":\"correlate\",\"left\":\"sleep_hours\",\"right\":\"average_hrv\",\"shift_days\":0}")))
       (is (= 2 (nlk:json-value object :integer "count")) "sleep_hours is derived from the night's seconds"))))
@@ -239,8 +237,7 @@ fresh token file defaulted: the section's key, never the folder's name."
       (is (eq t (nlk:json-value first :boolean "ok")))
       (is (= 1 (nlk:json-value first :integer "meals_today")))
       (is (= 2 (nlk:json-value second :integer "meals_today")) "a second meal joins the first")
-      (is (= 1 (nlk:json-value second :integer "meals_with_calories_today"))
-          "a meal without calories is kept, and counted apart")
+      (is (= 1 (nlk:json-value second :integer "meals_with_calories_today")) "a meal without calories is kept, and counted apart")
       (is (= 420 (nlk:json-value second :integer "total_calories_today"))))
     (let ((object (hd-object "hd-f-3" "health_query"
                               (format nil "{\"query_type\":\"food\",\"start\":\"~a\",\"end\":\"~a\"}" +day-one+ +day-one+))))

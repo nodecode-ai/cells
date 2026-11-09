@@ -21,10 +21,8 @@
   (:help :image-utils)
   (:command "image-utils")
   (:running
-   (is (= 80 (nodecode-image-utils::setting :jpeg-quality))
-       "the declared quality is what the cell runs on")
-   (is (= 64 (nodecode-image-utils::setting :max-pixels))
-       "and the declared ceiling"))
+   (is (= 80 (nodecode-image-utils::setting :jpeg-quality)) "the declared quality is what the cell runs on")
+   (is (= 64 (nodecode-image-utils::setting :max-pixels)) "and the declared ceiling"))
   (:refused ("jpeg_quality" 0) ("max_pixels" 0)))
 
 ;;; --- one scratch folder and one PNG per test ---------------------------------
@@ -79,8 +77,7 @@ header reader."
       (is (search "not a file"
                   (answer-of "iu-info-2" "image_info"
                              (format nil "{\"path\": ~s}"
-                                     (namestring (merge-pathnames "gone.png" dir)))))
-          "a path that is no file is refused in words"))))
+                                     (namestring (merge-pathnames "gone.png" dir))))) "a path that is no file is refused in words"))))
 
 (deftest image-utils-resize-writes-half-size-beside-the-input ()
   (with-cell-stop ((image-utils-start))
@@ -107,13 +104,11 @@ header reader."
         (is (search "allow_upscale"
                     (answer-of "iu-resize-3" "image_resize"
                                (format nil "{\"path\": ~s, \"width\": 90}"
-                                       (namestring path))))
-            "growing it needs allow_upscale")
+                                       (namestring path)))) "growing it needs allow_upscale")
         (is (search "allow_distort"
                     (answer-of "iu-resize-4" "image_resize"
                                (format nil "{\"path\": ~s, \"width\": 4, \"height\": 2}"
-                                       (namestring path))))
-            "two dimensions need allow_distort")))))
+                                       (namestring path)))) "two dimensions need allow_distort")))))
 
 (deftest image-utils-crop-and-rotate-move-the-pixels ()
   (with-cell-stop ((image-utils-start))
@@ -134,13 +129,11 @@ header reader."
         (is (search "not inside"
                     (answer-of "iu-crop-2" "image_crop"
                                (format nil "{\"path\": ~s, \"box\": [0, 0, 9, 9]}"
-                                       (namestring path))))
-            "a box outside the image is refused")
+                                       (namestring path)))) "a box outside the image is refused")
         (is (search "aspect takes two numbers"
                     (answer-of "iu-crop-3" "image_crop"
                                (format nil "{\"path\": ~s, \"aspect\": \"9x9\"}"
-                                       (namestring path))))
-            "an aspect with no colon is refused by name")))))
+                                       (namestring path)))) "an aspect with no colon is refused by name")))))
 
 (deftest image-utils-the-overwrite-gate-needs-both-keys ()
   (with-cell-stop ((image-utils-start))
@@ -151,18 +144,15 @@ header reader."
         (answer-of "iu-gate-1" "image_resize" json)
         (is (probe-file out) "the first write lands")
         (is (search "overwrite=true and confirm=true"
-                    (answer-of "iu-gate-2" "image_resize" json))
-            "the second is refused, and names both keys")
+                    (answer-of "iu-gate-2" "image_resize" json)) "the second is refused, and names both keys")
         (is (search "overwrite=true and confirm=true"
                     (answer-of "iu-gate-3" "image_resize"
                                (format nil "{\"path\": ~s, \"percent\": 50, \"overwrite\": true}"
-                                       (namestring path))))
-            "overwrite alone is not enough")
+                                       (namestring path)))) "overwrite alone is not enough")
         (is (search "written to"
                     (answer-of "iu-gate-4" "image_resize"
                                (format nil "{\"path\": ~s, \"percent\": 50, \"overwrite\": true, \"confirm\": true}"
-                                       (namestring path))))
-            "both keys write")))))
+                                       (namestring path)))) "both keys write")))))
 
 (deftest image-utils-convert-writes-jpeg-and-refuses-losing-alpha ()
   (with-cell-stop ((image-utils-start))
@@ -176,23 +166,19 @@ header reader."
         (is (search "PNG -> JPEG" answer) "the two formats are named")
         (is (probe-file jpeg) "a JPEG lands")
         (let ((bytes (alexandria:read-file-into-byte-vector jpeg)))
-          (is (and (= #xFF (aref bytes 0)) (= #xD8 (aref bytes 1)))
-              "and it leads with the JPEG signature"))
+          (is (and (= #xFF (aref bytes 0)) (= #xD8 (aref bytes 1))) "and it leads with the JPEG signature"))
         (is (search "flatten=true"
                     (answer-of "iu-convert-2" "image_convert"
                                (format nil "{\"path\": ~s, \"format\": \"JPEG\"}"
-                                       (namestring alpha))))
-            "alpha into JPEG is refused unless declared")
+                                       (namestring alpha)))) "alpha into JPEG is refused unless declared")
         (is (search "written to"
                     (answer-of "iu-convert-3" "image_convert"
                                (format nil "{\"path\": ~s, \"format\": \"JPEG\", \"flatten\": true}"
-                                       (namestring alpha))))
-            "and with flatten it is laid over the background")
+                                       (namestring alpha)))) "and with flatten it is laid over the background")
         (is (search "TIFF"
                     (answer-of "iu-convert-4" "image_convert"
                                (format nil "{\"path\": ~s, \"format\": \"TIFF\"}"
-                                       (namestring path))))
-            "a format it cannot write is named")))))
+                                       (namestring path)))) "a format it cannot write is named")))))
 
 (deftest image-utils-optimize-reports-what-it-wrote ()
   (with-cell-stop ((image-utils-start))

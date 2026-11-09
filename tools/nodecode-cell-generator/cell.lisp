@@ -582,7 +582,7 @@ an object) and WITH_COMMAND (default true). Answers the files it wrote."
                                                         "description" (nlk:json-object "type" "string"
                                                                                         "description" "what the parameter is")
                                                         "required" (nlk:json-object "type" "boolean"
-                                                                                     "description" "whether a call must carry it"))))))))
+                                                                                     "description" "whether a call must carry it")))))))
                  "settings" (nlk:json-object
                              "type" "array"
                              "description" "the cell's config fields, one object each; a name holding key, token, secret or password reads as an environment variable's name"
@@ -593,7 +593,7 @@ an object) and WITH_COMMAND (default true). Answers the files it wrote."
                                        "name" (nlk:json-object "type" "string"
                                                                 "description" "the config member, e.g. api_key")
                                        "description" (nlk:json-object "type" "string"
-                                                                       "description" "what the setting is for")))
+                                                                       "description" "what the setting is for"))))
                  "with_command" (nlk:json-object "type" "boolean"
                                                   "description" "also register /<name> in the shell; default true"))
                 "required" (vector "name")))

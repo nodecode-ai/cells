@@ -98,8 +98,7 @@ export_path defaulted to the fixture."
   (with-cell-stop ((apple-health-start "export_path" "/nonexistent/apple-health/export.xml"))
     (let ((object (ah-object "ah-status-2" "apple_health_connection_status" "{}")))
       (is (null (nlk:json-value object :boolean "ok")) "no file, not ok")
-      (is (search "Export All Health Data" (nlk:json-value object :string "summary"))
-          "and the answer says how to make one"))))
+      (is (search "Export All Health Data" (nlk:json-value object :string "summary")) "and the answer says how to make one"))))
 
 ;;; --- apple_health_data_inventory ----------------------------------------------------
 

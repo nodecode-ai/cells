@@ -98,8 +98,7 @@
 ;;; --- lifecycle ------------------------------------------------------------
 
 (define-cell-lifecycle-tests "mcp-serve"
-  (:running (is (equal "/mcp-serve" (nodecode-mcp-serve::server-running-p))
-                "the route is up on the path the section named")
+  (:running (is (equal "/mcp-serve" (nodecode-mcp-serve::server-running-p)) "the route is up on the path the section named")
             (is (equal "/mcp-serve" (nodecode-mcp-serve::setting :path)))
             (is (nodecode-mcp-serve::setting :public) "a local client is let in by default"))
   (:stopped (is (null (nodecode-mcp-serve::server-running-p)) "stop takes the route back"))
@@ -109,11 +108,9 @@
 (deftest mcp-serve-cell-a-path-is-a-setting-not-a-constant ()
   (with-mcp-serve-stubs
     (with-cell-stop ((mcp-serve-start "path" "/agent-mcp"))
-      (is (equal "/agent-mcp" (nodecode-mcp-serve::server-running-p))
-          "the route is where the section says, not where the source does")
+      (is (equal "/agent-mcp" (nodecode-mcp-serve::server-running-p)) "the route is where the section says, not where the source does")
       (let ((text (nodecode-mcp-serve::run-slash nil nil)))
-        (is (search "http://127.0.0.1:4242/agent-mcp" text)
-            "and the client line the operator is given carries it")))))
+        (is (search "http://127.0.0.1:4242/agent-mcp" text) "and the client line the operator is given carries it")))))
 
 ;;; --- the protocol ---------------------------------------------------------
 
@@ -124,12 +121,10 @@
                                         (nlk:json-object "protocolVersion" "2025-03-26")))
       (is (= 200 status) "initialize is answered")
       (is (equal "2.0" (nlk:json-value answer :string "jsonrpc")))
-      (is (equal "2025-03-26" (nlk:json-value answer :string "result" "protocolVersion"))
-          "the revision the client asked for is the one answered")
+      (is (equal "2025-03-26" (nlk:json-value answer :string "result" "protocolVersion")) "the revision the client asked for is the one answered")
       (is (equal "nodecode-mcp-serve"
                  (nlk:json-value answer :string "result" "serverInfo" "name")))
-      (is (nlk:json-value answer :object "result" "capabilities" "tools")
-          "tools is what it offers"))))
+      (is (nlk:json-value answer :object "result" "capabilities" "tools") "tools is what it offers"))))
 
 (deftest mcp-serve-cell-lists-its-six-tools ()
   (with-mcp-serve-stubs
@@ -138,11 +133,9 @@
       (let ((tools (nlk:json-value answer :array "result" "tools"))
             (names (nodecode-mcp-serve:tool-names)))
         (is (= 6 (length tools)) "six tools, one schema each")
-        (is (equal names (map 'list (lambda (tool) (nlk:json-value tool :string "name")) tools))
-            "every tool the cell names is advertised, in order")
+        (is (equal names (map 'list (lambda (tool) (nlk:json-value tool :string "name")) tools)) "every tool the cell names is advertised, in order")
         (dolist (tool (coerce tools 'list))
-          (is (equal "object" (nlk:json-value tool :string "inputSchema" "type"))
-              "each tool's schema is an object"))))))
+          (is (equal "object" (nlk:json-value tool :string "inputSchema" "type")) "each tool's schema is an object"))))))
 
 (deftest mcp-serve-cell-a-bad-method-is-a-json-rpc-error ()
   (with-mcp-serve-stubs
@@ -202,16 +195,14 @@
                               (nlk:json-object "session_id" "s1" "text" "are you there"))
       (is (not failed) "a send is not a failure")
       (is (search "sent to s1" text))
-      (is (equal '(("s1" "are you there")) *mcp-serve-sent*)
-          "the text reached the ingress once, for that session")))
+      (is (equal '(("s1" "are you there")) *mcp-serve-sent*) "the text reached the ingress once, for that session")))
     (with-cell-stop ((mcp-serve-start "read_only" t))
       (multiple-value-bind (text failed)
           (mcp-serve-tool-text "messages_send"
                                 (nlk:json-object "session_id" "s1" "text" "still there"))
         (is failed "read_only makes a send a refusal")
         (is (search "read_only" text) "and names the setting that refused it")
-        (is (equal '(("s1" "are you there")) *mcp-serve-sent*)
-            "nothing more reached the ingress")))))
+        (is (equal '(("s1" "are you there")) *mcp-serve-sent*) "nothing more reached the ingress")))))
 
 ;;; --- the client line ------------------------------------------------------
 
@@ -219,8 +210,7 @@
   (with-mcp-serve-stubs
     (with-cell-stop ((mcp-serve-start))
       (let ((text (nodecode-mcp-serve::run-slash nil nil)))
-        (is (search "http://127.0.0.1:4242/mcp-serve" text)
-            "the line carries the port this gateway answers on and the route")
+        (is (search "http://127.0.0.1:4242/mcp-serve" text) "the line carries the port this gateway answers on and the route")
         (is (search "mcpServers" text) "and is a client snippet, not a sentence")
         (is (search "messages_send" text) "with what the client gets")
         (is (not (search "read_only" text)) "and says nothing about a setting that is off"))))

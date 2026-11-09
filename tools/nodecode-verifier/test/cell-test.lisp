@@ -59,8 +59,7 @@
         (is (= 1 count) "one review raised it")
         (is (search "drops the index" text) "and it is what the review answers")))
     (let ((notice (second (cell-notice "nodecode-verifier"))))
-      (is (search "[CAUTION] the migration drops the index" notice)
-          "the finding stands where the agent reads it"))
+      (is (search "[CAUTION] the migration drops the index" notice) "the finding stands where the agent reads it"))
     (with-scripted-reviewer ("nothing to flag")
       (multiple-value-bind (text finding count)
           (nodecode-verifier::review "the agent fixed it" :session "verifier-cell-a")
@@ -76,8 +75,7 @@
     (is (search "[NOTE]" (second (cell-notice "nodecode-verifier"))) "a note is delivered")
     (with-scripted-reviewer ("blocker: the cache is never invalidated")
       (nodecode-verifier::review "the agent added a cache" :session "verifier-cell-b"))
-    (is (search "[BLOCKER]" (second (cell-notice "nodecode-verifier")))
-        "a later blocker replaces it")))
+    (is (search "[BLOCKER]" (second (cell-notice "nodecode-verifier"))) "a later blocker replaces it")))
 
 (deftest verifier-cell-a-lone-voice-is-not-enough ()
   (with-cell-stop ((verifier-start "enabled" t "agreement" 3 "agreement_min" 2))
@@ -116,8 +114,7 @@
                (write-string "watch the retry loops" out))
              (let ((nodecode-verifier::*verifier*
                      (list :priorities (namestring path))))
-               (is (search "watch the retry loops" (nodecode-verifier::review-system-prompt))
-                   "the priorities file reaches the reviewer's instruction")))
+               (is (search "watch the retry loops" (nodecode-verifier::review-system-prompt)) "the priorities file reaches the reviewer's instruction")))
         (ignore-errors (delete-file path))))))
 
 ;;; --- the phase gate ----------------------------------------------------------
@@ -176,8 +173,7 @@
         (let ((answer (nodecode-verifier::review-tool args)))
           (is (search "[BLOCKER]" answer) "the tool answers the finding")
           (is (string= "the agent rewrote the cache"
-                       (nodecode-verifier::verifier-review-arguments-transcript args))
-              "the contract carries the transcript"))))))
+                       (nodecode-verifier::verifier-review-arguments-transcript args)) "the contract carries the transcript"))))))
 
 (deftest verifier-cell-the-command-answers-each-verb ()
   (with-cell-stop ((verifier-start))
@@ -186,29 +182,22 @@
       (is (search "phase gate off" status) "the gate is off too")
       (is (search "/verify" status) "and the verbs are listed"))
     (is (search "verifier on"
-                (cell-entry "nodecode-verifier" "verify" "on" "verifier-cell-status"))
-        "/verify on turns it on")
+                (cell-entry "nodecode-verifier" "verify" "on" "verifier-cell-status")) "/verify on turns it on")
     (is (search "phase gate on"
-                (cell-entry "nodecode-verifier" "verify" "gate on" "verifier-cell-status"))
-        "/verify gate on turns the gate on")
+                (cell-entry "nodecode-verifier" "verify" "gate on" "verifier-cell-status")) "/verify gate on turns the gate on")
     (let ((agreed (cell-entry "nodecode-verifier" "verify" "agree 3 2" "verifier-cell-status")))
       (is (search "agreement 2 of 3" agreed) "/verify agree sets the rounds and the bar"))
     (is (search "delivered a test blocker"
                 (cell-entry "nodecode-verifier" "verify" "test blocker the cache is stale"
-                            "verifier-cell-status"))
-        "/verify test delivers a finding")
-    (is (search "[BLOCKER] the cache is stale" (second (cell-notice "nodecode-verifier")))
-        "which stands where the agent reads it")
+                            "verifier-cell-status")) "/verify test delivers a finding")
+    (is (search "[BLOCKER] the cache is stale" (second (cell-notice "nodecode-verifier"))) "which stands where the agent reads it")
     (is (search "the cache is stale"
-                (cell-entry "nodecode-verifier" "verify" "dump" "verifier-cell-status"))
-        "/verify dump answers the last finding")
+                (cell-entry "nodecode-verifier" "verify" "dump" "verifier-cell-status")) "/verify dump answers the last finding")
     (is (search "verifier off"
                 (progn (cell-entry "nodecode-verifier" "verify" "off" "verifier-cell-status")
-                       (cell-entry "nodecode-verifier" "verify" "status" "verifier-cell-status")))
-        "/verify off turns it off")
+                       (cell-entry "nodecode-verifier" "verify" "status" "verifier-cell-status"))) "/verify off turns it off")
     (is (search "not one of its choices"
-                (cell-entry "nodecode-verifier" "verify" "bogus" "verifier-cell-status"))
-        "an unknown verb names itself")))
+                (cell-entry "nodecode-verifier" "verify" "bogus" "verifier-cell-status")) "an unknown verb names itself")))
 
 ;;; --- a finished turn is queued and reviewed -----------------------------------
 
@@ -227,6 +216,5 @@
                (is (= 1 (length nodecode-verifier::*pending*)) "the turn is queued")
                (nodecode-verifier::tick)
                (is (null nodecode-verifier::*pending*) "the queue is drained")
-               (is (search "[CAUTION]" (second (cell-notice "nodecode-verifier")))
-                   "and the review stands")))))
+               (is (search "[CAUTION]" (second (cell-notice "nodecode-verifier"))) "and the review stands")))))
     (setf nodecode-verifier::*workers* t)))

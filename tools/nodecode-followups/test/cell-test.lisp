@@ -23,8 +23,7 @@
   (:command "followups")
   (:running (is (equal nodecode-followups::+primer+ (nle:help :followups)))
             (is (= 3 (nodecode-followups::setting :max-items)) "max_items defaults to three")
-            (is (= 90 (nodecode-followups::setting :cooldown-minutes))
-                "the cooldown defaults to ninety minutes"))
+            (is (= 90 (nodecode-followups::setting :cooldown-minutes)) "the cooldown defaults to ninety minutes"))
   (:refused ("max_items" 0) ("quiet_start" -1))
   (:idle followups:followups-error
          (followups:add :subject "the sore throat" :why "care" :at "+18h")
@@ -65,8 +64,7 @@
     (is-carrying (text (followups:retire 1 :note "it healed")) ("closed #1 the sore throat" "it retires")
                                                     ("it healed" "with the note"))
     (is (search "it healed" (princ-to-string (nodecode-followups::item-by-id
-                                         (followup-board-raw) 1)))
-        "the note is kept")))
+                                         (followup-board-raw) 1))) "the note is kept")))
 
 ;;; --- the gate --------------------------------------------------------------------
 
@@ -106,8 +104,7 @@
       (setf (getf (first (getf board :items)) :outcome) "annoyed"
             (getf (first (getf board :items)) :sent-at) (- (nlk:unix-now) 600))
       (nodecode-followups::write-board board))
-    (is (equal "muted" (getf (nodecode-followups::gate) :hold))
-        "one annoyed mutes its category")
+    (is (equal "muted" (getf (nodecode-followups::gate) :hold)) "one annoyed mutes its category")
     (is (null (followups:reminder)) "so nothing goes out")))
 
 (deftest followups-cell-one-reminder-carries-at-most-max-items ()
@@ -142,8 +139,7 @@
       (is-carrying text ("follow-ups: 1 active, 1 due" "the command summarises")
                         ("#1 care · the sore throat" "with the item"))
       (is dialog "and answers a panel"))
-    (is (search "closed #1" (nodecode-followups::run-slash "close 1" nil))
-        "close ID retires one from the command")))
+    (is (search "closed #1" (nodecode-followups::run-slash "close 1" nil)) "close ID retires one from the command")))
 
 (deftest followups-cell-a-bad-write-says-why ()
   (with-followups ()

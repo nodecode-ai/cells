@@ -84,15 +84,13 @@ keeps its own memory, and none reaches the operator's."
       (let ((answer (optmem-answer "optmem_note" (optmem-args "text" "the deploy ships on Friday"))))
         (is (equal "#0" (nlk:json-value answer :string "saved_as")))
         (is (equal "added" (nlk:json-value answer :string "status"))))
-      (is (= 320 (optmem-bytes store "LOG.txt"))
-          "one record is 320 bytes, the width the upstream memo tool writes")
+      (is (= 320 (optmem-bytes store "LOG.txt")) "one record is 320 bytes, the width the upstream memo tool writes")
       (let ((wake (optmem-answer "optmem_wake" (nlk:json-object))))
         (is (= 1 (nlk:json-value wake :integer "count")))
         (is (search "the deploy ships on Friday"
                     (aref (nlk:json-value wake :array "context") 0))))
       (is (search "the deploy ships on Friday"
-                  (cdr (assoc "optmem" (nle::read-harness-sections "s1") :test #'string=)))
-          "the digest rides every request as the optmem block")
+                  (cdr (assoc "optmem" (nle::read-harness-sections "s1") :test #'string=))) "the digest rides every request as the optmem block")
       (let ((too-long (optmem-tool "optmem_note"
                                     (optmem-args "text" (make-string 400 :initial-element #\x)))))
         (is (search "ERROR: optmem:" too-long) "an over-long memory is a repair, not a crash")
@@ -112,17 +110,14 @@ keeps its own memory, and none reaches the operator's."
                     (nlk:json-value (aref (nlk:json-value regex :array "results") 0)
                                     :string "text"))))
       (let ((prose (optmem-answer "optmem_recall" (optmem-args "query" "what does cacula mean"))))
-        (is (equal "token" (nlk:json-value prose :string "mode_used"))
-            "a sentence is routed to token search, never compiled as a regex")
+        (is (equal "token" (nlk:json-value prose :string "mode_used")) "a sentence is routed to token search, never compiled as a regex")
         (is (search "caçula" (nlk:json-value (aref (nlk:json-value prose :array "results") 0)
-                                              :string "text"))
-            "accent folding finds caçula from cacula"))
+                                              :string "text")) "accent folding finds caçula from cacula"))
       (let ((ranked (optmem-answer "optmem_recall" (optmem-args "query" "caçula" "mode" "bm25"))))
         (is (equal "bm25" (nlk:json-value ranked :string "mode_used")))
         (is (= 1 (nlk:json-value ranked :integer "count"))))
       (is (search "ERROR: optmem:"
-                  (optmem-tool "optmem_recall" (optmem-args "query" "(" "mode" "regex")))
-          "an explicitly broken pattern is reported, not silently empty"))))
+                  (optmem-tool "optmem_recall" (optmem-args "query" "(" "mode" "regex"))) "an explicitly broken pattern is reported, not silently empty"))))
 
 ;;; --- the decay tree --------------------------------------------------------------
 
@@ -132,10 +127,8 @@ keeps its own memory, and none reaches the operator's."
       (dotimes (index 4)
         (optmem-note (format nil "memory ~a about the release" index)))
       (let ((before (optmem-answer "optmem_wake" (nlk:json-object))))
-        (is (null (nlk:json-value before :boolean "complete"))
-            "a block without its summary cannot wake")
-        (is (search "Compress memories #0-1" (nlk:json-value before :string "nap_prompt"))
-            "the answer carries the next nap, as memo wake refuses"))
+        (is (null (nlk:json-value before :boolean "complete")) "a block without its summary cannot wake")
+        (is (search "Compress memories #0-1" (nlk:json-value before :string "nap_prompt")) "the answer carries the next nap, as memo wake refuses"))
       (is (equal "compressed"
                  (nlk:json-value (optmem-answer "optmem_nap"
                                                  (optmem-args "lo" 0 "hi" 2
@@ -147,26 +140,20 @@ keeps its own memory, and none reaches the operator's."
                                                               "summary" "two more memories about the release"))
                                  :string "status")))
       (let ((after (optmem-answer "optmem_wake" (nlk:json-object))))
-        (is (nlk:json-value after :boolean "complete")
-            "the digest is complete once both blocks are compressed")
+        (is (nlk:json-value after :boolean "complete") "the digest is complete once both blocks are compressed")
         (is (= 2 (nlk:json-value after :integer "count")))
         (is (search "#0-1 two memories about the release"
-                    (aref (nlk:json-value after :array "context") 0))
-            "the older block reads as its summary, the newest verbatim"))
+                    (aref (nlk:json-value after :array "context") 0)) "the older block reads as its summary, the newest verbatim"))
       (let ((zoomed (optmem-answer "optmem_zoom" (optmem-args "lo" 0 "hi" 4))))
         (is (= 2 (length (nlk:json-value zoomed :array "halves"))))
         (is (search "two more memories"
-                    (aref (nlk:json-value zoomed :array "halves") 1))
-            "zoom opens the node, never flattening it to raw lines"))
+                    (aref (nlk:json-value zoomed :array "halves") 1)) "zoom opens the node, never flattening it to raw lines"))
       (let ((forgotten (optmem-answer "optmem_forget" (optmem-args "lo" 0 "hi" 2))))
-        (is (= 2 (nlk:json-value forgotten :integer "count"))
-            "the block and its sibling are dropped, with every block built on them")
+        (is (= 2 (nlk:json-value forgotten :integer "count")) "the block and its sibling are dropped, with every block built on them")
         (is (= 0 (optmem-bytes store "TREE/2")) "TREE/2 is truncated where they lived"))
-      (is (search "ERROR: optmem:" (optmem-tool "optmem_forget" (optmem-args "lo" 0 "hi" 2)))
-          "a second forget reports the truth instead of a false success")
+      (is (search "ERROR: optmem:" (optmem-tool "optmem_forget" (optmem-args "lo" 0 "hi" 2))) "a second forget reports the truth instead of a false success")
       (is (null (nlk:json-value (optmem-answer "optmem_wake" (nlk:json-object))
-                                 :boolean "complete"))
-          "and the digest is incomplete again, as it should be"))))
+                                 :boolean "complete")) "and the digest is incomplete again, as it should be"))))
 
 ;;; --- the knobs -------------------------------------------------------------------
 
@@ -178,12 +165,10 @@ keeps its own memory, and none reaches the operator's."
       (let ((changed (optmem-answer "optmem_config"
                                      (optmem-args "changes" (vector "WAKE_LINES=2")))))
         (is (nlk:json-value changed :boolean "changed"))
-        (is (= 2 (nlk:json-value changed :integer "effective_wake_budget"))
-            "a change reports the budget it made")
+        (is (= 2 (nlk:json-value changed :integer "effective_wake_budget")) "a change reports the budget it made")
         (is (= 2 (nodecode-optmem::wake-budget)) "and the engine runs on it"))
       (is (search "read-only"
-                  (optmem-tool "optmem_config" (optmem-args "changes" (vector "ENTRY_CHARS=100"))))
-          "a memo-parity display value is refused, never silently persisted")
+                  (optmem-tool "optmem_config" (optmem-args "changes" (vector "ENTRY_CHARS=100")))) "a memo-parity display value is refused, never silently persisted")
       (is (search "invalid knob"
                   (optmem-tool "optmem_config" (optmem-args "changes" (vector "NOPE=1")))))
       (is (search "must be a positive integer"
@@ -191,8 +176,7 @@ keeps its own memory, and none reaches the operator's."
       (let ((shown (nlk:json-value (optmem-answer "optmem_config" (nlk:json-object))
                                    :array "config")))
         (is (= 5 (length shown)) "every knob is shown")
-        (is (= 96 (nlk:json-value (aref shown 0) :integer "default"))
-            "with its default, as memo config prints them")))))
+        (is (= 96 (nlk:json-value (aref shown 0) :integer "default")) "with its default, as memo config prints them")))))
 
 ;;; --- import ------------------------------------------------------------------------
 
@@ -207,11 +191,9 @@ keeps its own memory, and none reaches the operator's."
       (let ((wake (optmem-answer "optmem_wake" (nlk:json-object))))
         (is (= 2 (nlk:json-value wake :integer "count")))
         (is (search "the first memory"
-                    (aref (nlk:json-value wake :array "context") 0))
-            "an imported memory is an ordinary memory"))
+                    (aref (nlk:json-value wake :array "context") 0)) "an imported memory is an ordinary memory"))
       (is (search "bare file name"
-                  (optmem-tool "optmem_import" (optmem-args "file" "../LOG.txt")))
-          "the tool reads one bare name inside <store>/imports, never a path"))))
+                  (optmem-tool "optmem_import" (optmem-args "file" "../LOG.txt"))) "the tool reads one bare name inside <store>/imports, never a path"))))
 
 ;;; --- the automatic nap ---------------------------------------------------------------
 
@@ -241,7 +223,6 @@ keeps its own memory, and none reaches the operator's."
         (is (search store answer) "the status names the store it runs on"))
       (optmem-note "the deploy ships on Friday")
       (is (search "the deploy ships on Friday"
-                  (cell-entry "nodecode-optmem" "optmem" "deploy"))
-          "a query searches the log from the shell")
+                  (cell-entry "nodecode-optmem" "optmem" "deploy")) "a query searches the log from the shell")
       (is (search "No memory matched"
                   (cell-entry "nodecode-optmem" "optmem" "zzzznothing"))))))

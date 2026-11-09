@@ -66,8 +66,7 @@ object, through the tool's own contract, the body called with the record."
                  ("run the release script" "and shows the matching body")
                  ("trove_entry" "and says how to read the entry whole"))
     (is (search "no entry"
-                (trove-tool "trove_search" "query" "nothing said this"))
-        "a query nothing matched is an answer, not an error")))
+                (trove-tool "trove_search" "query" "nothing said this")) "a query nothing matched is an answer, not an error")))
 
 (deftest trove-cell-entry-returns-the-body-whole ()
   (with-trove-log
@@ -75,10 +74,8 @@ object, through the tool's own contract, the body called with the record."
            (seq (getf row :seq)))
       (is (integerp seq) "the log answers the row's seq")
       (let ((answer (trove-tool "trove_entry" "seq" seq)))
-        (is (search "run the release script, then add the cell" answer)
-            "the body comes back whole")
-        (is (search (format nil "[seq ~d" seq) answer)
-            "and the answer cites the seq searched")))))
+        (is (search "run the release script, then add the cell" answer) "the body comes back whole")
+        (is (search (format nil "[seq ~d" seq) answer) "and the answer cites the seq searched")))))
 
 (deftest trove-cell-read-walks-one-session-in-order ()
   (with-trove-log
@@ -87,21 +84,17 @@ object, through the tool's own contract, the body called with the record."
                  ("run the release script" "and the answer after it"))
     (let* ((rows (nlk:recall-log :session-id "trove-a" :limit 10))
            (newest (car (last rows))))
-      (is (search "before=" (trove-tool "trove_read" "session_id" "trove-a" "limit" 1))
-          "a cut answer says how to page older")
+      (is (search "before=" (trove-tool "trove_read" "session_id" "trove-a" "limit" 1)) "a cut answer says how to page older")
       (is-carrying (older (trove-tool "trove_read" "session_id" "trove-a"
                                      "before" (getf newest :seq) "match" "deploy"))
                    ("deploy" "before= reaches the older row")))
     (is (signals-error nodecode-trove:trove-error
-          (trove-tool "trove_read" "session_id" "no-such-session"))
-        "an unknown session refuses by name")))
+          (trove-tool "trove_read" "session_id" "no-such-session")) "an unknown session refuses by name")))
 
 (deftest trove-cell-a-missing-query-refuses-before-the-body ()
   (with-trove-log
-    (is (signals-error nlk:contract-refusal (trove-tool "trove_search"))
-        "trove_search with no query is refused by its contract")
-    (is (signals-error nlk:contract-refusal (trove-tool "trove_entry" "seq" "twelve"))
-        "a seq that is not an integer is refused too")))
+    (is (signals-error nlk:contract-refusal (trove-tool "trove_search")) "trove_search with no query is refused by its contract")
+    (is (signals-error nlk:contract-refusal (trove-tool "trove_entry" "seq" "twelve")) "a seq that is not an integer is refused too")))
 
 (deftest trove-cell-sessions-and-status-describe-the-log ()
   (with-trove-log
@@ -119,8 +112,7 @@ object, through the tool's own contract, the body called with the record."
     (is-carrying (digest (trove-tool "trove_evidence" "query" "the" "budget" 300))
                  ("Trove evidence" "the digest says what it is")
                  ("[trove-a" "and cites the session"))
-    (is (<= (length (trove-tool "trove_evidence" "query" "the" "budget" 300)) 900)
-        "a small budget keeps the digest near it")))
+    (is (<= (length (trove-tool "trove_evidence" "query" "the" "budget" 300)) 900) "a small budget keeps the digest near it")))
 
 ;;; --- /trove ----------------------------------------------------------------------
 
@@ -129,8 +121,7 @@ object, through the tool's own contract, the body called with the record."
     (multiple-value-bind (text dialog) (nodecode-trove::run-slash "" "trove-a")
       (is-carrying text ("session" "bare /trove says what the log holds"))
       (is (nle::dialog-json dialog) "and answers a panel")
-      (is (= 3 (length (nle::json-array (nle::dialog-json dialog) "rows")))
-          "one row to search, one per session"))
+      (is (= 3 (length (nle::json-array (nle::dialog-json dialog) "rows"))) "one row to search, one per session"))
     (is-carrying (found (nodecode-trove::run-slash "deploy" "trove-a"))
                  ("deploy" "a query searches every session"))
     (is-carrying (read-back (nodecode-trove::run-slash "read trove-b" "trove-a"))

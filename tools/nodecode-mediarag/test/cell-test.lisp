@@ -47,21 +47,17 @@
 ;;; --- the tools ------------------------------------------------------------------
 
 (deftest mediarag-cell-a-missing-corpus-root-refuses ()
-  (is (signals-error nlk:config-refusal (nodecode-mediarag:start-cell nil))
-      "an unanswered section refuses and names corpus_root"))
+  (is (signals-error nlk:config-refusal (nodecode-mediarag:start-cell nil)) "an unanswered section refuses and names corpus_root"))
 
 (deftest mediarag-cell-a-note-is-indexed-and-found-by-the-command ()
   (with-mediarag
     (is (search "noted 1 row" (nodecode-mediarag:add-note
-                               "The landing page moved to the docs folder."))
-        "the note tool answers what it stored")
+                               "The landing page moved to the docs folder.")) "the note tool answers what it stored")
     (let ((answer (nodecode-mediarag:search-text "landing page")))
       (is (search "note://" answer) "the search tool finds the note row")
       (is (search "landing page" (string-downcase answer)) "with the sentence in it"))
-    (is (search "1 rows over 1 sources" (cell-entry "nodecode-mediarag" "mediarag" ""))
-        "/mediarag reports the corpus with no argument")
-    (is (search "landing page" (cell-entry "nodecode-mediarag" "mediarag" "landing"))
-        "/mediarag searches with an argument")))
+    (is (search "1 rows over 1 sources" (cell-entry "nodecode-mediarag" "mediarag" "")) "/mediarag reports the corpus with no argument")
+    (is (search "landing page" (cell-entry "nodecode-mediarag" "mediarag" "landing")) "/mediarag searches with an argument")))
 
 (defun wav-octets (seconds)
   "A 16 kHz mono 16-bit WAVE of SECONDS of silence, as octets."
@@ -90,8 +86,7 @@
       (with-open-file (out sound :direction :output :if-exists :supersede
                                 :element-type '(unsigned-byte 8))
         (write-sequence (wav-octets 30) out))
-      (is (search "indexed 2 of 2" (nodecode-mediarag:ingest-dir (namestring folder)))
-          "the ingest tool reports both files")
+      (is (search "indexed 2 of 2" (nodecode-mediarag:ingest-dir (namestring folder))) "the ingest tool reports both files")
       (let ((answer (nodecode-mediarag:search-text "harvest september")))
         (is (search "notes.md" answer) "the document is found by its words"))
       (let ((answer (nodecode-mediarag:search-text "audiobook" :kind "audio")))
@@ -109,10 +104,7 @@
                      (declare (ignore method url arguments))
                      (values "# Trip notes\n\nThe ferry leaves the harbour at six." 200)))
              (is (search "fetched https://example.test/trip.md"
-                         (nodecode-mediarag:add-source "https://example.test/trip.md"))
-                 "the URL is fetched into the cache and indexed")
-             (is (search "ferry" (nodecode-mediarag:search-text "ferry"))
-                 "its words are searchable")
-             (is (search "no rows of kind image" (nodecode-mediarag:search-text "ferry" :kind "image"))
-                 "and it landed as a text row"))
+                         (nodecode-mediarag:add-source "https://example.test/trip.md")) "the URL is fetched into the cache and indexed")
+             (is (search "ferry" (nodecode-mediarag:search-text "ferry")) "its words are searchable")
+             (is (search "no rows of kind image" (nodecode-mediarag:search-text "ferry" :kind "image")) "and it landed as a text row"))
         (setf (symbol-function 'nodecode-mediarag::http-call) original)))))

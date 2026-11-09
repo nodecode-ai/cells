@@ -116,8 +116,7 @@ by *ANSWER-FN*, so no test dials Monid."
              (body (monid-request-body request)))
         (is (equal "https://monid.test/v1/run" (second request)))
         (is (equal "exa" (nlk:json-value body :string "provider")))
-        (is (< (abs (- (nlk:json-value body :number "maxCost") 0.05)) 1d-6)
-            "the section's ceiling rides every run")
+        (is (< (abs (- (nlk:json-value body :number "maxCost") 0.05)) 1d-6) "the section's ceiling rides every run")
         (is (equal "oslo" (nlk:json-value body :string "input" "body" "query")))))))
 
 (deftest monid-cell-balance-and-a-refused-answer ()

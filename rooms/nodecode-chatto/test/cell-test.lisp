@@ -86,8 +86,7 @@
     (is (equal "R1" (nlk:json-value (nck::request-plan-body plan) :string "roomId")))
     (is (equal "e-1" (nlk:json-value (nck::request-plan-body plan) :string "threadRootEventId")))
     (is (equal "Bearer t0k" (cdr (assoc "authorization" (nck::request-plan-headers plan)
-                                          :test #'string=)))
-        "the token rides the plan, never the body")))
+                                          :test #'string=))) "the token rides the plan, never the body")))
 
 ;;; --- the lap ----------------------------------------------------------------------
 

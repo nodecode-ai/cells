@@ -128,8 +128,7 @@ needle."
                  ("not HTTPS" "allow_insecure_http"))
     (is (null (nle::find-tool "document_ocr")) "a refused start installed nothing")
     (with-cell-stop ((document-ocr-start "api_base" "http://127.0.0.1:8080/v1" "model" "ocr-1"))
-      (is (equal "http://127.0.0.1:8080/v1" (nodecode-document-ocr::api-base))
-          "a loopback endpoint may answer without a token")
+      (is (equal "http://127.0.0.1:8080/v1" (nodecode-document-ocr::api-base)) "a loopback endpoint may answer without a token")
       (is (null (nodecode-document-ocr::auth-headers)) "and no header is sent without one"))))
 
 (deftest document-ocr-cell-a-token-can-come-from-the-environment ()

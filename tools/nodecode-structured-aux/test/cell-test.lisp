@@ -99,8 +99,7 @@ first."
       (is (equal "never touch the repository" (nlk:json-value state :string "guardian_policy")))
       (is (equal "~typesafe/jev-latest" (nlk:json-value body :string "model")))
       (is (equal "choice" (nlk:json-value questions :string "verdict" "type")))
-      (is (nth-value 1 (gethash "ESCALATE" (nlk:json-value questions :object "verdict" "criteria")))
-          "all three verdicts are offered")
+      (is (nth-value 1 (gethash "ESCALATE" (nlk:json-value questions :object "verdict" "criteria"))) "all three verdicts are offered")
       (is (search "ACTUAL risk" (nlk:json-value questions :string "verdict" "instructions"))))))
 
 (deftest structured-aux-cell-reads-the-verdict ()

@@ -89,8 +89,7 @@ STATUS) or (values OCTETS STATUS), as NLK:HTTP does. ASKED collects
 (deftest imagegen-cell-keeps-a-key-off-plain-http-to-a-public-host ()
   (let ((condition (signals-error nlk:config-refusal
                                   (imagegen-start "base_url" "http://gateway.public.test/v1"))))
-    (is (search "clear text" (princ-to-string condition))
-        "a public plain-HTTP gateway is refused, because the key would ride in the open"))
+    (is (search "clear text" (princ-to-string condition)) "a public plain-HTTP gateway is refused, because the key would ride in the open"))
   (with-cell-stop ((imagegen-start "base_url" "http://127.0.0.1:8317/v1"))
     (is (functionp stop) "a loopback gateway may be plain HTTP")))
 
@@ -130,8 +129,7 @@ STATUS) or (values OCTETS STATUS), as NLK:HTTP does. ASKED collects
         (let ((object (imagegen-object
                        "img-2" "generate_image"
                        "{\"prompt\":\"a heron\",\"aspect\":\"portrait\",\"model\":\"gpt-image-2-high\"}")))
-          (is (equal "gpt-image-2" (nlk:json-value object :string "api_model"))
-              "gpt-image-2-high is gpt-image-2 at high")
+          (is (equal "gpt-image-2" (nlk:json-value object :string "api_model")) "gpt-image-2-high is gpt-image-2 at high")
           (is (equal "high" (nlk:json-value object :string "requested_quality"))))
         (let ((payload (nlk:decode-json (getf (third (sent asked)) :content))))
           (is (equal "gpt-image-2" (nlk:json-value payload :string "model")))
@@ -160,8 +158,7 @@ STATUS) or (values OCTETS STATUS), as NLK:HTTP does. ASKED collects
                             (values "{\"data\":[{\"url\":\"https://cdn.test/fox.png\"}]}" 200))
                             ("/fox.png" (values (png-octets) 200)))
         (let ((object (imagegen-object "img-4" "generate_image" "{\"prompt\":\"a fox\"}")))
-          (is (probe-file (nlk:json-value object :string "image"))
-              "a url answer is fetched and saved, not handed on")
+          (is (probe-file (nlk:json-value object :string "image")) "a url answer is fetched and saved, not handed on")
           (is (equal "1x1" (nlk:json-value object :string "pixels"))))
         (is (eq t (getf (third (second asked)) :binary)) "fetched as bytes, not as text")
         (is (equal "https://cdn.test/fox.png" (second (second asked))))))))
@@ -183,8 +180,7 @@ STATUS) or (values OCTETS STATUS), as NLK:HTTP does. ASKED collects
             (is (equal "https://gateway.test/v1/images/edits" url))
             (let ((content (getf options :content)))
               (is (equal "make it dusk" (cdr (assoc "prompt" content :test #'equal))))
-              (is (pathnamep (cdr (assoc "image" content :test #'equal)))
-                  "the source rides as a file part")
+              (is (pathnamep (cdr (assoc "image" content :test #'equal))) "the source rides as a file part")
               (is (null (getf options :content-type)) "and the body is multipart, not JSON"))))))))
 
 (deftest imagegen-cell-refuses-a-source-that-is-not-an-image ()
@@ -219,8 +215,7 @@ STATUS) or (values OCTETS STATUS), as NLK:HTTP does. ASKED collects
             (is (search "[key]" text)))
           (is (equal "Bearer sk-secret-123"
                      (cdr (assoc "authorization" (getf (third (sent asked)) :headers)
-                                  :test #'equal)))
-              "the key rides as a bearer token"))))))
+                                  :test #'equal))) "the key rides as a bearer token"))))))
 
 ;;; --- /image --------------------------------------------------------------------------
 
@@ -238,8 +233,7 @@ STATUS) or (values OCTETS STATUS), as NLK:HTTP does. ASKED collects
           (is (search ".png" text) "the answer names the file it wrote")
           (is (search "gpt-image-2" text) "and the model"))
         (let ((payload (nlk:decode-json (getf (third (sent asked)) :content))))
-          (is (equal "a red fox" (nlk:json-value payload :string "prompt"))
-              "the flags are not part of the prompt")
+          (is (equal "a red fox" (nlk:json-value payload :string "prompt")) "the flags are not part of the prompt")
           (is (equal "high" (nlk:json-value payload :string "quality")) "a flag overrides the setting")
           (is (equal "1536x1024" (nlk:json-value payload :string "size")) "and picks the aspect"))))))
 

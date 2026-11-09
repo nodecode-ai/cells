@@ -55,8 +55,7 @@ a provider and a model, one that follows the assigning session."
    (is (= 6 (count-if #'functionp
                        (mapcar #'teammates-tool
                                '("teammates_roster" "teammate_assign" "teammate_check"
-                                 "teammate_wait" "teammate_message" "teammate_stop"))))
-       "all six tools are registered")
+                                 "teammate_wait" "teammate_message" "teammate_stop")))) "all six tools are registered")
    (is (= 900 (nodecode-teammates::setting :seconds)))
    (let ((answer (teammate-answer "teammates_roster")))
      (is (search "reviewer  Slow and careful" answer) "the roster names each teammate and its line")
@@ -77,8 +76,7 @@ a provider and a model, one that follows the assigning session."
       (is (search "scout: Cheap and quick" description))
       (is (not (search "anthropic" description)) "no provider reaches the model")
       (is (not (search "claude-opus-5" description)) "no model id reaches the model")
-      (is (equal '("teammate" "goal") (coerce (gethash "required" parameters) 'list))
-          "a name and a goal are all the schema requires"))))
+      (is (equal '("teammate" "goal") (coerce (gethash "required" parameters) 'list)) "a name and a goal are all the schema requires"))))
 
 (deftest teammates-cell-a-malformed-entry-is-skipped-and-said-so ()
   (with-cell-stop ((teammates-start
@@ -111,8 +109,7 @@ a provider and a model, one that follows the assigning session."
                                      "context" "it is in src/http.lisp")))
       (is (equal '(("reviewer" "review the patch" "it is in src/http.lisp" nil
                     "anthropic" "claude-opus-5"))
-                 seen)
-          "the roster entry resolved to its provider and model; the goal went whole, as one line")
+                 seen) "the roster entry resolved to its provider and model; the goal went whole, as one line")
       (is (search "mate-reviewer-3KQ7" answer) "the answer names the run to check")
       (is (search "teammate_check" answer) "and says what to call next"))))
 
@@ -127,8 +124,7 @@ a provider and a model, one that follows the assigning session."
       (funcall (teammates-tool "teammate_assign")
                (nlk:make-json-object "teammate" "scout" "goal" "and the tests?"
                                       "continue" "mate-scout-9ZQ2"))
-      (is (equal '(("scout" "and the tests?" "mate-scout-9ZQ2")) seen)
-          "the same session, which is what carries the earlier work"))))
+      (is (equal '(("scout" "and the tests?" "mate-scout-9ZQ2")) seen) "the same session, which is what carries the earlier work"))))
 
 (deftest teammates-cell-an-unknown-teammate-or-run-is-refused ()
   (with-cell-stop ((teammates-start "teammates" (teammate-two-roster)))
@@ -137,8 +133,7 @@ a provider and a model, one that follows the assigning session."
                   (teammate-answer "teammate_assign" "teammate" "ghost" "goal" "look"))))
     (is (search "reviewer is not a teammate run id"
                 (refusal-text nodecode-teammates::teammates-error
-                  (teammate-answer "teammate_check" "run" "reviewer")))
-          "a bare name is not a run id")))
+                  (teammate-answer "teammate_check" "run" "reviewer"))) "a bare name is not a run id")))
 
 (deftest teammates-cell-an-empty-roster-refuses-and-says-where-to-write-it ()
   (with-cell-stop ((teammates-start "teammates" (nlk:make-json-object)))
@@ -222,8 +217,7 @@ a provider and a model, one that follows the assigning session."
     (let ((shown (nle:slash "/teammates")))
       (is (search "Teammates (2)" shown))
       (is (search "reviewer  Slow and careful" shown) "a name and its line")
-      (is (search "(runs on anthropic · claude-opus-5 · reasoning high)" shown)
-          "what it runs on, for the operator"))
+      (is (search "(runs on anthropic · claude-opus-5 · reasoning high)" shown) "what it runs on, for the operator"))
     (let ((one (nle:slash "/teammates reviewer")))
       (is (search "You review changes and name the file and the line" one) "its instructions")
       (is (search "No runs of reviewer from this session yet" one)))

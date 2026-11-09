@@ -113,10 +113,8 @@ route names is an error."
       (is (eq :get (first request)))
       (is (search "tags=vip" (second request)) "the tag rides as tags")
       (is (search "limit=2" (second request)) "the call's own limit")
-      (is (equal "Bearer seq_user_test" (sequenzy-request-header request "authorization"))
-          "the key rides the header")
-      (is (equal "comp_1" (sequenzy-request-header request "x-company-id"))
-          "the section's company pins the workspace"))))
+      (is (equal "Bearer seq_user_test" (sequenzy-request-header request "authorization")) "the key rides the header")
+      (is (equal "comp_1" (sequenzy-request-header request "x-company-id")) "the section's company pins the workspace"))))
 
 (deftest sequenzy-cell-one-subscriber-answers-its-profile ()
   (with-sequenzy-answers
@@ -131,8 +129,7 @@ route names is an error."
                                          (nlk:json-object "email" "ana@example.com")))
       ("\"email\":\"ana@example.com\"") ("\"plan\":\"pro\"") ("\"Newsletter\"")
       ("\"notes\":1"))
-    (is (search "/api/v1/subscribers/ana" (second (first (sequenzy-asked))))
-        "the address is the path, encoded")))
+    (is (search "/api/v1/subscribers/ana" (second (first (sequenzy-asked)))) "the address is the path, encoded")))
 
 (deftest sequenzy-cell-a-stranger-is-named-not-guessed ()
   (with-sequenzy-answers
@@ -192,8 +189,7 @@ route names is an error."
                 200)))
     (is-carrying (answer (sequenzy-tool "sequenzy_campaigns" (nlk:json-object)))
       ("April Launch") ("\"status\":\"draft\"") ("\"labels\":[\"edm\"]") ("\"total\":1"))
-    (is (search "limit=25" (second (first (sequenzy-asked))))
-        "the section's max_rows bounds a list")
+    (is (search "limit=25" (second (first (sequenzy-asked)))) "the section's max_rows bounds a list")
     (is-carrying (answer (sequenzy-tool "sequenzy_campaigns"
                                          (nlk:json-object "campaign_id" "camp_1")))
       ("\"id\":\"camp_1\"") ("\"preview_url\":\"https://sequenzy.com/dashboard/campaign/camp_1?step=review\""))))
@@ -264,8 +260,7 @@ route names is an error."
     (let* ((request (first (sequenzy-asked)))
            (body (sequenzy-request-body request)))
       (is (eq :post (first request)))
-      (is (equal "key-1" (sequenzy-request-header request "idempotency-key"))
-          "one key per logical email")
+      (is (equal "key-1" (sequenzy-request-header request "idempotency-key")) "one key per logical email")
       (is (equal "welcome" (nlk:json-value body :string "slug")))
       (is (equal "Ana" (nlk:json-value body :string "variables" "firstName")))
       (is (equal "transactional" (nlk:json-value body :string "emailType"))))))

@@ -223,8 +223,7 @@ sends it -- the contract decoded, the hooks run; => the result text."
                                    (nlk:json-object "urls" (vector "https://a.test/1")))))
         (is (= 1 (length (anysearch-asked))) "no MCP request when mcp_fallback is off")
         (is (search "1. https://a.test/1" text) "the URL is still that URL's line")
-        (is (search "failed: AnySearch answered HTTP 500 on /v1/extract: boom" text)
-            "one URL's failure is its own line")))))
+        (is (search "failed: AnySearch answered HTTP 500 on /v1/extract: boom" text) "one URL's failure is its own line")))))
 
 ;;; --- /anysearch -----------------------------------------------------------------
 

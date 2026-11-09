@@ -18,10 +18,8 @@
   (:help :job-search)
   (:command "jobsearch")
   (:running (is (equal "f9a6ec16-0bfd-44d8-b3ee-073776745ee7"
-                       (nodecode-job-search::setting :listing))
-                 "the plugin's listing id is the default")
-            (is (= 6000 (nodecode-job-search::setting :max-chars))
-                "six thousand characters of a posting by default"))
+                       (nodecode-job-search::setting :listing)) "the plugin's listing id is the default")
+            (is (= 6000 (nodecode-job-search::setting :max-chars)) "six thousand characters of a posting by default"))
   (:refused ("command" "definitely-no-such-program-xyz"))
   (:idle nodecode-job-search:job-search-error
          (job-search:find-postings :keywords "senior designer")
@@ -41,23 +39,19 @@
                      "--keywords" "senior designer"
                      "--location" "United States"
                      "--limit" "5")
-                   (last-call))
-            "one search, one source, the flags the plugin's wrapper passed")
+                   (last-call)) "one search, one source, the flags the plugin's wrapper passed")
         (is (search "2 postings from ashby" answer) "the count and the source that answered")
-        (is (search "Senior Product Designer - Tidewater Health - Remote (US)" answer)
-            "the row a reader judges from")
+        (is (search "Senior Product Designer - Tidewater Health - Remote (US)" answer) "the row a reader judges from")
         (is (search "$180K - $210K" answer) "with the salary where the source gives one")
         (is (search "jp_22d0d871db24" answer) "the id a detail read needs")
-        (is (search "https://jobs.ashbyhq.com/tidewater/jp_22d0d871db24" answer)
-            "beside the url it must be paired with")
+        (is (search "https://jobs.ashbyhq.com/tidewater/jp_22d0d871db24" answer) "beside the url it must be paired with")
         (is (search "more with cursor cur_2" answer) "and the next page named")))))
 
 (deftest job-search-cell-a-search-names-the-source-that-really-answered ()
   (with-cell-stop ((job-search-start))
     (with-run-stub (:search +search-json+)
       (let ((answer (job-search:find-postings :keywords "senior designer" :source "linkedin")))
-        (is (search "(asked for linkedin)" answer)
-            "a source that answered for another is said out loud")))))
+        (is (search "(asked for linkedin)" answer) "a source that answered for another is said out loud")))))
 
 (deftest job-search-cell-an-empty-page-says-so-without-refusing ()
   (with-cell-stop ((job-search-start))
@@ -79,14 +73,11 @@
                      "--posting_id" "jp_22d0d871db24"
                      "--source_url" "https://jobs.ashbyhq.com/tidewater/jp_22d0d871db24"
                      "--source" "ashby")
-                   (last-call))
-            "the pair and the source, in the shape the route takes")
+                   (last-call)) "the pair and the source, in the shape the route takes")
         (is (search "Owns a care-navigation area end to end" answer) "the description")
         (is (search "Salary: $180K - $210K" answer) "the salary")
-        (is (search "leaves these unstated: employment_type, workplace_type" answer)
-            "and what the page did not yield, named rather than assumed")
-        (is (search "Source: ashby https://jobs.ashbyhq.com/tidewater/jp_22d0d871db24" answer)
-            "with where the user applies")))))
+        (is (search "leaves these unstated: employment_type, workplace_type" answer) "and what the page did not yield, named rather than assumed")
+        (is (search "Source: ashby https://jobs.ashbyhq.com/tidewater/jp_22d0d871db24" answer) "with where the user applies")))))
 
 ;;; --- refusals ------------------------------------------------------------------------
 
@@ -100,15 +91,12 @@
 (deftest job-search-cell-a-verb-refuses-what-it-cannot-ask ()
   (with-cell-stop ((job-search-start))
     (with-run-stub ()
-      (is (search "needs keywords" (refusal (lambda () (job-search:find-postings :keywords " "))))
-          "no keywords, no call")
+      (is (search "needs keywords" (refusal (lambda () (job-search:find-postings :keywords " ")))) "no keywords, no call")
       (is (search "needs the posting id"
                   (refusal (lambda () (job-search:posting :source-url "https://x.test/j"
-                                                          :source "ashby"))))
-          "no id, no call")
+                                                          :source "ashby")))) "no id, no call")
       (is (search "needs the source_url"
-                  (refusal (lambda () (job-search:posting :posting-id "jp_x" :source "ashby"))))
-          "no url, no call")
+                  (refusal (lambda () (job-search:posting :posting-id "jp_x" :source "ashby")))) "no url, no call")
       (is (null *calls*) "and nothing was spent"))))
 
 ;;; --- /jobsearch ----------------------------------------------------------------------
@@ -135,8 +123,7 @@
       (dolist (name '("job_search" "job_posting"))
         (let ((entry (nle::find-tool name)))
           (is (consp entry) (format nil "~a is registered" name))
-          (is (hash-table-p (nlk:contract-schema (second entry)))
-              "against a declared contract")
+          (is (hash-table-p (nlk:contract-schema (second entry))) "against a declared contract")
           (let* ((schema (second entry))
                  (arguments (if (equal name "job_search")
                                 (nlk:make-json-object "keywords" "senior designer"
@@ -155,8 +142,7 @@
       (is (signals-error nlk:contract-refusal
                          (nlk:contract-decode (second entry)
                                               (nlk:make-json-object "keywords" "x"
-                                                                     "source" "monster")))
-          "a fifth source is refused before any call"))))
+                                                                     "source" "monster"))) "a fifth source is refused before any call"))))
 
 ;;; --- the program really runs -------------------------------------------------------------
 
@@ -167,8 +153,7 @@
         (with-cell-stop ((job-search-start "command" program))
           (let ((answer (job-search:find-postings :keywords "senior designer" :source "ashby")))
             (is (stringp answer) "an answer, not a condition")
-            (is (search "Senior Product Designer" (or answer ""))
-                "the program's answer is the tool's answer")
+            (is (search "Senior Product Designer" (or answer "")) "the program's answer is the tool's answer")
             (let ((argv (uiop:read-file-string (merge-pathnames "argv" directory))))
               (is (search "search-jobs" argv) "the program was asked for a search")
               (is (search "senior designer" argv) "with the keywords as an argument")))))
@@ -177,5 +162,4 @@
                       :output "" :status 3 :error +refused-json+)))
         (with-cell-stop ((job-search-start "command" failing))
           (let ((said (refusal (lambda () (job-search:find-postings :keywords "senior designer")))))
-            (is (search "insufficient_credits" said)
-                "a failing exit code is read as a failure, with the body it printed")))))))
+            (is (search "insufficient_credits" said) "a failing exit code is read as a failure, with the body it printed")))))))

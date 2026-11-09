@@ -128,16 +128,14 @@ worker that sends it."
       (let ((json (frame-json frame)))
         (is (equal "SET_ACTIVITY" (nlk:json-value json :string "cmd")) "one SET_ACTIVITY command")
         (is (equal "Active Session"
-                   (nlk:json-value json :string "args" "activity" "details"))
-            "generic mode says Active Session, not the folder's name")
+                   (nlk:json-value json :string "args" "activity" "details")) "generic mode says Active Session, not the folder's name")
         (is (search "Nodecode"
                     (nlk:json-value json :string "args" "activity" "large_text")))
         (is (integerp (nlk:json-value json :integer "args" "pid")) "the pid Discord asks for")))
     (let ((handshake (first (sent-frames))))
       (is (= 0 (getf handshake :opcode)) "the handshake goes first")
       (is (equal "123456789012345678"
-                 (nlk:json-value (frame-json handshake) :string "client_id"))
-          "under the operator's own application id")
+                 (nlk:json-value (frame-json handshake) :string "client_id")) "under the operator's own application id")
       (is (= 1 (nlk:json-value (frame-json handshake) :integer "v")) "protocol version 1"))))
 
 (deftest discord-presence-cell-names-the-tool-the-agent-runs (with-discord-client)
@@ -148,8 +146,7 @@ worker that sends it."
                                                 (lambda (op) (declare (ignore op)) t))
       (nodecode-discord-presence::tick)
       (is (> (length (card-frames)) before) "the new activity is sent")
-      (is (search "[Reading File]" (getf (last-card) :text))
-          "the tool the agent is running stands on the card"))))
+      (is (search "[Reading File]" (getf (last-card) :text)) "the tool the agent is running stands on the card"))))
 
 (deftest discord-presence-cell-stealth-says-nothing-about-the-work (with-discord-client)
   (with-cell-stop ((discord-presence-start "stealth_mode" t))
@@ -171,30 +168,24 @@ worker that sends it."
     (wait-for-card)
     (is (search "Building the release"
                 (tool-answer "presence_show"
-                             "{\"details\":\"Building the release\",\"state\":\"ci\"}"))
-        "presence_show answers what it put up")
+                             "{\"details\":\"Building the release\",\"state\":\"ci\"}")) "presence_show answers what it put up")
     (let ((json (frame-json (last-card))))
       (is (equal "Building the release"
                  (nlk:json-value json :string "args" "activity" "details")))
       (is (equal "ci" (nlk:json-value json :string "args" "activity" "state"))))
-    (is (search "stays down" (tool-answer "presence_clear" "{\"pause\":true}"))
-        "presence_clear takes the card down")
-    (is (search "\"activity\":null" (getf (last-card) :text))
-        "which is an activity of null on the wire")
+    (is (search "stays down" (tool-answer "presence_clear" "{\"pause\":true}")) "presence_clear takes the card down")
+    (is (search "\"activity\":null" (getf (last-card) :text)) "which is an activity of null on the wire")
     (is (not (null nodecode-discord-presence::*paused*)) "and nothing more is published")
     (let ((before (length (card-frames))))
       (nodecode-discord-presence::tick)
       (is (= before (length (card-frames))) "a paused card sends nothing"))
-    (is (search "the card is off" (tool-answer "presence_status" "{}"))
-        "the status says the card is off")))
+    (is (search "the card is off" (tool-answer "presence_status" "{}")) "the status says the card is off")))
 
 (deftest discord-presence-cell-without-a-discord-client-says-so (with-no-client)
   (with-cell-stop ((discord-presence-start))
     (let ((answer (tool-answer "presence_show" "{\"details\":\"a line\"}")))
-      (is (search "no Discord client answered" answer)
-          "the tool's failure names the missing client"))
-    (is (search "no Discord client answered" nodecode-discord-presence::*last-error*)
-        "and the tick kept the same reason")))
+      (is (search "no Discord client answered" answer) "the tool's failure names the missing client"))
+    (is (search "no Discord client answered" nodecode-discord-presence::*last-error*) "and the tick kept the same reason")))
 
 ;;; --- /presence --------------------------------------------------------------------
 
@@ -207,13 +198,10 @@ worker that sends it."
       (is (search "updating every" text))
       (is (not (null dialog)) "with the one row that sets a line"))
     (is (search "stays down"
-                (nodecode-discord-presence::run-slash "off" nil))
-        "/presence off takes it down")
-    (is (search "back on" (nodecode-discord-presence::run-slash "on" nil))
-        "/presence on puts it back")
+                (nodecode-discord-presence::run-slash "off" nil)) "/presence off takes it down")
+    (is (search "back on" (nodecode-discord-presence::run-slash "on" nil)) "/presence on puts it back")
     (is (search "reviewing the log"
-                (nodecode-discord-presence::run-slash "reviewing the log" nil))
-        "anything else is the line to show")
+                (nodecode-discord-presence::run-slash "reviewing the log" nil)) "anything else is the line to show")
     (is (equal "reviewing the log"
                (nlk:json-value (frame-json (last-card))
                                :string "args" "activity" "details")))))

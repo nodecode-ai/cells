@@ -24,8 +24,7 @@
   (:running (let ((entry (nle::find-tool "teach_screen")))
               (is-present entry "the tool is registered under the plugin's name"
                 (is (equal "teach_screen" (first entry))))
-              (is (eq (third entry) 'nodecode-hud-teach::teach-screen)
-                  "the tool body is the cell's own function")))
+              (is (eq (third entry) 'nodecode-hud-teach::teach-screen) "the tool body is the cell's own function")))
   (:stopped (is (null (nle::find-tool "teach_screen")) "stop takes the tool back out"))
   (:refused ("max_edge" 10)))
 
@@ -155,8 +154,7 @@ the size sips reports, a Tcl version, a kill that always works."
       (is (search "New Game" answer) "with its window title")
       (is (search "860x620" answer) "and where it is on screen"))
     (setf *ht-accessibility* nil)
-    (is (search "ERROR:" (ht-tool "action" "list"))
-        "a window list without the permission is a refusal the model can read")))
+    (is (search "ERROR:" (ht-tool "action" "list")) "a window list without the permission is a refusal the model can read")))
 
 (deftest hud-teach-capture-answers-the-picture-and-its-geometry ()
   (with-hud-teach ()
@@ -168,10 +166,8 @@ the size sips reports, a Tcl version, a kill that always works."
       (is (equal (getf record :app) "Chess") "the capture is remembered for the next draw")
       (is (equal (getf record :bounds) '(40 60 860 620)) "with the window's own rect")
       (is (probe-file (getf record :file)) "and the JPEG is really written")
-      (is (member "screencapture" *ht-asked* :key #'first :test #'string=)
-          "through screencapture")
-      (is (member "sips" *ht-asked* :key #'first :test #'string=)
-          "shrunk by sips, as the original did"))))
+      (is (member "screencapture" *ht-asked* :key #'first :test #'string=) "through screencapture")
+      (is (member "sips" *ht-asked* :key #'first :test #'string=) "shrunk by sips, as the original did"))))
 
 (deftest hud-teach-capture-refuses-when-the-folder-is-unset ()
   (with-hud-teach ("capture_dir" nil)
@@ -247,8 +243,7 @@ the size sips reports, a Tcl version, a kill that always works."
     (is (search "visible 0" (ht-scene)) "and the scene says the screen is clear")
     (is (search "running" (ht-tool "action" "status")) "status answers the overlay's state")
     (ignore-errors (delete-file (nodecode-hud-teach::heartbeat-file)))
-    (is (search "no marks were up" (ht-tool "action" "clear"))
-        "with no daemon, clear says nothing was up rather than starting one")))
+    (is (search "no marks were up" (ht-tool "action" "clear")) "with no daemon, clear says nothing was up rather than starting one")))
 
 ;;; --- the first run, and the operator's side -------------------------------------------
 
@@ -266,14 +261,12 @@ the size sips reports, a Tcl version, a kill that always works."
   (with-hud-teach ()
     (is (search "overlay:" (nodecode-hud-teach::run-slash "" nil)) "bare /teach is status")
     (is (search "ready" (nodecode-hud-teach::run-slash "check" nil)) "/teach check runs the probes")
-    (is (search "not one of" (nodecode-hud-teach::run-slash "paint" nil))
-        "an unknown word says what the words are")
+    (is (search "not one of" (nodecode-hud-teach::run-slash "paint" nil)) "an unknown word says what the words are")
     (let ((answer (nodecode-hud-teach::run-slash "demo" nil)))
       (is (search "demo drawn" answer) "/teach demo captures and paints in one word")
       (is (search "create oval" (ht-scene)) "its sample ring is on screen"))))
 
 (deftest hud-teach-renders-a-tcl-safe-caption ()
   (is (equal (nodecode-hud-teach::tcl-string "a \"b\" $c \\[d\\]")
-             "\"a \\\"b\\\" \\$c \\\\\\[d\\\\\\]\"")
-      "a caption cannot end the Tcl string, interpolate a variable or run a command")
+             "\"a \\\"b\\\" \\$c \\\\\\[d\\\\\\]\"") "a caption cannot end the Tcl string, interpolate a variable or run a command")
   (is (equal (nodecode-hud-teach::tcl-string "plain") "\"plain\"") "a plain caption is one word"))

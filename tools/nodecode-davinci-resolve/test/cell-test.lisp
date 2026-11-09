@@ -166,8 +166,7 @@
                (lines (uiop:read-file-lines path)))
           (is (equal "frame,timecode_seconds,name,color,note,duration" (first lines)))
           (is (equal "0,0.000,Marker,Blue,,1" (second lines)))
-          (is (equal "12,0.500,Beat,Red,\"a, b\",2" (third lines))
-              "a note with a comma is one quoted field")
+          (is (equal "12,0.500,Beat,Red,\"a, b\",2" (third lines)) "a note with a comma is one quoted field")
           (is (= 3 (length lines))))))))
 
 (deftest davinci-resolve-cell-scans-a-media-folder ()

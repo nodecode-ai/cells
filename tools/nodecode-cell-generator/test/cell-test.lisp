@@ -45,16 +45,14 @@
       (is (probe-file (generated-file "smoke-sample" "README.md")) "the README")
       (is (probe-file (generated-file "smoke-sample" "test/support.lisp")) "the slice")
       (is (probe-file (generated-file "smoke-sample" "test/cell-test.lisp")) "the lifecycle tests")
-      (is (search "\"ping\"" (uiop:read-file-string (generated-file "smoke-sample" "cell.lisp")))
-          "the tool is declared")
+      (is (search "\"ping\"" (uiop:read-file-string (generated-file "smoke-sample" "cell.lisp"))) "the tool is declared")
       ;; the folder is a cell: it loads, it starts, and its tool answers
       (load-generated-cell "smoke-sample" :test-system t)
       (let ((stop (start-generated "smoke-sample")))
         (unwind-protect
              (let ((ping (find-symbol "PING" (find-package "NODECODE-SMOKE-SAMPLE"))))
                (is (fboundp ping) "the handler is defined")
-               (is (stringp (funcall ping (nlk:json-object "who" "there")))
-                   "the handler answers a string")
+               (is (stringp (funcall ping (nlk:json-object "who" "there"))) "the handler answers a string")
                (is (assoc "ping" nle::*tools* :test #'string=) "the tool is registered"))
           (funcall stop)
           (is (null (assoc "ping" nle::*tools* :test #'string=)) "and stopping takes it back"))))))
@@ -96,8 +94,7 @@
                     "description" "say it loud"
                     "params" (vector (nlk:json-object "name" "word" "type" "string"))))))
       (is (string= "tool_added" (answer-member answer "status")))
-      (is (search "(:tool \"shout\"" (uiop:read-file-string (generated-file "growth-sample" "cell.lisp")))
-          "the clause is in the file"))
+      (is (search "(:tool \"shout\"" (uiop:read-file-string (generated-file "growth-sample" "cell.lisp"))) "the clause is in the file"))
     (let ((answer (cell-generator:add-command
                    (nlk:json-object "cell" "growth-sample" "name" "grow"
                                      "description" "grow the cell"))))
@@ -126,5 +123,4 @@
         (cell-generator:add-command (nlk:json-object "cell" "handmade" "name" "added")))
       (is (string= ";; a cell nobody scaffolded here: no markers.
 "
-                   (uiop:read-file-string (merge-pathnames "cell.lisp" folder)))
-          "the folder is untouched"))))
+                   (uiop:read-file-string (merge-pathnames "cell.lisp" folder))) "the folder is untouched"))))

@@ -72,8 +72,7 @@ captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
     (is (equal "sabi-code" (nlk:json-value body :string "model")))
     (is (equal "nodecode" (header headers "X-Sabi-Client")))
     (is (equal "sess-01H:2" (header headers "X-Sabi-Session")))
-    (is (null (search "sk-openai" (or (header headers "authorization") "")))
-        "no other provider's key reaches the proxy")))
+    (is (null (search "sk-openai" (or (header headers "authorization") ""))) "no other provider's key reaches the proxy")))
 
 (deftest sabi-cell-replaces-a-stale-attribution-header ()
   (with-cell-stop ((sabi-start))
@@ -88,8 +87,7 @@ captured: URL, HEADERS and BODY (the decoded request) as dex:post saw them."
          nil :config nil
          :headers '(("X-Sabi-Client" . "another-client") ("Accept" . "text/event-stream")))
         (is (equal "nodecode" (header seen "X-Sabi-Client")))
-        (is (= 1 (count "x-sabi-client" seen :key #'car :test #'string-equal))
-            "one copy of a header this cell owns")
+        (is (= 1 (count "x-sabi-client" seen :key #'car :test #'string-equal)) "one copy of a header this cell owns")
         (is (equal "text/event-stream" (header seen "Accept")) "the lane's own headers stay")))))
 
 (deftest sabi-cell-omits-an-impure-session-id ()

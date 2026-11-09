@@ -17,8 +17,7 @@
   (:command "diff-review")
   (:running
    (is (nle::find-tool "diff_review") "the review tool is registered")
-   (is (equal 30 (nodecode-diff-review::setting :timeout-seconds))
-       "and the section's defaults are the values it runs on"))
+   (is (equal 30 (nodecode-diff-review::setting :timeout-seconds)) "and the section's defaults are the values it runs on"))
   (:stopped
    (is (null (nle::find-tool "diff_review")) "stop takes the tool back"))
   (:refused ("timeout_seconds" 0)
@@ -127,9 +126,7 @@ must not count.")
 
         (is (member "console.log statement" issues :test #'equal) "and the JavaScript call"))
 
-      (is (equal "diff_text" (gethash "mode" (gethash "comparison" result)))
-
-          "and the answer says which review it was"))))
+      (is (equal "diff_text" (gethash "mode" (gethash "comparison" result))) "and the answer says which review it was"))))
 
 (deftest diff-review-cell-text-that-is-no-diff-is-refused ()
   (with-git ()
@@ -155,12 +152,10 @@ must not count.")
         (is (member "--no-ext-diff" call :test #'equal) "the flags the parser needs are passed")
         (is (member "--no-textconv" call :test #'equal) "so the operator's config cannot change the output")
         (is (member "core.quotePath=false" call :test #'equal) "paths arrive unquoted where they can")
-        (is (member "1111111111111111111111111111111111111111" call :test #'equal)
-            "and the base ref was resolved to a commit first")
+        (is (member "1111111111111111111111111111111111111111" call :test #'equal) "and the base ref was resolved to a commit first")
         (is (equal "--" (car (last call))) "with the pathspec terminator last"))
       (is (= 1 (gethash "files_changed" result)) "one file changed")
-      (is (equal "app.py" (gethash "path" (aref (gethash "files" result) 0)))
-          "the a/ and b/ prefixes are off the path"))))
+      (is (equal "app.py" (gethash "path" (aref (gethash "files" result) 0))) "the a/ and b/ prefixes are off the path"))))
 
 (deftest diff-review-cell-untracked-files-are-read-too ()
   (let* ((directory (merge-pathnames (format nil "diff-review-~d/" (random 1000000))
@@ -177,8 +172,7 @@ must not count.")
              (is (= 1 (gethash "files_changed" result)) "one file")
              (is (equal "untracked" (gethash "status" (aref files 0))) "marked untracked")
              (is (= 1 (gethash "warning_count" result)) "and its print( was read")
-             (is (equal "notes.py" (gethash "file" (aref (gethash "warnings" result) 0)))
-                 "under its own name")))
+             (is (equal "notes.py" (gethash "file" (aref (gethash "warnings" result) 0))) "under its own name")))
       (uiop:delete-directory-tree directory :validate t :if-does-not-exist :ignore))))
 
 ;;; --- the branch's own commits ----------------------------------------------------
@@ -193,8 +187,7 @@ must not count.")
         (is (stringp (gethash "merge_base" comparison)) "and from the common ancestor"))
       (let ((call (find-if (lambda (argv) (member "diff" (rest argv) :test #'equal)) *calls*)))
         (is (member "--quiet" call :test #'equal) "with the dirty check run beside it")
-        (is (= 2 (count-if (lambda (argv) (member "diff" (rest argv) :test #'equal)) *calls*))
-            "one dirty check and one review")))))
+        (is (= 2 (count-if (lambda (argv) (member "diff" (rest argv) :test #'equal)) *calls*)) "one dirty check and one review")))))
 
 ;;; --- a git that complains --------------------------------------------------------
 
@@ -211,8 +204,7 @@ must not count.")
       (let ((result (review-answer "{}")))
         (is (equal "error" (gethash "status" result)) "no repository, no review")
         (is (equal "not_a_repository" (gethash "error_type" result)) "and the type says which")
-        (is (search "not inside a git work tree" (gethash "message" result))
-            "and says which directory")))))
+        (is (search "not inside a git work tree" (gethash "message" result)) "and says which directory")))))
 
 (deftest diff-review-cell-a-git-too-old-is-refused ()
   (with-git (:version "git version 2.20.1")

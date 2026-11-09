@@ -94,23 +94,17 @@ call says otherwise), its state in a temp directory and the sidecar stubbed."
 (deftest iroh-cell-a-ticket-pairs-a-peer-exactly-once ()
   (with-iroh-cell ()
     (let ((text (iroh:ticket)))
-      (is (uiop:string-prefix-p (format nil "hermes-iroh://pair?peer=~a&" +peer+) text)
-          "the ticket names this agent's endpoint")
+      (is (uiop:string-prefix-p (format nil "hermes-iroh://pair?peer=~a&" +peer+) text) "the ticket names this agent's endpoint")
       (is (search "nonce=" text) "with a one-use nonce")
       (is (search "addr=127.0.0.1" text) "and the direct address a peer can dial")
       (is (search "expires in 15 minutes" text) "good for the ticket lifetime")
       (let ((ticket (ticket-line text)))
-        (is (search "confirm" (refusal 'iroh:iroh-error (lambda () (iroh:pair ticket))))
-            "pairing refuses until the operator confirms, and says so")
-        (is (search +peer+ (refusal 'iroh:iroh-error (lambda () (iroh:pair ticket))))
-            "the refusal names the peer the ticket would trust")
-        (is (search (format nil "paired with ~a" +peer+) (iroh:pair ticket :confirm t))
-            "confirming pairs it")
+        (is (search "confirm" (refusal 'iroh:iroh-error (lambda () (iroh:pair ticket)))) "pairing refuses until the operator confirms, and says so")
+        (is (search +peer+ (refusal 'iroh:iroh-error (lambda () (iroh:pair ticket)))) "the refusal names the peer the ticket would trust")
+        (is (search (format nil "paired with ~a" +peer+) (iroh:pair ticket :confirm t)) "confirming pairs it")
         (is (search +peer+ (iroh:peers)) "the peer list knows it")
-        (is (search "nonce" (refusal 'iroh:iroh-error (lambda () (iroh:pair ticket :confirm t))))
-            "the same ticket cannot pair twice")
-        (is (search +peer+ (tool-text "iroh_peer_list"))
-            "iroh_peer_list answers from the same registry")))))
+        (is (search "nonce" (refusal 'iroh:iroh-error (lambda () (iroh:pair ticket :confirm t)))) "the same ticket cannot pair twice")
+        (is (search +peer+ (tool-text "iroh_peer_list")) "iroh_peer_list answers from the same registry")))))
 
 (deftest iroh-cell-an-expired-or-malformed-ticket-is-refused ()
   (with-iroh-cell ()
@@ -118,17 +112,14 @@ call says otherwise), its state in a temp directory and the sidecar stubbed."
                        (make-string 24 :initial-element #\b)
                        (- (nlk:unix-now) 3600)
                        (make-string 32 :initial-element #\0))))
-      (is (search "expired" (refusal 'iroh:iroh-error (lambda () (iroh:pair old :confirm t))))
-          "an hour-old ticket is expired")
+      (is (search "expired" (refusal 'iroh:iroh-error (lambda () (iroh:pair old :confirm t)))) "an hour-old ticket is expired")
       (is (search "no pairing ticket"
-                  (refusal 'iroh:iroh-error (lambda () (iroh:pair "hello" :confirm t))))
-          "so is a string that is no ticket")
+                  (refusal 'iroh:iroh-error (lambda () (iroh:pair "hello" :confirm t)))) "so is a string that is no ticket")
       (is (search "secret"
                   (refusal 'iroh:iroh-error
                            (lambda () (iroh:pair (format nil "hermes-iroh://pair?peer=peerx1&ts=1&nonce=~a"
                                                          (make-string 32 :initial-element #\0))
-                                                 :confirm t))))
-          "a ticket with no secret is refused")
+                                                 :confirm t)))) "a ticket with no secret is refused")
       (is (null (nodecode-iroh::find-peer "peerold1")) "and an expired one paired nothing"))))
 
 ;;; --- a call -------------------------------------------------------------------
@@ -155,19 +146,16 @@ call says otherwise), its state in a temp directory and the sidecar stubbed."
           (is (null (search "abcdefghijklmnop" input)) "and the token itself did not leave")
           (is (search "authSecret" input) "the pairing secret authenticates the task")
           (is (search +peer+ input) "and the peer is the one paired"))
-        (is (plusp (length (or (nlk:json-value (nodecode-iroh::find-peer +peer+) :string "last_called") "")))
-            "and the peer's record says when it was last called"))
+        (is (plusp (length (or (nlk:json-value (nodecode-iroh::find-peer +peer+) :string "last_called") ""))) "and the peer's record says when it was last called"))
       (is (search "not a paired peer"
-                  (refusal 'iroh:iroh-error (lambda () (iroh:call "peernobody9" "hi"))))
-          "an unpaired peer is refused before any process starts"))))
+                  (refusal 'iroh:iroh-error (lambda () (iroh:call "peernobody9" "hi")))) "an unpaired peer is refused before any process starts"))))
 
 ;;; --- no sidecar, and the panel --------------------------------------------------
 
 (deftest iroh-cell-without-a-sidecar-it-says-what-to-build ()
   (with-iroh-cell ("sidecar" "")
     (is (search "no sidecar" (tool-text "iroh_peer_status")) "the status names the gap")
-    (is (search "sidecar" (refusal 'iroh:iroh-error (lambda () (iroh:ticket))))
-        "a ticket needs an endpoint, and says where it comes from")
+    (is (search "sidecar" (refusal 'iroh:iroh-error (lambda () (iroh:ticket)))) "a ticket needs an endpoint, and says where it comes from")
     (is (search "no peers" (tool-text "iroh_peer_list")) "and no peer is paired")))
 
 (deftest iroh-cell-the-command-shows-the-status-and-its-panel ()
@@ -179,5 +167,4 @@ call says otherwise), its state in a temp directory and the sidecar stubbed."
            (object (nle::dialog-json dialog)))
       (is (equal "No peers paired" (nle::json-value object :text "summary")) "and its panel says so")
       (is (= 2 (length (nle::json-array object "rows"))) "with the two rows that start everything"))
-    (is (search "hermes-iroh://pair?peer=" (nodecode-iroh::run-command "ticket" nil))
-        "`/iroh ticket` issues this agent's ticket")))
+    (is (search "hermes-iroh://pair?peer=" (nodecode-iroh::run-command "ticket" nil)) "`/iroh ticket` issues this agent's ticket")))

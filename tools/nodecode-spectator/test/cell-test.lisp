@@ -19,8 +19,7 @@
   (:help :spectator)
   (:running (is (equal "Spectator" (nodecode-spectator::setting :title)) "the page's name")
             (is (equal 404 (first (nodecode-spectator::guest-route
-                                   (spectator-env "nope"))))
-                "a token the cell does not know is a 404, not a raise"))
+                                   (spectator-env "nope")))) "a token the cell does not know is a 404, not a raise"))
   (:refused ("invite_minutes" 0) ("max_events" 5))
   (:idle spectator:spectator-error (spectator:share "s1")))
 
@@ -29,15 +28,12 @@
 (deftest spectator-cell-the-mask-hides-paths-and-assignments ()
   (is (equal "~/... and NAME=*** and ***"
              (nodecode-spectator::mask-text
-              "/home/someone/notes.txt and NAME=secret and aaaaaaaaaaaaaaaaaaaaaaaa123"))
-      "a path, an assignment and an opaque token, each rewritten")
+              "/home/someone/notes.txt and NAME=secret and aaaaaaaaaaaaaaaaaaaaaaaa123")) "a path, an assignment and an opaque token, each rewritten")
   (is (equal "kept /home/someone/notes.txt"
-             (nodecode-spectator::mask-text "kept /home/someone/notes.txt" :mask nil))
-      "mask off keeps the line")
+             (nodecode-spectator::mask-text "kept /home/someone/notes.txt" :mask nil)) "mask off keeps the line")
   (is (<= (length (nodecode-spectator::mask-text
                     (format nil "~{~a ~}" (loop repeat 200 collect "word"))))
-          400)
-      "a line is clipped"))
+          400) "a line is clipped"))
 
 (deftest spectator-cell-a-fact-reads-as-one-masked-line ()
   (is (equal "called read_file"
@@ -47,18 +43,15 @@
   (is (search "opened ~/..."
               (nodecode-spectator::fact-line
                "turn.assistant_message_completed"
-               (nlk:json-object "message" "opened /home/someone/x.lisp and read it") t))
-      "an assistant message's paths are masked")
-  (is (null (nodecode-spectator::fact-line "session.title" (nlk:json-object) t))
-      "a kind the page has nothing to say about is left out"))
+               (nlk:json-object "message" "opened /home/someone/x.lisp and read it") t)) "an assistant message's paths are masked")
+  (is (null (nodecode-spectator::fact-line "session.title" (nlk:json-object) t)) "a kind the page has nothing to say about is left out"))
 
 ;;; --- sharing ------------------------------------------------------------------
 
 (deftest spectator-cell-a-share-refuses-without-an-address ()
   (with-cell-stop ((spectator-start))
     (let ((condition (signals-error spectator:spectator-error (spectator:share "s1"))))
-      (is (search "public_url" (spectator::spectator-error-detail condition))
-          "the refusal names the setting"))))
+      (is (search "public_url" (spectator::spectator-error-detail condition)) "the refusal names the setting"))))
 
 (deftest spectator-cell-a-share-answers-the-address-a-guest-opens ()
   (with-temp-store ()
@@ -73,8 +66,7 @@
       (is-present (invite (nodecode-spectator::live-invite token))
         "the invite the page reads is the one the address names"
         (is (equal "s1" (getf invite :session))))
-      (is (null (nodecode-spectator::live-invite "000000000000000000000000"))
-          "a token nothing named is no invite")))))
+      (is (null (nodecode-spectator::live-invite "000000000000000000000000")) "a token nothing named is no invite")))))
 
 ;;; --- the page -------------------------------------------------------------------
 
@@ -94,11 +86,9 @@
                        (spectator-env token :op "events" :query "since=0"))))
           (is (hash-table-p events) "the facts are a JSON body")
           (let ((lines (loop for event across (gethash "events" events) collect (gethash "line" event))))
-            (is (equal '("called read_file" "wrote ~/...") lines)
-                "each fact one masked line, oldest first")))
+            (is (equal '("called read_file" "wrote ~/...") lines) "each fact one masked line, oldest first")))
         (is (equal 404 (first (nodecode-spectator::guest-route
-                               (spectator-env "unknown"))))
-            "a token nothing minted is a 404")))))
+                               (spectator-env "unknown")))) "a token nothing minted is a 404")))))
 
 ;;; --- a guest's suggestion ---------------------------------------------------------
 
@@ -125,11 +115,9 @@
             (is (search "already approved"
                         (handler-case (progn (spectator:approve (getf one :id)) "")
                           (spectator:spectator-error (condition)
-                            (spectator::spectator-error-detail condition))))
-                "approving twice refuses instead of saying it twice")))
+                            (spectator::spectator-error-detail condition)))) "approving twice refuses instead of saying it twice")))
         (spectator:revoke)
         (is (search "closed or expired"
                     (first (third (nodecode-spectator::guest-route
                                    (spectator-env token :op "suggest" :method :post
-                                                  :query "text=late")))))
-            "a revoked invite takes no more suggestions")))))
+                                                  :query "text=late"))))) "a revoked invite takes no more suggestions")))))

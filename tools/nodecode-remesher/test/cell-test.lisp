@@ -139,8 +139,7 @@ comfy3d files defaulted to scratch files."
             (is (equal "model/gltf-binary" (nlk:json-value (aref assets 0) :string "media_type")))
             (is (equal (nlk:sha256-text (nodecode.term:file-octets
                                           (nlk:json-value (aref assets 0) :string "path")))
-                       (nlk:json-value (aref assets 0) :string "sha256"))
-                "the manifest's hash is the file's own")))))))
+                       (nlk:json-value (aref assets 0) :string "sha256")) "the manifest's hash is the file's own")))))))
 
 (deftest remesher-cell-a-missing-artifact-is-an-integrity-error ()
   (with-cell-stop ((remesher-start))
@@ -157,8 +156,7 @@ comfy3d files defaulted to scratch files."
         (delete-file path)
         (let ((after (remesher-object "assets-2" "remesher_assets"
                                        (format nil "{\"job_id\":\"~a\"}" job-id))))
-          (is (equal "integrity_error" (nlk:json-value after :string "status"))
-              "a saved artifact that is gone is not delivered")
+          (is (equal "integrity_error" (nlk:json-value after :string "status")) "a saved artifact that is gone is not delivered")
           (is (zerop (length (nlk:json-array after "assets"))) "and no assets are answered"))))))
 
 (deftest remesher-cell-refuses-a-bad-image-and-a-second-active-job ()
@@ -177,8 +175,7 @@ comfy3d files defaulted to scratch files."
              (second (remesher-answer "gen-4" "remesher_generate"
                                        (format nil "{\"image\":\"~a\"}" (remesher-image "fourth.png")))))
         (is (= 32 (length (nlk:json-value first :string "job_id"))) "the first job is queued")
-        (is (search "still active" second)
-            "a second submission while one runs is refused as busy")
+        (is (search "still active" second) "a second submission while one runs is refused as busy")
         (let ((state (await-job (nlk:json-value first :string "job_id"))))
           (is (equal "succeeded" (nlk:json-value state :string "status")) "and the first one finishes"))))))
 
@@ -206,8 +203,7 @@ comfy3d files defaulted to scratch files."
         (is (eq nil (nlk:json-value answer :boolean "gpu_generation_verified")))
         (is (equal "health" (second (first asked))) "the CLI's own health ran")
         (is (equal (remesher-scratch "config.json" "{\"server_url\":\"http://127.0.0.1:8188/\"}")
-                   (fourth (first asked)))
-            "against the configured config file"))))
+                   (fourth (first asked))) "against the configured config file"))))
   (with-cell-stop ((remesher-start "backend" "native-local"
                                    "native_python" (remesher-scratch "python")
                                    "native_checkout" (remesher-checkout)))

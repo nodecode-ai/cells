@@ -83,8 +83,7 @@ oldest first, each (:CONTENT ... :HEADERS ...)."
   (:fixture with-key)
   (:hooks :tool)
   (:help :jev-judge)
-  (:running (is (equal "typesafe" (nodecode-jev-judge:setting :backend))
-                 "the backend resolved from the key present"))
+  (:running (is (equal "typesafe" (nodecode-jev-judge:setting :backend)) "the backend resolved from the key present"))
   (:refused ("mode" 7) ("timeout_seconds" 0)))
 
 (deftest jev-judge-cell-without-a-key-refuses ()
@@ -106,8 +105,7 @@ oldest first, each (:CONTENT ... :HEADERS ...)."
       (let ((asked (wire (lambda () (jev-call)))))
         (let ((answer (jev-call)))
           (is (stringp answer) "the call did not run: it answered a refusal")
-          (is (search "refused by nodecode-jev-judge" answer)
-              "the refusal names the cell")
+          (is (search "refused by nodecode-jev-judge" answer) "the refusal names the cell")
           (is (search "destructive" answer) "and the signal that fired"))
         (is (= 1 (length asked)) "one judgment, one request")
         (let ((content (getf (first asked) :content)))
@@ -177,8 +175,7 @@ oldest first, each (:CONTENT ... :HEADERS ...)."
                     (dotimes (index 20)
                       (setf (gethash (format nil "arg~d" index) arguments) "value"))
                     (wire (lambda () (jev-call-with arguments))))))
-      (is (= 12 (hash-table-count (jev-sent-arguments (first asked))))
-          "the first twelve arguments, as the original sent them"))))
+      (is (= 12 (hash-table-count (jev-sent-arguments (first asked)))) "the first twelve arguments, as the original sent them"))))
 
 ;;; --- the model's own judgments, and the command ------------------------------------
 
@@ -196,8 +193,7 @@ oldest first, each (:CONTENT ... :HEADERS ...)."
                        "{\"risky\":{\"type\":\"bool\",\"instructions\":\"Risky?\"}}")))
                   :text +risky+))
       (is (search "\"noul\"" (getf (first asked) :content)) "bool is asked as noul")
-      (is (jev-near 0.82 (getf (getf answers :risky) :probability))
-          "the probability comes back")
+      (is (jev-near 0.82 (getf (getf answers :risky) :probability)) "the probability comes back")
       (is (integerp latency) "with what it took"))))
 
 (deftest jev-judge-cell-says-where-it-points (with-key)

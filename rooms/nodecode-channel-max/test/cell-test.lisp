@@ -82,15 +82,13 @@
     (is (search "chat_id=700" (nck::request-plan-path plan)) "the chat is in the path")
     (is (search "access_token=" (nck::request-plan-path plan)) "so is the token's slot")
     (is (equal "the answer" (gethash "text" (nck::request-plan-body plan))))
-    (is (equal "mid.1" (gethash "mid" (gethash "link" (nck::request-plan-body plan))))
-        "the answer replies under the ask")))
+    (is (equal "mid.1" (gethash "mid" (gethash "link" (nck::request-plan-body plan)))) "the answer replies under the ask")))
 
 (deftest channel-max-a-send-is-read-for-its-mid ()
   (is (equal "mid.9" (ncm:message-id-of
                        (nlk:json-object "message"
                                         (nlk:json-object "body" (nlk:json-object "mid" "mid.9"))))))
-  (is (equal "8" (ncm:message-id-of (nlk:json-object "message_id" 8)))
-      "a numeric id reads as its digits"))
+  (is (equal "8" (ncm:message-id-of (nlk:json-object "message_id" 8))) "a numeric id reads as its digits"))
 
 (deftest channel-max-the-token-is-required ()
   (let ((section (max-section)))

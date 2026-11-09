@@ -51,8 +51,7 @@
       ("nothing matched" "ordinary prose raises nothing"))
     (is-carrying (answer (blackbox:scan "It is fine to run the tests; the key is in the config."))
       ("nothing matched" "a word that merely rhymes with a secret raises nothing"))
-    (is (handler-case (progn (blackbox:scan "") nil) (blackbox:blackbox-error () t))
-        "empty text refuses")))
+    (is (handler-case (progn (blackbox:scan "") nil) (blackbox:blackbox-error () t)) "empty text refuses")))
 
 (deftest blackbox-cell-a-private-key-block-is-critical ()
   (with-cell-stop ((blackbox-start))
@@ -133,5 +132,4 @@ b3BlbnNzaC1rZXktdjEAAAAA
       (is-carrying (answer (blackbox:scan "we deploy on Fridays"))
         ("nothing matched" "and it does not fire on anything else"))))
   (is (handler-case (progn (blackbox-start "threat_list" "definitely-no-such-pattern-file.txt") nil)
-        (error () t))
-      "a threat_list that is not there refuses the start"))
+        (error () t)) "a threat_list that is not there refuses the start"))

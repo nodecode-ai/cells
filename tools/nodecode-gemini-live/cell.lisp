@@ -319,8 +319,8 @@ unknown fields are dropped rather than trusted."
         (case (event-kind event)
           (:ready (return-from await-ready t))
           (:error (fail "the Gemini Live API refused the session: ~a"
-                        (redact (or (second event) "") key))))
-          (t nil))))))
+                        (redact (or (second event) "") key)))
+          (t nil)))))))
 
 (defun collect-reply (transport deadline)
   "Whatever the model said before its turn completed: (values PCM TEXT TASKS FAILURE)."

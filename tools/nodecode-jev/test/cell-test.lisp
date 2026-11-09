@@ -90,8 +90,7 @@ repeated): REQUESTS each (METHOD URL HEADERS CONTENT) it was sent, oldest first.
       (is (equal "The export button writes an empty CSV." (nlk:json-value body :string "state")))
       (is (equal "jev-latest" (nlk:json-value body :string "model")) "the backend's default model")
       (is (equal "choice" (nlk:json-value questions :string "category" "type")))
-      (is (= 6 (hash-table-count (nlk:json-value questions :object "category" "criteria")))
-          "the triage rubric carries its six options")
+      (is (= 6 (hash-table-count (nlk:json-value questions :object "category" "criteria"))) "the triage rubric carries its six options")
       (is (equal "noul" (nlk:json-value questions :string "missing-context" "type")) "bool is the wire's noul")
       (is (equal "noul" (nlk:json-value questions :string "requires-approval" "type"))))))
 
@@ -99,8 +98,7 @@ repeated): REQUESTS each (METHOD URL HEADERS CONTENT) it was sent, oldest first.
   (with-jev (requests :config ("backend" "typesafe"))
     (multiple-value-bind (answers review backend) (jev:triage "a diff")
       (is (equal '(:category :missing-context :requires-approval)
-                 (loop for (id) on answers by #'cddr collect id))
-          "in the order asked, question ids as keywords")
+                 (loop for (id) on answers by #'cddr collect id)) "in the order asked, question ids as keywords")
       (let ((category (getf answers :category)))
         (is (eq :choice (getf category :type)))
         (is (equal "bug" (getf category :choice)))
@@ -119,16 +117,12 @@ repeated): REQUESTS each (METHOD URL HEADERS CONTENT) it was sent, oldest first.
     (let ((review (nth-value 1 (jev:triage "a diff"))))
       (is (getf review :enabled))
       (is (jev-near 0.75 (getf review :threshold)))
-      (is (equal '(:category :requires-approval) (getf review :review-questions))
-          "a low confidence and a likely authorization both ask for a look"))
+      (is (equal '(:category :requires-approval) (getf review :review-questions)) "a low confidence and a likely authorization both ask for a look"))
     (let ((review (nth-value 1 (jev:triage "a diff"))))
-      (is (member :missing-context (getf review :review-questions))
-          "0.48 of yes sits inside the 0.25-0.75 band"))
+      (is (member :missing-context (getf review :review-questions)) "0.48 of yes sits inside the 0.25-0.75 band"))
     (let ((review (nth-value 1 (jev:triage "a diff"))))
-      (is (member :category (getf review :review-questions))
-          "an unknown category is flagged even at 0.9 confidence")
-      (is (member :missing-context (getf review :review-questions))
-          "0.9 of yes on missing context is over 1-threshold too"))))
+      (is (member :category (getf review :review-questions)) "an unknown category is flagged even at 0.9 confidence")
+      (is (member :missing-context (getf review :review-questions)) "0.9 of yes on missing context is over 1-threshold too"))))
 
 (deftest jev-cell-reaches-cloudflare-with-the-gateway-headers ()
   (with-jev (requests
@@ -158,11 +152,9 @@ repeated): REQUESTS each (METHOD URL HEADERS CONTENT) it was sent, oldest first.
   (with-jev (requests :config ("backend" "typesafe")
                       :env '())
     (is (search "no typesafe key"
-                (refusal-text jev:jev-error (jev:triage "x")))
-        "a key is required")
+                (refusal-text jev:jev-error (jev:triage "x"))) "a key is required")
     (is (search "one of :preset and :questions"
-                (refusal-text jev:jev-error (jev:ask "x")))
-        "ask needs a preset or questions")
+                (refusal-text jev:jev-error (jev:ask "x"))) "ask needs a preset or questions")
     (is (search "exactly one"
                 (refusal-text jev:jev-error
                               (jev:ask "x" :preset :task-triage
@@ -174,8 +166,7 @@ repeated): REQUESTS each (METHOD URL HEADERS CONTENT) it was sent, oldest first.
   (with-jev (requests :config ("backend" "cloudflare" "account_id" "short")
                       :env '(("CLOUDFLARE_JEV_API_TOKEN" . "cf-env")))
     (is (search "account_id"
-                (refusal-text jev:jev-error (jev:triage "x")))
-        "a cloudflare account id is 32 hex digits")))
+                (refusal-text jev:jev-error (jev:triage "x"))) "a cloudflare account id is 32 hex digits")))
 
 (deftest jev-cell-says-what-it-is-configured-for ()
   (with-jev (requests :config ("backend" "typesafe"))

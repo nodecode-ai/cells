@@ -148,8 +148,7 @@ wallet seam is PRIORS-STUB-RUN, so no socket and no child process is opened."
   (:running (is (nle::find-tool "priors_agent_record") "the record tool is registered")
             (is (nle::find-tool "priors_find_sellers"))
             (is (nle::find-tool "priors_pay_url") "and the payment one, shut until the wallet is on")
-            (is (equal "https://mcp.priors.trade/mcp" (nodecode-priors::endpoint))
-                "the hosted server's default address")
+            (is (equal "https://mcp.priors.trade/mcp" (nodecode-priors::endpoint)) "the hosted server's default address")
             (is (not (nodecode-priors::wallet-wanted-p)) "the wallet is off by default")
 
             (is (stringp (nodecode-priors::status-line))))
@@ -160,11 +159,9 @@ wallet seam is PRIORS-STUB-RUN, so no socket and no child process is opened."
 (deftest priors-cell-the-wallet-seam-is-the-command-runner ()
   ;; Outside the fixture the seam is its default: the wallet's runner and not
   ;; the /priors command, which is another function of the same package.
-  (is (eq 'nodecode-priors::run-wallet-command nodecode-priors::*run*)
-      "*RUN* runs the wallet command")
+  (is (eq 'nodecode-priors::run-wallet-command nodecode-priors::*run*) "*RUN* runs the wallet command")
   (is (fboundp 'nodecode-priors::run-wallet-command))
-  (is (not (eq 'nodecode-priors::run-command nodecode-priors::*run*))
-      "and not the slash command of the same name"))
+  (is (not (eq 'nodecode-priors::run-command nodecode-priors::*run*)) "and not the slash command of the same name"))
 
 (deftest priors-cell-a-wallet-with-no-key-is-refused-by-name ()
   (with-priors-wire
@@ -186,29 +183,24 @@ wallet seam is PRIORS-STUB-RUN, so no socket and no child process is opened."
                              (format nil "~a for agent #~a"
                                      name (nlk:json-value arguments :integer "agent_id"))))
       (is (equal "agent_record for agent #9233"
-                 (priors-tool "priors_agent_record" (nlk:json-object "agent_id" "9233")))
-          "the server's text is the tool's answer")
+                 (priors-tool "priors_agent_record" (nlk:json-object "agent_id" "9233"))) "the server's text is the tool's answer")
       (let ((requests (priors-asked)))
         (is (= 3 (length requests)) "initialize, the notification, then the call")
         (is (equal "initialize" (priors-method (first requests))))
         (is (equal "notifications/initialized" (priors-method (second requests))))
         (is (equal "tools/call" (priors-method (third requests))))
         (is (equal "application/json, text/event-stream"
-                   (priors-request-header (first requests) "accept"))
-            "the transport the MCP spec asks for")
+                   (priors-request-header (first requests) "accept")) "the transport the MCP spec asks for")
         (let* ((body (priors-request-body (first requests)))
                (params (nlk:json-value body :object "params")))
           (is (equal "nodecode-priors" (nlk:json-value params :string "clientInfo" "name")))
           (is (stringp (nlk:json-value params :string "protocolVersion"))))
-        (is (null (priors-request-header (first requests) "mcp-session-id"))
-            "initialize opens the session")
-        (is (equal "session-1" (priors-request-header (third requests) "mcp-session-id"))
-            "every later message carries it")
+        (is (null (priors-request-header (first requests) "mcp-session-id")) "initialize opens the session")
+        (is (equal "session-1" (priors-request-header (third requests) "mcp-session-id")) "every later message carries it")
         (let* ((body (priors-request-body (third requests)))
                (params (nlk:json-value body :object "params")))
           (is (equal "agent_record" (nlk:json-value params :string "name")))
-          (is (eq 9233 (nlk:json-value params :integer "arguments" "agent_id"))
-              "a digit string is sent as the number the server declares")))
+          (is (eq 9233 (nlk:json-value params :integer "arguments" "agent_id")) "a digit string is sent as the number the server declares")))
       (priors-tool "priors_score_of" (nlk:json-object "agent_id" 7))
       (is (= 4 (length (priors-asked))) "the session is reused, not opened again"))))
 
@@ -220,13 +212,11 @@ wallet seam is PRIORS-STUB-RUN, so no socket and no child process is opened."
                              (declare (ignore name arguments))
                              "Agent #9233: score 812/1000, no defaults."))
       (is (search "score 812/1000"
-                  (priors-tool "priors_agent_record" (nlk:json-object "agent_id" 9233)))
-          "an SSE stream is read as its data lines")
+                  (priors-tool "priors_agent_record" (nlk:json-object "agent_id" 9233))) "an SSE stream is read as its data lines")
       (setf *sse* nil
             *tool-answer* #'priors-default-tool-answer)
       (is (search "find_sellers: ok"
-                  (priors-tool "priors_find_sellers" (nlk:json-object)))
-          "no argument is an empty object, not a refusal"))))
+                  (priors-tool "priors_find_sellers" (nlk:json-object))) "no argument is an empty object, not a refusal"))))
 
 (deftest priors-cell-a-tools-own-error-is-the-models-repair ()
   (with-priors-wire
@@ -250,8 +240,7 @@ wallet seam is PRIORS-STUB-RUN, so no socket and no child process is opened."
       (is (search "wallet ran pay_url"
                   (priors-tool "priors_pay_url"
                                 (nlk:json-object "url" "https://check.example/x"
-                                                 "max_price_usd" 0.1)))
-          "the command's answer is the tool's")
+                                                 "max_price_usd" 0.1))) "the command's answer is the tool's")
       (is (null (priors-asked)) "the wallet tools open no HTTP session of their own")
       (let* ((call (first *run-calls*))
              (argv (first call))
@@ -265,14 +254,11 @@ wallet seam is PRIORS-STUB-RUN, so no socket and no child process is opened."
                (arguments (nlk:json-value params :object "arguments")))
           (is (equal "pay_url" (nlk:json-value params :string "name")))
           (is (equal "https://check.example/x" (nlk:json-value arguments :string "url")))
-          (is (< (abs (- (nlk:json-value arguments :number "max_price_usd") 0.1)) 1d-6)
-              "the call's own price ceiling, as the number it was given")))
+          (is (< (abs (- (nlk:json-value arguments :number "max_price_usd") 0.1)) 1d-6) "the call's own price ceiling, as the number it was given")))
       (let ((environment (nodecode-priors::wallet-environment)))
-        (is (member "PRIORS_KEY_FILE=/k/agent.key" environment :test #'equal)
-            "the key file it names reaches the command")
+        (is (member "PRIORS_KEY_FILE=/k/agent.key" environment :test #'equal) "the key file it names reaches the command")
         (is (member "PRIORS_AGENT_ID=1234" environment :test #'equal))
-        (is (member "PRIORS_PAY_HOSTS=check.example" environment :test #'equal)
-            "the host list pay_url is bounded by reaches it too")))))
+        (is (member "PRIORS_PAY_HOSTS=check.example" environment :test #'equal) "the host list pay_url is bounded by reaches it too")))))
 
 (deftest priors-cell-the-wallet-tools-stay-shut-while-it-is-off ()
   (with-priors-wire
@@ -308,12 +294,10 @@ wallet seam is PRIORS-STUB-RUN, so no socket and no child process is opened."
                    ("Agent #9233" "agent_record says"))
       (let* ((body (priors-request-body (third (priors-asked))))
              (params (nlk:json-value body :object "params")))
-        (is (equal "agent_record" (nlk:json-value params :string "name"))
-            "the command reads the agent it names"))
+        (is (equal "agent_record" (nlk:json-value params :string "name")) "the command reads the agent it names"))
       (setf *requests* '())
       (is-carrying (answer (cell-entry "nodecode-priors" "priors" "check")) ("find_sellers says"))
       (let* ((body (priors-request-body (first (priors-asked))))
              (params (nlk:json-value body :object "params")))
         (is (equal "find_sellers" (nlk:json-value params :string "name")))
-        (is (equal "check" (nlk:json-value params :string "arguments" "query"))
-            "a word is the search it names")))))
+        (is (equal "check" (nlk:json-value params :string "arguments" "query")) "a word is the search it names")))))

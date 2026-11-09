@@ -28,15 +28,13 @@
     (let ((parts (cjk-parts :text-delta "the build is 完成 done")))
       (is (= 1 (length parts)) "one part out")
       (is (eq :text-delta (nle::stream-part-kind (first parts))) "still a text delta")
-      (is (equal "the build is done" (nle::stream-part-text (first parts)))
-          "and it carries no hanzi"))
+      (is (equal "the build is done" (nle::stream-part-text (first parts))) "and it carries no hanzi"))
     (let ((parts (cjk-parts :text-delta "готово")))
       (is (null parts) "a fragment that was only Cyrillic is not emitted empty"))
     (let ((parts (cjk-parts :text-delta "ok")))
       (is (equal "ok" (nle::stream-part-text (first parts))) "plain text is untouched"))
     (let ((parts (cjk-parts :reasoning-delta "思考")))
-      (is (equal "思考" (nle::stream-part-text (first parts)))
-          "the thinking stream keeps what the model thought in"))))
+      (is (equal "思考" (nle::stream-part-text (first parts))) "the thinking stream keeps what the model thought in"))))
 
 (deftest cjk-sanitizer-a-whole-fragment-of-leak-is-dropped ()
   ;; The original answered NIL when nothing changed; here a delta that was
@@ -44,14 +42,12 @@
   (with-cell-stop ((cjk-sanitizer-start))
     (is (null (cjk-parts :text-delta "完成")) "nothing handed on")
     (is (null (cjk-parts :text-delta "。")) "not even for a punctuation mark")
-    (is (search "2 dropped" (nodecode-cjk-sanitizer:run-slash "" nil))
-        "and the report counts what never streamed")))
+    (is (search "2 dropped" (nodecode-cjk-sanitizer:run-slash "" nil)) "and the report counts what never streamed")))
 
 (deftest cjk-sanitizer-strip-reasoning-takes-the-thinking-stream-too ()
   (with-cell-stop ((cjk-sanitizer-start "strip_reasoning" t))
     (let ((parts (cjk-parts :reasoning-delta "思考 done")))
-      (is (equal " done" (nle::stream-part-text (first parts)))
-          "the thinking stream is cleaned when asked for"))))
+      (is (equal " done" (nle::stream-part-text (first parts))) "the thinking stream is cleaned when asked for"))))
 
 (deftest cjk-sanitizer-slash-reports-pauses-and-resumes ()
   (with-cell-stop ((cjk-sanitizer-start))
@@ -61,11 +57,9 @@
       (is (search "0 deltas read, 0 characters taken out" report) "and nothing done yet"))
     (cjk-parts :text-delta "完成 a")
     (is (search "1 deltas read, 2 characters taken out"
-                (nodecode-cjk-sanitizer:run-slash "" nil))
-        "the counters follow the stream")
+                (nodecode-cjk-sanitizer:run-slash "" nil)) "the counters follow the stream")
     (is (search "paused" (nodecode-cjk-sanitizer:run-slash "off" nil)) "/cjk off pauses")
-    (is (equal "完成 a" (nle::stream-part-text (first (cjk-parts :text-delta "完成 a"))))
-        "and the next fragment comes through whole")
+    (is (equal "完成 a" (nle::stream-part-text (first (cjk-parts :text-delta "完成 a")))) "and the next fragment comes through whole")
     (is (search "on -" (nodecode-cjk-sanitizer:run-slash "on" nil)) "/cjk on resumes")
     (is (search "cleared" (nodecode-cjk-sanitizer:run-slash "reset" nil)) "/cjk reset clears")
     (is (search "0 deltas read" (nodecode-cjk-sanitizer:run-slash "" nil)))
@@ -85,5 +79,4 @@
     (is (search "not \"klingon\""
                 (nle::message-content
                  (execute-wire-call "cjk-call-3" "cjk_strip"
-                                    "{\"text\": \"ok\", \"scripts\": \"klingon\"}")))
-        "an unknown script is named, not silently ignored")))
+                                    "{\"text\": \"ok\", \"scripts\": \"klingon\"}"))) "an unknown script is named, not silently ignored")))

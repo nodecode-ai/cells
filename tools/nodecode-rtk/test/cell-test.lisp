@@ -76,8 +76,7 @@ the arguments it handed NEXT."
 (deftest rtk-cell-rewrites-an-eval-shell-call (with-cell-stop ((rtk-start "binary" (rtk-stub))))
   (let ((arguments (nlk:json-object "form" (format nil ";; what changed~%(sh \"git status\")"))))
     (rtk-verdict "eval" arguments)
-    (is (equal (format nil ";; what changed~%(sh \"rtk git status\")") (rtk-form arguments))
-        "the command is rewritten and the snippet's note is kept")))
+    (is (equal (format nil ";; what changed~%(sh \"rtk git status\")") (rtk-form arguments)) "the command is rewritten and the snippet's note is kept")))
 
 (deftest rtk-cell-rewrites-every-shell-call-in-a-snippet (with-cell-stop ((rtk-start "binary" (rtk-stub))))
   (let ((arguments (nlk:json-object "form" (format nil "~a~%(sh \"ls -la\")~%(+ 1 2)~%(sh \"git status\")"
@@ -85,14 +84,12 @@ the arguments it handed NEXT."
     (rtk-verdict "eval" arguments)
     (is (equal (format nil "~a~%(sh \"rtk ls -la\")~%(+ 1 2)~%(sh \"rtk git status\")"
                        ";; two commands")
-               (rtk-form arguments))
-        "each shell call is rewritten, and the form between them is not")))
+               (rtk-form arguments)) "each shell call is rewritten, and the form between them is not")))
 
 (deftest rtk-cell-keeps-a-quoted-command-readable (with-cell-stop ((rtk-start "binary" (rtk-stub))))
   (let ((arguments (nlk:json-object "form" "(sh \"echo \\\"hi there\\\"\")")))
     (rtk-verdict "eval" arguments)
-    (is (equal "(sh \"rtk echo \\\"hi there\\\"\")" (rtk-form arguments))
-        "the command's own quotes survive the round trip")
+    (is (equal "(sh \"rtk echo \\\"hi there\\\"\")" (rtk-form arguments)) "the command's own quotes survive the round trip")
     (is (consp (read-from-string (rtk-form arguments))) "and the snippet still reads")))
 
 (deftest rtk-cell-rewrites-a-strings-entry (with-cell-stop ((rtk-start "binary" (rtk-stub))))
