@@ -1,0 +1,25 @@
+nodecode-verifier is a rewrite of am423's am423/hermes-verifier:
+
+  https://github.com/am423/hermes-verifier
+  commit 514ff4a7a937e391fca763ba3c9732103f351531
+  MIT, Copyright (c) 2026 Hermes Verifier contributors (LICENSE)
+
+What was rewritten: the review loop (runtime.py, delta.py, brief.py, gate.py,
+guard.py) as one Common Lisp cell. A finished turn's new messages are read
+back out of the session log, the obvious credentials are redacted, the turn is
+reviewed on a second model, and the finding it raises stands under this cell's
+key as a notice the agent reads in its next request. VERIFIER.md review
+priorities are still discovered from the working directory up. The phase gate
+survives as a :TOOL hook: an impending destructive or publishing call is shown
+to the model, which answers allow or block, and any failure to decide allows
+the call.
+
+What was left out, and why: the desktop Verifier page and the dashboard API
+(Python and TypeScript over Hermes's own web server, which a cell does not
+have); the VERIFIER.yml roster of named verifiers with per-entry model and
+tool grants (one verifier and one model here, which is what the roster was for
+in most sessions); and the read-only file tools an advisor could be granted
+(a cell's verifier reads the transcript it is given, and the priorities file).
+The engagement gate that decided whether a turn was worth reviewing at all is
+folded into the review itself: one review per turn, skipped when the turn
+brought nothing new.
