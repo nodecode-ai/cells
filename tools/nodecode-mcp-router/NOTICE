@@ -1,0 +1,23 @@
+nodecode-mcp-router is a rewrite of Pinutss's Pinutss/jev-mcp-router:
+
+  https://github.com/Pinutss/jev-mcp-router
+  commit 6a7b3baf45af62def86c3d824b06c85569d14298
+
+MIT, Copyright (c) 2026 Pinuts (LICENSE)
+
+What was rewritten: the selector itself, from src/jev_mcp_router/selector.py, models.py and
+registry.py — the word-level lexical scoring (relevance and the light token-efficiency
+term), the hard access policies that precede the score (scope, disabled, already_failed,
+missing_permissions, forbidden_permissions), the max_tools and budget cut with its named
+rejections, the abstention, the one fallback hop and the single fallback preview, and the
+demo catalog — as Common Lisp in select.lisp, answering the same decisions, the same
+rejection names and the same JSON result shape. The one MCP tool mcp_select of
+mcp_server.py is registered as a Nodecode model tool against a declared boundary contract,
+the same call being available to eval as (mcp-router:select-tools ...); the demo catalog
+is what /mcp-router selects over, in place of the original's demo command.
+Left out: the remote judges (providers/jev.py, gateway.py, custom.py, catalog.py) and the
+keys they read, because the original's default JEV_PROVIDER=local is the whole heuristic
+and needs no network; the streamable-HTTP server and the demo page (api/server.py), which
+a cell reaches through its tool instead; the secret redaction (security/redaction.py),
+which exists only for a remote judge; the benchmarks and the Docker packaging, which are
+development tooling. The demo catalog's French description text became English.
