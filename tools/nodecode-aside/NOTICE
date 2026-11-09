@@ -1,0 +1,33 @@
+nodecode-aside is a rewrite of leonphull's leonphull/hermes-aside-browser:
+
+  https://github.com/leonphull/hermes-aside-browser
+  commit ffd4e0e0de4b3a8624f3d83f98c378b88d6f9581
+  MIT, Copyright (c) 2026 Leon Phull (LICENSE)
+
+Rewritten: the whole of the wrapper around the local `aside` CLI — the
+executable lookup (the configured path, then ASIDE_BIN, then PATH, then the
+places the app installs one, never a download), the five verbs (aside_status,
+aside_exec, aside_repl, aside_session, aside_memory) with their argument
+vectors built as a fixed list and run without a shell, the profile policy
+(model, host, account, effort, speed and permission) applied to every call
+while a host, an account or a permission a model sends is stripped before the
+profile's own value is merged in, the refusals that fail closed when the
+policy is unusable, the session actions that are list, stop, archive and
+delete only because resume, steer and queue drive a session whose permission
+and host the wrapper cannot verify, archive and delete requiring an explicit
+confirmation, the readiness probe behind one marker, the base64 line redaction
+and the 48k cut on an answer, and the pre-tool-call gate that keeps the
+built-in browser out of the way while Aside answers. The skill's prose lives
+in the tool descriptions and in (help :aside); the six `hermes aside ...`
+commands became one section of the config and one /aside command.
+
+Left out, and why: the `hermes aside models` catalog reader, which parsed the
+Aside settings file to list model names, and with it the resolver that took a
+catalog choice and turned it into a pin — a cell that pins one model in its
+own section needs no model list, and reading another application's settings
+directory from inside Nodecode buys nothing. Also left out: the CLI subcommand
+wiring into the host's own argument parser (a cell registers /aside instead),
+the MCP connector entry under catalog/ and the static mcp.json (a separate
+vendor surface that this wrapper never guarded), and the Hermes-skill
+installer instructions. Nothing of the original's guarantees was dropped: the
+permission setting still covers aside_exec only, and the manual still says so.
