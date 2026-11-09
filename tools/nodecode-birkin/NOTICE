@@ -1,0 +1,21 @@
+nodecode-birkin is a rewrite of ashmoonori-afk's ashmoonori-afk/birkin-mnemosyne:
+
+https://github.com/ashmoonori-afk/birkin-mnemosyne
+commit 63a34526973fc9ad0e5a030a474c67a5fca873e7
+MIT, Copyright (c) 2026 ashmoonori (LICENSE)
+
+The rewrite keeps what the plugin gives a user: durable notes as Markdown under
+one vault, create-only writes, ranked lexical recall with an AND label filter,
+reading one note whole, and reversible archiving that previews before it moves a
+file and never deletes one, plus the digest the original puts in the prompt.
+The Python provider was reimplemented against Nodecode's contract: the six
+provider tools became five `birkin_*` tools, the system-prompt block became a
+`:round` hook, and the vault lives under the Nodecode home unless the section
+names another folder. Left out, because they are Python seams Nodecode does not
+have or optional extras the original disables by default: the sixth tool,
+`birkin_memory_index`, which reads the original's resident index and topic
+views; the MCP server and its CLI; the model-driven curation prompts and
+consolidation runs; the opt-in session-transcript handoffs; and the optional
+semantic-embedding and rerank legs. Scoring is the same BM25 shape without the
+original's zone-decay and Hebbian access boosting, and no index or cache file
+is written beside the notes: the Markdown files are the whole store.
