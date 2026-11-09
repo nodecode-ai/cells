@@ -1,0 +1,26 @@
+nodecode-mistral-vibe is a rewrite of nebneo's nebneo/hermes-mistral-vibe:
+
+https://github.com/nebneo/hermes-mistral-vibe
+commit c0d7bc8d11306e18499c84dd94cc3581de550e55
+
+MIT, Copyright (c) 2026 Hermes Mistral Vibe contributors (LICENSE)
+
+What was rewritten: the provider itself, in Common Lisp against Nodecode's
+own seams. Its address, its key variable and its credential precedence
+(the dedicated variable only, never a plain Mistral key), its fallback
+model and the relay-verified reasoning-effort vocabularies came from
+vibe_provider.py, and its browser sign-in (the console's PKCE flow, the
+poll, the exchange, the address checks) from the same file's `_login` and
+`auth_handler`, rebuilt on Nodecode's own HTTP and auth.json. The plugin's
+model discovery (`GET /models` filtered on `capabilities.completion_chat`)
+is served here by Nodecode's provider listing of the same address; the cell
+publishes the fallback and GLM rows itself so the provider is pickable
+before a listing answers.
+
+What was left out: install.py (Nodecode installs a cell by copying its
+folder), the `hermes auth` subcommands (the same three actions are one
+`/mistral-vibe` command), the Hermes credential pool and its in-process
+GuardedClient wrapper, whose job here is done by the section's base_url and
+Nodecode's own credential order. No model ids are translated and no
+`expires_at` is parsed: a sign-in gives up after five minutes, as the
+plugin's cap does.
