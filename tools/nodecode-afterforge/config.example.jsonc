@@ -1,0 +1,13 @@
+{
+  // where the checks run: the repository the failures come from
+  "project": "~/src/thing",
+
+  // where reviewed cases and their evidence are kept; this home's folder when absent
+  "home": "~/.nodecode/afterforge",
+
+  // one check's ceiling, in seconds
+  "timeout_seconds": 120,
+
+  // how much of a check's output the model is handed, in characters
+  "output_chars": 1200
+}
