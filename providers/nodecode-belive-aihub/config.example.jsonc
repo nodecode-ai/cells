@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key itself lives in auth.json (/connect) or
+// BELIVE_TOKENHUB_API_KEY.
+{
+  "belive-aihub": {
+    "enabled": true,
+
+    // Where BeLive AI Hub is served. The chat lane appends /chat/completions.
+    // The hub's staging base (https://api-stg-tokenhub.belive.sg/api/v1) is
+    // accepted here too, and lists staging's models.
+    "base_url": "https://tokenhub-api.belive.sg/api/v1"
+  }
+}
