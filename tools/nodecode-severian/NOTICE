@@ -1,0 +1,30 @@
+nodecode-severian is a rewrite of Sahil-SS9's Sahil-SS9/Severian:
+
+  https://github.com/Sahil-SS9/Severian
+  commit bdb14b04ffa014148d4665f239688ca0856561da
+  MIT, Copyright (c) 2026 Sahil Saghir (LICENSE)
+
+The rewritten plugin is plugins/hermes/severian of that commit, a thin
+Hermes memory-provider shim over the repository's own engine, together with
+the adapter it delegates to (src/severian/integrations/hermes.py) and the
+HTTP API that adapter's engine serves (src/severian/api/). The cell keeps
+the tool names and their jobs — severian_search, severian_ingest,
+severian_get_observation and severian_search_shared — with
+severian_get_memory reading one derived memory by id, which the API answers
+and the provider reached in-process; the five-dimensional scope as the
+security boundary, failing closed with no default scope; the shared read
+over an explicit list of agent ids, merged and re-ranked exactly as
+search_shared merges it; and the shape of a turn written to the store,
+"user: ..." then "assistant: ...", as sync_turn writes it. The transport is
+the engine's versioned HTTP API rather than a Python provider object, and
+the agent calls the tools rather than having context prefetched for it.
+
+What was left out, and why: correct and forget, because the HTTP API does
+not route an observation revision or a memory correction, so they would
+need either an in-process service or an endpoint the engine does not serve;
+task progress, for the same reason; the in-process context assembler, which
+has no HTTP route, so the model searches instead of being handed a context
+block; and the Hermes provider lifecycle (prefetch, sync_turn, session
+switching, delegation), which are Hermes's own interfaces — a finished turn
+reaches the cell on the :frame point instead. LICENSE is the repository's
+LICENSE, unchanged.
