@@ -1,0 +1,22 @@
+nodecode-mermail is a rewrite of Nudgen-Marketing's Nudgen-Marketing/mermail-skills:
+
+  https://github.com/Nudgen-Marketing/mermail-skills
+  commit 269a711bf683845d75009df4984bf25eee83b0bd
+  MIT, Copyright (c) 2026 Nudgen Marketing (LICENSE)
+
+The original is not a program: it is a portable plugin bundle -- one plugin.json,
+one mcp.json naming the hosted MCP endpoint, and seventeen skills of Markdown
+that tell a model which server tool to call and in what envelope. This rewrite
+keeps what a user actually gets: the same hosted server, the same key, the same
+envelope (path ids at the top level, query for a read, body for a write), and
+every server tool still reachable by its bare name through mermail_call. What
+changed is the carrier: seven typed Nodecode tools with one-line refusals
+instead of an MCP manifest for a host to load, and a JSON-RPC client in Common
+Lisp (initialize, the initialized notification, tools/call, tools/list, the
+session header, JSON or server-sent-event answers) rather than a dependency on
+an external MCP host. Left out: the OAuth sign-in the original offers beside
+API keys (token exchange, browser handoff), the Agent Wallet and x402 payment
+skills built on full-profile OAuth, the Composio Gmail/Outlook bridge, the
+in-app Assistant tools, and the vendor CLI the mermail-cli skill drives. The
+skill prose itself is not copied: its rules became the (help :mermail) primer
+and the tool descriptions, in fewer words.
