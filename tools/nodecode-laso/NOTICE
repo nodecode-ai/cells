@@ -1,0 +1,28 @@
+nodecode-laso is a rewrite of LasoFinance's LasoFinance/hermes-plugin:
+https://github.com/LasoFinance/hermes-plugin
+commit 8a046544307af690f04277bcb04929e5d1d58970
+MIT, Copyright (c) Laso Finance (declared in plugin.yaml, author "Laso Finance"; the
+repository carries no LICENSE file)
+
+What was rewritten: the plugin's 66 MCP tools are here as two tools over one
+catalog — `laso_tools` searches the names, titles and approval flags lifted from
+the plugin's generated tools.json, and `laso_call` forwards one JSON-RPC
+`tools/call` to https://laso.finance/mcp with the same `laso_` prefix dropped from
+the name. The plugin's `pre_tool_call` hook, which asked the human to approve the 19
+calls that move money or mint a credential, is here the `confirm` argument those 19
+refuse without; its message was the same scalar summary, and the same caveat holds
+— a nested argument such as a recipient object is not shown in the prompt. The
+OAuth device flow of sign_in.py is ported as it stood (the same endpoints, the same
+client metadata document, the same poll interval behaviour and the same "call again
+to finish" step), with the key kept in this home's own file instead of a Hermes env
+file. The plugin's system-prompt instructions are the primer `(help :laso)` answers.
+Python's urllib became one `nlk:http` exchange per call.
+
+What was left out, and why: `plugin.yaml`, which is Hermes's own manifest (this
+folder's `.asd` is the manifest Nodecode reads); the plugin's unit tests, which
+tested Python plumbing rather than the API; the `skills/workflows/SKILL.md` file, a
+skill in Hermes's skill format — its guidance is the same primer's prose, and
+Nodecode's skill format is a different one; and the per-tool JSON schemas, which
+live on the server: a call that names an argument wrongly is told so by Laso. Also
+left out: reading the key from Hermes's env file and its dashboard, since a cell
+keeps its key in its own home.

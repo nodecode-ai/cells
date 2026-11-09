@@ -1,0 +1,15 @@
+// nodecode-laso's section of ~/.nodecode/config.jsonc.
+// agent_name is the only member the cell refuses without.
+{
+  "laso": {
+    "agent_name": "Nodecode",
+    // A lasoak_ key from https://laso.finance/agent/dashboard: written here, or
+    // named by the environment variable in api_key_env. Leave both out and the
+    // agent signs itself in from chat with a link and a short code.
+    "api_key_env": "LASO_API_KEY",
+    // The host every request goes to. One https host, no path.
+    "base_url": "https://laso.finance",
+    // One tool call's ceiling in seconds: paid tools settle on-chain first.
+    "timeout_seconds": 120
+  }
+}
