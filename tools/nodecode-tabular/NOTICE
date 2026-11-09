@@ -1,0 +1,26 @@
+nodecode-tabular is a rewrite of frankiethull's frankiethull/hermes-tabular:
+
+  https://github.com/frankiethull/hermes-tabular
+  commit c5b965086d0d5b8239703c2aa8a5df99b1eee5c3
+  MIT License, Copyright (c) 2026 hermes-tabular contributors (LICENSE)
+
+skill/ is that repository's skills/, references/ and examples/ folders,
+unchanged: the eleven SKILL.md files, defaults.yaml, pitfalls.md and the three
+worked examples.
+
+What was rewritten: the two steps of the pack that need no model. Its
+"inspect" and "split" skills described profiling a table and holding out an
+honest test set in Python; here they are one pass over one file in Lisp --
+shape, per-column type, role, missingness and cardinality, duplicate rows,
+leakage hints by name, the task the target implies, and the split and model
+order the pack's own policy asks for -- plus a seeded, stratified split that
+writes train and test files. The policy numbers in defaults.yaml are the same
+numbers, kept in one Lisp parameter so the verb and the prose cannot drift.
+
+What was left out: the models. CatBoost, TabICL, the linear baseline, the
+ensemble and the joblib checkpoint are Python, and a rewrite that bundled a
+Python runtime would be worse than the pack. The cell profiles, decides and
+splits; fitting stays with whatever toolchain the project already has, and the
+pack's prose in skill/ still tells the model how to do it. Also left out: the
+Hermes-side install scripts (scripts/install_skills.py, validate_skills.py),
+which only copied these Markdown files into a Hermes home.
