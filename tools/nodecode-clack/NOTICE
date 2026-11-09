@@ -1,0 +1,35 @@
+nodecode-clack is a rewrite of adroidian's adroidian/clack:
+
+  https://github.com/adroidian/clack
+  commit a965b33051d35bcef1dd3fa15255d34aacdba99a
+  Apache-2.0, Copyright 2026 Aaron Kasten (LICENSE)
+
+Rewritten: the nine tools of the plugin's `plugins/hermes-clack` — whoami,
+peers, send, poll, reconcile, ack, invite, join and accept — against the same
+relay protocol and the same local posture. What a user gets is unchanged: one
+Ed25519 seed that signs every request and, converted through RFC 7748, opens
+the X25519 + ChaCha20-Poly1305 envelopes peers send; the relay pinned by a
+fresh RSA-2048 challenge before any token or body leaves; one pending outbox
+with its receipt read back; a delivery journal written before any
+acknowledgement; a quarantine for messages that arrive plaintext or
+unreadable; and a join that stays pending until a separate accept. The Python
+is Common Lisp here: nlk:http for the exchanges, one section declaration for
+the five settings the plugin read from config.yaml, and plist schemas for the
+tools whose JSON the plugin wrote by hand. Ironclad carries the curve
+arithmetic and the two SHA digests; ChaCha20, Poly1305, HKDF-SHA256,
+HMAC-SHA256 and the RSASSA-PKCS1-v1_5 pin check are written out in
+crypto.lisp and envelope.lisp, readable line for line, as the plugin carried
+them in vendor/e2ee.py.
+
+Left out, and why: the bundled skill is the manual topic (help :clack) rather
+than a skill file, which is how this harness hands the model its etiquette.
+The cross-process fcntl lock on the state directory is one in-process lock
+(the cell's own), since one image holds the directory. The plugin's
+per-file symlink, hardlink, owner and permission scrutiny on every read is
+narrowed to owner-only atomic writes under the cell's home. Its HTTP layer
+distinguished rejected sends from transport failures to decide what to keep in
+the outbox; here any non-2xx answer keeps the outbox and names
+clack_reconcile, which is the same instruction in fewer states. The
+redirect-free opener is nlk:http's (which follows at most five redirects), so
+the origin pin, not the transport, is what a redirect cannot move. The demo,
+the test suite and the relay itself stay in the original repository.
