@@ -1,0 +1,20 @@
+nodecode-pushary is a rewrite of Pushary's Pushary/hermes-plugin-pushary:
+
+  https://github.com/Pushary/hermes-plugin-pushary
+  commit af29cb4ac34354c12ad5054eba82dc1ff3d0f7e2
+
+MIT, Copyright (c) 2026 Pushary (LICENSE)
+
+Rewritten in Common Lisp against Nodecode's cell contract: the six tools the plugin
+gives a model (pushary_notify, pushary_ask, pushary_wait, pushary_cancel,
+pushary_remind, pushary_propose_scope), their arguments and descriptions, the one
+JSON-RPC tools/call to /api/mcp/mcp that carries them with the account's bearer key,
+the ask-then-one-poll wait, the machine and session identity members, and the
+detail-page context a notification may carry. Left out: the parts that are Hermes'
+own runtime rather than Pushary's — the approval transport that routes Hermes'
+dangerous-command question to the phone, the lifecycle hooks (session start and end,
+pre/post tool call, agent_hook_active), the drain of queued phone instructions into a
+turn, the local pending-command file and the plugin-load marker, and the Partner-plan
+tools pushary_enroll and pushary_ask_end_user, which need a partner account; Nodecode
+has no approval transport to register into, so approvals reach the phone through
+pushary_ask with the same account.
