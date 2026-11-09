@@ -1,0 +1,9 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+"alice-voice": {
+  "enabled": true,
+  "secret": "set this to `openssl rand -hex 32`, 64 hex characters", // the bearer in the webhook path
+  "skill_id": "",            // the private Yandex Alice skill's id
+  "session": "alice",       // the Nodecode session every request becomes a turn in
+  "owner_user_id": ""        // optional: the one Alice account to accept
+}

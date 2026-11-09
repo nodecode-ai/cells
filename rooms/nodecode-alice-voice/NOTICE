@@ -1,0 +1,23 @@
+nodecode-alice-voice is a rewrite of bablobanov's bablobanov/hermes-alice-voice:
+
+  https://github.com/bablobanov/hermes-alice-voice
+  commit e31f2c8e65bb861c6806bd19e8f57a1e89726450
+  MIT License, Copyright (c) 2026 Ilya Balobanov (LICENSE)
+
+What was rewritten: the plugin's one working part, bridge.py, as cell.lisp --
+the same bearer-in-the-path secret and 64-hex rule, the same order of gates
+(running, path, protocol version, skill id, account, message ids), the same
+controller words answered locally, the same in-memory deduplication of the
+last 32 message ids, and the same ack that claims scheduling and not
+delivery. The words it speaks are the original's, with the destination
+renamed from Telegram to Nodecode.
+
+What was left out, and why: the plugin's own HTTP server (the cell answers on
+the gateway's own port as a route, so there is no port setting and no thread
+to close); the ALICE_WEBHOOK_SECRET environment variable (the secret is a
+field of the cell's section); the Hermes Telegram handler registration and its
+unload callback (the route is registered and taken back by the cell
+declaration); the core estop pause check (a Nodecode turn queues behind a
+running one instead of being refused); and the Hermes-specific session key,
+replaced by the id of the Nodecode session the requests land in. The plugin's
+Python tests were not ported; the cell has its own slice.
