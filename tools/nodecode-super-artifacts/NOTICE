@@ -1,0 +1,39 @@
+nodecode-super-artifacts is a rewrite of Super-Artifacts's Super-Artifacts/plugins:
+
+  https://github.com/Super-Artifacts/plugins
+  commit dce02981a179a09dad6509fe58a3a7b8cf020735
+  MIT License, Copyright (c) 2026 Super Artifacts (LICENSE)
+
+Rewritten: the one hosted MCP server the original's mcp.json named, spoken
+directly. The transport is here -- an initialize handshake with its
+notifications/initialized notice, an Mcp-Session-Id when the server names one,
+and either answer the streamable HTTP transport chooses, a JSON body or a
+server-sent event -- and five tools register on it: super_whoami,
+super_publish, super_data, super_artifacts, and super_tool, which reaches
+every other tool the server offers (super_upload, super_templates,
+super_comments, super_data_query, super_share, super_artifact_set,
+super_help and the rest) by its own name. super_publish forwards a slug, a
+title, the whole HTML and a visibility that is private unless the call says
+otherwise, and answers the URL the page went live at. The original's skill is
+the cell's manual topic, (help :super-artifacts), kept in its voice: call
+super_whoami first and name the account, publish private, never widen who can
+open an artifact unless the person asked, one stable slug per subject so every
+update is a version, report the rows that are there and never invent one.
+
+The sign-in is ported as /super-artifacts signin: OAuth 2.1 device
+authorization against the product's own discovery document -- register this
+client, ask for a device code, print the page and the code, poll the token
+endpoint in the background, keep the token at 0600 in the cell's state folder,
+and refresh it when it ages out.
+
+Left out, and why: Hermes's own plugin and MCP plumbing -- `hermes plugins
+install', `hermes mcp add --auth oauth', `hermes mcp login --flow device',
+/reload-mcp and the plugins dashboard -- is the cell's section, its /super-artifacts
+command and its own token file, since a Nodecode cell has no Hermes CLI to
+call. The portable plugin.yaml/plugin.json manifest and the after-install.md
+page are the .asd and the README. The browser authorization-code flow is left
+out: the device flow is the one that works over SSH and in a terminal, and it
+mints the same token. The MCP server's own tool schemas are not copied: the
+tools here carry the arguments the skill used, and any further tool is reached
+through super_tool, so a tool the server adds later still works without a
+release of this cell.
