@@ -1,0 +1,20 @@
+nodecode-decisions is a rewrite of eve-ai-dev's eve-ai-dev/hermes-decisions-plugin:
+
+  https://github.com/eve-ai-dev/hermes-decisions-plugin
+  commit eeac2eac98a3d1f566dc020912bb378aece431f8
+  MIT, Copyright (c) 2026 Decisions maintainers (LICENSE)
+
+Rewritten: the two tools (decisions_submit, decisions_status) with their JSON boundaries, the predicate-only
+request shape and its field-by-field reply check, the choice of background or foreground, the job registry
+with its ceiling of four running and its memory of thirty-two finished, the ownership of a job by the home
+and session that started it, and the section (endpoint, model, key, timeout) as a Nodecode section — in
+Common Lisp, on NLK:HTTP, with nothing of the Python package bundled.
+
+Left out, and why: the scoped-secret indirection (credential_ref plus the credential_endpoint binding that
+must equal endpoint) is one setting here, because a Nodecode section is the operator's approval and has no
+second place to name a secret; the key is api_key written inline or api_key_env naming the variable. The
+"notification_accepted" member of a job is gone: it reported Hermes injecting a message into a running
+session, and here the model polls decisions_status or the operator reads /decisions. Redirects follow
+NLK:HTTP's own five rather than being refused at the first hop. The completion notice Hermes posted into
+the session is not posted either: a cell's notice is a toast for the operator, and a job that finished is
+read where it is asked for.
