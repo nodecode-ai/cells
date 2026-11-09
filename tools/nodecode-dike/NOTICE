@@ -1,0 +1,53 @@
+nodecode-dike is a rewrite of Grizaceo's Grizaceo/hermes-dike:
+
+  https://github.com/Grizaceo/hermes-dike
+  commit 9780e467ec31d4635eb559e4c09bd49f17e178de
+
+MIT License, Copyright (c) 2026 Cristóbal Luis Muñoz Rojas (LICENSE).
+
+What was rewritten. The original is a thin Hermes adapter over a Python
+verification engine; this cell is that verification, in Common Lisp, with the
+statute pack shipped beside it. The citation grammar was carried over: the
+article prefix (art., artículo, artículos, arts.), an enumeration of numbers
+with its separators (1545, 1546 y 1547), the number words (artículo número
+9999), the ordinal forms (artículo primero), the transitory form (art. t. 5),
+the square degree between numeral and suffix (39° bis), the Latin suffixes
+(bis, ter, quáter, quinquies …) and the letter after a suffix (152 quáter N).
+The token normalisation matches: 0006_a => 6-a, t_0005 => t-5. The answer
+keeps the original's shape and its Spanish vocabulary: veredicto, detalles
+with estado VERIFICADA or FALLO, resolucion, vigencia, estado_texto_historico,
+texto_hash, no_verificadas, meta with pack_hash and the counts, and the same
+caveats (no substantive certification, no live vigencia, a mention with no
+article is not verified at all). The adapter's classification of an unusable
+answer into an error envelope is kept too.
+
+What was left out, and why. The original runs a 40,000-line Python engine; five
+of its modules are reached by `dike constancia`. This cell does the part a user
+sees -- detect the citations, resolve each to a statute, check the article and
+its in-force window at the date asked, and report -- and leaves the rest:
+- the Motor/NIF studio, the human-in-the-loop gates and the content signing
+  (commitment, signature, public key): a signature proves who said it, not that
+the article exists, and needs a key this cell has nowhere to keep;
+- HITL receipts, the starter-graph edge store, the exports and the SPARQL
+  shapes of the pack: none of them is read by `constancia`;
+- the .docx and .pdf readers: this cell takes text, or a .md / .txt file;
+- the 8,544-article pack's full JSON-LD rendering and its 5 MB tarball: the
+  cell ships two TSV tables (one row per article: token, text hash, in-force
+  window, retrieval date), 964 KB, read once at first use and checked against
+  PACK_HASH in every answer;
+- the 159-name alias registry: names come from the pack's own statute titles
+  plus the short forms chilean practice writes (cc, cpc, cpp, ct, cot, cpr);
+- the original's runtime install and hash re-check of the pack on every call:
+  a table that ships inside the cell needs no install, and the cell's own hash
+  is the one the answers carry;
+- the original's shell-out to a Python subprocess with a filtered environment:
+  there is no subprocess here, so there is no environment to filter.
+
+What is untouched. The statute data is the original's chile-base pack, snapshot
+af1422d66d1e6eee: 25 statutes, 8,544 articles, each with the SHA-256 of its
+text, its in-force window and its retrieval date. It is derived from Ley Chile
+-- Biblioteca del Congreso Nacional de Chile (https://nuevo.leychile.cl/),
+retrieved 2026-08-18, and it is NOT under the MIT License above: the repository's
+LICENSE and corpus/README.md in the original state the terms the package declares
+for the legal texts (outside copyright, attribution required), the metadata and
+the schema. It is a dated copy, not today's law.
