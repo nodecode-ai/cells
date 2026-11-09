@@ -1,0 +1,28 @@
+nodecode-archytan-lite is a rewrite of High-ArchyTech-Solutions's High-ArchyTech-Solutions/hermes-archytan-lite:
+
+  https://github.com/High-ArchyTech-Solutions/hermes-archytan-lite
+  commit 38748165b089f776acf9d6119eaeafdb76eed83e
+  MIT, Copyright (c) 2026 High ArchyTech Solutions (LICENSE)
+
+The plugin maps a harness's tool call to the actions it asks for -- the programs
+a shell command runs, with its subcommands; the paths it reads, writes and
+redirects into; the variables it sets; the hosts it fetches; the tool itself --
+and puts every one of them to a gate that answers allow or block, all or nothing,
+with per-minute limits, a fail-closed posture and a JSONL decision journal.
+This rewrite keeps that: the mapping and the resource-id spelling (git/push,
+https/host, a workspace path), the wildcard matching, the all-or-nothing
+decision over a call's checks, the per-action window, the unreadable-command
+refusal, and the journal. It is Common Lisp against Nodecode's cell contract
+instead of a Python plugin: the gate is the policy file the cell reads (and
+re-reads when it changes), the hook is the :TOOL point, and the model reaches
+the verbs through eval rather than through the harness's plugin API.
+
+Left out: the out-of-process gate itself -- the Docker-provisioned image, the
+HTTP authorize/redeem exchange, the Ed25519 keys and the signed receipt chain,
+single-use capabilities, and the SIGHUP reload -- because a Nodecode cell
+has no second process to trust and no reason to prove a decision to itself; the
+policy file, read in process, is the gate. Also left out: the harness's plugin
+entry points (pre_tool_call, and the /archytan subcommands that provision
+Docker, rotate keys and write a unit) and the interactive allow-once, which
+here is the operator's edit of the policy or of the `ungated` list. The journal
+is one line per decision and is not rotated at 2 MB.
