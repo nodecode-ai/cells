@@ -1,0 +1,22 @@
+nodecode-cloudflare-workers-ai is a rewrite of AhmetArif0's AhmetArif0/hermes-cloudflare-workers-ai-provider:
+
+  https://github.com/AhmetArif0/hermes-cloudflare-workers-ai-provider
+  commit f6821d058d504ee6324b0d3217564b93124c09f9
+  MIT, Copyright (c) 2026 AhmetArif0 (LICENSE)
+
+Rewritten: the model table of 2026-09-29 (the 16 Workers AI models with
+function calling and at least 64K of context, with Cloudflare's context
+windows, vision and reasoning flags and the reasoning_effort values each
+takes), the reasoning-effort rule (a rung the model does not take becomes the
+nearest weaker one, below its lowest becomes that lowest, off becomes `none`
+where it is taken), and the account-shaped base URL with the plugin's token
+variable. The code itself is a reimplementation against Nodecode's provider
+seams, in Common Lisp: Hermes' ProviderProfile with its register_provider call
+becomes the cell's catalog row, credential, listing and request-body hooks,
+and the model list is data in provider.lisp.
+
+Left out: the free-plan 403 classification (`model_entitlement`, not
+retryable, fall back), because Nodecode has no per-provider error classifier
+a cell can hook; the picker's `(paid plan)` marker stands in for it. The
+plugin's provider id `workers-ai` becomes `cloudflare-workers-ai`, the id
+Nodecode's privacy list already carries for the endpoint.
