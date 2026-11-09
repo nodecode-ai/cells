@@ -1,0 +1,54 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The speech is made on this machine: the only thing that leaves
+// it is the runtime's own first download of the model's weights.
+{
+  "omnivoice": {
+    "enabled": true,
+
+    // The command the OmniVoice runtime installs, or the path to it. Install
+    // it once with
+    //   pip install "hermes-omnivoice[omnivoice] @ git+https://github.com/ThaungThanHan/hermes-omnivoice.git"
+    "command": "omnivoice-hermes-tts",
+
+    // The model the runtime loads; its weights come from Hugging Face on the
+    // first call and are kept in the usual cache afterwards.
+    "model": "k2-fsa/OmniVoice",
+
+    // auto picks the best device here. cpu works and is slow; a GPU is much
+    // faster.
+    "device": "auto",
+    "dtype": "float16",
+
+    // The voice a call names none: "auto", a described voice such as
+    // "female, low pitch, british accent", or "ref:/a/short/clip.wav".
+    "voice": "auto",
+
+    // A voice description and a clip used when voice is empty. ref_text is
+    // what the clip says; without it the runtime transcribes the clip itself
+    // (slower, and it loads an ASR model).
+    "instruct": "",
+    "ref_audio": "",
+    "ref_text": "",
+
+    // A language code such as "th" or "my". Empty, OmniVoice reads the
+    // text itself.
+    "language": "",
+
+    "speed": "1.0",
+    "num_step": 32,
+    "guidance_scale": "2.0",
+
+    // wav, mp3, flac or ogg. MP3 needs ffmpeg on the PATH; without it the
+    // runtime writes a WAV instead and the answer names that file.
+    "format": "wav",
+
+    // Where the spoken files are kept, under the home.
+    "directory": "speech/",
+
+    // auto picks ffplay, afplay, paplay or aplay; or name a player with its
+    // flags, such as "mpv --no-video". A call's play argument decides whether
+    // a file is played at all.
+    "player": "auto"
+  }
+}
