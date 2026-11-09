@@ -1,0 +1,12 @@
+// The `startup` section of ~/.nodecode/config.jsonc. Nothing here is required:
+// with no section at all the cell reads this machine's own autostart entries.
+{
+  "startup": {
+    // Rows one table answer carries, at most 400. The call's own limit wins.
+    "max_rows": 100,
+    // Read the user-scope sources from another home -- a mounted disk, another
+    // profile -- instead of the running user's. The Windows registry is always
+    // the live one.
+    "home": "/home/someone"
+  }
+}
