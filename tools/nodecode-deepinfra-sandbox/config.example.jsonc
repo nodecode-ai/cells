@@ -1,0 +1,35 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "deepinfra-sandbox": {
+    "enabled": true,
+
+    // The DeepInfra API key, from deepinfra.com/dash/api_keys. A pasted key
+    // is kept in a 0600 file under ~/.nodecode/secrets/ and this section is
+    // pointed at that file instead.
+    "api_key": "...",
+
+    // Or the name of the environment variable holding it. DEEPINFRA_API_KEY
+    // is read either way, so an exported key needs no section at all.
+    "api_key_env": "DEEPINFRA_API_KEY",
+
+    // The sandbox plan tier, for example small or large. Unset is the
+    // service's own default (medium).
+    // "plan": "small",
+
+    // Only for a gateway of your own.
+    // "base_url": "https://api.deepinfra.com",
+
+    // One request's ceiling, in seconds.
+    "timeout_seconds": 60,
+
+    // How long an idle sandbox lives before the service stops it. /workspace
+    // is kept either way.
+    "idle_minutes": 60,
+
+    // When the cell stops: stop the sandbox and keep /workspace (true), or
+    // delete the sandbox and its files (false).
+    "keep_workspace": true
+  }
+}
