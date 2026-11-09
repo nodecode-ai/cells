@@ -65,10 +65,8 @@
                (format nil "stubbed answer from ~a" (nodecode-delegation::route-name route))))
            (tool (delegate-tool)))
       (is (search "stubbed answer from deep"
-                  (funcall tool (nlk:make-json-object "task" "debug the parser" "route" "deep")))
-          "the answer is the subagent's")
-      (is (equal '(("deep" "debug the parser" 900 "anthropic" "claude-opus-5" "high")) seen)
-          "the route resolved to provider, model and effort, and the task went whole")
+                  (funcall tool (nlk:make-json-object "task" "debug the parser" "route" "deep"))) "the answer is the subagent's")
+      (is (equal '(("deep" "debug the parser" 900 "anthropic" "claude-opus-5" "high")) seen) "the route resolved to provider, model and effort, and the task went whole")
       ;; no route: the mode's default, when one is set
       (funcall tool (nlk:make-json-object "task" "summarise this"))
       (is (equal "fast" (first (first seen))) "a task that picks none runs on the default when unset"))))
@@ -78,23 +76,20 @@
     (let* ((properties (gethash "properties" (getf (second (nle::find-tool "delegate")) :parameters)))
            (member (gethash "route" properties))
            (description (gethash "description" member)))
-      (is (equal '("fast" "deep") (coerce (gethash "enum" member) 'list))
-          "the enum is the route names, in config order")
+      (is (equal '("fast" "deep") (coerce (gethash "enum" member) 'list)) "the enum is the route names, in config order")
       (is (search "fast: Cheap and quick" description) "each name with its line")
       (is (search "deep: Slow and careful" description))
       (is (not (search "openrouter" description)) "no provider reaches the model")
       (is (not (search "claude-opus-5" description)) "no model id reaches the model")
       (is (equal '("task") (coerce (gethash "required" (getf (second (nle::find-tool "delegate")) :parameters))
-                                    'list))
-          "only the task is required"))))
+                                    'list)) "only the task is required"))))
 
 (deftest delegation-cell-a-route-that-is-not-configured-is-refused ()
   (with-cell-stop ((delegation-start "backend" "model_map" "routes" (delegate-two-routes)))
     (is (search "ghost is not a configured route"
                 (refusal-text nodecode-delegation::delegation-error
                   (funcall (delegate-tool)
-                           (nlk:make-json-object "task" "look at this" "route" "ghost"))))
-        "a name outside the routes names what is configured")))
+                           (nlk:make-json-object "task" "look at this" "route" "ghost")))) "a name outside the routes names what is configured")))
 
 (deftest delegation-cell-a-route-outside-the-mode-is-refused-not-misrun ()
   (with-cell-stop ((delegation-start "backend" "model_map" "routes" (delegate-two-routes)))
@@ -106,8 +101,7 @@
       (is (search "/delegation model_map"
                   (refusal-text nodecode-delegation::delegation-error
                     (funcall (delegate-tool)
-                             (nlk:make-json-object "task" "look at this" "route" "fast"))))
-          "the refusal names the way back"))))
+                             (nlk:make-json-object "task" "look at this" "route" "fast")))) "the refusal names the way back"))))
 
 ;;; --- the command -------------------------------------------------------------------
 
@@ -139,8 +133,7 @@
                                      (nlk:make-json-object "name" "no-model" "description" "d"
                                                            "provider" "somewhere")
                                      (delegate-route "fast" "A second fast." "anthropic" "another"))))
-    (is (equal '("fast") (nodecode-delegation::route-names))
-        "the malformed one and the repeated name are skipped")
+    (is (equal '("fast") (nodecode-delegation::route-names)) "the malformed one and the repeated name are skipped")
     (let ((problems (format nil "~{~a~^; ~}" (nodecode-delegation::setting :route-problems))))
       (is (search "no-model needs a model" problems))
       (is (search "fast is listed twice" problems)))))

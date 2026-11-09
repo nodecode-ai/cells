@@ -148,19 +148,14 @@
                                               "arguments" (nlk:json-object "query" "Warsaw")))))
       (let ((call (letsfg-request "tools/call" "find_airports")))
         (is-present (call call) "a tools/call went out"
-          (is (equal "Warsaw" (nlk:json-value (getf call :request) :string "params" "arguments" "query"))
-              "its arguments went with it")
-          (is (equal "Bearer lg_test_token" (letsfg-header call "authorization"))
-              "the bearer token the section named")
-          (is (equal "sess-1" (letsfg-header call "mcp-session-id"))
-              "the session the handshake answered")))
+          (is (equal "Warsaw" (nlk:json-value (getf call :request) :string "params" "arguments" "query")) "its arguments went with it")
+          (is (equal "Bearer lg_test_token" (letsfg-header call "authorization")) "the bearer token the section named")
+          (is (equal "sess-1" (letsfg-header call "mcp-session-id")) "the session the handshake answered")))
       (is (= 1 (count "initialize" *letsfg-calls*
                       :key (lambda (one) (nlk:json-value (getf one :request) :string "method"))
-                      :test #'equal))
-          "one handshake for the life of the start")
+                      :test #'equal)) "one handshake for the life of the start")
       (is (letsfg-request "notifications/initialized") "and the notification the protocol requires")
-      (is (equal (format nil "~a/mcp" "https://letsfg.co") (getf (first *letsfg-calls*) :url))
-          "every request goes to the one endpoint"))))
+      (is (equal (format nil "~a/mcp" "https://letsfg.co") (getf (first *letsfg-calls*) :url)) "every request goes to the one endpoint"))))
 
 (deftest letsfg-cell-a-search-keeps-what-was-given-and-drops-what-was-not ()
   (with-letsfg-wire
@@ -170,8 +165,7 @@
                                     "departure_date" "2026-12-04"
                                     "return_date" nil "adults" 1))
       (let ((call (letsfg-request "tools/call" "search_flights")))
-        (is-present (sent (and call (nlk:json-value (getf call :request) :object "params" "arguments")))
-            "the search went to letsfg's search_flights"
+        (is-present (sent (and call (nlk:json-value (getf call :request) :object "params" "arguments"))) "the search went to letsfg's search_flights"
           (is (equal "WAW" (nlk:json-value sent :string "origin")))
           (is (equal "LHR" (nlk:json-value sent :string "destination")))
           (is (= 1 (nlk:json-value sent :integer "adults")))
@@ -187,8 +181,7 @@
       (is (letsfg-request "tools/call" "get_flight_results") "a flight search_id reads as flights")
       (letsfg-tool "letsfg_results" (nlk:json-object "search_id" "s-2" "kind" "hotel"))
       (let ((call (letsfg-request "tools/call" "get_hotel_results")))
-        (is-present (sent (and call (nlk:json-value (getf call :request) :object "params" "arguments")))
-            "a hotel search_id reads as hotels"
+        (is-present (sent (and call (nlk:json-value (getf call :request) :object "params" "arguments"))) "a hotel search_id reads as hotels"
           (is (equal "s-2" (nlk:json-value sent :string "search_id"))))))))
 
 (deftest letsfg-cell-the-booking-path-passes-its-arguments-unchanged ()
@@ -201,12 +194,10 @@
                                                "arguments" (nlk:json-object "booking_handle" "h-1"
                                                                              "cabin_bag" t)))))
       (let ((call (letsfg-request "tools/call" "book_flight")))
-        (is-present (sent (and call (nlk:json-value (getf call :request) :object "params" "arguments")))
-            "book_flight ran with the arguments it was given"
+        (is-present (sent (and call (nlk:json-value (getf call :request) :object "params" "arguments"))) "book_flight ran with the arguments it was given"
           (is (equal "h-1" (nlk:json-value sent :string "booking_handle")))))
       (is (search "one of" (refusal-text nodecode-letsfg:letsfg-error
-                                          (letsfg-tool "letsfg_book" (nlk:json-object "tool" "get_flight_results"))))
-          "a read tool is not the write path"))))
+                                          (letsfg-tool "letsfg_book" (nlk:json-object "tool" "get_flight_results")))) "a read tool is not the write path"))))
 
 (deftest letsfg-cell-an-event-stream-answer-parses-like-a-plain-one ()
   (with-letsfg-wire
@@ -214,8 +205,7 @@
       (setf *letsfg-sse* t *letsfg-text* "Lisbon in November, four nights, from 212 EUR.")
       (is (equal "Lisbon in November, four nights, from 212 EUR."
                  (letsfg-tool "letsfg_call" (nlk:json-object "tool" "search_hotels"
-                                                               "arguments" (nlk:json-object "city" "Lisbon"))))
-          "the data: line carried the answer"))))
+                                                               "arguments" (nlk:json-object "city" "Lisbon")))) "the data: line carried the answer"))))
 
 (deftest letsfg-cell-failures-read-as-failures ()
   (with-letsfg-wire
@@ -223,12 +213,10 @@
       (setf *letsfg-text* "no offers for that date" *letsfg-failed* t)
       (is (equal "ERROR: no offers for that date"
                  (letsfg-tool "letsfg_call" (nlk:json-object "tool" "get_flight_results"
-                                                               "arguments" (nlk:json-object))))
-          "a tool's own error is the answer, marked ERROR:")
+                                                               "arguments" (nlk:json-object)))) "a tool's own error is the answer, marked ERROR:")
       (setf *letsfg-failed* nil *letsfg-status* 401)
       (is (search "401" (refusal-text nodecode-letsfg:letsfg-error
-                                       (letsfg-tool "letsfg_call" (nlk:json-object "tool" "get_preferences"))))
-          "a lapsed sign-in is a refusal naming the status"))))
+                                       (letsfg-tool "letsfg_call" (nlk:json-object "tool" "get_preferences")))) "a lapsed sign-in is a refusal naming the status"))))
 
 (deftest letsfg-cell-the-slash-command-answers-without-the-network ()
   (with-letsfg-wire
