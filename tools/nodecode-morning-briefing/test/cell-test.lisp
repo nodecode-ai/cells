@@ -100,10 +100,8 @@
 (deftest morning-briefing-refuses-without-a-place (with-stubbed-briefing)
   (with-cell-stop ((morning-briefing-start "subreddits" (vector "news")))
     (is (signals-error nodecode-morning-briefing:morning-briefing-error
-          (nodecode-morning-briefing:build-briefing))
-        "no latitude and longitude is a refusal")
+          (nodecode-morning-briefing:build-briefing)) "no latitude and longitude is a refusal")
     (is (search "latitude"
                 (handler-case (progn (nodecode-morning-briefing:build-briefing) "")
                   (nodecode-morning-briefing:morning-briefing-error (condition)
-                    (princ-to-string condition))))
-        "that names the setting to set")))
+                    (princ-to-string condition)))) "that names the setting to set")))

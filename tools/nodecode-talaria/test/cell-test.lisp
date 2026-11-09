@@ -101,8 +101,7 @@ once BODY reads it."
   (let ((condition (signals-error nlk:config-refusal
                                   (with-talaria-key
                                     (talaria-start "key_env" "TALARIA_UNSET_KEY")))))
-    (is (search "TALARIA_UNSET_KEY" (princ-to-string condition))
-        "the refusal names the variable that answered nothing"))
+    (is (search "TALARIA_UNSET_KEY" (princ-to-string condition)) "the refusal names the variable that answered nothing"))
   (is (null (nle::find-tool "talaria_capabilities")) "and installs nothing"))
 
 (deftest talaria-cell-refuses-a-url-without-a-scheme (with-talaria-key)
@@ -117,8 +116,7 @@ once BODY reads it."
     (with-talaria-wire (asked ("/talaria/v1/capabilities" (values +capabilities+ 200)))
       (let ((object (talaria-object "tal-1" "talaria_capabilities" "{}")))
         (is (equal "1.5.2" (nlk:json-value object :string "plugin_version")))
-        (is (eq t (nlk:json-value object :boolean "history_search"))
-            "the summary says where searching is on")
+        (is (eq t (nlk:json-value object :boolean "history_search")) "the summary says where searching is on")
         (is (= 1 (nlk:json-value object :integer "commands")))
         (is (equal "Talaria" (nlk:json-value object :string "agent_name")))
         (is (= 1 (length asked)) "a capability read is one request")
@@ -130,8 +128,7 @@ once BODY reads it."
   (with-cell-stop ((talaria-start))
     (with-talaria-wire (asked ("/talaria/v1/capabilities" (values +capabilities+ 200)))
       (let ((object (talaria-object "tal-2" "talaria_capabilities" "{\"full\":true}")))
-        (is (= 1 (nlk:json-value object :integer "version"))
-            "full hands the server's object over as it stands")))))
+        (is (= 1 (nlk:json-value object :integer "version")) "full hands the server's object over as it stands")))))
 
 ;;; --- talaria_search_history -----------------------------------------------------------
 
@@ -175,8 +172,7 @@ once BODY reads it."
                                      "{\"session_id\":\"20260101_ab12\",\"message_id\":42}")))
         (is (equal "claude-sonnet-4" (nlk:json-value object :string "model")))
         (is (equal "stop" (nlk:json-value object :string "finish_reason")))
-        (is (= 1200 (nlk:json-value object :integer "input_tokens"))
-            "the token counts come through")
+        (is (= 1200 (nlk:json-value object :integer "input_tokens")) "the token counts come through")
         (is (eq t (nlk:json-value object :boolean "has_reasoning"))))
       (is (equal "http://talaria.test:8080/talaria/v1/sessions/20260101_ab12/response?message_id=42"
                  (second (first asked))) "the session and the message ride the path and the query"))))

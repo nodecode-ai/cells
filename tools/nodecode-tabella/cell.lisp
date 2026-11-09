@@ -243,8 +243,8 @@ pdftotext, anything else through pandoc. => a string, at most MAX-CHARS."
          (text (progn
                  (unless (probe-file path) (fail "no file at ~a" path))
                  (cond ((member suffix *text-suffixes* :test #'string=) (plain-text path))
-                     ((member suffix *image-suffixes* :test #'string=)
-                      (fail "~a is an image: reading one needs OCR, which this cell does not carry" (file-namestring path)))
+                       ((member suffix *image-suffixes* :test #'string=)
+                        (fail "~a is an image: reading one needs OCR, which this cell does not carry" (file-namestring path)))
                        ((string= suffix "pdf") (pdf-text path))
                        (t (pandoc-text path))))))
     (if (and max-chars (plusp max-chars) (> (length text) max-chars))

@@ -140,7 +140,7 @@ model call. Answers the text stored, or NIL when nothing could be."
                                   (when (build-node level index)
                                     (fit-view)
                                     (return-from pump-once t))))))))
-        nil)))
+      nil)))
 
 (defun compactor-step ()
   "One wake of the summary worker: build a couple of nodes, oldest due first."

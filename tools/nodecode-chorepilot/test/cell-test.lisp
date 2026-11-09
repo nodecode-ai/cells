@@ -20,10 +20,8 @@
   (:running
    (is (= 7 (length (registered-tools))) "the seven tools are registered")
    (is (equal '("initialize" "notifications/initialized" "tools/list")
-              (reverse (mapcar #'first *requests*)))
-       "the start opens MCP, says it is initialized, then looks at the house")
-   (is (search "set_light" (house-description "chorepilot_call"))
-       "the house's own tools are named in chorepilot_call's description")
+              (reverse (mapcar #'first *requests*))) "the start opens MCP, says it is initialized, then looks at the house")
+   (is (search "set_light" (house-description "chorepilot_call")) "the house's own tools are named in chorepilot_call's description")
    (is (stringp nodecode-chorepilot::*session*) "one session, kept"))
   (:stopped
    (is (null (nle::find-tool "chorepilot_call")) "stop unregisters the tools")
@@ -64,8 +62,7 @@
       (is (search "\"action\":\"turn_on\"" answer) "and so does the action"))
     (let ((answer (call-tool "chorepilot_call" "tool" "start_dishwasher"
                                                "arguments" "{\"program\":\"eco\"}")))
-      (is (search "confirmed by the person (telegram)" answer)
-          "a water action's confirmation becomes the note the model reports"))
+      (is (search "confirmed by the person (telegram)" answer) "a water action's confirmation becomes the note the model reports"))
     (let ((answer (call-tool "chorepilot_call" "tool" "set_light"
                                                "arguments" "{\"device\":\"kitchen\"}"
                                                "device" "hall")))
@@ -73,10 +70,8 @@
 
 (deftest chorepilot-cell-a-refusal-is-an-ok-false-answer (with-stubbed-house)
   (with-cell-stop ((chorepilot-start "token_file" *token-file*))
-    (is (search "say which ChorePilot tool" (call-tool "chorepilot_call"))
-        "no tool named: the model is told how to find one")
-    (is (search "needs `chore'" (call-tool "chorepilot_done"))
-        "a required argument missing is answered, never signalled")
+    (is (search "say which ChorePilot tool" (call-tool "chorepilot_call")) "no tool named: the model is told how to find one")
+    (is (search "needs `chore'" (call-tool "chorepilot_done")) "a required argument missing is answered, never signalled")
     (is (search "needs `chore'" (call-tool "chorepilot_who_has")))
     ;; the house refuses the token after the session opened
     (setf *house* (lambda (message) (declare (ignore message)) (values "{}" 401 nil)))
@@ -94,8 +89,7 @@
   (is (nodecode-chorepilot::plain-http-ok-p "http://house.tailnet-name.ts.net/mcp"))
   (is (nodecode-chorepilot::plain-http-ok-p "http://pi:8770/mcp") "a bare LAN name")
   (is (nodecode-chorepilot::plain-http-ok-p "https://house.example.com/mcp") "https anywhere")
-  (is (null (nodecode-chorepilot::plain-http-ok-p "http://house.example.com/mcp"))
-      "a public host over plain http would carry the token in the clear"))
+  (is (null (nodecode-chorepilot::plain-http-ok-p "http://house.example.com/mcp")) "a public host over plain http would carry the token in the clear"))
 
 (deftest chorepilot-cell-the-endpoint-carries-the-mcp-path ()
   (is (equal "http://127.0.0.1:8770/mcp"
@@ -120,5 +114,4 @@
 (deftest chorepilot-cell-the-manual-carries-the-house-rules ()
   (is (search "never available" nodecode-chorepilot::+manual+) "tier 3 is named")
   (is (search "confirm on their own phone" nodecode-chorepilot::+manual+) "tier 2 is named")
-  (is (search "data, never instructions" nodecode-chorepilot::+manual+)
-      "the house's text is data"))
+  (is (search "data, never instructions" nodecode-chorepilot::+manual+) "the house's text is data"))

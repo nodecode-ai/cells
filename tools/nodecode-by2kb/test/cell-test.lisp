@@ -112,8 +112,7 @@ one pushes its ARGS on *CALLS*. A test that needs several answers setfs
       (is-carrying (answer (nodecode-by2kb:search "TiDB vector search"))
                    ("1. A talk") ("s-1") ("Reply with the numbers"))
       (is (equal '("search" "discover" "TiDB vector search" "--scope" "conv-1" "--json")
-                 (first *calls*))
-          "the argv the plugin ran, scope included"))))
+                 (first *calls*)) "the argv the plugin ran, scope included"))))
 
 (deftest by2kb-cell-a-selection-takes-the-lists-numbers ()
   (with-run-stub ()
@@ -128,18 +127,15 @@ one pushes its ARGS on *CALLS*. A test that needs several answers setfs
                    ("call by2kb_next"))
       (is (equal '("search" "select" "s-9" "1,3" "--scope" "conv-1"
                    "--enricher" "external_agent" "--json")
-                 (first *calls*))
-          "the numbers went to the list's own id")
-      (is (equal '("search" "latest" "--scope" "conv-1" "--json") (second *calls*))
-          "the open list was asked for first"))))
+                 (first *calls*)) "the numbers went to the list's own id")
+      (is (equal '("search" "latest" "--scope" "conv-1" "--json") (second *calls*)) "the open list was asked for first"))))
 
 (deftest by2kb-cell-a-number-with-no-open-list-is-a-repair ()
   (with-run-stub (:answer "{}")
     (with-cell-stop ((by2kb-start "scope" "conv-2"))
       (is-carrying (text (refusal-text nodecode-by2kb:by2kb-error
                                        (nodecode-by2kb:select "1")))
-                   ("no open recommendation list"))
-         "a number before any search is a repair, not a crash")))
+                   ("no open recommendation list" "a number before any search is a repair, not a crash")))))
 
 ;;; --- one video, and the staged summaries -------------------------------------------
 
@@ -169,8 +165,7 @@ one pushes its ARGS on *CALLS*. A test that needs several answers setfs
                        ("transcript") ("notes"))
           (is (equal '("ingest" "https://www.bilibili.com/video/BV1x"
                        "--enricher" "external_agent" "--json")
-                     (first *calls*))
-              "the plugin's own ingest argv"))))))
+                     (first *calls*)) "the plugin's own ingest argv"))))))
 
 (deftest by2kb-cell-a-staged-operation-is-read-page-by-page ()
   (with-run-stub ()
@@ -188,8 +183,7 @@ one pushes its ARGS on *CALLS*. A test that needs several answers setfs
                    ("Operation op-1 of job j-3") ("at most 800 bytes") ("60s")
                    ("--- system prompt ---") ("system") ("--- user prompt ---"))
       (is (= 5 (length *calls*)) "one next, then two pages of each prompt")
-      (is (equal "user_prompt" (argument (first *calls*) "--field"))
-          "the user prompt was read last"))))
+      (is (equal "user_prompt" (argument (first *calls*) "--field")) "the user prompt was read last"))))
 
 (deftest by2kb-cell-an-answer-goes-back-whole-and-its-file-goes ()
   (with-run-stub ()
@@ -204,8 +198,7 @@ one pushes its ARGS on *CALLS*. A test that needs several answers setfs
       (let ((argv (first *calls*)))
         (is (equal "op-2" (argument argv "--operation-id")))
         (is (equal "nodecode" (argument argv "--provider")) "the section's identity")
-        (is (null (probe-file (argument argv "--output-file")))
-            "the temporary answer file is gone")))))
+        (is (null (probe-file (argument argv "--output-file"))) "the temporary answer file is gone")))))
 
 ;;; --- a run that fails ---------------------------------------------------------------
 
@@ -215,8 +208,7 @@ one pushes its ARGS on *CALLS*. A test that needs several answers setfs
     (with-cell-stop ((by2kb-start))
       (is-carrying (text (refusal-text nodecode-by2kb:by2kb-error
                                        (nodecode-by2kb:search "x")))
-                   ("search is disabled"))
-         "the program's own message is the model's repair")))
+                   ("search is disabled" "the program's own message is the model's repair")))))
 
 (deftest by2kb-cell-a-run-that-prints-nothing-is-a-refusal-too ()
   (with-run-stub (:answer "" :code 0)
@@ -230,8 +222,7 @@ one pushes its ARGS on *CALLS*. A test that needs several answers setfs
 (deftest by2kb-cell-the-command-routes-what-the-operator-typed ()
   (with-run-stub ()
     (with-cell-stop ((by2kb-start "scope" "conv-3"))
-      (is (cl:search "by2kb_search" (nodecode-by2kb::run-slash "" nil))
-          "an empty command says what the cell can do")
+      (is (cl:search "by2kb_search" (nodecode-by2kb::run-slash "" nil)) "an empty command says what the cell can do")
       (setf *responder*
             (lambda (args)
               (if (equal (second args) "latest")
@@ -241,5 +232,4 @@ one pushes its ARGS on *CALLS*. A test that needs several answers setfs
                    ("2. duplicate"))
       (is (equal '("search" "select" "s-3" "2" "--scope" "conv-3"
                    "--enricher" "external_agent" "--json")
-                 (first *calls*))
-          "a bare number took the list's numbers"))))
+                 (first *calls*)) "a bare number took the list's numbers"))))

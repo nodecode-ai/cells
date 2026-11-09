@@ -105,8 +105,7 @@ fake endpoint the caller bound."
   (:config "token_env" "BROWSERLESS_TOKEN")
   (:help :browserless)
   (:running
-   (is (equal "https://production-sfo.browserless.io" (nodecode-browserless::base-url))
-       "the default region endpoint")
+   (is (equal "https://production-sfo.browserless.io" (nodecode-browserless::base-url)) "the default region endpoint")
    (loop for name in '("browserless_fetch" "browserless_screenshot" "browserless_pdf")
          do (is (nle::find-tool name) name)))
   (:refused ("token_env" 5) ("base_url" "production-sfo.browserless.io")))
@@ -188,9 +187,9 @@ fake endpoint the caller bound."
           (is (probe-file path) "the PNG is on disk")
           (is (search "(look " (nlk:json-value object :string "note")) "the answer says how to see it")
           (when (probe-file path) (ignore-errors (delete-file path)))))
-        (let* ((request (first (requests-to "/screenshot")))
-               (body (nlk:decode-json (third request))))
-          (is (eq t (nlk:json-value body :boolean "options" "fullPage")) "full page was asked for")))))
+      (let* ((request (first (requests-to "/screenshot")))
+             (body (nlk:decode-json (third request))))
+        (is (eq t (nlk:json-value body :boolean "options" "fullPage")) "full page was asked for")))))
 
 (deftest browserless-cell-saves-a-pdf ()
   (with-fake-browserless (("POST" "/pdf" (page-octets "%PDF-1.4")))

@@ -197,11 +197,9 @@ cone 7 is 1240 degrees
         (is (search "notes/kiln.md" answer) "the path is vault-relative")
         (is (search "Kiln schedule" answer) "with the note's title")
         (is (search "1 note" answer) "one note carried both words"))
-      (is (search "No note matched" (kokpit-tool "kokpit_brain_search" "query" "zeppelin"))
-          "a word the vault never says matches nothing")
+      (is (search "No note matched" (kokpit-tool "kokpit_brain_search" "query" "zeppelin")) "a word the vault never says matches nothing")
       (is (search "no word" (refusal-text nodecode-kokpit:kokpit-error
-                                          (kokpit-tool "kokpit_brain_search" "query" "a")))
-          "a query of one-letter words refuses in words"))))
+                                          (kokpit-tool "kokpit_brain_search" "query" "a"))) "a query of one-letter words refuses in words"))))
 
 ;;; --- the night pass ------------------------------------------------------------------
 
@@ -219,18 +217,15 @@ cone 7 is 1240 degrees
              (vault (nodecode-kokpit::vault-directory)))
         (is (= 2 (length open)) "two proposals, both open")
         (is (search (nlk:json-value source :string "quote")
-                    (vault-text vault (nlk:json-value source :string "path")))
-            "the quote is in the file word for word")
+                    (vault-text vault (nlk:json-value source :string "path"))) "the quote is in the file word for word")
         (let ((accepted (kokpit-tool "kokpit_night" "action" "accept"
                                       "id" (subseq (nlk:json-value stale :string "id") 0 6))))
           (is (search "Accepted" accepted))
-          (is (search "- [ ] Kitchen shelf: pick the paint" (vault-text vault "To-Do.md"))
-              "accepting writes one To-Do line and edits nothing"))
+          (is (search "- [ ] Kitchen shelf: pick the paint" (vault-text vault "To-Do.md")) "accepting writes one To-Do line and edits nothing"))
         (let ((dismissed (kokpit-tool "kokpit_night" "action" "dismiss"
                                        "id" (nlk:json-value due :string "id"))))
           (is (search "Dismissed" dismissed)))
-        (is (= 0 (length (nodecode-kokpit::open-proposals (nodecode-kokpit::load-night))))
-            "one accepted and one dismissed leave nothing open")
+        (is (= 0 (length (nodecode-kokpit::open-proposals (nodecode-kokpit::load-night)))) "one accepted and one dismissed leave nothing open")
         (is (search "call the printer" (vault-text vault "To-Do.md")) "the tasks are untouched")))))
 
 ;;; --- /kokpit ---------------------------------------------------------------------------
@@ -243,11 +238,8 @@ cone 7 is 1240 degrees
     (is (search "call the glazier"
                 (nodecode-kokpit::run-command (format nil "todo call the glazier due:~a"
                                                       (iso-days-ahead 3))
-                                               "s-1"))
-        "todo takes a due date off the end")
-    (is (search "(due: " (vault-text (nodecode-kokpit::vault-directory) "To-Do.md"))
-        "and writes it as the To-Do reader reads it")
+                                               "s-1")) "todo takes a due date off the end")
+    (is (search "(due: " (vault-text (nodecode-kokpit::vault-directory) "To-Do.md")) "and writes it as the To-Do reader reads it")
     (is (search "Wrote inbox/" (nodecode-kokpit::run-command "note buy salt" "s-1")))
     (is (search "Night pass" (nodecode-kokpit::run-command "night run" "s-1")))
-    (is (search "Kokpit does not know" (nodecode-kokpit::run-command "wat" "s-1"))
-        "an unknown subcommand says so")))
+    (is (search "Kokpit does not know" (nodecode-kokpit::run-command "wat" "s-1")) "an unknown subcommand says so")))

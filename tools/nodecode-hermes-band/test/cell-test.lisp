@@ -18,8 +18,7 @@
   (:help :hermes-band)
   (:command "band")
   (:running
-   (is (search "band-cell-test" (format nil "~a" (nodecode-hermes-band::setting :output-dir)))
-       "the section's output folder is what a render uses")
+   (is (search "band-cell-test" (format nil "~a" (nodecode-hermes-band::setting :output-dir))) "the section's output folder is what a render uses")
    (let ((entry (nle::find-tool "band_render")))
      (is-present entry "the plugin's render tool is registered under its name"
        (is (equal "band_render" (first entry))))))
@@ -173,5 +172,4 @@ created empty, whatever ffmpeg would have written there."
   (let* ((first (nodecode-hermes-band::voice-lead "D" "major" "I" nil))
          (second (nodecode-hermes-band::voice-lead "D" "major" "V" first)))
     (is (>= (length first) 3) "at least three voices")
-    (is (< (abs (- (first (sort (copy-list second) #'<)) (first (sort (copy-list first) #'<)))) 24)
-        "the next chord stays near the one before it")))
+    (is (< (abs (- (first (sort (copy-list second) #'<)) (first (sort (copy-list first) #'<)))) 24) "the next chord stays near the one before it")))

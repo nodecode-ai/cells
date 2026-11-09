@@ -182,8 +182,7 @@ first."
                  "/widgts -> /widgets")
     (is-carrying (text (sr-criteria (first requests)))
                  "/widgets: list the widgets" "/gadgets: list the gadgets")
-    (is (not (search "/models:" (sr-criteria (first requests))))
-        "the live catalog was not offered")))
+    (is (not (search "/models:" (sr-criteria (first requests)))) "the live catalog was not offered")))
 
 ;;; --- /slash-router --------------------------------------------------------------------
 

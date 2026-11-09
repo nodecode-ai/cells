@@ -74,14 +74,11 @@
     (with-cell-stop ((model-presets-start "presets" +mp-presets+))
       (let ((text (cell-entry "nodecode-model-presets" "preset" "fast" "s1")))
         (is (search "pinned to anthropic/claude-haiku-4.5" text) "the answer is the pick's own line")
-        (is (find "claude-haiku-4.5" *mp-calls* :key (lambda (call) (getf call :model)) :test #'equal)
-            "the preset's model is the pick")
+        (is (find "claude-haiku-4.5" *mp-calls* :key (lambda (call) (getf call :model)) :test #'equal) "the preset's model is the pick")
         (is (equal "s1" (getf (find "claude-haiku-4.5" *mp-calls*
                                     :key (lambda (call) (getf call :model)) :test #'equal)
-                              :session-id))
-            "on this session")
-        (is (find "low" *mp-calls* :key (lambda (call) (getf call :effort)) :test #'equal)
-            "its rung is the pick's effort")))))
+                              :session-id)) "on this session")
+        (is (find "low" *mp-calls* :key (lambda (call) (getf call :effort)) :test #'equal) "its rung is the pick's effort")))))
 
 (deftest model-presets-cell-an-override-wins-over-the-preset ()
   (with-presets
@@ -89,8 +86,7 @@
       (let ((text (cell-entry "nodecode-model-presets" "preset"
                               "deep --effort high --provider openrouter" "s1")))
         (is (search "pinned to openrouter/gpt-5.4" text) "the override is what lands")
-        (is (find "high" *mp-calls* :key (lambda (call) (getf call :effort)) :test #'equal)
-            "the override's rung, not the preset's")))))
+        (is (find "high" *mp-calls* :key (lambda (call) (getf call :effort)) :test #'equal) "the override's rung, not the preset's")))))
 
 (deftest model-presets-cell-a-name-it-does-not-have-refuses ()
   (with-presets
@@ -105,8 +101,7 @@
     (with-cell-stop ((model-presets-start "presets" +mp-presets+))
       (multiple-value-bind (text dialog)
           (cell-entry "nodecode-model-presets" "preset" "" "s1")
-        (is (equal "Model presets" (nlk:json-value dialog :string "title"))
-            "typing /preset alone opens the picker")
+        (is (equal "Model presets" (nlk:json-value dialog :string "title")) "typing /preset alone opens the picker")
         (is (= 2 (length (nlk:json-value dialog :array "rows"))) "with a row a preset")
         (is (search "claude-haiku-4.5" text) "and the same words as text"))
       (let ((status (cell-entry "nodecode-model-presets" "preset" "status" "s1")))
@@ -128,5 +123,4 @@
                      (nodecode-model-presets:decode-preset-request
                       (nlk:json-object "action" "switch" "preset" "deep")))))
           (is (search "pinned to openai/gpt-5.4" said) "the tool lands the pick on the ambient session")
-          (is (find "gpt-5.4" *mp-calls* :key (lambda (call) (getf call :model)) :test #'equal)
-              "through the same seam /preset uses"))))))
+          (is (find "gpt-5.4" *mp-calls* :key (lambda (call) (getf call :model)) :test #'equal) "through the same seam /preset uses"))))))

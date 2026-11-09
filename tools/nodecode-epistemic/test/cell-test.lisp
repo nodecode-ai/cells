@@ -54,8 +54,7 @@
                                         "evidence" "log.txt line 12 is earlier than the reload"
                                         "source" "log.txt"))))
           (is (ok-p compared) "the observation compares")
-          (is (search "stale" (answer-text compared))
-              "and the claim the check was bound to is marked stale")
+          (is (search "stale" (answer-text compared)) "and the claim the check was bound to is marked stale")
           (is (search "revise" (gethash "next" compared)) "with the next step named"))
         (let ((revised (as-session ("s1")
                          (case-answer "operation" "revise" "claim_id" "C1"
@@ -68,8 +67,7 @@
                                      "summary" "The log contradicts the reload hypothesis."))))
           (is (ok-p closed) "the case closes")
           (is (equal "closed" (gethash "status" (gethash "case" closed))) "as closed")
-          (is (null (nodecode-epistemic::session-case "s1"))
-              "and stops being the session's running case"))))))
+          (is (null (nodecode-epistemic::session-case "s1")) "and stops being the session's running case"))))))
 
 (deftest epistemic-cell-a-close-waits-for-the-pending-check ()
   (with-epistemic ()
@@ -86,12 +84,10 @@
   (with-epistemic ()
     (is (signals-error nlk:contract-refusal
           (nlk:contract-decode (nlk:contract 'nodecode-epistemic::case-request)
-                               (nlk:make-json-object "case_id" "x")))
-        "the operation is required")
+                               (nlk:make-json-object "case_id" "x"))) "the operation is required")
     (is (signals-error nlk:contract-refusal
           (nlk:contract-decode (nlk:contract 'nodecode-epistemic::probe-request)
-                               (nlk:make-json-object "case_id" "x")))
-        "of both tools")))
+                               (nlk:make-json-object "case_id" "x"))) "of both tools")))
 
 ;;; --- the two hooks ------------------------------------------------------------------
 
@@ -113,8 +109,7 @@
             (probes (gethash "probes" (gethash "case" (as-session ("s1")
                                                          (case-answer "operation" "show"))))))
         (is (ok-p shown) "the case still answers")
-        (is (search "04:12" (gethash "observed" (aref probes 0)))
-            "and the tool's own result is what the comparison is against")))))
+        (is (search "04:12" (gethash "observed" (aref probes 0))) "and the tool's own result is what the comparison is against")))))
 
 (deftest epistemic-cell-the-running-case-reaches-the-model-and-nobody-else ()
   (with-epistemic ()
@@ -128,7 +123,7 @@
       (is (= 1 (length mine)) "one reminder at the session's next request")
       (is (search "cfg-change" (first mine)) "carrying the case")
       (is (search "stop when" (string-downcase (first mine))) "and its stopping condition")
-        (is (null theirs) "a session with no case is told nothing")))))
+      (is (null theirs) "a session with no case is told nothing")))))
 
 ;;; --- /case --------------------------------------------------------------------------
 
@@ -148,8 +143,6 @@
     (with-open-file (stream blocked :direction :output :if-exists :supersede
                                      :if-does-not-exist :create)
       (write-string "not a directory" stream))
-    (is (signals-error nlk:config-refusal (epistemic-start "dir" "epistemic-blocked"))
-        "a dir that is a file refuses")
+    (is (signals-error nlk:config-refusal (epistemic-start "dir" "epistemic-blocked")) "a dir that is a file refuses")
     (is (search "dir" (refusal-text nlk:config-refusal
-                                    (epistemic-start "dir" "epistemic-blocked")))
-        "naming the setting")))
+                                    (epistemic-start "dir" "epistemic-blocked"))) "naming the setting")))

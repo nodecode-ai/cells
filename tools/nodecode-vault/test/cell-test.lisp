@@ -65,8 +65,7 @@ home, and any PAIRS added to the section."
                                           :item "demo" :field "key" :value "sk-test-1234"
                                           :label "Demo"))))
     (is (equal "sk-test-1234"
-               (vault-call "vault_get" (nodecode-vault::make-get-call :ref "hv:demo:key")))
-        "the value comes back through the seal")
+               (vault-call "vault_get" (nodecode-vault::make-get-call :ref "hv:demo:key"))) "the value comes back through the seal")
     (is (equal "sk-test-1234" (vault:secret "hv:demo:key")) "and through the verb")
     (let ((text (vault-store-text)))
       (is (not (search "sk-test-1234" text)) "the file holds no plaintext")
@@ -78,8 +77,7 @@ home, and any PAIRS added to the section."
     (is (search "removed demo"
                 (vault-call "vault_remove" (nodecode-vault::make-remove-call :item "demo"))))
     (is (equal "(empty vault)"
-               (vault-call "vault_list" (nodecode-vault::make-list-call)))
-        "an empty vault answers, it does not fail")
+               (vault-call "vault_list" (nodecode-vault::make-list-call))) "an empty vault answers, it does not fail")
     (is (not (search "sk-test-1234" (vault-store-text))) "a removed value is gone from the file")))
 
 (deftest vault-cell-a-wrong-key-is-refused-not-half-read ()
@@ -90,20 +88,17 @@ home, and any PAIRS added to the section."
       (with-open-file (out key :direction :output :if-exists :supersede)
         (format out "~a~%" (make-string 64 :initial-element #\a))))
     (is (search "ERROR: VAULT-ERROR"
-                (vault-call "vault_get" (nodecode-vault::make-get-call :ref "hv:demo:key")))
-        "the tag does not verify, so the read fails loudly")
+                (vault-call "vault_get" (nodecode-vault::make-get-call :ref "hv:demo:key"))) "the tag does not verify, so the read fails loudly")
     (is (search "did not open" nodecode-vault::*last-error*))))
 
 (deftest vault-cell-without-a-key-a-read-names-setup-and-creates-nothing ()
   (with-vault ()
     (is (search "run /vault setup once"
-                (vault-call "vault_get" (nodecode-vault::make-get-call :ref "hv:demo:key")))
-        "the refusal names the way back")
+                (vault-call "vault_get" (nodecode-vault::make-get-call :ref "hv:demo:key"))) "the refusal names the way back")
     (is (null (probe-file (nodecode-vault::key-file-path))) "a read makes no key")
     (is (null (probe-file (nodecode-vault::store-path))) "and no store")
     (is (search "ERROR: VAULT-ERROR"
-                (vault-call "vault_get" (nodecode-vault::make-get-call :ref "demo")))
-        "a ref that is not hv: is refused too")))
+                (vault-call "vault_get" (nodecode-vault::make-get-call :ref "demo"))) "a ref that is not hv: is refused too")))
 
 (deftest vault-cell-run-hands-a-command-the-mapped-variables-and-not-the-transcript ()
   (with-vault ("env" (vector "DEMO_TOKEN=hv:demo:token"))
@@ -115,13 +110,10 @@ home, and any PAIRS added to the section."
               (lambda (command env) (push (list command env) seen) "the command's output")))
         (is (equal "the command's output"
                    (vault-call "vault_run" (nodecode-vault::make-run-call
-                                             :command "printenv DEMO_TOKEN")))
-            "the tool answers the command's output"))
+                                             :command "printenv DEMO_TOKEN"))) "the tool answers the command's output"))
       (is (equal "printenv DEMO_TOKEN" (first (first seen))) "the command as given")
-      (is (equal "sk-live-9" (cdr (assoc "DEMO_TOKEN" (second (first seen)) :test #'equal)))
-          "the secret is in the command's environment, not in the answer"))
-    (is (equal "sk-live-9" (string-trim '(#\Newline #\Space) (vault:run "printenv DEMO_TOKEN")))
-        "and the real runner lays it over this process's own environment")))
+      (is (equal "sk-live-9" (cdr (assoc "DEMO_TOKEN" (second (first seen)) :test #'equal))) "the secret is in the command's environment, not in the answer"))
+    (is (equal "sk-live-9" (string-trim '(#\Newline #\Space) (vault:run "printenv DEMO_TOKEN"))) "and the real runner lays it over this process's own environment")))
 
 ;;; --- the command ------------------------------------------------------------------
 
@@ -129,24 +121,18 @@ home, and any PAIRS added to the section."
   (with-vault ()
     (is (search "vault ready" (cell-entry "nodecode-vault" "vault" "setup")))
     (is (search "stored demo.key" (cell-entry "nodecode-vault" "vault" "put demo key sk-1")))
-    (is (equal "demo: key (set)" (cell-entry "nodecode-vault" "vault" "show hv:demo"))
-        "show masks the value")
+    (is (equal "demo: key (set)" (cell-entry "nodecode-vault" "vault" "show hv:demo")) "show masks the value")
     (is (equal "sk-1" (cell-entry "nodecode-vault" "vault" "get hv:demo:key")) "get answers it")
-    (is (search "DEMO=hv:demo" (cell-entry "nodecode-vault" "vault" "env demo DEMO"))
-        "env prints the mapping to paste into the section")
+    (is (search "DEMO=hv:demo" (cell-entry "nodecode-vault" "vault" "env demo DEMO")) "env prints the mapping to paste into the section")
     (is (search "items: 1" (cell-entry "nodecode-vault" "vault" "doctor")))
     (is (search "removed demo" (cell-entry "nodecode-vault" "vault" "rm demo")))
-    (is (search "unknown /vault verb" (cell-entry "nodecode-vault" "vault" "nope"))
-        "a verb it does not know is said so, not signalled")))
+    (is (search "unknown /vault verb" (cell-entry "nodecode-vault" "vault" "nope")) "a verb it does not know is said so, not signalled")))
 
 ;;; --- the refusals -----------------------------------------------------------------
 
 (deftest vault-cell-a-missing-member-or-setting-refuses ()
   (is (signals-error nlk:contract-refusal
-        (nlk:contract-decode (nlk:contract 'nodecode-vault::get-call) (nlk:json-object)))
-      "a call with no ref is refused before any body runs")
+        (nlk:contract-decode (nlk:contract 'nodecode-vault::get-call) (nlk:json-object))) "a call with no ref is refused before any body runs")
   (with-vault ()
-    (is (signals-error nlk:config-refusal (vault-start "timeout_seconds" 0))
-        "an integer under its minimum refuses at start")
-    (is (signals-error nlk:config-refusal (vault-start "env" 5))
-        "a list that is not a list refuses at start")))
+    (is (signals-error nlk:config-refusal (vault-start "timeout_seconds" 0)) "an integer under its minimum refuses at start")
+    (is (signals-error nlk:config-refusal (vault-start "env" 5)) "a list that is not a list refuses at start")))

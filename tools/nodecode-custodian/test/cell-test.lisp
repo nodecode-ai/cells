@@ -66,8 +66,7 @@
       (custodian-call "custodian_scan" "{}")
       (is (= 1 (length (nodecode-custodian::open-issues))) "a second scan bumps that issue rather than filing another")
       (is (= 2 (nodecode-custodian::json-number-value
-                (first (nodecode-custodian::open-issues)) "count"))
-          "and counts the second sighting"))))
+                (first (nodecode-custodian::open-issues)) "count")) "and counts the second sighting"))))
 
 (deftest custodian-cell-a-line-that-quotes-a-pattern-is-not-a-finding ()
   (custodian-reset)
@@ -84,18 +83,15 @@
                          (custodian-line "INFO resumed")))
   (with-cell-stop ((custodian-start))
     (let ((answer (custodian-call "custodian_scan" "{}")))
-      (is (not (search "oc_disk_full" answer))
-          "a continuation line inherits the date above it, so an old error's body is stale too")
+      (is (not (search "oc_disk_full" answer)) "a continuation line inherits the date above it, so an old error's body is stale too")
       (is (search "oc_cron_disabled_transient" answer) "the recent one still reports")
       (is (search "fresh" answer) "with its own line as the evidence"))))
 
 (deftest custodian-cell-an-empty-source-list-refuses ()
-  (is (signals-error nlk:config-refusal (custodian-start "sources" #()))
-      "a cell with nothing to watch refuses rather than starting mute")
+  (is (signals-error nlk:config-refusal (custodian-start "sources" #())) "a cell with nothing to watch refuses rather than starting mute")
   (is (search "sources"
               (handler-case (custodian-start "sources" #())
-                (nlk:config-refusal (condition) (princ-to-string condition))))
-      "and the refusal names the setting to fill in"))
+                (nlk:config-refusal (condition) (princ-to-string condition)))) "and the refusal names the setting to fill in"))
 
 ;;; --- the ledger ---------------------------------------------------------------
 
@@ -110,12 +106,10 @@
       (is (search id listed) "the open issue is listed by its id")
       (is (search "oc_http_502_provider_unavailable" listed) "with its fingerprint")
       (is (search "tier 2" listed) "and the tier a reader acts on")
-      (is (search "1 open" (custodian-call "custodian_issues" "{\"action\": \"summary\"}"))
-          "the summary counts what is open")
+      (is (search "1 open" (custodian-call "custodian_issues" "{\"action\": \"summary\"}")) "the summary counts what is open")
       (is (search "resolved"
                   (custodian-call "custodian_issues"
-                                  (format nil "{\"action\": \"resolve\", \"issue_id\": ~s}" id)))
-          "resolve says so")
+                                  (format nil "{\"action\": \"resolve\", \"issue_id\": ~s}" id))) "resolve says so")
       (is (null (nodecode-custodian::open-issues)) "and the ledger has nothing open after it"))))
 
 (deftest custodian-cell-the-command-and-the-status-answer ()
@@ -123,11 +117,9 @@
   (with-cell-stop ((custodian-start))
     (let ((status (nodecode-custodian::status)))
       (is (search (format nil "~d fingerprints tracked" (length nodecode-custodian::*fingerprints*))
-                  status)
-          "the status counts the fingerprints")
+                  status) "the status counts the fingerprints")
       (is (search "last scan: never" status) "and says when the last scan ran")
       (is (search "tier 1" status) "with the tiers"))
     (is (search "custodian_scan" (nodecode-custodian::run-command "help" nil)) "the manual names the tools")
     (is (search "custodian ledger" (nodecode-custodian::run-command "issues" nil)) "issues reads the ledger")
-    (is (search "custodian takes" (nodecode-custodian::run-command "frobnicate" nil))
-        "and a word it does not know is told what it takes")))
+    (is (search "custodian takes" (nodecode-custodian::run-command "frobnicate" nil)) "and a word it does not know is told what it takes")))

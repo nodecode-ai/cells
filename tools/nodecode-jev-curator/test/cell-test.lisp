@@ -97,14 +97,11 @@ endpoint answering one JE­V-ANSWER for RELATION with STATUS."
   (with-library ()
     (let ((skills (nodecode-jev-curator::collect-inventory)))
       (is (= 3 (length skills)) "three SKILL.md files, one skill each")
-      (is (equal '("braise" "deploy" "deploy-logs") (mapcar #'nodecode-jev-curator::skill-name skills))
-          "sorted by name")
+      (is (equal '("braise" "deploy" "deploy-logs") (mapcar #'nodecode-jev-curator::skill-name skills)) "sorted by name")
       (is (equal "Ship a service with one command."
                  (nodecode-jev-curator::skill-description
-                  (nodecode-jev-curator::skill-by-name skills "deploy")))
-          "the description is the front matter's")
-      (is (uiop:string-prefix-p "sha256:" (nodecode-jev-curator::skill-digest (first skills)))
-          "an sha256 digests every skill"))
+                  (nodecode-jev-curator::skill-by-name skills "deploy"))) "the description is the front matter's")
+      (is (uiop:string-prefix-p "sha256:" (nodecode-jev-curator::skill-digest (first skills))) "an sha256 digests every skill"))
     (is (search "deploy  " (nodecode-jev-curator:inventory)) "the report lists the skills")))
 
 (deftest jev-curator-cell-the-candidates-rank-the-overlapping-pair ()
@@ -128,15 +125,13 @@ endpoint answering one JE­V-ANSWER for RELATION with STATUS."
         (destructuring-bind (method url headers content) (first *jev-requests*)
           (is (eq :post method) "one POST")
           (is (equal "https://api.typesafe.ai/v1/systemone" url) "to TypeSafe's judgment route")
-          (is (equal "Bearer ts-env" (cdr (assoc "authorization" headers :test #'string-equal)))
-              "with the key")
+          (is (equal "Bearer ts-env" (cdr (assoc "authorization" headers :test #'string-equal))) "with the key")
           (let* ((body (nlk:decode-json (if (stringp content) content (nlk:body-text content))))
                  (questions (nlk:json-value body :object "questions"))
                  (state (nlk:json-value body :object "state")))
             (is (equal "jev-latest" (nlk:json-value body :string "model")) "the default model")
             (is (equal "choice" (nlk:json-value questions :string "relation" "type")) "the relation choice")
-            (is (= 8 (hash-table-count (nlk:json-value questions :object "relation" "criteria")))
-                "whose eight options carry their meanings")
+            (is (= 8 (hash-table-count (nlk:json-value questions :object "relation" "criteria"))) "whose eight options carry their meanings")
             (is (equal "noul" (nlk:json-value questions :string "a_in_b" "type")) "and the preservation questions")
             (is (equal "deploy" (nlk:json-value state :string "skill_a" "name")) "both skills go along")
             (is (equal "skill-relations-v3" (nlk:json-value state :string "contract")) "under the contract's version")))
@@ -146,8 +141,7 @@ endpoint answering one JE­V-ANSWER for RELATION with STATUS."
 (deftest jev-curator-cell-nothing-is-asked-without-egress ()
   (with-library ()
     (is (search "egress" (refusal-text nodecode-jev-curator:jev-curator-error
-                                        (nodecode-jev-curator:judge "deploy" "deploy-logs")))
-        "a judgment without egress names the consent it lacks")
+                                        (nodecode-jev-curator:judge "deploy" "deploy-logs"))) "a judgment without egress names the consent it lacks")
     (is (search "noop" (nodecode-jev-curator:plans)) "and a scan without judgments plans nothing")
     (is (null *jev-requests*) "nothing was sent")))
 
@@ -171,14 +165,12 @@ endpoint answering one JE­V-ANSWER for RELATION with STATUS."
           (is (search "merge-" (nodecode-jev-curator::merge-plan-id plan)) "a content-hash id")
           (is (equal "validated" (nodecode-jev-curator::merge-plan-status plan)) "validated")
           (is (equal '("deploy-logs") (nodecode-jev-curator::merge-plan-absorbed plan)) "one member absorbed")
-          (is (uiop:string-prefix-p "sha256:" (nodecode-jev-curator::merge-plan-canonical-digest plan))
-              "bound to the digest it judged"))))))
+          (is (uiop:string-prefix-p "sha256:" (nodecode-jev-curator::merge-plan-canonical-digest plan)) "bound to the digest it judged"))))))
 
 (deftest jev-curator-cell-a-protected-skill-is-never-proposed ()
   (with-library ("mode" "observe" "egress" t "protected" (vector "deploy-logs"))
     (with-jev-server ()
-      (is (not (search "deploy-logs" (nodecode-jev-curator:candidates)))
-          "a protected skill is left out of the pairs a scan would judge")
+      (is (not (search "deploy-logs" (nodecode-jev-curator:candidates))) "a protected skill is left out of the pairs a scan would judge")
       (let* ((skills (nodecode-jev-curator::collect-inventory))
              (by-name (make-hash-table :test #'equal)))
         (dolist (skill skills) (setf (gethash (nodecode-jev-curator::skill-name skill) by-name) skill))
@@ -188,8 +180,7 @@ endpoint answering one JE­V-ANSWER for RELATION with STATUS."
                (edge (nodecode-jev-curator::evaluate-judgment judgment by-name '("deploy-logs"))))
           (is (null (nodecode-jev-curator::edge-authorized edge)) "a protected member is never absorbed")
           (is (member "protected:deploy-logs" (nodecode-jev-curator::edge-refusals edge)
-                      :test #'string=)
-              "and the refusal names it"))))))
+                      :test #'string=) "and the refusal names it"))))))
 
 ;;; --- apply -----------------------------------------------------------------------------
 
@@ -205,17 +196,14 @@ endpoint answering one JE­V-ANSWER for RELATION with STATUS."
         (is (search "mode: apply"
                     (refusal-text nodecode-jev-curator:jev-curator-error
                                   (nodecode-jev-curator:apply-plan
-                                   (nodecode-jev-curator::merge-plan-id (only-plan)))))
-            "observe refuses to apply")))
+                                   (nodecode-jev-curator::merge-plan-id (only-plan))))) "observe refuses to apply")))
     (with-cell-stop ((jev-curator-start "roots" (vector (namestring dir)) "mode" "apply" "egress" t))
       (with-jev-server ()
         (nodecode-jev-curator:plans)
         (let ((text (nodecode-jev-curator:apply-plan
                      (nodecode-jev-curator::merge-plan-id (only-plan)))))
           (is (search "archived" text) "the apply says what moved")
-          (is (null (uiop:directory-exists-p (merge-pathnames "deploy-logs/" dir)))
-              "the absorbed folder left the library")
-          (is (uiop:directory-exists-p (merge-pathnames "deploy/" dir))
-              "the canonical one stayed")
+          (is (null (uiop:directory-exists-p (merge-pathnames "deploy-logs/" dir))) "the absorbed folder left the library")
+          (is (uiop:directory-exists-p (merge-pathnames "deploy/" dir)) "the canonical one stayed")
           (let ((archive (nodecode-jev-curator::archive-dir)))
             (is (plusp (length (uiop:subdirectories archive))) "and sits in the archive")))))))

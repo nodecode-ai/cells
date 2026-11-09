@@ -98,10 +98,8 @@
         (let ((call (first *calls*)))
           (is (eq :get (first call)) "a GET")
           (is (search "/models" (second call)) "of the account-scoped catalog")
-          (is (equal "Bearer test-token" (header-value (fourth call) "authorization"))
-              "carrying the sign-in as its bearer")
-          (is (equal "codex_cli_rs" (header-value (fourth call) "originator"))
-              "and naming the client the backend insists on"))))))
+          (is (equal "Bearer test-token" (header-value (fourth call) "authorization")) "carrying the sign-in as its bearer")
+          (is (equal "codex_cli_rs" (header-value (fourth call) "originator")) "and naming the client the backend insists on"))))))
 
 (deftest codex-truly-cell-says-how-to-sign-in (with-codex)
   (with-cell-stop ((codex-truly-start))
@@ -139,13 +137,10 @@
           (is (= 1 (length *config-writes*)) "one write of the provider's model rows")
           (let ((path (first (first *config-writes*)))
                 (rows (second (first *config-writes*))))
-            (is (equal '("providers" "openai-codex" "models") path)
-                "at the row Nodecode reads a window from")
+            (is (equal '("providers" "openai-codex" "models") path) "at the row Nodecode reads a window from")
             (is (= 2 (length rows)) "both catalog models are managed")
-            (is (every (lambda (row) (= 900000 (getf row :context_window))) rows)
-                "each given the target window")
-            (is (equal "gpt-6.1-sol" (getf (aref rows 0) :id))
-                "and the row it already had keeps its id")))))))
+            (is (every (lambda (row) (= 900000 (getf row :context_window))) rows) "each given the target window")
+            (is (equal "gpt-6.1-sol" (getf (aref rows 0) :id)) "and the row it already had keeps its id")))))))
 
 (deftest codex-truly-cell-a-dry-run-writes-nothing (with-codex)
   (with-cell-stop ((codex-truly-start))
@@ -165,8 +160,7 @@
         (is (= 1 (length *config-writes*)) "one write")
         (let ((rows (second (first *config-writes*))))
           (is (= 1 (length rows)) "the row set to the target is gone")
-          (is (equal "gpt-6-sol" (getf (aref rows 0) :id))
-              "and the person's own window is left alone"))))))
+          (is (equal "gpt-6-sol" (getf (aref rows 0) :id)) "and the person's own window is left alone"))))))
 
 ;;; --- probe ------------------------------------------------------------------------
 
@@ -184,8 +178,7 @@
         (let ((probes (remove-if-not (lambda (call) (search "/responses" (second call))) *calls*)))
           (is (plusp (length probes)) "each round is one request to the Responses endpoint")
           (is (equal "Bearer test-token"
-                     (header-value (fourth (first probes)) "authorization"))
-              "on the same sign-in"))))))
+                     (header-value (fourth (first probes)) "authorization")) "on the same sign-in"))))))
 
 ;;; --- the contract -----------------------------------------------------------------
 

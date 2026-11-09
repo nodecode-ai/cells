@@ -60,12 +60,10 @@
       (is (search "you renewed yours in March" read) "and why it matters"))
     (is (search "already carries" (muse-tool "feed_add"
                                              (nlk:json-object "key" "passport-2026"
-                                                              "title" "again" "content" "x")))
-        "a stable key is one article")
+                                                              "title" "again" "content" "x"))) "a stable key is one article")
     (is (search "Passports, faster" (muse-tool "feed_list"))))
   (with-muse ()                                            ; the store outlives a stop
-    (is (search "Passports, faster" (muse-tool "feed_list"))
-        "the article is in the store, not in memory")))
+    (is (search "Passports, faster" (muse-tool "feed_list")) "the article is in the store, not in memory")))
 
 (deftest muse-cell-a-refusal-names-what-to-send (with-muse-store)
   (with-muse ()
@@ -75,16 +73,14 @@
     (is (search "status is active, done or cancelled"
                 (muse-tool "goal_update" (nlk:json-object "id" "goal-1" "status" "later"))))
     (is (signals-error nlk:contract-refusal
-          (muse-tool "sing" (nlk:json-object)))
-        "an action outside the declaration never reaches the body")))
+          (muse-tool "sing" (nlk:json-object))) "an action outside the declaration never reaches the body")))
 
 (deftest muse-cell-interests-ideas-and-the-feed-brief (with-muse-store)
   (with-muse ()
     (is (search "until" (muse-tool "interest_record" (nlk:json-object "title" "bicycle touring"))))
     (is (search "topic-1" (nodecode-muse::store-text "topics")))
     (let ((topic (first (nodecode-muse::entries "topic"))))
-      (is (string> (nodecode-muse::field topic "expires") (nlk:iso-now))
-          "the topic expires in the future, not at once"))
+      (is (string> (nodecode-muse::field topic "expires") (nlk:iso-now)) "the topic expires in the future, not at once"))
     (is (search "idea-1" (muse-tool "idea_add" (nlk:json-object "title" "a steel frame"
                                                                "rationale" "it takes a rack"))))
     (is (search "feed brief" (muse-tool "preferences" (nlk:json-object))))
@@ -102,12 +98,10 @@
     (let ((panel (nth-value 1 (muse:run-slash "" nil))))
       (is (search "/muse done goal-1"
                   (format nil "~{~a~}" (mapcar (lambda (row) (getf (getf row :run) :enter))
-                                                (getf panel :rows))))
-          "the panel's first line closes the goal"))
+                                                (getf panel :rows)))) "the panel's first line closes the goal"))
     (is (search "done" (muse:run-slash "done goal-1" nil)))
     (is (search "0 active" (muse:context "status")) "and the store says so")
-    (is (signals-error nodecode-muse:muse-error (muse:run-slash "sing" nil))
-        "an unknown line refuses, and /muse answers it as muse: ...")))
+    (is (signals-error nodecode-muse:muse-error (muse:run-slash "sing" nil)) "an unknown line refuses, and /muse answers it as muse: ...")))
 
 ;;; --- the due reminder -------------------------------------------------------------
 

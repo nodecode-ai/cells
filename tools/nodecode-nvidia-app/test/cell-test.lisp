@@ -180,8 +180,7 @@ restart leaves under a call, and clears itself so the retry answers.")
     (is (search "is not published"
                 (handler-case (progn (nvidia-app-start "server_json" (nvapp-missing-json)) "")
                   (nlk:config-refusal (condition)
-                    (nlk:config-refusal-detail condition))))
-        "the refusal names the file it looked for")
+                    (nlk:config-refusal-detail condition)))) "the refusal names the file it looked for")
     (is (null (nle::find-tool "nvapp_overlay_capture")) "a refused start installed nothing")
     (is (null *nvapp-calls*) "and dialled nothing")))
 
@@ -192,21 +191,16 @@ restart leaves under a call, and clears itself so the retry answers.")
     (with-cell-stop ((nvidia-app-start "server_json" (nvapp-server-json)))
       (setf *nvapp-text* "GeForce Game Ready 581.15 is installed.")
       (is (equal "GeForce Game Ready 581.15 is installed."
-                 (nvapp-tool "nvapp_client_get_driver_status" (nlk:json-object)))
-          "the app's text is the answer")
+                 (nvapp-tool "nvapp_client_get_driver_status" (nlk:json-object))) "the app's text is the answer")
       (let ((call (nvapp-request "tools/call" "nvapp_client_get_driver_status")))
         (is-present (call call) "a tools/call went out"
-          (is (equal "Bearer published-token" (nvapp-header call "authorization"))
-              "with the token the app published")
-          (is (equal "sess-1" (nvapp-header call "mcp-session-id"))
-              "and the session the handshake answered")))
+          (is (equal "Bearer published-token" (nvapp-header call "authorization")) "with the token the app published")
+          (is (equal "sess-1" (nvapp-header call "mcp-session-id")) "and the session the handshake answered")))
       (is (= 1 (count "initialize" *nvapp-calls*
                       :key (lambda (one) (nlk:json-value (getf one :request) :string "method"))
-                      :test #'equal))
-          "one handshake for the life of the start")
+                      :test #'equal)) "one handshake for the life of the start")
       (is (nvapp-request "notifications/initialized") "and the notification the protocol requires")
-      (is (equal "http://app.test:47985/mcp" (getf (first *nvapp-calls*) :url))
-          "every request goes to the published address"))))
+      (is (equal "http://app.test:47985/mcp" (getf (first *nvapp-calls*) :url)) "every request goes to the published address"))))
 
 (deftest nvidia-app-cell-the-published-address-wins-over-a-stale-one ()
   ;; NVIDIA App picks a new port and token when it restarts; a section that
@@ -227,8 +221,7 @@ restart leaves under a call, and clears itself so the retry answers.")
       (setf *nvapp-sse* t *nvapp-text* "Recording started.")
       (is (equal "Recording started."
                  (nvapp-tool "nvapp_overlay_capture"
-                              (nvapp-json "action" "toggle_recording" "enable" t)))
-          "the data: line carried the answer"))))
+                              (nvapp-json "action" "toggle_recording" "enable" t))) "the data: line carried the answer"))))
 
 (deftest nvidia-app-cell-a-session-the-app-forgot-is-handed-again ()
   ;; An app restart under a call: the server forgets the session, the cell
@@ -240,16 +233,13 @@ restart leaves under a call, and clears itself so the retry answers.")
             *nvapp-expire-once* t
             *nvapp-text* "Instant Replay is on.")
       (is (equal "Instant Replay is on."
-                 (nvapp-tool "nvapp_overlay_get_status" (nlk:json-object)))
-          "the read was repeated after the handshake")
+                 (nvapp-tool "nvapp_overlay_get_status" (nlk:json-object))) "the read was repeated after the handshake")
       (is (= 2 (count "tools/call" *nvapp-calls*
                       :key (lambda (one) (nlk:json-value (getf one :request) :string "method"))
-                      :test #'equal))
-          "once refused, once answered")
+                      :test #'equal)) "once refused, once answered")
       (is (= 1 (count "initialize" *nvapp-calls*
                       :key (lambda (one) (nlk:json-value (getf one :request) :string "method"))
-                      :test #'equal))
-          "with exactly one new handshake"))))
+                      :test #'equal)) "with exactly one new handshake"))))
 
 ;;; --- the restricted Overlay workflow -------------------------------------------------
 
@@ -259,18 +249,15 @@ restart leaves under a call, and clears itself so the retry answers.")
       (is (search "takes enable"
                   (refusal-text nodecode-nvidia-app:nvidia-app-error
                                 (nvapp-tool "nvapp_overlay_capture"
-                                             (nvapp-json "action" "toggle_recording"))))
-          "a toggle without enable is refused, not guessed")
+                                             (nvapp-json "action" "toggle_recording")))) "a toggle without enable is refused, not guessed")
       (is (null *nvapp-calls*) "and nothing was dialled to find out")
       (nvapp-tool "nvapp_overlay_capture" (nvapp-json "action" "toggle_recording" "enable" nil))
       (let ((sent (nvapp-sent "nvapp_overlay_capture")))
         (is-present (sent sent) "the explicit state went out"
-          (is (search "\"enable\":false" (nlk:encode-json-object sent))
-              "as the false the caller asked for")))
+          (is (search "\"enable\":false" (nlk:encode-json-object sent)) "as the false the caller asked for")))
       (nvapp-tool "nvapp_overlay_capture" (nvapp-json "action" "toggle_recording" "enable" t))
       (is (search "\"enable\":true"
-                  (nlk:encode-json-object (nvapp-sent "nvapp_overlay_capture")))
-          "and true as true"))))
+                  (nlk:encode-json-object (nvapp-sent "nvapp_overlay_capture"))) "and true as true"))))
 
 (deftest nvidia-app-cell-save-and-screenshot-take-no-enable ()
   (with-nvapp-wire
@@ -278,8 +265,7 @@ restart leaves under a call, and clears itself so the retry answers.")
       (is (search "no enable"
                   (refusal-text nodecode-nvidia-app:nvidia-app-error
                                 (nvapp-tool "nvapp_overlay_capture"
-                                             (nvapp-json "action" "save_instant_replay" "enable" t))))
-          "save_instant_replay takes no enable")
+                                             (nvapp-json "action" "save_instant_replay" "enable" t)))) "save_instant_replay takes no enable")
       (nvapp-tool "nvapp_overlay_capture" (nvapp-json "action" "capture_screenshot"))
       (let ((sent (nvapp-sent "nvapp_overlay_capture")))
         (is-present (sent sent) "a screenshot needs only its action"
@@ -287,24 +273,20 @@ restart leaves under a call, and clears itself so the retry answers.")
       (is (search "capture_screenshot"
                   (refusal-text nodecode-nvidia-app:nvidia-app-error
                                 (nvapp-tool "nvapp_overlay_capture"
-                                             (nvapp-json "action" "toggle_desktop_capture" "enable" t))))
-          "desktop capture is not offered"))))
+                                             (nvapp-json "action" "toggle_desktop_capture" "enable" t)))) "desktop capture is not offered"))))
 
 (deftest nvidia-app-cell-only-rtx-dvc-is-a-filter ()
   (with-nvapp-wire
     (with-cell-stop ((nvidia-app-start "url" "http://app.test:47985/mcp"))
       (nvapp-tool "nvapp_overlay_configure_filters" (nvapp-json "filter" "rtx_dvc" "enable" t))
-      (is (search "rtx_dvc" (nlk:encode-json-object (nvapp-sent "nvapp_overlay_configure_filters")))
-          "the one filter the workflow authorizes")
+      (is (search "rtx_dvc" (nlk:encode-json-object (nvapp-sent "nvapp_overlay_configure_filters"))) "the one filter the workflow authorizes")
       (is (search "filter is"
                   (refusal-text nodecode-nvidia-app:nvidia-app-error
                                 (nvapp-tool "nvapp_overlay_configure_filters"
-                                             (nvapp-json "filter" "rtx_hdr" "enable" t))))
-          "another filter is refused")
+                                             (nvapp-json "filter" "rtx_hdr" "enable" t)))) "another filter is refused")
       (is (search "takes enable"
                   (refusal-text nodecode-nvidia-app:nvidia-app-error
-                                (nvapp-tool "nvapp_overlay_configure_stats" (nvapp-json))))
-          "statistics visibility needs its state"))))
+                                (nvapp-tool "nvapp_overlay_configure_stats" (nvapp-json)))) "statistics visibility needs its state"))))
 
 ;;; --- the app's own tools --------------------------------------------------------------
 
@@ -313,8 +295,7 @@ restart leaves under a call, and clears itself so the retry answers.")
     (with-cell-stop ((nvidia-app-start "url" "http://app.test:47985/mcp"))
       (is (search "game is missing"
                   (refusal-text nodecode-nvidia-app:nvidia-app-error
-                                (nvapp-tool "nvapp_client_launch_application" (nvapp-json))))
-          "launching without a game is refused")
+                                (nvapp-tool "nvapp_client_launch_application" (nvapp-json)))) "launching without a game is refused")
       (nvapp-tool "nvapp_client_launch_application" (nvapp-json "game" "Example Game"))
       (is (equal "Example Game"
                  (nlk:json-value (nvapp-sent "nvapp_client_launch_application") :string "game")))
@@ -336,27 +317,23 @@ restart leaves under a call, and clears itself so the retry answers.")
       (nvapp-tool "nvapp_client_set_laptop_feature"
                   (nvapp-json "feature" "battery_boost" "game" "Example Game" "use_global" t))
       (is (search "\"batteryBoost\":{\"useGlobal\":true}" (nlk:encode-json-object
-                                                           (nvapp-sent "nvapp_client_set_laptop_feature")))
-          "the application shape that follows the global setting carries no enabled")
+                                                           (nvapp-sent "nvapp_client_set_laptop_feature"))) "the application shape that follows the global setting carries no enabled")
       (is (search "fan_volume"
                   (refusal-text nodecode-nvidia-app:nvidia-app-error
                                 (nvapp-tool "nvapp_client_set_laptop_feature"
                                              (nvapp-json "feature" "whisper_mode" "game" "Example Game"
                                                           "use_global" nil "enable" t
-                                                          "fan_volume" "Quiet"))))
-          "an application-scoped Whisper Mode takes no fan profile"))))
+                                                          "fan_volume" "Quiet")))) "an application-scoped Whisper Mode takes no fan profile"))))
 
 (deftest nvidia-app-cell-failures-read-as-failures ()
   (with-nvapp-wire
     (with-cell-stop ((nvidia-app-start "url" "http://app.test:47985/mcp"))
       (setf *nvapp-text* "overlay_not_available" *nvapp-failed* t)
       (is (equal "ERROR: overlay_not_available"
-                 (nvapp-tool "nvapp_overlay_get_status" (nlk:json-object)))
-          "the app's own failure is the answer, marked ERROR: with its code")
+                 (nvapp-tool "nvapp_overlay_get_status" (nlk:json-object))) "the app's own failure is the answer, marked ERROR: with its code")
       (setf *nvapp-failed* nil *nvapp-status* 500)
       (is (search "500" (refusal-text nodecode-nvidia-app:nvidia-app-error
-                                       (nvapp-tool "nvapp_overlay_get_status" (nlk:json-object))))
-          "a refused transport is a refusal naming the status"))))
+                                       (nvapp-tool "nvapp_overlay_get_status" (nlk:json-object)))) "a refused transport is a refusal naming the status"))))
 
 (deftest nvidia-app-cell-the-token-never-rides-in-a-failure ()
   (with-nvapp-wire

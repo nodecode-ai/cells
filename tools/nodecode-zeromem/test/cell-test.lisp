@@ -29,8 +29,7 @@
                         (nodecode-zeromem::recall-block
                          (list (list :session-id "s-1" :session-turn 2 :speaker "user"
                                      :text "the words" :at "2026-11-08T10:00:00.000Z"))
-                         700))
-                "the block names itself and the turn"))
+                         700)) "the block names itself and the turn"))
   (:refused ("top_k" 0) ("chars" 10) ("store" 5))
   (:idle nodecode-zeromem:zeromem-error (zeromem:recall "anything") (zeromem:stats)
          (zeromem:import-turns)))
@@ -38,14 +37,11 @@
 ;;; --- a call's own shape --------------------------------------------------------------
 
 (deftest zeromem-cell-a-call-without-its-query-is-refused ()
-  (is (signals-error nlk:contract-refusal (nodecode-zeromem:decode-zeromem-recall (nlk:json-object)))
-      "an empty call has no query and is refused")
+  (is (signals-error nlk:contract-refusal (nodecode-zeromem:decode-zeromem-recall (nlk:json-object))) "an empty call has no query and is refused")
   (is (signals-error nlk:contract-refusal
-        (nodecode-zeromem:decode-zeromem-forget-call (nlk:json-object "session_id" "")))
-      "an empty session id is no session id")
+        (nodecode-zeromem:decode-zeromem-forget-call (nlk:json-object "session_id" ""))) "an empty session id is no session id")
   (is (= 3 (nodecode-zeromem:zeromem-recall-top-k (nodecode-zeromem:decode-zeromem-recall
-                                  (nlk:json-object "query" "x" "top_k" 3))))
-      "a call may ask for its own count"))
+                                  (nlk:json-object "query" "x" "top_k" 3)))) "a call may ask for its own count"))
 
 ;;; --- keeping and answering ------------------------------------------------------------
 
@@ -57,8 +53,7 @@
     (is (= 2 (length (zeromem-ingest "z-past"))) "a turn's ask and its answer, both kept")
     (is (equal '("the deploy script lives in ops/deploy.sh"
                  "it runs just release, with no arguments")
-               (mapcar (lambda (turn) (getf turn :text)) (zeromem-kept)))
-        "kept verbatim, whole, and in the order they were said")
+               (mapcar (lambda (turn) (getf turn :text)) (zeromem-kept))) "kept verbatim, whole, and in the order they were said")
     (let* ((answer (nodecode-zeromem::recall-tool
                     (nodecode-zeromem:decode-zeromem-recall
                      (nlk:json-object "query" "deploy release"))))
@@ -67,19 +62,13 @@
       (is (= 2 (length evidence)) "both turns of the past session answer")
       (is (search "ops/deploy.sh" answer) "the ask's words, verbatim")
       (is (search "just release" answer) "and the answer's")
-      (is (equal "z-past" (nlk:json-value (aref evidence 0) :string "session_id"))
-          "each with its session")
+      (is (equal "z-past" (nlk:json-value (aref evidence 0) :string "session_id")) "each with its session")
       (is (member (nlk:json-value (aref evidence 0) :string "speaker") '("user" "assistant")
-                  :test #'equal)
-          "and its speaker")
-      (is (search "2026" (nlk:json-value (aref evidence 0) :string "at"))
-          "and the day it was said"))
-    (is (null (nodecode-zeromem::recall-turns (zeromem-store) "deploy" :exclude "z-past"))
-        "the calling session's own turns are never among them")
-    (is (null (nodecode-zeromem::recall-turns (zeromem-store) "unrelated zebra"))
-        "a query nothing answers answers nothing")
-    (is (search "no past turn answers that" (zeromem:recall "unrelated zebra"))
-        "and the verb says so")))
+                  :test #'equal) "and its speaker")
+      (is (search "2026" (nlk:json-value (aref evidence 0) :string "at")) "and the day it was said"))
+    (is (null (nodecode-zeromem::recall-turns (zeromem-store) "deploy" :exclude "z-past")) "the calling session's own turns are never among them")
+    (is (null (nodecode-zeromem::recall-turns (zeromem-store) "unrelated zebra")) "a query nothing answers answers nothing")
+    (is (search "no past turn answers that" (zeromem:recall "unrelated zebra")) "and the verb says so")))
 
 (deftest zeromem-cell-one-turn-is-kept-once ()
   (with-zeromem ()
@@ -104,15 +93,12 @@
                      (nlk:json-object "session_id" "z-gone"))))))
       (is (= 2 (nlk:json-value answer :integer "deleted_turns")) "both turns went")
       (is (zerop (length (zeromem-kept))) "and the store is empty"))
-    (is (null (zeromem-ingest "z-gone"))
-        "the log still holds them, but they are not read in again")
+    (is (null (zeromem-ingest "z-gone")) "the log still holds them, but they are not read in again")
     (is (zerop (length (zeromem-kept))) "the store stays empty")
-    (is (search "no turn of z-gone" (nodecode-zeromem::run-slash "forget z-gone" "z-x"))
-        "the command says nothing is stored")
+    (is (search "no turn of z-gone" (nodecode-zeromem::run-slash "forget z-gone" "z-x")) "the command says nothing is stored")
     (let ((nlk:*scribe-session-id* "z-live"))
       (is (search "refusing to delete the active session"
-                  (nodecode-zeromem::run-slash "forget z-live" "z-live"))
-          "the running session is never forgotten"))))
+                  (nodecode-zeromem::run-slash "forget z-live" "z-live")) "the running session is never forgotten"))))
 
 ;;; --- the round -----------------------------------------------------------------------
 
@@ -128,11 +114,9 @@
       (let ((told (zeromem-told "z-new")))
         (is (= 1 (length told)) "one reminder, once")
         (is (search "Recalled from past sessions" (first told)) "named for what it is")
-        (is (search "the weekly invoice cron is called biller" (first told))
-            "the past session's words, verbatim")
+        (is (search "the weekly invoice cron is called biller" (first told)) "the past session's words, verbatim")
         (is (search "z-old #" (first told)) "with their provenance")
-        (is (not (search "when does the invoice cron run" (first told)))
-            "and never the turn's own ask"))
+        (is (not (search "when does the invoice cron run" (first told))) "and never the turn's own ask"))
       (zeromem-round "z-new" turn 1)
       (is (= 1 (length (zeromem-told "z-new"))) "a later round of the same turn adds none")
       (is (= 3 (length (zeromem-kept))) "the round kept the new turn's ask and the old two"))))
@@ -155,17 +139,12 @@
     (ensure-durable-session "z-cmd")
     (zeromem-say (zeromem-admit "z-cmd" "ship it") "shipped")
     (is (search "0 turns" (nodecode-zeromem::run-slash "" "z-cmd")) "an empty store says so")
-    (is (search "would import 2 turns" (nodecode-zeromem::run-slash "import" "z-cmd"))
-        "a preview")
+    (is (search "would import 2 turns" (nodecode-zeromem::run-slash "import" "z-cmd")) "a preview")
     (is (zerop (length (zeromem-kept))) "and a preview writes nothing")
-    (is (search "imported 2 turns" (nodecode-zeromem::run-slash "import yes" "z-cmd"))
-        "the import writes")
-    (is (search "2 turns from 1 session" (nodecode-zeromem::run-slash "stats" "z-cmd"))
-        "and the counters know it")
-    (is (search "nothing new to import" (nodecode-zeromem::run-slash "import" "z-cmd"))
-        "a second import has nothing left")
-    (is (search "unknown subcommand" (nodecode-zeromem::run-slash "wat" "z-cmd"))
-        "a word it does not know says so")))
+    (is (search "imported 2 turns" (nodecode-zeromem::run-slash "import yes" "z-cmd")) "the import writes")
+    (is (search "2 turns from 1 session" (nodecode-zeromem::run-slash "stats" "z-cmd")) "and the counters know it")
+    (is (search "nothing new to import" (nodecode-zeromem::run-slash "import" "z-cmd")) "a second import has nothing left")
+    (is (search "unknown subcommand" (nodecode-zeromem::run-slash "wat" "z-cmd")) "a word it does not know says so")))
 
 ;;; --- across a restart -----------------------------------------------------------------
 

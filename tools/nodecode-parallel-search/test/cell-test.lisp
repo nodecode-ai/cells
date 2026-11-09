@@ -19,8 +19,7 @@
   (:running
    (is (nle::find-tool "web_search") "web_search is registered")
    (is (nle::find-tool "web_fetch") "web_fetch is registered")
-   (is (equal "https://search.parallel.ai/mcp" (nodecode-parallel-search::endpoint))
-       "with no section it dials Parallel's own server"))
+   (is (equal "https://search.parallel.ai/mcp" (nodecode-parallel-search::endpoint)) "with no section it dials Parallel's own server"))
   (:stopped
    (is (null (nle::find-tool "web_search")) "stop unregisters web_search")
    (is (null (nle::find-tool "web_fetch")) "stop unregisters web_fetch"))
@@ -43,10 +42,8 @@
                  (nlk:json-value arguments :string "objective")))
       (is (equal "fastapi response model"
                  (aref (nlk:json-value arguments :array "search_queries") 0)))
-      (is (= 5 (nlk:json-value arguments :integer "max_results"))
-          "the section's max_results answers when the call names none")
-      (is (equal "sess-1" (cdr (assoc "mcp-session-id" (getf call :headers) :test #'string-equal)))
-          "the session the initialize handed out rides the call"))))
+      (is (= 5 (nlk:json-value arguments :integer "max_results")) "the section's max_results answers when the call names none")
+      (is (equal "sess-1" (cdr (assoc "mcp-session-id" (getf call :headers) :test #'string-equal))) "the session the initialize handed out rides the call"))))
 
 (deftest parallel-search-cell-one-session-serves-every-call (with-parallel ()
     (parallel-call-tool "web_search" "{\"objective\":\"one\"}")

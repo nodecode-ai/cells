@@ -117,8 +117,7 @@
   (with-cell-stop ((print3d-start))
     (let* ((stl (print3d-write-cube (merge-pathnames "cube-300.stl" (uiop:temporary-directory)) 300.0))
            (text (nodecode-print3d:check-mesh-text (nodecode-print3d:check-mesh stl))))
-      (is (search "ERROR size 300.00 x 300.00 x 300.00 mm exceeds the 256 x 256 x 260 mm bed" text)
-          "the error carries the bed it was measured against")
+      (is (search "ERROR size 300.00 x 300.00 x 300.00 mm exceeds the 256 x 256 x 260 mm bed" text) "the error carries the bed it was measured against")
       (is (search "not printable yet" text) "and says it is not printable yet"))))
 
 (deftest print3d-cell-a-part-that-floats-is-a-warning-not-an-error ()

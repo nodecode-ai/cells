@@ -69,8 +69,7 @@ refusal string."
     (flet ((crons (action) (tenuo-verdict "cron" (nlk:json-object "action" action))))
       (is (eq :allowed (crons "list")) "one_of admits a member")
       (is (stringp (crons "delete")) "and refuses the rest"))
-    (is (stringp (tenuo-verdict "read_file" (nlk:json-object "query" "x")))
-        "a constrained argument the call does not carry refuses")))
+    (is (stringp (tenuo-verdict "read_file" (nlk:json-object "query" "x"))) "a constrained argument the call does not carry refuses")))
 
 (deftest tenuo-cell-an-expired-warrant-refuses-every-call ()
   (with-cell-stop ((tenuo-start "warrant"
@@ -98,11 +97,9 @@ refusal string."
            (let ((records (nodecode-tenuo::audit-records :limit 10)))
              (is (= 2 (length records)) "one line per call")
              (is (equal '("ALLOW" "DENY")
-                        (mapcar (lambda (record) (gethash "decision" record)) records))
-                 "the decision each call got")
+                        (mapcar (lambda (record) (gethash "decision" record)) records)) "the decision each call got")
              (is (equal "/etc/passwd"
-                        (gethash "path" (gethash "arguments" (second records))))
-                 "with the arguments the call carried")))
+                        (gethash "path" (gethash "arguments" (second records)))) "with the arguments the call carried")))
       (ignore-errors (delete-file log)))))
 
 (deftest tenuo-cell-on_denial-log-records-but-lets-the-call-run ()
@@ -119,11 +116,9 @@ refusal string."
 (deftest tenuo-cell-the-check-tool-answers-through-the-dispatch-seam ()
   (with-cell-stop ((tenuo-start "warrant" (tenuo-warrant +allow-eval+)))
     (flet ((check (json) (funcall (third (nle::find-tool "tenuo_check")) (nlk:decode-json json))))
-      (is (search "allowed" (check "{\"tool\": \"eval\", \"arguments\": {\"form\": \"(* 2 3)\"}}"))
-          "a call the warrant allows")
+      (is (search "allowed" (check "{\"tool\": \"eval\", \"arguments\": {\"form\": \"(* 2 3)\"}}")) "a call the warrant allows")
       (is (search "refused: read_file is not in the warrant"
-                  (check "{\"tool\": \"read_file\", \"arguments\": {\"path\": \"/etc/passwd\"}}"))
-          "and one it does not"))))
+                  (check "{\"tool\": \"read_file\", \"arguments\": {\"path\": \"/etc/passwd\"}}")) "and one it does not"))))
 
 (deftest tenuo-cell-the-audit-tool-reads-what-the-log-holds ()
   (let ((log (merge-pathnames (format nil "tenuo-~a.jsonl" (gensym)) (uiop:temporary-directory))))
@@ -133,6 +128,5 @@ refusal string."
            (tenuo-verdict "read_file")
            (funcall (third (nle::find-tool "tenuo_audit")) (nlk:decode-json "{\"denied_only\": true}"))
            (is (search "DENY" (nodecode-tenuo::audit-text :denied-only t)) "a denial is listed")
-           (is (search "DENY" (nodecode-tenuo::audit-text :limit 5))
-               "and the whole log lists it too"))
+           (is (search "DENY" (nodecode-tenuo::audit-text :limit 5)) "and the whole log lists it too"))
       (ignore-errors (delete-file log)))))

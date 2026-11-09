@@ -45,15 +45,12 @@
         (is (string= "C1" (getf (first (getf (only-scan) :chunks)) :id)) "one chunk, in the record")
         (is (= 2 (length (getf (only-scan) :skipped))) "the doc and the test folder are gaps named")
         (is (search "a test, example, doc or eval folder"
-                    (getf (first (getf (only-scan) :skipped)) :reason))
-            "the test folder is skipped, and named")
+                    (getf (first (getf (only-scan) :skipped)) :reason)) "the test folder is skipped, and named")
         (is (search "a document, asset or lockfile"
-                    (getf (second (getf (only-scan) :skipped)) :reason))
-            "and so is the README")
+                    (getf (second (getf (only-scan) :skipped)) :reason)) "and so is the README")
         ;; a deep scan reads them too, and gets a chunk of its own
         (is (search "3 files read, 0 skipped"
-                    (secscan:start-scan :path (namestring root) :mode "deep"))
-            "deep reads tests and docs")))))
+                    (secscan:start-scan :path (namestring root) :mode "deep")) "deep reads tests and docs")))))
 
 (deftest security-scan-cell-a-scan-without-a-folder-refuses-and-diff-needs-git ()
   (with-dir (root)
@@ -178,8 +175,7 @@
         ("2.1.0") ("security-severity") ("partialFingerprints") ("nc/command-injection"))
       (let ((document (nlk:decode-json (secscan:export-scan (only-id) :fmt "sarif"))))
         (is (equal "2.1.0" (gethash "version" document)))
-        (is (equal "error" (gethash "level" (aref (gethash "results" (aref (gethash "runs" document) 0)) 0)))
-            "a critical finding is a SARIF error"))
+        (is (equal "error" (gethash "level" (aref (gethash "results" (aref (gethash "runs" document) 0)) 0))) "a critical finding is a SARIF error"))
       (is-carrying (csv (secscan:export-scan (only-id) :fmt "csv"))
         ("findingId") ("\"'=cmd reaches the shell\"") ("CWE-78"))
       (let ((json (nlk:decode-json (secscan:export-scan (only-id) :fmt "json"))))
@@ -191,8 +187,7 @@
       (is-carrying (text (refusal-text secscan:security-scan-error (secscan:cancel-scan (only-id))))
         ("sealed"))
       (is (eq :sealed (handler-case (progn (secscan:export-scan (only-id) :fmt "yaml") t)
-                         (secscan:security-scan-error () :sealed)))
-          "an unknown format refuses, and the scan is still readable"))))
+                         (secscan:security-scan-error () :sealed))) "an unknown format refuses, and the scan is still readable"))))
 
 ;;; --- the dependency check -------------------------------------------------------
 
@@ -215,8 +210,7 @@
           (let ((check (getf (only-scan) :dependencies)))
             (is (equal "ok" (getf check :state)) "the check ran")
             (is (= 2 (getf check :packages)) "both manifests were read")
-            (is (equal "prototype pollution" (getf (first (getf check :advisories)) :summary))
-                "and the advisory OSV named is kept"))
+            (is (equal "prototype pollution" (getf (first (getf check :advisories)) :summary)) "and the advisory OSV named is kept"))
           (is (= 1 (length asked)) "one call, whatever the manifests hold")
           (is (equal :post (first (first asked))))
           (is (search "/v1/querybatch" (second (first asked)))))))
@@ -227,8 +221,7 @@
       (with-scan-cell ()
         (is-carrying (text (secscan:start-scan :path (namestring root)))
           ("dependency check: failed") ("no route to the host"))
-        (is (search "the scan is partial" (secscan:get-scan (only-id) :section "activity"))
-            "a check that could not run leaves the scan partial")))))
+        (is (search "the scan is partial" (secscan:get-scan (only-id) :section "activity")) "a check that could not run leaves the scan partial")))))
 
 ;;; --- /security -----------------------------------------------------------------
 

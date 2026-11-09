@@ -103,8 +103,7 @@
                                             (namestring (merge-pathnames "x.docx" dir))))))
         (is (= 1 (nlk:json-value object :integer "count")))
         (is (equal "paragraph 0"
-                   (nlk:json-value (aref (nlk:json-array object "hits") 0) :string "where"))
-            "a hit says where it is, not only that it is"))
+                   (nlk:json-value (aref (nlk:json-array object "hits") 0) :string "where")) "a hit says where it is, not only that it is"))
       (let ((answer (office-answer "office-search-2" "office_search"
                                     (format nil "{\"path\":~s,\"query\":\"nowhere\"}"
                                             (namestring (merge-pathnames "x.docx" dir))))))
@@ -127,8 +126,7 @@
           (is (search "Goodbye"
                       (getf (first (nodecode-office::document-blocks
                                     (nodecode-office::archive path) :docx))
-                            :text))
-              "and the document reads back with the new word")
+                            :text)) "and the document reads back with the new word")
           (let ((revert (office-object "office-receipt-1" "office_receipt"
                                         (format nil "{\"action\":\"revert\",\"id\":~d}" id))))
             (is (eq t (nlk:json-value revert :boolean "ok")))
@@ -177,8 +175,7 @@
       (let ((answer (office-answer "office-inspect-3" "office_inspect"
                                     (format nil "{\"path\":~s}" (namestring (merge-pathnames "elsewhere.docx" (nlk:home "not-on-the-desk/")))))))
         (is (search "not inside a folder on the desk" answer) "a write outside the desk never starts"))
-      (is (search "Hello world" (office-text (merge-pathnames "x.docx" dir)))
-          "and the file beside it is untouched"))))
+      (is (search "Hello world" (office-text (merge-pathnames "x.docx" dir))) "and the file beside it is untouched"))))
 
 (deftest office-cell-refuses-a-missing-path ()
   (with-cell-stop ((office-start))

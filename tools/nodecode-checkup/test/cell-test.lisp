@@ -20,8 +20,7 @@
   (:help :checkup)
   (:command "checkup")
   (:running (is (nle::find-tool "run_checkup") "the tool is registered")
-            (is (equal '("sections" "cells" "notices") (nodecode-checkup::setting :scopes))
-                "scopes defaults to the three checks")
+            (is (equal '("sections" "cells" "notices") (nodecode-checkup::setting :scopes)) "scopes defaults to the three checks")
             (is (= 20 (nodecode-checkup::setting :max-findings))))
   (:stopped (is (null (nle::find-tool "run_checkup")) "stop unregisters the tool"))
   (:refused ("max_findings" 0))
@@ -42,12 +41,10 @@
       (let ((text (checkup:scan scope)))
         (is (stringp text) scope)
         (is (uiop:string-prefix-p "checkup: " text) scope)))
-    (is (equal '("sections" "cells" "notices") (nodecode-checkup::checked-scopes nil))
-        "bare means every check, in order")
+    (is (equal '("sections" "cells" "notices") (nodecode-checkup::checked-scopes nil)) "bare means every check, in order")
     (is (equal '("cells") (nodecode-checkup::checked-scopes '("cells"))))
     (is (search "no check of this cell" (refusal-text nodecode-checkup:checkup-error
-                                                      (checkup:scan "nonsense")))
-        "a scope the cell does not know names the set it does")))
+                                                      (checkup:scan "nonsense"))) "a scope the cell does not know names the set it does")))
 
 (deftest checkup-cell-a-standing-notice-is-a-finding-with-its-fix ()
   (with-cell-stop ((checkup-start))
@@ -77,8 +74,7 @@
     (let ((result (execute-wire-call "call-1" "run_checkup" "{\"scope\":\"cells\"}")))
       (is (equal "tool" (gethash "role" result)))
       (is (uiop:string-prefix-p "checkup: "
-                                (princ-to-string (nle::message-content result)))
-          "the tool answers the report, not a summary of it"))))
+                                (princ-to-string (nle::message-content result))) "the tool answers the report, not a summary of it"))))
 
 (deftest checkup-cell-the-tool-is-held-to-the-shape-it-advertises (with-session-store ("s1"))
   (with-cell-stop ((checkup-start))

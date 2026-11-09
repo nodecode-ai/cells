@@ -170,8 +170,7 @@ STATUS), as NLK:HTTP does. ASKED collects (METHOD URL), oldest first."
                 (values "" 0))))
         (let ((object (athena-object "athena-6" "athena_install" "{\"url\":\"image upscaler\"}")))
           (is (equal "https://github.com/example/voice-cloner"
-                     (nlk:json-value object :string "repo"))
-              "a name is resolved to the repository the store names first"))))))
+                     (nlk:json-value object :string "repo")) "a name is resolved to the repository the store names first"))))))
 
 (deftest athena-cell-install-refuses-a-folder-already-taken ()
   (with-cell-stop ((athena-start))
@@ -199,8 +198,7 @@ STATUS), as NLK:HTTP does. ASKED collects (METHOD URL), oldest first."
       (let ((object (athena-object "athena-8" "athena_launch" "{\"app\":\"voice-cloner\"}")))
         (is (= 4242 (nlk:json-value object :integer "pid")))
         (is (equal "sh start.sh" (nlk:json-value object :string "command")) "the folder's own start script runs")
-        (is (equal "http://127.0.0.1:7860" (nlk:json-value object :string "url"))
-            "the URL the app's log named is answered")))))
+        (is (equal "http://127.0.0.1:7860" (nlk:json-value object :string "url")) "the URL the app's log named is answered")))))
 
 (deftest athena-cell-launch-refuses-an-app-with-nothing-to-run ()
   (with-cell-stop ((athena-start))
@@ -261,10 +259,8 @@ STATUS), as NLK:HTTP does. ASKED collects (METHOD URL), oldest first."
         (is (search "GPU ran out of memory" (nlk:json-value object :string "cause")))
         (is (search "batch size" (nlk:json-value object :string "fix")) "the reading says what answers it"))
       (let ((object (athena-object "athena-15" "athena_logs" "{\"app\":\"voice-cloner\",\"lines\":1}")))
-        (is (search "CUDA out of memory" (nlk:json-value object :string "lines"))
-            "the last line of the log is answered")
-        (is (not (search "loading weights" (nlk:json-value object :string "lines")))
-            "and only as many lines as were asked for")))))
+        (is (search "CUDA out of memory" (nlk:json-value object :string "lines")) "the last line of the log is answered")
+        (is (not (search "loading weights" (nlk:json-value object :string "lines"))) "and only as many lines as were asked for")))))
 
 (deftest athena-cell-status-names-where-it-reads ()
   (with-cell-stop ((athena-start))

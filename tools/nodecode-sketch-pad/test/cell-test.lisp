@@ -92,8 +92,7 @@ PADDED with EXTRA zero bytes so a test can pass the cap."
         (is (search (file-namestring path) last) "which is the one sketch_pad_last names")
         (is (= (length (sketch-pad-png))
                (with-open-file (in path :element-type '(unsigned-byte 8))
-                 (file-length in)))
-            "of exactly the bytes that were sent")
+                 (file-length in))) "of exactly the bytes that were sent")
         (is (search ".png" (file-namestring path)) "with a .png name")))))
 
 (deftest sketch-pad-cell-the-newest-drawing-is-the-last-save ()
@@ -102,11 +101,9 @@ PADDED with EXTRA zero bytes so a test can pass the cap."
     (let ((first (getf (nodecode-sketch-pad::last-sketch) :width)))
       (sketch-pad-tool "sketch_pad_save" "png_base64" (sketch-pad-png-base64 300 200))
       (is (= 100 first) "the first drawing was read back as it was saved")
-      (is (= 300 (getf (nodecode-sketch-pad::last-sketch) :width))
-          "last.png follows the newest save, not the first")
+      (is (= 300 (getf (nodecode-sketch-pad::last-sketch) :width)) "last.png follows the newest save, not the first")
       (is (= 2 (length (directory (merge-pathnames "sketch-*.png"
-                                                   (nodecode-sketch-pad::sketches-directory)))))
-          "and both drawings are kept, one file each"))))
+                                                   (nodecode-sketch-pad::sketches-directory))))) "and both drawings are kept, one file each"))))
 
 (deftest sketch-pad-cell-a-drawing-that-is-not-a-png-is-refused ()
   (with-pad ("max_bytes" 1024)
@@ -118,8 +115,7 @@ PADDED with EXTRA zero bytes so a test can pass the cap."
                                  "png_base64" (sketch-pad-png-base64 10 10 5000))))
       (is (search "not a PNG" jpeg) "bytes without the PNG signature are refused")
       (is (search "cap is" big) "and one over max_bytes is refused, naming the cap")
-      (is (null (nodecode-sketch-pad::newest-sketch-file))
-          "nothing refused was written"))))
+      (is (null (nodecode-sketch-pad::newest-sketch-file)) "nothing refused was written"))))
 
 ;;; --- the page and the save it posts --------------------------------------------------
 
@@ -141,12 +137,9 @@ PADDED with EXTRA zero bytes so a test can pass the cap."
         (multiple-value-bind (last-body last-status) (sketch-pad-get "/last")
           (is (= 200 last-status) "and /last answers the newest drawing")
           (let ((newest (nlk:decode-json last-body)))
-            (is (search "last.png" (nlk:json-value newest :string "path"))
-                "under the one path the newest drawing always has")
-            (is (= 64 (nlk:json-value newest :integer "width"))
-                "the one just saved, not an older one")
-            (is (equal path (nlk:json-value newest :string "archive"))
-                "with the dated file this save wrote beside it")))))
+            (is (search "last.png" (nlk:json-value newest :string "path")) "under the one path the newest drawing always has")
+            (is (= 64 (nlk:json-value newest :integer "width")) "the one just saved, not an older one")
+            (is (equal path (nlk:json-value newest :string "archive")) "with the dated file this save wrote beside it")))))
     (multiple-value-bind (body status) (sketch-pad-post "/save" "{\"png_base64\": \"bm90IGEgcG5n\"}")
       (is (= 400 status) "a body that is not a PNG is a 400, not a saved file")
       (is (search "PNG" body) "and says why"))
@@ -165,8 +158,7 @@ PADDED with EXTRA zero bytes so a test can pass the cap."
    (is (search ":" (nodecode-sketch-pad::pad-url)) "and pad-url names it")
    (is-present (entry (nle::find-tool "sketch_pad_last")) "sketch_pad_last is registered")
    (is-present (entry (nle::find-tool "sketch_pad_save")) "and sketch_pad_save")
-   (is (search "No sketch yet" (sketch-pad-tool "sketch_pad_last"))
-       "with no drawing yet, the tool says so rather than refusing"))
+   (is (search "No sketch yet" (sketch-pad-tool "sketch_pad_last")) "with no drawing yet, the tool says so rather than refusing"))
   (:stopped
    (is (null (sketch-pad-port)) "stop stops serving the pad")
    (is (null (nle::find-tool "sketch_pad_last")) "and takes the tools back out"))

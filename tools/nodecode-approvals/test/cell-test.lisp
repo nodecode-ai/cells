@@ -74,8 +74,7 @@ sent, oldest first."
              (state (nlk:json-value body :object "state"))
              (questions (nlk:json-value body :object "questions")))
         (is (equal "rm -rf build/" (nlk:json-value state :string "command")))
-        (is (equal "build/ is disposable" (nlk:json-value state :string "operator_policy"))
-            "the operator's policy is the trusted channel")
+        (is (equal "build/ is disposable" (nlk:json-value state :string "operator_policy")) "the operator's policy is the trusted channel")
         (is (equal "writes outside the project" (nlk:json-value state :string "flagged_as")))
         (is (equal "jev-latest" (nlk:json-value body :string "model")))
         (is (equal "choice" (nlk:json-value questions :string "verdict" "type")))
@@ -98,8 +97,7 @@ sent, oldest first."
     (is (equal "high_blast"
                (getf (run :verdict "APPROVE" :confidence 0.9 :blast-radius 1.8) :rule)))
     (is (equal "low_confidence"
-               (getf (run :verdict "APPROVE" :confidence 0.3 :blast-radius 1.8) :rule))
-        "a low confidence is named before a wide blast radius")
+               (getf (run :verdict "APPROVE" :confidence 0.3 :blast-radius 1.8) :rule)) "a low confidence is named before a wide blast radius")
     (let ((answer (run :verdict "APPROVE" :confidence 0.9 :blast-radius 0.1
                        :reads-secrets 0.9 :sends-outbound 0.8)))
       (is (equal "DENY" (getf answer :verdict)))
@@ -108,8 +106,7 @@ sent, oldest first."
                (getf (run :verdict "APPROVE" :confidence 0.9 :blast-radius 0.1
                           :reads-secrets 0.8) :rule)))
     (is (equal "DENY"
-               (getf (run :verdict "DENY" :reads-secrets 0.8) :verdict))
-        "a model DENY survives the secret-read escalation")
+               (getf (run :verdict "DENY" :reads-secrets 0.8) :verdict)) "a model DENY survives the secret-read escalation")
     (is (equal "ESCALATE"
                (getf (run :verdict "APPROVE" :confidence 0.9 :blast-radius 0.1
                           :self-advocating 0.7) :verdict)) "the command argues for itself")
@@ -119,8 +116,7 @@ sent, oldest first."
       (is (equal "policy_allow" (getf answer :rule))))
     (is (equal "ESCALATE"
                (getf (run :verdict "ESCALATE" :confidence 0.8 :blast-radius 0.2
-                          :policy-allows 0.9) :verdict))
-        "with no policy sent, a policy answer decides nothing")
+                          :policy-allows 0.9) :verdict)) "with no policy sent, a policy answer decides nothing")
     (let ((answer (run :verdict "APPROVE" :confidence 0.9 :blast-radius 0.1 :truncated t)))
       (is (equal "ESCALATE" (getf answer :verdict)) "a truncated APPROVE escalates")
       (is (equal "truncated" (getf answer :rule))))
@@ -185,10 +181,8 @@ sent, oldest first."
     (is (equal "~typesafe/jev-latest" (nlk:json-value (approvals-body (first requests)) :string "model"))))
   (with-approvals (requests :config ("base_url" "http://127.0.0.1:8011") :env ())
     (approvals:review "ls")
-    (is (equal "http://127.0.0.1:8011" (second (first requests)))
-        "a base of one's own is the endpoint itself")
-    (is (null (approvals-header (third (first requests)) "authorization"))
-        "and may be asked anonymously")))
+    (is (equal "http://127.0.0.1:8011" (second (first requests))) "a base of one's own is the endpoint itself")
+    (is (null (approvals-header (third (first requests)) "authorization")) "and may be asked anonymously")))
 
 (deftest approvals-cell-logs-each-decision-and-answers-its-command ()
   (with-approvals (requests)

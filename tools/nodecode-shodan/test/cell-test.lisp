@@ -77,8 +77,7 @@ STATUS), as NLK:HTTP does. ASKED collects (METHOD URL CONTENT), oldest first."
           (is (equal "1.1.1.1" (nlk:json-value host :string "ip")))
           (is (equal "AS13335" (nlk:json-value host :string "asn")) "the ASN is not doubled")
           (is (= 2 (length (nlk:json-array host "services"))) "one line per banner")
-          (is (= 2 (length (nlk:json-array host "open_ports")))
-              "the ports come from the banners, as the original derives them")
+          (is (= 2 (length (nlk:json-array host "open_ports"))) "the ports come from the banners, as the original derives them")
           (is (equal "CVE-2020-1234"
                      (nlk:json-value (aref (nlk:json-array host "vulns") 0) :string "cve")))
           (is (= 1 (length asked)) "one request")
@@ -111,8 +110,7 @@ STATUS), as NLK:HTTP does. ASKED collects (METHOD URL CONTENT), oldest first."
                                             (nlk:json-value object :object "facets") "version") 0)
                                      :string "value")))
           (is (search "free" (nlk:json-value object :string "cost")))
-          (is (= 0 (gethash "query_credits_spent" (nodecode-shodan::ledger-object)))
-              "a count spends no query credit"))))))
+          (is (= 0 (gethash "query_credits_spent" (nodecode-shodan::ledger-object))) "a count spends no query credit"))))))
 
 ;;; --- shodan_cve, keyless ------------------------------------------------------------
 

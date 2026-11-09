@@ -50,8 +50,7 @@
   (let ((claims (nodecode-provenance:claims-in "User decided to ship on Friday.")))
     (is (= 1 (length claims)) "one claim")
     (is (equal "decided" (nodecode-provenance::claim-pattern (first claims))) "by the verb that matched"))
-  (is (= 1 (length (nodecode-provenance:claims-in "The owner already approved the migration.")))
-      "an adverb between the subject and the verb does not hide it")
+  (is (= 1 (length (nodecode-provenance:claims-in "The owner already approved the migration."))) "an adverb between the subject and the verb does not hide it")
   (is (= 1 (length (nodecode-provenance:claims-in "用户决定周五发布。"))) "the Chinese form is caught too"))
 
 (deftest provenance-cell-leaves-open-and-generic-forms-alone ()
@@ -59,15 +58,13 @@
   (is (null (nodecode-provenance:claims-in "If the user approved, proceed.")) "a conditional")
   (is (null (nodecode-provenance:claims-in "Has the user decided?")) "a question")
   (is (null (nodecode-provenance:claims-in "Step 3: the user confirmed the order.")) "a spec line")
-  (is (null (nodecode-provenance:claims-in "In the usability study, the user chose the cheaper plan."))
-      "a generic actor in a study")
+  (is (null (nodecode-provenance:claims-in "In the usability study, the user chose the cheaper plan.")) "a generic actor in a study")
   (is (null (nodecode-provenance:claims-in "发布日期待用户确认。")) "待 makes it open"))
 
 (deftest provenance-cell-a-preference-counts-only-when-the-scope-says-so ()
   (is (null (nodecode-provenance:claims-in "The user prefers dark mode.")) "decisions are the default scope")
   (is (= 1 (length (nodecode-provenance:claims-in "The user prefers dark mode."
-                                                  :scope "decisions+preferences")))
-      "and decisions+preferences asks for it"))
+                                                  :scope "decisions+preferences"))) "and decisions+preferences asks for it"))
 
 ;;; --- the tools ---------------------------------------------------------------------
 
@@ -111,8 +108,7 @@
 (deftest provenance-cell-the-contract-refuses-a-text-that-is-missing ()
   (is (signals-error nlk:contract-refusal
         (nlk:contract-decode (nlk:contract 'nodecode-provenance::check-ask)
-                              (nlk:make-json-object "user_text" "hi")))
-      "text is required at the boundary"))
+                              (nlk:make-json-object "user_text" "hi"))) "text is required at the boundary"))
 
 (deftest provenance-cell-the-report-names-what-it-saw ()
   (with-cell-stop ((provenance-start))
@@ -129,8 +125,7 @@
    (lambda (&rest arguments) (declare (ignore arguments)) :context)
    "s-capture" :prior-context nil
    :messages (list (nlk:json-object "role" "user" "content" "I decided we ship on Friday.")))
-  (is (equal '("I decided we ship on Friday.") (nodecode-provenance::session-said "s-capture"))
-      "the user's own words are kept for the gate this turn runs"))
+  (is (equal '("I decided we ship on Friday.") (nodecode-provenance::session-said "s-capture")) "the user's own words are kept for the gate this turn runs"))
 
 (deftest provenance-cell-observe-mode-lets-the-write-through ()
   (with-cell-stop ((provenance-start))
@@ -154,5 +149,4 @@
         (declare (ignore result))
         (is (eq t ran) "an eval that keeps no memory runs")
         (is (null (nodecode-provenance::memory-write-text
-                   (list :name "shell" :arguments (nlk:make-json-object "command" "ls"))))
-            "and so does every other tool")))))
+                   (list :name "shell" :arguments (nlk:make-json-object "command" "ls")))) "and so does every other tool")))))

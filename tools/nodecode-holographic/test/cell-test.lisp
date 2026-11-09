@@ -19,8 +19,7 @@
   (:help :holographic)
   (:command "holographic")
   (:config "db_path" (holographic-test-file))
-  (:running (is (equal nodecode-holographic::+primer+ (nle:help :holographic))
-                "(help :holographic) is the primer")
+  (:running (is (equal nodecode-holographic::+primer+ (nle:help :holographic)) "(help :holographic) is the primer")
             (is (nle::find-tool "fact_store") "the store tool is registered")
             (is (nle::find-tool "fact_feedback") "the feedback tool is registered")
             (is (equal "on" (nodecode-holographic::setting :recall)) "recall is on by default")
@@ -42,11 +41,9 @@
       (is (search "The build runs with just" found) "a keyword the fact does not say finds it")
       (is (search "[1]" found) "and the line carries the id fact_feedback takes"))
     (is (search "The build runs with just"
-                (holographic-ask "action" "search" "query" "build"))
-        "a word of the text finds it too")
+                (holographic-ask "action" "search" "query" "build")) "a word of the text finds it too")
     (is (search "No relevant facts found."
-                (holographic-ask "action" "search" "query" "weather forecast Lisbon tomorrow"))
-        "a message it holds nothing of recalls nothing")))
+                (holographic-ask "action" "search" "query" "weather forecast Lisbon tomorrow")) "a message it holds nothing of recalls nothing")))
 
 (deftest holographic-cell-a-change-keeps-the-text-it-replaced ()
   (with-holographic ()
@@ -54,11 +51,9 @@
     (is (search "changed: [1] Alice lives in Berlin"
                 (holographic-ask "action" "change" "fact_id" 1
                                  "content" "Alice lives in Berlin"
-                                 "valid_from" "2026-09-01"))
-        "the fact says the new sentence")
+                                 "valid_from" "2026-09-01")) "the fact says the new sentence")
     (is (search "No relevant facts found."
-                (holographic-ask "action" "search" "query" "Paris"))
-        "and Paris is no longer what it says")
+                (holographic-ask "action" "search" "query" "Paris")) "and Paris is no longer what it says")
     (let ((history (holographic-ask "action" "history" "fact_id" 1)))
       (is (search "Alice lives in Paris" history) "the version it replaced is kept")
       (is (search "Alice lives in Berlin" history) "and the current one is named"))))
@@ -68,33 +63,25 @@
     (holographic-ask "action" "add" "content" "The office is on Harbour Street")
     (holographic-ask "action" "add" "content" "The standup is at nine")
     (is (search "ended: [1]"
-                (holographic-ask "action" "end" "fact_id" 1 "valid_to" "2026-10-01"))
-        "ending names the fact")
+                (holographic-ask "action" "end" "fact_id" 1 "valid_to" "2026-10-01")) "ending names the fact")
     (is (not (search "Harbour Street"
-                     (holographic-ask "action" "search" "query" "where is the office")))
-        "an ended fact is not recalled")
+                     (holographic-ask "action" "search" "query" "where is the office"))) "an ended fact is not recalled")
     (is (search "The office is on Harbour Street"
-                (holographic-ask "action" "search" "query" "office" "as_of" "2026-09-01"))
-        "but it held on a date before it ended")
+                (holographic-ask "action" "search" "query" "office" "as_of" "2026-09-01")) "but it held on a date before it ended")
     (is (search "forgot #2: The standup is at nine"
-                (holographic-ask "action" "forget" "fact_id" 2))
-        "a forget answers what it destroyed")
+                (holographic-ask "action" "forget" "fact_id" 2)) "a forget answers what it destroyed")
     (is (search "No relevant facts found."
-                (holographic-ask "action" "search" "query" "standup"))
-        "and it is gone")
-    (is (search "no fact #2" (holographic-ask "action" "history" "fact_id" 2))
-        "history of a forgotten fact refuses by id")))
+                (holographic-ask "action" "search" "query" "standup")) "and it is gone")
+    (is (search "no fact #2" (holographic-ask "action" "history" "fact_id" 2)) "history of a forgotten fact refuses by id")))
 
 (deftest holographic-cell-feedback-moves-the-trust-a-line-shows ()
   (with-holographic ("min_trust" "0.1")
     (holographic-ask "action" "add" "content" "The staging host is green")
     (is (search "trust now 0.60" (holographic-rate "helpful" 1)) "helpful raises it")
     (is (search "trust now 0.50" (holographic-rate "unhelpful" 1)) "unhelpful lowers it")
-    (is (search "origin confirmed" (holographic-rate "confirmed" 1))
-        "confirmed records who stands behind it")
+    (is (search "origin confirmed" (holographic-rate "confirmed" 1)) "confirmed records who stands behind it")
     (is (search "trust 0.65"
-                (holographic-ask "action" "search" "query" "staging host"))
-        "and the line the model reads says so")))
+                (holographic-ask "action" "search" "query" "staging host")) "and the line the model reads says so")))
 
 ;;; --- the round ---------------------------------------------------------------------
 
@@ -115,8 +102,7 @@
                  (lambda (op) op)))
       (is (= 1 (length recorded)) "the block rides the request, once")
       (is (search "# Holographic memory" (first recorded)) "under its own heading")
-      (is (search "The deploy key lives in the vault" (first recorded))
-          "with the fact the message recalls"))))
+      (is (search "The deploy key lives in the vault" (first recorded)) "with the fact the message recalls"))))
 
 (deftest holographic-cell-recall-off-injects-nothing ()
   (with-holographic ("recall" "off")
@@ -144,10 +130,7 @@
       (is (search "holographic: 1 facts (1 current)" plain) "bare /holographic is the store's line")
       (is (search "recall on" plain) "with the switch it runs under"))
     (is (search "The release is cut on Thursdays"
-                (nodecode-holographic::run-slash "search release" "s1"))
-        "/holographic search asks by hand")
-    (is (search "stored #2" (nodecode-holographic::run-slash "add The docs live in the repo" "s1"))
-        "/holographic add writes one")
+                (nodecode-holographic::run-slash "search release" "s1")) "/holographic search asks by hand")
+    (is (search "stored #2" (nodecode-holographic::run-slash "add The docs live in the repo" "s1")) "/holographic add writes one")
     (is (search "is not one of its choices"
-                (nodecode-holographic::run-slash "dance" "s1"))
-        "a word it does not know says so")))
+                (nodecode-holographic::run-slash "dance" "s1")) "a word it does not know says so")))

@@ -89,29 +89,23 @@ them for a session with one section already on it."
 (deftest handflow-cell-a-refusal-says-which-and-is-marked-failed
   (with-fresh-plans
     (with-cell-stop ((handflow-start))
-      (is (search "no active plan" (handflow-call "action" "complete" "step" "1"))
-          "a move with no plan says so")
+      (is (search "no active plan" (handflow-call "action" "complete" "step" "1")) "a move with no plan says so")
       (handflow-call "action" "start" "goal" "a job" "steps" (vector "alpha" "beta"))
       (let ((text (handflow-call "action" "complete" "step" "9")))
         (is (search "ERROR: " text) "an unknown step is a failed call")
         (is (search "no step matches" text) "naming what it could not match"))
-      (is (search "still open" (handflow-call "action" "finish"))
-          "finish refuses while a step is open")
-      (is (search "(done)" (handflow-call "action" "finish" "force" t))
-          "force closes it anyway"))))
+      (is (search "still open" (handflow-call "action" "finish")) "finish refuses while a step is open")
+      (is (search "(done)" (handflow-call "action" "finish" "force" t)) "force closes it anyway"))))
 
 (deftest handflow-cell-a-call-that-names-no-action-is-refused-by-the-contract
   (with-fresh-plans
     (with-cell-stop ((handflow-start))
       (let ((schema (second (nle::find-tool "handflow"))))
-        (is (hash-table-p (nlk:contract-schema schema))
-            "the tool is registered against a declared contract")
+        (is (hash-table-p (nlk:contract-schema schema)) "the tool is registered against a declared contract")
         (is (signals-error nlk:contract-refusal
-              (nlk:contract-decode schema (nlk:make-json-object "goal" "no action here")))
-            "a call without an action is refused before the body runs")
+              (nlk:contract-decode schema (nlk:make-json-object "goal" "no action here"))) "a call without an action is refused before the body runs")
         (is (signals-error nlk:contract-refusal
-              (nlk:contract-decode schema (nlk:make-json-object "action" "levitate")))
-            "and so is an action outside the vocabulary")))))
+              (nlk:contract-decode schema (nlk:make-json-object "action" "levitate"))) "and so is an action outside the vocabulary")))))
 
 (deftest handflow-cell-plans-and-their-state-outlive-a-stop-and-a-start
   (with-fresh-plans
@@ -134,10 +128,8 @@ them for a session with one section already on it."
 (deftest handflow-cell-the-plan-rides-every-request
   (with-fresh-plans
     (with-cell-stop ((handflow-start))
-      (is (functionp (cell-hook "nodecode-handflow" 'nle::read-harness-sections))
-          "the cell advises the harness sections")
-      (is (equal (list (cons "index" "a ranked index")) (handflow-sections))
-          "with no plan the sections come back exactly as they went in")
+      (is (functionp (cell-hook "nodecode-handflow" 'nle::read-harness-sections)) "the cell advises the harness sections")
+      (is (equal (list (cons "index" "a ranked index")) (handflow-sections)) "with no plan the sections come back exactly as they went in")
       (handflow-call "action" "start" "goal" "ride every request"
                       "steps" (vector "plan it" "work it"))
       (let ((sections (handflow-sections)))
@@ -162,5 +154,4 @@ them for a session with one section already on it."
   (with-fresh-plans
     (with-cell-stop ((handflow-start "show_plan" nil))
       (handflow-call "action" "start" "goal" "kept quiet" "steps" (vector "say nothing"))
-      (is (null (assoc "handflow" (handflow-sections) :test #'equal))
-          "show_plan off leaves the request as it was"))))
+      (is (null (assoc "handflow" (handflow-sections) :test #'equal)) "show_plan off leaves the request as it was"))))

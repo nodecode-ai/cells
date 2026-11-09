@@ -120,8 +120,7 @@ which is what starting the cell reads for its profile."
         (is (equal "what do I drink" (nlk:json-value body :string "query")))
         (is (= 3 (nlk:json-value body :integer "limit")) "the call's limit")
         (is (equal '("memory" "skills")
-                   (coerce (nlk:json-array body "scopes") 'list))
-            "the original's default scopes")))))
+                   (coerce (nlk:json-array body "scopes") 'list)) "the original's default scopes")))))
 
 (deftest sgme-cell-conversation-and-wiki-read-their-own-layers ()
   (with-sgme-wire
@@ -133,8 +132,7 @@ which is what starting the cell reads for its profile."
       (is (search "[s1] the words of 2026-08-11"
                   (sgme-tool "sgme_conversation_search" (nlk:json-object "query" "Oslo"))))
       (let ((body (sgme-request-body (sgme-request-to "/v1/search"))))
-        (is (equal '("sessions") (coerce (nlk:json-array body "scopes") 'list))
-            "the raw session layer only"))
+        (is (equal '("sessions") (coerce (nlk:json-array body "scopes") 'list)) "the raw session layer only"))
       (sgme-tool "sgme_wiki_search" (nlk:json-object "query" "tea" "limit" 4))
       (let ((request (sgme-request-to "/v1/wiki/search")))
         (is (search "q=tea" (second request)) "the query rides the URL")
@@ -182,8 +180,7 @@ which is what starting the cell reads for its profile."
       (is (search "/v1/admin/care/signals/e1/consume"
                   (second (sgme-request-to "/consume"))))
       (is (search "already claimed"
-                  (sgme-tool "sgme_signal_claim" (nlk:json-object "event_id" "e2")))
-          "a 409 is a skip, not a failure")
+                  (sgme-tool "sgme_signal_claim" (nlk:json-object "event_id" "e2"))) "a 409 is a skip, not a failure")
       (is (equal "Acked signal e1 as acked."
                  (sgme-tool "sgme_signal_ack"
                             (nlk:json-object "event_id" "e1" "result" "watered them"))))
@@ -254,13 +251,11 @@ which is what starting the cell reads for its profile."
              (body (sgme-request-body request))
              (content (nlk:json-value body :string "content")))
         (is (equal "https://sgme.test/v1/append" (second request)))
-        (is (equal "k-test" (sgme-request-header request "x-api-key"))
-            "an append carries the agent key, as the original sends it")
+        (is (equal "k-test" (sgme-request-header request "x-api-key")) "an append carries the agent key, as the original sends it")
         (is (equal "nodecode-s-42" (nlk:json-value body :string "session_key")))
         (is (equal "laptop" (nlk:json-value body :string "agent_id")))
         (is (search "Ada Lovelace" content))
         (is (search "Noted." content)))
       (await (:timeout 5) (sgme-request-to "/v1/admin/refine/trigger_async"))
       (is (equal "a-test"
-                 (sgme-request-header (sgme-request-to "/v1/admin/refine/trigger_async") "x-api-key"))
-          "a refinement is admin work"))))
+                 (sgme-request-header (sgme-request-to "/v1/admin/refine/trigger_async") "x-api-key")) "a refinement is admin work"))))

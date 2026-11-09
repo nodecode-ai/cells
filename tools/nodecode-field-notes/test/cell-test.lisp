@@ -122,8 +122,7 @@
            (id (nlk:json-value answer :string "id")))
       (is (stringp id) "the create answers the note's id")
       (is (probe-file (nodecode-field-notes::note-path id)) "the note is a file in the store")
-      (is (search "A cron job fires twice" (uiop:read-file-string (nodecode-field-notes::index-path)))
-          "the index carries the note")
+      (is (search "A cron job fires twice" (uiop:read-file-string (nodecode-field-notes::index-path))) "the index carries the note")
       (let ((found (field-notes-json
                     (field-notes-tool "fieldnote_search" (nlk:json-object "query" "scheduler")))))
         (is (= 1 (nlk:json-value found :integer "total")) "the search finds it by a body word")
@@ -151,8 +150,7 @@
          "a patch note needs patch_kind"))
     (is (= 0 (nlk:json-value (field-notes-json
                               (field-notes-tool "fieldnote_search" (nlk:json-object)))
-                             :integer "total"))
-        "a refused note wrote nothing")))
+                             :integer "total")) "a refused note wrote nothing")))
 
 (deftest field-notes-cell-the-store-outlives-a-restart ()
   (with-cell-stop ((field-notes-start*))

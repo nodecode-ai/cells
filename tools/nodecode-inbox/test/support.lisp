@@ -52,7 +52,7 @@ healthy job scheduled ahead."
 (defmacro with-stubbed-sources ((&key notices sessions cron evals notes) &body body)
   "Run BODY with the cell's four readers standing in for their sources.
 NOTICES, SESSIONS, CRON and EVALS are the item lists a source answers; NOTES
-is an alist of source name to the note a failed read would carry, "read"
+is an alist of source name to the note a failed read would carry, \"read\"
 where it is silent."
   `(with-saved-globals (nodecode-inbox::*notices-reader* nodecode-inbox::*sessions-reader*
                         nodecode-inbox::*cron-reader* nodecode-inbox::*evals-reader*)

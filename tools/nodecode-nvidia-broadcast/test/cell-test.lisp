@@ -137,12 +137,9 @@ collects (METHOD URL CONTENT HEADERS), oldest first, once BODY reads it."
       (with-gateway (asked)
         (let ((answer (wire-answer "nb-1" "get_broadcast_state" "{\"effect_type\":\"camera\"}")))
           (is (search "background_blur" answer) "the state comes back as the gateway said it")
-          (is (equal "camera" (nlk:json-value (sent-arguments (first (tool-calls asked))) :string "effectType"))
-              "effect_type is mapped onto the gateway's effectType")
-          (is (string= "session-1" (header-of (first (tool-calls asked)) "mcp-session-id"))
-              "every call after initialize echoes the session id it issued")
-          (is (equal "initialize" (nlk:json-value (nlk:decode-json (third (first asked))) :string "method"))
-              "and initialize is the first thing the cell sends"))))))
+          (is (equal "camera" (nlk:json-value (sent-arguments (first (tool-calls asked))) :string "effectType")) "effect_type is mapped onto the gateway's effectType")
+          (is (string= "session-1" (header-of (first (tool-calls asked)) "mcp-session-id")) "every call after initialize echoes the session id it issued")
+          (is (equal "initialize" (nlk:json-value (nlk:decode-json (third (first asked))) :string "method")) "and initialize is the first thing the cell sends"))))))
 
 (deftest nvidia-broadcast-cell-reads-a-server-sent-answer
   ;; The streamable transport may answer in events rather than one object.
@@ -150,8 +147,7 @@ collects (METHOD URL CONTENT HEADERS), oldest first, once BODY reads it."
     (let ((*gateway-tools* (list (cons "get_broadcast_state" (lambda (arguments) (declare (ignore arguments)) +state+))))
           (*gateway-events* t))
       (with-gateway (asked)
-        (is (search "background_blur" (wire-answer "nb-2" "get_broadcast_state" "{}"))
-            "an event-stream answer is read to its data payload")))))
+        (is (search "background_blur" (wire-answer "nb-2" "get_broadcast_state" "{}")) "an event-stream answer is read to its data payload")))))
 
 (deftest nvidia-broadcast-cell-reports-a-failed-call
   (with-cell-stop ((nvidia-broadcast-start))
@@ -159,8 +155,7 @@ collects (METHOD URL CONTENT HEADERS), oldest first, once BODY reads it."
           (*gateway-is-error* t))
       (with-gateway (asked)
         (declare (ignore asked))
-        (is (search "ERROR: device_not_selected" (wire-answer "nb-3" "get_broadcast_state" "{}"))
-            "an isError answer is a failure, not an answer")))))
+        (is (search "ERROR: device_not_selected" (wire-answer "nb-3" "get_broadcast_state" "{}")) "an isError answer is a failure, not an answer")))))
 
 ;;; --- setting effects ------------------------------------------------------------------
 
@@ -179,16 +174,13 @@ collects (METHOD URL CONTENT HEADERS), oldest first, once BODY reads it."
     (let ((*gateway-tools* (list (cons "set_effects" (lambda (arguments) (nlk:json-value arguments :string "action"))))))
       (with-gateway (asked)
         (is (equal "restore_previous_live"
-                   (wire-answer "nb-5" "set_effects" "{\"action\":\"restore_previous_live\"}"))
-            "the action alone is the whole call")
-        (is (null (nlk:json-value (sent-arguments (first (tool-calls asked))) :string "effects"))
-            "and no effects array is sent with it")))))
+                   (wire-answer "nb-5" "set_effects" "{\"action\":\"restore_previous_live\"}")) "the action alone is the whole call")
+        (is (null (nlk:json-value (sent-arguments (first (tool-calls asked))) :string "effects")) "and no effects array is sent with it")))))
 
 (deftest nvidia-broadcast-cell-refuses-an-empty-effect-set
   (with-cell-stop ((nvidia-broadcast-start))
     (with-gateway (asked)
-      (is (search "ERROR:" (wire-answer "nb-6" "set_effects" "{}"))
-          "neither effects nor an action is refused before anything is sent")
+      (is (search "ERROR:" (wire-answer "nb-6" "set_effects" "{}")) "neither effects nor an action is refused before anything is sent")
       (is (null (tool-calls asked)) "and the gateway is never called"))))
 
 ;;; --- devices and resolution ------------------------------------------------------------
@@ -198,8 +190,7 @@ collects (METHOD URL CONTENT HEADERS), oldest first, once BODY reads it."
     (let ((*gateway-tools* (list (cons "list_devices" (lambda (arguments) (nlk:encode-json-object arguments))))))
       (with-gateway (asked)
         (wire-answer "nb-7" "list_devices" "{}")
-        (is (equal "all" (nlk:json-value (sent-arguments (first (tool-calls asked))) :string "kind"))
-            "an absent kind asks for all three sections")))))
+        (is (equal "all" (nlk:json-value (sent-arguments (first (tool-calls asked))) :string "kind")) "an absent kind asks for all three sections")))))
 
 (deftest nvidia-broadcast-cell-switches-a-camera-and-its-size-at-once
   (with-cell-stop ((nvidia-broadcast-start))
@@ -210,8 +201,7 @@ collects (METHOD URL CONTENT HEADERS), oldest first, once BODY reads it."
         (let ((sent (sent-arguments (first (tool-calls asked)))))
           (is (equal "cam-2" (nlk:json-value sent :string "deviceId")) "the id is the gateway's deviceId")
           (is (= 1920 (nlk:json-value sent :integer "width")))
-          (is (= 60 (nlk:json-value sent :integer "frameRate"))
-              "and the frame rate rides the same call, never guessed by the cell"))))))
+          (is (= 60 (nlk:json-value sent :integer "frameRate")) "and the frame rate rides the same call, never guessed by the cell"))))))
 
 (deftest nvidia-broadcast-cell-sets-a-resolution
   (with-cell-stop ((nvidia-broadcast-start))
@@ -220,8 +210,7 @@ collects (METHOD URL CONTENT HEADERS), oldest first, once BODY reads it."
         (wire-answer "nb-9" "set_camera_resolution" "{\"device_id\":\"cam-2\",\"width\":1280,\"height\":720}")
         (let ((sent (sent-arguments (first (tool-calls asked)))))
           (is (= 1280 (nlk:json-value sent :integer "width")))
-          (is (not (nth-value 1 (gethash "frameRate" sent)))
-              "a size with no frame rate sends none, so the gateway can say ambiguous_frame_rate"))))))
+          (is (not (nth-value 1 (gethash "frameRate" sent))) "a size with no frame rate sends none, so the gateway can say ambiguous_frame_rate"))))))
 
 ;;; --- file processing ---------------------------------------------------------------------
 

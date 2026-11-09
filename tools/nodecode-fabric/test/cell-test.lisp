@@ -39,8 +39,7 @@
     (is (search "written to the fabric"
                 (fabric:remember "decision"
                                  "We stopped retrying the billing webhook twice: the queue deduplicates by event id now, so a retry storm cannot double-charge."
-                                 "billing retry removed from the webhook"))
-        "a write says where it went")
+                                 "billing retry removed from the webhook")) "a write says where it went")
     (is (= 1 (length (fabric-entries))) "one entry is one markdown file")
     (let* ((file (first (fabric-entries)))
            (agent (fabric-entry-field file "agent"))
@@ -48,14 +47,12 @@
       (is (equal "tester" agent) "the entry carries the section's agent")
       (is (= 8 (length id)) "and an id a handoff can name")
       (is (search "deduplicates by event id"
-                  (uiop:read-file-string file))
-          "the body is on disk as it was written"))
+                  (uiop:read-file-string file)) "the body is on disk as it was written"))
     (let ((answer (fabric:recall "billing webhook retry")))
       (is (search "billing retry removed" answer) "the query's words find the entry")
       (is (search "relevance:" answer) "ranked, with the score it earned")
       (is (search "tester:" answer) "and the agent:id a review would name"))
-    (is (equal nodecode-fabric::*nothing* (fabric:recall "kubernetes ingress"))
-        "a query nothing matches says so")))
+    (is (equal nodecode-fabric::*nothing* (fabric:recall "kubernetes ingress")) "a query nothing matches says so")))
 
 (deftest fabric-cell-the-best-match-ranks-first-and-a-budget-caps-the-rest ()
   (with-fabric ()
@@ -65,12 +62,9 @@
                       "release calendar notes")
     (let ((answer (fabric:recall "tenant cache key")))
       (is (< (search "cache key names the tenant" answer)
-             (or (search "release calendar notes" answer) most-positive-fixnum))
-          "the entry the words match ranks above the one they do not"))
-    (is (search "release" (fabric:recall "tenant cache key release"))
-        "both are returned when both match")
-    (is (not (search "release calendar" (fabric:recall "tenant cache key release" :max-results 1)))
-        "max_results caps the answer")))
+             (or (search "release calendar notes" answer) most-positive-fixnum)) "the entry the words match ranks above the one they do not"))
+    (is (search "release" (fabric:recall "tenant cache key release")) "both are returned when both match")
+    (is (not (search "release calendar" (fabric:recall "tenant cache key release" :max-results 1))) "max_results caps the answer")))
 
 (deftest fabric-cell-search-finds-an-exact-word-the-ranking-would-miss ()
   (with-fabric ()
@@ -79,8 +73,7 @@
     (let ((answer (fabric:lookup "--allow-unauthenticated")))
       (is (search "tester:" answer) "the entry that holds the word comes back")
       (is (search "--allow-unauthenticated" answer) "with the line that matched"))
-    (is (equal nodecode-fabric::*nothing* (fabric:lookup "no-such-word-here"))
-        "a word no entry holds says so")))
+    (is (equal nodecode-fabric::*nothing* (fabric:lookup "no-such-word-here")) "a word no entry holds says so")))
 
 ;;; --- handoffs ---------------------------------------------------------------------
 
@@ -99,16 +92,13 @@
       (is (search "written to the fabric"
                   (fabric:remember "task" "finish the invoice export for the September close"
                                    "invoice export for September"
-                                   :status "open" :assigned-to "tester"))
-          "another agent hands work over")
+                                   :status "open" :assigned-to "tester")) "another agent hands work over")
       (is (search "written to the fabric"
                   (fabric:remember "review" "the retry loop looks right, but the timeout is not tested"
-                                   "timeout untested" :review-of work))
-          "and reviews this agent's work by its reference"))
+                                   "timeout untested" :review-of work)) "and reviews this agent's work by its reference"))
     (with-cell-stop ((fabric-start "dir" dir))
       (let ((pending (fabric:pending)))
-        (is (search "1 task(s), 1 review(s)" pending)
-            "what waits: the task assigned here, and the review of the work")
+        (is (search "1 task(s), 1 review(s)" pending) "what waits: the task assigned here, and the review of the work")
         (is (search "invoice export for September" pending) "the task is listed"))
       (let ((brief (fabric:brief)))
         (is (search "fabric brief for tester" brief) "the brief names whose it is")
@@ -123,10 +113,8 @@
       (is (search "training_value" (fabric:curate id "high")) "curate answers what it set")
       (is (equal "high" (fabric-entry-field file "training_value")) "the header carries it")
       (is (= 1 (length (fabric-entries))) "and no second entry was written")
-      (is (equal "fabric: no entry has id \"nope\"." (fabric:curate "nope" "high"))
-          "an id no entry has says so")
-      (is (search "high, normal or low" (fabric:curate id "sometimes"))
-          "and a value outside the three is refused"))))
+      (is (equal "fabric: no entry has id \"nope\"." (fabric:curate "nope" "high")) "an id no entry has says so")
+      (is (search "high, normal or low" (fabric:curate id "sometimes")) "and a value outside the three is refused"))))
 
 ;;; --- the turn's own memory -----------------------------------------------------
 
@@ -142,8 +130,7 @@
         (is (search "billing retry removed" text) "and the matching entry rides the turn"))
       (setf nodecode-fabric::*turn-input* (lambda (session) (declare (ignore session)) "nothing relevant"))
       (is (null (nodecode-fabric::round-text "s1")) "silence is the normal answer"))
-    (is (equal nodecode-fabric::*standing* (fabric-standing "s1"))
-        "every request carries the standing paragraph while the cell runs")))
+    (is (equal nodecode-fabric::*standing* (fabric-standing "s1")) "every request carries the standing paragraph while the cell runs")))
 
 ;;; --- refusals --------------------------------------------------------------------
 
@@ -152,16 +139,12 @@
     (is (search "need a type" (fabric:remember "" "body" "summary")) "a type is required")
     (is (search "need a type" (fabric:remember "task" "" "summary")) "so is a content")
     (is (search "need a type" (fabric:remember "task" "body" "")) "and a summary")
-    (is (search "needs assigned_to" (fabric:remember "task" "body" "summary" :status "open"))
-        "an open task names who it is for")
-    (is (search "review_of" (fabric:remember "review" "body" "summary"))
-        "a review names the entry it reviews")
+    (is (search "needs assigned_to" (fabric:remember "task" "body" "summary" :status "open")) "an open task names who it is for")
+    (is (search "review_of" (fabric:remember "review" "body" "summary")) "a review names the entry it reviews")
     (is (search "names no entry" (fabric:remember "review" "body" "summary"
-                                                  :review-of "tester:deadbeef"))
-        "and that entry must exist")
+                                                  :review-of "tester:deadbeef")) "and that entry must exist")
     (is (search "high, normal or low" (fabric:remember "decision" "body" "summary"
-                                                         :training-value "maybe"))
-        "training value is one of three")
+                                                         :training-value "maybe")) "training value is one of three")
     (is (= 0 (length (fabric-entries))) "nothing was written by any of them")))
 
 ;;; --- the boundary ------------------------------------------------------------
@@ -185,5 +168,4 @@
     (let* ((entry (nle::find-tool "fabric_brief"))
            (brief (third entry)))
       (is (search "fabric brief for tester"
-                  (funcall brief (nlk:contract-decode (second entry) (nlk:make-json-object))))
-          "a tool with optional members answers with none given"))))
+                  (funcall brief (nlk:contract-decode (second entry) (nlk:make-json-object)))) "a tool with optional members answers with none given"))))

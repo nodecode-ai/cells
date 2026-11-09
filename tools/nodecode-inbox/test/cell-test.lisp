@@ -116,8 +116,7 @@
         (is (= 2 (length jobs)))
         (is (equal "nightly" (getf (first jobs) :name)))
         (is (equal "failed" (getf (first jobs) :last-status)))
-        (is (equal "code 1 stderr: no target" (getf (first jobs) :last-line))
-            "a multi-line failure is one line")
+        (is (equal "code 1 stderr: no target" (getf (first jobs) :last-line)) "a multi-line failure is one line")
         (is (equal "the digest" (getf (second jobs) :report)) "the owed answer"))))
   ;; No row yet: absent, not an error.
   (with-stubbed-fdefinitions ((nlk:store-open-p () t)
@@ -150,6 +149,5 @@
                                                        :title (format nil "session ~d" i)
                                                        :source "cli" :updated-at (get-universal-time)
                                                        :waits nil)))
-    (is (search "◆ Open surfaces (2)" (nodecode-inbox:inbox-text :limit 2))
-        "the limit is the section's, not the source's")
+    (is (search "◆ Open surfaces (2)" (nodecode-inbox:inbox-text :limit 2)) "the limit is the section's, not the source's")
     (is (search "◆ Open surfaces (6)" (nodecode-inbox:inbox-text :limit 20)))))

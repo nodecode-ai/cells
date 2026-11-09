@@ -17,8 +17,7 @@
   (:hooks :tool)
   (:help :break)
   (:command "break")
-  (:running (is (plusp (nodecode-tool-break::setting :salvage-chars))
-                "the note keeps a tail of what the call returned")
+  (:running (is (plusp (nodecode-tool-break::setting :salvage-chars)) "the note keeps a tail of what the call returned")
             (is (= 2 (nodecode-tool-break::setting :again-limit)) "again defaults to two uses"))
   (:refused ("again_limit" 0) ("salvage_chars" -1) ("again_limit" "two"))
   (:idle nodecode-tool-break::tool-break-error
@@ -37,14 +36,12 @@
                                      (setf inside (tool-break-command "break-status" "" "s1"))
                                      "the call's own answer")
                                    :arguments (tool-break-slow-arguments)
-                                   :session "s1"))
-          "an unmarked call answers its own text")
+                                   :session "s1")) "an unmarked call answers its own text")
       (is (search "\"inflight\":true" inside) "the call is in flight while it runs")
       (is (search "\"count\":1" inside) "one call")
       (is (search "\"name\":\"eval\"" inside) "named as the model called it")
       (is (search "make test" inside) "and labelled with what it runs"))
-    (is (search "\"inflight\":false" (tool-break-command "break-status" "" "s1"))
-        "once it returns nothing is in flight")))
+    (is (search "\"inflight\":false" (tool-break-command "break-status" "" "s1")) "once it returns nothing is in flight")))
 
 (deftest tool-break-cell-break-rewrites-the-result-of-a-running-call ()
   (with-tool-break ()
@@ -95,8 +92,7 @@
       (tool-break-call "eval"
                         (lambda () (setf other (tool-break-command "break" "" "s2")))
                         :arguments (tool-break-slow-arguments) :session "s1" :call-id "c9")
-      (is (equal "Nothing in flight" (string-trim " " other))
-          "another session's /break leaves it alone")
+      (is (equal "Nothing in flight" (string-trim " " other)) "another session's /break leaves it alone")
       (let ((text (tool-break-call "eval"
                                     (lambda ()
                                       (setf named (tool-break-command "break" "--id cx" "s1"))

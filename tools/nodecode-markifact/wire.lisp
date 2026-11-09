@@ -158,9 +158,9 @@ access_token or token_env")))
         (cond ((zerop (length line))
                (when data
                  (let ((object (ignore-errors
-                                (nlk:decode-json (format nil "~{~a~^~%~}" (nreverse data)))))))
+                                (nlk:decode-json (format nil "~{~a~^~%~}" (nreverse data))))))
                    (setf data '())
-                   (when object (push object events))))
+                   (when object (push object events)))))
               ((uiop:string-prefix-p "data:" line)
                (push (nlk:trimmed (subseq line 5)) data)))))))
 

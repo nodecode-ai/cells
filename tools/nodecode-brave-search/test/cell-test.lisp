@@ -52,8 +52,7 @@
     (is (cl:search "api.search.brave.com/res/v1/web/search" (getf call :url)) "to Brave's endpoint")
     (is (equal +key+ (header call "x-subscription-token")) "with the section's token")
     (is (equal "rust release notes" (param call "q")))
-    (is (equal "10" (param call "count"))
-        "the section's count answers when the call names none")
+    (is (equal "10" (param call "count")) "the section's count answers when the call names none")
     (is (equal "moderate" (param call "safesearch")) "and its safe-search mode")
     (is (null (param call "country")) "an unset member is not sent at all"))))
 
@@ -73,8 +72,7 @@
     (let ((call (first *calls*)))
       (is (equal "pd" (param call "freshness")))
       (is (equal "us" (param call "country")))
-      (is (equal "10" (param call "count"))
-          "the section's own count answers a call that names none")))))
+      (is (equal "10" (param call "count")) "the section's own count answers a call that names none")))))
 
 ;;; --- the text a model reads --------------------------------------------------------
 
@@ -106,8 +104,7 @@
 
 (deftest brave-search-cell-the-command-searches-and-explains-itself (with-brave ()
   (is (cl:search "Rust & Cargo"
-                 (cell-entry "nodecode-brave-search" "brave" "rust release notes" "brave-cell-1"))
-      "/brave searches")
+                 (cell-entry "nodecode-brave-search" "brave" "rust release notes" "brave-cell-1")) "/brave searches")
   (let ((bare (cell-entry "nodecode-brave-search" "brave" "" "brave-cell-1")))
     (is (cl:search "brave_web_search" bare) "with no query it names what the cell gives")
     (is (cl:search "10 results" bare) "and the count a bare call asks for"))))

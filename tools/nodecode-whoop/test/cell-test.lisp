@@ -149,8 +149,7 @@ read it as: a JSON decimal is a different precision coming back than going out."
 (deftest whoop-cell-refuses-an-unset-refresh-token-variable (with-whoop-credentials)
   (let ((condition (signals-error nlk:config-refusal
                                   (whoop-start "refresh_token_env" "WHOOP_UNSET_TOKEN"))))
-    (is (search "WHOOP_UNSET_TOKEN" (princ-to-string condition))
-        "the refusal names the variable that is unset")
+    (is (search "WHOOP_UNSET_TOKEN" (princ-to-string condition)) "the refusal names the variable that is unset")
     (is (null (nle::find-tool "whoop_daily_summary")))))
 
 ;;; --- whoop_daily_summary -------------------------------------------------------------- 
@@ -165,24 +164,17 @@ read it as: a JSON decimal is a different precision coming back than going out."
       (let* ((text (whoop-answer "whoop-1" "whoop_daily_summary" "{\"days\":7}"))
              (object (nlk:decode-json text)))
         (is (= 2 (nlk:json-value object :integer "window" "cycles")) "two scored cycles")
-        (is (= 68 (nlk:json-value object :number "latest_recovery" "recovery_score"))
-            "the newest scored recovery is the headline")
+        (is (= 68 (nlk:json-value object :number "latest_recovery" "recovery_score")) "the newest scored recovery is the headline")
         (is (= 48 (nlk:json-value object :number "latest_recovery" "resting_heart_rate")))
-        (is (= 7.5 (nlk:json-value object :number "latest_sleep" "hours_asleep"))
-            "hours asleep is in bed minus awake, from the millisecond stages")
-        (is (= 88 (nlk:json-value object :number "latest_sleep" "sleep_performance_percentage"))
-            "and the nap in the window is not mistaken for the night")
-        (is (approx 12.4 (nlk:json-value object :number "latest_cycle" "strain"))
-            "the newest cycle's strain, read at wire precision")
+        (is (= 7.5 (nlk:json-value object :number "latest_sleep" "hours_asleep")) "hours asleep is in bed minus awake, from the millisecond stages")
+        (is (= 88 (nlk:json-value object :number "latest_sleep" "sleep_performance_percentage")) "and the nap in the window is not mistaken for the night")
+        (is (approx 12.4 (nlk:json-value object :number "latest_cycle" "strain")) "the newest cycle's strain, read at wire precision")
         (is (= 2 (length (nlk:json-array object "workouts"))) "both workouts ride along")
-        (is (= 3 (nlk:json-value object :integer "window" "recoveries"))
-            "the pending score is not counted as a recovery")
-        (is (= 3 (nlk:json-value object :integer "window" "sleeps"))
-            "and the nap is left out of the sleep count"))
+        (is (= 3 (nlk:json-value object :integer "window" "recoveries")) "the pending score is not counted as a recovery")
+        (is (= 3 (nlk:json-value object :integer "window" "sleeps")) "and the nap is left out of the sleep count"))
       (is (= 5 (length asked)) "one token exchange and four collection reads")
       (is (equal :post (first (first asked))) "the first exchange is the token grant")
-      (is (search "grant_type=refresh_token" (third (first asked)))
-          "and it carries the refresh grant"))))
+      (is (search "grant_type=refresh_token" (third (first asked))) "and it carries the refresh grant"))))
 
 (deftest whoop-cell-asleep-window-is-clamped (with-whoop-credentials)
   (with-cell-stop ((whoop-start))
@@ -192,8 +184,7 @@ read it as: a JSON decimal is a different precision coming back than going out."
                              ("/v2/cycle" (values +cycles+ 200))
                              ("/v2/activity/workout" (values +workouts+ 200)))
       (let ((object (whoop-object "whoop-2" "whoop_daily_summary" "{\"days\":365}")))
-        (is (= 30 (nlk:json-value object :integer "window_days"))
-            "a window longer than WHOOP will page is 30 days, not an error"))
+        (is (= 30 (nlk:json-value object :integer "window_days")) "a window longer than WHOOP will page is 30 days, not an error"))
       (is (search "start=" (second (second asked))) "the window rides the query string"))))
 
 (deftest whoop-cell-asks-the-token-endpoint-once (with-whoop-credentials)
@@ -204,12 +195,10 @@ read it as: a JSON decimal is a different precision coming back than going out."
                              ("/v2/user/measurement/body" (values +body+ 200)))
       (whoop-object "whoop-3" "whoop_recovery_trend" "{\"days\":30}")
       (whoop-object "whoop-3b" "whoop_get_profile" "{}")
-      (is (= 1 (count-if (lambda (entry) (search "oauth2/token" (second entry))) asked))
-          "the access token is held for the process, not fetched per call")
+      (is (= 1 (count-if (lambda (entry) (search "oauth2/token" (second entry))) asked)) "the access token is held for the process, not fetched per call")
       (let ((data-call (find-if (lambda (entry) (search "/v2/recovery" (second entry))) asked)))
         (is (equal "Bearer access-1"
-                   (cdr (assoc "authorization" (fourth data-call) :test #'equal)))
-            "and every data call carries it")))))
+                   (cdr (assoc "authorization" (fourth data-call) :test #'equal))) "and every data call carries it")))))
 
 (deftest whoop-cell-answers-a-profile (with-whoop-credentials)
   (with-cell-stop ((whoop-start))
@@ -228,24 +217,19 @@ read it as: a JSON decimal is a different precision coming back than going out."
     (with-whoop-wire (asked ("oauth2/token" (values +token+ 200))
                              ("/v2/recovery" (values +recoveries+ 200)))
       (let ((object (whoop-object "whoop-5" "whoop_recovery_trend" "{\"days\":30}")))
-        (is (equal "rising" (nlk:json-value object :string "metrics" "recovery_score" "direction"))
-            "41, 55 then 68 is a rising fit")
+        (is (equal "rising" (nlk:json-value object :string "metrics" "recovery_score" "direction")) "41, 55 then 68 is a rising fit")
         (is (= 3 (nlk:json-value object :integer "metrics" "recovery_score" "n_valid")))
-        (is (= 54.7 (nlk:json-value object :number "metrics" "recovery_score" "avg"))
-            "the average is one decimal")
-        (is (equal "falling" (nlk:json-value object :string "metrics" "resting_heart_rate" "direction"))
-            "resting heart rate falling is the good direction")
+        (is (= 54.7 (nlk:json-value object :number "metrics" "recovery_score" "avg")) "the average is one decimal")
+        (is (equal "falling" (nlk:json-value object :string "metrics" "resting_heart_rate" "direction")) "resting heart rate falling is the good direction")
         (is (search "Recovery score averaged"
-                    (aref (nlk:json-array object "summary") 0))
-            "the summary line reads as a sentence")))))
+                    (aref (nlk:json-array object "summary") 0)) "the summary line reads as a sentence")))))
 
 (deftest whoop-cell-refuses-a-trend-of-one-day (with-whoop-credentials)
   (with-cell-stop ((whoop-start))
     (with-whoop-wire (asked ("oauth2/token" (values +token+ 200))
                              ("/v2/recovery" (values +recoveries+ 200)))
       (let ((object (whoop-object "whoop-6" "whoop_recovery_trend" "{\"days\":1}")))
-        (is (= 2 (nlk:json-value object :integer "lookback_days"))
-            "two points are the least a slope can be fitted to")))))
+        (is (= 2 (nlk:json-value object :integer "lookback_days")) "two points are the least a slope can be fitted to")))))
 
 ;;; --- whoop_sleep_trend ----------------------------------------------------------------
 
@@ -255,10 +239,8 @@ read it as: a JSON decimal is a different precision coming back than going out."
                              ("/v2/activity/sleep" (values +sleeps+ 200)))
       (let ((object (whoop-object "whoop-7" "whoop_sleep_trend" "{\"days\":30}")))
         (is (equal "rising" (nlk:json-value object :string "metrics" "sleep_performance_percentage" "direction")))
-        (is (= 3 (nlk:json-value object :integer "count"))
-            "the nap is left out of the trend")
-        (is (= 6.8 (nlk:json-value object :number "metrics" "sleep_duration_hours" "avg"))
-            "6, 6.75 and 7.5 hours asleep average 6.75, read to one decimal")))))
+        (is (= 3 (nlk:json-value object :integer "count")) "the nap is left out of the trend")
+        (is (= 6.8 (nlk:json-value object :number "metrics" "sleep_duration_hours" "avg")) "6, 6.75 and 7.5 hours asleep average 6.75, read to one decimal")))))
 
 ;;; --- whoop_list_workouts ----------------------------------------------------------------
 
@@ -273,8 +255,7 @@ read it as: a JSON decimal is a different precision coming back than going out."
         (is (search "Showing the newest 1 of 2"
                     (nlk:json-value object :string "truncated_note")))
         (is (= 11.2 (nlk:json-value (aref (nlk:json-array object "workouts") 0)
-                                     :number "strain"))
-            "the newest workout comes first")))))
+                                     :number "strain")) "the newest workout comes first")))))
 
 (deftest whoop-cell-refuses-a-workout-call-it-cannot-read (with-whoop-credentials)
   ;; A field of the wrong type is refused by the contract, before the body runs

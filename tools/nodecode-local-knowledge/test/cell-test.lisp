@@ -55,8 +55,7 @@ Written on every call, so a scratch home left by an older run cannot lie."
   (:running
    (is (nle::find-tool "knowledge_search") "the search tool is registered")
    (is (nle::find-tool "knowledge_usage_report") "and the report's")
-   (is (= 5 (count-if (lambda (entry) (eql 0 (search "knowledge_" (first entry)))) nle::*tools*))
-       "five of them, as the original had"))
+   (is (= 5 (count-if (lambda (entry) (eql 0 (search "knowledge_" (first entry)))) nle::*tools*)) "five of them, as the original had"))
   (:stopped
    (is (null (nle::find-tool "knowledge_search")) "and stop takes every one back"))
   (:refused
@@ -67,16 +66,14 @@ Written on every call, so a scratch home left by an older run cannot lie."
 (deftest local-knowledge-cell-a-missing-root-setting-refuses ()
   (with-cell-stop ((local-knowledge-start))
     (is (signals-error nodecode-local-knowledge:local-knowledge-error
-                        (nodecode-local-knowledge::search-text "backup"))
-        "a question with no roots configured refuses, naming the setting")))
+                        (nodecode-local-knowledge::search-text "backup")) "a question with no roots configured refuses, naming the setting")))
 
 ;;; --- what a question routes to -------------------------------------------------
 
 (deftest local-knowledge-cell-a-question-routes-to-the-whole-artifact ()
   (with-knowledge ()
     (let ((answer (knowledge-call "knowledge_search" "{\"query\": \"backup restore\"}")))
-      (is (probe-file (merge-pathnames "runbooks/backup-restore.md" (fixture-root)))
-          "the fixture runbook is on disk where the roots name it")
+      (is (probe-file (merge-pathnames "runbooks/backup-restore.md" (fixture-root))) "the fixture runbook is on disk where the roots name it")
       (is (search "runbook:runbooks/backup-restore" answer) answer)
       (is (search "script:scripts/backup" answer) "and the script that does it")
       (is (search "routing hint" answer) "the answer says a hit is a hint"))))
@@ -102,8 +99,7 @@ Written on every call, so a scratch home left by an older run cannot lie."
       (is (search "Deploy a release" answer) "the title the frontmatter declares")
       (is (search "ops/deploy/SKILL.md" answer) "and the file it is")
       (is (search "rollback" answer) "with the start of its text")
-      (is (search "doc:ops/deploy/references/checklist" answer)
-          "and the support document under it"))))
+      (is (search "doc:ops/deploy/references/checklist" answer) "and the support document under it"))))
 
 (deftest local-knowledge-cell-neighbours-name-the-relation ()
   (with-knowledge ()
@@ -115,8 +111,7 @@ Written on every call, so a scratch home left by an older run cannot lie."
 (deftest local-knowledge-cell-an-unknown-id-refuses-by-name ()
   (with-knowledge ()
     (is (signals-error nodecode-local-knowledge:local-knowledge-error
-                        (nodecode-local-knowledge::fetch-text "skill:nope"))
-        "an id the index does not hold refuses")))
+                        (nodecode-local-knowledge::fetch-text "skill:nope")) "an id the index does not hold refuses")))
 
 ;;; --- the local record ------------------------------------------------------------
 
@@ -133,10 +128,8 @@ Written on every call, so a scratch home left by an older run cannot lie."
 (deftest local-knowledge-cell-a-rating-outside-the-set-refuses ()
   (with-knowledge ()
     (is (signals-error nodecode-local-knowledge:local-knowledge-error
-                        (nodecode-local-knowledge::feedback-text "great"))
-        "a rating the original never had refuses")
-    (is (nodecode-local-knowledge::feedback-text "useful")
-        "and one it had is taken")))
+                        (nodecode-local-knowledge::feedback-text "great")) "a rating the original never had refuses")
+    (is (nodecode-local-knowledge::feedback-text "useful") "and one it had is taken")))
 
 ;;; --- what the operator types -------------------------------------------------------
 

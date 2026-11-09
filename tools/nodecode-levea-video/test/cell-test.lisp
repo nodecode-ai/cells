@@ -93,16 +93,12 @@ oldest first, and ANSWER answers (values BODY STATUS HEADERS)."
                                    "video_url" "https://example.test/in.mp4")))
           (multiple-value-bind (method url headers body) (levea-call asked)
             (is (eq :post method) "one POST")
-            (is (equal "https://api.example.test/api/v1/misc/openclaw/v1/execute" url)
-                "to the editor's execute endpoint")
-            (is (equal "Bearer test-key" (cdr (assoc "authorization" headers :test #'string-equal)))
-                "with the operator's key")
+            (is (equal "https://api.example.test/api/v1/misc/openclaw/v1/execute" url) "to the editor's execute endpoint")
+            (is (equal "Bearer test-key" (cdr (assoc "authorization" headers :test #'string-equal))) "with the operator's key")
             (is (equal "autonomous_edit" (nlk:json-value body :string "tool")) "the one edit tool")
             (is (equal "cut the first 10 seconds and export mp4"
-                       (nlk:json-value body :string "params" "prompt"))
-                "the prompt rides inside params")
-            (is (equal "https://example.test/in.mp4" (nlk:json-value body :string "params" "video_url"))
-                "and so does the source"))
+                       (nlk:json-value body :string "params" "prompt")) "the prompt rides inside params")
+            (is (equal "https://example.test/in.mp4" (nlk:json-value body :string "params" "video_url")) "and so does the source"))
           (is (search "https://cdn.example.test/out.mp4" answer) "the exported file is in the answer")
           (is (search "prj_1" answer) "with the project id to continue from"))))))
 
@@ -113,8 +109,7 @@ oldest first, and ANSWER answers (values BODY STATUS HEADERS)."
                                             (list (nlk:json-object "success" t "message" "done"
                                                                    "projectId" "prj_2"))))
         (let ((answer (levea-tool "levea_video_edit" "prompt" "trim it")))
-          (is (search "without authoritative verification" answer)
-              "a success the backend did not verify is said so, not claimed")
+          (is (search "without authoritative verification" answer) "a success the backend did not verify is said so, not claimed")
           (is (= 1 (length asked)) "one call"))))))
 
 ;;; --- the queue ------------------------------------------------------------------
@@ -135,8 +130,7 @@ oldest first, and ANSWER answers (values BODY STATUS HEADERS)."
           (multiple-value-bind (method url headers body) (levea-call asked)
             (declare (ignore headers))
             (is (eq :post method) "one POST")
-            (is (equal "https://api.example.test/api/v1/misc/openclaw/v1/queue-edit" url)
-                "to the queue endpoint")
+            (is (equal "https://api.example.test/api/v1/misc/openclaw/v1/queue-edit" url) "to the queue endpoint")
             (is (equal "prj_3" (nlk:json-value body :string "projectId")) "for the named project"))
           (is (search "task_1" answer) "the task id is in the answer"))))))
 
@@ -157,8 +151,7 @@ oldest first, and ANSWER answers (values BODY STATUS HEADERS)."
           (is (= 2 (length asked)) "a wait reads the job again until it ends")
           (multiple-value-bind (method url) (levea-call asked 1)
             (is (eq :get method) "a read, not a write")
-            (is (equal "https://api.example.test/api/v1/misc/openclaw/v1/jobs/job_1" url)
-                "by the job's own path"))
+            (is (equal "https://api.example.test/api/v1/misc/openclaw/v1/jobs/job_1" url) "by the job's own path"))
           (is (search "https://cdn.example.test/render.mp4" answer) "the rendered file is in the answer")
           (is (not (search "rendering" answer)) "and the pending state is not the answer"))))))
 
@@ -175,12 +168,10 @@ oldest first, and ANSWER answers (values BODY STATUS HEADERS)."
         (let ((answer (levea-tool "levea_active_task" "project_id" "prj/9")))
           (multiple-value-bind (method url) (levea-call asked 0)
             (declare (ignore method))
-            (is (equal "https://api.example.test/api/v1/misc/openclaw/v1/task-status/task_9" url)
-                "a task is read by its id"))
+            (is (equal "https://api.example.test/api/v1/misc/openclaw/v1/task-status/task_9" url) "a task is read by its id"))
           (multiple-value-bind (method url) (levea-call asked 1)
             (declare (ignore method))
-            (is (equal "https://api.example.test/api/v1/misc/openclaw/v1/projects/prj%2F9/active-task" url)
-                "a project id is one path segment, slash and all"))
+            (is (equal "https://api.example.test/api/v1/misc/openclaw/v1/projects/prj%2F9/active-task" url) "a project id is one path segment, slash and all"))
           (is (search "task_9" answer) "the running edit is in the answer")
           (is (search "rendering" answer) "with the state it is in"))))))
 

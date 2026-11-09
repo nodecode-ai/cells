@@ -119,11 +119,9 @@ names is an error."
 ;;; --- the key, exchanged for a token --------------------------------------------
 
 (deftest fmsg-cell-reads-its-address-from-the-token ()
-  (is (equal "@agent@example.com" (nodecode-fmsg::jwt-address +jwt+))
-      "the sub claim is the granted address")
+  (is (equal "@agent@example.com" (nodecode-fmsg::jwt-address +jwt+)) "the sub claim is the granted address")
   (is (null (nodecode-fmsg::jwt-address "not-a-jwt")))
-  (is (equal "hi" (nlk:decode-octets (nodecode-fmsg::base64url-octets "aGk")))
-      "base64url decodes without padding"))
+  (is (equal "hi" (nlk:decode-octets (nodecode-fmsg::base64url-octets "aGk"))) "base64url decodes without padding"))
 
 (deftest fmsg-cell-exchanges-the-key-once-and-caches-it ()
   (with-fmsg-answers (("/fmsg?" (fmsg-answer-list)))
@@ -131,8 +129,7 @@ names is an error."
     (fmsg-tool "fmsg_inbox" (fmsg-args))
     (is (= 1 (length (fmsg-token-requests))) "one key exchange for two calls")
     (let ((exchange (first (fmsg-token-requests))))
-      (is (equal "Bearer fmsgk_key_secret" (fmsg-request-header exchange "authorization"))
-          "the key rides the exchange as a Bearer")
+      (is (equal "Bearer fmsgk_key_secret" (fmsg-request-header exchange "authorization")) "the key rides the exchange as a Bearer")
       (is (search "/fmsg/token" (second exchange))))))
 
 (deftest fmsg-cell-exchanges-again-when-a-call-is-refused ()
@@ -171,8 +168,7 @@ names is an error."
     (let ((request (second (fmsg-asked))))
       (is (search "limit=2" (second request)) "the limit rides the query")
       (is (search "offset=0" (second request)))
-      (is (search "eyJzdWIi" (fmsg-request-header request "authorization"))
-          "the call rides the token, not the key"))))
+      (is (search "eyJzdWIi" (fmsg-request-header request "authorization")) "the call rides the token, not the key"))))
 
 (deftest fmsg-cell-inbox-reads-sent-when-asked ()
   (with-fmsg-answers (("/fmsg/sent" (fmsg-answer-list)))
@@ -206,15 +202,13 @@ names is an error."
     (let ((text (fmsg-tool "fmsg_send"
                             (fmsg-args "text" "the build is green"
                                        "to" "@alice@example.com, @bob@example.com"))))
-      (is (search "sent #7 to @alice@example.com, @bob@example.com" text)
-          "the answer names the id and every recipient")
+      (is (search "sent #7 to @alice@example.com, @bob@example.com" text) "the answer names the id and every recipient")
       (is (search "as a new thread, topic \"Nodecode\"" text) "as a new thread, with the section's default topic"))
     (let* ((requests (fmsg-asked))
            (draft (second requests))
            (body (fmsg-request-body draft)))
       (is (equal "https://api.fmsg.io/fmsg" (second draft)) "the draft is one POST to /fmsg")
-      (is (equal "Bearer " (subseq (fmsg-request-header draft "authorization") 0 7))
-          "and rides the token")
+      (is (equal "Bearer " (subseq (fmsg-request-header draft "authorization") 0 7)) "and rides the token")
       (is (equal "@agent@example.com" (gethash "from" body)) "it writes from its own address")
       (is (equal '("@alice@example.com" "@bob@example.com") (coerce (gethash "to" body) 'list)))
       (is (equal "Nodecode" (gethash "topic" body)) "the section's default topic")
@@ -237,8 +231,7 @@ names is an error."
            (body (fmsg-request-body draft)))
       (is (= 9 (gethash "pid" body)) "the reply names its parent")
       (is (null (gethash "topic" body)) "and carries no topic of its own")
-      (is (equal '("@alice@example.com" "@carol@example.com") (coerce (gethash "to" body) 'list))
-          "every participant of the parent but this address"))))
+      (is (equal '("@alice@example.com" "@carol@example.com") (coerce (gethash "to" body) 'list)) "every participant of the parent but this address"))))
 
 ;;; --- /fmsg --------------------------------------------------------------------
 

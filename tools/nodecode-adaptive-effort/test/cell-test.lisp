@@ -98,8 +98,7 @@ session task, and every landing recorded. => (values REQUESTS LANDED): the
                    (nlk:json-value body :string "state" "prompt")) "the task is the state")
         (is (equal "jev-latest" (nlk:json-value body :string "model")))
         (is (equal "score" (nlk:json-value body :string "questions" "effort" "type")))
-        (is (= 3 (length (nlk:json-value body :array "questions" "effort" "criteria")))
-            "the plugin's three-level rubric")))))
+        (is (= 3 (length (nlk:json-value body :array "questions" "effort" "criteria"))) "the plugin's three-level rubric")))))
 
 (deftest adaptive-effort-cell-scores-follow-the-plugin-thresholds ()
   (loop for (score label) in '((0.4 "low") (1.0 "medium") (1.49 "medium") (1.5 "high"))
@@ -131,8 +130,7 @@ session task, and every landing recorded. => (values REQUESTS LANDED): the
       (call-with-scorer (lambda () (aeffort:choose "x" :session-id "s1"))
                          :score 1.8 :ladder nil)
     (declare (ignore requests))
-    (is (equal '(("high" "s1")) landed)
-        "a ladder the image will not name is tried as the label says")))
+    (is (equal '(("high" "s1")) landed) "a ladder the image will not name is tried as the label says")))
 
 (deftest adaptive-effort-cell-dry-run-lands-nothing ()
   (multiple-value-bind (requests landed)
@@ -236,8 +234,7 @@ session task, and every landing recorded. => (values REQUESTS LANDED): the
      (is (search "no decision yet" (cell-entry "nodecode-adaptive-effort" "adaptive" "history")))
      (cell-entry "nodecode-adaptive-effort" "adaptive" "choose Rewrite the scheduler")
      (is (search "Rewrite the scheduler"
-                 (cell-entry "nodecode-adaptive-effort" "adaptive" "history"))
-         "the ledger reads back what was decided")
+                 (cell-entry "nodecode-adaptive-effort" "adaptive" "history")) "the ledger reads back what was decided")
      (is (search "usage: /adaptive probe" (cell-entry "nodecode-adaptive-effort" "adaptive" "probe")))
      (is (search "is not one of" (cell-entry "nodecode-adaptive-effort" "adaptive" "nope"))))
    :score 1.8))

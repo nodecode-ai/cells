@@ -71,8 +71,7 @@
   (with-captured-wakes
     (let ((once (heartbeat-arm :title "one shot" :kind "after" :every "10m" :now 0)))
       (is (= 1 (nodecode-heartbeat::tick 600)) "the one shot wakes")
-      (is (null (nodecode-heartbeat::find-watch (nodecode-heartbeat::watch-get once :id)))
-          "and retires after it"))
+      (is (null (nodecode-heartbeat::find-watch (nodecode-heartbeat::watch-get once :id))) "and retires after it"))
     (let ((clock (heartbeat-arm :title "paused clock" :kind "every" :every "1m" :now 0)))
       (heartbeat:pause (nodecode-heartbeat::watch-get clock :id))
       (is (= 0 (nodecode-heartbeat::tick 600)) "a paused watch says nothing")
@@ -81,14 +80,11 @@
 
 (deftest heartbeat-cell-refuses-a-watch-it-cannot-honour (with-heartbeat-runtime ()
   (is (signals-error heartbeat:heartbeat-error
-        (heartbeat-arm :title "nameless file" :kind "file" :every "1m"))
-      "a file watch with no path is refused")
+        (heartbeat-arm :title "nameless file" :kind "file" :every "1m")) "a file watch with no path is refused")
   (is (signals-error heartbeat:heartbeat-error
-        (heartbeat-arm :title "bad kind" :kind "moon" :every "1m"))
-      "an unknown kind is refused")
+        (heartbeat-arm :title "bad kind" :kind "moon" :every "1m")) "an unknown kind is refused")
   (is (signals-error heartbeat:heartbeat-error
-        (heartbeat-arm :title "no clock" :kind "every" :every "soon"))
-      "a duration that names none is refused")
+        (heartbeat-arm :title "no clock" :kind "every" :every "soon")) "a duration that names none is refused")
   (is (null nodecode-heartbeat::*watches*) "a refused watch leaves nothing behind")))
 
 (deftest heartbeat-cell-the-pulse-tool-arms-lists-and-refuses (with-heartbeat-runtime ()
@@ -98,16 +94,13 @@
             (values "" 200 nil))))
     (is (search "no watch stands"
                 (nodecode-heartbeat::run-pulse
-                 (nodecode-heartbeat::decode-pulse (nlk:json-object "action" "list"))))
-        "the tool answers from an empty registry")
+                 (nodecode-heartbeat::decode-pulse (nlk:json-object "action" "list")))) "the tool answers from an empty registry")
     (is (search "armed watch-the-site"
                 (nodecode-heartbeat::run-pulse
                  (nodecode-heartbeat::decode-pulse
                   (nlk:json-object "action" "create" "title" "watch the site"
-                                   "kind" "url" "url" "https://example.invalid/" "every" "5m"))))
-        "the tool arms a watch")
+                                   "kind" "url" "url" "https://example.invalid/" "every" "5m")))) "the tool arms a watch")
     (is (search "watch the site" (heartbeat:watches)) "and the verb lists it")
     (is (= 1 (length nodecode-heartbeat::*watches*)))
     (is (signals-error nlk:contract-refusal
-          (nodecode-heartbeat::decode-pulse (nlk:json-object "action" "explode")))
-        "an action the contract does not carry is refused before the body"))))
+          (nodecode-heartbeat::decode-pulse (nlk:json-object "action" "explode"))) "an action the contract does not carry is refused before the body"))))

@@ -193,8 +193,7 @@ STATUS), as NLK:HTTP does. ASKED collects (METHOD URL CONTENT) oldest first."
       (is (search "unread again" (mail-answer "r1" "mail_mark" "{\"id\":\"1712345678-42\"}")))
       (is (search "Trash" (mail-answer "r2" "mail_delete" "{\"id\":\"1712345678-42\"}")))
       (is (equal "a,b\n1,2" (mail-answer "r3" "mail_attachment"
-                                           "{\"id\":\"1712345678-42\",\"index\":0}"))
-          "a text attachment comes back as its text")
+                                           "{\"id\":\"1712345678-42\",\"index\":0}")) "a text attachment comes back as its text")
       (is (search "sent: <r@mail.test>"
                   (mail-answer "r4" "mail_reply"
                                 "{\"id\":\"1712345678-42\",\"body_markdown\":\"done\"}")))

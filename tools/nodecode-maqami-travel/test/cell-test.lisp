@@ -170,8 +170,7 @@ is the stubbed server's, and no test dials MAQAMI."
              (params (nlk:json-value message :object "params")))
         (is (equal "tools/call" (nlk:json-value message :text "method")) "one tools/call")
         (is (equal "post_hotels_rates" (nlk:json-value params :text "name")) "naming the tool")
-        (is (equal "Cairo" (nlk:json-value (nlk:json-value params :object "arguments") :text "cityName"))
-            "with the arguments the model wrote"))
+        (is (equal "Cairo" (nlk:json-value (nlk:json-value params :object "arguments") :text "cityName")) "with the arguments the model wrote"))
       (is (search "2 hotel rates" answer) "and the server's text is the answer")
       (is (search "https://book.maqami.co/booking" answer) "the checkout link included"))))
 
@@ -209,5 +208,4 @@ is the stubbed server's, and no test dials MAQAMI."
           (is (equal "post_hotels_rates"
                      (nlk:json-value (nlk:json-value (maqami-rpc (car (last (maqami-asked))))
                                                       :object "params")
-                                     :text "name"))
-              "by the name the operator typed"))))
+                                     :text "name")) "by the name the operator typed"))))

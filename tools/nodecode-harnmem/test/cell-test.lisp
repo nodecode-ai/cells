@@ -67,8 +67,7 @@
    (is (search "HarnMem store at" (nodecode-harnmem::run-command "" nil))))
   (:stopped
    (is (null (nle::find-tool "harnmem_search")) "stop unregisters the tools")
-   (is (null (nodecode-harnmem::snapshot-section (lambda (session) (declare (ignore session)) nil) "s1"))
-       "and the snapshot is gone from the standing sections"))
+   (is (null (nodecode-harnmem::snapshot-section (lambda (session) (declare (ignore session)) nil) "s1")) "and the snapshot is gone from the standing sections"))
   (:refused ("max_inject_tokens" 0) ("hot_entries" 0) ("max_inject_chars" 5))
   (:idle nodecode-harnmem:harnmem-error (nodecode-harnmem::setting :home)))
 
@@ -131,8 +130,7 @@
       (let ((answer (harnmem-json (harnmem-tool "harnmem_forget" (nlk:json-object "id" first)))))
         (is (equal "trash" (nlk:json-value answer :string "mode")))
         (is (null (probe-file (harnmem-record-file first))) "gone from the shard")
-        (is (plusp (length (directory (merge-pathnames "*.md" (merge-pathnames "trash/" (nodecode-harnmem::home))))))
-            "and kept in trash"))
+        (is (plusp (length (directory (merge-pathnames "*.md" (merge-pathnames "trash/" (nodecode-harnmem::home)))))) "and kept in trash"))
       (let ((answer (harnmem-json (harnmem-tool "harnmem_forget"
                                                  (nlk:json-object "id" second "hard" t)))))
         (is (equal "hard" (nlk:json-value answer :string "mode")))
@@ -183,8 +181,7 @@
 
 (deftest harnmem-cell-the-command-shows-the-store-or-searches-it ()
   (with-cell-stop ((harnmem-start "home" (harnmem-scratch-home)))
-    (is (search "HarnMem store at" (cell-entry "nodecode-harnmem" "harnmem" ""))
-        "no argument shows the store")
+    (is (search "HarnMem store at" (cell-entry "nodecode-harnmem" "harnmem" "")) "no argument shows the store")
     (harnmem-write "Lives in Oslo" "says so when it comes up")
     (let ((answer (cell-entry "nodecode-harnmem" "harnmem" "oslo user lives")))
       (is (search "memories match" answer))

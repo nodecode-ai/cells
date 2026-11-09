@@ -181,8 +181,7 @@ oldest first, and ANSWER answers (values BODY STATUS HEADERS)."
         (let ((answer (dg-tool "deepgram_speak" "text" "a line")))
           (is (search "not mp3 audio" answer) "a 200 that is not audio is refused, not saved")))
       (is (= 0 (length (directory (merge-pathnames "*.mp3"
-                                                   (nodecode-deepgram-voice::setting :directory)))))
-          "a 200 that was not audio leaves no mp3 file"))))
+                                                   (nodecode-deepgram-voice::setting :directory))))) "a 200 that was not audio leaves no mp3 file"))))
 
 (deftest deepgram-voice-refuses-an-oversize-text-and-a-speed-out-of-range ()
   (with-voice ("api_key" "test-key")
@@ -288,5 +287,4 @@ oldest first, and ANSWER answers (values BODY STATUS HEADERS)."
         (let ((answer (nodecode-deepgram-voice::run-say "good morning" "s1")))
           (is (search "saved " answer) "/say speaks the line into a file")
           (is (probe-file (dg-answer-path answer)) "that is there")
-          (is (equal "good morning" (nlk:json-value (nlk:decode-json (fourth (first asked))) :text "text"))
-              "with the line as the text that was sent"))))))
+          (is (equal "good morning" (nlk:json-value (nlk:decode-json (fourth (first asked))) :text "text")) "with the line as the text that was sent"))))))

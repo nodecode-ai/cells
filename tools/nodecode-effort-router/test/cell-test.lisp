@@ -92,8 +92,7 @@ context build would freeze, so only a test that builds no context binds it."
   (:command "effort-router")
   (:running (is (nle::find-tool "effort_route") "effort_route is registered")
             (is (nle::find-tool "effort_status") "effort_status is registered")
-            (is (equal "ollama-cloud" (nodecode-effort-router::routed-provider))
-                "the default provider routed")
+            (is (equal "ollama-cloud" (nodecode-effort-router::routed-provider)) "the default provider routed")
             (is (= 6 (length (nodecode-effort-router::grid))) "the measured grid, six deep")
             (is (= 1/2 (nodecode-effort-router::confidence-floor)) "the default floor"))
   (:stopped (is (null (nle::find-tool "effort_route")) "stop unregisters the tools")
@@ -104,8 +103,7 @@ context build would freeze, so only a test that builds no context binds it."
   (with-router-wire
     (let ((condition (signals-error nlk:config-refusal
                         (effort-router-start "api_key_env" "NO_SUCH_VARIABLE_FOR_EFFORT_ROUTER"))))
-      (is (search "NO_SUCH_VARIABLE_FOR_EFFORT_ROUTER" (princ-to-string condition))
-          "the refusal names the variable it looked in")
+      (is (search "NO_SUCH_VARIABLE_FOR_EFFORT_ROUTER" (princ-to-string condition)) "the refusal names the variable it looked in")
       (is (null (nle::find-tool "effort_route")) "a refused start installed nothing"))))
 
 ;;; --- the tools ------------------------------------------------------------------
@@ -120,21 +118,18 @@ context build would freeze, so only a test that builds no context binds it."
       (let ((request (first (router-asked))))
         (is (= 1 (length (router-asked))) "one decision, one request")
         (is (eq :post (first request)))
-        (is (equal "https://openrouter.ai/api/alpha/decisions" (second request))
-            "the Decisions API, not the chat endpoint")
+        (is (equal "https://openrouter.ai/api/alpha/decisions" (second request)) "the Decisions API, not the chat endpoint")
         (is (equal "Bearer test-key" (cdr (assoc "authorization" (getf (cddr request) :headers)
                                                   :test #'string-equal))))
         (let ((body (router-body request)))
-          (is (equal "typesafe/jev-1.13" (nlk:json-value body :string "model"))
-              "the decision model is pinned")
+          (is (equal "typesafe/jev-1.13" (nlk:json-value body :string "model")) "the decision model is pinned")
           (is (equal "prove this lemma about groups"
                      (nlk:json-value (nlk:json-value body :object "state") :string "user_message")))
           (let* ((questions (nlk:json-value body :object "questions"))
                  (criteria (nlk:json-value (nlk:json-value questions :object "model_route")
                                             :object "criteria")))
             (is (= 6 (hash-table-count criteria)) "one criterion per grid entry")
-            (is (search "deepseek-v4.1-flash" (gethash "1" criteria))
-                "the first criterion is the grid's first model")))))))
+            (is (search "deepseek-v4.1-flash" (gethash "1" criteria)) "the first criterion is the grid's first model")))))))
 
 (deftest effort-router-cell-a-low-confidence-answer-keeps-the-turn ()
   (with-router-wire
@@ -181,8 +176,7 @@ context build would freeze, so only a test that builds no context binds it."
                                                    :prior-context nil
                                                    :messages (list (router-message))))
           (is (= 2 (length seen)) "both rounds of the turn ran")
-          (is (every (lambda (round) (equal '("glm-5.3" "high") round)) seen)
-              "both on the routed model and effort, and one route was asked for them")
+          (is (every (lambda (round) (equal '("glm-5.3" "high") round)) seen) "both on the routed model and effort, and one route was asked for them")
           (is (= 1 (length (router-asked))) "one decision for the turn"))))))
 
 (deftest effort-router-cell-a-failed-decision-leaves-the-request-alone ()
@@ -197,10 +191,8 @@ context build would freeze, so only a test that builds no context binds it."
                   (nodecode-effort-router::route-around
                    (lambda (&rest arguments) (declare (ignore arguments))
                      (and (equal original nle::*model*) :context))
-                   "s2" :prior-context nil :messages (list (router-message))))
-              "the turn goes out on the model it already had")
-          (is (search "no route" (nodecode-effort-router::last-decision-text))
-              "and the failure is remembered with its reason"))))))
+                   "s2" :prior-context nil :messages (list (router-message)))) "the turn goes out on the model it already had")
+          (is (search "no route" (nodecode-effort-router::last-decision-text)) "and the failure is remembered with its reason"))))))
 
 (deftest effort-router-cell-another-provider-is-not-routed ()
   (with-router-wire
@@ -210,6 +202,5 @@ context build would freeze, so only a test that builds no context binds it."
         (is (eq :untouched
                 (nodecode-effort-router::route-around
                  (lambda (&rest arguments) (declare (ignore arguments)) :untouched)
-                 "s3" :prior-context nil :messages (list (router-message))))
-            "a turn on another provider is left alone")
+                 "s3" :prior-context nil :messages (list (router-message)))) "a turn on another provider is left alone")
         (is (null (router-asked)) "and asks for no decision")))))

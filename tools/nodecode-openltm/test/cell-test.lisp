@@ -72,8 +72,7 @@ dispatch does, and answer what it answers."
   (with-fresh-store
     (is (search "user_id"
                 (format nil "~{~a~^; ~}"
-                        (nlk:section-problems (nlk:find-section '("openltm")) nil)))
-        "the section reports user_id as required")
+                        (nlk:section-problems (nlk:find-section '("openltm")) nil))) "the section reports user_id as required")
     (with-cell-stop ((openltm-start "capture" nil))
       (let ((answer (openltm-tool "openltm_learn" "content" "A fact worth keeping.")))
         (is (search "user_id" answer) "the tool refuses, naming the setting")
@@ -102,8 +101,7 @@ dispatch does, and answer what it answers."
     (let ((stats (openltm-brain)))
       (is (search "brain: 3 mem" stats) stats)
       (is (search "gotcha 1" stats) "the rule table filed the parser fact as a gotcha"))
-    (is (search "No memory is scoped" (openltm-tool "openltm_context" "project" "atlas"))
-        "a project with no memory says so")))
+    (is (search "No memory is scoped" (openltm-tool "openltm_context" "project" "atlas")) "a project with no memory says so")))
 
 (deftest openltm-cell-the-same-fact-twice-is-confirmation ()
   (with-openltm-running ()
@@ -122,14 +120,12 @@ dispatch does, and answer what it answers."
                                  "relationship_type" "supports")))
       (is (search "Linked #2 supports #1" linked) linked))
     (is (search "already" (openltm-tool "openltm_relate" "source_id" 2 "target_id" 1
-                                         "relationship_type" "supports"))
-        "a link said twice is said once")
+                                         "relationship_type" "supports")) "a link said twice is said once")
     (let ((graph (openltm-tool "openltm_graph" "memory_id" 2)))
       (is (search "#1 [pattern]" graph) graph)
       (is (search "supports #1" graph) "the link is named"))
     (is (search "must be one of" (openltm-tool "openltm_relate" "source_id" 1 "target_id" 2
-                                                "relationship_type" "causes"))
-        "a type outside the six is refused")
+                                                "relationship_type" "causes")) "a type outside the six is refused")
     (is (search "Forgot #2" (openltm-tool "openltm_forget" "id" 2)))
     (is (equal 1 (length nodecode-openltm::*memories*)))
     (is (equal '() nodecode-openltm::*relations*) "the link went with it")
@@ -157,8 +153,7 @@ dispatch does, and answer what it answers."
     ;; the file is the authority: a start reads it back
     (nodecode-openltm::load-store)
     (is (equal 2 (length nodecode-openltm::*memories*)) "two memories read back")
-    (is (equal "constraint" (getf (second nodecode-openltm::*memories*) :category))
-        "with their categories")))
+    (is (equal "constraint" (getf (second nodecode-openltm::*memories*) :category)) "with their categories")))
 
 (deftest openltm-cell-a-turn-adds-what-the-rules-say ()
   (with-openltm-running ()

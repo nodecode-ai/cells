@@ -164,8 +164,7 @@ in-memory server that has just let the bot in."
   (with-minecraft
     (let ((bot (nodecode-minecraft::connect-bot)))
       (is (nodecode-minecraft::bot-connected-p bot) "the login success means the bot is in")
-      (is (equal "NodecodeBot" (nodecode-minecraft::bot-username bot))
-          "under the name it was given"))))
+      (is (equal "NodecodeBot" (nodecode-minecraft::bot-username bot)) "under the name it was given"))))
 
 (deftest minecraft-cell-a-chat-message-parses-to-its-sender-and-text ()
   (multiple-value-bind (uuid text) (player-chat-said (player-chat-body "hi there"))
@@ -186,8 +185,7 @@ in-memory server that has just let the bot in."
         (with-stubbed-fdefinitions ((nlk:active-turn-p (session) nil)
                                     (nlk:turn-answer (session) "**A quiet valley**, with a river."))
           (nodecode-minecraft::deliver-pending))
-        (is (equal '("A quiet valley, with a river.") (written-lines))
-            "the answer goes back into chat, markdown flattened")
+        (is (equal '("A quiet valley, with a river.") (written-lines)) "the answer goes back into chat, markdown flattened")
         (is (null nodecode-minecraft::*asking*) "the player is not owed twice")))))
 
 (deftest minecraft-cell-a-long-answer-is-split-with-markers ()
