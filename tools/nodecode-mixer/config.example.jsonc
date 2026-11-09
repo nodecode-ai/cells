@@ -1,0 +1,20 @@
+{
+  // Mixer's section. Every dial has a default, so an empty section is fine;
+  // copy the keys you want to change. Restart the cell after editing it:
+  // (restart-cells "nodecode-mixer"), or press space on it twice in /cells.
+  "mixer": {
+    // ask waits for your approval before a write; auto lets it go;
+    // plan is read-only, and limits the shell to commands that write nothing.
+    "edits": "auto",
+    // A glob allow-list of the paths that may be written. Empty means no
+    // limit. A relative glob anchors at the session's folder; a glob
+    // starting with / matches anywhere.
+    "scope": ["src/**", "tests/**"],
+    // Added plus removed lines one turn may change. 0 turns the budget off.
+    "lines": 200,
+    // What happens when a change adds a new package.
+    "deps": "ask",
+    // How long an approval card waits for an answer.
+    "ask_seconds": 120
+  }
+}
