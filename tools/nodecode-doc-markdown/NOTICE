@@ -1,0 +1,42 @@
+nodecode-doc-markdown is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-doc-markdown:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-doc-markdown
+  commit 4206b7f8066fe84f2c295f480a441f47154d9315
+  MIT License, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+What was rewritten: the plugin's one tool, doc_convert, and the path guard
+around it, in Common Lisp. The guard is the original's, judgement included:
+an absolute path only, no http/https/file URL in any letter case, every
+symbolic link followed before anything is judged, a path component that
+starts with "." refused, the harness's home refused, an allowlist of
+extensions, a size cap read from the config and never from the call, and a
+refusal that names what to do next (error_type and next_step, here one
+line of text). The extension allowlist, the 20 MiB default, the 200000
+character default cut and the "the worker is not a sandbox" posture are the
+original's too.
+
+The Python runtime is gone. The original handed a file to Microsoft's
+MarkItDown (MIT) in a child interpreter; here a .docx, .xlsx or .pptx is read
+as the zip of OOXML parts it is, with a DEFLATE decoder (RFC 1951) and a zip
+central-directory reader written in the cell, and an HTML page, a CSV, JSON
+and plain text are read directly. No MarkItDown source, and no Python, node
+or npm, is bundled or run.
+
+What was left out, and why:
+  - .xls (BIFF) workbooks: MarkItDown read them best-effort through a Python
+    library; a BIFF reader is a format of its own, so the rewrite refuses .xls
+    and says to save it as .xlsx or .csv.
+  - PDF is best-effort. Every stream is inflated where its bytes say zlib and
+    the text operators (Tj, TJ) are read out; a scanned page, or text in
+    compressed object streams, answers nothing and refuses instead of
+    answering noise. MarkItDown used pdfminer, which does the full job.
+  - The child process, its 8-second and 60-second timeouts and its 880 MiB
+    memory cap: there is no child. The conversion runs in this process and the
+    section's caps are max_file_bytes and max_output_chars.
+  - The plugin's pluggable third-party MarkItDown plugins, its LLM caption and
+    transcription switches and its (unregistered) web extract provider: v0.1 of
+    the original had none of them wired either.
+
+What the rewrite adds: the section doc-markdown (max_file_bytes,
+max_output_chars, refuse_hidden), the /doc command for the operator, and
+(help :doc-markdown).
