@@ -1,0 +1,27 @@
+nodecode-openspec is a rewrite of FelineStateMachine's FelineStateMachine/hermes-openspec:
+
+  https://github.com/FelineStateMachine/hermes-openspec
+  commit 493b42cd95d2a30f967ede5a53eb22d1bd248fb9
+  MIT License, Copyright (c) 2025 Dami Etoile (LICENSE)
+
+The Python tool handlers, the spec parser and diff, the change, idea, task
+and archive operations, the authoring guides of `openspec_instructions` and
+the tool descriptions were rewritten in Common Lisp against Nodecode's cell
+contract: twenty `openspec_*` tools and `/openspec`, over the same
+`openspec/` markdown artifacts, with the same tool names, arguments and
+answer shapes, and the same derived statuses (`draft`, `todo`,
+`in_progress`, `done`, `archived`). The registry that mapped a vanity name
+to a repository path is the section's `projects` list (`name=path`) instead
+of a SQLite database under the plugin's own home. The spec parser mirrors
+the original state machine line for line: title, purpose, requirements,
+scenarios and their GIVEN/WHEN/THEN steps.
+
+Left out: the desktop and dashboard surfaces (the board, the spec browser,
+the source CRUD routes and their React bundle), which were the plugin's own
+UI rather than its data; `openspec_change_sequence_set`, whose ordering
+metadata lived in the plugin's database for that dashboard only; and the
+eleven bundled SKILL.md orchestration skills, whose prose the
+`openspec_instructions` guides carry in short. The original shelled out to
+the `openspec` CLI for listing, showing, validating and applying; the
+rewrite reads the files itself, and keeps `openspec_cli` as the
+passthrough for the subcommands the files do not carry.
