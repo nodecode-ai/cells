@@ -1,0 +1,31 @@
+nodecode-agentwallet is a rewrite of openclawcash's openclawcash/agentwalletapi-hermes:
+
+  https://github.com/openclawcash/agentwalletapi-hermes
+  commit ae547a9c51dfc6060fe2441411f9ec846250ef75
+  MIT, Copyright (c) 2026 OpenClawCash (LICENSE)
+
+Rewritten: the whole of what the plugin gives a user -- its five tools
+(agentwalletapi_wallets_list, _wallet_get, _wallet_rename, _wallet_create and
+_transfer_send), their argument names, the five OpenClawCash agent endpoints
+they call, the X-Agent-Key header the agent key travels in, the host allowlist
+that keeps that key on openclawcash.com, and the plugin's own guidance about
+labels being data and writes selecting a wallet by walletId -- as a Nodecode
+cell. The plugin was a thin Python bridge over urllib, so nothing here is
+vendored: each tool is one nlk:http exchange, the section holds the key
+(inline, or the name of the environment variable holding it), and every answer
+is rendered for the model as text rather than as the HTTP client's parsed
+object. The plugin's docstrings and README notes are the cell's manual,
+(help :agentwallet). The export passphrase stays where the plugin put it: the
+OPENCLAWCASH_EXPORT_PASSPHRASE variable, read at the moment wallet_create
+needs it, sent to the service that custodies the wallet, and never a tool
+argument.
+
+Left out: the plugin's refusal to follow HTTP redirects. Its client disabled
+them so the key could not be resent to a host a Location header named;
+nlk:http follows up to five, so the allowlist -- openclawcash.com and one
+label under it, no port, path or credentials -- is the guard this cell carries.
+Also left out: private-key import, which the plugin itself kept off the tool
+surface so a raw key never enters the model's context, and the swap, bridge,
+escrow and casino tools of the wider MCP server, which the plugin did not
+expose either. The plugin's AGENTWALLETAPI_KEY and AGENTWALLETAPI_URL
+fallbacks are kept, as the section's own members.
