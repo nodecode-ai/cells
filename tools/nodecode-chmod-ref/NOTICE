@@ -1,0 +1,26 @@
+nodecode-chmod-ref is a rewrite of olric3015's olric3015/hermes-plugins:
+
+  https://github.com/olric3015/hermes-plugins
+  commit d2f543a0979eee73202a3fe06bb2c722b04d5765
+  MIT License, Copyright (c) 2026 olric3015 (LICENSE)
+
+What was rewritten: the plugin's chmod-ref folder (modes.py, __init__.py) as
+Common Lisp. modes.py is the whole of it -- the octal and ls -l readers, the
+symbolic change applied the way GNU chmod applies it with a umask of 0, the
+umask answer, the notes about setuid, setgid, sticky, classes and git, and
+the wording of every line -- and MODES.LISP is that engine, worked out by the
+same arithmetic and saying the same things, with no dependency beyond Common
+Lisp. Every answer a user got from the plugin, this cell gives.
+
+What was left out: the plugin registered a CONTEXT REFERENCE provider, a
+Hermes-only input feature: a user wrote @chmod:755 inside a message and
+Hermes replaced the reference with the explanation before the model saw it.
+Nodecode has no such reference syntax, so the same engine is reached three
+ways instead -- the tool chmod_explain for the model, /chmod for the
+operator, and (nodecode-chmod-ref:explain "755") through eval -- and the
+plugin's autocomplete suggestions (preview) became the one-line summaries
+/chmod answers: not the completion menu, which Nodecode draws itself.
+
+The last note a change's answer carried pointed at the reference syntax
+(give a starting mode to see one result: @chmod:"644 u+x") and now names
+the value itself (give a starting mode to see one result: 644 u+x).
