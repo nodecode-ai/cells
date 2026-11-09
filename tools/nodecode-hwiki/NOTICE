@@ -1,0 +1,32 @@
+nodecode-hwiki is a rewrite of ottosulin's ottosulin/hwiki:
+
+  https://github.com/ottosulin/hwiki
+  commit d1961956eaafbd64fef71cb7135d475efcc8f954
+  MIT, Copyright (c) 2026 Otto Sulin (LICENSE)
+
+What was rewritten: the plugin's memory provider, whole. The four tools keep
+their names, descriptions and parameters (wiki_memory_search, wiki_memory_read,
+wiki_memory_write, wiki_memory_status); the store keeps its rules (the curated
+wiki is read-only to the agent, writes are append-only dated bullets confined
+to memory_dir, a secret-shaped write is refused, untrusted_dirs are never
+indexed, recalled or read, a page resolves by path, slug, wikilink or title
+and is truncated at max_chars); the ranker keeps its shape (heading-scoped
+chunks, prefix-matched query terms with the same stopwords, BM25, at most
+max_hits_per_page headings per page, demote_paths filled last, untrusted hits
+re-filtered); and the recall before each model request keeps its form (the
+"## Wiki Memory (recalled)" block, min_query_chars, prefetch_limit, and a
+prefetch_max_chars budget over the snippets).
+
+What was left out, and why: the SQLite FTS5 index, replaced by an index this
+cell builds in memory over the same chunks, because a cell bundles no Python
+or database -- it is rebuilt on the first search after reindex_seconds, and
+after every write; the qmd backend (a Node CLI with GGUF models) and its
+reciprocal-rank fusion; the include/exclude globs (every *.md outside the
+hidden and untrusted directories is indexed); the HERMES_HOME config file and
+environment overrides (the cell's section is the config); the `hermes hwiki`
+subcommands (status, search, index, lint, config, migrate) beyond what /hwiki
+answers; the optional mirror of the harness's built-in memory writes, because
+Nodecode's built-in memory is not this cell's to intercept; and the
+`updated:` frontmatter bump on append.
+
+LICENSE is hwiki's repository LICENSE, unchanged.

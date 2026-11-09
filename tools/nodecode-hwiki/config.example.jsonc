@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "hwiki": {
+    "wiki_path": "~/wiki",            // the folder of markdown pages: an Obsidian vault works
+    "memory_dir": "wiki/memory",      // the one folder the agent may write to
+    "untrusted_dirs": ["raw"],        // never indexed, recalled or readable: third-party documents
+    "demote_paths": ["log.md", "wiki/memory/builtin-mirror.md"], // ranked after curated pages
+    "auto_recall": true,              // hand the model what a turn's prompt recalls
+    "prefetch_limit": 4,
+    "prefetch_max_chars": 1400,
+    "min_query_chars": 8,
+    "max_hits_per_page": 2,
+    "reindex_seconds": 60
+  }
+}
