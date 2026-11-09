@@ -1,0 +1,20 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "discord-presence": {
+    "enabled": true,
+    "client_id": "123456789012345678",
+    "update_interval": 3,
+    "hold_seconds": 15,
+    "session_title_mode": "generic",   // generic | full | hidden
+    "show_activity": true,
+    "show_model": true,
+    "show_tokens": true,
+    "show_git_branch": false,
+    "stealth_mode": false,
+    "large_image": "",
+    "large_text": "Nodecode"
+  }
+}
