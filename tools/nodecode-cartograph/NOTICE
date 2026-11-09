@@ -1,0 +1,30 @@
+nodecode-cartograph is a rewrite of anthony-maio's anthony-maio/cartograph:
+
+  https://github.com/anthony-maio/cartograph
+  commit e2e06db1c79f3de60760d9045ae6908ddf4e4b21
+  MIT License, Copyright (c) 2026 Anthony Maio (LICENSE)
+
+That repository is a TypeScript program -- a CLI, an MCP server and install
+adapters -- and its assets/hermes folder is the Hermes plugin: a thin Python
+wrapper that runs the installed Node CLI as a subprocess and hands the JSON it
+prints to the model as two tools, cartograph_analyze and cartograph_context.
+
+cell.lisp rewrites those two tools so that a Nodecode session answers them
+with no external program at all: the walk of the repository, the reading of
+each file's import forms, the resolution of a specifier to a file of the same
+repository, the ranking over the resulting edges, and the selection of
+excerpts for a task are the cell's own Lisp. The tools keep their names and
+their arguments (repo, top, and task for the context tool), the answers carry
+what the plugin's answers carried (the file count, the edge count, the ranked
+files, the dependency hubs, and per-file excerpts with a line range and a
+reason), and the section keeps the plugin's own settings (allowed_roots, the
+output and excerpt ceilings), with max_files and ignore added to bound the
+walk.
+
+Left out, because they belong to the Node program rather than to the plugin:
+the LLM-backed wiki and prepare-a-packet commands, the MCP server, the
+markdown renderings, the artifact cache, and the install/doctor subcommands.
+The plugin's timeout and its subprocess plumbing have no counterpart: nothing
+is spawned, so there is no process to time out. Its import reading covers
+twenty-odd languages by extension here, where the CLI's own analyzer did its
+own set; an edge the reading misses is a miss, never an invention.
