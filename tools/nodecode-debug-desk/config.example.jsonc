@@ -1,0 +1,10 @@
+// The debug-desk cell's section, as ~/.nodecode/config.jsonc would carry it.
+// Nothing here has to be set: git on PATH is the whole setup.
+{
+  "debug-desk": {
+    "enabled": true,
+    // A repeat of the same failure inside this many seconds is the same
+    // failure counted, not a new one.
+    "debounce_seconds": 120
+  }
+}
