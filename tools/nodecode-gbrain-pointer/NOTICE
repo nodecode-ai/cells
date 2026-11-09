@@ -1,0 +1,33 @@
+nodecode-gbrain-pointer is a rewrite of praggybuilds's praggybuilds/hermes-gbrain-pointer:
+https://github.com/praggybuilds/hermes-gbrain-pointer
+commit 56212b086ed8dc134011440fc05cfc867586b9a4
+MIT, Copyright (c) 2026 praggybuilds (LICENSE)
+
+The Python memory provider became a Nodecode cell. Kept as the original
+writes them: the two exchanges (a client_credentials token from the origin's
+/token, then one JSON-RPC tools/call of GBrain's search), the arguments that
+search carries (the first 500 characters of the operator's message, the
+limit, snippet_chars 1, fields lean, the optional source id), the envelope
+reading (plain JSON or SSE data: lines), the row rules (a row GBrain flags
+injection_suspected is dropped before duplicates are counted, a slug, a
+title and a source id and nothing else survive), the pointer line and the
+header above it, the one-turn-later hand-over, the bounded bodies, and the
+fail-open posture. The daemon thread is an NLK:WORKER-START, and the
+injection seam is the harness's own: the request is written through
+NLK:RECORD-TURN-CONTEXT-PROMPT at the :ROUND point.
+
+Left out, because Hermes' shape is not Nodecode's: the memory-provider
+interface itself (initialize, sync_turn, queue_prefetch and prefetch, recall
+status, the reset and rewind generations, shutdown) -- a Nodecode cell reads
+a turn's input from the store and writes into the request it is building, so
+there is no provider object to keep in step; the per-profile secret scope,
+the credential-fingerprint cache and the in-flight bookkeeping, which exist
+so one Hermes process can serve several routed profiles, where a Nodecode
+home is a process; the custom opener that ignores proxies and refuses
+redirects, which is the harness's HTTP client now; and Hermes'
+is_trivial_prompt, replaced by a local test of a slash command, a greeting,
+an acknowledgement, or fewer than three words.
+
+Added, because a Nodecode cell can carry them: the gbrain_pointer tool,
+/gbrain-pointer and a manual topic, so a search can be asked for now
+instead of waiting for the next turn.
