@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell — documentation,
+// not config: the folder gets pushed and holds no secret.
+{
+  "tinyfish": {
+    "api_key": "tf-...", // or export TINYFISH_API_KEY
+    "search_url": "https://api.search.tinyfish.ai",
+    "fetch_url": "https://api.fetch.tinyfish.ai",
+    "agent_url": "https://agent.tinyfish.ai",
+    "timeout_seconds": 30,
+    "agent_timeout_seconds": 300,
+    "poll_seconds": 3,
+    "max_results": 5,
+    "max_chars": 12000
+  }
+}

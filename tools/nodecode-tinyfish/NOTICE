@@ -1,0 +1,24 @@
+nodecode-tinyfish is a rewrite of tinyfish-io's tinyfish-io/tinyfish-web-agent-integrations:
+
+https://github.com/tinyfish-io/tinyfish-web-agent-integrations
+commit 2b29d5c864d08fd9716d6f15c3eafdf487b148d3
+MIT, Copyright (c) 2026 Tiny Fish, Inc. (LICENSE)
+
+Rewritten: the Hermes plugin's TinyFish REST client and the four things it gives
+an agent — Search, Fetch, the goal-based web agent (`tinyfish_agent`) and the
+Browser Context Profile tools — as a Nodecode cell in Common Lisp: five tools,
+the `/tinyfish` command, a `(help :tinyfish)` topic and the same calls to the
+same hosts (`api.search.tinyfish.ai`, `api.fetch.tinyfish.ai`,
+`agent.tinyfish.ai`) with the same `X-API-Key` header. The run polling, the
+result truncation and the profile sign-in link keep the original's shape.
+
+Left out: the Hermes web-provider and browser-provider seams, which exist to
+route a harness's own `web_search`, `web_extract` and browser tools through
+TinyFish — Nodecode has its own, so the same API is a set of verbs here; the
+`pre_tool_call` credit-approval hook and the `hermes tinyfish` setup CLI, which
+exist to prompt per billed session and write a harness's config; the opt-in setup
+telemetry and the wallet auto-reload view; and three of the five profile verbs
+(sign in to an existing profile, rename, delete), which are one API call each and
+were not needed to create a profile, sign in and run with it. No code, prompt or
+data file from the original is bundled: the plugin's Python is not shipped, and
+nothing here runs it.
