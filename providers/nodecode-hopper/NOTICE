@@ -1,0 +1,18 @@
+nodecode-hopper is a rewrite of mykeura's mykeura/hopper:
+https://github.com/mykeura/hopper
+commit 68427cf7770b393b6b4b694722d24431058fbd3f
+MIT, Copyright (c) 2026 Miguel Euraque (LICENSE)
+
+The plugin's one idea is carried whole: the model picker offers the OpenRouter
+model ids a person wrote down, and nothing else. Rewritten from Python into
+Common Lisp against Nodecode's cell contract: `__init__.py`'s provider profile
+became the cell's catalog row and its listing (`provider.lisp`, `cell.lisp`),
+so the same file decides what `/models`, `/connect` and a turn see, and
+`manage.py`'s list, add, remove, reset and file verbs became the `/hopper`
+command. Left out: the environment variables `HERMES_HOME` and
+`HOPPER_MODELS_FILE`, whose jobs the `hopper` section's `models_file` and the
+organism's own home now do; the base64 `replace-b64` verb, which existed to
+carry a desktop half's payload past Hermes's own quoting rules and has no caller
+once that half is gone; and `manage.py` itself, whose verbs the command already
+answers. The default model, the file format and the rule that an empty list is
+a provider with no models are the original's.
