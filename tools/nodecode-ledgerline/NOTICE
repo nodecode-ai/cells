@@ -1,0 +1,25 @@
+nodecode-ledgerline is a rewrite of Adolanium's Adolanium/hermes-ledgerline:
+
+  https://github.com/Adolanium/hermes-ledgerline
+  commit a89efceab1ff5eb0cc3f58c0482c0f1d368a6d1b
+  MIT License, Copyright (c) 2026 Adolanium (LICENSE)
+
+What was rewritten: the ledger itself. The original is one JavaScript file for
+Hermes Desktop that reads the gateway's session and analytics routes, prices
+each session from what the gateway recorded, and draws spend by day, model and
+helper task, a per-session token split, budgets, recommendations, an
+on-request audit and a live pane. This cell keeps the numbers and the
+questions: one read over the event log this organism keeps, added up in Lisp
+into a range summary, a per-session receipt and a budget line, as three tools
+the model calls and one command the operator types. No price list is
+reimplemented: a round the gateway could not price stays unknown here too.
+
+What was left out, and why: the desktop surface (the page, the statusbar chip,
+the live turn pane, the six translation bundles) is Hermes Desktop's own
+window dressing and has no meaning outside that app; the session browser
+(title search, sort by tools or failures, profile merging, clickable receipts
+and file paths) is not rebuilt, since Nodecode's own session list is the one
+that browses sessions; budget alerts through a messaging platform and spend
+reports as cron jobs are left to Nodecode's channels and cron cell; and the
+explain/audit model calls are not ported, because the model calling
+ledger_session already has the receipt in hand and can say what it means.
