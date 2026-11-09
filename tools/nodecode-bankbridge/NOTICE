@@ -1,0 +1,32 @@
+nodecode-bankbridge is a rewrite of bankbridge-money's bankbridge-money/bankbridge-plugin:
+
+  https://github.com/bankbridge-money/bankbridge-plugin
+  commit c7fcda435eeaeee94cf4479983d646027befb467
+  MIT License, Copyright (c) 2026 Great Work LLC (LICENSE)
+
+Rewritten: the whole of what the plugin gives a user — the remote MCP server at
+its one endpoint, its twelve read-only tools (accounts, spending, transactions,
+merchant history, recurring charges, cashflow, categories, holdings,
+investment transactions, connect a bank), and its guidance on reading the data
+(amounts are positive when money leaves, card payments and transfers between
+the operator's own accounts are not spending, warnings belong in the answer) —
+as a Nodecode cell. The plugin was a portable manifest with no code: a skill
+and a server URL. Here the MCP client is this folder's own, three JSON-RPC
+messages over Streamable HTTP per call, with the response read as JSON or as an
+SSE stream; nlk:http is the transport and there is no SDK under it. The
+plugin's 19 slash commands are kept whole, in commands.lisp, each submitted
+to the session that runs it; /bankbridge is this rewrite's own command, saying
+where the cell points and proving the key with one tools/list. The skill's
+frontmatter description became the (help :bankbridge) summary and its body the
+manual behind it.
+
+Left out: the browser sign-in. The original's clients sign in through OAuth
+2.1 with Dynamic Client Registration; the cell takes the bearer key the
+original also documents (`Authorization: Bearer bbk_...`) from a variable the
+section names, which the loader reads and refuses on, and leaves the OAuth
+flow to the harness's own MCP client if a person would rather use that. Also
+left out: the per-client install recipes and marketplace listings of the
+manifest (Claude, Cursor, VS Code, Codex, Gemini and the rest), and the
+server's live tool schemas — a cell registers its tools at load, so each tool
+here carries the arguments the skill documents and passes anything else
+through to the server unchanged.

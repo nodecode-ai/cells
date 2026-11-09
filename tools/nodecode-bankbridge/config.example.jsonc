@@ -1,0 +1,15 @@
+// nodecode-bankbridge: BankBridge's read-only bank data, in the config's
+// "bankbridge" section. The key is named, never written here.
+{
+  "bankbridge": {
+    "enabled": true,
+    // the variable holding a bbk_... key from https://bankbridge.money
+    "api_key_env": "BANKBRIDGE_API_KEY",
+    // the MCP endpoint; leave it as it is
+    "url": "https://bankbridge.money/api/mcp",
+    // seconds one call may take
+    "timeout": 60,
+    // the most characters one answer carries; the rest is cut, and said so
+    "result_chars": 20000
+  }
+}
