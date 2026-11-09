@@ -1,0 +1,12 @@
+{
+  // A Grounder search key: paste it here, or leave api_key out and name the
+  // variable holding it in api_key_env.
+  "grounder": {
+    "api_key": "",
+    "api_key_env": "GROUNDER_API_KEY",
+    "base_url": "https://api.grounder.net",
+    "max_results": 5,
+    "description_chars": 800,
+    "timeout_seconds": 45
+  }
+}
