@@ -1,0 +1,35 @@
+nodecode-deepgram-voice is a rewrite of jaysonsantos's jaysonsantos/hermes-deepgram-voice-plugin:
+
+  https://github.com/jaysonsantos/hermes-deepgram-voice-plugin
+  commit 2d31b885ec873ed6693edd7ad1a80f7023439ac0
+  MIT License, Copyright (c) 2026 Jayson Santos dos Reis (LICENSE)
+
+Rewritten: both provider calls of the plugin, as tools a model can reach. The
+Aura 2 text-to-speech call survives in deepgram_speak -- POST
+{api_base_url}/speak with the text as JSON, the voice as the `model` query
+parameter, `encoding` and `container` chosen from the format asked for (mp3,
+ogg/opus, wav/linear16, flac), an optional speed, the `Authorization: Token`
+header, the saved file named with its description and a stamp, and the
+section's per-profile voice, format, folder and API root. The Nova
+speech-to-text call survives in deepgram_transcribe -- POST
+{api_base_url}/listen with the recording as the body and the content type its
+extension implies, smart formatting and punctuation on, a named language or
+language detection, diarisation with paragraphs, and the transcript read out
+of Deepgram's results (paragraphs preferred, every channel joined). Both tools
+refuse, before a billed request goes out, what the API would refuse or bill
+for: no key, an oversize text, a speed outside 0.7 to 1.5, a missing or empty
+recording, and an oversize upload; both report Deepgram's own error code and
+message when it answers one; and both check that a 200 really carried the
+audio that was asked for. The plugin's setup metadata became the
+`deepgram-voice` config section, and its dotenv-aware key lookup is the section's api_key or
+the environment variable api_key_env names.
+
+Left out: the Hermes provider registration itself (TTSProvider and
+TranscriptionProvider and the setup-schema/picker metadata behind them),
+because Nodecode has no provider slot for a voice and a model reaches these
+two calls as tools instead. The plugin's patch of Hermes's own config module
+and its pytest contract suite against that tree have no equivalent here; the
+behaviour they pinned -- the request shape, the refusal order, the saved file
+-- is what this cell's own offline tests pin. The command line is Nodecode's:
+the plugin's /say-style surface became the /say command, which the plugin did
+not have.
