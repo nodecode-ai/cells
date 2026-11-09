@@ -215,14 +215,14 @@ url contains, else DEFAULT."
   (with-websearch ("providers" (websearch-providers "brave" "b-key" "deepseek" "ds-key")
                    "provider" "deepseek")
     (with-scripted-http (calls :body (deepseek-body
-                                      (format nil "ANSWER: Bitvavo leads.~%~
+                                      (format nil "ANSWER: Alpha leads.~%~
 {\"url\": \"https://b/2\", \"summary\": \"Second page.\", \"date\": \"2026-10-01\"}~%~
 {\"url\": \"https://made/up\", \"summary\": \"From memory.\", \"date\": \"\"}")
                                       '("B1" "https://b/1" nil)
                                       '("B2" "https://b/2" nil)
                                       '("B3" "https://b/3" "2026-09-30")
                                       '("B4" "https://b/4" nil)))
-      (let ((text (web:search "crypto exchange netherlands" :n 3)))
+      (let ((text (web:search "example query" :n 3)))
         (is (= 1 (length calls)) "the named keyed provider answered alone")
         (let* ((call (first calls))
                (body (shasht:read-json (http-call-content call))))
@@ -234,10 +234,10 @@ url contains, else DEFAULT."
           (is (equal "web_search_20250305" (nlk:json-value (aref (nlk:json-array body "tools") 0) :text "type"))
               "the native web_search server tool")
           (is (contains-p (nlk:json-value (aref (nlk:json-array body "messages") 0) :string "content")
-                          "crypto exchange netherlands")
+                          "example query")
               "the query is the ask")
           (is (not (contains-p (http-call-url call) "ds-key")) "key never in the URL"))
-        (is (equal (format nil "Bitvavo leads.~%~%1. B2 — Second page. (2026-10-01)~%   https://b/2~%~%~
+        (is (equal (format nil "Alpha leads.~%~%1. B2 — Second page. (2026-10-01)~%   https://b/2~%~%~
 2. B1~%   https://b/1~%~%3. B3 (2026-09-30)~%   https://b/3")
                    text)
             "answer, the listed result first with its summary, the rest in search order, n caps")
