@@ -950,6 +950,80 @@ its section included."
       (delete-file shot)))
   (is (null (ncd:message-media (nlk:json-object "id" "s1")))))
 
+(deftest channel-discord-a-card-edit-refused-its-upload-still-lands-its-words ()
+  ;; Past a server's edit upload cap Discord refuses an edit that uploads a
+  ;; file -- 429, code 400009 -- and takes the same edit keeping its pictures
+  ;; by id. A card that gained a picture asked with it on every tick and its
+  ;; words froze with it (Foresight Labs Private, 2026-11-09): the refused edit
+  ;; goes again without the new picture, the channel's next edits upload none
+  ;; for the pause Discord named, and the first edit after it carries it.
+  (let ((new (temp-path "card-held" "png"))
+        (refused (lambda (&optional (code 400009))
+                   (nck:make-scripted-response 429 (nlk:json-object "code" code "retry_after" 30
+                                                                    "message" "limit")))))
+    (alexandria:write-byte-vector-into-file (coerce #(137 80 78 71) '(vector (unsigned-byte 8))) new
+                                            :if-exists :supersede)
+    (unwind-protect
+         (labels ((card (headline)
+                    (list :state :working :elapsed "3s" :headline headline
+                          :images (list (list "step-1.png" "/gone/old.png" "old.png")
+                                        (list "step-2.png" (namestring new) "shot.png"))))
+                  (plan (channel headline &rest keys)
+                    (apply #'ncd:edit-message-plan (list :channel-id channel) "s1" "w"
+                           :card (card headline) :media '(("step-1.png" . "900")) keys))
+                  (payload (plan &aux (body (nck:request-plan-body plan)))
+                    (if (hash-table-p body)
+                        body
+                        (nlk:decode-json (cdr (assoc "payload_json" body :test #'equal)))))
+                  (uploads-p (plan) (not (hash-table-p (nck:request-plan-body plan))))
+                  (shown (plan)
+                    (let ((gallery (find 12 (card-parts (payload plan))
+                                         :key (lambda (part) (gethash "type" part)))))
+                      (map 'list (lambda (item) (nlk:json-value item :string "media" "url"))
+                           (gethash "items" gallery))))
+                  (run (responses plan &aux (executor (nck:make-recording-executor
+                                                        :responses responses
+                                                        :retry-after-fn #'ncd::discord-retry-after-ms)))
+                    (values (nck:execute-plan (ncd::hold-refused-uploads executor) plan)
+                            (nck:recording-executor-plans executor))))
+           ;; Refused for its upload: the same edit goes again, the new picture
+           ;; left out, the kept one still shown by its id.
+           (multiple-value-bind (result plans) (run (list (funcall refused)) (plan "held-1" "Looking"))
+             (is (nck:execution-ok-p result) "the card's edit lands")
+             (is (= 2 (length plans)))
+             (is (uploads-p (first plans)) "the first ask carries the new picture")
+             (is (not (uploads-p (second plans))) "the second uploads nothing")
+             (is (equal '("attachment://step-1.png") (shown (second plans))))
+             (is (equal '("900") (map 'list (lambda (kept) (gethash "id" kept))
+                                      (gethash "attachments" (payload (second plans))))))
+             (is (search "### Looking" (gethash "content" (first (card-parts (payload (second plans))))))))
+           ;; Held: the channel's next edit leaves the new picture out from the
+           ;; start, another channel's still carries it.
+           (is (not (uploads-p (plan "held-1" "Still looking"))))
+           (is (uploads-p (plan "held-2" "Looking")))
+           ;; The pause over, the picture rides the next edit.
+           (setf (gethash "held-1" ncd::*edit-upload-holds*) (1- (nck:now-ms)))
+           (is (uploads-p (plan "held-1" "Looking again")))
+           ;; A settle retries: its refusals spent, it still goes without the picture.
+           (multiple-value-bind (result plans)
+               (run (list (funcall refused) (funcall refused) (funcall refused)) (plan "held-3" "Done" :retry t))
+             (is (nck:execution-ok-p result))
+             (is (= 2 (length plans)))
+             (is (not (uploads-p (second plans)))))
+           ;; Any other refusal is the answer as it was: an edit budget spent
+           ;; (30046), or an edit that uploaded nothing.
+           (multiple-value-bind (result plans) (run (list (funcall refused 30046)) (plan "held-4" "Looking"))
+             (is (not (nck:execution-ok-p result)))
+             (is (= 1 (length plans)))
+             (is (not (ncd::edit-uploads-held-p "held-4"))))
+           (multiple-value-bind (result plans) (run (list (funcall refused))
+                                                    (ncd:edit-message-plan '(:channel-id "held-5") "s1" "words"))
+             (is (not (nck:execution-ok-p result)))
+             (is (= 1 (length plans)))))
+      (dolist (channel '("held-1" "held-2" "held-3" "held-4" "held-5"))
+        (remhash channel ncd::*edit-upload-holds*))
+      (delete-file new))))
+
 (deftest channel-discord-a-card-stays-inside-discords-caps ()
   ;; One V2 message holds 40 components however nested and 4000 characters of
   ;; text: the fullest card the kit draws — four steps with their Output, a

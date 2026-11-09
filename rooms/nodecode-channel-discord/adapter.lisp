@@ -929,8 +929,8 @@ list is the gate."
                                 (nlk:when-let (host (ignore-errors (quri:uri-host (quri:uri api-base))))
                                   (list host)))
                         :test #'string-equal))
-    (let ((executor (or executor (make-discord-executor
-                                  :api-base api-base :token token))))
+    (let ((executor (hold-refused-uploads (or executor (make-discord-executor
+                                                        :api-base api-base :token token)))))
       ;; The bot's own user id, read over REST when the config does not pin
       ;; one: mention policy, a reply to the bot, and the bot's own seat in
       ;; voice all know it by it. A failed read is a loud warning: every
