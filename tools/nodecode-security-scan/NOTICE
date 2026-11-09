@@ -1,0 +1,28 @@
+nodecode-security-scan is a rewrite of NousResearch's NousResearch/hermes-official-plugins:
+
+  https://github.com/NousResearch/hermes-official-plugins
+  commit 65f5ad93c7dc14dc661ff2ff3ead0fda71e7bd9d
+  Apache-2.0, Copyright (c) 2026 unsupportedpastels (LICENSE; the holder as
+  their NOTICE states it), with portions Copyright (c) 2025 OpenAI
+
+Rewritten from Python into Common Lisp against the Nodecode cell contract:
+the nine security_scan_* tools (start, get, checkpoint, submit_worker_result,
+record_validations, record_chains, finalize, cancel, export) and their
+arguments, the /security command and its holder-only validation grants, the
+chunked walk with the standard/deep/diff modes and what each skips, the
+evidence model (rule, severity, exact path and line, evidence state,
+taxonomy, validation status, fingerprint), the rule that a confirmation needs
+a passing test and a behaving negative control, and the four exports
+(Markdown, canonical findings JSON, SARIF 2.1.0 and formula-escaped CSV). The
+OSV dependency check is kept, without the pinned osv-scanner download: the cell
+queries api.osv.dev itself.
+
+Left out: the desktop Security page and its dashboard API, the
+`hermes security-review` CLI, the subagent pool and its worker leases with the
+automatic "Continue security scan" turn injection, the import-map ranking of a
+repository over 90 chunks, the seven prose skills, the endoflife.date runtime
+check, and the http-probe/local-command execution of validation plans (a plan
+can be recorded, and the grant that would allow it minted, but nothing runs
+here). The scan store is one JSON file per scan under the home rather than
+SQLite: this cell is the only process that writes it, so a database earns
+nothing.
