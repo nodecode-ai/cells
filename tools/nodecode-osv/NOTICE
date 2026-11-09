@@ -1,0 +1,26 @@
+nodecode-osv is a rewrite of EloquentBrush0x's EloquentBrush0x/hermes-context-refs:
+https://github.com/EloquentBrush0x/hermes-context-refs
+commit 43ab2b75e660db5edcfe2f215776294c45408b40
+MIT, Copyright (c) 2026 EloquentBrush0x (LICENSE)
+
+Rewritten: the plugin's one subject -- a vulnerability record from
+https://api.osv.dev/v1/vulns/<id>, with CVE, GHSA and other OSV ids
+normalized the way it normalized them, up to four alias records read for the
+package data a CVE record lacks, and the record rendered as the same block of
+text (summary, aliases, dates, severity vectors with their source records,
+weaknesses, affected packages with version ranges and fixed versions,
+upstream git ranges when no record has package data, details, ranked
+references, and the closing note that advisory text is quoted material). The
+id checks, the character cap on the details, the 20 affected entries, the 12
+references and the refusal wording follow the original. The original's
+settings, max_chars and timeout_seconds, are kept, and alias_lookups replaces
+its fixed limit of four.
+
+Left out: the "@cve:", "@ghsa:" and "@osv:" prefixes themselves. Those are
+Hermes Agent's context-reference extension point, which Nodecode has no
+equivalent of; here the same lookup is the osv_lookup tool, the /osv command
+and the (osv:lookup ...) verb. Also left out: the parallel alias reads (they
+run one at a time under the same deadline, so a slow OSV shortens the alias
+list instead of holding the turn), the same-host-only redirect rule (the
+image's HTTP client follows at most five redirects), and autocomplete, which
+in the original answered nothing anyway.
