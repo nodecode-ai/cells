@@ -1,0 +1,12 @@
+// The flashdata cell's section of ~/.nodecode/config.jsonc.
+// Every data query spends the account's paid FlashData Credits; a key is
+// made at https://flashdata.dev/app/api-keys.
+{
+  "flashdata": {
+    "api_key": "...",              // or leave empty and export FLASHDATA_API_KEY
+    "api_key_env": "FLASHDATA_API_KEY",
+    "timeout_seconds": 60,          // a long transcript or an extended search takes its time
+    "max_items": 10,                // results of one list the model reads
+    "max_chars": 6000
+  }
+}

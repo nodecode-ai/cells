@@ -1,0 +1,22 @@
+nodecode-flashdata is a rewrite of rocosen's rocosen/flashdata-mcp:
+https://github.com/rocosen/flashdata-mcp, commit 23e0d9849b2546767741fabfc454fb0089f1cb58,
+MIT, Copyright (c) 2026 FlashData contributors (LICENSE).
+
+What was rewritten: the plugin was declarative - an mcp.json naming the hosted
+FlashData MCP endpoint with the key in an X-API-Key header, a plugin.json
+declaring one secret setting, and fifteen Skills over the server's tools. This
+cell speaks the same JSON-RPC to the same endpoint itself: the handshake, the
+tool call, the JSON and event-stream answers, and the fifteen operations
+(Google web, news, image, shopping, video and places search; YouTube search,
+extended search, metadata, transcript, captions, trainability, channel,
+suggestions and storage delivery; and the pricing, job and result reads) as
+their own verbs, with three model tools in front of them. The renderer is new:
+the original left the reading of each answer to the Skill, this one numbers a
+result list and clips a long answer to the section's bounds.
+
+What was left out: the fifteen Skills as separate prose documents (their
+argument names and limits are now the primer and the tool schemas), the
+Hermes approval and secret plumbing (Nodecode owns both), and youtube_download
+as a verb of its own - it takes a storage object with the operator's own
+credentials, so it is reached through flashdata:call rather than a signature
+this cell would have to guess.
