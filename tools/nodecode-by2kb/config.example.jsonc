@@ -1,0 +1,24 @@
+// The by2kb cell's section, as ~/.nodecode/config.jsonc would carry it.
+// Nothing here has to be set: by2kb on PATH is the whole setup.
+{
+  "by2kb": {
+    // The by2kb program: its name on PATH, or the path to it.
+    // Install it with: pipx install "by2kb[asr-whisper,youtube]"
+    "by2kb": "by2kb",
+
+    // The provider and model names recorded in each summary job's
+    // provenance. They are labels, not credentials: the summaries are
+    // written by the session's own model.
+    "provider": "nodecode",
+    "model": "nodecode",
+
+    // An opaque scope a conversation shares, so a listed number answers
+    // that conversation's own recommendation list. Empty derives one from
+    // the session.
+    "scope": "",
+
+    // One by2kb run's ceiling, in seconds. Transcribing a long video with
+    // local Whisper takes minutes.
+    "timeout_seconds": 3600
+  }
+}
