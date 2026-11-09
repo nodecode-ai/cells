@@ -1,0 +1,19 @@
+// nodecode-you's section of ~/.nodecode/config.jsonc. Documentation, not
+// config: the folder holds no secret, so a key pasted here is only an example.
+{
+  "you": {
+    // A You.com API key. Optional: without one, you_search answers on the
+    // free profile (search only), and the other three tools say a key is
+    // needed. YDC_API_KEY in the environment answers when this is unset.
+    "api_key": "<a You.com API key, or leave it out and set YDC_API_KEY>",
+
+    // How many results you_search answers with when its call names none.
+    "count": 5,
+
+    // One You.com call's ceiling, in seconds. Research wants a large one.
+    "timeout_seconds": 60,
+
+    // How much of one answer a tool result carries.
+    "max_chars": 12000
+  }
+}
