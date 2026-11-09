@@ -1,0 +1,31 @@
+nodecode-lfg-alarm is a rewrite of lfg-gm's lfg-gm/lfg-alarm-mcp:
+
+  https://github.com/lfg-gm/lfg-alarm-mcp
+  commit ba7b6afb27ef9a737986a3e5a57b4b2b66482d91
+  MIT License, Copyright (c) 2026 LFG Alarm (LICENSE)
+
+Rewritten: the plugin's whole reach -- its mcp.json, which names the hosted
+MCP server at https://mcp.lfg.gm over the streamable HTTP transport with
+Authorization: Bearer -- and its skill, skills/lfg-alarm/SKILL.md, whose
+guidance is the cell's manual topic (help :lfg-alarm). The connection is
+JSON-RPC over HTTP from the image (nlk:http): initialize, notifications/
+initialized, tools/list (following the server's cursors) and tools/call, a
+JSON body or a server-sent event stream in answer, the Mcp-Session-Id and
+MCP-Protocol-Version headers the transport asks for, one fresh handshake
+when a session the server forgot answers 400 or 404, and a tool's isError
+answer reported as the call's failure. Every tool the server lists is
+registered as a Nodecode tool under the server's own name with the server's
+own description and input schema, so the model sees what Hermes showed it;
+the section declares the key, the URL, one request's timeout and how much of
+an answer a result carries. The Python-free original is Lisp here, and no
+Node, Python or MCP server is launched locally.
+
+Left out, and why: the plugin was only a pointer plus a skill, so the one
+thing not reproduced is the OAuth 2.1 sign-in its README walks a person
+through for Hermes (dynamic client registration, a browser on lfg.gm and a
+callback route). A personal key from the LFG Alarm app reaches the same
+server, the same account and the same tools, so the cell takes the key
+instead of keeping an OAuth client in a tool cell. Also left out is Hermes's
+`trust: untrusted` setting, which is Hermes's own gate on write-capable tool
+calls rather than a property of the server. The tools and the data are LFG
+Alarm's; the license above covers the plugin, not the service.
