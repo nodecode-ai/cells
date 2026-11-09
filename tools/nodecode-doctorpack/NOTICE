@@ -1,0 +1,25 @@
+nodecode-doctorpack is a rewrite of godhiraj-code's godhiraj-code/hermes-doctorpack:
+https://github.com/godhiraj-code/hermes-doctorpack
+commit ac00ace14ea9210e2e02a7b978cf4bc51eec2d8f
+MIT, Copyright (c) 2026 Dhiraj Das (LICENSE)
+
+What was rewritten: the three tools (config audit, plugin check, postmortem) and the
+slash command, in Common Lisp against the Nodecode cell contract. The finding model
+(ok/warn/fail/unknown, severity, confidence, evidence, recommendation), the overall
+status ranking, the conservative rule that missing evidence is `unknown' and never
+`fail', the redaction pass (assigned keys and tokens, bearer credentials, issuer-
+prefixed token shapes, URL userinfo, email addresses and phone shapes), the log scan
+with its lookback window and its error/warning word lists, the exclusive-creation
+report naming, and the postmortem's markdown layout are the original's, carried over
+line for line in intent and reimplemented here.
+
+What was left out and why: the subject is the Nodecode home rather than the Hermes
+home, so the checks read what this harness writes -- config.jsonc instead of
+config.yaml, the cells/ folder instead of the plugins/ list, and the home's own
+*.log files instead of Hermes's agent/gateway/errors logs. Hermes's approval mode
+and its security.redact_secrets switch have no Nodecode counterpart, so the inline-
+credential check stands in their place, and a cell folder that carries no .asd
+stands in for Hermes's 'enabled and disabled at once' plugin conflict. The pip
+distribution, the hermes plugin.yaml entry points and the CLI subcommand
+registration are replaced by the cell's own declaration, and PyYAML by the cell's
+line readers; nothing of the original's Python is bundled.

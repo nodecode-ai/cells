@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for the doctorpack cell --
+// documentation, not config: the folder gets pushed and holds no secret. Every
+// member is optional; with no section at all the cell audits the home it runs in.
+// A present section is enabled; "enabled": false vetoes the whole cell, the
+// tools with it.
+{
+  "doctorpack": {
+    "home": "~/.nodecode",             // another profile's home to read; unset = the active one
+    "lookback_hours": 24,               // how far back a log line counts
+    "max_evidence": 20,                 // how many evidence snippets a postmortem keeps
+    "include_logs": true                // false keeps the log scan out of the config audit
+  }
+}
