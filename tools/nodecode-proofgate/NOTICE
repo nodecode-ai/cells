@@ -1,0 +1,22 @@
+nodecode-proofgate is a rewrite of Whydiriki700's Whydiriki700/proofgate:
+
+  https://github.com/Whydiriki700/proofgate
+  commit b07f2fe5ee019a5d6e3fd24ad3b61dbce6302fec
+  MIT License, Copyright (c) 2026 Riki Wahyudi (LICENSE)
+
+Rewritten: the plugin's three Hermes hooks and its Python modules as one
+Nodecode cell. The post_tool_call hook that recorded every tool call becomes a
+:TOOL point hook over the same dispatch; the transform_llm_output claim checker
+becomes the proof_check tool, with the same four claim families (file, send,
+run, figure), the same PASS / DOWNGRADE / BLOCK verdicts, and the same
+fail-closed rule; the ledger, the /proof command, the proof_status tool and the
+first-turn briefing become a JSON Lines ledger, a slash command, a tool and a
+help topic. The checker is reimplemented in Common Lisp with no dependencies.
+
+Left out, and why: the original's transform_llm_output hook held the finished
+reply and rewrote or withheld it, which in Nodecode is the model's own call to
+proof_check (a BLOCK in enforce mode comes back as the call's failure);
+evidence.jsonl, because the evidence never leaves the process; the Python
+argument redaction, because the evidence is in memory and the ledger carries
+only verdicts and counts; and the `hermes proofgate ledger` CLI subcommand,
+which /proof answers in the chat.
