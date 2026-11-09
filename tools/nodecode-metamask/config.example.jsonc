@@ -1,0 +1,14 @@
+// nodecode-metamask: the MetaMask agent wallet, through the mm CLI on this machine.
+// No key goes here: MetaMask keeps the wallet's keys, and `mm login` keeps the login.
+{
+  "metamask": {
+    // the CLI's name on PATH, or a path to it
+    "program": "mm",
+    // the chain a call that names none uses: 8453 is Base, 1 is Ethereum
+    "default_chain_id": 8453,
+    // the fiat balances and prices are read in
+    "default_currency": "usd",
+    // one mm call's ceiling, in seconds
+    "timeout_seconds": 90
+  }
+}
