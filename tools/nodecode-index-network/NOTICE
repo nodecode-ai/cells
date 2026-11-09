@@ -1,0 +1,31 @@
+nodecode-index-network is a rewrite of indexnetwork's indexnetwork/hermes-plugin:
+
+  https://github.com/indexnetwork/hermes-plugin
+  commit 1214c6179d00ccc5f6e27454385f3fd0abbaf845
+  MIT License, Copyright (c) 2026 Index Network (LICENSE)
+
+The original is a Hermes Agent plugin: sixteen model-facing tools over the
+Index Network REST API, a CLI sign-in, an MCP server registration, a desktop
+panel, and a Bun negotiator sidecar that runs the other people's agents'
+turns. What was rewritten: nine of those tools (index_read_intents,
+index_create_intent, index_update_intent, index_list_opportunities,
+index_update_opportunity, index_read_networks, index_join_network,
+index_add_intent_to_network, index_read_docs) in Common Lisp against the same
+endpoints -- POST /intents/list, /intents, PATCH /intents/{id},
+GET /opportunities, PATCH /opportunities/{id}/status, GET /networks,
+POST /networks/{id}/join, POST /intents/{id}/networks, GET /docs -- with the
+same names, the same arguments and the same deep links in the answer, so the
+cell reads and writes the same account. The reads are also /index verbs and
+indexnetwork package functions, and (help :index-network) is the manual.
+
+What was left out, and why: the Bun negotiator sidecar and its prompts,
+morning cron and dashboard (they need a Bun runtime and the plugin's own model
+bridge, and they take turns rather than answer a model's call); the
+device-code browser sign-in and the session token it stores (a key is what
+the negotiator runs on anyway, and Index mints one from that session under
+Settings, then advanced); five tools -- index_list_intent_networks,
+index_read_network_memberships (folded into index_read_networks),
+index_create_network, index_update_network and index_open_app -- since they
+are one-line requests whose ids the kept tools already answer; and the MCP
+server registration and desktop panel, which are Hermes surfaces rather than
+Index data.
