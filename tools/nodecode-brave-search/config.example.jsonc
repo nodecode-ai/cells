@@ -1,0 +1,14 @@
+{
+  // A Brave Search subscription token: paste it here, or leave api_key out and
+  // name the variable holding it in api_key_env.
+  "brave-search": {
+    "api_key": "",
+    "api_key_env": "BRAVE_API_KEY",
+    "count": 10,
+    "safesearch": "moderate",
+    "country": "",
+    "search_lang": "",
+    "freshness": "",
+    "timeout_seconds": 20
+  }
+}
