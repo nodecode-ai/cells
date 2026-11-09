@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "crawl4ai": {
+    "enabled": true,
+    // Required: your Crawl4AI server's address, http:// or https://.
+    "url": "http://localhost:11235",
+    // The JWT the server logs at startup, sent as `Authorization: Bearer`.
+    // Leave it out when the server runs with auth off.
+    "api_token": "the-jwt-the-server-printed",
+    // How long one page may take: the server renders it in a browser first.
+    "timeout_seconds": 60
+  }
+}
+
