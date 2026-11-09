@@ -1,0 +1,7 @@
+nodecode-mediarag is a rewrite of dyiapanis's dyiapanis/mediarag:
+
+  https://github.com/dyiapanis/mediarag
+  commit 29d47c34f53340eb3a4267792c61f38c34ee8e03
+  MIT, Copyright (c) 2026 D Yiapanis (LICENSE)
+
+The original is a Hermes plugin: five tools over one SQLite corpus, ingest through pandoc/pdftotext/ffmpeg, an EmbeddingGemma-2 ONNX embedding tower on onnxruntime and torch, a hybrid semantic-plus-BM25 search fused by reciprocal rank, and scheme adapters (Raindrop, pCloud, Dropbox, Obsidian, rclone) run as subprocesses. The rewrite keeps the five tool names and shapes, the chunking sizes, the subtitle and audio spans, and the reciprocal-rank fusion of two lanes, in Lisp over one readable corpus file, with no dependency beyond Nodecode. Left out because each needs a runtime this cell does not carry: the ONNX embedding tower and its 285 MB of weights (the vector lane here is cosine over hashed character 4-grams, not a learned embedding), the pdf and office converters, ffmpeg audio decoding beyond a WAV file's own header, movie thumbnails, the scheme adapters, and the original's kind="semantic" ordering. Nothing of the original's Hermes registration, its SQLite schema or its Python is carried over.
