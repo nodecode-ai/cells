@@ -1,0 +1,27 @@
+nodecode-elevenlabs-music is a rewrite of NousResearch's NousResearch/hermes-official-plugins:
+
+  https://github.com/NousResearch/hermes-official-plugins
+  commit 1e326ddd28ae261821d7714d106fe114999a0bba
+  MIT License, Copyright (c) 2026 Nous Research (LICENSE)
+
+The rewrite is the plugin's agent half in Common Lisp: its eight tools
+(elevenlabs_music_compose, _compose_plan, _draft_plan, _upload, _stems,
+_from_video, _finetunes, _job) with their arguments and limits, the
+ElevenLabs endpoints they call -- /v1/music/detailed, /v1/music/plan,
+/v1/music/finetunes, /v1/music/upload, /v1/music/stem-separation and
+/v1/music/video-to-music -- the xi-api-key header, the multipart and
+multipart/mixed answers, the ZIP the stem endpoint returns, the output_format
+and model choices, the local file checks, the per-track JSONL library, and
+the background job a long generation runs in. Its hosting surface is
+Nodecode's: the plugin's config_schema is the cell's section, and the tools
+are registered with NODE:REGISTER-TOOL instead of a Hermes tool registry.
+
+Left out, because it is Hermes's own surface and not the plugin's work: the
+Hermes Desktop music card and music library tab (desktop/), their ffmpeg
+WAV/FLAC downloads, and the chat-app instruction that arms a background
+sleep wake so a long song is delivered later. The plugin's bundled
+`elevenlabs-music` skill is not shipped as a Nodecode skill either; the same
+guidance is the cell's (help :elevenlabs-music) primer. Job records live in
+the process rather than for seven days on disk, and a track's real length is
+not parsed out of the audio frames. No line of the original Python, its
+Desktop bundle or its tests is carried over.
