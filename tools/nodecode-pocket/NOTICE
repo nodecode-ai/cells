@@ -1,0 +1,26 @@
+nodecode-pocket is a rewrite of Belweave's Belweave/hermes-notify:
+https://github.com/Belweave/hermes-notify
+commit 698b66b6d64a87d317ba97938f37f9ed75f04cd6
+MIT, Copyright (c) 2026 Preetham Kyanam (LICENSE)
+
+Rewritten in Common Lisp against Nodecode's cell contract: the three Notify
+Agent API writes a release or a task actually needs — an update for the
+phone (POST /notifications), a question with its decision or written answer
+(POST /interactions, then GET /interactions/{id}[/wait]), and the same read
+again by id (GET /interactions/{id}) — with the same fixed origin, bearer
+key, idempotency key and one-wait ceiling of 25 seconds, as three tools
+(notify_send, notify_ask, notify_poll), a /pocket command and the manual on
+(help :pocket). The tool schemas are contract declarations, so a tool
+cannot advertise one shape and read another, and the whole HTTP seam is one
+function a test binds.
+
+Left out, because Nodecode already answers them or they need Hermes's own
+runtime: the release workspace with measured stages and checks
+(notify_release), publishing the workspace to the operator's Cloudflare
+Worker (notify_publish_app), the six tools' sqlite journal and idempotency
+ledger (this cell keeps the last eight receipts in memory instead), the
+native Hermes approval transport that intercepts a command before it runs
+(Nodecode's tools ask the question inside a tool call; the person's answer
+arrives as that call's answer), automatic progress updates and Live
+Activities, the bundled skill, the web/desktop App, and the signed webhook
+receipt.
