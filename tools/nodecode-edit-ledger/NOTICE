@@ -1,0 +1,28 @@
+nodecode-edit-ledger is a rewrite of olric3015's olric3015/hermes-plugins:
+
+  https://github.com/olric3015/hermes-plugins
+  commit c0a93cb23627ac1856cb29db163e2cbfff77251d
+  MIT, Copyright (c) 2026 olric3015 (LICENSE)
+
+Rewritten: the whole ledger, in Common Lisp. The row a turn leaves (when,
+which model, how many files, of which types), the bounded ledger file
+(append, trim to its newest rows past a size, skip a torn line), the fold
+that turns repeated reports of one turn into one row, the file-type reading
+including (none) and (other), the window words (6h, 7d), the /edit-log
+verbs, the by-model / by-type / by-day tables and the recent list are the
+original's.
+
+Left out, and why: Hermes fires one pre_verify hook with the turn's whole
+changed_paths list, while a Nodecode turn reports its changes per tool call,
+so the observer reads each tool result's workspace diff and write-file/edit
+receipts and keeps the paths until the turn reaches its terminal fact
+(turn.completed, turn.failed or turn.cancelled) -- there is no "attempt"
+counter to fold, and a replayed terminal fact is guarded instead. Hermes's
+per-profile plugin data directory became the cell's own folder under the
+home, with the section's file setting to point elsewhere. The row's
+"platform" column is gone: Hermes runs one turn on one platform, Nodecode
+records none per turn, so the original's "platforms" grouping reads by
+model. The original's session tag was a SHA-256 prefix of the session id;
+the rewrite uses the kernel's short digest of it, the same idea with no
+crypto code of its own. No part of the original runs here: no Python, no
+dependencies, no network.
