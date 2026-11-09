@@ -23,6 +23,57 @@
       ]
     },
     {
+      "name": "nodecode-advisor",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "f1278a6974e7ab6c6635598df1486eb6f269cad9",
+      "path": "tools/nodecode-advisor",
+      "description": "A persistent second model reviews each turn and posts tagged advice",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ljubomirj",
+        "repo": "ljubomirj/hermes-advisor-plugin",
+        "commit": "37e55975611d38212cf082029ece504f207df656",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-afterforge",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "e23596b0c59a238550cb730f34a449d8add1b304",
+      "path": "tools/nodecode-afterforge",
+      "description": "Reviewed regression checks: a failure or correction, a command that proves it fixed",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ussyverse",
+        "repo": "ussyverse/afterforge",
+        "commit": "067a739e5ab64097140c5200bde2cc5d52662ea5",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-agent-batch",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "72d131acd528e6178f7e30263a36104ae1cbe408",
+      "path": "tools/nodecode-agent-batch",
+      "description": "Agent Batch: a task list phased into parallel groups and dispatched to GitHub Actions agents, with the runs and pull requests they open",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "raaaas",
+        "repo": "raaaas/hermes-agent-batch",
+        "commit": "064afc5dba8869df703ba055aa2760730c0d30dc",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-alibaba-coding-plan",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
@@ -59,6 +110,23 @@
       ]
     },
     {
+      "name": "nodecode-alice-voice",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "170df96bf521fe77e6d5f07ca88f5122fad23f56",
+      "path": "rooms/nodecode-alice-voice",
+      "description": "A Yandex Alice voice skill's requests, answered as turns in one session",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "bablobanov",
+        "repo": "bablobanov/hermes-alice-voice",
+        "commit": "e31f2c8e65bb861c6806bd19e8f57a1e89726450",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-amazon-bedrock",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "25af67383f79ce626f0ad31a68d9441fd5cf8400",
@@ -68,6 +136,40 @@
       "depends_on": [
         "nodecode"
       ]
+    },
+    {
+      "name": "nodecode-android-emulator",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "ecfe2feb9bea24ed6a3e419dfef01ed615e4e614",
+      "path": "tools/nodecode-android-emulator",
+      "description": "Android Emulator: drive a headless emulator with adb - screenshots, taps, apps, GPS, battery, logcat",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "PIR8-Software",
+        "repo": "PIR8-Software/hermes-android-emulator",
+        "commit": "3b5cb61e8bd6c4600f797a44c44234a6371bd59a",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-apify",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "bb8e36323a804f616dd1215aa3039c79ea470861",
+      "path": "tools/nodecode-apify",
+      "description": "Apify Actors: discover one in the Store, start runs, collect results, plus Apify web search and page fetch",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "apify",
+        "repo": "apify/apify-hermes-agent-plugin",
+        "commit": "a3a7af0c0dda9fdac79d67fb0a7a50b7a39cd91d",
+        "license": "MIT"
+      }
     },
     {
       "name": "nodecode-apple",
@@ -185,6 +287,40 @@
       ]
     },
     {
+      "name": "nodecode-checkin",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "4541595aabfacbed7afc8541c70e338632c7c63c",
+      "path": "tools/nodecode-checkin",
+      "description": "Idle check-ins: after a chat goes quiet, one prompt into the bound session, the wait doubling per unanswered one and waking hours kept",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "capthvnsen",
+        "repo": "capthvnsen/alans-way-agents",
+        "commit": "0f65549ac1353f6b74b8ac6a22d58f3eb6dea0a3",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-chronicle",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "3dd7d512366a04344006bd46d6bcda063f36d37a",
+      "path": "tools/nodecode-chronicle",
+      "description": "Chronicle memory: local-first beliefs and captured turns, kept in one file on this machine",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "indigokarasu",
+        "repo": "indigokarasu/chronicle-agent-context-and-memory",
+        "commit": "92e4351a852117a11542210d06e8e5bfb61c3f1a",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-claude-code",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "592aee9df0baa66f6fa1a8a64eac095968e77d81",
@@ -282,6 +418,23 @@
       ]
     },
     {
+      "name": "nodecode-custodian",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "b41b5bed7c3b2668fce2c323f1b17aaf0c11ef9c",
+      "path": "tools/nodecode-custodian",
+      "description": "Custodian: known-failure fingerprints over the log files you watch, and an issue ledger",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "indigokarasu",
+        "repo": "indigokarasu/hermes-custodian-plugin",
+        "commit": "d5b4ebfd2353a29380a51c8bcba84d4682cf4c91",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-cyber-security",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "7147f3e8d1c40da67ee0edb1bf3b4b50fd660d39",
@@ -362,6 +515,23 @@
       ]
     },
     {
+      "name": "nodecode-doppler-geo",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "99a3a4a9caab61ef359ca77e09dd5c02ab9f43f0",
+      "path": "tools/nodecode-doppler-geo",
+      "description": "Aircraft flyover Doppler tones in a recording, and the ground area they were heard from",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "mojomast",
+        "repo": "mojomast/hermes-aircraft-doppler-geolocation",
+        "commit": "14b4b0c841de0a77c0eb405a311acc540d3a1b58",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-elevenlabs-music",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "23590e5a9b1b722d0411b4067e0546b32ebf79e4",
@@ -414,6 +584,23 @@
       ]
     },
     {
+      "name": "nodecode-fallback",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "406d354104f54678307b64b6c86847e3312f8f75",
+      "path": "tools/nodecode-fallback",
+      "description": "Heuristic model failover: rank your providers' models and keep Nodecode's failover chain filled",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "tomkubik",
+        "repo": "tomkubik/hermes-fallback",
+        "commit": "ce150572ea10de682a2c67902b314590b55683b3",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-fish-audio",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "292295bbab0daa1b260ca3528728c20ce1b305d2",
@@ -428,6 +615,23 @@
         "repo": "100yenadmin/fish-audio-hermes",
         "commit": "606afb54aa1a354cc8eac0b17f3da3a105ac55a7",
         "license": "Apache-2.0"
+      }
+    },
+    {
+      "name": "nodecode-fluxer",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "bb2c1c4b7da4ca07229381a67edad1c835883d50",
+      "path": "tools/nodecode-fluxer",
+      "description": "Fluxer chat from Nodecode: post, read, react and pin as the bot",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "elkimek",
+        "repo": "elkimek/hermes-fluxer-plugin",
+        "commit": "6d2ef9767d0a0811a3ae26a76290b9b1e4636d4c",
+        "license": "MIT"
       }
     },
     {
@@ -546,6 +750,23 @@
         "repo": "Infinite-Labs-AI/hermes-health-apollo",
         "commit": "9f2db670a2669c9f3401fecb3b547ed52bcb2c3b",
         "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-heartbeat",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "457ab87c82cbef18bb589bd9a62d8b65f317a0ce",
+      "path": "tools/nodecode-heartbeat",
+      "description": "Wakes and watchers: a timed check-in, or a file, url or command that wakes its session when it changes",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "electricsheephq",
+        "repo": "electricsheephq/heartbeat2",
+        "commit": "8a1fc6efe9ad340941d92d7bf39583e8dc2dc8bc",
+        "license": "Apache-2.0"
       }
     },
     {
@@ -800,6 +1021,23 @@
       ]
     },
     {
+      "name": "nodecode-local-knowledge",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "b62c164da21599bbce61f1741dc0b61a6c45c1b9",
+      "path": "tools/nodecode-local-knowledge",
+      "description": "Index local skills, scripts, runbooks and docs so a question routes to the file to read first",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "stepanov1975",
+        "repo": "stepanov1975/hermes-local-knowledge",
+        "commit": "c13a1a357eb110fe62d6d4f8a715187079766541",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-lsp",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5055220bcab19b96cd46be432cd9765ed3b13bea",
@@ -893,6 +1131,40 @@
         "repo": "matrixorigin/memoria",
         "commit": "3a5c5065b2820d56dd3d8ac8bb259a9424b1476e",
         "license": "Apache-2.0"
+      }
+    },
+    {
+      "name": "nodecode-memos",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "94ac2fc36e8b76bb8c1020de15c323ec727ad84f",
+      "path": "tools/nodecode-memos",
+      "description": "MemOS memory: durable facts in one local file, six tools, found by their words",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Markgatcha",
+        "repo": "Markgatcha/memos",
+        "commit": "af8fa31e01078e4d5e38210b61acdf90f6d70581",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-muse",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "dad7def9ac88f2e57f2d6d9dfdedc3b277c5ce68",
+      "path": "tools/nodecode-muse",
+      "description": "Muse: a companion with goals, expiring interests, a quiet Feed and reminders that arrive at your next request",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "xiaohei-info",
+        "repo": "xiaohei-info/hermes-muse",
+        "commit": "0dade28130b6901dfa2dd81a067856441948d33c",
+        "license": "MIT"
       }
     },
     {
@@ -1397,6 +1669,57 @@
       }
     },
     {
+      "name": "nodecode-supermemory",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "6d761190f7f0ccd1ef4bed69adadae94798f132c",
+      "path": "tools/nodecode-supermemory",
+      "description": "Supermemory: long-term memory, a profile and per-turn capture, through Supermemory's cloud or a self-hosted server",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "supermemoryai",
+        "repo": "supermemoryai/hermes-supermemory",
+        "commit": "91405dd00fdf2a0b3515b25c25557598f6793299",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-switchyard",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "4a352718323f1e778eaf11dbd42d30177ff7d866",
+      "path": "tools/nodecode-switchyard",
+      "description": "Switchyard: which skill fits this task, and how much reasoning effort it needs",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "bgrablin",
+        "repo": "bgrablin/hermes-switchyard",
+        "commit": "895c101d4228f12cbb7e56194f94d0e555256339",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-talaria",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "225f4bd409ff5503b499e15c65cb7088fb37d5e5",
+      "path": "tools/nodecode-talaria",
+      "description": "Talaria WebUI: search Hermes session history, read a reply's details and a session's context use",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "liamsmith86",
+        "repo": "liamsmith86/talaria-webui",
+        "commit": "04ebc042c43e3af07ccdc44fa30c1794f1b02c1e",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-talk",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "97c18625bcb96e52608b1ec7f700d00797bca36a",
@@ -1410,6 +1733,23 @@
         "author": "TheSmokeDev",
         "repo": "TheSmokeDev/hermes-talk",
         "commit": "790f6d283d4720302eda21f9086d4fc01be3ec0a",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-tavily",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "2df4e6d607f39c776f8446a70d938775116df2a3",
+      "path": "tools/nodecode-tavily",
+      "description": "Tavily web search, page extraction, site map, crawl and research, as five tools the model calls",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "tavily-ai",
+        "repo": "tavily-ai/tavily-hermes-plugin",
+        "commit": "ac556341056dc903988f63d627d595e468f1cfa9",
         "license": "MIT"
       }
     },
@@ -1726,6 +2066,23 @@
           "sign_in": "/zai-coding-plan login"
         }
       ]
+    },
+    {
+      "name": "nodecode-zalo",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "60652034017438a2181bb06a496e7c4012c4a5d8",
+      "path": "rooms/nodecode-zalo",
+      "description": "Zalo: talk to nodecode through a Zalo bot",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "moken627-hub",
+        "repo": "moken627-hub/hermes-plugin-zalo",
+        "commit": "5a989368d0877c930e76fcc75ea125e7af7ea872",
+        "license": "MIT"
+      }
     }
   ]
 }
