@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "tracekit": {
+    "enabled": true,
+    "signer": "http://127.0.0.1:7787",
+    // an https signer's bearer token: the variable's name, or a file. One or neither.
+    "token_env": "TRACEKIT_SIGNER_TOKEN",
+    "agent": "nodecode",
+    "timeout_seconds": 15,
+    "ask_seconds": 120,
+    "fail_open": false
+  }
+}
