@@ -1,0 +1,27 @@
+nodecode-groq is a rewrite of AhmetArif0's AhmetArif0/hermes-groq-provider:
+https://github.com/AhmetArif0/hermes-groq-provider
+commit b5be0388c2b4cae8ed6a30c7371aaa1330731ee8
+MIT, Copyright (c) 2026 AhmetArif0 (LICENSE)
+
+Rewritten: the provider profile itself (its default base of
+https://api.groq.com/openai/v1, its GROQ_API_KEY variable, its fallback models
+and its chat-completions wire) as a Nodecode catalog row and one request-body
+hook; the per-model reasoning table, which sends each model only the
+reasoning_effort values it was checked to accept and lowers a pick the model
+does not take to the nearest weaker one (turning reasoning off sends `none'
+where the model has it and its weakest level otherwise); and the filter that
+keeps the models that cannot run a conversation out of the picker.
+
+Added, because Nodecode's catalog is where a picker reads its list: the model
+list is read from Groq's own /v1/models at start and hourly, since models.dev
+publishes Groq under a package no Nodecode lane claims and names no address for
+it -- without that row the provider could be neither chosen nor dialled.
+
+Left out, and why: the Hermes private seams the original imported
+(providers.base, ProviderProfile, register_provider) have no place here, so the
+profile is a catalog row and its two methods (fetch_models,
+build_api_kwargs_extras) are one /models read and one request-body hook. Hermes' 64K-token
+context rule is not a Nodecode rule, so the filter keeps the original's own id
+markers rather than a size ceiling, and a live model models.dev has not
+published still lists (with Groq's rungs and no context or price) where Hermes
+would have dropped it.
