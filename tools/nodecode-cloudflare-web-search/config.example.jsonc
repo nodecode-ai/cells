@@ -1,0 +1,42 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "cloudflare-web-search": {
+    "enabled": true,
+
+    // A Cloudflare API token with Account Workers AI Read and Account AI
+    // Gateway Read. A pasted token is kept in a 0600 file under
+    // ~/.nodecode/secrets/ and this section is pointed at that file instead.
+    "api_token": "",
+
+    // Or the name of the environment variable holding it.
+    // CLOUDFLARE_WEB_SEARCH_API_TOKEN is read either way.
+    "api_token_env": "CLOUDFLARE_WEB_SEARCH_API_TOKEN",
+
+    // The 32-character account id; CLOUDFLARE_ACCOUNT_ID is read when this
+    // is empty.
+    "account_id": "",
+
+    // The AI Gateway the search is routed, logged and billed through;
+    // CLOUDFLARE_GATEWAY_ID is read when this is empty.
+    "gateway_id": "default",
+
+    // Which search provider routes a call that names none.
+    "provider": "ceramic",
+
+    // The alias of a provider key stored on the gateway, when you bring your
+    // own key instead of spending the gateway's credits. Empty falls back to
+    // the gateway's credits.
+    "byok_alias": "",
+
+    // Cloudflare's API root; change it only for a proxy of your own.
+    "base_url": "https://api.cloudflare.com/client/v4",
+
+    // How many results a call that names none asks for; at most 10.
+    "max_results": 5,
+
+    // Seconds one search may take.
+    "timeout_seconds": 30
+  }
+}
