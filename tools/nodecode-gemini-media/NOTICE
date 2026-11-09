@@ -1,0 +1,23 @@
+nodecode-gemini-media is a rewrite of bytecakelake's bytecakelake/hermes-gemini-media-generation:
+
+  https://github.com/bytecakelake/hermes-gemini-media-generation
+  commit 44bc2dd0349c08cecdcb44333b9fa0000ef01d95
+  Apache License 2.0, Copyright (c) 2026 bytecakelake (LICENSE)
+
+What was rewritten: the plugin's two generation calls are here as three tools and one slash
+command in Common Lisp. The rewritten source carries the same Gemini API calls the plugin made
+through the google-genai SDK (model, input parts, response_format with aspect_ratio, image_size,
+resolution and duration, and generation_config.video_config.task), the same aspect, size,
+resolution and duration rules and the same "adjusted" flags they raise, the same curated model
+table and the same id-based classifier behind the model list, the same reference-picture rules
+(header sniffing for PNG, JPEG, WebP, HEIC and HEIF, 15 MB each and 18 MB together, private
+hosts refused, at most 14 pictures for an image and 6 for a video), and the same error classes,
+status hints and key scrubbing.
+
+What was left out, and why: the google-genai SDK, because the cell speaks the API's HTTP
+directly; Hermes's image_generate and video_generate lanes with their picker, because a
+Nodecode cell declares its own tools and section; the 24-hour model-list cache on disk, because
+the cell keeps the list in memory for a day and falls back to the curated table; the wall-clock
+deadline on an abandoned worker thread, because NLK:HTTP's timeout is the cell's ceiling; the
+MP4-only duration read above 64 MB; and Hermes's own generated-media folder, replaced by the
+operator's output_dir.
