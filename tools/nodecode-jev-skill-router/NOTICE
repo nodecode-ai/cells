@@ -1,0 +1,32 @@
+nodecode-jev-skill-router is a rewrite of ydmw74's ydmw74/jev-skill-router:
+https://github.com/ydmw74/jev-skill-router
+commit 76ee09e049dbc10c76f98cfefc6ca16b42cfad38
+
+MIT, Copyright (c) 2026 ydmw74 (LICENSE)
+
+The repository ships no LICENSE file; plugin.json declares "license": "MIT"
+and its author's URL is the GitHub handle above, which is the holder used here.
+
+Rewritten: the whole selection the tool made -- the one `choice` over the live
+roster on the index-shortened descriptions, the three request judgments
+(`acts_on_user_system`, `would_follow_documented_procedure`, and the inverted
+`prose_suffices`) and their mean as the gate, the second call's rerank of the
+shortlist with each candidate's full description and 700 characters of its own
+text plus one `fits` judgment each, both thresholds (0.30/0.30), the
+`none_of_these` option, the shortlist of three, the answer object
+(`decision`, `suggested`, `gate`, `gate_values`, `shortlist`, `fits`,
+`suggestion_block`, usage, seconds), the two backends (a TypeSafe key, or an
+adapter endpoint with its own bearer token) and the fail-safe posture: a call
+with no credential names what to set and spends nothing, and a failure is a
+field in the answer rather than an exception. The roster, read in the original
+from `$HERMES_HOME/skills` and their `SKILL.md` front matter, is here what an
+index lists -- the skills this image keeps. The MCP tool is Nodecode's
+`skill_select`; the operator reaches the same decision through
+`/jev-skill-router`.
+
+Left out: the stdio MCP server loop, its JSON-RPC framing and its `uv`
+launcher, because Nodecode dispatches a declared tool itself; and the
+per-session roster cache, because a live index is cheap to read and a stale
+roster is what the original's own comment warns about. The companion
+`SKILL.md` is carried as `(help :jev-skill-router)`. Python's stdlib client
+became a hand-written JSON writer and `nlk:http`.
