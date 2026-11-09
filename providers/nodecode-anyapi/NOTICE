@@ -1,0 +1,25 @@
+nodecode-anyapi is a rewrite of es697's es697/hermes-provider-anyapi:
+https://github.com/es697/hermes-provider-anyapi
+commit e5b7b985b5aa56bc585ef1924858978696eb0c3a
+MIT, Copyright (c) 2026 AnyAPI (LICENSE)
+
+What was rewritten: the provider profile (its base, its key variable, the
+catalog row it becomes), the reading of AnyAPI's catalog `tags` that keeps
+only the routes accepting tool calls, the fallback to the unfiltered listing
+when that read fails or names none, the cache that keeps one answered
+catalog for the process, the fallback model roster, and the deferral to the
+generic listing when the base is not AnyAPI's own. The profile became a
+config section (`base_url`, `tool_capable`, `timeout_seconds`) plus three
+hooks: the catalog row, the credential and the model listing. The Hermes
+plumbing the plugin relied on rather than wrote -- the model picker, `/model`,
+`doctor`, `--provider`, the credential resolution -- is the core's here and
+was not rewritten. The provider id is `anyapi` rather than `anyapi.ai`, which
+is what makes the core's own `<ID>_API_KEY` ladder read `ANYAPI_API_KEY`.
+
+What was left out: the profile fields Nodecode has no use for (the `any-api`
+alias, `hostname`, `auth_type`, `api_mode`, `signup_url` as profile data,
+`supports_vision` as a profile-wide claim, and `default_aux_model`, which
+Nodecode pins per session in its own config), and `ANYAPI_BASE_URL`, whose
+place the section's `base_url` takes. A key `/connect` saves answers as it
+does for any other provider, without code here: the plugin's registry did
+that for it, and so does the core.
