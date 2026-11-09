@@ -1,0 +1,27 @@
+// The cell's section of ~/.nodecode/config.jsonc. A present section is an
+// enabled one; "enabled": false vetoes the cell and installs nothing.
+"insight": {
+  // Required: the OpenAI-compatible base URL, scheme included. The cell
+  // POSTs <base_url>/chat/completions.
+  "base_url": "https://api.example.com/v1",
+  "model": "gpt-4.1-mini",
+
+  // The key is named, never written here: an environment variable
+  // (api_key_env) or a file only you can read (api_key_file). Set at most
+  // one; a local server may take neither.
+  "api_key_env": "OPENAI_API_KEY",
+  // "api_key_file": "~/.config/insight-key",
+
+  // Optional: a SearXNG instance with format=json enabled, for the two
+  // sources a definition cites. Empty or absent, nothing is searched.
+  // "searxng_url": "http://localhost:8888",
+
+  // Optional: the whole system instruction, {term} replaced by the term.
+  // "template": "**{term}** - one-sentence definition, then one example.",
+
+  // Optional: look for sources before writing (needs searxng_url).
+  "search": true,
+
+  // How long the provider may take, in seconds.
+  "timeout": 120
+}
