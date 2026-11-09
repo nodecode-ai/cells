@@ -1,0 +1,15 @@
+// The nexus cell's section of ~/.nodecode/config.jsonc.
+// Nothing here is a secret: the Qdrant API key is named by an env var.
+{
+  "nexus": {
+    "url": "http://127.0.0.1:6333",
+    "collection": "nexus",
+    "embedding_url": "http://127.0.0.1:11434/api/embed",
+    "embedding_model": "qwen3-embedding:0.6b",
+    "api_key_env": "QDRANT_API_KEY",
+    "access_level": "private",
+    "agent": "nodecode",
+    "recall": true,
+    "capture": true
+  }
+}

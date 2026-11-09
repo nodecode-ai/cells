@@ -1,0 +1,34 @@
+nodecode-nexus is a rewrite of Neboy72's Neboy72/nexus-memory:
+
+  https://github.com/Neboy72/nexus-memory
+  commit 783488328eee1a9ae29ea6ae62bdb63be5dfade3
+  MIT License, Copyright (c) 2026 Nebo (LICENSE)
+
+Rewritten: the plugin's user-facing memory on the nexus Qdrant collection --
+nexus_recall (with the point-in-time as_of), nexus_remember (category,
+salience, confidence, access level, source), nexus_forget, the
+nexus_guardrail_check that matches stored protection rules against a
+destructive command's targets, and nexus_find_entities. The same payload
+fields and the same collection name, so a cell and the original provider (or
+any MCP-connected agent) read and write one memory. The prefetch of what the
+store holds about the newest ask before each turn, and the write-back of a
+finished turn, are carried; so is the access-level gate that fails closed on a
+missing level, and the demotion of stored text that reads like an instruction.
+The Python runtime of the original -- an embedded Qdrant client, a local
+sentence-transformers stack, a private venv, a loopback embedding service and
+the consolidation daemon -- is Common Lisp here: nlk:http speaks Qdrant's
+REST API and an embeddings endpoint, one section declaration types the
+settings, and five nlk:define-contract declarations type the tools'
+arguments so the schema the model is shown and the body that runs are one
+shape.
+
+Left out: the parts of the original that are an engine rather than a Hermes
+surface -- the knowledge-graph traversal and subgraph verbs (the edges ride
+in each fact's payload; nexus_find_entities reads the entities without
+walking them), the guardrail override audit record, the cost-aware routing
+statistics, the SICA self-improvement cycle, the opt-in recall reranker, the
+LLM fact extraction at session end (a cell takes no second model call, so a
+finished turn is filed as the user's own sentence), the daily backups, the
+watchdog self-check and status section, the update check, and the standalone
+CLI, MCP server and dashboard, which are other front ends for the same
+runtime.
