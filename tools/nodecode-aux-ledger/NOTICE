@@ -1,0 +1,28 @@
+nodecode-aux-ledger is a rewrite of olric3015's olric3015/hermes-plugins:
+
+  https://github.com/olric3015/hermes-plugins
+  commit aee39a67b4ffb1ff786c417fb92f997a8c7663b7
+  MIT, Copyright (c) 2026 olric3015 (LICENSE)
+
+The original is a Hermes Agent plugin in Python: an `__init__.py` that
+subscribes to the `post_auxiliary_call` hook and registers `/aux`, and a
+`ledger.py` that appends one JSON object per auxiliary-call attempt to a JSONL
+file under the plugin's data folder, trims it past 2 MB, and prints the two
+reports. This rewrite keeps the same feature in Common Lisp as a Nodecode cell:
+one advisory function on `nle:complete` (Nodecode's one side call) writes each
+row, one advisory function on the provider entry under it keeps the attempt
+count and the token usage, `ledger.lisp` owns the same row, the same
+newest-5000 trim, the same windows and the same two tables, and `/aux`, the
+`aux_ledger` tool and the `(help :aux)` topic are the one declaration's
+contributions. A row is what the original's row was: identifiers, timings and
+token counts, never a prompt or an answer.
+
+Left out, and why: the ledger's location was the plugin's data folder, which
+Hermes resolves per profile; a Nodecode cell has one config section, so `file`
+names the ledger instead. Hermes reports a task name per call (`titling`,
+`compression`, ...) because its hook receives one; `nle:complete` receives
+only an instruction, so a named call comes from `WITH-TASK` and everything else
+reads as `side`. The original's `aux_task`, `provider` and `model` groupings,
+time windows, `recent N` listing, the trim and the `/aux clear` verb are all
+kept, as is its rule that a call that cannot be recorded never fails the call
+it was recording.
