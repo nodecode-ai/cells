@@ -1,0 +1,21 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. An absent section is enabled; "enabled": false vetoes it.
+{
+  "protonpass": {
+    "command": ["pass-cli"],
+    // the variable holding a personal access token or AI-agent token, for a
+    // machine with no terminal to sign in at; leave it out to use the
+    // pass-cli login this process already sees
+    "token_env": "PROTON_PASS_PERSONAL_ACCESS_TOKEN",
+    "key_provider": "fs",
+    "vault": "Keys",
+    "field": "password",
+    "mappings": [
+      "OPENAI_API_KEY=pass://Keys/OpenAI/password"
+    ],
+    "timeout_seconds": 30,
+    "cache_ttl_seconds": 300
+  }
+}
