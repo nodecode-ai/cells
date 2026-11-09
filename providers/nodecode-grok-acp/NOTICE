@@ -1,0 +1,28 @@
+nodecode-grok-acp is a rewrite of nicolasdmolina's nicolasdmolina/hermes-grok-acp:
+
+https://github.com/nicolasdmolina/hermes-grok-acp
+commit 2851d6667be7f1a9044fee5006a382699d942c6f
+MIT, Copyright (c) 2026 Nicky Molina (LICENSE)
+
+Rewritten: the provider a turn rides (the `grok' CLI on the user's own Grok
+subscription, argv `agent --no-leader stdio'), the ACP session lifecycle
+(initialize at protocol version 1, session/new, the model and the reasoning
+effort as session config options, one session/prompt per round), the fold of
+the streamed session/update text, the OpenAI-schema prompt with the
+<tool_call> block contract and its parsing back into tool calls, the
+fs/read_text_file and fs/write_text_file bridge, the permission answer, the
+model and effort selection, the argument list the section names, and the
+friendly note when the CLI is missing or logged out. Reimplemented in Common
+Lisp against the Nodecode cell contract: one lane whose stream function
+spawns the CLI and speaks the protocol, one hook answering the credential,
+one listing the models.
+
+Left out: the plugin's inheritance of its harness's ACP client, its
+provider-profile and alias plumbing (`xai-grok-acp`, `grok-acp-agent`), the
+`grok models` setup probe and its interactive `grok login`, the
+provider-credential scrubbing of the child environment, the `GROK_HOME` and
+`GROK_CLI_PATH`/`HERMES_GROK_ACP_ARGS` environment overrides (the section
+names the same things), the error-text translation for a missing binary, and
+the session-model-list fetch that only fed a picker. The plugin's whole
+purpose, a Grok subscription answering turns keylessly through the CLI it is
+already logged in to, is kept.
