@@ -1,0 +1,13 @@
+nodecode-emotion-chip is a rewrite of 100yenadmin's 100yenadmin/ai-emotion-chip:
+
+  https://github.com/100yenadmin/ai-emotion-chip
+  commit f4afab1e0e23f1691ad3ecf56982df2ab94aef72
+  Apache-2.0, Copyright 2026 Electric Sheep (100yenadmin) (LICENSE)
+
+The emotion data the original bundles (emotion_chip/data/) is CC0 1.0, dedicated by the same author (LICENSE-DATA).
+
+What was rewritten: the original's pure half — the bracket scanner in emotion_chip/score.py, the renderer in emotion_chip/render/, the group and alias tables and the guide prose in emotion_chip/data/ — reimplemented in Common Lisp: the same grammar, the same five dialect tables, the same 171 emotion concepts, 19 rendering groups and sound aliases, transcribed from the original's bundled JSON. The scanner keeps the original's guards: an identifier's brackets, a chained subscript, a call's result, a numeric reference and a Markdown link's target are the agent's own text and never delivery; a sentence boundary is read around the common abbreviations; a group that wraps other groups is unwrapped so no operator word is spoken.
+
+What was left out, and why: the original was a speech provider inside another harness, so it also carried the transport — the ElevenLabs HTTP call, the Fish Audio plugin bridge, the per-session delivery log, the vendor-tag adapter the Fish plugin needs, and the middleware that rewrote another provider's speech request in place. None of that survives being taken out of that harness: this rewrite is text in, text out, and answers the voice settings the opening cue asks for beside the rendered text, which is what any speech call is given. The Fish S1 tagless route survives as a dialect; the "sounds off" session switch survives as a setting the command writes.
+
+What the rewrite adds: the dialect is a declared setting rather than a guess from the harness's voice configuration, so one image renders for either vendor; the section refuses a backend it cannot speak for; and the guide the original could only paste into a system prompt is a manual topic and a tool.
