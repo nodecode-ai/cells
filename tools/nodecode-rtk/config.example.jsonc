@@ -1,0 +1,11 @@
+// The rtk cell's section. Every member is optional; these are the
+// defaults, written out. There is no key and no secret: the cell runs the
+// rtk program the user already installed.
+{
+  "rtk": {
+    "binary": "rtk",
+    "timeout_seconds": 2,
+    "rewrite_eval": true,
+    "extra_tools": []
+  }
+}
