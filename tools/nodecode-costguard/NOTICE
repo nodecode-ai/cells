@@ -1,0 +1,22 @@
+nodecode-costguard is a rewrite of Whydiriki700's Whydiriki700/costguard:
+
+  https://github.com/Whydiriki700/costguard
+  commit 967e2b7ac9fed33698d430906bd6feba0339a6fe
+  MIT, Copyright (c) 2026 Riki Wahyudi (LICENSE)
+
+What was rewritten: the plugin's four pieces are one cell. Its metering of
+each API call from the provider's usage block became a read of the
+`turn.usage` facts Nodecode already records per provider round — exact
+counts, and the cost the catalog's price made of them at the time of the
+round; its per-session and per-day totals are folded from those facts; its
+nudge as a budget nears is one line recorded into the turn at the round
+point, once per session and level; and its brake is a refusal at the tool
+point, with the same exemption for its own status tool. The `/cost` command,
+the status tool and the manual carry the report.
+
+What was left out, and why: the per-model price overrides in the plugin's
+settings are dropped, because Nodecode prices each round with its own catalog
+when the round is recorded and that price is what the store keeps; the
+chars-per-token estimate for endpoints that report no usage is dropped too,
+because a round with no counts is metered as nothing rather than guessed at,
+and the plugin's own unit-test suite is replaced by this cell's tests.
