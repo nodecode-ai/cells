@@ -1,0 +1,30 @@
+nodecode-lcm-x is a rewrite of electricsheephq's electricsheephq/lcm-x:
+
+  https://github.com/electricsheephq/lcm-x
+  commit 984a40045372f1f24a87d060194786f4d1843b90
+  MIT, Copyright (c) 2026 Stephen Schoettler (LICENSE)
+
+Rewritten: the promise and the verbs. The original hooks a Hermes turn's
+before-call, after-call and subagent points and keeps every message and tool
+result in an embedded SQLite store, compressing older turns into a tree of
+summaries that the model can walk back down into the verbatim text. This cell
+keeps every turn the same way -- the operator's ask, the answer and each
+tool result, verbatim, on the :frame point -- in one append-only JSON file per
+session, and gives the model the four verbs that matter over it: lcm_search
+finds the blocks carrying a query's words, lcm_expand reads them (and their
+neighbours) back in full by the reference lcm:<session>:<seq>, lcm_recent
+lists the newest, and lcm_status says what is held and where. /lcm and
+(help :lcm-x) are the operator's side of it. The references, the
+lossless store and the "search, then read back verbatim" flow are the
+original's; the SQLite DAG, the summary tree and the tool names are not.
+
+Left out, and why: the DAG of summaries and its compaction policy, the
+embedding provider and its semantic search, the retrieval planning, the
+evidence compiler and the diagnostic and doctor verbs (16 tools in all). Each
+of them compresses or re-ranks context so that a smaller window suffices --
+which is the Hermes harness's problem, not Nodecode's, where the model edits
+its own working context and a whole turn costs nothing to keep. What is kept
+is the half Nodecode does not already have: a store outside the window that
+outlives compaction and answers the exact words rather than a summary of them.
+Search is lexical (every word of the query must appear) instead of embedded,
+so there is no model call, no key and no server.
