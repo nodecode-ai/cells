@@ -1,0 +1,23 @@
+nodecode-rea is a rewrite of NousResearch's NousResearch/hermes-official-plugins:
+
+  https://github.com/NousResearch/hermes-official-plugins
+  commit 1690b63a4790cb821fb6a319ba524815d4e09411
+  MIT License, Copyright (c) 2026 Nous Research (LICENSE)
+
+Rewritten: the plugin's `mcp.json` — the pinned `npx -y rea-agents@6.7.0 mcp`
+server, its stdio transport, and the two environment variables it forwarded
+(`REA_GHIDRA_STARTUP_TIMEOUT_MS`, `REA_PWNTOOLS_PYTHON`) — as a cell that
+launches the server itself and exposes it as two model tools and the verbs
+`rea:tools`, `rea:schema`, `rea:call`, `rea:status` and `rea:restart`, so no
+`mcp.servers` entry is hand-written. Also rewritten: the
+`skills/reverse-engineer-anything` and `skills/crash-triage` workflows, as
+the prose `(help :rea)` answers.
+
+Left out: the two skill folders verbatim and their six reference documents
+(the workflow is condensed to the primer, not shipped as files); the
+`REA_KUNA_COMMAND`, `REA_TSHARK_COMMAND`, `REA_CAPINFOS_COMMAND`,
+`REA_SIGROK_COMMAND` and `REA_WABT_BIN_DIRECTORY` environment variables,
+which the plugin did not forward either — engines are found on PATH as REA's
+own default; the `crash-triage` helper script, a standard-library Python file
+whose job the crash tools now do through the same server; and the plugin's
+per-server call budget, which is the cell's `call_timeout_seconds` setting.

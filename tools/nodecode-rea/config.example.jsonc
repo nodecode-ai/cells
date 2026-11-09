@@ -1,0 +1,17 @@
+// The rea section of ~/.nodecode/config.jsonc. Every field is optional
+// except server: the pin the plugin shipped is rea-agents@6.7.0.
+{
+  "rea": {
+    // the pinned npm package the MCP server runs from ("npx -y <server> mcp")
+    "server": "rea-agents@6.7.0",
+    // the launcher: npx on PATH, or a path to one. Node.js 22.19+, 24.11+ or 26+
+    "npx": "npx",
+    // one call's deadline, in seconds. A first Ghidra import can take minutes
+    "call_timeout_seconds": 300,
+    // forwarded as REA_GHIDRA_STARTUP_TIMEOUT_MS: REA's own import deadline
+    "ghidra_startup_timeout_ms": 900000,
+    // forwarded as REA_PWNTOOLS_PYTHON: a Python with pwntools, pyelftools and
+    // Unicorn, which core dumps need; empty leaves REA's own default
+    "pwntools_python": ""
+  }
+}
