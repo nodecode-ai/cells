@@ -1,0 +1,26 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "usage-guard": {
+    "enabled": true,
+    "sources": ["claude", "codex"],
+    "threshold_percent": 97,
+    "warn_percents": ["80", "90"],
+    "max_age_s": 60,
+    "min_interval_s": 180,
+    "stale_grace_s": 900,
+    "fail_open": false,
+    "cache_file": "",
+    // empty reads the published endpoint of each source
+    "claude_base_url": "",
+    "codex_base_url": "",
+    // empty reads the sign-in that app wrote on this machine
+    "claude_credentials": "",
+    "codex_credentials": "",
+    // empty reads the variable named in the docstring of each
+    "claude_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
+    "codex_token_env": "CODEX_ACCESS_TOKEN"
+  }
+}
