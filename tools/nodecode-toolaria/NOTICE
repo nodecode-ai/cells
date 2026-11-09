@@ -1,0 +1,25 @@
+nodecode-toolaria is a rewrite of Sahil-SS9's Sahil-SS9/Toolaria:
+
+  https://github.com/Sahil-SS9/Toolaria
+  commit 667df67ef5bd23160b1b87a93ebf895c122b6b17
+  MIT License, Copyright (c) 2026 Sahil Saghir (LICENSE)
+
+cell.lisp is the plugin's rescue half, rewritten in Common Lisp against the
+Nodecode cell contract. The original's transform_tool_result hook becomes one
+hook on the core's :TOOL point: a tool result over max_result_chars is
+written to a content-addressed store (the first 12 hex characters of its
+SHA-256, as the original's handle is) and the model reads a head-and-tail
+excerpt plus a handle line. rescuer_fetch keeps the same name, the same
+modes it could carry in Common Lisp - outline, search, grep, range, stat,
+full - and the same answer shapes; /rescuer is the original's /rescuer status
+command; the tests prove the spill, every mode and the lifecycle, offline.
+
+Left out, and why: pass-by-reference (the tla:<id> token expanded inside a
+downstream tool's arguments) needs the host's tool-request middleware, which
+this contract does not expose, so a handle is read with rescuer_fetch only.
+Also left out: semantic search through sentence-transformers (search here
+ranks by the words a line shares with the query, so the cell carries no
+Python and no model download), the optional Fernet encryption of credential
+tier blobs and its key-rotation command, the hot-blob pinning and size-budget
+sweeps (a sweep here drops blobs older than ttl_hours at start), the chained
+version grammar (<id>@N) and the expansion audit ledger.
