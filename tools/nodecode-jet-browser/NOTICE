@@ -1,0 +1,21 @@
+nodecode-jet-browser is a rewrite of masakaai's masakaai/jet-browser:
+https://github.com/masakaai/jet-browser
+commit 1b0b10feb70e52bde844ba4e1cb7c35600af4b35
+Apache-2.0, Copyright 2026 Jet Browser contributors (LICENSE)
+
+The original is an integration for another agent harness: `integrations/hermes`,
+one Python module that registers a single tool and, when the tool is called,
+starts the project's digest-pinned Jet Browser image with Docker, drives its
+ordered JSONL protocol (create, navigate, snapshot, input, evaluate,
+screenshot, close), checks the evidence, and removes the container.
+
+This rewrite keeps that one bounded operation and its protocol, in Common Lisp:
+the same tool under the same name and with the same JSON evidence, the same
+fixed `docker run` argument vector, the same pinned image and the same
+checked-in seccomp profile, carried over unchanged into this folder. What it
+adds is Nodecode's own surface — a declared config section the setup panel and
+the model's primer both read, a `/jetbrowser` command, a manual topic, and an
+option to keep the captured PNG — and what it leaves out is the Hermes plugin
+API itself: there is no other harness here to register with. The original's
+Python unit tests are replaced by this folder's Common Lisp tests, which run
+the cell against a scripted container and need no Docker.

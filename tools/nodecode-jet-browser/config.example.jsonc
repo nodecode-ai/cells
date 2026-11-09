@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "jet-browser": {
+    "enabled": true,
+    "image": "ghcr.io/masakaai/jet-browser@sha256:540a1fec531bf71b62c2c2d030c033249955ffc192ab7e0e7a1ac8d8412a661b",
+    "docker": "docker",
+    "platform": "linux/amd64",
+    "timeout_seconds": 180,
+    "memory": "1g",
+    "cpus": "2",
+    // where to keep the PNG the check captures; omit to keep only its sha256
+    "screenshot_file": ""
+  }
+}
