@@ -1,0 +1,28 @@
+nodecode-file-tray is a rewrite of aydnOktay's aydnOktay/hermes-file-tray:
+
+  https://github.com/aydnOktay/hermes-file-tray
+  commit 275f040af145b6b3f9660487b7d35821d33d5aca
+  MIT, Copyright (c) 2026 aydnOktay (LICENSE)
+
+What was rewritten: the whole plugin, in Common Lisp against Nodecode's cell
+contract. The two tools keep their names and their answers (`file_tray_list`
+with its `markdown` switch, `file_tray_clear`), `/files` keeps its three
+words, and the rules are the original's: unique paths, the newer action in
+place, at most `max_items` (40 unless set), URLs and one-line garbage
+ignored, a 500-character path limit, and a markdown list that numbers each
+path with its action. In Hermes the paths were gathered from a
+`post_tool_call` for `read_file`, `write_file` and `patch` and kept in one
+`state.json` for the whole install; here the same seam is two Nodecode ones —
+an advice on the file verbs `edit`, `write-file` and `look`, and the `:tool`
+point's argument scan — and the list lives in each session's own state, so it
+never mixes two sessions.
+
+What was left out, and why: the desktop pane (`desktop/plugin.js`) draws a
+Hermes window, so the operator's view here is `/files` and its panel, which is
+what the pane's click-to-insert composer flow reduced to; the bundled skill
+(`skills/file-tray/SKILL.md`) became the tool's own description and
+`(help :files)`, since a cell's guidance needs no separate registry; and the
+V4A patch-body scan (`*** Update File:` lines) went with it, because no
+Nodecode verb takes a multi-file patch body — `patch` here changes a kept
+definition, not a file. The `file://` URL and the Windows drive-letter cases
+are kept, as written.
