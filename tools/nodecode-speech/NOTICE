@@ -1,0 +1,35 @@
+nodecode-speech is a rewrite of allmodels-io's allmodels-io/hermes-speech:
+
+  https://github.com/allmodels-io/hermes-speech
+  commit 6efecc359aa4c091b41ad530575943657ee259de
+  MIT License, Copyright (c) 2026 AllModels (LICENSE)
+
+Rewritten: the AllModels client and the call paths behind it -- the API root
+and its /oai OpenAI-compatible base (client.py), the bearer key that is either
+inline or read from the variable api_key_env names (client.py's API_KEY_ENV and
+get_api_key), text-to-speech as POST {root}/oai/v1/audio/speech with the model,
+voice, input, response_format, speed and provider fields, the x-idempotency-key
+header, the 0.25 to 4.0 speed clamp and the mp3/opus/aac/flac/wav/pcm response
+formats (providers.py's AllModelsTTSProvider.synthesize), speech-to-text as one
+multipart POST {root}/oai/v1/audio/transcriptions with the model, file,
+language and prompt (providers.py's AllModelsTranscriptionProvider.transcribe),
+and the public, cursor-paginated voice catalogue at GET /v1/voices with its q,
+model, provider, language and page_size parameters, flattened per voice and
+provider the way catalog.py's _normalize_voice_entry did (client.py's
+list_voices). The per-profile speech settings the plugin wrote into Hermes'
+config.yaml -- tts.model, tts.voice, tts.allmodels.voice_provider, tts.speed,
+tts.output_format, stt.allmodels.model, language and prompt -- are the cell's
+allmodels-speech config section, read by the same three verbs the plugin's
+providers served.
+
+Left out: the Hermes-only surfaces -- registration as Hermes' own TTS and
+transcription provider, the sentence-pipelined voice mode and the streaming
+PCM path (streaming.py), the Ogg/Opus switch for messaging gateways, MEDIA:
+delivery, the /voice pipeline, the two bundled skills and the setup and
+management tools that drove them, the email signup and verification flow, the
+background model-catalogue cache, and the GitHub release update checker --
+because they plug into Hermes' runtime or its UI rather than describe an API,
+and a cell reaches AllModels directly through nlk:http instead. Signup,
+top-up links and the model catalogue are therefore not in the rewrite: a user
+brings a key from allmodels.io, and /speech balance reads the account's credit
+the way the plugin's own balance command did.
