@@ -1,0 +1,7 @@
+nodecode-vision-inline is a rewrite of BrokeSkill's BrokeSkill/hermes-vision-inline:
+
+  https://github.com/BrokeSkill/hermes-vision-inline
+  commit 281bce608e799834cd1b60929d3f9b44756cb7c2
+  MIT, Copyright (c) 2026 BrokeSkill (LICENSE)
+
+Rewritten: the one rule the original exists for — when the session's model takes image input, the image goes to that model as an image and stays in the conversation, and only a model that reads text only, or a section that says text, sends it to an OpenAI-compatible captioner whose answer comes back. The original reached this from a Hermes tool_execution middleware that replaced the vision_analyze handler and called Hermes's private vision helpers; here it is the see_image tool the model calls and the /vision command, so the rule is the pure function ROUTE-FOR and needs no private seam. Left out: the middleware shape itself, which is Hermes's plugin contract and has no analogue here — Nodecode's core already attaches an image the model asks to see with (look PATH), so the attachment is a call to the engine's own attach-turn-images rather than a replacement of a handler. Also left out: reading the model's modality from a locally cached models.dev file, which is the engine's model-reads-images-p here; and the diagnostic logging the original wrote, which /vision answers instead.
