@@ -719,6 +719,23 @@
       }
     },
     {
+      "name": "nodecode-effort-router",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "047b561535f069f900de1cf5dd448cf4f57e3cf4",
+      "path": "tools/nodecode-effort-router",
+      "description": "Effort routing: each turn goes to the model and reasoning effort a decision model picks for it",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "AlphaPerseii3000",
+        "repo": "AlphaPerseii3000/jev-effort-router",
+        "commit": "6fd9f2ec1c53cb99b5e6c7043c25bbd37938d4a5",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-elevenlabs-music",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "23590e5a9b1b722d0411b4067e0546b32ebf79e4",
@@ -925,6 +942,23 @@
       ]
     },
     {
+      "name": "nodecode-github-mentions",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "1c10e7c7090fa0a020997ba2565155c958219c59",
+      "path": "tools/nodecode-github-mentions",
+      "description": "GitHub @mentions as tasks: list the unread ones, read the thread, answer in it",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "luantak",
+        "repo": "luantak/hermes-github-mentions",
+        "commit": "d8a88220a547180663fcec76a069c8fbbf63bff9",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-gitlab-duo",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
@@ -1025,6 +1059,23 @@
       }
     },
     {
+      "name": "nodecode-handflow",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "5c4e8834391d22ef28f03bd0a6b85e7d06733f8f",
+      "path": "tools/nodecode-handflow",
+      "description": "A visible step plan the agent writes before it works and marks as it goes",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "DECRUX9812",
+        "repo": "DECRUX9812/hermes-handflow",
+        "commit": "6526ef75ffeb133d66472bc1899c87f34dcf9556",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-health-data",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "6993479c6791b14428d5940a36b71915936f1fd9",
@@ -1056,6 +1107,23 @@
         "repo": "electricsheephq/heartbeat2",
         "commit": "8a1fc6efe9ad340941d92d7bf39583e8dc2dc8bc",
         "license": "Apache-2.0"
+      }
+    },
+    {
+      "name": "nodecode-hermes-band",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "fc3f18a53e08692f0b96006704767cf7b1d0db84",
+      "path": "tools/nodecode-hermes-band",
+      "description": "Compose and render original music locally: a score in, an exact-length wav and mp3 out",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "RegeneratusLabs",
+        "repo": "RegeneratusLabs/hermes-band",
+        "commit": "c9dec797d9bf29fd5e09be538952c7db9bace8c8",
+        "license": "MIT"
       }
     },
     {
@@ -1367,6 +1435,23 @@
       }
     },
     {
+      "name": "nodecode-levea-video",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "da9b17c0d7979ec46113ead09bc703c4b2c42601",
+      "path": "tools/nodecode-levea-video",
+      "description": "Levea agentic video editing: describe the edit, the cloud editor renders and exports an MP4",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "brajendrak00068",
+        "repo": "brajendrak00068/agentic-ai-video-production",
+        "commit": "0f11f14511c8b9a030689d1541c28752c1d60a59",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-lfg-alarm",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "d085f32fb0c1e9340c776dd930c570c0c2822a09",
@@ -1455,6 +1540,23 @@
       "depends_on": [
         "nodecode"
       ]
+    },
+    {
+      "name": "nodecode-magi",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "9c5976b6a4dd03176822961db7f1ac447cac9f15",
+      "path": "tools/nodecode-magi",
+      "description": "Review pending memory writes and edit the durable memory store",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "MarcosAlves90",
+        "repo": "MarcosAlves90/magi",
+        "commit": "3c08b45466c6d4c5f0047a24175c6734accb9c7e",
+        "license": "MIT"
+      }
     },
     {
       "name": "nodecode-markifact",
@@ -1576,6 +1678,23 @@
       }
     },
     {
+      "name": "nodecode-mermail",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "5d020cc00b4aaaa033150187786ec4eded8ae18c",
+      "path": "tools/nodecode-mermail",
+      "description": "Mermail: agent mailboxes and email over the hosted MCP server, as tools",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Nudgen-Marketing",
+        "repo": "Nudgen-Marketing/mermail-skills",
+        "commit": "269a711bf683845d75009df4984bf25eee83b0bd",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-mind-kit",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "87f0cc7055074c9281719948d4936ef5c6ee511b",
@@ -1593,6 +1712,23 @@
       }
     },
     {
+      "name": "nodecode-model-router",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "cb2b272d9ce69212e77cddd01af30521b218dbe6",
+      "path": "tools/nodecode-model-router",
+      "description": "Picks an LLM for a task under quality, cost and latency limits, and explains the choice",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Pinutss",
+        "repo": "Pinutss/jev-model-router",
+        "commit": "b977dc3ef07738aab005c433d08c1da3fa949e8d",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-monid",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "7230f46d034d74bf9f75b35f731b46c65ad2c96a",
@@ -1606,6 +1742,23 @@
         "author": "monid-ai",
         "repo": "monid-ai/hermes-plugin",
         "commit": "cdf26de6da51a04c5ffccaa48bee0a2d51f7c35c",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-morning-briefing",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "bfc5bcb886579b28b9a7315e942b70c25a7c649c",
+      "path": "tools/nodecode-morning-briefing",
+      "description": "Morning briefing: the day's weather and the last 36 hours of headlines as one printable newsprint page",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "drkpxl",
+        "repo": "drkpxl/morning-briefing",
+        "commit": "347ce44a1e71173285b2943a7a97bbdece8327b2",
         "license": "MIT"
       }
     },
@@ -1772,6 +1925,23 @@
       ]
     },
     {
+      "name": "nodecode-optchat",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "1d98cb10e8aee199ca8250e3d668bf0718733e46",
+      "path": "tools/nodecode-optchat",
+      "description": "Endless local memory: an append-only log of every turn and a binary summary tree to recall it",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "aska-digital",
+        "repo": "aska-digital/optchat-memory",
+        "commit": "7b0f3abd65b95996366d0495787c95af981ea587",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-otel",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "d9226cc7b676b761f80d1644f1745c313d505cff",
@@ -1932,6 +2102,23 @@
         "author": "lucas-nicolas",
         "repo": "lucas-nicolas/hermes-protonpass",
         "commit": "b17cc05a92494aa1d6481c3f1b6ff14a241f7375",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-pushover",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "5ba82cd3c6c0bd661e23781cdd2c4ef217ff87ab",
+      "path": "tools/nodecode-pushover",
+      "description": "Pushover: a push notification to your phone when the agent needs you",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "lightx",
+        "repo": "lightx/pushover-hermes-plugin",
+        "commit": "967fe2d476b384d51773529a7b34ab52e3fdebf1",
         "license": "MIT"
       }
     },
@@ -2468,6 +2655,23 @@
       }
     },
     {
+      "name": "nodecode-tripo",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "8adb65c6836d9aef6d3bf3bc6886f341eeb7f478",
+      "path": "tools/nodecode-tripo",
+      "description": "Tripo 3D: text, image or multiview to 3D, texturing, rigging, animation, retopology and conversion",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Adolanium",
+        "repo": "Adolanium/hermes-tripo",
+        "commit": "09b26f6b3b2662a0fe86dc782283bc4cddf7a196",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-twenty-crm",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "ce316971de58ab6ef0c7fb0dcd93927bf26fe285",
@@ -2547,6 +2751,23 @@
       }
     },
     {
+      "name": "nodecode-venice-web",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "50d4cdff993fd99f9191127030f647f5b2e85f07",
+      "path": "tools/nodecode-venice-web",
+      "description": "Venice AI web search and page extract: privacy-first search and Markdown fetch, on a key",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "MnrGreg",
+        "repo": "MnrGreg/hermes-venice-web",
+        "commit": "dcc286fc40544f4489831ff246de8030fd0417fa",
+        "license": "MIT"
+      }
+    },
+    {
       "name": "nodecode-vidiq",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "0187de5c9b62c69bf8f2c0d005c9de224a14dc8f",
@@ -2622,6 +2843,23 @@
         "author": "NousResearch",
         "repo": "NousResearch/hermes-labs-plugins",
         "commit": "4987918a068fcf4b3efbb584db5dd05e5f57c669",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "nodecode-workflows",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "bf5c72ca13a26d94c6e1b51ef0643d5f48a62c5f",
+      "path": "tools/nodecode-workflows",
+      "description": "Agent-authored workflow graphs run in the background: after-edges, fan-outs, gates, resume",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "jacobhausler",
+        "repo": "jacobhausler/hermes-workflows",
+        "commit": "464b4aa304960c89522e709d6b109d0fd08fe06e",
         "license": "MIT"
       }
     },
