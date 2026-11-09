@@ -1,0 +1,31 @@
+nodecode-deepseek-search is a rewrite of JasonSwindle's JasonSwindle/hermes-deepseek-search-fetch:
+
+  https://github.com/JasonSwindle/hermes-deepseek-search-fetch
+  commit 95738a9913ac6595b73e655fad1d79414b1311dc
+  MIT, Copyright (c) 2026 Jason Swindle (LICENSE)
+
+The rewritten plugin is the repository root of that commit: one Python module
+that registered a web provider with a harness, answering that harness's
+search and extract calls from POST /v1/tools/search and /v1/tools/fetch.
+What is carried over is everything between the two tools and the vendor: the
+two endpoints, the bearer key and where it comes from, the 128-character
+query clamp at a word boundary, the reversal of the fetch endpoint's
+backslash escaping in both content fields, the search fields (query, count,
+need_content, localization), the hit signals (rerank_score, authority, date,
+site_name), the retries on 408, 429 and 5xx with Retry-After when the call
+can afford it, the 402 top-up sentence, the 300-character cap on vendor
+error text, and the rule that a failed answer is a line the model can repair
+from rather than an exception. It was rewritten in Common Lisp against
+Nodecode's cell contract, as two model-facing tools (deepseek_search,
+deepseek_fetch) and two eval verbs, since Nodecode has no web-backend seam
+for a cell to plug into.
+
+What was left out, and why: the harness-shaped parts -- the provider base
+class, the settings surface, the batch deadline that kept a multi-URL
+extract inside that harness's own timeout (here each request has its own
+ceiling), and the fallback to the harness's keyless search ring, which is
+the host's behaviour and not the plugin's. The site_icon url each hit can
+carry is not printed, because a model reading a text answer cannot use an
+icon. The Python test suite, its live acceptance script and its dev-only
+pinned requirements are not carried; this folder has its own offline tests,
+every vendor call stubbed.
