@@ -1,0 +1,23 @@
+// The section ~/.nodecode/config.jsonc may carry for the followups cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it, and an absent one runs on the defaults below. The agent writes a
+// follow-up down with the followup_add tool (or (followups:add ...) from eval)
+// and it comes back as one reminder at its next model request once its time
+// has arrived.
+{
+  "followups": {
+    // The quiet window: no reminder goes out from quiet_start to quiet_end,
+    // through midnight. Equal hours mean no window at all.
+    "quiet_start": 23,
+    "quiet_end": 8,
+    // The least time between two reminders, so a due item is not said twice.
+    "cooldown_minutes": 90,
+    // How many follow-ups one reminder may carry, and how many lines it may
+    // take: a message, not a digest.
+    "max_items": 3,
+    "max_lines": 6,
+    // How long a category the operator pushed back on (one "annoyed", or
+    // three "ignored") stays muted.
+    "mute_days": 30
+  }
+}
