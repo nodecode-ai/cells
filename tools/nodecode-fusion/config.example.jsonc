@@ -1,0 +1,21 @@
+// nodecode-fusion: the whole `fusion' section of ~/.nodecode/config.jsonc.
+// Every member is optional; this is the shape, not a requirement.
+{
+  "fusion": {
+    // which harness configs to read; empty reads every one present
+    "harnesses": ["hermes", "codex", "claude", "grok"],
+
+    // the folders those configs live in
+    "hermes_home": "~/.hermes",
+    "codex_home": "~/.codex",
+    "claude_home": "~/.claude",
+
+    // count a provider whose key is set in the environment, when no config
+    // names a model: the original's standard pairing, added as one
+    "count_env_keys": true,
+
+    // a file of rosters merged over the detected ones: each value is the
+    // roster shape the `fusion_teams` tool answers with `template=NAME`
+    "templates_file": "~/fusion-templates.json"
+  }
+}
