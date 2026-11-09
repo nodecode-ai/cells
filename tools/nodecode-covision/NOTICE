@@ -1,0 +1,34 @@
+nodecode-covision is a rewrite of Covision-Consultants's Covision-Consultants/covision-agent-plugin:
+
+  https://github.com/Covision-Consultants/covision-agent-plugin
+  commit 373012bed0a36f7d4345a180eefc26352403cd3d
+  Apache-2.0, Copyright (c) Covision-Consultants (LICENSE, whose appendix names no year or holder)
+
+The rewritten plugin is the repository root of that commit. Its two halves are
+kept. The MCP declaration (mcp.json) becomes the `covision' section's
+endpoint, defaulting to the same production connector,
+https://connector.covisionperformance.com/mcp; the cell speaks MCP's
+Streamable HTTP transport to it -- initialize, the initialized notification,
+tools/list and tools/call over JSON-RPC 2.0, the Mcp-Session-Id carried back,
+a reply in a JSON body or in the last data: line of an event stream -- and
+registers every tool the connector lists as a Nodecode tool under the
+connector's own name, so the model calls the same approved read-only tools the
+original's runtime would have listed. covision_tools lists them and
+covision_call runs one by name, which is what the connector offers whether or
+not the listing at start succeeded. The skill (skills/covision/SKILL.md) is
+kept twice: its operating rules ride every request as a standing section, and
+its use cases are the manual's page and the two tools' descriptions --
+source facts apart from recommendations, the record's title, date or URL
+cited, no claim that anything was written, a plain statement when access is
+unavailable, and a focused follow-up when the request names no meeting,
+organization or time range. /covision answers the connection the way the
+original's setup notes answer `hermes mcp test`.
+
+What was left out, and why: the browser OAuth sign-in. The original leaves it
+to its runtime (`hermes mcp login`, whose pre-registered client and local
+redirect port are its own), so the cell reads an access token from its section
+and leaves the sign-in to the operator; a refresh still has to be re-pasted,
+because the client id the token was issued to belongs to the client that
+signed in. scripts/validate.mjs, the JSON-manifest check, has nothing to
+check here: this cell's manifest is its .asd. LICENSE is the repository's
+LICENSE, unchanged.
