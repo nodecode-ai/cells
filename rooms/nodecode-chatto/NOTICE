@@ -1,0 +1,24 @@
+nodecode-chatto is a rewrite of jrimmer's jrimmer/hermes-chatto-plugin:
+
+  https://github.com/jrimmer/hermes-chatto-plugin
+  commit aab0a20635cb578253a8014bc8d93e1b32f020fc
+  MIT, Copyright (c) Nous Research (LICENSE; the repository carries no
+  LICENSE file, and its plugin.yaml names that author and licence)
+
+What was rewritten: the lane as a whole -- logging in to a Chatto server with
+an account and password, reading the rooms a bot is in, reading room events,
+posting answers with the ask's thread, the mention rule (@login in a room, any
+message in a direct message) and the poll that keeps it all going. The
+ConnectRPC paths and their JSON bodies are the original's; the WebSocket
+realtime transport, the binary protobuf codec that fed it, and the Hermes
+gateway own plumbing around them are not carried over.
+
+What was left out and why: the original listens on Chatto's realtime
+WebSocket, decoding binary protobuf frames by hand; this lane polls the same
+server's ConnectRPC methods every few seconds instead, so it needs no codec
+and no long-lived socket, at the cost of a reply landing a few seconds later
+than a message arrives. Message editing is not modelled either -- Chatto's
+edit call is not carried -- so a status card that would be edited arrives as
+a fresh line in the same thread. File uploads, typing indicators beyond one
+beat, reactions and the Hermes-specific cron delivery, presence broadcasting
+and heartbeat file are left to the host cell that draws the answer.

@@ -1,0 +1,19 @@
+// channels.chatto --- the Chatto lane. Secrets are references, never values.
+{
+  "channels": {
+    "chatto": {
+      "url": "https://chat.example.com",
+      "login": "nodecode-bot",
+      // one of the two, holding the bot account's password
+      "password_file": "~/.nodecode/secrets/chatto-password",
+      // "password_env": "CHATTO_PASSWORD",
+      // fail-closed: at least one of these must name who may talk
+      "allowed_users": ["you"],
+      "owner": ["you"],
+      // empty means every room the bot is in; list ids to narrow it
+      "allowed_rooms": [],
+      "require_mention": true,
+      "free_response_rooms": []
+    }
+  }
+}
