@@ -1,0 +1,21 @@
+nodecode-pii is a rewrite of lukefx's lukefx/hermes-pii:
+
+https://github.com/lukefx/hermes-pii
+commit bd6c8e5dea1d709ff3182cb78ceb141e7c06ab5c
+MIT, Copyright (c) 2026 Luca Simone (LICENSE)
+
+The plugin hooks Hermes's own request middleware and hands user-role text to
+Presidio, with a separately provisioned spaCy model reading names, places and
+organizations. This rewrite keeps the shape and drops the Python: the cell
+advises the fold that projects the event log onto provider-shaped messages,
+redacts the user-role text of a copy, and hands the fold's clean flag back.
+The detectors are local string rules -- an address, a phone number written
+with a plus or separators, a checksum-valid card number, an IBAN whose
+remainder checks, a dotted IPv4 address -- and the same union-of-overlaps
+mask names the placeholder, structured kinds first. What was left out: the
+spaCy model, so a person or a place is masked only when the operator lists
+the word in `terms`, and a phone is read by its written shape rather than by
+libphonenumber. The Italian model, the score threshold, the language
+setting and the fail-open warning class wording went with them; the
+fail-open policy itself, the copy-not-in-place rewrite, the user-role-only
+whitelist and the no-recovery-map masking are kept.
