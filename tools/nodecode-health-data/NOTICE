@@ -1,0 +1,35 @@
+nodecode-health-data is a rewrite of Infinite-Labs-AI's Infinite-Labs-AI/hermes-health-apollo:
+
+  https://github.com/Infinite-Labs-AI/hermes-health-apollo
+  commit 9f2db670a2669c9f3401fecb3b547ed52bcb2c3b
+  MIT License, Copyright (c) 2026 Ultima AI, Inc. (LICENSE)
+
+Rewritten: the question the plugin exists to answer, and the three verbs that
+answer it — health_sync, health_query and health_log_food — over a local store
+of one row a day: Oura's daily sleep, readiness (with its resting-heart-rate
+contributor and temperature deviation), activity (score, steps, active
+calories), stress (high and recovery seconds, the day's summary) and SpO2, plus
+the long sleep period (duration, efficiency, average HRV, lowest heart rate,
+bedtime). health_query keeps the original's recent / date_range / stress_days /
+coverage shapes, its Pearson correlation over a shifted pairing (so last
+night's sleep can be compared with today's readiness), and its food log with
+calories optional and counted apart when absent. The coach's answering rules —
+cite dates and values, compare against the user's own baseline, frame
+cross-domain links as associations, say when data is thin, never invent a
+number, never diagnose — are the plugin's skills/health-coach/SKILL.md, kept as
+the manual (help :health-data). The Python (requests, SQLite) is Common Lisp
+here: nlk:http for Oura's v2 REST API, one section declaration for the
+settings, three nlk:define-contract declarations for the tools' arguments, and
+JSON lines under the organism's home for the store.
+
+Left out: the Google Health connector and its OAuth application (accounts,
+token refresh, PKCE) — an Oura personal access token needs no application of
+the user's own, and a second provider doubles the setup for a cell that answers
+from one; the browser OAuth flow and its loopback callback; the six-hour cron
+that ran a sync launcher script; /health's connect, setup and doctor
+subcommands, replaced by the section and one sync verb; the calendar peek
+through a host Google Workspace helper; and the analysis-pack layer
+(health_feature_query, health_analysis_plan, health_analyze,
+health_analysis_explain), whose feature materialization and provenance tables
+were built for that second provider. A query_type correlates two metrics
+instead, which is the question the packs mostly answered.
