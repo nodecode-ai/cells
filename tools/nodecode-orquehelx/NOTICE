@@ -1,0 +1,33 @@
+nodecode-orquehelx is a rewrite of TicoraX's TicoraX/OrqueHelx:
+
+  https://github.com/TicoraX/OrqueHelx
+  commit 964896e44979b29755dd880c5eb2557909e88bf6
+  MIT License, Copyright (c) 2026 TicoraX (LICENSE)
+
+Rewritten: the plugin's routes and its one tool, `delegate_to`, from
+`routes.py`, `delegate.py` and `__init__.py` — a route is a name the model
+picks, over a provider and a model it never sees as parameters; the goal runs
+in a subagent pinned to that route's provider and model, and answers what the
+child said; a route that runs out of quota answers `out_of_quota`, with the
+reset time when the provider named one and the other routes; the `policy` -
+`ask`, `parent_decides`, `wait` - still decides what the parent does next, and
+`ask` and `wait` still keep it from delegating again in the same turn until
+the user answers. Also rewritten: the quota bookkeeping of `quota.py` (only an
+unambiguous provider error counts, never a guess) as the records `/ohx quota`
+reads, and the `/ohx routes|quota` command of `command.py`.
+
+Left out, and why: Hermes' `fetch_account_usage` measurement (a window's
+percentage and reset time, and the rule that a measured window at 100 % is an
+exhaustion). Nodecode has no per-subscription usage fetcher, so a percentage
+would have to be invented; the cell records an exhaustion only from the words
+a provider failed with, and `/ohx quota` says `no data` where the original
+would print a window. Also left out: the `api_request_error` hook, because
+the failure is read where the subagent's own turn ends (so only delegated
+failures are counted); the `pre_tool_call` hook that blocks Hermes' native
+`delegate_task` while routes are configured, since a Nodecode subagent is
+launched by the cell and there is no native spawner to redirect; the
+system-prompt section, replaced by the tool and help-topic lines the cell
+declares; the v0.1 Spanish keys (`rutas`, `politica`, `preguntar`,
+`padre_decide`, `esperar`); and the `acp` route form, refused since v0.3.0 by
+the original and here simply a route whose provider is the ACP provider's own
+name.
