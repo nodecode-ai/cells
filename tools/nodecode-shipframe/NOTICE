@@ -1,0 +1,20 @@
+nodecode-shipframe is a rewrite of juanitourquiza's juanitourquiza/shipframe:
+
+  https://github.com/juanitourquiza/shipframe
+  commit 2d0a246206b7a3235c3167af5512d8dd4d8a29dd
+  MIT License, Copyright (c) 2026 Juan Urquiza (LICENSE)
+
+skills/ is that repository's skills/ folder, unchanged: 44 folders, a SKILL.md
+in each, with the sibling files they name. Nothing converts them; Nodecode
+reads a SKILL.md under a cell as a prose skill where it sits.
+
+shipframe.lisp is ours. The upstream plugin registers its skills with a
+dependency-free Python entrypoint; Nodecode's index reads the same folders
+directly, so the entrypoint has no work left, and this one file takes its
+place: the chain the skills walk, the pack by purpose, and the rules they
+share, drawn from the repository's README at that commit. The installer for
+Claude Code, Codex CLI and OpenCode (install.sh, hooks/, agents/, codex/,
+opencode/, .claude-plugin/), the technology packs under project-packs/, the
+templates, the wiki seed and the opt-in CI reviewer (scripts/) are left out:
+they install into other harnesses or run in someone's CI, and none of them is
+something a Nodecode cell can be.
