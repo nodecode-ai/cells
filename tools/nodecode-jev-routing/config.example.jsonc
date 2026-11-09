@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "jev-routing": {
+    "enabled": true,
+    // the routing table JSON; empty leaves the cell inert
+    "config_path": "",
+    // shadow and notify both only advise; off makes route answer (:skipped "mode off")
+    "mode": "shadow",
+    // empty: TYPESAFE_BASE_URL, else https://api.typesafe.ai
+    "base_url": "",
+    // empty: TYPESAFE_DEFAULT_MODEL, else jev-latest
+    "model": "",
+    "timeout_ms": 3500
+  }
+}
