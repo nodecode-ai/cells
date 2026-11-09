@@ -1,0 +1,16 @@
+{
+  // nodecode-tripwire: everything here is optional. With no section at all
+  // the log is tripwire/events.jsonl under the Nodecode home, and the cell
+  // only watches.
+  "tripwire": {
+    // Where the rows are written. The digest's mark sits beside it.
+    // "events_file": "~/notes/refusals.jsonl",
+    // Refuse this one tool, so the alarm can be proved end to end. Empty
+    // means the cell only watches. Clear it when the drill is done.
+    "drill_tool": "",
+    // Tools whose failures are housekeeping and never a trip.
+    // "ignore": ["screenshot"],
+    // Record a call that failed on its own, not only one a cell stopped.
+    "record_errors": false
+  }
+}

@@ -1,0 +1,21 @@
+nodecode-tripwire is a rewrite of percyhendrux123-prog's percyhendrux123-prog/hermes-tripwire:
+
+  https://github.com/percyhendrux123-prog/hermes-tripwire
+  commit 904a4f559808c57152ebb666cd0ab7d863220b49
+  MIT License, Copyright (c) 2026 Deploy Axiom (LICENSE)
+
+The original is a plugin for another agent harness: it listens for a blocked
+tool call and for a denied approval, writes one line about each to a shared
+JSON-lines file, and ships a small scheduled script that reads the new lines
+and prints one alert. This rewrite keeps that record and reimplements it in
+Common Lisp against Nodecode's own seams: one :TOOL point hook records what a
+refused call answered, `/tripwire` and the `tripwire_digest` tool are the
+digest the scheduled script used to print, and the original's `TEST_BLOCK`
+switch file (which blocked one tool in one profile) became the declared
+`drill_tool` setting, so the alarm can still be proved end to end. The
+approval half is read off the refusal text an approval card produces, because
+Nodecode asks the question through the guard cell's own path rather than a
+separate approval hook; the count-every-event bookkeeping (a byte offset, a
+cross-process file lock) is a line count and one in-process lock, since one
+Nodecode process owns a home. The original's fields, its 120-character
+reason, its never-store-the-arguments rule and its fail-open posture are kept.
