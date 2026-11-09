@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell -- documentation,
+// not config: the folder holds no secret. The declaration in cell.lisp is the
+// authority; this is an illustration of it. A present section is enabled;
+// "enabled": false vetoes it.
+{
+  "nowstamp": {
+    "enabled": true,
+    "timezone": "Europe/Berlin",
+    "zoneinfo_dir": "/usr/share/zoneinfo",
+    "format": "%a %Y-%m-%d %H:%M %Z",
+    "language": "en",
+    "show_elapsed": true,
+    "stamp_tool_results": false,
+    "stamp_interval_seconds": 60
+  }
+}
