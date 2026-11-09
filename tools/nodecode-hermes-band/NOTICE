@@ -1,0 +1,28 @@
+nodecode-hermes-band is a rewrite of RegeneratusLabs's RegeneratusLabs/hermes-band:
+
+  https://github.com/RegeneratusLabs/hermes-band
+  commit c9dec797d9bf29fd5e09be538952c7db9bace8c8
+  MIT License, Copyright (c) 2026 Regeneratus Labs (LICENSE)
+
+Rewritten: the four tools the plugin gave the model -- band_render,
+band_validate_score, band_list_presets and band_doctor -- with the same
+arguments; the score as data (bpm, key, mode, bars, progression of roman
+numerals, and one part per player with instruments, roles, fingering and drum
+patterns, registers, start bars, gains, voices, jitter, swing and a mix of pan,
+level and send); the four presets (bed, band, pulse, funk) with their tempos,
+keys, bars and progressions; the theory that voices each chord by moving least
+from the one before it; the humanisation (section arc, per-voice drum offsets,
+jitter, swing); the MIDI writer (format 1, one track per part); and the render
+chain -- fluidsynth per part, the stems summed with per-part pan and level, a
+synthesised room built from feedback delay lines, a fade, peak normalisation to
+-3.2 dB, ffmpeg's EBU R128 loudness pass and the mp3.
+
+Left out: the plugin's numpy DSP that could not be carried without a Python
+runtime -- the per-instrument EQ profiles, the FFT convolution reverb built from
+a noise impulse response, the tilt EQ and the tanh glue saturation -- replaced
+by a simpler deterministic room and the controllers each MIDI track carries; the
+`hermes-band` command line (doctor/demo/check) and the audio-measurement report,
+which read the rendered wav and are an operator's tool rather than a model's; the
+five-bot session runner and the rap piece under session/ and pieces/, which are
+worked examples in the repository, not the plugin; and the plugin's own
+plugin.yaml settings schema, which became this cell's hermes-band config section.
