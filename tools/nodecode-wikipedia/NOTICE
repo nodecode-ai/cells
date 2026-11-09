@@ -1,0 +1,21 @@
+nodecode-wikipedia is a rewrite of EloquentBrush0x's EloquentBrush0x/hermes-context-refs:
+
+  https://github.com/EloquentBrush0x/hermes-context-refs
+  commit 0154f6bfaafc837cc4af78742e6db7c087d5b5a7
+  MIT License, Copyright (c) 2026 EloquentBrush0x (LICENSE)
+
+Rewritten: the plugin's `wiki-ref` folder, whose `@wiki:<title>` context
+reference becomes a Nodecode tool (`wikipedia`) and a slash command (`/wiki`).
+The MediaWiki query, the trailer that marks the text as quoted material, the
+section walk over the plain-text extract (one section plus its subsections,
+exact heading before a case-insensitive one), the pronunciation clean-up, the
+word-boundary truncation, the edition/max_chars/timeout settings and the "did
+you mean" suggestions on a miss are the original's, reimplemented in Common
+Lisp against the cell contract.
+
+Left out: Hermes's `@prefix:` reference syntax and its keystroke autocomplete,
+which are that harness's own; the same two shapes live here as a tool argument
+and a `Title#Section` target, and a miss answers with the titles or headings
+that would have autocompleted. Also left out: the same-host redirect guard, since
+the cell hands redirects to Nodecode's own HTTP client, which bounds how many it
+follows instead of checking the host here.
