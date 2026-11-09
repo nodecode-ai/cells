@@ -1,0 +1,21 @@
+nodecode-fluent is a rewrite of Bruno-coder21's Bruno-coder21/fluent:
+
+  https://github.com/Bruno-coder21/fluent
+  commit 182c4301f2437e784e9022f1f38576e1d68c3f5f
+  MIT, Copyright (c) 2026 Bruno Verona (LICENSE)
+
+The rewrite keeps the idea whole: a program's own `--help` is read once, kept
+as a small card in this home's fluent folder, and every command an eval call
+spawns is checked against it before it runs, so a long option the program does
+not have is caught with the closest one it does. help.lisp is the help-page
+parser and the checker; adopt.lisp runs `--help` and keeps the cards; cell.lisp
+is the section, /fluent, fluent_check and the one :tool hook. Left out, because
+Nodecode supplies it or this cell does not need it: the man page reader (one
+help page per command is enough to judge its options), the
+destructive-subcommand approval prompts (nodecode-guard refuses risky shell
+commands, and Nodecode has its own approvals), the plugin's dashboard and its
+counters, the post-run offer to adopt a program that rejected an option (the
+model has fluent_check with `adopt` instead), and the freshness check against
+the binary's size and mtime -- a card describes the program as it was when it
+was read, and /fluent adopt reads it again. Only long options are judged, as in
+the original; short options and positional words pass.
