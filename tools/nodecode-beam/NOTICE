@@ -1,0 +1,28 @@
+nodecode-beam is a rewrite of Beam-Network's Beam-Network/beam-hermes:
+
+https://github.com/Beam-Network/beam-hermes
+commit d41448cb3f08bacbc368a4948ecbe310e5f6964c
+
+MIT, Copyright (c) 2026 Beam Network, Fusionblock LLC (LICENSE)
+
+The rewrite carries beam_hermes/api.py and beam_hermes/common.py as Lisp: the
+Beam API root, the X-Api-Key header, GET /auth/me, GET /transfers and
+GET /transfers/<id>, the fields of a transfer that are shown (id, status,
+bytes, error, timestamps), the status and order vocabularies, and the
+refusals for a missing key, a refused key and a 404. It carries
+beam_hermes/rooms.py as Lisp too: the `beam --json --no-interactive`
+invocation, the Room actions' arguments and the checks on each (an id that is
+never an option, the fixed vocabularies, confirmed=true before a credit is
+spent), the invitation token written to a file whose path — never its token —
+is answered, and the JSON the CLI prints, rendered as text. The section's key
+variable replaces BEAM_API_KEY read straight from the environment, and the
+nodecode home replaces the plugin's data directory.
+
+Left out, and why: `estimate` and `start` are the Beam Python SDK's work —
+it signs short-lived routes locally and a detached worker keeps signing them
+until the transfer ends — and the cell depends on nothing but nodecode, so no
+transfer is created here. `media_publish`, whose answer is a WHIP URL and a
+bearer token for an encoder, and the detached Room listener with its cursor
+(`beam_room_listen`, `beam_room_messages`) are Room features a later cell can
+carry. The Hermes toolset/skill wiring is Hermes's, not a cell's: the tools
+and one help topic replace it.
