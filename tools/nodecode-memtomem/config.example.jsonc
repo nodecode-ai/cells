@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it. Every member is optional: the
+// defaults below are memtomem's own store.
+{
+  "memtomem": {
+    "root": "~/.memtomem",   // the store: notes, config.json and memtomem's index
+    "notes_dir": "~/.memtomem/memories",
+    "max_results": 8,         // hits one search answers with unless the call asks otherwise
+    "max_bytes": 4000000      // how much of the notes one read takes in
+  }
+}
