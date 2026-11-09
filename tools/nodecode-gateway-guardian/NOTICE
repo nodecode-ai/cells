@@ -1,0 +1,24 @@
+nodecode-gateway-guardian is a rewrite of kawsthingz's kawsthingz/kawsthingz-hermes-gateway-guardian:
+
+  https://github.com/kawsthingz/kawsthingz-hermes-gateway-guardian
+  commit f9959e4b1006ced16d1c6d6647dabe7c99f5aeb1
+
+MIT — declared in that repository's plugin.yaml, which carries no LICENSE file —
+Copyright (c) 2026 kawsthingz (plugin.yaml)
+
+What was rewritten: the plugin's two tools and its slash command are this
+cell's two tools and `/gateway-guardian`; its pattern counts, its OK/DEGRADED/
+BLOCKED thresholds, its cause sentences, its recovery checklists and its
+append-only intent log are the same logic, written again in Common Lisp against
+the Nodecode cell contract. Its regular expressions became the literal phrases
+those expressions named, since the core carries no regular expressions; a line
+is still counted once per phrase it carries. Its declared tools, hooks and
+command names are unchanged in spirit, prefixed as Nodecode names tools.
+
+What was left out and why: the plugin was written for one agent runtime — it
+resolved that runtime's home from an environment variable, walked its profile
+folders for logs, and recognised its gateway processes by their command line.
+This cell reads the log files its section names (defaulting to the newest under
+this home) and recognises this runtime's own gateway process by /proc, so it
+answers for the gateway it runs beside. Nothing was added: no network call, no
+credential, no telemetry.
