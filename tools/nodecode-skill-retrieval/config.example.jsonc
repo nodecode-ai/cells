@@ -1,0 +1,11 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell.
+// Documentation, not config: the folder gets pushed and holds no secret.
+{
+  "skill-retrieval": {
+    "enabled": true,
+    "roots": ["~/.nodecode/skills", "~/skill-libraries"],
+    "top_k": 6,
+    "inject": true,
+    "triggers": true
+  }
+}
