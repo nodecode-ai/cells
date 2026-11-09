@@ -1,0 +1,9 @@
+{
+  "nyx": {
+    // where the journal lives; leave it out for <nodecode home>/memory
+    "data_dir": "~/.neurobase",
+    "recall_limit": 8,
+    "forget_days": 7,
+    "filter_secrets": true
+  }
+}
