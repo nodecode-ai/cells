@@ -1,0 +1,7 @@
+// The inbox cell's section: nothing here is required.
+{
+  "inbox": {
+    // How many rows each section of the view prints.
+    "limit": 20
+  }
+}
