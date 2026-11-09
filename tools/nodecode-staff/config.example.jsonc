@@ -1,0 +1,24 @@
+// The staff section, as ~/.nodecode/config.jsonc takes it. Every member is
+// optional: with none of them, the built-in team answers on the session's own
+// model and the board lives in staff/jobs.json under the Nodecode home.
+//
+// A roster you write replaces the built-in team whole.
+{
+  "staff": {
+    "specialists": [
+      { "id": "ops",
+        "title": "Ops lead",
+        "focus": "runs the week",
+        "prompt": "You run operations. Give the plan as days, with what is due when." }
+    ],
+
+    // Where a handoff goes. Either, both, or neither.
+    "inbox_dir": "~/CoworkerInbox",              // handoffs/<id>.json out, results/<id>.md back
+    "webhook_url": "https://your.host/hook",     // https only; http for localhost. May hold a credential,
+                                                 //   which is why it is a secret and is shown as scheme://host/...
+
+    "state_dir": "~/staff",                      // the job board; staff/ under the Nodecode home when unset
+    "webhook_timeout_seconds": 15,               // one POST's deadline
+    "max_output_tokens": 1200                     // one specialist answer's ceiling
+  }
+}

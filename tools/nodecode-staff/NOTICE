@@ -1,0 +1,47 @@
+nodecode-staff is a rewrite of leoresendedop-sys's leoresendedop-sys/grokbot-staff:
+
+  https://github.com/leoresendedop-sys/grokbot-staff
+  commit 30840dcbbecefc659112acfd21609beaa0efc85c
+  MIT License, Copyright (c) 2026 grokbot-staff contributors (LICENSE)
+
+Rewritten: the whole plugin bar its two user interfaces. The six built-in
+specialists with their titles, focus lines and instructions, and the paragraph
+every one of their system prompts opens with, are specialists.py's, character for
+character; so is the sentence that names the team after the role, and the user
+message that puts a context under a heading (specialists.py:10-70, 118-121). The
+roster rules came too: an id of lower-case letters, digits, - and _, at most 40,
+the first of a repeated id kept, the built-in team standing in when a user's
+list names none, and every field cut to its ceiling. The job board is the
+original's one JSON file of jobs -- local briefs and handoffs together, newest
+500, rewritten whole under a lock with an atomic replace (store.py). The five
+tools keep their arguments and their bounds, and their two commands became one,
+/staff, because a cell's command is its own name.
+
+The handoff bridge is bridge.py's: https only, plain http for a loopback host,
+refuse a URL carrying user info, show a configured webhook as scheme://host/...
+so a token in its path or query is never printed, a strict job-id pattern
+before a path is built from one, no symlinked result file, a 2 MB ceiling on
+one, and results read from results/<id>.json|md|txt with a .json answering its
+result or text member. It fails closed: with neither a webhook nor a folder
+configured, a handoff says what to set and sends nothing. The Python is Common
+Lisp here: one NLK:COMPLETE side call in place of ctx.llm.complete, one
+NLK:HTTP POST in place of urllib, and the folder read with UIOP.
+
+What was left out, and why. The Hermes dashboard route and the desktop pane:
+they draw the board inside Hermes's own web and desktop UI, and a cell has
+neither to draw into -- staff_status and /staff read the same board. The
+bundled skill file, which is guidance for a model: its playbook is (help :staff)
+here, where a person and a model both reach it. The optional delegation backend,
+which registers a `specialist` parameter on Hermes's own delegate_task: Nodecode
+routes a delegated session by its own means, and a cell that replaced that would
+be routing every turn, not staffing one. Also left out: the plugin's own
+manifest and packaging, and its unit tests, which test the Python.
+
+Two renames, neither a loss. grokbot_delegate, grokbot_collect and
+grokbot_status are staff_delegate, staff_collect and staff_handoffs, because the
+bridge is any webhook routine or shared folder the user runs, not one brand's
+bot; and the section still reads the GROKBOT_STAFF_WEBHOOK_URL variable the
+original named, so an existing configuration keeps working. Redirects: the
+original refused them outright, and here the POST goes through the runtime's one
+HTTP call, which follows up to five -- the URL is held to https before the first
+one, as it was there.
