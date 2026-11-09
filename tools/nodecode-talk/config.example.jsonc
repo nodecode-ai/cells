@@ -1,0 +1,26 @@
+// The nodecode-talk section. Every member is optional except a key.
+{
+  // The environment variable holding an OpenAI API key.
+  "api_key_env": "OPENAI_API_KEY",
+  // The API root; OpenAI's unless a compatible one is named.
+  "base_url": "https://api.openai.com/v1",
+  // The voice that speaks: alloy, ash, ballad, coral, echo, sage, shimmer,
+  // verse, marin or cedar.
+  "voice": "cedar",
+  // The speech model; tts-1 and tts-1-hd also answer.
+  "tts_model": "gpt-4o-mini-tts",
+  // The transcription model; whisper-1 also answers.
+  "stt_model": "gpt-4o-mini-transcribe",
+  // The audio container speech is written in: mp3, wav, opus, flac or aac.
+  "format": "mp3",
+  // The CLI that plays a file, given its path. Empty, the first of afplay,
+  // paplay, aplay, ffplay and mpv found on PATH.
+  "player": "",
+  // The CLI that records the microphone, a command line with %f for the file
+  // and %s for the seconds. Empty, the first of arecord, sox and ffmpeg found.
+  "record_command": "",
+  // How long talk_listen and a bare /talk record for.
+  "record_seconds": 6,
+  // How long one audio request may take, in seconds.
+  "timeout": 120
+}
