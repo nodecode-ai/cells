@@ -1,0 +1,28 @@
+nodecode-error-ledger is a rewrite of olric3015's olric3015/hermes-plugins:
+
+  https://github.com/olric3015/hermes-plugins
+  commit dd646070c662ebf1978e5623bf30d2d1f55f7bef
+  MIT, Copyright (c) 2026 olric3015 (LICENSE)
+
+What was rewritten: the plugin's hook and its ledger module are one cell. Its
+hook appended a JSON line per failed provider attempt to a file of its own;
+Nodecode's log already journals each failed attempt (`turn.provider_retry`,
+with the provider, model, HTTP status, the provider's own line and the budget
+it spent) and each model move (`turn.provider_fallback`, with the
+classification of the failure), so the cell folds those facts instead of
+recording them again: one row per failed attempt, a retry and the fallback of
+the same attempt merged. The original's `/errors` words are kept whole --
+last 24 hours or a window such as 7d, by model, provider, cause or day,
+`recent N`, and the newest-first list -- as the `/error-ledger` command, an
+`error_ledger` tool the model can call, `(help :error-ledger)` and the eval
+functions `report`, `failures` and `clear`.
+
+What was left out, and why: the plugin's own file, its two-megabyte trim and
+its file lock are gone, because the log it now reads is bounded and shared by
+the whole organism; `clear` hides what is recorded so far (one log position
+kept under the home) instead of deleting rows, because the facts are the
+organism's own record and a ledger cell should not destroy them; the
+recorded `session_id`, retry count and API duration columns are dropped from
+the tables, since the log's session and turn identify a row and the plugin's
+retry counter was its own bookkeeping; and the plugin's unit-test suite is
+replaced by this cell's tests.
