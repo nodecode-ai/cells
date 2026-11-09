@@ -1,0 +1,23 @@
+nodecode-boxcompute is a rewrite of boxcompute's boxcompute/hermes-plugin:
+
+  https://github.com/boxcompute/hermes-plugin
+  commit de27f5719372905686474f8a7650c591c63e899c
+  MIT, Copyright (c) 2026 BoxCompute (LICENSE)
+
+The original carried no code: a portable manifest (plugin.json), one skill
+(skills/sandboxes/SKILL.md), a banner, and a line the user ran by hand,
+`hermes mcp add boxcompute --url https://mcp.boxcompute.ai/mcp --auth oauth`,
+which added BoxCompute's hosted MCP server to Hermes and let Hermes discover
+its tools. The server is still the service here, and the skill is still the
+guidance, but this cell is the MCP client itself: wire.lisp speaks JSON-RPC
+over streamable HTTP with nlk:http, keep the session id the initialize answer
+issues, and call tools/call; tools.lisp declares six tools over the server's
+own; and +PRIMER+, the skill's rules (when to use a VM instead of the user's
+machine, start small, run long work as a process, stop to stop paying, a
+preview link is public, delete only when asked), is (help :boxcompute).
+What was left out: the OAuth sign-in and the browser flow (a cell's section
+is one key, and Hermes owned the token store, so an API key is the way in
+here), the manifest's tool discovery at connect time (the six tools declare
+their arguments, and boxcompute:tools, boxcompute:schema read the server's
+catalog live for anything else), and the banner. Nothing of the original is
+vendored.
