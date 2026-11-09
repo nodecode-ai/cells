@@ -1,0 +1,37 @@
+nodecode-cognition is a rewrite of aska-digital's aska-digital/cognition-memory:
+
+  https://github.com/aska-digital/cognition-memory
+  commit a31ae960034ef3f0f860a33dc5ab8637549343aa
+  Apache-2.0, Copyright (c) aska-digital (LICENSE)
+
+The rewritten plugin is the repository root of that commit: a Hermes memory
+provider (`agent.memory_provider.MemoryProvider`) called `cognition`. Its
+contract is carried over whole — the three tools keep their names,
+descriptions and parameters (`cognition_search` with query, top_k and repo;
+`cognition_status`; the read-only `cognition_dream` with its optional repo),
+the extraction keeps its narrow heuristics and its 400-character clip, the
+queue keeps the deterministic `cog-{session}-{seq}` refs, the 1m/5m/30m retry
+schedule with 10% jitter, the 24-hour cap, the bounded queue that drops the
+oldest pending entry with a tombstone, and the backlog the status tool
+reports; the commit log keeps the fetch-first merge that compares against the
+base the writer saw, keeps both versions under `{ref}-conflict-{unix_ts}` when
+it no longer matches, and treats exact redelivery as applied; provenance keeps
+its five mandatory fields and its gate; and recall keeps the truncation order
+(system pin, then provenance, then recency, then salience), the marker
+whenever anything is dropped, and the degenerate-budget rule that keeps the
+top entry rather than answering nothing. The store is a directory under the
+home instead of `HERMES_HOME/cognition/`, and two JSON files instead of SQLite
+plus one.
+
+What was left out, and why: the SQLite queue is one `queue.json` holding the
+pending entries and the tombstones, because this image has no SQLite and the
+queue is small by construction (its bound is a thousand entries); the
+cross-process `flock` transaction and the per-ref thread locks became one
+folder lock, because a Nodecode home is one process and one drain; and
+`archive_and_evict`, the eviction-preserving `archive.jsonl` API that nothing
+in the original calls automatically, is not carried over. What is new is
+Nodecode's own: the capture hooks the in-process ingress instead of a
+session-end callback, a `/cognition` command with `remember` beside the three
+tools, and a help topic. The one thing the cell reads outside its own store
+is the home's `.gitconfig` `user.name`, as the author fallback the original
+documents; everything else stays on this machine.

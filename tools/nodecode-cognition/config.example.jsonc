@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "cognition": {
+    "enabled": true,
+    "dir": "",
+    "repos": ["default"],
+    "capture": true,
+    "recall": true,
+    "budget_tokens": 8000,
+    "queue-max-entries": 1000,
+    "author": ""
+  }
+}
