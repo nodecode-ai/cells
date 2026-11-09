@@ -1,0 +1,31 @@
+// The section ~/.nodecode/config.jsonc may carry for the browserless cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it and takes
+// every browserless_* tool out of the catalog.
+{
+  "browserless": {
+    "enabled": true,
+    // the environment variable holding your Browserless API token;
+    // token_file names a file holding it instead (set one, not both)
+    "token_env": "BROWSERLESS_TOKEN",
+    "token_file": "",
+    // the region endpoint your account answers on
+    "base_url": "https://production-sfo.browserless.io",
+    // the stealth browser: hides navigator.webdriver and HeadlessChrome
+    "stealth": true,
+    // "residential" routes the page through a residential IP (more plan units)
+    "proxy": "",
+    // the residential exit country, two letters: us, gb, de
+    "proxy_country": "",
+    // one proxy IP for a whole render rather than a rotation
+    "proxy_sticky": true,
+    // let Browserless solve the captchas it detects
+    "solve_captchas": false,
+    "block_ads": false,
+    // how long one page, and one request, may take
+    "timeout_seconds": 30,
+    // the longest page text browserless_fetch answers
+    "content_chars": 20000
+  }
+}
