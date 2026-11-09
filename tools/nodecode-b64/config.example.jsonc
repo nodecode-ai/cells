@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "b64": {
+    "enabled": true,
+    "max_input_chars": 65536,      // a longer value is refused, not cut
+    "max_inflated_bytes": 1048576, // gzip and zlib output is cut here
+    "text_chars": 3000,            // characters of decoded text shown
+    "text_lines": 60,              // lines of decoded text shown
+    "dump_bytes": 128              // bytes of a binary shown as a hex dump
+  }
+}
