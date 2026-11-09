@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "chronicle": {
+    "dir": "~/notes/chronicle/",  // where the store lives; chronicle/ under the home unless answered
+    "capture": true,              // store each finished turn as a raw event
+    "capture_chars": 600,         // how much of each half of a turn one raw event keeps
+    "search_limit": 5,            // beliefs, and raw events, one search answers with
+    "timeline_limit": 10,         // entries chronicle_timeline answers with
+    "max_beliefs": 2000,         // beliefs kept; the oldest incidental and normal ones go first
+    "max_events": 2000           // raw turn events kept, newest first
+  }
+}

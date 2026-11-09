@@ -1,0 +1,34 @@
+nodecode-chronicle is a rewrite of indigokarasu's indigokarasu/chronicle-agent-context-and-memory:
+
+  https://github.com/indigokarasu/chronicle-agent-context-and-memory
+  commit 92e4351a852117a11542210d06e8e5bfb61c3f1a
+  MIT, Copyright (c) 2026 Indigo Karasu (LICENSE)
+
+The rewritten plugin is the repository root of that commit: a Hermes memory
+provider and context engine over one shared core, with a SQLite event log,
+beliefs that supersede rather than overwrite, salience tiers, an optional
+embedding index and a dashboard.
+
+What was rewritten: the two-tier memory (curated beliefs above the raw events
+that every finished turn leaves), capture of a finished turn, beliefs with
+provenance (an id, a kind, an entity and an attribute, a salience tier, a
+timestamp and a source), supersession by correction, retraction that keeps the
+record, a search over both tiers, an answer that abstains instead of guessing,
+a timeline, an entity's facts, and the original's tool names
+(chronicle_remember, chronicle_search, chronicle_answer, chronicle_ask_about,
+chronicle_timeline, chronicle_history, chronicle_correct, chronicle_forget,
+and chronicle_get_context from the original's get_context). One
+/chronicle command and one manual topic replace the original's dashboard
+entry points, and the store is one JSON document the operator can read.
+
+What was left out, and why: the SQLite event log and the vector index are
+replaced by one JSON document and term matching, because a cell is an
+in-process Lisp folder with no Python and no database driver to lean on; the
+optional embeddings, the host-model extraction pass (a turn is captured whole
+rather than distilled by a second model), the derived-belief rules, the
+contradiction queue, federation, principals and read ACLs, the local-SQLite
+query tool, consent withdrawal and verification queues -- each of these leans
+on machinery (an embedder, a second model call, a federation peer, an ACL
+principal) that the original's runtime supplies and a cell does not; and the
+web dashboard, whose answers /chronicle, the tools and the store file give.
+LICENSE is the original repository's LICENSE, unchanged.
