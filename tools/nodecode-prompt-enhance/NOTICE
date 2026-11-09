@@ -1,0 +1,31 @@
+nodecode-prompt-enhance is a rewrite of apoapostolov's apoapostolov/hermes-agent-awesome-plugins:
+
+  https://github.com/apoapostolov/hermes-agent-awesome-plugins
+  commit 953732a9fb52b6fd89e73fc96d910aab63163e07
+  MIT License, Copyright (c) 2026 Apostol Apostolov (LICENSE)
+  Copyright (c) Adolanium (original hermes-rss,
+  https://github.com/Adolanium/hermes-rss) (LICENSE)
+
+Rewritten: the plugin's two halves, from public/prompt-enhance/desktop/plugin.js.
+Its enhancer set (Clarify, Tighten, Grammar, Expand, Summarize) and their
+instruction texts, the payload that puts a saved prompt and the current draft
+together under "Context:", the library of folders, names and bodies seeded with
+those five, saving, listing, showing and deleting a prompt, and the one-shot
+rewrite: an enhancer's instruction plus "Return only the rewritten prompt. No
+preamble and no code fence.", the draft as the input, and only the rewritten
+prompt back. The rewrite is one POST to an OpenAI-compatible
+chat/completions endpoint named in the config section, where the original asked
+the host for its one-shot call; the library is one JSON file under the home
+instead of the plugin host's storage.
+
+Left out: everything that exists only because the original draws into the Hermes
+desktop composer -- the composer icon and its spinner, the dropdown menus, the
+glyphs (Codicon names), the drag-and-drop reorder, the edit dialogs, the CSS
+that reached into the host's dialog markup, and the per-session undo of an
+enhancement. Also left out: the one-call model override, which ran the host's
+/model command with --once for the session it was in; a cell has no session
+model to override, and the section's model is the rewrite's model. Nothing of
+the original's own code is bundled; it is all reimplemented in Common Lisp
+against Nodecode's cell contract.
+
+LICENSE in this folder is that repository's LICENSE file, unchanged.

@@ -1,0 +1,21 @@
+// The section ~/.nodecode/config.jsonc may carry for the prompt-enhance cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it and takes
+// every prompt_* tool out of the catalog.
+{
+  "prompt-enhance": {
+    "enabled": true,
+    // where the rewrite is asked: any OpenAI-compatible chat-completions root
+    "base_url": "https://api.openai.com/v1",
+    // the model that rewrites a draft; required, and there is no default
+    "model": "",
+    // the environment variable holding the endpoint's key; an endpoint of
+    // your own that takes none still wants it set, to anything
+    "api_key_env": "OPENAI_API_KEY",
+    // the longest answer a rewrite may carry, in tokens
+    "max_tokens": 4096,
+    // how long one rewrite may take, in seconds
+    "timeout_seconds": 60
+  }
+}
