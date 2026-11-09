@@ -1,0 +1,31 @@
+nodecode-memory-shield is a rewrite of churnast's churnast/hermes-memory-shield:
+
+  https://github.com/churnast/hermes-memory-shield
+  commit 347ab18408da52937f7e808a6e88a52b74184225
+  MIT License, Copyright (c) 2026 churnast (LICENSE)
+
+What was rewritten: the promise, in the original's own terms -- the agent may
+add a fact wherever it may write, the operator's own profile may be corrected
+only by the operator in a direct chat and by nobody deleted, the agent's notes
+may be added to and corrected but not deleted, a shared chat is read-only
+unless the person or the chat is trusted, and a violation is blocked or only
+logged. The four policy levels (off, no_delete, owner_edits, append_only,
+read_only), the shared-chat layer on top of them, the trusted list and the two
+modes (block, observe) are the original's. What the original reached through a
+`memory` tool, USER.md and MEMORY.md is reached here through the definitions
+Nodecode keeps: a memory or a skill is one file in a knowledge cell, so the
+tool call becomes a (define-memory ...) or (define-skill ...) -- an add, or a
+replace when that name is already kept -- an (unintern 'name) of one, an
+(edit path ...) or (write-file path ...) into a knowledge folder, or a shell
+command that removes one of its files. Those reads of a call are the
+rewrite's own, as is /memory-shield standing in for the original's
+/memory-shield command and the policy shown by it.
+
+What was left out, and why: the snapshot copies of the two memory files and
+their restore command, because a Nodecode knowledge cell is its own git
+repository and every keep is already a commit -- git is the undo. The audit
+log of refused writes is left out too, since a refusal already lands in the
+session as a failed tool call and a notice carries what observe mode let
+through. The owner-profile rule for Hermes' unattended background review has
+no counterpart, and the approval-gate mode is not repeated: Nodecode answers a
+tool call with a refusal or with nothing, so `mode` is block or observe.
