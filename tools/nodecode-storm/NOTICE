@@ -1,0 +1,30 @@
+nodecode-storm is a rewrite of bmtrnavsky's bmtrnavsky/storm-fusion-research-pipeline:
+https://github.com/bmtrnavsky/storm-fusion-research-pipeline
+commit b1a492eb9cfd41b120db8ac6d8a97128901b87d2
+MIT, Copyright (c) 2026 Brad Trnavsky (LICENSE)
+
+Rewritten: the plugin's one tool, `storm_run_panel`, as a Nodecode cell. Panel.py's two
+prompts are carried nearly word for word — the seat instruction (role, brief, the
+questions it must answer from its own viewpoint, ground claims in retrievable sources,
+mark what is unsourced, end with 3-5 key findings) and the judge instruction (recommend,
+do not decide; consensus first, then contradictions with weights, then what stays
+unresolved) — as are the round's shape (every seat on every lineup slot, one judge over
+all the reports), the caps (12 seats x 4 slots), its rule that a slot names its own
+model and never a model the plugin invented, its refusal to swap in a replacement when a
+seat fails, the "success/panel/calls" answer, and the plain-language hint a failed run
+gives. Where the plugin called the host's `ctx.llm`, this cell calls `nle:complete`, the
+host's own side call, and pins the provider and model through the target that call
+resolves — so, as in the original, the cell never reads a key or a credential store. The
+plugin's skill (its SKILL.md and reference notes) is carried as the manual `(help :storm)`
+plus the tool description, condensed to what a round needs.
+
+Left out, and why: mixture-of-agents presets as a slot and nested fanout (the plugin
+reaches them through a host-specific provider id that a Nodecode lane need not have; a
+preset's reference models can be listed as separate lineup slots instead); the per-call
+`temperature` and the per-call `max_tokens` override as a tool argument (kept, but as the
+section's ceiling, since the host's side call takes no temperature); and the token-usage
+report alongside each seat (the side call answers text, not usage). The standalone
+`run_panel.py` CLI, which posts to an arbitrary OpenAI-compatible endpoint with its own
+key, is left out: in Nodecode the lanes and their credentials already exist, and a second
+key path would be a second way to fail. The human gates live in the conversation rather
+than in a state machine, so a round is one call rather than four checkpoints.
