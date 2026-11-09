@@ -1,0 +1,41 @@
+nodecode-mcp-creator is a rewrite of tonbistudio's tonbistudio/hermes-mcp-plugin-creator:
+
+  https://github.com/tonbistudio/hermes-mcp-plugin-creator
+  commit 0bcd7023ce9764a01551753a3b6800c4fe695047
+  MIT License, Copyright (c) 2026 tonbistudio (LICENSE)
+
+The nine mcp_creator_* tools are rewritten in Common Lisp against Nodecode's
+own seams, with the original's names and arguments: servers, introspect,
+mine, convert, scaffold, validate, install, drift, review. What each one
+keeps:
+
+- introspect is the same one-shot, read-only MCP client: initialize, then
+  tools/list, prompts/list and resources/list over stdio (a child's two
+  pipes, newline-delimited JSON-RPC) or streamable HTTP (one POST per
+  message, JSON or SSE back), with a fingerprint over the tool names and
+  their input schemas, saved as the drift baseline.
+- mine folds what the model actually did with a server: per-tool call and
+  error counts, error samples, and which tool a call followed. The
+  original read the profile's session database and its own hook log; here a
+  :TOOL hook records the MCP calls an eval form makes, redacted, in this
+  folder's own log.
+- convert is the same portable-entry rewrite: a literal secret becomes
+  ${ITS_NAME}, and an unpinned npx/uvx launcher, a profile-only key or an
+  absolute path in an argument is a warning a publish build must fix.
+- scaffold enforces the same name, pin and secret rules, is gated on its
+  own marker file, scans for private detail, and refuses a publish build
+  that carries any.
+- validate, install, drift and review keep their meanings: a structural
+  check of the package, a copy into the cells folder that refuses a folder
+  it did not make, the unchanged/additive/recompile verdict, and a review
+  over drift plus usage since the build.
+
+Left out, because Nodecode's own machinery already is it: the plugin.json
+and mcp.json package shape (the package written here is a Nodecode knowledge
+cell, nodecode-<name>.asd plus a prose define-skill, with mcp.json beside
+it for any MCP client), the `hermes plugins validate` and `hermes plugins
+enable` subprocesses (validate is the cell's own structural check, install
+writes into this home's cells folder and says the next boot loads it), and
+the pre_tool_call approval gate (Nodecode asks its own questions before a
+tool runs). The bundled twelve-step procedure, its references and the
+skill's own frontmatter survive as the cell's manual, (help :mcp-creator).
