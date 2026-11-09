@@ -1,0 +1,27 @@
+nodecode-corpus is a rewrite of teakesdev's teakesdev/corpus-agent-kit:
+
+  https://github.com/teakesdev/corpus-agent-kit
+  commit 53db664236201a885a3a7133ffe62476293faace
+  Apache-2.0 (LICENSE); its copyright line is the stock placeholder
+  "Copyright [yyyy] [name of copyright owner]" and the repository names no
+  holder, so the holder is taken as the author's GitHub handle, teakesdev.
+
+The original carries no code: it is one MCP server citation
+(https://corpuslaw.us/api/mcp, streamable HTTP) plus two prose skills, one for
+US-law research and one for a company-formation intake, wrapped for several
+harnesses. What was rewritten here is that server spoken to directly from the
+image -- a small JSON-RPC client (initialize, notifications/initialized,
+tools/call, a plain JSON or an event-stream answer, one session per start, an
+optional bearer key) in mcp.lisp, five model tools named after the catalog's own
+(law_search, law_get_node, law_coverage, corpus_account, and corpus_call for the
+rest, the formation family included), a /corpus command, and a primer in
+tools.lisp that condenses the two skills' procedure: search before answering,
+quote the citation verbatim, read the provision, check coverage instead of
+guessing, quote limits and prices only from live responses, never collect a
+Social Security Number, never promise to file, pay or submit, and treat referral
+codes as the vendor's business. What was left out, and why: the two skills are
+not shipped as files, so the per-harness config tables (useless inside a cell),
+the worked examples and the vendor's own marketing copy, including the copy it
+required before a formation question, are gone -- their doctrine is the primer,
+in our own words; the other wrapper folders and the logo are decoration or a
+second spelling of the same manifest.
