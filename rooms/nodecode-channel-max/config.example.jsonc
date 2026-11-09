@@ -1,0 +1,27 @@
+// channels.max — talk to Nodecode through a MAX messenger bot.
+// A present section is an enabled one; "enabled": false vetoes it.
+{
+  "channels": {
+    "max": {
+      // Exactly one of these two names the bot token. Never paste the
+      // token here: this file is pushed with the folder.
+      "bot_token_env": "MAX_BOT_TOKEN",
+      // "bot_token_file": "/home/you/.config/max/bot-token",   // mode 600
+
+      // The MAX user ids whose messages the bot answers. Required: without
+      // it the lane refuses to start.
+      "allowed_users": ["123456789"],
+
+      // The operator's own MAX user id, if different: standing policy.
+      // "owner": ["987654321"],
+
+      // The bot's @name in MAX, when its token's /me carries none: how a
+      // group message is recognised as naming the bot.
+      // "username": "nodebot",
+
+      // Seconds between two reads when a read came back empty. MAX holds
+      // the read open for its own timeout first.
+      "poll_seconds": 3
+    }
+  }
+}
