@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key itself lives in auth.json (/connect) or EXPLABS_API_KEY.
+{
+  "experientiallabs": {
+    "enabled": true,
+
+    // Where the gateway is served. The chat lane appends /chat/completions.
+    "base_url": "https://api.experientiallabs.ai/v1",
+
+    // Where /explabs reads GET /credits and GET /key. Set this only when the
+    // gateway's address above is a mirror that serves the Cost API too.
+    "cost_api_base": "https://api.experientiallabs.ai/api/v1",
+
+    // One Cost API read's ceiling, in seconds.
+    "usage_timeout_seconds": 4
+  }
+}

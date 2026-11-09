@@ -1,0 +1,24 @@
+nodecode-experientiallabs is a rewrite of kyoto-aircon's kyoto-aircon/hermes-experientiallabs:
+https://github.com/kyoto-aircon/hermes-experientiallabs
+commit 0d26c3eac2965105a507f6ed90e046bf6f981056
+MIT, Copyright (c) 2026 Spheraz (LICENSE)
+
+Rewritten: the provider profile (its OpenAI-compatible gateway at
+https://api.experientiallabs.ai/v1, its key variables EXPLABS_API_KEY and
+EXPERIENTIALLABS_API_KEY, its curated fallback model list and its auxiliary
+vision model) as a Nodecode catalog row and a credential hook; and the
+account-usage reads behind Hermes' /usage view (GET /credits and GET /key on
+the Cost API, the wallet window and the daily key cap) as the /explabs slash
+command, keeping the original's fail-open posture and its dollars-and-cents
+formatting.
+
+Left out, and why: Nodecode has no per-provider usage view for a cell to
+fill, so the two reads answer a command instead of a panel, and the
+4.5-second clamp the original applies to fit Hermes' 10-second usage hook is
+not needed here (the setting stays, its ceiling does not). The original's
+error classifier, which re-marks the gateway's transient guardrail 400s as
+retryable, is left out because Nodecode's retry ladder reads the status
+alone; a guardrail refusal therefore ends the turn with the gateway's own
+message, and a second ask is the operator's. The live `GET /v1/models`
+listing is not read either: the picker draws the curated fallback, as the
+original does when its live read fails.
