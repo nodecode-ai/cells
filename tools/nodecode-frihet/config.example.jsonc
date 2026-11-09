@@ -1,0 +1,19 @@
+// The frihet cell's section: one key, and where it goes.
+//
+// A section naming no key refuses the start, so the cell is only on once one
+// of the two first members is set. mcp_url is the canonical endpoint unless a
+// private mirror answers the same MCP.
+{
+  "frihet": {
+    // The Frihet API key, pasted here, or left empty with api_key_env naming
+    // the variable that holds it.
+    "api_key": "",
+    "api_key_env": "FRIHET_API_KEY",
+    "mcp_url": "https://mcp.frihet.io/mcp",
+    // Seconds one exchange with the endpoint may take.
+    "timeout_seconds": 15,
+    // Whether an irreversible operation (send, markPaid, issue, delete,
+    // registerVerifactu) waits for you to say Allow once.
+    "ask": true
+  }
+}
