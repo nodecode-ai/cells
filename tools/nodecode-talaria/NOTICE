@@ -1,0 +1,21 @@
+nodecode-talaria is a rewrite of liamsmith86's liamsmith86/talaria-webui:
+
+  https://github.com/liamsmith86/talaria-webui
+  commit 04ebc042c43e3af07ccdc44fa30c1794f1b02c1e
+  MIT, Copyright (c) 2026 Liam Smith (LICENSE)
+
+Rewritten: the plugin's HTTP surface on a Hermes Agent API server, /talaria/v1, as four
+Common Lisp tools on the plugin's own routes -- the capability probe, cross-session history
+search, one reply's metadata (model, token counts, finish reason, reasoning) and one
+session's context use. The argument shapes, the paging (twenty matches a page, offsets to
+10,000, a 200-character query), the session-id and message-id bounds, and the server's own
+error words on a refusal all come from the plugin's sources.
+
+Left out, because it is the plugin's other half and lives inside the server it extends: the
+route handlers themselves, the rewind and compress actions with their session leases, the
+branch-a-session copy, the live clarification and reasoning event stream, the profile
+instructions and prefill inheritance, and the private Hermes internals the plugin reaches
+into (its api_server adapter, agent compression and session database). Those need the
+Hermes runtime and a running run loop; a cell that is a client reads their results instead.
+The observations store the plugin keeps inside the profile is read through the plugin's own
+/response and /context routes rather than by opening its SQLite file.
