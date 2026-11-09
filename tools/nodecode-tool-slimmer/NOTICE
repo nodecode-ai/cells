@@ -1,0 +1,29 @@
+nodecode-tool-slimmer is a rewrite of aliasocracy's aliasocracy/hermes-tool-slimmer:
+
+  https://github.com/aliasocracy/hermes-tool-slimmer
+  commit 1b90aa592f7423233ea6cdfd44c7188e14ca7ccf
+  MIT License, Copyright (c) 2026 Hermes Tool Slimmer contributors (LICENSE)
+
+The plugin was a Hermes plugin of four model tools and a pre-request hook: it
+ranked a turn's own words against the tool catalog's names and descriptions,
+sent only the tools that answered them plus a pinned set, and reported the
+schema tokens saved through a dashboard, a `/tool-slimmer` command and a CLI.
+This rewrite keeps the selection and the report, in Common Lisp: `nle:submit`
+advised to keep each session's own words, `turn-prompt` advised to trim that
+session's tool vector against them, the same three model-facing verbs
+(`tool_slimmer_select`, `tool_slimmer_status` and the way back to every
+schema), a `/tool-slimmer` command and a `(help :tool-slimmer)` topic. The
+keyword ranking is the original's `keyword` mode; the pinned names are its
+`always_include`; the fail-open trim is its `fail_open`; the tokens/4 estimate
+is its `approx_tokens`.
+
+Left out, and why: the dashboard page and its HTTP API (Nodecode's cells
+report through `/cells` and the TUI, and the plugin's own counters ride
+`/tool-slimmer` instead); the `anthropic_tool_search` and `two_pass` modes,
+which defer schemas by a provider-side tool-search flag Nodecode's wires do
+not carry, and the `hydrate_tools` tool that went with them; the systemd
+self-heal unit and the scripts that patched the harness core (Nodecode has no
+such core patch to repair); and the optional `jev` mode, which sent each
+request's text to a third-party ranking API — this rewrite dials nothing.
+Hermes and TypeSafe are their owners' names; the license above covers
+the plugin, not any service.
