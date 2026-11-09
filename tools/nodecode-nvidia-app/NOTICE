@@ -1,0 +1,23 @@
+nodecode-nvidia-app is a rewrite of NousResearch's NousResearch/hermes-nvidia:
+
+  https://github.com/NousResearch/hermes-nvidia
+  commit de75692b479dc88b95e428a9cb25091d3fb0e327 (nvidia-app)
+  MIT, Copyright (c) Nous Research (declared in nvidia-app/plugin.json, which names the
+  author there; the repository carries no LICENSE file of its own)
+
+Rewritten: the plugin's one integration — NVIDIA App's local MCP server on loopback, published
+at an address and token the app rewrites in its McpServer server.json — as an MCP client of the
+cell's own over Nodecode's HTTP: the initialize handshake with its notification and session, the
+Streamable HTTP body (a JSON answer or an event stream's last data: line), re-reading the
+published address and token on every connection, and a session the app forgot handed once more
+under a call. The plugin's twelve tools are registered under their original names, with their
+arguments translated to the app's own, and its skill — the restricted Overlay workflow, the
+explicit-state and no-verification-read rules, the exact game names, the error codes, and the
+"report only what came back" discipline — is the cell's manual topic, /nvidia and its primer.
+
+Left out: the plugin.json manifest, the MCP server declaration with its liveness and version
+block (the cell is the client, so there is no connector to declare and no catalog line to relay),
+the skill's deferral to Hermes's deferred tool catalog, tool_search and tool_describe (the cell
+adds nvapp_list_tools, which asks the server for its own list), and the first-run PowerShell
+probe, which is guidance in the manual rather than a tool. Nothing of the app's code is bundled:
+every byte goes to the server NVIDIA App itself runs.
