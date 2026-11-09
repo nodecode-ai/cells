@@ -1,0 +1,29 @@
+{
+  // nodecode-ros: the `ros` section of ~/.nodecode/config.jsonc.
+  // Nothing here is required: the built-in mock robot is the default.
+  "ros": {
+    "backend": "mock",          // "mock" (2D sim, no ROS) or "rosbridge" (a robot)
+    "host": "localhost",        // the rosbridge machine, a host name -- not a URL
+    "port": 9090,
+    "timeout_seconds": 8,
+    "cmd_vel": "/cmd_vel",
+    "odom": "/odom",
+    "camera": "/camera/image_raw",
+    "stamped": false,            // true wraps the velocity in geometry_msgs/TwistStamped
+    "allow_topics": ["/cmd_vel"],       // globs; a write outside these is refused
+    "allow_services": ["/mock/*"],
+    "geofence": [],              // e.g. [-4, 4, -4, 4] to keep the robot in a rectangle
+    "mock_arena": [5, 5],        // half sizes of the sim's arena, metres
+    "mock_cones": [3.5, 0.8],    // cones as x,y,x,y
+    "snapshots_kept": 20,
+    "safety": {                  // the interlock's numbers; these are the plugin's defaults
+      "max_linear_mps": 0.5,
+      "max_angular_rps": 1.0,
+      "max_duration_s": 5,
+      "default_duration_s": 1,
+      "over_limit_action": "block",   // or "clamp": cap the command and say so
+      "max_odom_age_s": 5,
+      "margin_m": 0.25
+    }
+  }
+}
