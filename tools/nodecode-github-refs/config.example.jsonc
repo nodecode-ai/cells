@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+// No key is needed: the cell reads public repositories anonymously.
+{
+  "github-refs": {
+    "enabled": true,
+    "max_chars": 6000,
+    "max_comments": 10,
+    "timeout_seconds": 10
+  }
+}
