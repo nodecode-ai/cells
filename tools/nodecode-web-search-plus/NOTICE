@@ -1,0 +1,24 @@
+nodecode-web-search-plus is a rewrite of robbyczgw-cla's robbyczgw-cla/hermes-web-search-plus:
+  https://github.com/robbyczgw-cla/hermes-web-search-plus
+  commit 4eebfd77a4572111306f4ff551be4e53ef76f450
+  MIT, Copyright (c) 2026 Robby (LICENSE)
+
+What was rewritten: the plugin's two model-facing tools, web_search_plus and
+web_extract_plus, and the behaviour behind them — routing a query to the
+engine that suits its shape (Brave for general, Serper for security and
+shopping, Exa for documentation and papers), falling back down the configured
+providers when one fails or finds nothing, recency and news filters, domain
+include and exclude lists, research mode (search, then read the top pages),
+the provider chains for search and extraction, and the notes that say which
+engine was tried and why it was skipped. The Python plugin is gone: the whole
+cell is Common Lisp, and its network is nlk:http.
+
+What was left out, and why: the engines and extractors whose API is not one
+HTTP request to a documented endpoint — You.com, Linkup, Parallel, Keenable,
+Serpbase, Querit, TinyFish, the Firecrawl search vertical, and the DonSeTch
+CLI the original spawns — so a cell never runs a program on the operator's
+machine. Also left out: the search cache and its persistence, the quality
+report and routing diagnostics, provider health statistics, semantic span
+ranking and query-intent classification, markdown as a second output format,
+the setup and status slash commands of the Hermes CLI, and the native Hermes
+web-provider bridge, which has no meaning outside its host.
