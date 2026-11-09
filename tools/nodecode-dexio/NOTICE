@@ -1,0 +1,38 @@
+nodecode-dexio is a rewrite of dexio-wiki's dexio-wiki/hermes-plugin:
+
+  https://github.com/dexio-wiki/hermes-plugin
+  commit d05715098148e0335ceaf87a58caaa22d19ff3ff
+  MIT, Copyright (c) 2026 Forrest Zhang (LICENSE)
+
+What was rewritten: the plugin's memory provider, whole. The six tools keep
+their names, descriptions and parameters (dexio_search, dexio_read,
+dexio_list, dexio_write, dexio_edit, dexio_append), the aliases models reach
+for out of habit (content, old_string, new_string) and the rule that a
+missing new_text is not an empty one; the wire keeps its shape (one JSON-RPC
+tools/call per request to <url>/mcp, Authorization: Bearer, Accept JSON or
+text/event-stream, a plain JSON body or a short server-sent stream, and the
+second content item of a read as the page itself); the recall before each
+turn keeps its shape (the turn's message clipped to 300 characters, the
+"## From your Dexio wiki" block with each page's title, path and up to three
+matching lines, a per-query cache cleared by a write, and the 1-to-10
+max_results); and the block of words the model is given about the wiki keeps
+the original's advice -- search first, update rather than duplicate, link with
+[[path]], give a one-line note, never file a secret. A tool's answer is
+rendered as the lines a model reads -- a page a line, with its path, its
+version and the lines that matched -- where the original handed back the
+server's JSON; the data is the same.
+
+What was left out, and why: the Hermes Desktop pane (dashboard/plugin_api.py
+and desktop/plugin.js) and the local activity record it polls, because a
+Nodecode cell has no Desktop pane to feed -- the recall and the tools are the
+whole of what it kept, and the record was a view of them, never an input; and
+the Hermes config files and environment overrides ($HERMES_HOME/dexio.json,
+DEXIO_URL, DEXIO_API_KEY lookup order), whose answers the cell's own section
+gives (api_key, api_key_env, url, auto_recall, max_results, recall_chars,
+timeout_seconds), with DEXIO_API_KEY still read from the environment and
+DEXIO_API_KEY still the fallback when the section names nothing. The agent
+name a write carries is the section's `agent` (default "nodecode") rather
+than a Hermes profile name, and /dexio -- showing the wiki and its page count,
+or searching it -- stands in for the plugin's memory status config.
+
+LICENSE is the plugin repository's LICENSE, unchanged.
