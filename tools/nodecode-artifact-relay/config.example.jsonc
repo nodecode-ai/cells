@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder is pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "artifact-relay": {
+    "enabled": true,
+    "base_url": "https://relay.example",
+    "control_plane": "https://relay.lok-labs.com",
+    "token_env": "ARTIFACT_RELAY_API_TOKEN",
+    // "token_file": "~/.nodecode/artifact-relay/token",
+    // "state_dir": "~/.nodecode/artifact-relay/",
+    "include_provenance": false,
+    "timeout_seconds": 90
+  }
+}
