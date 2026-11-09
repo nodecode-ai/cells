@@ -1,0 +1,25 @@
+nodecode-handydandy is a rewrite of percyhendrux123-prog's percyhendrux123-prog/hermes-handydandy:
+
+  https://github.com/percyhendrux123-prog/hermes-handydandy
+  commit 3c085a5e21f312800ada2650db2a462462b5fa49
+  MIT License, Copyright (c) 2026 Deploy Axiom (LICENSE)
+
+Rewritten: the plugin's whole working part, in Common Lisp against Nodecode's
+cell contract. Its three hooks (pre_api_request, transform_llm_output,
+pre_llm_call) measured a Hermes session's size and appended a notice to the
+answer or an instruction to the next request; here one :round hook reads the
+turn's own meter -- the context the newest round filled against the model's
+window, the input tokens, the rounds -- and records one line into the prompt
+of the round about to be asked, plus one standing notice for the operator.
+Its JSON state file and its file lock are gone: where a session stands is
+that session's own state, which outlives a restart and needs no lock. Its
+"connect" and "carryover" modes, already removed upstream, are not here; the
+CSV of handoffs is kept as an optional setting. The handoff the plugin only
+asked for in prose is now a tool, so the sections land in one file the cell
+writes rather than wherever the model chooses.
+
+Left out: the Hermes-only wiring (ctx.register_hook, plugin.yaml, the
+HERMES_HOME and HANDYDANDY_* environment fallbacks), and the message-count
+limit, which became a round limit because Nodecode's turn meter counts rounds
+rather than messages. The plugin's own test suite is not carried over; the
+cell has tests of its own under test/.
