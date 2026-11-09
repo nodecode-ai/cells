@@ -1,0 +1,37 @@
+nodecode-github-app is a rewrite of himanusia's himanusia/hermes-github-app-plugin:
+
+  https://github.com/himanusia/hermes-github-app-plugin
+  commit 2adfd020f93a5d71a563e94c88738fb8e64335f8
+  author himanusia (https://github.com/himanusia)
+  MIT License, Copyright (c) 2026 himanusia (LICENSE)
+
+Rewritten: the plugin's seven tools and the identity behind them, as one cell.
+The verbs, their arguments and their answers are the original's (github_app/tools.py,
+TOOL_SPECS): github_identity, github_create_issue, github_comment_issue,
+github_list_issues, github_get_issue, github_review_pr and github_merge_pr, with
+the same owner/name repository rule, the same positive-number and full-40-character
+SHA checks, the same compact JSON answers, and the attribution (auth method and
+actor) on every result. So is the credential order (github_app/client.py,
+_resolve_credentials): a GitHub App's App ID, installation ID and private key
+sign an RS256 JWT, the JWT is exchanged for an installation token, and the actor
+is the App's own <slug>[bot]; failing that a GITHUB_TOKEN/GH_TOKEN, failing that
+an already-signed-in gh CLI. The original delegated RSA signing to PyJWT; here
+ironclad signs the same PKCS#1 v1.5 SHA-256 block, and the PEM (PKCS#1 or
+PKCS#8) is read by a small DER reader, so the cell needs no Python and no
+openssl. The write gate is the original's own allow_write_actions setting, and
+its stale-head rules are kept: a review refuses unless commit_id is the live
+head, and a merge always carries the head SHA it expects.
+
+Left out: the pre_tool_call approval hook, which built a rule key from a fresh
+UUID so an "always" answer never persisted and blocked any write payload over
+3000 characters. A cell has no approval prompt of its own, so the original's
+allow_write_actions setting is the whole gate and the two head-SHA arguments are
+the second check; the payload-size block goes with the prompt. Also left out:
+the Hermes profile .env fallback and the secret_scope read (a cell reads its own
+section of the config, so unrelated profile secrets are never touched), the
+thread-local client bookkeeping that closed a client after each call, the /app
+slug lookup when app_slug is set, the GH_CONFIG_DIR routed-profile check in the
+gh CLI fallback, and the redirect-refusing urllib opener (NLK:HTTP follows up to
+five redirects; the token rides only the https API base the section names, which
+is validated the way the original validated it). The original's Hermes-side
+toolset name and its check_fn gate are the cell's registration and start refusal.

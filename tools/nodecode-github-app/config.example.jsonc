@@ -1,0 +1,21 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "github_app": {
+    "enabled": true,
+    // A GitHub App: the bot-first identity the original preferred.
+    "app_id": "123456",
+    "installation_id": "45678901",
+    "private_key_file": "~/.config/github-app.pem",
+    "app_slug": "",
+    // Or a personal access token, named, never written here.
+    "token_env": "GITHUB_TOKEN",
+    "token_file": "",
+    "gh_cli": true,
+    // The gate: while false, no tool writes.
+    "allow_write_actions": false,
+    "api_url": "https://api.github.com",
+    "timeout": 30
+  }
+}
