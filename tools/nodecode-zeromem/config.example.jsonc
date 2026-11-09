@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for the zeromem cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// Nothing here is required; these are the defaults. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "zeromem": {
+    // The folder holding turns.jsonl (the turns, verbatim) and
+    // progress.jsonl (how far each session was read). Under the home.
+    "store": "zeromem/",
+    // Put what past sessions answered into a turn's first model request.
+    "recall": true,
+    // How many turns one recall answers.
+    "top_k": 5,
+    // The most of one turn's words a recall line carries.
+    "chars": 700
+  }
+}
