@@ -1,0 +1,29 @@
+nodecode-sound-effects is a rewrite of NousResearch's NousResearch/hermes-official-plugins:
+
+  https://github.com/NousResearch/hermes-official-plugins
+  commit e7a218f26db88426ab3e7376f0e000b6e356f5e7
+  MIT License, Copyright (c) 2026 Nous Research (LICENSE)
+
+Rewritten: the elevenlabs_sound_effect tool and its whole call path -- the
+prompt/duration/loop/influence/model arguments, the refusal of an oversize
+prompt, of a length written in the prompt instead of in duration_seconds, and
+of a length outside 0.5 to 30 seconds; the per-profile settings for the model,
+the audio format, the API base URL and the key (an inline secret or the
+environment variable it names); the streaming POST to
+/v1/sound-generation?output_format=... under a 50 MB cap and a 120-second
+timeout; the check that the bytes really are the container that was asked for;
+the saved, never-overwritten file and the honest playing time read out of the
+bytes (MP3 frames, the WAV header, the Ogg granule) rather than quoted from
+the request; the character-cost header reported as what was billed; and the
+append-only library of every generation, which /sfx reads back and the help
+topic :sfx teaches from.
+
+Left out: the Hermes-only surfaces -- the Desktop sound card, the Desktop
+sound library tab and its dashboard backend, and the bundled
+elevenlabs-sound-design skill's ffmpeg post-processing script (process,
+loopfix, loopcheck, pack) -- because they render in Hermes's own UI or need a
+Python runtime, not a cell. Their guidance survives in the tool description
+and the :sfx manual topic; the files stay in the sounds folder where any
+ffmpeg, editor or game engine can pick them up. The plugin's per-profile
+plugin-data directory and plugin.yaml settings schema became the cell's
+sound-effects config section.

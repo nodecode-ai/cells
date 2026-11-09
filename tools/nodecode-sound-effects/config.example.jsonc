@@ -1,0 +1,34 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. Every generation is billed to the ElevenLabs account the key
+// belongs to.
+{
+  "sound-effects": {
+    "enabled": true,
+
+    // The key itself, kept as this home keeps secrets. Leave it empty and the
+    // variable api_key_env names is read instead.
+    "api_key": "",
+
+    // The environment variable that holds the key when api_key is empty.
+    "api_key_env": "ELEVENLABS_API_KEY",
+
+    // eleven_text_to_sound_v2 or eleven_text_to_sound_v3: what a call uses
+    // when it names no model of its own.
+    "sound_model": "eleven_text_to_sound_v2",
+
+    // mp3_44100_128, mp3_44100_192, opus_48000_128, opus_48000_192,
+    // wav_44100 or wav_48000. 192 kbps MP3 is Creator plans and up, 44.1 kHz
+    // WAV Pro and up; if the plan refuses one, the tool reports ElevenLabs'
+    // own error.
+    "output_format": "mp3_44100_128",
+
+    // https, or http only for a localhost stand-in. Change it for an
+    // ElevenLabs data-residency endpoint, such as
+    // https://api.eu.residency.elevenlabs.io.
+    "api_base_url": "https://api.elevenlabs.io",
+
+    // Where the audio files and their library line are kept, under the home.
+    "directory": "sounds/"
+  }
+}
