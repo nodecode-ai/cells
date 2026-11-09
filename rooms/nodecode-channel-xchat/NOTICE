@@ -1,0 +1,28 @@
+nodecode-channel-xchat is a rewrite of NousResearch's NousResearch/hermes-official-plugins:
+
+  repository: https://github.com/NousResearch/hermes-official-plugins
+  commit: e7a218f26db88426ab3e7376f0e000b6e356f5e7
+  MIT, Copyright (c) 2026 Nous Research (LICENSE)
+
+What was rewritten: the plugin's job -- running as one connected X account and
+answering X's end-to-end encrypted direct messages -- kept, in Common Lisp. The
+Nodecode cell keeps the Read of the conversation list and of each conversation's
+events, the per-conversation cursor kept across restarts (cursors.sexp beside
+the home), the allowlist of numeric X account ids, read receipts, and the
+answer sealed with the conversation's key and POSTed back as ciphertext. Its
+own sealing replaces the plugin's calls into chatxdk: HKDF-SHA256 over the pair
+of account ids and the conversation id for the key, HMAC-SHA256 in counter
+mode with a truncated HMAC tag for the body, written as x1.<nonce>.<body>.<tag>.
+The room, the session, the gate, the status card and delivery are
+nodecode-channel-kit's, as they are for every member of the rooms/.
+
+What was left out, and why: X's native Chat XDK is a Python/Rust binding whose
+ciphertext layout, X25519-wrapped conversation keys and Ed25519 message
+signatures are not published, so a Lisp cell cannot reproduce them byte for
+byte; a body sealed here is read by a cell here, not by X's own clients, and a
+real interop with the X app would take that spec. The same reason leaves out
+the encrypted media pipeline (attachments in and out, the three-step upload),
+the key-registration onboarding flow (`hermes xchat setup` -- the cell takes an
+already-registered account's token and user id), automatic token refresh, the
+pairing code for unknown senders, mention wake words for group conversations,
+and the standalone delivery handshake for a conversation nobody has opened.

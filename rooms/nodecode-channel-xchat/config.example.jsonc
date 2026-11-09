@@ -1,0 +1,19 @@
+{
+  "channels": {
+    "xchat": {
+      // The OAuth2 user access token of the account the agent runs as
+      // (scopes dm.read, dm.write, users.read). A secret is never inline:
+      // name the environment variable, or a file, that holds it.
+      "access_token_env": "XCHAT_ACCESS_TOKEN",
+      // Optional: lets the lane renew the ~2h token (needs client_id).
+      "refresh_token_env": "XCHAT_REFRESH_TOKEN",
+      "client_id": "",
+      // The account's numeric X user id (GET /2/users/me).
+      "user_id": "",
+      // Who may talk to the agent: numeric X account ids.
+      "allowed_users": ["1234567890"],
+      "poll_seconds": 10,
+      "send_read_receipts": false
+    }
+  }
+}
