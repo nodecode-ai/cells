@@ -1,0 +1,25 @@
+nodecode-glasser is a rewrite of glasser-ai's glasser-ai/hermes-plugin-glasser:
+
+  https://github.com/glasser-ai/hermes-plugin-glasser
+  commit 79a2f5a343735548d270f87309a44ad4d32c2ecc
+  MIT, Copyright (c) 2026 Glasser (LICENSE)
+
+What was rewritten: the package is a manifest (plugin.json, mcp.json) plus a
+skill (skills/glasser/SKILL.md) and nothing that runs, so the rewrite is the
+capability it declares. Its one remote MCP server -- https://api.glasser.ai/mcp,
+reached there through the `npx mcp-remote' bridge -- is spoken directly here:
+MCP's streamable HTTP, initialize, notifications/initialized and tools/call,
+with the key as a bearer, in wire.lisp. Its seven tools keep their names and
+arguments as glasser_search, glasser_inspect, glasser_run, glasser_runs_get,
+glasser_runs_list, glasser_runs_stop and glasser_balance; the section holds
+the endpoint, the key and one timeout; and the skill's working agreement --
+search, then inspect, then run, name the price before spending, poll a run,
+read the charge, act on a refusal -- is the (help :glasser) manual, so the
+model still reads it.
+
+What was left out, and why: the browser sign-in, because `mcp-remote' is Node
+and the cell may not bundle it -- a key from app.glasser.ai/keys, the same key
+that sign-in resolves to, takes its place, and no OAuth token is stored or
+refreshed; and the bridge process, because the endpoint speaks streamable
+HTTP and the release's own MCP client already reaches it that way. Nothing of
+the original's own code is carried: it had none beyond the manifest.
