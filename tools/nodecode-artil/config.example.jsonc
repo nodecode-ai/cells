@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret. A
+// present section is enabled; "enabled": false vetoes it.
+{
+  "artil": {
+    "enabled": true,
+
+    // The artil program: its name on PATH (npm i -g artil-ai), or a path to
+    // it. A cell that cannot find it refuses to start and says so.
+    "program": "artil",
+
+    // How long one call may take, in seconds. A program past it is killed and
+    // the call answers ERROR: ARTIL-ERROR.
+    "timeout_seconds": 90
+  }
+}

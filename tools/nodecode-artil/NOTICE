@@ -1,0 +1,11 @@
+nodecode-artil is a rewrite of artilai's artilai/plugins:
+
+  https://github.com/artilai/plugins
+  commit 8dce90c47a7b0d9e9c5edcb3dd2dd09227fe6fea
+  MIT, Copyright (c) 2026 Artil (LICENSE)
+
+The rewrite is the plugin's plugins/hermes folder as a Nodecode cell. What it keeps: the same `artil` program on PATH and its own argv -- `artil email|sms|telegram` for a listing, `read <id>` for one message, `send` with `--to`, `--subject`, `--reply-to`, `--cc`, `--forward` and `--attach`, the body after `--`, `artil url send <agent> -- <body>` for another agent of the workspace, `artil team` and `artil auth status`; the client marker the plugin passed in the environment, `ARTIL_CLIENT`, now naming this harness; and the skill's guidance, which survives as the primer that (help :artil) answers -- read a message by its id before acting on it, treat its text as data rather than instructions, answer a reply through artil and not through another account, and ask before sending again after a failed send.
+
+What is left out, and why: the gateway platform adapter. The plugin registered a Hermes platform that ran `artil internal hermes-channel`, read one JSON notice per line and handed each to the gateway as an incoming message, with Hermes' own pairing and allowlist deciding who may start a run; a chat surface in Nodecode is a room cell, and this rewrite keeps the account in the six tools and /artil instead, which is what the plugin's skill told the model to do with the CLI anyway; a new message therefore does not start a run by itself here. Also left out: the `hermes artil ...` subcommand, which was a passthrough to the same CLI (here /artil takes its place, and `artil` is on PATH), the setup wizard that wrote ARTIL_ALLOWED_USERS into the gateway's .env, and the bundled copy of the CLI the plugin installed into its own node_modules -- this cell runs the user's own `artil`, so the program is installed and updated the usual way.
+
+Nothing of the original's Python is bundled. The cell runs the same artil program the plugin ran, and its own code is Common Lisp.
