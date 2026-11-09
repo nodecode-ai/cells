@@ -1,0 +1,24 @@
+nodecode-canary-trap is a rewrite of Tarekkharsa's Tarekkharsa/hermes-canary-trap:
+
+  https://github.com/Tarekkharsa/hermes-canary-trap
+  commit cbef2f98aee69cfacf59402e3d4fe98427d10b84
+  Apache-2.0 (LICENSE; the file carries no copyright line, and the plugin's own
+  metadata names the author as Tarekkharsa)
+
+What was rewritten: the plugin's three hooks are two points and one command. The decoy and
+the detector came over nearly whole -- the same key shape, the same 32 random characters,
+the same sixteen-character fragment rule, and the same plain, URL-encoded, obfuscated,
+reversed, base64 and hex readings -- reimplemented in Common Lisp with no dependency beyond
+Nodecode. The context injection is the `:ROUND` point and `NLK:RECORD-TURN-CONTEXT-PROMPT`,
+which puts the paragraph into the very request about to be built; the scan and the block are
+the `:TOOL` point, answering `NLE:FAILURE` so the call is recorded failed; the lockdown's
+"approve" is the core's `ASK-OPERATOR` question card, with Allow once and Deny; and
+`/canary` keeps its five verbs, reading an incident list of time, tool, disguise and
+session. A `canary_status` tool was added so the model can read what tripped.
+
+What was left out, and why: the reply transform (a Hermes output hook that redacted the decoy
+and prefixed the answer) has no Nodecode seam, so the alert is a standing notice on the board
+and in the model's notices block, plus the refusal text; the incident list and the lockdown
+are memory of this process rather than durable plugin state, so a restart issues a new decoy
+over an empty list; the `platform` field of an incident is gone, since one machine is one
+platform; and the plugin's own Python test suite is replaced by this cell's tests.
