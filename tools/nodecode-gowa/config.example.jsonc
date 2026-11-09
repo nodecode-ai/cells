@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "gowa": {
+    "base_url": "http://127.0.0.1:3000",
+    // The whole Authorization value the server prints, in a variable or a
+    // file of KEY=VALUE lines; neither means a GOWA without auth.
+    "auth_env": "GOWA_AUTH_HEADER",
+    "auth_file": "~/.config/gowa/.env",
+    // Loopback is the only plain-http origin allowed unless this says so.
+    "plain_http": false,
+    // Where a pairing QR is written; <home>/gowa/ unless named here.
+    "state_dir": null,
+    "timeout_seconds": 15
+  }
+}

@@ -1,0 +1,29 @@
+nodecode-gowa is a rewrite of anpicasso's anpicasso/hermes-go-whatsapp:
+
+  https://github.com/anpicasso/hermes-go-whatsapp
+  commit a48546353fe79456bc193402905b17b3e1cd1be6
+  MIT, Copyright (c) 2026 Angello Picasso (LICENSE)
+
+The original registered three Hermes tools over one GOWA server -- gowa_devices
+(list or inspect a device slot), gowa_device_login (pair one from a QR or a
+phone code, creating the slot when asked) and gowa_device_remove (purge one
+after an explicit confirmation) -- speaking to the server's REST API at
+GET /devices, GET /devices/{id}, POST /devices, GET /devices/{id}/login,
+POST /devices/{id}/login/code?phone= and DELETE /devices/{id}, with a whole
+Basic or Bearer value the operator supplies. This cell keeps those three
+tools, their names, their arguments and their refusals: a slot that is
+already linked or pairing is not paired again, a number linked elsewhere is
+named, create_if_missing alone makes a slot, a removal needs confirm, the
+QR link must be on the server's own origin, and a base_url on plain HTTP is
+loopback-only unless the section allows more. Every call is reimplemented in
+Common Lisp against NLK:HTTP, and the original's JSON envelopes are answered
+as the prose a model reads, with the QR written 0600 under the home.
+
+What was left out: the GOWA installer. The original's `hermes gowa setup`
+downloaded a pinned v9.5.0 release, verified its SHA-256, unpacked it under
+the home, generated a Basic credential and a webhook secret, wrote a systemd
+unit, a launchd agent or a scheduled task, and configured the host's MCP
+server entry. A cell loads inside a running organism rather than beside a
+CLI, so this one talks to a server the operator already runs, and /gowa is
+the list the CLI's setup used to end at. Also left out: the Hermes plugin
+manifest, its toolset wiring, and the config writes into another app's file.
