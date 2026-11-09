@@ -1,0 +1,25 @@
+nodecode-pocket-watch is a rewrite of indigokarasu's indigokarasu/hermes-pocket-watch-plugin:
+https://github.com/indigokarasu/hermes-pocket-watch-plugin
+commit b05178ab1f2d8a39a377581c3dc7562ec8f0c2dc
+MIT, Copyright (c) 2026 Indigo Karasu (LICENSE)
+
+What was rewritten: the plugin's five read-only JSON routes over a cron jobs
+store -- the overview counts, the enriched job list with its filters, the health
+scores and their bands, and the daily, weekly and monthly schedule grids -- are
+Common Lisp functions here, over the jobs the Nodecode cron cell keeps in the
+store or a jobs JSON the section names. They answer as one model-facing tool
+(pocket_watch), one command (/pocket-watch), one manual topic, and the same
+verbs callable from eval; the cron-expression reading, the status and kind
+vocabulary, the 0-100 health arithmetic and the healthy/degraded/critical bands
+are the original's.
+
+What was left out: the dashboard pane itself -- the React bundle, the tab in the
+harness's own web UI and the plugin manifest that mounts it -- because Nodecode's
+surface for this is a tool and a report, not a tab in someone else's web app.
+The original's two maintenance endpoints are absent for the same reason the
+original never implemented them: it advertised job maintenance, and its API was
+GET-only. Two field reads are adapted rather than copied: a job's kind is read
+from the job (a script, a prompt, a skill), and a consecutive-failure count is
+read where the registry keeps one, since the Nodecode registry holds a job's
+newest outcome and its fire count rather than a failure streak (the fire count
+stands in for the original's completed count).
