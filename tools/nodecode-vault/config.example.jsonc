@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "vault": {
+    "enabled": true,
+    // the sealed store; the default is vault/agent-vault.sexp under the home
+    "store": "vault/agent-vault.sexp",
+    // the key, as 64 hex characters; /vault setup writes the default file
+    "key_file": "vault/master.key",
+    // or an environment variable holding it; outranks key_file
+    "key_env": "NODECODE_VAULT_KEY",
+    // what vault_run resolves into the command's environment
+    "env": ["OPENAI_API_KEY=hv:openai:key", "GITHUB_TOKEN=hv:github:token"],
+    "timeout_seconds": 60
+  }
+}
