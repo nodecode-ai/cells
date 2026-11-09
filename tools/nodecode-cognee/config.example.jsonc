@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "cognee": {
+    "base_url": "http://127.0.0.1:8011", // your cognee server; a remote one needs a key
+    "api_key_env": "COGNEE_API_KEY",     // the variable holding the key, or "api_key" inline
+    "dataset": "nodecode",                // where these memories live
+    "search_type": "",                    // e.g. CHUNKS for fast raw passages; blank lets Cognee route
+    "top_k": 10,
+    "recall_timeout_seconds": 120,
+    "write_timeout_seconds": 120
+  }
+}
