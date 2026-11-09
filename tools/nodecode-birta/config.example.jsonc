@@ -1,0 +1,26 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "birta": {
+    "enabled": true,
+
+    // The bearer token Birta's MCP server accepts, from the sign-in at
+    // birta.dev. A token pasted into /settings is kept in a 0600 file under
+    // ~/.nodecode/secrets/ and this section is pointed at that file instead.
+    "token": "...",
+
+    // Or the name of the environment variable holding it. BIRTA_TOKEN is read
+    // either way, so an exported token needs no section at all.
+    "token_env": "BIRTA_TOKEN",
+
+    // Only for a proxy or a gateway of your own.
+    // "url": "https://birta.dev/mcp",
+
+    // One MCP exchange's ceiling, in seconds: a publish can take a while.
+    "timeout_seconds": 120,
+
+    // How much of one tool answer a result carries.
+    "max_chars": 6000
+  }
+}
