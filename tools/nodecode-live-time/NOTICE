@@ -1,0 +1,26 @@
+nodecode-live-time is a rewrite of chenfeijiang95-ui's chenfeijiang95-ui/hermes-live-time:
+
+  https://github.com/chenfeijiang95-ui/hermes-live-time
+  commit f5e4edcefb19f68f11c0e3faf5f6983577500c75
+  MIT License, Copyright (c) 2026 chenfeijiang95-ui (LICENSE)
+
+Rewritten: the whole reading -- the timezone-aware clock, the weekday, the UTC
+offset and the block's wording, which claims authority over "now" and calls an
+earlier session-start stamp history; the timezone resolution (the plugin's
+hermes_time resolver and its config.yaml timezone key became the cell's
+timezone setting, read from the tz database instead of through the host
+runtime); the fail-open posture, so an unreadable zone costs the machine's own
+zone rather than the turn; and the section itself, which is the cell's config
+section.
+
+Left out: the hook's placement. The plugin injected its block into the user
+message of every single request through a Hermes-only pre_llm_call hook; a cell
+has one standing context seam, the harness section the engine reads at a turn's
+first request and freezes for that turn's rounds, so the reading is per turn
+here rather than per request. Two things carry the difference: the block names
+its own instant, and a current_time tool reads the clock again inside a turn
+that runs long. Also left out: hermes_time and hermes_yaml, the runtime
+modules the plugin imported for profile routing and YAML parsing, which a cell
+does not have; and the plugin's YAML file parsing, replaced by the tz database
+under zoneinfo_dir. /time, the current_time tool and the (help :live-time)
+topic are additions, not part of the original.
