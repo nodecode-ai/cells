@@ -498,12 +498,25 @@ shows and never beside it."
   ;; is running there. The call stamps itself an act first: it changes the
   ;; answer, so the snippet calling it is never watched, and a watched one's
   ;; run again is refused before it hands anything (NLE:RECEIPT).
+  ;;
+  ;; A file the answer could not carry -- gone, over the attach cap, one
+  ;; past the count cap -- is refused here, before it is taken, the reason
+  ;; named (RIDING-ANSWER-FILES judges, as the delivery does): a receipt that
+  ;; names a file is a file that rides, and a caller told no can still post
+  ;; it as its own message.
   (nle:receipt "calls" (list :verb "answer-file" :source (namestring pathname)))
   (multiple-value-bind (host lane turn-id)
       (running-answer "answer-file" platform channel thread session)
     (declare (ignore host))
-    (list :session-id lane.session-id :turn-id turn-id
-          :files (add-answer-files lane turn-id (list (pathname pathname))))))
+    (let ((file (pathname pathname)))
+      (destructuring-bind (&optional path kind why)
+          (car (last (nth-value 1 (riding-answer-files
+                                   (append (handed-answer-files lane turn-id) (list file))))))
+        (when (eq path file)
+          (error "answer-file: ~a ~a, so the answer would not carry it~:[~;; nck:post-file posts it as its own message~] -- nothing was handed"
+                 file why (eq kind :size))))
+      (list :session-id lane.session-id :turn-id turn-id
+            :files (add-answer-files lane turn-id (list file))))))
 
 (defparameter +answer-choice-cap+ 5
   "The most choices one answer carries: one row of buttons.")
