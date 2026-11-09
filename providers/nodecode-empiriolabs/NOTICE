@@ -1,0 +1,18 @@
+nodecode-empiriolabs is a rewrite of EmpirioLabs-AI's EmpirioLabs-AI/hermes-empiriolabs:
+https://github.com/EmpirioLabs-AI/hermes-empiriolabs
+commit 20f049d5913ec850e98bef3d289f6cb43645869e
+MIT, Copyright (c) 2026 EmpirioLabs.ai LLC (LICENSE)
+
+Rewritten: the provider itself (its base of https://api.empiriolabs.ai/v1,
+its EMPIRIOLABS_API_KEY variable, its offline fallback ids, and the chat
+wire) as a Nodecode catalog row, a listing hook and a credential hook; the
+catalog reader (the chat-with-tool-calling filter, the context window, image
+input, reasoning and price each model declares, the alias lookup); the
+reasoning rule that sends reasoning_effort only when a level was chosen and
+the model declares one, at the nearest level that is not dearer; and the
+auxiliary-model rule as the price and effort data the picker reads.
+
+Left out: the original's one-hour in-memory catalog cache and its
+failure back-off, which the picker's own listing cache already covers; its
+per-provider auxiliary-model pick, which Nodecode keeps as one image-wide
+auxiliary target; and its gzip handling, which nlk:http does itself.
