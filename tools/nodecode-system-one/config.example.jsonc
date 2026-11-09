@@ -1,0 +1,21 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell -- documentation,
+// not config: the folder gets pushed and holds no secret. The declaration in
+// cell.lisp is the authority; this is an illustration of it. A present section
+// is enabled; "enabled": false vetoes it.
+{
+  "system-one": {
+    "enabled": true,
+    // where the Local System One sidecar answers
+    "service_url": "http://127.0.0.1:8787",
+    // one gate's HTTP ceiling in milliseconds; a slow gate fails open
+    "timeout_ms": 500,
+    // the three gates, switched one by one
+    "search_gate": true,
+    "model_tier_gate": true,
+    "notification_gate": true,
+    // say what the original plugin's acknowledged Canary mode would have changed
+    "canary_advice": true,
+    // only when the sidecar was started with a bearer token
+    "auth_token_env": "LOCAL_SYSTEM_ONE_TOKEN"
+  }
+}

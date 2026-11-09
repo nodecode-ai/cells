@@ -1,0 +1,37 @@
+nodecode-system-one is a rewrite of NMTZ-z's NMTZ-z/system-one-benchmark-lab:
+
+  https://github.com/NMTZ-z/system-one-benchmark-lab
+  commit 1095495019b2dff2b4231ed70ec23a3ea716e2f6
+  Apache-2.0. The repository's LICENSE keeps the Apache-2.0 placeholder for the
+  holder line: Copyright [yyyy] [name of copyright owner] (LICENSE).
+
+The rewritten plugin is integrations/hermes/local-system-one-hermes at that
+commit: three gates of a local decision service, asked by hooks on a Hermes turn.
+Its wire is carried over unchanged: POST /v1/workflows/search-gate and
+POST /v1/workflows/model-tier-gate with {task, context, request_id} -- the task
+bounded to 4000 characters and the context to 2000 -- and POST
+/v1/workflows/notification-gate with {event (6000 characters), context, urgency,
+user_action_required, blocking_failure, routine_update, deadline_minutes,
+request_id}; the response fields decision, tier, delivery, decision_source,
+reason, probability_search, probability_strong, priority_score, confidence and
+backend; the 500 ms per-gate ceiling, clamped to 50 ms..5 s; the fail-open rule
+that any error, timeout or incomplete answer leaves the caller's own choice
+standing; the audited hard no-Web reasons (bounded_transform_task,
+connected_app_data, local_file_or_repo) and hard-fast reasons
+(bounded_transform, bounded_structured_transform) that the original's Canary mode
+acted on; the loopback default endpoint; and the three independently switched
+gates. LICENSE is the repository's LICENSE, unchanged.
+
+What was left out, and why: the Hermes hook points themselves
+(pre_llm_call, post_llm_call, on_session_end) and the llm_request middleware,
+because Nodecode's one tool is eval and a cell's vocabulary is Lisp functions,
+so the gates are verbs plus two tools (system_one_route, system_one_notify) and
+the /system-one command; the Canary request mutations, because no provider
+request seam is a cell's to edit here, so an audited rule is said as advice on
+the decision line instead of applied; the owned-kanban-card and cron-wrapper
+task enrichment, because it reads Hermes's own database and environment; the
+per-turn off/shadow/canary mode and the persisted shadow history, because a
+cell is asked rather than hooked and its answers are never persisted; and
+Python's urllib, replaced by the image's own nlk:http. One addition: an optional
+bearer token (auth_token or auth_token_env) for a sidecar started with one,
+which the original never sent.
