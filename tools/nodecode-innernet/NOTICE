@@ -1,0 +1,31 @@
+nodecode-innernet is a rewrite of your-innernet's your-innernet/innernet-mcp:
+
+  https://github.com/your-innernet/innernet-mcp
+  commit 9da4f24e04dffc526129c11546eb4bb2ef60ef81
+  MIT, Copyright (c) 2026 innernet (LICENSE)
+
+The rewritten plugin is the hermes/ folder of that commit: a plugin manifest,
+an MCP server entry and two skills (skills/innernet and
+skills/innernet-handoff). The rewrite keeps the endpoint, the tools and what
+the skills say to the model. The server at https://innernet.live/api/mcp is
+dialled over the streamable-HTTP transport the manifest names (initialize,
+notifications/initialized, tools/call, SSE or JSON answers, and the
+Mcp-Session-Id it hands back), and every tool the skills name is registered
+with Nodecode under the same name and arguments: innernet_list_projects,
+innernet_load_project, innernet_context, innernet_get_dimension, search,
+fetch, innernet_save_context, innernet_capture, innernet_self_capture,
+innernet_self_sync, innernet_self_facts, innernet_triage, innernet_task_list,
+innernet_task_create, innernet_task_update, innernet_task_complete,
+innernet_rooms, innernet_handoff_read, innernet_handoff_write,
+innernet_import and innernet_export. The two skills become the tool
+descriptions, the (help :innernet) page and /innernet, which loads a project
+by its slug.
+
+What was left out, and why: the OAuth sign-in, because a cell has no browser
+callback of its own -- the section takes the account's access token, inline or
+by environment variable, and sends it as a bearer token; the plugin's own
+wiring of two skill packages, because Nodecode has no separate skill files to
+install and the same guidance is the help page and the tool descriptions
+instead; and the other hosts' manifests (Claude, Codex, Cursor, Gemini), which
+name the same server and carry nothing this cell needs. LICENSE is the
+repository's LICENSE, unchanged.
