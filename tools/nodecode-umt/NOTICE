@@ -1,0 +1,28 @@
+nodecode-umt is a rewrite of Markgatcha's Markgatcha/universal-mcp-toolkit:
+https://github.com/Markgatcha/universal-mcp-toolkit
+commit b6eb997c316de472318ca658d6d7b57b62ca13d0
+MIT, Copyright (c) 2026 universal-mcp-toolkit (LICENSE)
+
+Rewritten: the three MCP servers the plugin ships with no configuration at all
+-- servers/hackernews (five tools), servers/arxiv (three) and
+servers/npm-registry (three) -- as one Nodecode cell. Each server is a stdio
+MCP process over an HTTP client in TypeScript; here the clients are Lisp
+functions against the same endpoints (the Hacker News Firebase API, the
+Algolia HN search index, export.arxiv.org's Atom query API and
+registry.npmjs.org), and the same eleven tools are registered with the model
+under their source's prefix, so three namespaces never collide in one tool
+list. The rendering follows each server's renderText: a numbered line a
+story, paper or package, with the fields the original's schemas carried.
+
+Left out: the `umt` CLI and the two commands that drive it (commands/umt.md,
+commands/umt-doctor.md, skills/umt-mcp/SKILL.md) -- listing a registry of 28
+MCP servers, merging them into another harness's config files, scaffolding
+Agent Skills and self-updating the CLI. None of that is a tool a Nodecode cell
+needs: Nodecode talks to MCP servers itself through its own mcp cell, and a
+cell that wrote into other applications' config files would be doing to the
+operator's machine what Nodecode already does for its own section. The Atom
+feed's non-entry resources (the arxiv `feed` resource and the
+`literature-review` prompt) are not carried either: a cell's verbs and tools
+are its surface, and both were reachable through the three list and search
+tools. Caching, the plugin's rate limiter and its config-file backups have no
+counterpart here: nothing is written, so nothing needs backing up.

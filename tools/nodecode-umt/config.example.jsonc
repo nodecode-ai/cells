@@ -1,0 +1,12 @@
+{
+  // The umt section: three public, read-only APIs and the ceiling on one
+  // call. Every default works as it is; nothing here is a secret.
+  "umt": {
+    "hn_api_base": "https://hacker-news.firebaseio.com/v0",
+    "hn_search_base": "https://hn.algolia.com/api/v1",
+    "arxiv_api_base": "https://export.arxiv.org/api/query",
+    "npm_registry_base": "https://registry.npmjs.org",
+    "default_category": "cs.AI",
+    "timeout": 20
+  }
+}
