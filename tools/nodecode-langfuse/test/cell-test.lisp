@@ -36,14 +36,12 @@
   (cell-publish "nodecode-langfuse"
                 (cell-frame-op "turn.usage" :turn "t1" :payload (usage-payload)))
   (is (null *posts*) "a round on its own sends nothing")
-  (is (equal "done" (run-tool-call "sh" (nlk:json-object "command" "ls -la") "done"))
-      "the tool answers exactly what it would have")
+  (is (equal "done" (run-tool-call "sh" (nlk:json-object "command" "ls -la") "done")) "the tool answers exactly what it would have")
   (is (null *posts*) "and the call waits with its trace")
   (end-the-turn)
   (is (= 1 (length *posts*)) "the turn's end sends one batch")
   (is (equal "https://langfuse.test/api/public/ingestion" (getf (first *posts*) :url)))
-  (is (search "Basic " (cdr (assoc "authorization" (getf (first *posts*) :headers) :test #'equal)))
-      "the project's keys ride as basic auth")
+  (is (search "Basic " (cdr (assoc "authorization" (getf (first *posts*) :headers) :test #'equal))) "the project's keys ride as basic auth")
   (is-present (trace (event-of-type "trace-create"))
     "the batch opens with its trace, so every span below it has a home"
     (let ((body (event-body trace)))
@@ -64,8 +62,7 @@
       (is (equal 120 (gethash "output_reasoning_tokens" usage)))
       (is (< (abs (- 0.0123d0 (coerce (gethash "total" (gethash "costDetails" body))
                                        'double-float)))
-             1d-9)
-          "the cost the core priced rides as costDetails")
+             1d-9) "the cost the core priced rides as costDetails")
       (is (equal "stop" (gethash "finish_reason" metadata)))))
   (is-present (span (event-of-type "span-create"))
     "the call is a span under it"
@@ -82,8 +79,7 @@
                  "ERROR: DIVISION-BY-ZERO: /")
   (end-the-turn)
   (let ((body (event-body (event-of-type "span-create"))))
-    (is (equal "ERROR" (gethash "level" body))
-        "a result that says ERROR is drawn failed")
+    (is (equal "ERROR" (gethash "level" body)) "a result that says ERROR is drawn failed")
     (is (equal "eval" (gethash "name" body)))))
 
 (deftest langfuse-cell-a-failed-turn-is-a-failed-trace (with-langfuse ())
@@ -106,8 +102,7 @@
   (is (= 1 (nodecode-langfuse::held-count)) "and the batch is still held")
   (is (search "HTTP 500" (langfuse:status)) "the status line says why")
   (setf *answer* t)
-  (is (search "sent 1 trace" (cell-entry "nodecode-langfuse" "langfuse" "send"))
-      "send retries what is held")
+  (is (search "sent 1 trace" (cell-entry "nodecode-langfuse" "langfuse" "send")) "send retries what is held")
   (is (= 2 (length *posts*)) "a second attempt")
   (is (zerop (nodecode-langfuse::held-count)) "and it is gone once it went")
   (is (null nodecode-langfuse::*last-error*))
@@ -121,13 +116,11 @@
   (is (equal "password=<redacted>"
              (nodecode-langfuse:redact-string "password=hunter2")))
   (is (equal "the key <redacted> is pasted again"
-             (nodecode-langfuse:redact-string "the key pk-lf-9f8e7d6c5b4a is pasted again"))
-      "a pasted project key is replaced wherever it stands")
+             (nodecode-langfuse:redact-string "the key pk-lf-9f8e7d6c5b4a is pasted again")) "a pasted project key is replaced wherever it stands")
   (let ((cut (nodecode-langfuse:capture-string (make-string 500 :initial-element #\x))))
     (is (= 200 (length (subseq cut 0 (or (search "…" cut) 0)))) "cut at the section's ceiling")
     (is (search "300 chars more" cut) "and it says how much was left out"))
-  (is (= 20 (length (nodecode-langfuse:capture-string (make-string 20 :initial-element #\x))))
-      "text under the ceiling is whole"))
+  (is (= 20 (length (nodecode-langfuse:capture-string (make-string 20 :initial-element #\x)))) "text under the ceiling is whole"))
 
 (deftest langfuse-cell-metadata-mode-carries-no-content (with-langfuse ("capture" "metadata"))
   (cell-publish "nodecode-langfuse"
@@ -145,18 +138,15 @@
 ;;; --- the endpoint, and the verbs ------------------------------------------------
 
 (deftest langfuse-cell-the-url-and-the-auth-are-the-projects (with-langfuse ("base_url" "https://langfuse.test/"))
-  (is (equal "https://langfuse.test/api/public/ingestion" (langfuse:ingestion-url))
-      "a trailing slash on the base is not doubled")
-  (is (equal "Basic dXNlcjpwYXNz" (langfuse:basic-auth "user" "pass"))
-      "RFC 4648 basic auth over the two keys"))
+  (is (equal "https://langfuse.test/api/public/ingestion" (langfuse:ingestion-url)) "a trailing slash on the base is not doubled")
+  (is (equal "Basic dXNlcjpwYXNz" (langfuse:basic-auth "user" "pass")) "RFC 4648 basic auth over the two keys"))
 
 (deftest langfuse-cell-the-slash-command-answers-through-stubbed-io (with-langfuse ())
   (let ((line (cell-entry "nodecode-langfuse" "langfuse" "")))
     (is (search "api/public/ingestion" line))
     (is (search "capture sanitized" line))
     (is (search "0 traces held" line)))
-  (is (search "a test trace went" (cell-entry "nodecode-langfuse" "langfuse" "test"))
-      "the smallest proof the keys work")
+  (is (search "a test trace went" (cell-entry "nodecode-langfuse" "langfuse" "test")) "the smallest proof the keys work")
   (is (= 1 (length *posts*)))
   (is (equal "nodecode-langfuse test"
              (gethash "name" (event-body (event-of-type "trace-create")))))
@@ -170,8 +160,7 @@
   (with-stubbed-ingestion
     (is (signals-error nlk:config-refusal
           (nodecode-langfuse:start-cell
-           (nlk:json-object "langfuse" (nlk:json-object "capture" "sanitized"))))
-        "no public and secret key: the loader's refusal")
+           (nlk:json-object "langfuse" (nlk:json-object "capture" "sanitized")))) "no public and secret key: the loader's refusal")
     (is (null (cell-hook "nodecode-langfuse" :frame)) "and nothing was installed")
     (is (null (cell-hook "nodecode-langfuse" :tool)))
     (is (search "web address"
@@ -182,5 +171,4 @@
                                                           "secret_key" "sk-lf-test"
                                                           "base_url" "not a web address")))
                            "")
-                  (nlk:config-refusal (condition) (nlk:config-refusal-detail condition))))
-        "a base URL that is not a web address refuses too")))
+                  (nlk:config-refusal (condition) (nlk:config-refusal-detail condition)))) "a base URL that is not a web address refuses too")))
