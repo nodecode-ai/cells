@@ -279,7 +279,7 @@ unknown fields are dropped rather than trusted."
     (when (zerop (length key))
       (let ((variable (nlk:trimmed (or (setting :api-key-env) ""))))
         (when (plusp (length variable))
-          (setf key (nlk:trimmed (or (uiop:getenv variable) "")))))
+          (setf key (nlk:trimmed (or (uiop:getenv variable) ""))))))
     (when (zerop (length key))
       (fail "no Gemini key: paste one into the gemini-live section's api_key, or set the variable ~a. A key from https://aistudio.google.com/apikey works on the free tier. Nothing was sent."
             (setting :api-key-env)))
@@ -320,7 +320,7 @@ unknown fields are dropped rather than trusted."
           (:ready (return-from await-ready t))
           (:error (fail "the Gemini Live API refused the session: ~a"
                         (redact (or (second event) "") key)))
-          (t nil)))))))
+          (t nil))))))
 
 (defun collect-reply (transport deadline)
   "Whatever the model said before its turn completed: (values PCM TEXT TASKS FAILURE)."

@@ -35,13 +35,14 @@
     (funcall (third entry)
              (nlk:contract-decode (second entry) (apply #'nlk:make-json-object pairs)))))
 
-(defmacro with-live-session ((sent &key frames) &body body)
+(defmacro with-live-session ((sent &key frames dialed) &body body)
   "BODY with the socket stubbed: FRAMES replayed in order, every frame sent
-pushed onto SENT oldest last."
+pushed onto SENT oldest last, and, when DIALED names a variable, every URL
+a socket was opened to pushed onto it."
   `(let* ((queue (copy-list ,frames))
           (nodecode-gemini-live::*transport-maker*
             (lambda (url)
-              (declare (ignore url))
+              ,(if dialed `(push url ,dialed) '(declare (ignore url)))
               (list :send (lambda (text) (push text ,sent))
                     :recv (lambda (seconds) (declare (ignore seconds)) (pop queue))
                     :close (lambda () nil)))))
@@ -118,3 +119,39 @@ pushed onto SENT oldest last."
         (let ((refused (handler-case (progn (gl-tool "text" "   ") nil)
                             (error (condition) (princ-to-string condition)))))
           (is-present refused "whitespace alone is refused"))))))
+
+;;; --- the key, and the frames before the session is ready ---------------------
+
+(deftest gemini-live-dials-with-the-key-it-was-given ()
+  (let* ((directory (gl-directory))
+         (started (gemini-live-start "api_key" "test-key-0451" "directory" (namestring directory))))
+    (nlk:with-cleanup ((progn (funcall started)
+                               (uiop:delete-directory-tree directory :validate t :if-does-not-exist :ignore)))
+      (let ((sent '())
+            (dialed '()))
+        (with-live-session (sent :frames (list +ready+ +spoken+) :dialed dialed)
+          (is (search "twenty past four" (gl-tool "text" "what time is it")) "the turn is answered"))
+        (is (= 1 (length dialed)) "one socket per call")
+        (is (search "?key=test-key-0451" (first dialed)) "the socket carries the section's key"))))
+  (let* ((directory (gl-directory))
+         (started (gemini-live-start "api_key" "" "api_key_env" "GEMINI_LIVE_TEST_KEY"
+                                     "directory" (namestring directory))))
+    (sb-posix:setenv "GEMINI_LIVE_TEST_KEY" "env-key-0451" 1)
+    (nlk:with-cleanup ((progn (funcall started)
+                               (sb-posix:unsetenv "GEMINI_LIVE_TEST_KEY")
+                               (uiop:delete-directory-tree directory :validate t :if-does-not-exist :ignore)))
+      (let ((sent '())
+            (dialed '()))
+        (with-live-session (sent :frames (list +ready+ +spoken+) :dialed dialed)
+          (gl-tool "text" "what time is it"))
+        (is (search "?key=env-key-0451" (first dialed)) "or the key in the variable api_key_env names")))))
+
+(deftest gemini-live-waits-past-frames-before-the-session-is-ready ()
+  (let* ((directory (gl-directory))
+         (started (gemini-live-start "api_key" "test-key" "directory" (namestring directory))))
+    (nlk:with-cleanup ((progn (funcall started)
+                               (uiop:delete-directory-tree directory :validate t :if-does-not-exist :ignore)))
+      (let ((sent '()))
+        (with-live-session (sent :frames (list "{\"outputTranscription\":{\"text\":\"one moment\"}}"
+                                               +ready+ +spoken+))
+          (is (search "twenty past four" (gl-tool "text" "what time is it")) "a frame before setupComplete is passed over"))))))
