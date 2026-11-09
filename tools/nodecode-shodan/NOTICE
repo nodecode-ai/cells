@@ -1,0 +1,31 @@
+nodecode-shodan is a rewrite of Adolanium's Adolanium/hermes-plugin-shodan:
+
+  https://github.com/Adolanium/hermes-plugin-shodan
+  commit d12828e9c90654bca598d45832cee2ef6454cf30
+  MIT License, Copyright (c) 2026 Adolanium (LICENSE)
+
+Rewritten: the twelve model-facing tools and their argument schemas
+(shodan_host, shodan_search, shodan_count, shodan_dns, shodan_cve,
+shodan_account, shodan_meta, shodan_scan, shodan_alert, shodan_exploits,
+shodan_query, shodan_trends), the five API families they reach
+(api.shodan.io, exploits.shodan.io, trends.shodan.io and the two keyless
+ones, internetdb.shodan.io and cvedb.shodan.io), the response shaping that
+keeps a busy host inside the context window at three verbosities, the
+free-count-first credit discipline with a per-session ledger that refuses
+rather than overspending, the hostname resolution and the InternetDB
+fallback, the scan guards (off by default, an allowlist, one credit per
+address) and the alert actions, and the /shodan command's forgiving
+dispatch (a bare address is a host lookup, anything else a free count with
+facets). The Python (httpx, threading, dataclasses) is Common Lisp here:
+nlk:http is the one seam, one section declaration carries the settings and
+twelve nlk:define-contract declarations carry the tools' arguments, so the
+schema the model is shown and the body that runs are one shape.
+
+Left out: the core/full tool profile split, because a cell registers the
+tools it declares and all twelve are declared; the YAML config file under
+~/.hermes and the `hermes shodan` CLI (setup, doctor, profile full), whose
+work a cell's /settings and /shodan command already do; the bundled skills
+(query-syntax, recon, monitoring) as separate skill files, whose method is
+folded into the manual the twelve tools carry; and the per-thread rate
+limiter, replaced by a single paced seam with a small TTL cache, since one
+process makes the calls here.
