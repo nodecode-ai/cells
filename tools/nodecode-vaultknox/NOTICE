@@ -1,0 +1,22 @@
+nodecode-vaultknox is a rewrite of Ufonik88's Ufonik88/Hermes-VaultKnox:
+
+https://github.com/Ufonik88/Hermes-VaultKnox
+commit 8aea272fd9b071615fcd0c93a38b760485673316
+Apache-2.0, Copyright 2026 Ufonik (LICENSE)
+
+The plugin is Python: a registry of 28 secret detectors, three Hermes hooks
+that redact a message on its way in, inject secret-handling rules, and rewrite a
+reply that asks the user for a key, and a tool that reads an encrypted vault
+when the vaultknox package is installed. This rewrite keeps the registry and
+the policy and drops the Python. The detectors are the plugin's own cl-ppcre
+patterns, one to one, matched over every message of a request at the point the
+event log is folded into provider-shaped messages -- a copy is rewritten, the
+log keeps the original -- and an assistant turn is passed through the same
+secret-asking rewrite, now advice to keep the value out of chat rather than a
+command line for the vault. Left out: the encrypted vault itself and its tool
+actions (masked references, one-time tokens, write gates, token revocation),
+which a local sealed store already covers in Nodecode, so this cell only scans
+and redacts; the per-conversation injection of secret-handling rules, which is
+a system-prompt habit here rather than a rewritten turn; the unsalted SHA-256
+fingerprint the plugin logged beside each finding; and the placeholder's
+rotation notice, which stays in the tool's answer and this folder's README.
