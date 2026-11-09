@@ -1,0 +1,15 @@
+{
+  // nodecode-steward: no key, no server. The section may be left out whole.
+  "steward": {
+    // The registry: projects, and which session follows which project.
+    // Relative to the Nodecode home.
+    "data_file": "steward/projects.json",
+
+    // One check's ceiling, in seconds. A check that runs longer is stopped
+    // and its evidence says so; health then reads unknown.
+    "timeout_seconds": 60,
+
+    // How much of a check's output is kept, as the head of one line.
+    "evidence_chars": 400
+  }
+}
