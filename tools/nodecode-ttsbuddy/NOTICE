@@ -1,0 +1,34 @@
+nodecode-ttsbuddy is a rewrite of ngelik's ngelik/ttsbuddy-cli:
+
+  https://github.com/ngelik/ttsbuddy-cli
+  commit cb7af8ab874ab4643041a12cb6723c24ea787a66
+  MIT License, Copyright (c) 2025 ngelik (LICENSE)
+
+Rewritten: the speech provider as a tool that talks to the API the CLI talked
+to -- POST https://www.ttsbuddy.com/v1/agent-tts with the text, voice, speed
+and language, a bearer key and an Idempotency-Key header (internal/api's
+Speak and SpeakRequest), the job poll at GET the same URL with ?id= and its
+202/processing/completed/failed/expired states with retry_after_seconds
+(cmd/speak.go's handleSpeakResponse and pollUntilComplete), and the download
+of the finished MP3 from audio_url with the host allow-list the CLI applied
+(internal/api's ValidateDownloadURL: https to the API host or *.amazonaws.com,
+http only to loopback). The offline curated voice catalogue -- the Kokoro ids,
+names, genders and languages and the ten Supertonic st_* voices
+(internal/api/voices.go's CuratedVoices) -- is the cell's data, so the voice
+picker costs no request, and the 0.5 to 1.5 accepted speed range is its
+(types.go's AcceptedSpeedMin and AcceptedSpeedMax). Exact-job recovery is the
+plugin's ttsbuddy_recover tool: GET one known job by id and download it to a
+fresh path, never submitting speech again. The settings the plugin held per
+profile -- the TTSBUDDY_API_KEY secret, the voice, speed, Supertonic language
+and poll timeout -- are the cell's ttsbuddy config section.
+
+Left out: the TTS Buddy CLI itself and everything only it did -- the browser
+and email sign-in, the local config and job state under cli_config_dir, the
+`hermes ttsbuddy account delete start|confirm|status|cancel` account deletion
+with its emailed code, and the CLI's terminal rendering -- because a cell
+speaks to the API directly and has no terminal of its own. Also left out:
+registration as Hermes' own TTS provider and the voice-bubble conversion
+Hermes did after synthesis, since a cell hands the model a file path instead;
+and the per-language display names the CLI expanded the ten Supertonic voices
+into, so those ten are listed once each and the section's language chooses
+the accent.

@@ -1,0 +1,36 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. Every call that reaches TTS Buddy is billed to the account the
+// key belongs to.
+{
+  "ttsbuddy": {
+    "enabled": true,
+
+    // The agent key itself, kept as this home keeps secrets. Leave it empty
+    // and the variable api_key_env names is read instead.
+    "api_key": "",
+    "api_key_env": "TTSBUDDY_API_KEY",
+
+    // The voice every call speaks in unless it names one. List them with
+    // ttsbuddy_voices: Kokoro ids such as af_heart speak their own language,
+    // the Supertonic st_* ones take a language.
+    "voice": "st_m1",
+
+    // Optional: the pace, 0.5 to 1.5. Empty leaves it to the API.
+    "speed": "",
+
+    // The language a Supertonic voice speaks, such as en, fr or de. Kokoro
+    // voices ignore it.
+    "language": "",
+
+    // Where the synthesized MP3s are kept, under the home.
+    "directory": "voice/",
+
+    // https, or http only for a localhost stand-in.
+    "api_base_url": "https://www.ttsbuddy.com/v1/agent-tts",
+
+    // How long one job is followed before the call answers its id for
+    // ttsbuddy_recover. 30 to 1800 seconds.
+    "poll_timeout_seconds": 600
+  }
+}
