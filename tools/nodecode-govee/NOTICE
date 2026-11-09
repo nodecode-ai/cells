@@ -1,0 +1,27 @@
+nodecode-govee is a rewrite of promptclickrun's promptclickrun/hermes-govee:
+
+  https://github.com/promptclickrun/hermes-govee
+  commit 2d552cd1c67421cd5c9bbd8dd9b267f6dd5f0a0a
+  Apache-2.0, Copyright (c) 2026 promptclickrun (LICENSE)
+
+The plugin was one Hermes tool, govee_lights, and one skill that told the
+model how to use it, over Govee's developer API. This rewrite keeps that
+tool's name, its eight actions, its argument names, the four endpoints it
+calls, and the rules it enforced: a light is found by exact device ID or by a
+name that matches one light; a capability must be advertised before it is
+used; brightness, colour and white temperature must sit inside the range the
+device itself advertises; a scene name must match one scene; and after every
+command the state is read back twice, about two seconds apart, with
+"accepted" and "verified" reported apart so a lagging cloud is never mistaken
+for a change. The plugin's skill is the cell's manual topic, (help :govee),
+kept in its own voice: change only the lights asked for, never guess a target
+from part of a name, never claim a change the read-back did not confirm, and
+stop on a rate limit rather than retrying. The cell posts to Govee with
+nlk:http, so no Python, no dependency and no local server are needed.
+What was left out: Hermes's own secret lookup and secure-entry prompt (a
+cell's section is where its key lives, so this one reads the section, then
+GOVEE_API_KEY, and refuses at start when neither is set), the plugin
+manifest, and its Python test suite, replaced by the offline tests here. Tool
+refusals are marked as failed results, which is how Nodecode draws a failed
+call, instead of riding back as an "ok": false object. The answer's members
+are the original's own. Nothing of the original is vendored.

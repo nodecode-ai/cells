@@ -1,0 +1,24 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "govee": {
+    "enabled": true,
+
+    // The developer API key Govee emails you (Govee Home app: Profile >
+    // Settings > Apply for API Key). A pasted key is kept in a 0600 file under
+    // ~/.nodecode/secrets/ and this section is pointed at that file instead.
+    "api_key": "...",
+
+    // Or the name of the environment variable holding it. GOVEE_API_KEY is
+    // read either way, so an exported key needs no section at all.
+    "api_key_env": "GOVEE_API_KEY",
+
+    // Only for a proxy or a gateway of your own.
+    // "base_url": "https://openapi.api.govee.com/router/api/v1",
+
+    // One Govee request's ceiling, in seconds. A command adds up to two state
+    // read-backs about two seconds apart, inside Govee's 30-a-minute limit.
+    "timeout_seconds": 15
+  }
+}
