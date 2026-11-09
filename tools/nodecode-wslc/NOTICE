@@ -1,0 +1,29 @@
+nodecode-wslc is a rewrite of Yicheng-Mark's Yicheng-Mark/hermes-windows-plugins:
+
+  https://github.com/Yicheng-Mark/hermes-windows-plugins
+  commit 5bad3fb2baf04ce6befecfefce6d14f4c9c98934
+  MIT License, Copyright (c) 2026 Yicheng-Mark (LICENSE)
+
+Rewritten: the plugin's wslc CLI adapter and its config shapers, in Common
+Lisp. hermes_wslc_sandbox/wslc.py's contract is what cli.lisp implements: the
+binary resolution order (an explicit path, PATH, then the default Windows
+install location), `ps` read as NDJSON and `inspect` as an array, existence
+decided by the exit status because the CLI localizes its prose, the
+`run --help` probe that decides which hardening flags this build takes instead
+of assuming Docker's parity, and the container name and label rules from
+config.py (a persistent sandbox's name reproducible, a non-persistent one
+unique per run, only a name this cell started its own to remove). Its shape is
+one agent-facing tool, wslc_exec, two more over the same CLI, and eval verbs,
+instead of Hermes's terminal environment provider.
+
+Left out, and why: Hermes's terminal-environment provider itself -- the
+BaseEnvironment subclass, its cwd markers, stdin plumbing and process handles
+-- is not rewritten, because Nodecode's own shell is its own and a cell
+cannot replace it; the sandbox is reached through the tool and the verbs
+instead. For the same reason the container is created on the first command
+rather than at gateway boot, so a machine without the CLI is not refused at
+start. `container_disk` is reported by the original and enforced by neither
+(it was only ever a note: wslc has no `--storage-opt`), so this cell does not
+carry the setting at all; the HERMES_WSLC_BINARY override is the `binary`
+setting here. The plugin's private core imports have no counterpart: nothing
+here reaches into Nodecode's shell.
