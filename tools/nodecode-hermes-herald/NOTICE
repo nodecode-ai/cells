@@ -1,0 +1,36 @@
+nodecode-hermes-herald is a rewrite of bennybuoy's bennybuoy/hermes-herald:
+
+  https://github.com/bennybuoy/hermes-herald
+  commit 1d185a9e0f4fbfa141447be401903cc80407e1cb
+  MIT License, Copyright (c) 2026 Ben Kamholtz (LICENSE)
+
+Rewritten: the plugin's dispatch surface against one Hermes Agent API server —
+dispatch_agent (POST /v1/runs, returning the run id), check_dispatch and
+collect_dispatches (GET /v1/runs/{id}, several in one call), cancel_dispatch
+(POST /v1/runs/{id}/stop), ping_profile (GET /v1/health), list_profile_models
+(GET /v1/models, with the route/alias/parent reading that separates a
+dispatchable alias from the profile's primary identity), dispatch_chat
+(POST /v1/chat/completions, keeping one target session per profile), and
+dispatch_status (the local record of what was dispatched from here), with their
+argument schemas, their answer shapes, the run-id rules, and the model
+provenance a dispatch carries. The Python (urllib, threads, SQLite) is Common
+Lisp here: nlk:http for the profile's API server, one section declaration for
+the settings, six nlk:define-contract declarations for the tools' arguments,
+and a JSON record under the Nodecode home in place of the SQLite ledger. Where
+the plugin configured many profiles and named one per call, the cell's section
+names one address, because a Nodecode home talks to the profiles it is pointed
+at rather than holding a roster.
+
+Left out: delegate_subagent and llm_call, which ran a worker inside the Hermes
+process against Hermes's own parent-agent context and provider routing — a
+different organism's in-process seams, with the per-call model switch,
+inherited context and SOUL.md those depend on. llm_direct, a second tool that
+spoke to any configured OpenAI-compatible endpoint with its own key, also
+needs Hermes's provider plumbing and gave a user no Hermes-specific value a
+plain provider cell does not. The approval relay (approve_dispatch) and the
+SSE callback listener are left out for the same reason: both delivered events
+into a live Hermes session while a run went on, and a cell answering a tool
+call has no session of the other process to deliver into — the run id and a
+poll carry the same facts without the listener. The stamped trace/hop routing
+envelope for detached graphs of dispatches is not reproduced either: the cell
+dispatches to one address, so there is no graph to route.

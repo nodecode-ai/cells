@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration.
+{
+  "hermes": {
+    "enabled": true,
+    "name": "reviewer",
+    "url": "http://hermes.local:8651",
+    "api_key_env": "HERMES_API_KEY",
+    "model": "reviewer-fast",
+    "timeout_seconds": 60
+  }
+}
