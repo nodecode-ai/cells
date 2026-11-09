@@ -1,0 +1,24 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The Snyk account's token lives in the Snyk CLI's own config
+// (snyk auth, or /snyk login), so nothing here is a secret.
+{
+  "snyk": {
+    "enabled": true,
+
+    // The argv prefix that runs the Snyk CLI: a global install, or the same
+    // pinned release the original plugin launched, without one.
+    "command": ["snyk"],
+    // "command": ["npx", "-y", "snyk@1.1306.0"],
+
+    // One run's ceiling; past it the CLI's whole process tree is killed.
+    "timeout_seconds": 600,
+
+    // How much of what the CLI wrote one tool result carries.
+    "max_output_chars": 20000,
+
+    // The floor a scan reports when its call names none. low reports
+    // everything; a code scan has no critical rung and reads it as high.
+    "severity_threshold": "low"
+  }
+}

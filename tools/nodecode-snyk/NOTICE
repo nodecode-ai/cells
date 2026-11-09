@@ -1,0 +1,28 @@
+nodecode-snyk is a rewrite of NousResearch's NousResearch/hermes-official-plugins:
+
+  https://github.com/NousResearch/hermes-official-plugins
+  commit abec9e822a23089943dd1d476a104bf746f19f86
+  MIT License, Copyright (c) 2025 Nous Research (LICENSE)
+
+The plugin was one mcp.json entry, which launched Snyk's first-party MCP
+server on stdio (`npx -y snyk@1.1306.0 mcp -t stdio --profile full`), and one
+skill, skills/snyk-security-scan/, whose SKILL.md and references/tools.md
+describe thirteen tools and the loop around them. Every one of those tools was
+a thin wrapper over one subcommand of the same Snyk CLI, so this rewrite
+keeps the tool names and the argument names and runs the subcommands itself,
+from the image, through nlk:run-bounded: `snyk code test`, `snyk test`,
+`snyk container test`, `snyk iac test`, `snyk sbom test`, `snyk aibom`,
+`snyk auth`, `snyk trust -d`, `snyk logout` and `--version`. The skill's
+guidance — absolute paths, sign in first, trust one folder, python3 for
+Python, ask before scanning a private repository — is the cell's manual topic,
+(help :snyk); its per-tool argument reference is each tool's declared
+schema. Nothing of the original is vendored, and no Node, npm or npx run is
+needed (a `command` of ["npx", "-y", "snyk@1.1306.0"] runs the same pinned
+release for an operator with no global install).
+
+Left out, and why: snyk_package_health_check and snyk_breakability_check are
+answered by the MCP server from Snyk's package-intelligence HTTP API, which
+the CLI exposes no subcommand for; snyk_send_feedback reports issue-count
+deltas to Snyk, which the original marks as opt-in telemetry and this rewrite
+leaves to the operator. Snyk itself, the Snyk CLI and the scans are Snyk
+Ltd's; the license above covers the plugin, not the service.
