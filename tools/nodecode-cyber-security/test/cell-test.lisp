@@ -15,20 +15,25 @@
   (:refused ("refresh_hours" 0)))
 
 (deftest cyber-security-the-report-puts-what-to-patch-first (with-stubbed-security)
-  (setf *sp-outputs* '(("php" "8.2.10" 0) ("node" "v24.22.1" 0)))
+  (setf *sp-outputs* '(("php" "8.2.10" 0)))
   (let* ((rows (nodecode-cyber-security:check))
          (first-row (first rows))
-         (node (find "nodejs-2026-10" rows :test #'equal :key (lambda (r) (getf r :id))))
          (railway (find "railway-2026-10-21" rows :test #'equal :key (lambda (r) (getf r :id))))
          (text (nodecode-cyber-security:report :rows rows)))
     (is (equal "php2shell" (getf first-row :id)) "the vulnerable critical sorts first")
     (is (eq :vulnerable (getf first-row :status)))
-    (is (eq :ok (getf node :status)) "a fixed node passes")
     (is (eq :manual (getf railway :status)) "a platform breach has no machine check")
     (is (search "PATCH CRITICAL (exploited) php2shell" text))
     (is (search "8.2.10 < 8.2.35" text))
     (is (search "READ  HIGH (exploited) railway-2026-10-21" text))
-    (is (search "1 to patch" text))))
+    (is (search "1 to patch" text)))
+  ;; The same advisory on a release that carries the fix: the feed drops and
+  ;; adds advisories, so the passing case rests on the one this test already
+  ;; names, not on a second id the feed may retire.
+  (setf *sp-outputs* '(("php" "8.2.35" 0)))
+  (is (eq :ok (getf (find "php2shell" (nodecode-cyber-security:check) :test #'equal :key (lambda (r) (getf r :id)))
+                    :status))
+      "a fixed php passes"))
 
 (deftest cyber-security-slash-shows-one-advisory-in-full (with-stubbed-security)
   (let ((text (nodecode-cyber-security:run-slash "show php2shell" nil)))
