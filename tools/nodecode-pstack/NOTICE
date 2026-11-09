@@ -1,0 +1,29 @@
+nodecode-pstack is a rewrite of Cloeille's Cloeille/pstack:
+
+  https://github.com/Cloeille/pstack
+  commit d9454cc1ecba5f28b136deacdfe2df959cf7cdec
+  MIT License, Copyright (c) 2026 poteto (adapted by Madeleine) (LICENSE)
+
+prose/skills/ is the original's skills/ folder, unchanged: poteto-mode with
+its 17 playbooks, the 51 other skills, and the references and scripts they
+name. The cell around it is new: where the original is a Hermes plugin whose
+register() reads every SKILL.md's frontmatter and hands the lot to Hermes's
+skill loader, this is one Lisp cell that lists the same files itself (each
+skill's own description line, each playbook's opening bolded line) behind a
+`pstack` tool and a /pstack command, and reads one file when it is asked for.
+A served file keeps the original's words and carries two lines above them:
+where it sits, and how the original's skill_view(name='pstack:X',
+file_path='playbooks/Y.md') reads here, as pstack(name="X") and
+pstack(name="Y"). The prose is not otherwise edited, so the Hermes names it
+still uses (skill_view, delegate_task, cronjob, session_search, and the
+scripts/watch-pr and references/bugbot-triage.md that the original repository
+names but does not ship) are explained in the header rather than rewritten.
+
+Left out, and why: the repository's docs/ folder (a guide to the original's
+own plugin layout, not to the playbooks), scripts/check_refs.py and
+scripts/check_version.py (the original's maintainer tooling, run by hand, not
+by the plugin), and plugin.yaml (the Hermes manifest, which the cell's .asd
+replaces). Hermes's skill frontmatter keys other than name and description
+(version, author, licence, platforms, tags) are read by nobody here: a
+Nodecode cell carries its own metadata in the .asd, and the catalogue needs
+only a name and the one line that says when to read the file.
