@@ -1,0 +1,26 @@
+nodecode-mpp is a rewrite of tempoxyz's tempoxyz/hermes-mpp:
+
+  https://github.com/tempoxyz/hermes-mpp
+  commit a0782b7024ad0256cceede338754b466ded1df06
+  MIT, Copyright (c) 2026 Tempo (LICENSE)
+
+Rewritten: the payment-aware HTTP path and the mpp_fetch tool, in Common Lisp
+against the Nodecode cell contract. The original patches httpx inside the host
+process, so every exchange in Hermes — including clients the plugin never sees
+— answers challenges; a cell has no such seam, so here the same behaviour
+lives in the one tool the model calls (mpp_fetch) and in /mpp: the request,
+the `WWW-Authenticate: Payment` parsing (auth-params, base64url request JSON),
+the origin allowlist, the response shape (status, url, headers, body,
+truncated), the withholding of sensitive response headers, the body ceiling,
+and one paid retry with the credential in `Authorization`.
+
+Left out, and why: the wallet cryptography. The original signs a Tempo charge
+transaction (a type-0x76 TempoTransaction with an expiring nonce, built and
+signed by the pympp library); that is not reimplemented here, so the signature
+comes from a payer command the section names, which may be a script over pympp
+or any MPP client. Also left out: the global httpx instrumentation of traffic
+other than mpp_fetch, the ledger that serializes and fails closed on duplicate
+or uncertain attempts across one process, cookie reconciliation on the retry,
+streaming responses, redirect guarding beyond the initial URL's host check, and
+the plugin's own `hermes-mpp install` CLI, whose job — writing TEMPO_PRIVATE_KEY
+into the host's .env — the section replaces.
