@@ -1,0 +1,22 @@
+nodecode-cron-gate is a rewrite of superlowburn's superlowburn/hermes-jev-cron-gate:
+
+  https://github.com/superlowburn/hermes-jev-cron-gate
+  commit cfd999802bd8d6eb25b986f128323fae0572429c
+  MIT, Copyright (c) 2026 superlowburn (LICENSE)
+
+Rewritten in Common Lisp against Nodecode's cell contract: the question a gate
+puts to TypeSafe's System One over a state snapshot, the four kinds of source
+(a file or its tail, whether paths changed since the last wake, a localhost
+URL's body, static text), the 6,000-character cap that keeps the end, the
+localhost-only rule for URLs, the skip-below bar, the forced wake after a run
+of skips, the per-gate counters and the JSON-lines decision log, and failing
+open on every error path. The one tool became the cell's verbs in the
+cron-gate: package plus a cron_gate tool, a /cron-gate command and a help
+topic, because eval is how a Nodecode model reaches a cell.
+
+Left out: Hermes cron's pre-run --script slot, so the generated wrapper
+script, its chmod, and setup/remove writing into the harness's scripts
+directory have no counterpart -- a Nodecode scheduled job runs a prompt, and
+the gate is a verb that prompt calls first. The original's `test` action (a
+dry run that prints the score and a state preview) is the decision itself
+here, and the decision is what `check` answers.
