@@ -1,0 +1,30 @@
+nodecode-otel is a rewrite of briancaffey's briancaffey/hermes-otel:
+
+  https://github.com/briancaffey/hermes-otel
+  commit d234865b13e997e0b3a50dc18aaad7c7d7b1b1fe
+
+Apache-2.0, Copyright 2026 Brian Caffey (LICENSE).
+
+What was rewritten: the plugin's hook points and its OTLP export became a
+Nodecode cell. Hermes' fifteen hooks (session, tool, LLM, API, sub-agent,
+approval) are replaced by the two the Nodecode runtime publishes without a
+runtime patch: the :tool point, one span per tool call with its arguments,
+result preview, duration and status; and the :frame point, which turns a
+turn's durable facts into spans — `turn.provider_request` (one model round,
+with the time to first token), `turn.usage` (the round's token counts and
+cost, as gen_ai.usage attributes) and `turn.failed`. Both are emitted in the
+OpenTelemetry semantic conventions and posted as OTLP/HTTP JSON, one
+resource per export, to any collector; the multi-backend fan-out, the
+per-backend batch processors and the LangSmith HTTP path were left out.
+Reading spans back is the `otel_spans` tool and `/otel` over a local JSONL
+file, standing in for the plugin's SQLite live store, dashboard and query
+CLI; `otel_mark` plays the part of a manual span.
+
+What was left out, and why: the dashboard (its own web UI), the SQLite live
+store with retention windows, the fourteen backend profiles with their
+credential fallbacks, host and GPU metrics, the LangSmith backend, the
+sampled-log export and the bundled skill. None of them is the core of what
+the plugin gives a user — spans where a person can read them — and each was a
+second runtime this cell does not need. The section keeps the two settings
+the plugin got right: content_capture (full, preview, off) and a local store
+that means nothing leaves the machine until an endpoint is named.
