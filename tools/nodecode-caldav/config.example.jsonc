@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "caldav": {
+    "enabled": true,
+    "url": "http://127.0.0.1:5232/user/calendar/",
+    "user": "your-account",
+    "password": "your-password",
+    "days": 7,
+    "max_events": 50,
+    "timeout_seconds": 20
+  }
+}
