@@ -1,0 +1,9 @@
+{
+ "schema": "hermes-woof.knowledge-manifest.v1",
+ "built_at": "2026-09-30T02:10:13Z",
+ "woof_version": "1.0.0",
+ "woof_source_commit": "ee21e5d3",
+ "woof_source_commit_full": "ee21e5d3896bd6e10e3f461d9563921fc149d49f",
+ "docs": 54,
+ "chunks": 790
+}
