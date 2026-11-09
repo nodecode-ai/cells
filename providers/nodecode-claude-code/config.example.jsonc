@@ -10,10 +10,12 @@
     // The Claude Code CLI: a name on PATH, or a path.
     "command": "claude",
 
-    // What /models lists under claude-code/. Anthropic model ids: a model's
-    // window, output ceiling and effort ladder are read off Anthropic's own
-    // catalog row, and a model whose window is past 200K runs on its 1M route.
-    "models": ["claude-opus-5-5", "claude-sonnet-5", "claude-haiku-4-5", "claude-fable-5-1"],
+    // /models lists what the login may call (Anthropic's own model listing,
+    // asked with the CLI's headers). These Anthropic model ids join it: an
+    // alias, or an id the listing leaves out. A model's window, output
+    // ceiling and effort ladder are read off Anthropic's own catalog row, and
+    // a model whose window is past 200K runs on its 1M route.
+    "models": ["claude-haiku-4-5"],
 
     // How long the CLI may take to write one round's request, replaying the
     // session's history included (about 2 ms a user turn).

@@ -15,6 +15,7 @@
 
 (define-cell-lifecycle-tests "claude-code"
   (:hooks :credential 'nle::walk-provider-stream 'nle::configured-provider-inventory
+          'nle::listable-provider-ids 'nle::list-provider-models
           'nle::resolve-model-capability 'nle::model-price)
   (:running (is (nle::find-lane-by-name "claude-code" nil) "the lane is registered"))
   (:stopped (is (null (nle::find-lane-by-name "claude-code" nil)) "and taken back out"))
@@ -447,3 +448,33 @@ started."
         (is (equal '(1 5 0.1d0 1.25d0) (nle::model-price "claude-haiku-4-5" "claude-code")) "priced at Anthropic's API list price")))
     (nlk:bind (((ids) (nle::configured-provider-inventory :auth-path auth)))
       (is (not (member "claude-code" ids :test #'equal)) "stopped, it is gone"))))
+
+(defparameter +cc-listing+
+  "{\"data\":[{\"type\":\"model\",\"id\":\"claude-fable-5-2\",\"display_name\":\"Claude Fable 5.2\",\"max_input_tokens\":1000000,\"max_tokens\":128000},
+            {\"type\":\"model\",\"id\":\"claude-haiku-4-5-20251001\",\"display_name\":\"Claude Haiku 4.5\",\"max_input_tokens\":200000}],
+    \"has_more\":false}"
+  "Anthropic's /v1/models as a login may be answered it.")
+
+(deftest claude-code-cell-lists-what-its-login-may-call ()
+  (with-cc-round ()
+    (let ((asked nil) (sent nil))
+      (with-stubbed-fdefinition
+          (nle::http-fetch (url &rest args)
+           (setf asked url sent (getf args :headers))
+           (values +cc-listing+ 200))
+        (nlk:bind (((rows error) (nle::list-provider-models "claude-code")))
+          (is (null error) "the listing answered")
+          (is (equal "https://api.anthropic.com/v1/models?limit=1000" asked) "Anthropic's own listing")
+          (is (equal "Bearer fake-oauth-token" (cc-header sent "authorization")) "asked with the CLI's own login")
+          (is (eql 1000000 (getf (find "claude-fable-5-2" rows :key (lambda (row) (getf row :id)) :test #'equal) :context-window)) "a model the day it ships, with its window")
+          (is (equal '("claude-fable-5-2" "claude-haiku-4-5-20251001") (mapcar (lambda (row) (getf row :id)) rows)) "what the login may call, nothing else"))))
+    (is (member "claude-code" (nle::listable-provider-ids) :test #'equal) "/models fetches it")))
+
+(deftest claude-code-cell-lists-its-own-models-beside-the-login ()
+  (with-cell-stop ((claude-code-start "command" "/nonexistent/claude" "models" (vector "claude-haiku-4-5" "claude-fable-5-2")))
+    (let ((ids (mapcar (lambda (row) (getf row :id))
+                       (nodecode-claude-code::listing-rows +cc-listing+ (nle::parse-provider-listing +cc-listing+)))))
+      (is (equal '("claude-fable-5-2" "claude-haiku-4-5-20251001" "claude-haiku-4-5") ids) "an alias the listing leaves out joins it, once"))
+    (nlk:bind (((rows error) (nle::list-provider-models "claude-code")))
+      (is (null rows) "no CLI, no listing")
+      (is (search "no /nonexistent/claude on PATH" error) "and its row says why"))))

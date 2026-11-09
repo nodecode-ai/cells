@@ -34,7 +34,10 @@ It follows NousResearch's
   don't want overage charges. Nodecode prices a claude-code round at
   Anthropic's API list price for its model: the Dashboard's cost for it is
   what the round would have cost on the API, not what your plan charged.
-- **Models.** Models with windows over 200K run on their 1M route. On some
+- **Models.** `/models` lists what your login may call: Anthropic's own
+  model listing, asked with the headers the CLI sends, so a model is offered
+  the day Anthropic ships it. No request goes out to list them and no usage
+  is spent. Models with windows over 200K run on their 1M route. On some
   plans a 1M route, and Fable, draw from usage credits.
 
 ## Install
@@ -59,7 +62,7 @@ This is optional. The section is on unless it says `"enabled": false`:
 {
   "claude-code": {
     "command": "claude",
-    "models": ["claude-sonnet-5", "claude-haiku-4-5"],
+    "models": ["claude-haiku-4-5"],
     "timeout_seconds": 120,
     "reuse_seconds": 600
   }

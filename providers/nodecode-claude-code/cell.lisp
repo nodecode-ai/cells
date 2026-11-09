@@ -14,6 +14,10 @@
 ;;;;   :CREDENTIAL                     the provider's credential is the CLI's
 ;;;;                                   login, which this image never holds
 ;;;;   CONFIGURED-PROVIDER-INVENTORY   /models lists claude-code/<model>
+;;;;   LISTABLE-PROVIDER-IDS           and asks for its listing, which
+;;;;   LIST-PROVIDER-MODELS            is Anthropic's own /v1/models, asked
+;;;;                                   with the headers the CLI's login
+;;;;                                   sends: a model the day it ships
 ;;;;   RESOLVE-MODEL-CAPABILITY        a model's window, output ceiling and
 ;;;;                                   effort ladder are Anthropic's own row
 ;;;;   MODEL-PRICE                     Anthropic's API list price: a
@@ -23,7 +27,7 @@
 ;;;;
 ;;;; Config, a sibling top-level key next to `websearch' and `cron':
 ;;;;   "claude-code": {"command": "claude",
-;;;;                   "models": ["claude-sonnet-5", "claude-haiku-4-5"],
+;;;;                   "models": ["claude-haiku-4-5"],
 ;;;;                   "timeout_seconds": 120,
 ;;;;                   "reuse_seconds": 600}
 ;;;; A vetoed section ("enabled": false) installs nothing: no lane, no hook.
@@ -94,6 +98,68 @@ each with Anthropic's window for it."
                                        (nle::model-capability-context-tokens
                                         (nle::resolve-model-capability id +provider+))))))
 
+(defparameter +listing-round+
+  "{\"max_tokens\":1,\"messages\":[{\"role\":\"user\",\"content\":\"models\"}]}"
+  "The one-word round the CLI writes so a listing can ride its login: the
+relay keeps the request, so it is never sent and spends nothing.")
+
+(defun login-headers ()
+  "The headers the CLI's login sends with, read off the request it writes
+for +LISTING-ROUND+: the relay keeps it, so nothing leaves through the CLI."
+  ;; `sonnet' is the CLI's own alias: the request is never sent, so any model
+  ;; the CLI takes will do, and an alias never retires.
+  (values (%author-request (nlk:decode-json +listing-round+)
+                           :model "sonnet" :directory (uiop:temporary-directory))))
+
+(defun listing-rows (text rows)
+  "ROWS, the kernel's reading of the listing TEXT, each with the window
+Anthropic's max_input_tokens gives it, and the section's models the listing
+leaves out (an alias, an id it does not name) after them."
+  (let ((windows (make-hash-table :test #'equal)))
+    (loop for entry across (or (nlk:json-value (nlk:decode-json text) :array "data") #())
+          for id = (nlk:json-value entry :string "id")
+          for window = (nlk:json-value entry :integer "max_input_tokens")
+          when (and id window (plusp window)) do (setf (gethash id windows) window))
+    (append (mapcar (lambda (row &aux (row (copy-list row)))
+                      (unless (getf row :context-window)
+                        (setf (getf row :context-window) (gethash (getf row :id) windows)))
+                      row)
+                    rows)
+            (loop for id in (coerce (setting :models) 'list)
+                  unless (find id rows :key (lambda (row) (getf row :id)) :test #'string=)
+                    collect (list :id id)))))
+
+(defun login-listing ()
+  "(values ROWS ERROR), LIST-PROVIDER-MODELS for claude-code: the models the
+CLI's login may call, Anthropic's /v1/models asked with the headers the CLI
+sends (LOGIN-HEADERS), or NIL and why it could not be asked."
+  ;; The listing is the login's own word, so a model Anthropic ships today is
+  ;; offered today, and one the plan does not carry is not.
+  (unless (cli-program (setting :command))
+    (return-from login-listing
+      (values nil (format nil "no ~a on PATH" (setting :command)))))
+  (multiple-value-bind (body status)
+      (handler-case (nle::http-fetch (concatenate 'string +upstream+ "/v1/models?limit=1000")
+                                     :headers (login-headers)
+                                     :timeout nle::*provider-models-fetch-timeout-seconds*)
+        (nle::provider-error (condition) (values nil (nle::provider-error-detail condition)))
+        (error (condition) (values nil (princ-to-string condition))))
+    (if (stringp body)
+        (multiple-value-bind (rows error) (nle::parse-provider-listing body)
+          (if error (values nil error) (values (listing-rows body rows) nil)))
+        (values nil (if (stringp status) status "empty listing")))))
+
+(defun listing (next provider &rest arguments)
+  "LIST-PROVIDER-MODELS advice: claude-code's listing is its login's."
+  (if (equal provider +provider+)
+      (login-listing)
+      (apply next provider arguments)))
+
+(defun listable (next &rest arguments)
+  "LISTABLE-PROVIDER-IDS advice: claude-code among the providers whose
+listing /models fetches; one that cannot be asked says why in its row."
+  (sort (adjoin +provider+ (apply next arguments) :test #'string-equal) #'string<))
+
 (defun inventory (next &rest arguments)
   "CONFIGURED-PROVIDER-INVENTORY advice: claude-code among the credentialed
 providers, its models among the configured ones."
@@ -139,11 +205,11 @@ API, as openai-codex prices its subscription models."
 
 (nle:define-cell claude-code
   (:section ("claude-code")
-    (:guide "command is the claude CLI, logged in with `claude' then /login; models are what /models lists as claude-code/<model>")
+    (:guide "command is the claude CLI, logged in with `claude' then /login; /models lists what that login may call as claude-code/<model>")
     ("command" :string :default "claude"
      :doc "the Claude Code CLI: a name on PATH or a path")
-    ("models" :list :default (vector "claude-opus-5-5" "claude-sonnet-5" "claude-haiku-4-5" "claude-fable-5-1")
-     :doc "the Anthropic model ids /models offers under claude-code/")
+    ("models" :list :default (vector)
+     :doc "Anthropic model ids /models offers under claude-code/ beside the ones the login lists: an alias, or an id its listing leaves out")
     ("timeout_seconds" :integer :default 120 :min 1
      :doc "how long the CLI may take to write one round's request, its history replay included")
     ("reuse_seconds" :integer :default 600 :min 0
@@ -152,5 +218,7 @@ API, as openai-codex prices its subscription models."
   (:hook :credential #'credential)
   (:hook 'nle::walk-provider-stream #'walk)
   (:hook 'nle::configured-provider-inventory #'inventory)
+  (:hook 'nle::listable-provider-ids #'listable)
+  (:hook 'nle::list-provider-models #'listing)
   (:hook 'nle::resolve-model-capability #'capability)
   (:hook 'nle::model-price #'price))
