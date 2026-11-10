@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed and holds no secret. The
+// declaration in cell.lisp is the authority; this is an illustration of it. A
+// present section is enabled; "enabled": false vetoes it.
+{
+  "jwt": {
+    "enabled": true,
+    "max_token_chars": 16384,
+    "max_claims": 60,
+    "max_value_chars": 200,
+    "skew_seconds": 60
+  }
+}
