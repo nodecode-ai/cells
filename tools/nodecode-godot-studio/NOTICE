@@ -1,0 +1,30 @@
+nodecode-godot-studio is a rewrite of Foolafroos's Foolafroos/godot-studio:
+
+  https://github.com/Foolafroos/godot-studio
+  commit 6c1d42d22ae6274f0ed4a3a9a264d2effe461736
+
+MIT, Copyright (c) 2026 Foolafroos (LICENSE). The original repository carries no
+LICENSE file; plugin.yaml and the bundled skill's frontmatter declare MIT, so
+LICENSE here is MIT's standard text under the repository's own holder.
+
+What was rewritten: the plugin's four tools and the headless contract behind
+them — finding a Godot 4 binary on PATH or at a desktop install's own path and
+refusing in words when none is found, the headless check with --quit and
+--quit-after N frames and its bounded tail of the engine's output, the export
+from a named preset with --export-release and --export-debug, the resolution of
+the output path (the preset's export_path when none is given) with the original's
+two guards kept exactly: the output must resolve inside the project after
+symlinks and .., and an existing file is only overwritten when it is a known
+export artifact of that project; creating the output's parent directory; the
+export-template hint; the export_presets.cfg reader that skips each preset's
+.options section and answers every preset with the artifact's existence, size and
+modification time; and the install report, narrowed to the engine and the
+configured projects. The workflow guidance the plugin bundled as a skill is the
+manual (help :godot-studio).
+
+What was left out, and why: the desktop half (a status bar chip and a builds
+gallery pane with its own read-only HTTP backend), because a Nodecode cell
+answers through tools, /godot-studio and the manual rather than a separate window and
+its port; and the godot-ai MCP registration in the install report (a `mcp list`
+call and `uv` detection, which name another harness's command), because the MCP
+server belongs to a different product and this cell's report is about this one.
