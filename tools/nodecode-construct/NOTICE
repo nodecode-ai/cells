@@ -1,0 +1,35 @@
+nodecode-construct is a rewrite of rtmandreyev's rtmandreyev/construct:
+
+  https://github.com/rtmandreyev/construct
+  commit 24a1bc838076c94728376850d461b383d003caa9
+  Apache-2.0, Copyright (c) 2026 Artyom Andreyev (LICENSE; the holder is
+  named in the repository's NOTICE, the licence text is the Apache License 2.0)
+
+Rewritten: the scene, its format and its provenance. A construct-scene is
+still the original's idea -- a named thing as parts, each of a shape from a
+closed vocabulary at a real size and a real place, with the facts it is known
+by, where each fact came from, and how surely it is known (verified,
+user_supplied, traced, inferred, decorative), so a wrong number stays
+traceable to what said it. The checks came over with it: every problem
+carries its JSON path and the fix to apply, and the scene is compiled once
+into triangles and lines that every output is cut from, so a page, a glTF and
+an STL of one scene cannot disagree. The exports are the original's too, with
+fewer formats: glTF with a node, a mesh and a material per part; OBJ with one
+named object per part; a binary STL in millimetres; and the hologram page --
+one self-contained HTML file, the lines and faces inlined, turning, each part
+named and in its own colour. Every written file is read back and counted
+before the cell says it is done, as the original does.
+
+Left out, and why: the original's engine is about 1.3 MB of Python, and a
+Nodecode cell carries none of it. So there is no CAD (FreeCAD, STEP, 3MF), no
+film renderer (ffmpeg, music, runfilm), no model kit with a booklet, no
+headless-browser review images, no NetLogo runs drawn as constructs, and no
+joints with animation -- each needs a program or an engine this cell does not
+bundle, and each is a build of its own rather than a rewrite of one. The
+shipped constructs (sixteen, from a Land Cruiser to the Sainte-Chapelle), the
+critic's verdict, the archetypes and the sixteen tutorials are left out as
+data: the cell ships two starters, a cube and a shed, and a scene is written
+as JSON. The commands `construct_command` reaches (rounds, tracing, lofting,
+likeness, terrain, globe, plates) are out for the same reason: each is an
+engine, not a verb. What remains is the part of Construct that this image can
+do alone, offline, with no Python and no network.
