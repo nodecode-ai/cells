@@ -1,0 +1,34 @@
+nodecode-reaction-ledger is a rewrite of olric3015's olric3015/hermes-plugins:
+
+  https://github.com/olric3015/hermes-plugins
+  commit c3cf4f480a7a7ee33be542703dd00d5b90bce7cc
+
+MIT License, Copyright (c) 2026 olric3015 (LICENSE)
+
+What was rewritten: the plugin's one job - keep a row for every reaction
+change in the chats the bot serves, and answer /reaction-log with which emoji
+are used, on how many messages, in how many chats, and when last - as a
+Nodecode cell. Its hashing carries over unchanged: a chat is 12 hex digits of
+a SHA-256 over room and chat id, a message 12 hex digits over room, chat and
+message id, so no chat or message id, no user id and no user name is ever
+written. Its JSON-lines file under the data directory, its newest-rows trim,
+its options (/reaction-log all | Nh | Nd | days | recent [N] | clear, and its
+one-line refusal of an option it does not know) and its rule that each
+message counts once with the reactions it has now all carry over. Where the
+plugin subscribed to Hermes's gateway_platform_event hook, the cell advises
+the channel kit's reaction seam, which every room adapter hands its reactions
+to; the kit loads as a cell of its own, so the advice is taken when the seam
+exists and a worker keeps looking while it does not. It still only watches: an
+error in the observer is swallowed, and the kit's own answer stands. The same
+three verbs are on the manual as reaction-ledger:summary, reaction-ledger:recent
+and reaction-ledger:clear for a report taken through eval.
+
+What was left out, and why: the plugin kept the reactions a message carries
+after each change, because Telegram hands over the whole set each time; a
+kit candidate is one emoji added or taken back, so a row here is that one
+change and a message's current reactions are its rows folded in file order.
+The Unicode-name column of the plugin's table is gone, since this image has
+no Unicode name table, and with it the custom-emoji count: the kit reads
+plain emoji only. The plugin's 2 MB byte bound is the section's row count
+instead, since one row's size no longer varies with a chat's name. The
+plugin's own card image and its end-to-end harness are not part of the cell.
