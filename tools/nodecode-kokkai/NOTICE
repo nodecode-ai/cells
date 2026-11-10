@@ -1,0 +1,30 @@
+nodecode-kokkai is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-kokkai:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-kokkai
+  commit 0c9bcfc49f64fd063131bf2676904f2ea166002c
+  MIT License, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+Rewritten: the plugin's three tools, reimplemented in Common Lisp against the
+cell contract. `kokkai_search` asks the National Diet Library's meeting list
+and answers one summary per meeting with the official meetingURL; the page
+must hold every match or the call says so rather than reporting 0 meetings,
+and a row without a speechID is not a page a watch may mark seen from.
+`kokkai_speech` asks the speech search and answers the first 240 characters
+of each speech, the speaker, the meeting, the date and the speechURL, with
+the total and a truncation mark first. `kokkai_watch` saves a query, marks
+what the window already holds as seen, and checks it daily: only the daily
+check advances the seen speech IDs, so a manual run can be repeated. The
+house set, the from/until pairing and order, the query-length ceiling, the
+two-megabyte page cap and the five-second floor between requests are the
+original's, as is the PDL 1.0 credit line each answer ends with, in Japanese,
+naming the URLs that were used.
+
+Left out: the Hermes `pre_tool_call` approval hook, since a Nodecode cell
+writes its own state file instead of a config rule Hermes had to gate; the
+`hermes cron` job and the `scripts/jp-kokkai-watch.py` script the plugin
+wrote and left behind after uninstall, since the cell's own worker thread
+checks the watches and nothing survives the folder but one JSON file; the
+`deliver` target, whose platform names are Hermes gateway surfaces, replaced
+by a standing Nodecode notice; and the plugin's "always" rule keys and its
+unattended-session refusals, which belong to the other harness's approval
+machinery.
