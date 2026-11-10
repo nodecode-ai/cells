@@ -1,0 +1,11 @@
+// The sluice section: a staged copy of one project folder, reviewed before it
+// lands. `workspace` is the only required member; the rest have defaults.
+{
+  "sluice": {
+    "workspace": "/work/project",   // the folder to stage; its real files wait for sluice_apply
+    "copy_git": true,                 // copy .git into the stage so git status and git diff work there
+    "max_file_mb": 25,                // the largest file copied; bigger ones are listed as skipped
+    "max_workspace_mb": 1024,         // the largest workspace staged
+    "allow_paths": ["/tmp"]          // outside paths written without the NOT CONTAINED label
+  }
+}
