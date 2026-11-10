@@ -1,0 +1,32 @@
+nodecode-mflow is a rewrite of vladyslavpatrick's vladyslavpatrick/mflow-hermes:
+
+  https://github.com/vladyslavpatrick/mflow-hermes
+  commit 9e6428e78413a0fd7b3afdbb29d5001378acad24
+  MIT, Copyright (c) 2025 mFlow (LICENSE)
+
+The original is a portable Agent Plugins v1 package with no code of its own: an
+mcp.json pointing at mFlow's hosted MCP server (https://mcp.m-flow.io/mcp),
+behind one bearer token from MFLOW_TOKEN, and a skill that teaches a model the
+server's snake_case tools and their pitfalls. What was rewritten here is that
+whole reach, in Common Lisp: the streamable-HTTP JSON-RPC client itself
+(initialize once, the Mcp-Session-Id echoed after, one tools/call per verb,
+a JSON or `data:' framed answer read by the reply's id, the session re-taken
+once when the server forgets it), the skill's tools regrouped into ten the
+model calls by name -- projects, tasks, task creation, task
+update, comment, Knowledge Base list and write, coding-agent delegation and
+status, and mflow_call for every tool not named above -- and the skill's own
+guidance, carried over as the text of (help :mflow): ids not names, labelIds
+a full replace, list before creating a doc, an ADR's three sections, supersede
+rather than delete, confirm delete_* and transfer_knowledge_base, poll the
+coding agent and never in a tight loop, a 401 means the token must be renewed.
+The plugin's MFLOW_TOKEN becomes the cell's section: token written inline or
+token_env naming the variable that holds it. LICENSE is the repository's
+LICENSE, unchanged.
+
+What was left out, and why: the Hermes plugin manifest and the skill's
+recipes file, which are pointers and prose for a harness rather than reach,
+with the recipes' guidance folded into (help :mflow) instead; the OAuth
+sign-in path (authorization_code with PKCE, no refresh grant) because it needs
+a browser callback this cell does not open, so a Personal Access Token, the
+plugin's own Option B, is the one way in; and Python's MCP client, replaced
+by this cell's own client over the image's nlk:http.
