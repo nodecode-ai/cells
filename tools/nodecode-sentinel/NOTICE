@@ -1,0 +1,16 @@
+nodecode-sentinel is a rewrite of SaltProphet's SaltProphet/hermes-sentinel:
+https://github.com/SaltProphet/hermes-sentinel
+commit ea578eaffb871802162186adcc93ebbf71f99f92
+MIT, Copyright (c) 2026 Justin Strange (LICENSE)
+
+Rewritten in Common Lisp against Nodecode's cell contract: the six credential
+patterns, the middle-out truncation to a character and a line bound, the loop
+trap on a third identical call with its reset, and the local execution ledger
+with its status/audit/reset/clear commands. The original hung these on four
+Hermes hooks; here three of them ride the one `:tool` point — which the core
+calls around every tool body, before and after — and the message guard is an
+advice on `NLE:SUBMIT`, the one in-process ingress. Left out: the SQLite file,
+because the ledger is a best-effort in-process record and a cell that writes to
+disk on every call is a heavier promise than it needs to make; and the CLI
+subcommand, since `/sentinel` and `(help :sentinel)` are the surfaces a
+Nodecode user already has.
