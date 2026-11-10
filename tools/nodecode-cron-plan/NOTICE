@@ -1,0 +1,23 @@
+nodecode-cron-plan is a rewrite of Moodtuner997's Moodtuner997/hermes-cron-consolidator:
+
+  https://github.com/Moodtuner997/hermes-cron-consolidator
+  commit 52acc397a7eb4ccf809e03afbc021a29f440b28b
+  MIT License, Copyright (c) 2026 Moodtuner997 (LICENSE)
+
+The report was rewritten in Common Lisp from the original's Python: cronfields.py's five-field schedule
+expansion and overlap test, analysis.py's grouping of jobs whose prompts are near-duplicates (its difflib
+ratio reimplemented as a longest-common-block recursion), the same-skills-and-destination and
+same-script groupings, the union-find that makes one candidate of a group, the keeper rule (most fires,
+then oldest), the token ceiling averaged over the window's daily usage, the clock-time collision check
+that leaves out pollers, and report.py's Markdown and JSON answers and its argument words. The cell reads
+the same files the plugin read, cron/jobs.json and cron/usage_audit.jsonl, and writes nothing. It is a
+Nodecode cell rather than a Hermes plugin: the slash command is registered through the cell contract,
+the settings live in the config's cron-plan section, and the same plan is one Lisp call,
+(cron-plan:plan "report").
+
+Left out, because it is not what the report is about: cron/executions.db is not read, so the per-job
+failed-run count that came from SQLite is absent and a failure streak is the number jobs.json records;
+the CLI entry point (hermes cron-consolidator) has no counterpart, the cell's /cron-plan and
+(cron-plan:plan ...) standing in for it; and the Hermes home is named by the section's home setting
+rather than discovered from HERMES_HOME, so one set of arguments serves both a profile and a copied
+home the way --profile and --home did.
