@@ -705,6 +705,24 @@
       "category": "platform"
     },
     {
+      "name": "nodecode-android-bridge",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0753ef9afa27abd573b3d9e8b3d109aeeb6d14bc",
+      "path": "tools/nodecode-android-bridge",
+      "description": "Android Bridge: drive a paired Android phone over its relay - screen, taps, typing, files, camera, SMS",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "TechFlipsi",
+        "repo": "TechFlipsi/FlipsiBridge",
+        "commit": "5f185b2d5ac8b88d127815c13ee31970d31f678a",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-android-emulator",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "ecfe2feb9bea24ed6a3e419dfef01ed615e4e614",
@@ -1011,6 +1029,24 @@
       "category": "models"
     },
     {
+      "name": "nodecode-arcade",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "36c37f3cee7f7f81d05856b1d4299a7b2382c3de",
+      "path": "tools/nodecode-arcade",
+      "description": "Snake, Breakout and Pong in the conversation, with leaderboards the model can read",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "leoresendedop-sys",
+        "repo": "leoresendedop-sys/hermes-arcade",
+        "commit": "2daa7bed248a916ed2058f4574d31283a506b571",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-archytan-lite",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "0884bcff160de689f9ab68c2057b7074301160f3",
@@ -1042,6 +1078,24 @@
         "author": "J182Razor",
         "repo": "J182Razor/hermes-arena-skill",
         "commit": "0fdb521220f0d4507044e97a56eadee1cea9b65e",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-ark",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "03824ce49de975536a6b52a2db27aa1d8c559bf1",
+      "path": "tools/nodecode-ark",
+      "description": "Encrypted, deduplicated snapshots of config and cells, restorable one file at a time",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "medomohamed22",
+        "repo": "medomohamed22/hermes-ark",
+        "commit": "a23e529c1f636aa49d974576cdc5cb15fc8242d3",
         "license": "MIT"
       },
       "category": "tools"
@@ -1795,6 +1849,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-caduceus",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "8b0a3953113d9153e024b64487996705a71ce93d",
+      "path": "tools/nodecode-caduceus",
+      "description": "Caduceus: a private local vault for DNA raw data, gene-drug answers, Apple Health trends and health notes",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "electricsheephq",
+        "repo": "electricsheephq/caduceus",
+        "commit": "8dd0c77ac80ce3b56a4b3285fbeca6c0fe83b767",
+        "license": "Apache-2.0"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-caldav",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "95598598cb0654bda5b86f3da0ccb75c62ad78b5",
@@ -2450,6 +2522,24 @@
       "category": "models"
     },
     {
+      "name": "nodecode-clearance",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "066490cf939f428e800a3f0ea7153677325a6239",
+      "path": "tools/nodecode-clearance",
+      "description": "Per-sender tool tiers: every tool call is checked in code against who sent the message",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "yuzuru99",
+        "repo": "yuzuru99/hermes-clearance",
+        "commit": "40adfd6db365d1279733ca541e8c25383302d74e",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-clef",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "835216e6dcdba3cce558e56a9461e05524344810",
@@ -2857,6 +2947,24 @@
       "category": "memory"
     },
     {
+      "name": "nodecode-construct",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "ab4ef16726bb11720b3fb5a9ee7dc20b7d37db15",
+      "path": "tools/nodecode-construct",
+      "description": "Construct: a described thing into a checked scene, glTF, OBJ, STL and a hologram page",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "rtmandreyev",
+        "repo": "rtmandreyev/construct",
+        "commit": "24a1bc838076c94728376850d461b383d003caa9",
+        "license": "Apache-2.0"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-coreweave",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "b4426ed98562546ec246fa02d68c6aed3b65f288",
@@ -2900,6 +3008,42 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-cortive",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "9c6eb9a7fddf0f6a277032a9b12703acd2d24883",
+      "path": "tools/nodecode-cortive",
+      "description": "Cortive memory: recall captured pages, PDFs and screenshots from a local Cortive library",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "KadenDevAi",
+        "repo": "KadenDevAi/hermes-cortive",
+        "commit": "3eb2f4935994c6b7ea0d7067428d3051f9388fc6",
+        "license": "MIT"
+      },
+      "category": "memory"
+    },
+    {
+      "name": "nodecode-cospark",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "3123ac32244dc986b34d3d1d2db8428d8b9b26ac",
+      "path": "tools/nodecode-cospark",
+      "description": "Cospark: research ad references and make images, video ads and voiceovers through its hosted MCP server",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "corift",
+        "repo": "corift/cospark-ai",
+        "commit": "535535a8006b5b6b44c6a3acefa6273cf9d26a0c",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-costguard",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "268cd8666dc109443853c554b8112187d9d21688",
@@ -2932,6 +3076,24 @@
         "repo": "Covision-Consultants/covision-agent-plugin",
         "commit": "373012bed0a36f7d4345a180eefc26352403cd3d",
         "license": "Apache-2.0"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-crashtest",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "fa92bc3a0ff088a3fd5576ad98b0a9b1047b4766",
+      "path": "tools/nodecode-crashtest",
+      "description": "Crash test the agent: one armed turn of failing tools, then a 1-5 star rating of how it coped",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "salch-cred",
+        "repo": "salch-cred/crash-test",
+        "commit": "00f30620de92a470721b19a158fe26ceee8b0025",
+        "license": "MIT"
       },
       "category": "tools"
     },
@@ -2988,6 +3150,24 @@
         "license": "MIT"
       },
       "category": "automation"
+    },
+    {
+      "name": "nodecode-cron-plan",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "307094d9d3ad78a660432c00d48881d5df05fce0",
+      "path": "tools/nodecode-cron-plan",
+      "description": "A read-only plan for merging and rescheduling cron jobs",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Moodtuner997",
+        "repo": "Moodtuner997/hermes-cron-consolidator",
+        "commit": "52acc397a7eb4ccf809e03afbc021a29f440b28b",
+        "license": "MIT"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-crontab",
@@ -3116,6 +3296,24 @@
         "nodecode"
       ],
       "category": "tools"
+    },
+    {
+      "name": "nodecode-daily-edition",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "73eb170b602e565547f2be36c1cdcf8168b2d3cc",
+      "path": "tools/nodecode-daily-edition",
+      "description": "A dated front page compiled from interest phrases: one story once, cross-posts merged, reprints withheld",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ousiaresearch",
+        "repo": "ousiaresearch/daily-edition",
+        "commit": "b53569f93157708fd7019e499a86fdf9a9117d3a",
+        "license": "MIT"
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-dangerous-patterns",
@@ -3425,6 +3623,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-developh",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "7ce9cc5980c526708bb9f0e076c580817805f618",
+      "path": "tools/nodecode-developh",
+      "description": "Developh website audit: PageSpeed Insights audits with a ranked fix list, plus the studio's profile and case studies",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Developh",
+        "repo": "Developh/skills",
+        "commit": "c8899016509e112f218c28de578f99ed8a2a4fce",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-devin",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
@@ -3442,6 +3658,42 @@
         }
       ],
       "category": "models"
+    },
+    {
+      "name": "nodecode-devsentry",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "81e9dd7c5cf064c1a0f967e7d476dc7637f09acc",
+      "path": "tools/nodecode-devsentry",
+      "description": "Read-only project inventory, traceback leads and tracked git diffs",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Archangel20",
+        "repo": "Archangel20/devsentry",
+        "commit": "0475b45a3ac2abe14f54bb841fb44ba7ef230fe1",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-devtune",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "ce1a8e200bbbeac3e1c1851fbbc68c6865b7fdda",
+      "path": "tools/nodecode-devtune",
+      "description": "DevTune: what AI answers say about a product, and which tools coding agents pick",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "devtunehq",
+        "repo": "devtunehq/skills",
+        "commit": "bb38e20a34a7577d359fd9a508caa1cf1ef8b1a7",
+        "license": "MIT"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-dexio",
@@ -3534,6 +3786,24 @@
       "category": "platform"
     },
     {
+      "name": "nodecode-distro-reader",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "dd6dfdf9ea6e6f441a553520fd30c4e36103abc1",
+      "path": "tools/nodecode-distro-reader",
+      "description": "Distro Reader: search and read Distro's news, stories, books and podcasts, as eight tools",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Distro-Media",
+        "repo": "Distro-Media/hermes-plugin-distro-reader",
+        "commit": "57bfa385e6dd9e1dc1d5230d0907c1c07d248ae7",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-doc-markdown",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "a3eaf338f968b7d312f4888019bb5b076fa45c17",
@@ -3569,6 +3839,24 @@
         "license": "MIT"
       },
       "category": "tools"
+    },
+    {
+      "name": "nodecode-doctrine",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "433f9df371f4f019b443624d8b8201a28384665a",
+      "path": "tools/nodecode-doctrine",
+      "description": "Axiom Doctrine: nine conduct rules in every request, and which enforcer cells are installed",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "percyhendrux123-prog",
+        "repo": "percyhendrux123-prog/hermes-axiom-agent",
+        "commit": "1861b7820d5866e36b07dc54bb647f9eefa94bd5",
+        "license": "MIT"
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-document-ocr",
@@ -3695,6 +3983,24 @@
         "license": "Apache-2.0"
       },
       "category": "desktop"
+    },
+    {
+      "name": "nodecode-dyscalculia",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "461043a308dd2f141504acf14a7056d55664b709",
+      "path": "tools/nodecode-dyscalculia",
+      "description": "Dyscalculia statistics: cited prevalence, references, chart data and screening-test facts from dyscalculia.io",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Dyscalculia-io",
+        "repo": "Dyscalculia-io/dyscalculia-agent-plugin",
+        "commit": "a8083b1ba3667998025ed1bab15500ed8096ac35",
+        "license": "MIT"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-eatwise",
@@ -3956,6 +4262,24 @@
       "category": "general"
     },
     {
+      "name": "nodecode-equipdash",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "2202addd1fb696dbf618ccfcad97dab33047d15e",
+      "path": "tools/nodecode-equipdash",
+      "description": "EquipDash: a rental or activity shop's day, bookings, availability and payments, as tools the model calls",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "equipdash",
+        "repo": "equipdash/agent",
+        "commit": "64becfb220719b1c207efeaa78d9b5f641d53fa4",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-error-ledger",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "41f61b75cd7276079976723adefa780ca65e1a9a",
@@ -4090,6 +4414,24 @@
       "category": "models"
     },
     {
+      "name": "nodecode-eyes",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "c5637f49b45bddab3afc31437022661767a2381b",
+      "path": "tools/nodecode-eyes",
+      "description": "Eyes: a measured note on every image, video or sound a tool just wrote -- frame filled, motion, brightness, loudness, silences",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Agenziamaia",
+        "repo": "Agenziamaia/eyes",
+        "commit": "5f30bd487be26ed9b074fddd3a4408709b92154c",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-fabric",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5e94027c8737d3627bbd3bf87025a824c9204cbb",
@@ -4103,6 +4445,24 @@
         "author": "esaradev",
         "repo": "esaradev/icarus-plugin",
         "commit": "e46cba30fb95a0b54b7c4d6c26169a424283d72b",
+        "license": "MIT"
+      },
+      "category": "memory"
+    },
+    {
+      "name": "nodecode-factledger",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "11a6f4876d7d4d67c1a9fa5eb89d95f37dbf0501",
+      "path": "tools/nodecode-factledger",
+      "description": "Factledger: a durable ledger of typed facts, a new value closing the old row",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "explorelifehus-eng",
+        "repo": "explorelifehus-eng/factledger",
+        "commit": "77843ab263d8678bf44ce4b50b88d62cc5ae9b7e",
         "license": "MIT"
       },
       "category": "memory"
@@ -4143,6 +4503,24 @@
         "license": "MIT"
       },
       "category": "models"
+    },
+    {
+      "name": "nodecode-fashio",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "e97fd85bba030b0e6b13201fac07244525ddc7b6",
+      "path": "tools/nodecode-fashio",
+      "description": "Fashio: on-model fashion photos, try-on, flat lays and product videos on your own Fashio key",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "fashiolabs",
+        "repo": "fashiolabs/fashio-agent-plugin",
+        "commit": "1901c1a576e752cbd1496e79006882d2f6c61a36",
+        "license": "MIT"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-fashion-design",
@@ -4308,6 +4686,24 @@
       "category": "voice"
     },
     {
+      "name": "nodecode-fivedive",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "be866870d611245eaa54883207d2775336af6efd",
+      "path": "rooms/nodecode-fivedive",
+      "description": "5dive app chat: the web and mobile chat of a 5dive box, through its local spool",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "5dive-ai",
+        "repo": "5dive-ai/5dive-plugins",
+        "commit": "d9e8ad1ad0f6e109d54a213e743d25284389f875",
+        "license": "Apache-2.0"
+      },
+      "category": "platform"
+    },
+    {
       "name": "nodecode-flashdata",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5c84edd81c4a8d0fc5d2044d039b1f9785242f72",
@@ -4468,6 +4864,25 @@
         "license": "MIT"
       },
       "category": "platform"
+    },
+    {
+      "name": "nodecode-follow-through",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "04111d44835284d1fa8447968bcb018aa623a179",
+      "path": "tools/nodecode-follow-through",
+      "description": "Hold an answer that promises work nothing is running, and make it do the work or launch it",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "Agenziamaia",
+        "repo": "Agenziamaia/follow-through",
+        "commit": "9e4ddc528b62254c944ed25542902b6f99d652a4",
+        "license": "MIT"
+      },
+      "category": "automation"
     },
     {
       "name": "nodecode-followups",
@@ -5040,6 +5455,96 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-glasses",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "828c5cec5d751189cb27c6b7346ac219e53b7e4b",
+      "path": "rooms/nodecode-glasses",
+      "description": "Smart glasses as a channel: a wearer's words and camera in, short replies out",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "100yenadmin",
+        "repo": "100yenadmin/glasses-platform",
+        "commit": "dbc797b6cc4063261c5be298288e599322913b98",
+        "license": "MIT"
+      },
+      "category": "platform"
+    },
+    {
+      "name": "nodecode-glorya",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "b6e860869f4e4323fc16a12113a4c40d0f55c1ba",
+      "path": "tools/nodecode-glorya",
+      "description": "Glorya: image ads, video ads, landing pages and websites, as tools and /glorya",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Glorya-AI",
+        "repo": "Glorya-AI/hermes-plugin",
+        "commit": "e6ffa2bb4e6180686ebf276ff5b9744c029842f8",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-gmi-image",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "39845198a4d4f8bb89aa035fff948d5a3d0dc394",
+      "path": "tools/nodecode-gmi-image",
+      "description": "GMI Cloud images: Seedream, Gemini and the rest of GMI's live catalog, as the gmi_image tool and /gmi-image",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "zkasuran",
+        "repo": "zkasuran/hermes-gmi-media",
+        "commit": "6760b29d6f9f93f47cef08702bda876fb10af652",
+        "license": "Apache-2.0"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-gmi-speech",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "8e4f56084470ecba4d3a4313fe4198c7e6976434",
+      "path": "tools/nodecode-gmi-speech",
+      "description": "GMI Cloud speech: say text into an audio file, a model's voices, and the model ids",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "zkasuran",
+        "repo": "zkasuran/hermes-gmi-media",
+        "commit": "6760b29d6f9f93f47cef08702bda876fb10af652",
+        "license": "Apache-2.0"
+      },
+      "category": "voice"
+    },
+    {
+      "name": "nodecode-gmi-video",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "c26ee3d079f46d01b76a5a0ccb3fc18f8e9f7732",
+      "path": "tools/nodecode-gmi-video",
+      "description": "GMI Cloud text- and image-to-video: make a video from a prompt or a public image URL",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "zkasuran",
+        "repo": "zkasuran/hermes-gmi-media",
+        "commit": "6760b29d6f9f93f47cef08702bda876fb10af652",
+        "license": "Apache-2.0"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-godot",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "7ba479f18b2cb8a71c45be7fe9cecdfd3fddc65b",
@@ -5343,6 +5848,24 @@
         "license": "MIT"
       },
       "category": "tools"
+    },
+    {
+      "name": "nodecode-hackertube",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "ce1c6dfb7be9590aa1a52bde7aa5476995b1c1c7",
+      "path": "tools/nodecode-hackertube",
+      "description": "Focused media search across Hacker News, podcasts, books and audiobooks, with a local library",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "rcmiller01",
+        "repo": "rcmiller01/hackertube",
+        "commit": "3e65af3b424bb932de944731340d99122f0a67ed",
+        "license": "MIT"
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-hades-coding-workflows",
@@ -9876,6 +10399,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-song-gift",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "f0d9ae880291cde0a7b8102a3610f8c72fccf832",
+      "path": "tools/nodecode-song-gift",
+      "description": "Custom Song Gift: gift occasions, musical styles and lyric storytelling advice, as four tools",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "GptsApp",
+        "repo": "GptsApp/custom-song-gift-mcp",
+        "commit": "2b436a21a5b68422cc009633e56dd3aa244b453e",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-soniox",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "960914954f59d4f599da58def5bada596dc676fd",
@@ -11084,6 +11625,24 @@
         "license": "MIT"
       },
       "category": "voice"
+    },
+    {
+      "name": "nodecode-vram",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "a0043aa073b00363086da8e52584af3d3539edd9",
+      "path": "tools/nodecode-vram",
+      "description": "GPU room and the local Ollama models loaded in it: fit checks, unloads, status",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "jimmy77733",
+        "repo": "jimmy77733/coffee-vram",
+        "commit": "ce9db238dd51c6713b4fdc1140635ad6b616ee57",
+        "license": "MIT"
+      },
+      "category": "models"
     },
     {
       "name": "nodecode-warm",
