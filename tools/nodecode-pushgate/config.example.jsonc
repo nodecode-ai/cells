@@ -1,0 +1,8 @@
+{
+  // The command that must pass before `git push` or `gh pr create`.
+  // One repository can have its own instead: /pushgate check <command>.
+  "pushgate": {
+    "check": "npm test",
+    "max_receipts": 200
+  }
+}

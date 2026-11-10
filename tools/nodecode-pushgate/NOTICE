@@ -1,0 +1,23 @@
+nodecode-pushgate is a rewrite of cirwel's cirwel/hermes-receipts:
+
+  https://github.com/cirwel/hermes-receipts
+  commit 0dd1a374cc70ce388040f99adc908c7054ed8fa9
+  Apache-2.0, Copyright 2025-2026 Kenny Wang (CIRWEL Systems) (LICENSE)
+
+Rewritten for Nodecode in Common Lisp: the original bound a passing check to
+the Git tree of the content being published and gated `git push` and
+`gh pr create` on it, through two Hermes tool-call hooks and a `/receipts`
+command over a SQLite ledger. This cell keeps that contract in the Nodecode
+idiom: one `:TOOL` hook reads the commands an eval call runs, a `pushgate` tool
+runs the check and records the verdict, `/pushgate` is the operator's command,
+and the ledger is one JSON file in the Nodecode home. The fingerprint is no
+longer rebuilt in the plugin: the working tree is staged in a throwaway index
+and `git write-tree` answers, which leaves unreferenced blobs in the
+repository's object database where the original wrote nothing.
+
+Left out: the Python package and its `hermes plugins` packaging, the
+terminal-backend and plugin-host scope checks (a Nodecode cell has one shell
+and no plugin host), the model-facing `hermes receipts check` refusal (the tool
+here simply has no action that changes the check), the SHA-256 digest of a
+run's output (the ledger keeps the exit code and the tree instead), the demo
+harness, and the SQLite store with its threading lock.
