@@ -1,0 +1,40 @@
+nodecode-vram is a rewrite of jimmy77733's jimmy77733/coffee-vram:
+https://github.com/jimmy77733/coffee-vram
+commit ce9db238dd51c6713b4fdc1140635ad6b616ee57
+MIT, Copyright (c) 2026 JYUN MING CHEN (LICENSE)
+
+What was rewritten: the questions the original's `vram_status` tool and its
+`/vram` command answered, and the one action `/vram evict` took. The fit
+check is the original's estimator (the model's file size from `/api/tags`
+plus the KV cache its own `model_info` shape implies, at the context Ollama
+will actually load, with the KV-cache type and the safety margin as
+settings), its reading of a model already loaded as a measured size, its
+hybrid-attention correction, its budget cap (the reserve and the hold line,
+whichever is lower), and its eviction plan over idle, unpinned models, the
+one nearest its expiry first. `vram_unload` is the `POST
+/api/generate {"model": …, "keep_alive": 0}` the original sent, with its
+pinned-model and not-loaded refusals. The GPU numbers come from
+`nvidia-smi --query-gpu=memory.total,memory.used` when it is installed and
+from Ollama's own figures when it is not, which is the original's NVML-then-
+`nvidia-smi`-then-nothing fallback with the NVML call left out (a cell may
+run a program the machine already has, not open a driver library). The
+settings that survived (`ollama_url`, `reserve_mb`, `warn_pct`, `hold_pct`,
+`kv_cache_type`, `estimate_overhead_pct`, `gpu_total_mb`, `pinned_models`)
+are the section's, in MB rather than fractional GB because a section field is
+an integer.
+
+What was left out: the `llm_execution` middleware that held every local call
+in a first-come-first-served queue and unloaded a model to make room for it,
+and with it the scheduler, the keep-warm `keep_alive` extension, the
+`queue_timeout_s` fail-open, the `sample_interval_ms` background sampler and
+its in-memory history; the `budget_pool` choice between the GPU carve-out,
+system RAM and their sum; the interrupt-flag check; the desktop status chip,
+pane, toasts and command palette; and the `hermes coffee-vram` CLI. All of
+them are the harness's own surfaces -- a queue around its calls, a chip in
+its window, a subcommand of its binary -- or a live loop a question-and-
+answer cell has no place for. `clock`, `mode`, `alert_source`,
+`on_overflow`, `watch_external`, `evict_idle_s`, `show_*` and
+`max_concurrent_local` were the same surfaces' settings and had nothing left
+to configure. On this side the model asks before it switches: `vram_fit`
+answers "does it fit, and what would make room", and `vram_unload` performs
+the eviction the original's queue would have performed on its own.

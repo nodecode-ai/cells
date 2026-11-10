@@ -1,0 +1,25 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "vram": {
+    "enabled": true,
+    // the Ollama this cell reads and unloads on
+    "ollama_url": "http://127.0.0.1:11434",
+    // the program the GPU numbers are read with; Ollama's own figures are
+    // used when it is missing
+    "smi_path": "nvidia-smi",
+    // the GPU pool in MB, for a driver that misreports it; 0 detects it
+    "gpu_total_mb": 0,
+    // memory the fit check leaves for the desktop, in MB
+    "reserve_mb": 2048,
+    "warn_pct": 85,
+    "hold_pct": 95,
+    // match OLLAMA_KV_CACHE_TYPE so the KV cache estimate is the one loaded
+    "kv_cache_type": "f16",
+    "estimate_overhead_pct": 10,
+    // model names this cell never suggests or performs an unload of
+    "pinned_models": []
+  }
+}
