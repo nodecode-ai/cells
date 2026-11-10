@@ -1,0 +1,28 @@
+nodecode-klipper is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-klipper-print-watch:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-klipper-print-watch
+  commit 1dd1391c171afd92825ec07a81b1efbaca5c64e0
+  MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+Rewritten in Common Lisp against Nodecode's cell contract. What the original
+reaches is the same and it is reached the same way: one configured Moonraker
+origin, the object query for print stats, virtual SD card, display status,
+extruder, bed and webhooks, the file metadata for a slicer time estimate, the
+gcode list, the webcam list and still, the print pause/resume/cancel endpoints,
+and the same watch diff -- klippy_shutdown, complete, error, paused from
+printing only, cancelled, and stalled when the file position, progress and
+filename all stand still -- with the same per-print generation so an event is
+reported once. The API key still goes to that origin alone, as X-Api-Key.
+
+Left out, and why: Hermes's pre_tool_call approval hook, because Nodecode has
+no approval prompt between the model and a tool -- the same guarantee is kept
+inside the call instead, as a preview that sends nothing and a `confirm: true`
+second call that reads the state, sends the move and reads it again. The cron
+job and the script it wrote under the Hermes home are replaced by a worker on
+`klipper.watch_minutes` that raises the same events as a standing notice. The
+optional vision check (one model call per tick to judge a still) is left out:
+this cell saves the still and tells the model where it is. The plugin's skill
+is the manual topic `(help :klipper)`, which every request already carries a
+line of. Snapshot pruning keeps the newest 20, as the original did, and the
+stills and watch state live in this cell's own folder under the Nodecode home
+rather than in a plugin data directory.
