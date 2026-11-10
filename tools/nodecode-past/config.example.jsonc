@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "past": {
+    "enabled": true,
+    "api_key": "past_sk_...",
+    "api_key_env": "PAST_API_KEY",
+    "identity": "an email or an id",
+    "api_url": "https://api.past.dev",
+    "recall": true,
+    "recall_limit": 8,
+    "context_chars": 4000,
+    "ingest": true,
+    "sitting_minutes": 30,
+    "timeout_seconds": 20
+  }
+}
