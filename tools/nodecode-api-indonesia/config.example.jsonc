@@ -1,0 +1,11 @@
+// The api-indonesia cell's section of ~/.nodecode/config.jsonc. Nothing here has
+// to be written: the defaults are these, and the key is a reference to an
+// environment variable, never the key itself.
+{
+  "api-indonesia": {
+    "api_key_env": "API_INDONESIA_KEY",
+    "url": "https://mcp.apiindonesia.id/mcp",
+    "rest_url": "https://use.apiindonesia.id/api/v1",
+    "timeout_seconds": 60
+  }
+}
