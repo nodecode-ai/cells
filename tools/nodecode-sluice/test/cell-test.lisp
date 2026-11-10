@@ -93,3 +93,14 @@
       (is (member :privilege (categories "sudo apt-get install -y git")) "and an elevated one")
       (is (null (categories "cd sub && make test")) "a build inside the workspace is not held")
       (is (null (categories "echo hi > out.txt")) "nor a redirect inside it"))))
+
+(deftest sluice-cell-digests-are-sha256-through-what-a-release-carries
+  ;; SHA-256 of "abc" (FIPS 180-2); the MD5 this once took needed sb-md5,
+  ;; an SBCL contrib no release carries, so the cell loaded nowhere but on a
+  ;; machine with SBCL installed beside it.
+  (let ((abc "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD"))
+    (is (equal abc (nodecode-sluice::digest-string "abc"))
+        "a text's digest is the SHA-256 of its UTF-8 bytes")
+    (with-workspace (workspace ("a.txt" "abc"))
+      (is (equal abc (nodecode-sluice::digest-file (nodecode-sluice::path-join workspace "a.txt")))
+          "and a file's is the SHA-256 of its bytes"))))

@@ -12,7 +12,10 @@
   :license "MIT"
   :author "orjinameh (original), Nodecode (rewrite)"
   :version "0.1.0"
-  :depends-on ("nodecode")
+  ;; SHA-256 through ironclad, which every release carries: SBCL's own
+  ;; contribs, sb-md5 among them, are not in a release, so a cell that
+  ;; requires one loads only where an SBCL install sits beside it.
+  :depends-on ("nodecode" "ironclad/digest/sha256")
   :serial t
   :components ((:file "package")
                (:file "stage")
