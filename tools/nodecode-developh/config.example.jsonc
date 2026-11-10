@@ -1,0 +1,24 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+// Nothing here is required: the server is free and asks for no key.
+{
+  "developh": {
+    "enabled": true,
+
+    // Only for a proxy or a gateway of your own.
+    // "endpoint": "https://www.developh.co/mcp",
+
+    // English (en) or European Portuguese (pt) for every answer.
+    "locale": "en",
+
+    // One studio profile, case-study or inquiry call's ceiling, in seconds.
+    "timeout_seconds": 30,
+
+    // One audit's ceiling: a mobile audit takes 20 to 90 seconds.
+    "audit_timeout_seconds": 150,
+
+    // How much of one report the model reads.
+    "max_chars": 8000
+  }
+}
