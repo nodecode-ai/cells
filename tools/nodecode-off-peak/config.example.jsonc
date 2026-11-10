@@ -1,0 +1,20 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. Nothing here is a secret: the cell reads the clock and your own
+// markdown ledger, and reaches no network.
+{
+  "off-peak": {
+    "enabled": true,
+
+    // Your ledger of queued work, in markdown: a table row
+    // `| ID | job | owner | evidence | status | window |` or a bullet
+    // `- id: K-001 | status: awaiting | ...`. The cell reads it, counts it and
+    // -- only on /off-peak approve -- rewrites the status of the items you
+    // name, atomically. Nothing else writes it.
+    "queue_file": "~/.nodecode/off-peak/queue.md",
+
+    // How many minutes before the off-peak window opens the one-shot notice
+    // says it is about to: once per window, not once per tick.
+    "remind_minutes": 30
+  }
+}

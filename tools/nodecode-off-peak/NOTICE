@@ -1,0 +1,24 @@
+nodecode-off-peak is a rewrite of onkanat's onkanat/hermes-offpeak-bekci:
+
+  https://github.com/onkanat/hermes-offpeak-bekci
+  commit e566f9101be4bc9e8084e8f09b27bb7fbd551a04
+  MIT, Copyright (c) 2026 Hakan Kılıçaslan (onkanat) (LICENSE)
+
+Rewritten: the window arithmetic (peak is Monday to Friday 12:00-18:00 UTC,
+and all day at the weekend is off-peak), the countdown and the window's next
+change, the markdown ledger of queued work in both shapes the original read (a
+table row, or a bullet with `id:` and `status:` fields), the counts by status,
+the user-only approval that rewrites one item's status and nothing else, the
+JSON status line, the suggested cron job printed in full with the hash of its
+plan, and the one-shot notice before the window opens. All of it is Common
+Lisp in cell.lisp against Nodecode's cell contract, with no part of the
+original's Python or JavaScript carried over.
+
+Left out: the Hermes desktop status-bar chip and its title-bar badge; the
+`llm_execution` middleware, which measured the call rate of Ollama Cloud
+calls inside the peak window and could, once configured, sleep them -- a
+per-call seam Nodecode's cells do not have; the `on_session_end` hook's JSONL
+measurement log, replaced by the reminder's standing notice; and the two
+install/removal commands that injected a cron request into a Hermes session,
+replaced by `/off-peak plan`, which prints the job for the shipped cron cell
+to install.
