@@ -1,0 +1,20 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config. The declaration in cell.lisp is the authority.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "safe-swap": {
+    "enabled": true,
+    "quarantine_dir": "~/.safe-swap/trash",
+    "rule_rm": true,
+    "swap_single_rm": true,
+    "rule_git_push": true,
+    "rule_git_reset": true,
+    "rule_git_restore": true,
+    "rule_git_branch": true,
+    "rule_git_clean": true,
+    "rule_git_stash": true,
+    "trusted_force_branches": ["wip/*"],
+    "note_to_agent": true,
+    "notify_unswapped": true
+  }
+}
