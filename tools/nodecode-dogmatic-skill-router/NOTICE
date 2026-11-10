@@ -1,0 +1,25 @@
+nodecode-dogmatic-skill-router is a rewrite of DoGMaTiiC's DoGMaTiiC/hermes-jev:
+
+  https://github.com/DoGMaTiiC/hermes-jev
+  commit 5dddbeaac5be08281e6c3b372eeaba3639971f0a (plugins/jev-dogmatic-skill-router)
+  MIT License, Copyright (c) 2026 Patrick / DoGMaTiiC (LICENSE)
+
+Rewritten: the two-request decision (one choice over the whole roster plus
+three gate questions, then a re-read of the shortlist with each candidate's
+own text and one fits question each), its thresholds, its chunking at 240
+options, the skip rules, the one injected line, and the three wire routes
+(TypeSafe's /v1/systemone, OpenRouter's Decisions API, the Vercel AI
+Gateway's evaluation-model) with the same defaults, key order and
+fail-open posture. The Hermes hook and the roster changed with the host: the
+pre_llm_call hook became an advice on the one in-process ingress plus an
+advice on where a turn's standing sections are read, the <skill_relevance>
+block became the harness section of that name, and the SKILL.md walk became
+the organism's own kept prose skills, which the core reads as data.
+
+Left out: the plugin's CLI verbs that only made sense against Hermes's own
+config and log (on/off/auto wrote config.yaml; status and check reported the
+JSONL decision log), its Hermes credential-pool and .env lookup for the
+OpenRouter key, its Retry-After retry and per-endpoint pacing, and its
+per-process response cache. The cell reads auth.json and the environment,
+keeps a failure breaker, and speaks its state through /dogmatic-skill-router instead
+of writing a log.

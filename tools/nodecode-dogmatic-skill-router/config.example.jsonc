@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "dogmatic-skill-router": {
+    "enabled": true,
+    "mode": "auto",
+    "backend": "auto",
+    "gate": 30,
+    "fits": 40,
+    "shortlist": 3,
+    "excerpt": 700,
+    "suggest_chars": 4000,
+    "timeout": 4
+  }
+}
