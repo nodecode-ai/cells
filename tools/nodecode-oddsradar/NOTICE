@@ -1,0 +1,26 @@
+nodecode-oddsradar is a rewrite of WV629's WV629/hermes-oddsradar:
+
+  https://github.com/WV629/hermes-oddsradar
+  commit dfafcd59e6d2efeb4fd9cffa832836b1637c07c7
+  MIT License, Copyright (c) 2026 WV629 (LICENSE)
+
+Rewritten: the plugin's whole read-only engine, in Common Lisp against the cell
+contract. The two public hosts and their endpoint parameters, the double-encoded
+outcome/price arrays, the URL-and-slug resolver with its "pick one slug" list,
+the live CLOB midpoint with the Gamma snapshot as fallback, the 7-day text
+sparkline, the short volume form, the persistent watchlist written atomically
+under one lock, the move rule measured from the last alert, the edge-triggered
+above/below thresholds with their one-point re-arm, the once-only resolution
+alert, and the "skipped" lines of a check that could not reach a market are the
+original's. Its five tools keep their names (`odds_search`, `odds_market`,
+`odds_watch`, `odds_check`, `odds_movers`) and its `/odds` command becomes
+`/oddsradar`, with the same subcommands.
+
+Left out: Hermes's `hermes oddsradar` CLI and its `cron-script` verb, which
+wrote a Python script into the harness's own scripts folder for a no-agent cron
+job — that harness's cron surface is Nodecode's own, so the same rule check is
+one call (`odds_check`, or `/oddsradar check`) a schedule can make. Also left
+out: the JSON shape of the tools' answers, since a Nodecode tool that prints
+the block reads better than one that hands a model JSON to re-render; and the
+profile-scoped data directory, which is this home's `oddsradar/` folder unless
+`data_file` names another.
