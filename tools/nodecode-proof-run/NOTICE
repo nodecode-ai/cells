@@ -1,0 +1,26 @@
+nodecode-proof-run is a rewrite of raffieeey's raffieeey/hermes-proof-run:
+
+  https://github.com/raffieeey/hermes-proof-run
+  commit 36f3f4111b6d8cd5cf67d53eaf54e62148fcf3ca
+  MIT License, Copyright (c) 2026 raffieeey (LICENSE)
+
+Rewritten: the plugin's three Hermes hooks and its Python modules as one
+Nodecode cell. The pre_tool_call gate and the post_tool_call observer become
+one :TOOL point hook over the dispatch, which sees a call before its body runs
+and the answer after; the /proof command becomes /proof-run with the same
+verbs (start, stop, cancel, learn, rebind, status, unbind); the observed-step
+contract, the exact-argument comparison, the read preconditions with their
+age, the consumption of a read by the next mutation, the unproven verdict and
+the profile-wide saved contract are kept, as a JSON file per contract under
+the Nodecode home. The matcher is reimplemented in Common Lisp with no
+dependencies, and a proof_status tool lets the model read what is gating.
+
+Left out, and why: the version history directory beside each contract, since a
+rebind overwrites the file at version + 1; the descriptor-relative no-follow
+storage dance and the per-name flock, because Nodecode writes one file
+atomically through its own home and a cell is one process; the legacy
+version-1 schema and its rebind refusal, because nothing here ever wrote one;
+the credential scan over the contract text, which is one keyword sweep over
+the arguments instead; and the Hermes tool-name table of read-only tools,
+which is a section list here, because in Nodecode almost every call is the
+eval tool and a read is a verb inside its form.
