@@ -1,0 +1,35 @@
+nodecode-iris-chat-channel is a rewrite of irislib's irislib/iris-chat-channels:
+
+  https://github.com/irislib/iris-chat-channels
+  commit 202a422c81eec3246bf19cb45657fc3513c2ac9a
+  MIT, Copyright (c) 2026 Iris contributors (LICENSE)
+
+The rewrite is the plugin's `hermes` folder as a Nodecode room. What it
+keeps: the same `iris` CLI and its argv (`--json --no-background-sync`,
+`read <contact> --limit 1000`, `send <contact> <text>`, `service status`,
+`service run`), the CLI's identity directory handed to it as `IRIS_DATA_DIR`
+under the private channel directory, the one-approved-direct-contact rule
+(only messages whose chat is the paired owner are taken, and reply text goes
+to that same owner), the npub-to-hex decoding and its checksum, the
+`pairing.json` the setup wizard writes, starting the Iris service only when
+it is down and stopping only the process this cell started, the seen list
+that keeps a message from being answered twice, one turn per message with
+its answer sent back as text, the 12000-character reply limit the platform
+declares, and the standalone sender, here the `iris_chat_send` tool and
+`/iris-chat-channel TEXT`.
+
+What is left out, and why: the Hermes gateway platform itself (registration,
+adapter inheritance, the setup wizard's prompts and `hermes gateway setup`)
+— a chat surface in Nodecode is a room cell, so the section, `/settings` and
+`/iris-chat-channel` take its place, and the pairing itself is the CLI's own
+`invite accept`, done once before the cell is switched on. Also left out: the
+sqlite job queue and outbox, of which one seen list and one session are the
+Nodecode form; the loopback bridge for managed containers
+(`IRIS_CHANNEL_BRIDGE_URL`), because a cell runs in the same process as the
+CLI and needs no broker; the typing and seen receipts, which the Iris CLI
+exposes but a lap-per-poll does not need; and the first-contact
+introduction prompt the wizard queued, which the operator's first message
+takes the place of.
+
+Nothing of the original's Python is bundled. The cell runs the same `iris`
+CLI the plugin ran, and its own code is Common Lisp.

@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "channels": {
+    "iris-chat-channel": {
+      "state_dir": "~/.nodecode/iris-channel",   // the private Iris channel directory
+      "owner": "npub1...",                       // the approved contact; omit when pairing.json names it
+      "program": "iris",                         // the Iris CLI on PATH
+      "poll_seconds": 3,
+      "timeout_seconds": 45,
+      "manage_service": true,                    // start the Iris service when it is down
+      "max_length": 12000
+    }
+  }
+}
