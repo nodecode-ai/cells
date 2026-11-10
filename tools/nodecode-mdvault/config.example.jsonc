@@ -1,0 +1,16 @@
+// The mdvault section of ~/.nodecode/config.jsonc: a folder of Markdown notes
+// becomes the organism's memory. Nothing here is a secret.
+{
+  "mdvault": {
+    "vault_path": "~/notes",          // required: the folder the notes live in
+    "write_folder": "inbox",          // where new notes are written, under the vault
+    "auto_recall": true,              // recall notes into the prompt before each turn
+    "recall_limit": 4,                // notes recalled per turn; 0 disables recall
+    "recall_chars": 1800,             // the character budget of that block
+    "search_limit": 6,                // notes one search answers by default
+    "max_notes": 5000,                // stop indexing after this many; 0 means no cap
+    "max_file_kb": 1024,              // a note bigger than this is not indexed
+    "refresh_seconds": 2,             // how stale the index may be before the folder is swept again
+    "exclude_dirs": [".obsidian", ".git", "node_modules", ".trash", ".venv", "__pycache__"]
+  }
+}
