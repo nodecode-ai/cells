@@ -1,0 +1,14 @@
+// The `kiwi` section of ~/.nodecode/config.jsonc. Nothing here is required
+// when Node.js and npm are on PATH.
+{
+  "kiwi": {
+    // the launcher; a wrapper that takes `-y PACKAGE mcp serve` works too
+    "command": "npx",
+    // the pinned buyer runtime: the tool set follows this version
+    "package": "@harrylabsj/kiwi@0.12.24",
+    // the longest one call may take, the first download included
+    "timeout_seconds": 120,
+    // the runtime's SQLite store; empty keeps its own default under the home
+    "db_path": ""
+  }
+}
