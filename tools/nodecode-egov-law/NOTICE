@@ -1,0 +1,32 @@
+nodecode-egov-law is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-egov-law:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-egov-law
+  commit 2e96dd28108250b374160077d6e1d9fa4dea55f1
+  MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+The original is three Python tools for Hermes Agent over the e-Gov Law API v2,
+plus a skill that told the agent how to read what they return. The rewrite
+keeps the same three tools, under the same names and with the same arguments
+(egov_law_search, egov_law_article, egov_law_revisions), and speaks the same
+API from Common Lisp through nlk:http: a law is resolved the way a person
+names it (official title, e-Gov abbreviation, the common short names e-Gov
+does not index, a law number or a law ID, with an ambiguous name listed as
+candidates), an article is read by its e-Gov element name (Article_32_2,
+Paragraph_2, the law's own 附則) and its XML is flattened to text, and the
+amendment history is grouped into what is scheduled, what is in force now and
+what came before, with the day-before/day check pair each row carries. It
+also answers a Lisp call (egov-law:article "労基法" "32"), an operator's
+/egov-law command, and (help :egov-law) with the same guidance the original's
+skill gave: cite source.attribution and url, do not write a law from memory.
+
+Left out, because the shape they fit is Hermes's own: the Automation
+Blueprint jp-egov-law:weekly-amendments (a template a Hermes user turns into a
+cron job) and Hermes's tool-search registration and per-platform tool
+switches; Nodecode's own cron cell and /cells do that work here. The original's
+edition-level details that only matter to a model reading a 4,000-character
+article are simplified: the call that hunts an article moved by an amendment
+to its old version, and the note that points at an 附則 article restating it,
+are not carried, and the text search answers the laws and snippets without the
+original's per-sentence position filtering. Everything else — the aliases, the
+law-type ranking, the full-width paragraph numbering, the 8 MB response cap
+and the one-host rule — is carried.
