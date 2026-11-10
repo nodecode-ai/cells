@@ -1,0 +1,27 @@
+nodecode-ram-first-context is a rewrite of ether-btc's ether-btc/ram-first-context:
+
+  https://github.com/ether-btc/ram-first-context
+  commit 364992afde615e8588e285fbb4dd6fe8d57f6869
+  MIT, Copyright (c) 2026 ether-btc (LICENSE)
+
+The original is a Hermes Agent plugin: one Python module that registered
+mnemosyne_fts_recall, a read-only FTS5 keyword search over the Mnemosyne
+database the harness's memory provider keeps, with a LIKE fallback when the
+index or the file cannot answer, an opt-in local usage counter, and every
+answer -- errors included -- a JSON array. The rewrite keeps that tool under
+the same name, with the same two arguments and the same answer: the same two
+statements, term quoting that makes FTS5 operators and punctuation literal,
+the trailing-star prefix, the LIKE fallback ordered by importance, the error
+record instead of an exception, and the opt-in local usage line.
+
+What it left out is what belonged to the other harness: the plugin's
+plugin.yaml manifest and its packaging (the entry-point install path, its CI
+and its pytest suite), Hermes's own profile resolution, and the loader health
+check that hid the tool while the database was absent -- in Nodecode a search
+answers the error record instead, and the section's db_path is the operator's
+to name. The connection is opened with PRAGMA query_only rather than the
+original's read-only URI, because Nodecode's SQLite binding opens by path;
+the statements are still SELECTs only. The original's telemetry was an
+environment flag; here it is the section's usage_log, off by default. Nothing
+of the original is bundled here, and nothing of it runs: the search is Lisp
+over the same SQLite file.
