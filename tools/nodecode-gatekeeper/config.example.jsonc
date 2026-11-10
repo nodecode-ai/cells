@@ -1,0 +1,26 @@
+// The section ~/.nodecode/config.jsonc may carry for the gatekeeper cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The gate holds no secret: the ledger is one file under the home.
+{
+  "gatekeeper": {
+    // Required: your own UTC offset, +HH:MM or -HH:MM. It dates a consent
+    // record and is the offset that record takes when none is named.
+    "owner_offset": "+00:00",
+    // A consent record for the exact recipient and channel is required; a
+    // suppression always applies, whether this is on or off.
+    "require_consent": true,
+    // The permitted window, in the recipient's local time: start inclusive,
+    // end exclusive. A window that wraps past midnight is one window.
+    "start": "08:00",
+    "end": "21:00",
+    // The least time between two sends in one thread, even after a reply.
+    // An unanswered thread always holds, whatever this says.
+    "min_gap_seconds": 0,
+    // Routine wording approved in advance, compared exactly after $name is
+    // filled from the variables stored for that recipient. Empty: every
+    // message needs the owner's approval.
+    "templates": ["Hello $name, the build finished."],
+    // The opt-out words the owner records with /gatekeeper optout.
+    "stop_keywords": ["STOP", "STOPALL", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"]
+  }
+}
