@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell, as
+// documentation and not as config. The declaration in cell.lisp is the
+// authority; this is an illustration of it. A present section is enabled;
+// "enabled": false vetoes it. Four of the five sources need no key.
+{
+  "hackertube": {
+    "enabled": true,
+    "sources": ["hn", "itunes", "openlibrary", "librivox"],
+    "max_results": 10,
+    "timeout_seconds": 10,
+    "openlibrary_contact": "",
+    "youtube_key_env": "YOUTUBE_API_KEY"
+  }
+}
