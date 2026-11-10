@@ -1,0 +1,26 @@
+nodecode-procgen-studio is a rewrite of iamlukethedev's iamlukethedev/hermes-procgen-studio:
+
+  https://github.com/iamlukethedev/hermes-procgen-studio
+  commit 204b063ca5dcb81c050299b9fcaa47ea5a437553
+  MIT License, Copyright (c) 2026 Lucas (iamlukethedev) (LICENSE)
+
+Rewritten: the six style presets and their palettes, the palette roles and
+their meanings, the STYLE.md art contract (preset:/palette:/palette.<role>:
+lines, free prose passed on as written), the seed that makes one render
+reproducible, the render record (image, editable source and meta.json in one
+folder), the pixel-grid source format, the /procgen verbs (status, styles,
+style, init, set, list, show, source, reroll, render) and the art-direction
+guidance. The pixel-grid renderer is new Lisp that writes a PNG byte by byte,
+so a sprite needs no image library at all; seeded tokens ({{seed}},
+{{rand:MIN:MAX}}, {{pick:a,b,c}}, {{role}}) replace the original's Python
+drawing programs as the way a seed changes a drawing.
+
+Left out: the parts that depend on Hermes running the model. The original is
+an image *backend*: Hermes's image_generate asks the configured model for a
+program and renders it. Nodecode has no image backend to hang itself on, so
+here the session's own model writes the source and calls procgen_draw. That
+leaves out the critic pass and its bounded redraws, the rewrite-an-existing-
+render edit, the generate-from-prompt and regen verbs, the auxiliary model
+slots, and the video half (MP4/GIF through ffmpeg). Python drawing programs
+in a sandboxed interpreter are left out too: with the source written by the
+session's model rather than a subprocess, no code of the model's runs at all.
