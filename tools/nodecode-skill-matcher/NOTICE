@@ -1,0 +1,27 @@
+nodecode-skill-matcher is a rewrite of xXLODXx's xXLODXx/hermes-skill-router:
+
+  https://github.com/xXLODXx/hermes-skill-router
+  commit 445c32f9b274f53bf3d37ce1b37ec1b3e5530ac4
+  MIT License, Copyright (c) 2026 Skill Router contributors (LICENSE)
+
+Rewritten in Common Lisp as a Nodecode cell: the evidence-first scoring is
+the original's (a word shared with a name 5, a tag 3, a description 1, a
+stem or compound overlap only supporting evidence, confidence the score over
+ten plus a little for agreeing kinds, a floor of 3, at most three named,
+the rest reported as rejections, and the same fallback line). Its catalog is
+this organism's own inventory -- the cell folders under the home and every
+SKILL.md beneath them -- read with a small hand parser instead of the
+original's regexes, and it keeps the local decision log, with a hashed
+topic signature kept per session so a task routed twice says so.
+
+Left out: the Hermes hook path. The original injected its block into the
+first turn of every session by itself, on four Hermes hooks (pre_llm_call,
+pre_tool_call, post_tool_call, post_llm_call); a Nodecode cell reaches the
+prompt through the harness sections, and no accessor here answers a
+session's newest user message, so the rewrite routes on demand -- the
+match_skills tool, /skill-matcher, and a manual topic -- rather than
+speculating on every turn. Also left out: the keyword learning store
+(learned_keywords.json, tool_stats.json) with its lift gate and pruning,
+which needs Hermes tool-call names to learn from; and the dashboard
+(dashboard/, a React page over a FastAPI router), which has no counterpart
+here.
