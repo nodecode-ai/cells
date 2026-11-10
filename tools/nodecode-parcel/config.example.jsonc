@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "parcel": {
+    // Paste the key from web.parcelapp.net here, or leave this out and name
+    // the variable that holds it.
+    // "api_key": "",
+    "api_key_env": "PARCEL_API_KEY",
+    "api_base": "https://api.parcel.app/external",
+    "cache_seconds": 600,
+    "request_timeout": 15,
+    "reads_per_hour": 20,
+    "adds_per_day": 20
+  }
+}

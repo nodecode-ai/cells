@@ -1,0 +1,30 @@
+nodecode-parcel is a rewrite of promptclickrun's promptclickrun/hermes-parcel:
+
+  https://github.com/promptclickrun/hermes-parcel
+  commit 9641b4092f1373ca021285e80b0885cb9e1c7fa3
+
+Apache-2.0, Copyright (c) 2026 promptclickrun (LICENSE)
+
+What was rewritten: the whole plugin. The original is a Python Hermes Agent
+plugin: a client for Parcel's external API on the standard library, three
+model tools (parcel_deliveries, parcel_add_delivery, parcel_carriers), a
+/parcel slash command and a bundled skill. This cell is Common Lisp: the same
+three tools, the same /parcel command, the same three endpoints with the same
+query and the same JSON body, the same status numbers turned into the same
+words, the same compact record a model reads (description, tracking number,
+carrier, status, expected dates, latest event or the whole history), the same
+carrier lookup, and the same local guards (a ten-minute cache, a local count
+of Parcel's 20 reads an hour and 20 adds a day, the last list answered marked
+stale when the limit is spent, and an add checked before it is sent). The
+config keys carry over as api_base, api_key and api_key_env, and the request
+timeouts, the cache age and both limits are settings here too. Requests go
+through the image's own HTTP call; nothing is fetched at run time and there
+is no Python.
+
+What was left out: the skill file, whose doctrine (read once, answer from that
+result, lead with what needs the operator, ask before adding) now lives in the
+cell's help topic and tool descriptions; and the on-disk state file, so the
+cache and the request counts live in the running process and a restart costs
+at most one read. The original refused HTTP redirects outright so the API key
+could not be forwarded; the image's own HTTP call follows up to five, which
+is its behaviour and not this cell's to change.
