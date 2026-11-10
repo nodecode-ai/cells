@@ -1,0 +1,35 @@
+nodecode-hireko is a rewrite of HireKoAI's HireKoAI/HirekoAiPluginPublicRepo:
+
+  https://github.com/HireKoAI/HirekoAiPluginPublicRepo
+  commit 4af68d73ac89e67f8bc5f4a68d1079f1dc2c8294
+  MIT, Copyright (c) 2026 Hireko (LICENSE)
+
+The rewritten plugin is its `.hermes-plugin` folder at that commit: a Node
+stdio MCP server with no dependencies that signs a recruiter in to Hireko's
+AWS Cognito user pool and proxies tool calls to Hireko's hosted MCP facade
+over JSON-RPC. Its wire is carried over unchanged: the tenant's own
+configuration page at recruiter-<tenant>[.beta].hireko.ai names the Cognito
+app client and the pool's region, with the plugin's hard-coded client id and
+us-east-1 as the fallback; InitiateAuth with USER_PASSWORD_AUTH, the email
+and the password as AuthParameters and the X-Amz-Target header; one
+`tools/call` per tool with the same arguments the plugin builds (the title,
+a slugged external_job_group_id, both dates in epoch milliseconds, the
+AllFunnels funnel, the recruiter's email or a default), the bearer token
+plus the AuthorizationTenant, AuthorizationRegion and x-tenant headers; the
+poll of get_interview_link until a jobId or an interview_link appears, the
+candidate link built on interview-test[.<stage>].hireko.ai with the same
+settings query; the session saved as one JSON file per tenant, 0600; the
+answer shape (structuredContent, else content[0].text, else the error
+text). LICENSE is the repository's LICENSE, unchanged.
+
+The cell's section replaces the plugin manifest's environment variables
+(tenant, stage, HIREKO_USERNAME, HIREKO_PASSWORD, the credential store),
+and the session file lives under the Nodecode home.
+
+What was left out, and why: the browser device login and its loopback
+listener on a fixed port with an eight-byte state nonce, because Nodecode's
+sign-in is a command and a password in the environment, so /hireko login
+signs in through the same Cognito call headlessly; the stdio JSON-RPC
+transport, tools/list and initialize, which the cell contract replaces; the
+`login` tool the plugin handled but never advertised, since hireko_login is
+advertised here; and Node itself, replaced by the image's own NLK:HTTP.
