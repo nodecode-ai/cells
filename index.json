@@ -22,7 +22,7 @@
     {
       "name": "nodecode-abstract",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "26365840fcfb36483e0041e952d014a0cc170062",
+      "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
       "path": "providers/nodecode-abstract",
       "description": "Abstract: GLM-5.3, DeepSeek-V4-Flash and Kimi-K3 over the Responses API",
       "license": "MIT",
@@ -400,7 +400,7 @@
     {
       "name": "nodecode-ai-usage",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "f3044b66c34696b5c522361c07130135cc07b1fe",
+      "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
       "path": "tools/nodecode-ai-usage",
       "description": "How much of each AI subscription is left, read from the plans themselves",
       "license": "MIT",
@@ -633,7 +633,7 @@
     {
       "name": "nodecode-antidote",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "f4051deb355f09822454355e29477004cfc2109e",
+      "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
       "path": "tools/nodecode-antidote",
       "description": "Guardrails on what a tool call reads and sends",
       "license": "MIT",
@@ -700,7 +700,7 @@
     {
       "name": "nodecode-anyapi",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "ebef61eeb79aa539036a398f43c3060895c2aaff",
+      "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
       "path": "providers/nodecode-anyapi",
       "description": "AnyAPI.ai: one key for many vendors' models, listed by the routes that take tool calls",
       "license": "MIT",
@@ -1954,7 +1954,7 @@
     {
       "name": "nodecode-channel-xchat",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "a9f2a620a89a6044b89f2190583780e7ec519acf",
+      "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
       "path": "rooms/nodecode-channel-xchat",
       "description": "Talk to nodecode over X Chat: X's end-to-end encrypted direct messages",
       "license": "MIT",
@@ -2326,7 +2326,7 @@
     {
       "name": "nodecode-cloudflare-workers-ai",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "6a34a7e32d62bdf4072dca783b3d241a13ae7e66",
+      "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
       "path": "providers/nodecode-cloudflare-workers-ai",
       "description": "Cloudflare Workers AI: its models, context windows and per-model reasoning effort",
       "license": "MIT",
@@ -5412,7 +5412,7 @@
     {
       "name": "nodecode-hopper",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "8c202f4092dd29d06f54ba2d6c43ce93440e4b82",
+      "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
       "path": "providers/nodecode-hopper",
       "description": "Hopper: a curated list of OpenRouter models, as a Nodecode provider",
       "license": "MIT",
@@ -6356,7 +6356,7 @@
     {
       "name": "nodecode-laso",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "bed717e07a4afddb6a73afe2563c638ce2e1b2b6",
+      "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
       "path": "tools/nodecode-laso",
       "description": "Laso Finance: spend USDC on prepaid cards, gift cards and payouts, from chat",
       "license": "MIT",
@@ -7105,7 +7105,7 @@
     {
       "name": "nodecode-memory-shield",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "b828a6599ce97842027043d52cc0042bc88d07d5",
+      "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
       "path": "tools/nodecode-memory-shield",
       "description": "Keeps the agent from rewriting or wiping what it remembers about its operator",
       "license": "MIT",
@@ -8384,7 +8384,7 @@
     {
       "name": "nodecode-plan-mode",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "7b5999b91e6ea68db7dc08f133833bd48bbaa084",
+      "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
       "path": "tools/nodecode-plan-mode",
       "description": "Enforced plan mode: the agent plans, you approve, then it edits",
       "license": "MIT",
@@ -11121,7 +11121,7 @@
     {
       "name": "nodecode-workflows",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "bf5c72ca13a26d94c6e1b51ef0643d5f48a62c5f",
+      "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
       "path": "tools/nodecode-workflows",
       "description": "Agent-authored workflow graphs run in the background: after-edges, fan-outs, gates, resume",
       "license": "MIT",
