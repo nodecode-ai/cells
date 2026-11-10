@@ -1,0 +1,11 @@
+// The reinfolib section of ~/.nodecode/config.jsonc. A free key comes from
+// https://www.reinfolib.mlit.go.jp/help/apiManual/ ; the cell refuses at start
+// until one of api_key and api_key_env is set.
+{
+  "reinfolib": {
+    "api_key": "",                      // the key itself; a secret stays in the config or in the environment, never in a file this cell writes
+    "api_key_env": "REINFOLIB_API_KEY", // or the name of the variable that holds it; set one, not both
+    "base_url": "",                     // empty means MLIT's own host; otherwise an origin only, e.g. https://www.reinfolib.mlit.go.jp
+    "timeout_seconds": 30               // how long one request may take
+  }
+}

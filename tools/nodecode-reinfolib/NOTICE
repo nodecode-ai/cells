@@ -1,0 +1,31 @@
+nodecode-reinfolib is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-reinfolib:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-reinfolib
+  commit cfb17760af4b44df2057a262c16f90dfef5066ee
+  MIT License, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+Rewritten: the whole plugin in Common Lisp, in one file. The fetch is the same
+one GET to /ex-api/external/XIT001 with the same five parameters, the key in the
+same Ocp-Apim-Subscription-Key header and never in a URL, the same eight-megabyte
+body cap, the same one-second gap between requests, the same refusal of a plain
+http origin that is not loopback, and the same scan of the answer for the key's
+text. The projection is the plugin's twelve columns, the twenty-row cap, the
+digits-only TradePrice median with its .5 half, the counts and medians by type,
+and MLIT's attribution, processing note and terms sentence verbatim. The argument
+rules are the plugin's, in its order and its words: a five-digit code whose
+prefix is 01-47, the designated-city codes refused with a ward-code example, 2005
+from quarter 3, a quarter that has not started refused, and the full-width digits
+a Japanese keyboard produces folded to ASCII. The tool keeps its name
+(reinfolib_quarter), and the slash command and the skill's procedure are the
+command and (help :reinfolib).
+
+Left out, because they are Hermes surfaces rather than the read: the bundled
+skill's tool_search/tool_call indirection (this model calls the tool directly),
+the Automation Blueprint that schedules the weekly check (the cron cell schedules
+in Nodecode), and Hermes's [SILENT] delivery rule for a week with no data, which
+belongs to a scheduler. The JSON payload the plugin returned is rendered as the
+text a Nodecode tool answers with, carrying the same facts. The rewrite follows
+redirects with the shared HTTP client, up to five, where the plugin refused any
+3xx, so a redirect is only reported when the last hop is one. A key leak is
+detected in the answer's text after one percent or \u decoding, where the plugin
+also scanned a JSON re-encoding of the payload.
