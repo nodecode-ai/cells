@@ -3341,6 +3341,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-dogmatic-skill-router",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "40948693c3685e546ef2b298b1d0b73440c8bbed",
+      "path": "tools/nodecode-dogmatic-skill-router",
+      "description": "Names the one skill of yours that fits the turn, before the model call",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "DoGMaTiiC",
+        "repo": "DoGMaTiiC/hermes-jev",
+        "commit": "5dddbeaac5be08281e6c3b372eeaba3639971f0a",
+        "license": "MIT"
+      },
+      "category": "automation"
+    },
+    {
       "name": "nodecode-doppler-geo",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "99a3a4a9caab61ef359ca77e09dd5c02ab9f43f0",
@@ -3969,6 +3987,25 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-file-lineage",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0114e8b80ec967b9437c62db4f5e7fb3b010d750",
+      "path": "tools/nodecode-file-lineage",
+      "description": "Provenance receipts for the files the agent writes, and the graph back to their sources",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "P0GL0L",
+        "repo": "P0GL0L/hermes-lineage",
+        "commit": "5d9027158efd517930479bc35601d17a71452369",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-file-tray",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "3ea23d6e1a0e2a4b687ddaeda93eda70a0acf966",
@@ -4476,6 +4513,24 @@
         "author": "skappafrost",
         "repo": "skappafrost/hermes-gemini-live",
         "commit": "cf549e7f8af858568936ccb434c7e1104eb200e9",
+        "license": "MIT"
+      },
+      "category": "voice"
+    },
+    {
+      "name": "nodecode-gemini-live-bridge",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "5492bd83327fe16dfb4edf27fe42cb7447092003",
+      "path": "tools/nodecode-gemini-live-bridge",
+      "description": "Gemini Live: one duplex session with the Live API, its model catalog and its token meter",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "cruzlxyz",
+        "repo": "cruzlxyz/gemini-live-bridge",
+        "commit": "a0016e33244ff2f74fd33bae1869e4a8c06f5034",
         "license": "MIT"
       },
       "category": "voice"
@@ -5675,6 +5730,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-invinoveritas-receipts",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "06691784e3c6e319948c3f74d09fe9110c9156be",
+      "path": "tools/nodecode-invinoveritas-receipts",
+      "description": "Signed, salted receipts for decisions: commit, verify for free, open later",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "babyblueviper1",
+        "repo": "babyblueviper1/hermes-invinoveritas",
+        "commit": "6a4f9c7b49beac69899f18f3bcf1d0b340297624",
+        "license": "MIT"
+      },
+      "category": "general"
+    },
+    {
       "name": "nodecode-iris-chat",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "68810d3864bea7decbe27d540eea33d7fb7e7b51",
@@ -5688,6 +5761,24 @@
         "author": "irislib",
         "repo": "irislib/iris-chat-rs",
         "commit": "43a1066894f1948adb3febc1e3a91a31ccccef14",
+        "license": "MIT"
+      },
+      "category": "platform"
+    },
+    {
+      "name": "nodecode-iris-chat-channel",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "d2cabf67f74afea721937dc3e3cbb0ff73feca30",
+      "path": "rooms/nodecode-iris-chat-channel",
+      "description": "Iris Chat: talk to nodecode through one approved Iris contact",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "irislib",
+        "repo": "irislib/iris-chat-channels",
+        "commit": "202a422c81eec3246bf19cb45657fc3513c2ac9a",
         "license": "MIT"
       },
       "category": "platform"
@@ -6575,6 +6666,24 @@
         "license": "MIT"
       },
       "category": "models"
+    },
+    {
+      "name": "nodecode-long-conversations",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0601cd53959be7a1844a461375e474331072695c",
+      "path": "tools/nodecode-long-conversations",
+      "description": "Handoff briefs that carry a session's state past its context limit",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "cspears32",
+        "repo": "cspears32/hermes-long-conversations",
+        "commit": "1a8dc52b7ae610f6db2d2ab0a7e7133b3a199807",
+        "license": "MIT"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-lowrouter",
@@ -9360,6 +9469,24 @@
         "license": "Apache-2.0"
       },
       "category": "tools"
+    },
+    {
+      "name": "nodecode-skill-matcher",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "bb028ee2b2882d823303120aefc6a5d5394c7c6e",
+      "path": "tools/nodecode-skill-matcher",
+      "description": "Route a task to the installed cells and skills that fit it, with the evidence for each match",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "xXLODXx",
+        "repo": "xXLODXx/hermes-skill-router",
+        "commit": "445c32f9b274f53bf3d37ce1b37ec1b3e5530ac4",
+        "license": "MIT"
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-skill-retrieval",
