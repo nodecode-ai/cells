@@ -1,0 +1,16 @@
+// The time-machine section: restore points for one folder, and the effects a
+// rewind cannot undo. Everything here is optional; with no section at all the
+// cell protects the folder the session runs in and takes a restore point before
+// a call that changes files.
+{
+  "time-machine": {
+    "workspace": "",                  // absolute path of the folder to protect; empty: the session's folder
+    "auto_checkpoint": true,          // a restore point before a call that changes files
+    "mutation_cooldown_seconds": 120, // least seconds between two automatic restore points
+    "retention": 20,                  // automatic checkpoints kept; a checkpoint a human asked for is never pruned
+    "max_file_mb": 50,                // largest file a checkpoint copies; a bigger one is counted as skipped
+    "max_files": 5000,                // most files one checkpoint walks
+    "exclude_git": true,              // leave .git out: faster, and a rewind keeps the history
+    "annotate_results": true          // say in a tool result where its restore point is, and when it crossed a line
+  }
+}
