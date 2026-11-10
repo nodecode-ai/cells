@@ -1,0 +1,32 @@
+nodecode-llmapi is a rewrite of llmapi-ai's llmapi-ai/hermes-provider-llmapi:
+https://github.com/llmapi-ai/hermes-provider-llmapi
+commit cc5ff07af24c1f2218a62ea5bbc1e69d3a61b8e7
+MIT, Copyright (c) 2026 LLM API Inc. (LICENSE)
+
+Rewritten: the provider profile itself (its default base of
+https://api.llmapi.ai/v1, its LLMAPI_API_KEY variable, its featured models) as
+a Nodecode catalog row, one credential hook, one lane hook and one
+request-header hook; the per-model wire rule (claude-* on the Anthropic
+Messages API, GPT-5 and later on the Responses API, everything else on Chat
+Completions) as RESOLVE-MODEL-LANE advice, so one key serves all three wires
+at the one address; the public catalog read (GET /v1/models, no key, which
+supplies the picker, context windows, image input, reasoning rungs and list
+prices) as an hourly read cached in memory, with the original's 64K picker
+floor kept and its featured models standing in while the read has not
+answered; and GET /v1/credits as the /llmapi usage command, which prints the
+balance, the billing mode and the monthly cap.
+
+Left out, and why: Hermes' private seams (providers.base, ProviderProfile,
+register_provider, the fetch_models / api_mode_for_model / get_model_context_length
+profile methods) have no place here, so each is a Nodecode seam instead -- a
+catalog row, a lane hook, a request hook. The original's error classifier,
+which maps the gateway's error codes onto Hermes' own failover reasons, is
+left out because Nodecode classifies a provider's refusal itself. Its
+per-request cost reporting (the gateway's billed cost when the organization
+turns cost-in-response on, else an estimate from the catalog's list prices) is
+left out because Nodecode prices a round from the catalog row this cell
+supplies. Its auxiliary model pin is left out because Nodecode names its own
+auxiliary model. Catalog aliases (claude-haiku-4.5 -> claude-haiku-4-5) are
+left out because the picker lists the catalog's ids, and one alias row would
+list the same model twice; the gateway accepts either spelling, so a model
+typed as an alias still runs.
