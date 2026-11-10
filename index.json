@@ -20,6 +20,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-aave",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "9fbc2a9ad25665f99ff2e375e66b86e6c9de554b",
+      "path": "tools/nodecode-aave",
+      "description": "Aave V3/V4 markets, positions, health factor and unsigned transactions through Aave's MCP server",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "aave",
+        "repo": "aave/skills",
+        "commit": "7132f6e952f9100f16577c33774a1e63948f7fab",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-abstract",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
@@ -200,6 +218,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-affiliateo",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "cce11dbe3b1e7eb3a34b070e2d428b34f9503a15",
+      "path": "tools/nodecode-affiliateo",
+      "description": "Affiliateo: affiliates, payouts, revenue, ads, invoices and support through its hosted MCP server",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "affiliateo",
+        "repo": "affiliateo/agent",
+        "commit": "e08724753dda10a522b668ab10a81c87990dee11",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-afterforge",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "e23596b0c59a238550cb730f34a449d8add1b304",
@@ -213,6 +249,24 @@
         "author": "ussyverse",
         "repo": "ussyverse/afterforge",
         "commit": "067a739e5ab64097140c5200bde2cc5d52662ea5",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-agenda-guardian",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "3550488e65fe59ccb32dd46e4c2b18daeb3117c9",
+      "path": "tools/nodecode-agenda-guardian",
+      "description": "Agenda Guardian: a day planned around your rules, your calendar and your own real times",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Moodtuner997",
+        "repo": "Moodtuner997/hermes-agenda-guardian",
+        "commit": "2493df2b4b85985faf7f19e4d9b6fe838b9ed5dd",
         "license": "MIT"
       },
       "category": "tools"
@@ -5802,6 +5856,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-island",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "4d6bcddf9499acd608fb93fef8c073b1eb154f6b",
+      "path": "tools/nodecode-island",
+      "description": "Play an agent-inception voxel island over the game's MCP world",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ethanwiegert",
+        "repo": "ethanwiegert/agent-inception",
+        "commit": "4143348e3b5180a95ec76d23fe6443c1a106ec1e",
+        "license": "MIT"
+      },
+      "category": "general"
+    },
+    {
       "name": "nodecode-iwork",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "e3cfd57204c30c0cc94f75825fcefe5bac0f2d14",
@@ -10729,6 +10801,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-vibeleak",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "58072c126931de6f258db895e157aa2d57c2c997",
+      "path": "tools/nodecode-vibeleak",
+      "description": "VibeLeak: an owner-approved website assessment and a read-only local PHP/source review",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "abundantbeing",
+        "repo": "abundantbeing/vibeleak-atlas",
+        "commit": "898323b75fa926c9b4a1a7675091ed647def3617",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-vidiq",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "0187de5c9b62c69bf8f2c0d005c9de224a14dc8f",
@@ -10763,6 +10853,24 @@
         "license": "MIT"
       },
       "category": "tools"
+    },
+    {
+      "name": "nodecode-voicestudio",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "e0a090ea1b039c34baf7804e175cdbbf2f3da7e2",
+      "path": "tools/nodecode-voicestudio",
+      "description": "VoiceStudio: speak, design voices, render chaptered audiobooks and dub videos through a local VoiceStudio server",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "aska-digital",
+        "repo": "aska-digital/protean-voice-studio",
+        "commit": "efe5c1910ee22de7e911a9c8a8625027781f2729",
+        "license": "MIT"
+      },
+      "category": "voice"
     },
     {
       "name": "nodecode-warm",
