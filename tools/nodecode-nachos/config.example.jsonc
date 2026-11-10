@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "nachos": {
+    "enabled": true,
+    "store_file": "",
+    "prefetch_top_n": 5,
+    "prefetch_chars": 1500,
+    "manifest_chars": 1200
+  }
+}
