@@ -1,0 +1,22 @@
+nodecode-openrouter-everything is a rewrite of dadhalfdev's dadhalfdev/openrouter-everything:
+https://github.com/dadhalfdev/openrouter-everything
+commit ec6974a96f9965e59d23bf1d5c5e4f2eb7333338
+MIT, Copyright (c) 2026 Marco Rodrigues (Dad Half Dev) (LICENSE)
+
+Rewritten: the five OpenRouter calls the plugin made — Decisions, Extractions,
+Rerank, Embeddings and the web_search server tool — as five verbs in the
+OPENROUTER-EVERYTHING package and five model-facing tools, each speaking
+OpenRouter's REST API directly from Common Lisp, with the plugin's curated
+default model per capability as the fallback when the config names none, its
+/api/alpha derivation from the configured /api/v1 base, its attribution
+headers, and its key order (api_key, then the named variable, then
+OPENROUTER_API_KEY). Left out: the plugin was a Hermes provider plugin, so it
+also registered web search/fetch, image generation, video generation, TTS and
+STT as Hermes providers and rewrote Hermes' config.yaml to switch them on.
+A Nodecode provider lane is a different cell's job — OpenRouter's chat lane
+and its voice APIs already have cells — so this one keeps the calls that are
+verbs rather than lanes, and the per-capability model choice survives as the
+section's *_model members instead of a config rewrite. Also left out: the
+plugin's model-adequacy validator, which read Hermes' live model catalog to
+reject a mismatched model; a section naming a model by hand has no such
+switch to guard.
