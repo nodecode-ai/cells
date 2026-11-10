@@ -1,0 +1,11 @@
+// The octoprint section of ~/.nodecode/config.jsonc.
+{
+  "octoprint": {
+    "url": "http://printer.local:5000",
+    "api_key": "", // an OctoPrint user key; sent only as X-Api-Key to that origin
+    "snapshot_url": "", // optional webcam still on the printer's own host
+    "stall_minutes": 10,
+    "snapshot_max_bytes": 2000000,
+    "watch_minutes": 0 // 0 = no background watch; 5 checks every five minutes
+  }
+}
