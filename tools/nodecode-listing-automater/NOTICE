@@ -1,0 +1,18 @@
+nodecode-listing-automater is a rewrite of Summertimechi's Summertimechi/listing-automater-skill:
+
+  https://github.com/Summertimechi/listing-automater-skill
+  commit d751b49e5d849f2967d2f5281d23400098b0e718
+  MIT, Copyright (c) 2026 NeoAsis (LICENSE)
+
+The original is a skill-only plugin: an __init__.py whose one register() call
+adds skills/listing-automater/SKILL.md to the agent as a read-only skill, and a
+plugin.yaml declaring no tools, hooks or environment variables. Rewritten here:
+that SKILL.md is one prose define-skill, its frontmatter description the
+sentence the index lists and its whole body kept as comment lines, so
+(help 'listing-automater) reads the guidance as the author wrote it and nothing
+is evaluated.
+
+Left out: the plugin's registration shim (a knowledge cell has nothing to
+start, and the index reads the skill from its file), and the repository README's
+npx install line, which installs the plugin for another harness. Nothing else of
+the original is missing: the skill has no companion files.
