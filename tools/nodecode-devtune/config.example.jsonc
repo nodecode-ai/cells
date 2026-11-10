@@ -1,0 +1,16 @@
+{
+  // A DevTune project API key -- API Keys in the DevTune account sidebar.
+  // Paste it here, or leave api_key out and name the variable holding it in
+  // api_key_env.
+  "devtune": {
+    "api_key": "",
+    "api_key_env": "DEVTUNE_API_KEY",
+    // the project to read; empty, GET /connection answers the one the key
+    // reaches
+    "project_id": "",
+    "base_url": "https://devtune.ai/api/v2",
+    // the window a measurement read that names none asks for: 30 or 90
+    "window_days": 30,
+    "timeout_seconds": 30
+  }
+}
