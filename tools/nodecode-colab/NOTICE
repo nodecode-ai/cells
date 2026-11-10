@@ -1,0 +1,17 @@
+nodecode-colab is a rewrite of PietrangeloManco's PietrangeloManco/hermes-colab:
+https://github.com/PietrangeloManco/hermes-colab
+commit f05cf934fff3b446f2e00cc32e19432e9e41e87b
+MIT, Copyright (c) 2026 Pietrangelo Manco (LICENSE)
+
+What was rewritten: the plugin's eight tools became seven Nodecode tools and
+a /colab command (colab_resume folded into the run, which resumes by
+itself). The Colab tunnel endpoints, the assignment dance, the keep-alive,
+the unassign, the runtime proxy token, the Jupyter kernel, the outputs that
+come home and the fresh runtime after a reclaim are the same protocol,
+reimplemented against NLK:HTTP and websocket-driver. What was left out and
+why: the Hermes OAuth store and the dashboard page, which have no Nodecode
+counterpart here, so the Google grant is read from the cell's own section;
+the SQLite run store, since a run lives in the cell's memory with its log
+and outputs on disk; and the zip bundle, papermill notebooks, detached
+runner and pre_llm_call notice, which this executes in the kernel and
+reports with nle:notice instead.
