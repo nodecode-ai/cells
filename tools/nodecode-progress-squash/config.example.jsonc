@@ -1,0 +1,9 @@
+// nodecode-progress-squash needs no setting: the folder squashes progress
+// bars as it stands. What it takes, with every default:
+{
+  "progress-squash": {
+    "footer": true,        // end a rewritten output with the count of frames dropped
+    "min_frames": 1,       // overwritten frames of one line before it is collapsed; 2 keeps a single overwrite
+    "keep": []             // progress-line stems to leave as they are, such as "epoch:"
+  }
+}

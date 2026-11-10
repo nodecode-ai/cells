@@ -1,0 +1,15 @@
+nodecode-progress-squash is a rewrite of pierrenode's pierrenode/hermes-progress-squash:
+
+  https://github.com/pierrenode/hermes-progress-squash
+  commit 044e6f1128037a58a76d5f6ff71df1607b4c1c63
+  MIT License, Copyright (c) 2026 pierrenode (LICENSE)
+
+Rewritten in Common Lisp against Nodecode's cell contract: the segment rule,
+the stem, the ANSI stripping, the footer and the settings are the original's
+squash.py ported line for line, and the one transform_terminal_output hook of
+the original's __init__.py is an advice on the sh function instead, because
+Nodecode has no terminal-output point. Added here, and not in the original:
+the footer/min_frames/keep settings, a /progress-squash command with the run's
+counters, and a help topic. Left out: the Hermes manifest and the Python test
+suite; background-process polling, which the original also squashes and
+Nodecode has no separate seam for.
