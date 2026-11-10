@@ -1,0 +1,42 @@
+nodecode-long-conversations is a rewrite of cspears32's cspears32/hermes-long-conversations:
+
+  https://github.com/cspears32/hermes-long-conversations
+  commit 1a8dc52b7ae610f6db2d2ab0a7e7133b3a199807
+  MIT, Copyright (c) 2026 cspears32 (declared in plugin.yaml; the repository carries no LICENSE file)
+
+The rewritten plugin is the repository at that commit. Its own description
+-- persistent long-term conversations across session boundaries via
+structured handoff briefs -- is what this cell does, and the brief is the
+original's: the same eight fields (topic, work in progress, decisions made,
+active state files, key assumptions, open questions, dead ends, next step),
+saved as one file per brief, listed newest first, read back as a block with
+the same headings and the same closing line telling the next session to
+continue from there. Its scoping rule is kept as well: a brief belongs to the
+identity that wrote it, and a session reads only the briefs it may. The five
+tools keep their names and their JSON answers -- handoff_save, handoff_load
+and handoff_list answer the same success, message, brief, count and context
+members the original's answered -- and the original's /long-conversations-free Hermes
+install becomes a Nodecode slash command of that name.
+
+What was rewritten, and how: the store is Common Lisp against the Nodecode
+cell contract instead of Python against the Hermes plugin API. A brief is one
+JSON file in the folder the section names, written atomically under the
+folder's lock, instead of a profile directory of briefs, a config.yaml and a
+lineage graph; the pre-LLM hook that used to inject a pending brief at a
+session's first turn is one NLE:DEFINE-CELL :round observer, which hands a
+saved brief to the first model request of another session and then clears the
+marker. The optional beta event log is kept as the section's own reporting
+rather than a second JSONL file, and the lineage graph is left to Nodecode,
+whose sessions already record lineage.
+
+What was left out, and why: the token-threshold monitor and the aggressive
+auto-brief extraction -- the two hooks that watched the Hermes context
+engine's last_total_tokens against its context_length, and at a watermark
+either recommended a handoff or built one from the last three user messages.
+Nodecode's own context editing and turn accounting do not expose that
+watermark to a cell, so the brief is written when the model or the operator
+decides instead of at a ratio; the eight brief fields, the tool answers and
+the delivery are unaffected. The config tools (handoff_config_get and
+handoff_config_set, which wrote a config.yaml beside the briefs) are the
+section now: /settings and the `handoff` section of config.jsonc write the
+same three values, so no tool is needed to change a switch the operator owns.
