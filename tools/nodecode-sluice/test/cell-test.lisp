@@ -99,8 +99,7 @@
   ;; an SBCL contrib no release carries, so the cell loaded nowhere but on a
   ;; machine with SBCL installed beside it.
   (let ((abc "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD"))
-    (is (equal abc (nodecode-sluice::digest-string "abc"))
-        "a text's digest is the SHA-256 of its UTF-8 bytes")
+    (is (equal abc (nodecode-sluice::digest-string "abc")) "a text's digest is the SHA-256 of its UTF-8 bytes")
     (with-workspace (workspace ("a.txt" "abc"))
-      (is (equal abc (nodecode-sluice::digest-file (nodecode-sluice::path-join workspace "a.txt")))
-          "and a file's is the SHA-256 of its bytes"))))
+      (let ((file (nodecode-sluice::path-join workspace "a.txt")))
+        (is (equal abc (nodecode-sluice::digest-file file)) "and a file's is the SHA-256 of its bytes")))))
