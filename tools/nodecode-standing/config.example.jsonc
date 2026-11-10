@@ -1,0 +1,38 @@
+// The standing section of ~/.nodecode/config.jsonc. Every member is
+// optional: out of the box the cell runs at L1 -- reads and workspace
+// writes -- and asks about everything else.
+{
+  "standing": {
+    "actor": "default",
+    "level": "L1",
+    "promote_after": 10,
+    "max_auto_level": "L2",
+
+    // The folder whose writes count as local. Empty asks about every write.
+    "workspace": "/absolute/path/to/your/work",
+
+    // What a file proof may read: folders or exact files. Empty uses the
+    // workspace; with neither, no file is read. A credential store is never
+    // read even when it sits inside a root.
+    "file_proof_roots": [],
+
+    // What an http proof may fetch: URL prefixes, a trailing slash allowing
+    // a subtree, the query exact. Empty refuses every fetch.
+    "http_proof_targets": ["http://127.0.0.1:8000/health"],
+
+    // Exact read-only command lines a command proof may run. Nothing else
+    // runs, and no shell reads them.
+    "command_allowlist": ["git status --short"],
+
+    // Tool names that need a passing proof in this session before they run.
+    "proof_before": [],
+
+    // Ask Allow once or Deny before refusing. With nobody there to ask, or
+    // no answer in time, the call is refused.
+    "ask": true,
+    "ask_seconds": 120,
+
+    // A proof's ceiling in seconds: one fetch, or one command.
+    "timeout": 10
+  }
+}

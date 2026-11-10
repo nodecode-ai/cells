@@ -1,0 +1,24 @@
+nodecode-standing is a rewrite of percyhendrux123-prog's
+percyhendrux123-prog/hermes-standing:
+
+  https://github.com/percyhendrux123-prog/hermes-standing
+  commit 8c8126ee85073d9ef8cfaf6ed935ce68dcae42d8
+  MIT, Copyright (c) 2026 Deploy Axiom (LICENSE)
+
+Rewritten: the trust levels and what each lets through, the proof tool that
+checks a file's SHA-256 or a text in it, an allowlisted URL's body and an exact
+allowlisted command's output, the record of levels, passes and fails that a
+pass raises and a failed check lowers, the owner's own level command with its
+log, and the guidance the model reads about proving before it claims.
+
+Left out, and why: the plugin's Hermes identity plumbing (the profile name,
+the kanban task id, the session env accessor) is replaced by the cell's own
+`actor` setting and the running turn's session id; the SQLite ledger became a
+small s-expression file in the nodecode home, because it is one process's
+record and needs no schema; the configurable level-to-category map is the
+original's default map, fixed, as every cell's section here is declared once;
+and the kanban completion gate -- a card cannot be marked done without a proof
+-- became `proof_before`, a list of tool names that need a passing proof in the
+session first, since Nodecode has no kanban card of its own. The action gate
+reads the form an `eval` call evaluates instead of Hermes's tool names, because
+Nodecode has one tool.
