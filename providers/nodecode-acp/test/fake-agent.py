@@ -4,6 +4,8 @@
 What it does is read off the prompt's first word:
   write NAME TEXT   asks permission, then writes NAME in the session folder
   run COMMAND       runs COMMAND (no permission) and shows its output
+  describe COMMAND  runs COMMAND with a description, as Claude Code does, then
+                    a subagent call
   plan              sends a plan, then says done
   wait              streams a word, then waits for session/cancel
   count             says how many prompts this session has had (kept in a
@@ -115,6 +117,22 @@ def prompt(rid, params):
                      "content": [{"type": "content", "content": {"type": "text",
                                   "text": "```console\n" + res.stdout + res.stderr + "```"}}]})
         say(sid, "Ran it.")
+    elif head == "describe":
+        # Claude Code's shape: a command whose Bash input carries a one-line
+        # description, then a subagent -- kind think, titled by its task.
+        command = text[9:]
+        call = "call-" + uuid.uuid4().hex[:8]
+        update(sid, {"sessionUpdate": "tool_call", "toolCallId": call, "title": command, "kind": "execute",
+                     "status": "pending", "rawInput": {"command": command, "description": "Say hello\nto the folder"}})
+        res = subprocess.run(command, shell=True, cwd=cwd, capture_output=True, text=True)
+        update(sid, {"sessionUpdate": "tool_call_update", "toolCallId": call, "status": "completed",
+                     "content": [{"type": "content", "content": {"type": "text", "text": res.stdout}}]})
+        call = "call-" + uuid.uuid4().hex[:8]
+        update(sid, {"sessionUpdate": "tool_call", "toolCallId": call, "title": "Check the callers", "kind": "think",
+                     "status": "pending", "rawInput": {"prompt": "Find every caller", "subagent_type": "Explore"}})
+        update(sid, {"sessionUpdate": "tool_call_update", "toolCallId": call, "status": "completed",
+                     "content": [{"type": "content", "content": {"type": "text", "text": "No other callers."}}]})
+        say(sid, "Done.")
     elif head == "plan":
         update(sid, {"sessionUpdate": "plan", "entries": [
             {"content": "Read the code", "priority": "high", "status": "completed"},

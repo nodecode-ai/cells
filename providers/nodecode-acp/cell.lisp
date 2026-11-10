@@ -14,7 +14,8 @@
 ;;;;   MODEL-LISTED-P                  and a pick of one is an id, never a
 ;;;;                                   catalog's display name
 ;;;;   TOOL-ARGUMENTS-ACTIVITY         an agent's call in the shell's own
-;;;;                                   words: Read, Edited, Ran, Searched
+;;;;                                   words: Read, Edited, Ran, Searched,
+;;;;                                   led by the agent's own (its note)
 ;;;;   ROW-TOOL-TITLE, -COMMANDS       the agent's own title where those words
 ;;;;                                   have none; a command as `$ command'
 ;;;;
@@ -89,35 +90,50 @@ among the models."
 (defun text-of (object key)
   (let ((value (gethash key object))) (and (stringp value) (plusp (length value)) value)))
 
+(defun call-entries (call)
+  "The entries CALL's kind and input make in the shell's own words: a read
+reads, an edit edits, a search searches, a fetch fetches, and a command reads
+as a bash call with that command does -- by its family where one names it
+(ls lists), else by its line (echo, false). NIL for a call that names none."
+  (let ((kind (text-of call "kind"))
+        (path (text-of call "path"))
+        (command (text-of call "command"))
+        (pattern (text-of call "pattern")))
+    (cond ((and (equal kind "read") path) (list (list :read path nil)))
+          ((and (member kind '("edit" "delete" "move") :test #'equal) path)
+           (list (list (if (eq (gethash "new" call) t) :write :edit) path nil)))
+          ((and (equal kind "search") pattern) (list (list :search pattern nil)))
+          ((and (equal kind "fetch") (text-of call "url")) (list (list :fetch (text-of call "url") nil)))
+          ;; A web search is a fetch with a query and no page.
+          ((and (equal kind "fetch") pattern) (list (list :search pattern nil)))
+          (command
+           (or (nle::shell-command-entries command)
+               (let ((line (string-trim '(#\Space #\Tab #\Newline #\Return) command)))
+                 (and (plusp (length line)) (list (list :command line nil)))))))))
+
 (defun activity (next name arguments &rest keys &key metadata error-p &allow-other-keys)
-  "TOOL-ARGUMENTS-ACTIVITY advice: an acp call's activity, from the kind and
-the input its agent gave it -- a read reads, an edit edits, a command is
-read as the shell command it is -- plus every file its result changed."
+  "TOOL-ARGUMENTS-ACTIVITY advice: an acp call's activity -- its entries in the
+shell's words (CALL-ENTRIES) plus every file its result changed, and the
+agent's own words for it (its `description') as its note, which a row, the
+band and a digest read first."
   (if (not (equal name "acp"))
       (apply next name arguments keys)
       (let ((call (call-object arguments)))
         (when call
-          (let* ((kind (text-of call "kind"))
-                 (path (text-of call "path"))
-                 (command (text-of call "command"))
-                 (entries
-                   (cond ((and (equal kind "read") path) (list (list :read path nil)))
-                         ((and (member kind '("edit" "delete" "move") :test #'equal) path)
-                          (list (list (if (eq (gethash "new" call) t) :write :edit) path nil)))
-                         ((and (equal kind "search") (text-of call "pattern"))
-                          (list (list :search (text-of call "pattern") nil)))
-                         ((and (equal kind "fetch") (text-of call "url"))
-                          (list (list :fetch (text-of call "url") nil)))
-                         (command (nle::shell-command-entries command)))))
+          (let ((entries (call-entries call))
+                (command (text-of call "command"))
+                (words (text-of call "description")))
             (let ((diff (and (hash-table-p metadata) (gethash "workspace_diff" metadata))))
               (when (hash-table-p diff)
                 (loop for file across (or (gethash "files" diff) #())
                       for changed = (and (hash-table-p file) (text-of file "path"))
                       when (and changed (notany (lambda (entry) (equal (second entry) changed)) entries))
                         do (setf entries (append entries (list (list :edit changed nil)))))))
-            (when entries
-              (nle::activity-from-entries entries :head (and command (not path) command)
-                                                  :error-p error-p)))))))
+            (when (or entries words)
+              (nle::activity-from-entries entries
+                                          :note words
+                                          :head (and command (not (text-of call "path")) command)
+                                          :error-p error-p)))))))
 
 (defun title (next row activity)
   "ROW-TOOL-TITLE advice: an acp call the shell has no words for is titled
