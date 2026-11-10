@@ -1,0 +1,38 @@
+nodecode-protocol-chaos is a rewrite of chaos-xxl's chaos-xxl/protocol-chaos:
+
+  https://github.com/chaos-xxl/protocol-chaos
+  commit cb3f13a51b3d81e224eeadde68e1f55d6b2770d2
+  Apache-2.0, Copyright 2026 Xue Xinglong (LICENSE)
+
+The rewritten plugin is integrations/hermes/protocol-chaos of that commit.
+Its seams are carried over onto Nodecode's: the plugin's pre_llm_call, which
+put an overview of the open matters before the model and the matters a
+message named into the turn, is the :round point here, and its post_llm_call,
+which recorded the user's words after the answer, is the :frame point and a
+worker. The wire is the same MCP streamable HTTP endpoint with the same
+bearer token and the same protocol version, and the same three tools do the
+work: context_pack for the directory (paged, cached thirty seconds, with
+sinceVersion), event_get_protocol for one matter by id, and event_note to
+record words verbatim. The matter states, the header line over added
+context, the 3,900-character overview, the inverse-document-frequency
+matching of a message against matter titles (with its 0.75 weight for a
+closed matter), the indented forest of parts, the shape of the matter
+block, the 600-character recording clip and the recording instructions the
+model is given are the original's. So is the rule that only ids go to the
+server when matters are read, and that a scheduled job's and a subagent's
+turns get no context and record nothing (here: the whole cell stays out of
+a turn it did not see the user's message of). The original's organizer
+skill, which folds recorded words into goals, limits, plans and progress
+once a day, is carried as the procedure (help :protocol-chaos) states, for
+the user's own scheduled run.
+
+What was left out, and why: the per-message structure fold
+(event_record_expression driven by a structured-output call, with its
+VERSION_CONFLICT retry) is not run after each turn here -- Nodecode's side
+call answers prose, and the organizer procedure in the help topic does the
+fold in one pass; the bundled Hermes cron blueprint for the organizer, since
+a Nodecode user schedules it with the cron cell; the agent.secret_scope
+lookup, replaced by the section's token, token_env and the
+PROTOCOL_CHAOS_TOKEN the original already read; and the four overview
+placement modes (system prompt, first turn, off), of which two remain:
+the turn's first round, and off.

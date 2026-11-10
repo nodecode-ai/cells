@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "protocol-chaos": {
+    "url": "https://example.org:8443/mcp",  // your server's MCP endpoint
+    "token_env": "PROTOCOL_CHAOS_TOKEN",    // or "token": "…" written here
+    "actor": "nodecode",                    // the client name the token was issued for
+    "capture": "auto",                      // auto | match | off
+    "overview": true,
+    "related": 3,
+    "timeout_seconds": 8,
+    "capture_max_chars": 600
+  }
+}
