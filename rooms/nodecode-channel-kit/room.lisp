@@ -747,15 +747,16 @@ indicator is posted to."
   (with-room-book (book host)
     (car (alexandria:ensure-gethash key book.typing (cons (make-typing-state) target)))))
 
-(defun lane-live-p (lane)
+(defun lane-live-p (lane &optional (now (now-ms)))
   "Whether LANE's turn has not settled; the second value is the newest moment
-that turn was seen producing (DIGEST-SEEN-MS), 0 when nothing is live."
+that turn counts as seen at NOW (DIGEST-TYPING-SEEN-MS: NOW while a call is
+in flight), 0 when nothing is live."
   ;; The beat's cap measures the turn's silence from it.
   (bt2:with-lock-held ((lane-lock lane))
     (let ((digest lane.digest))
       (if (and digest
                (member digest.phase '(:queued :running)))
-          (values t (digest-seen-ms digest))
+          (values t (digest-typing-seen-ms digest now))
           (values nil 0)))))
 
 (defun typing-surfaces (lanes &aux (live (make-hash-table :test #'equal)))

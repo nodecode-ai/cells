@@ -116,13 +116,21 @@
 ;;; sighting (DIGEST-SEEN-MS — the same stamp the stall notice reads), beats
 ;;; keep going while the turn keeps producing, and stop once it has shown
 ;;; nothing for the cap — a wedged turn cannot type forever, and a long
-;;; working one never loses its bubble mid-turn.
+;;; working one never loses its bubble mid-turn. A call still in flight is
+;;; the turn working however long it shows nothing (a CI wait, a build),
+;;; so it counts as seen until +TYPING-CALL-CAP-MS+ past its start
+;;; (DIGEST-TYPING-SEEN-MS): a hung tool cannot type forever either.
 
 (defparameter +typing-refresh-ms+ 8000)
 (defparameter +typing-cap-ms+ 300000
   "How long a surface's turn may show nothing before its typing beat stops:
 a silence cap, not an age cap — a turn that keeps producing keeps its beat
 however long it runs.")
+(defparameter +typing-call-cap-ms+ 3600000
+  "How long one call in flight keeps its surface's beat on by itself: the
+turn counts as seen while its open call is younger than this, and the
+silence cap runs from the call's start once it is older: a hung tool stops
+typing, a long build or CI wait keeps its bubble.")
 
 (nlk:define-record (typing-state (:copier nil) (:export :constructor))
   (active-p nil :type boolean)

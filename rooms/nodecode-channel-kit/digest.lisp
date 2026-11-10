@@ -460,6 +460,18 @@ call or round it showed (DIGEST-NOTE-VISIBLE) — the same sighting the stall
 notice reads. 0 for a digest that never opened."
   (max digest.started-at-ms digest.visible-at-ms))
 
+(defun digest-typing-seen-ms (digest now)
+  "The newest moment DIGEST's turn counts as seen for its typing beat: NOW
+while a call it started is still in flight and younger than
++TYPING-CALL-CAP-MS+ (the turn is working, though a call shows nothing until
+it lands), and its newest sighting (DIGEST-SEEN-MS) otherwise."
+  ;; The card already reads an open call as work, never as a stall
+  ;; (DIGEST-CARD); the beat reads it the same way.
+  (let ((open (digest-open-step digest)))
+    (if (and open (< (- now (digest-step-started-ms open)) +typing-call-cap-ms+))
+        now
+        (digest-seen-ms digest))))
+
 ;;; --- folds (lane lock held, no I/O) ----------------------------------------
 
 (defun digest-note-tool-call (digest)
