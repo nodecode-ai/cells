@@ -1,0 +1,15 @@
+{
+  // cloro search: one model tool, cloro_search, and (cloro:search "...").
+  // Make a key at https://dashboard.cloro.dev/api-keys.
+  "cloro": {
+    // Paste the key here, or leave it empty and name the variable holding it.
+    // "api_key": "",
+    "api_key_env": "CLORO_API_KEY",
+    // The location of the results a call that names none gets.
+    "country": "US",
+    // How many results such a call asks for (a call may ask for 1 to 20).
+    "count": 5,
+    // cloro opens the live results page, so a search is slow.
+    "timeout_seconds": 120
+  }
+}

@@ -1,0 +1,34 @@
+nodecode-cloro is a rewrite of cloro-dev's cloro-dev/hermes-plugin-cloro:
+
+https://github.com/cloro-dev/hermes-plugin-cloro
+commit 7189fbd9ab14aafaa3fb18f419ca76d46aa1bc4a
+
+MIT, Copyright (c) 2026 cloro (LICENSE)
+
+What was rewritten: the plugin registered a web-search backend on its harness,
+named "cloro", which the harness's own web_search tool called. There is no
+backend registry to register into here, so the same request is a tool of this
+cell's own, cloro_search, and a Lisp verb, cloro:search, answering the same
+text. It POSTs the same two members -- the query and a 2-letter ISO 3166-1
+country, upcased, refused when it is not two letters -- to
+api.cloro.dev/v1/monitor/google, with the key in the same Authorization:
+Bearer header, the same JSON and Accept headers, and the same 120-second
+ceiling (cloro opens the live results page while it answers). It lifts the
+same fields out of result.organicResults -- link, title, snippet -- skips a
+result with no resolved http or https link, and stops after the count the
+call asked for (5 when it names none, clamped to 1-20). A failure carries
+cloro's own error sentence, as the original's error_message did. The key
+moves from CLORO_API_KEY into the cell's `cloro' section, which still reads
+that variable when no key is pasted there, so the plugin's
+"available only when the secret is set" is here a section that names no key
+refusing the start.
+
+What was left out: the harness's provider interface itself -- is_available,
+get_setup_schema, the "paid" badge and the dashboard link it carried -- which
+has no counterpart here; the section's own guide and the setup panel say the
+same things in this harness's words. The original answered a JSON object with
+a "data.web" array; this cell answers the same fields as one block a result,
+which is what a model reads, and signals CLORO-ERROR instead of
+returning an "error" member. Two small additions: the HTML tags and entities
+Google sends in a title or a snippet are cleaned off, and the plugin's
+dashboard link loses its marketing parameters.
