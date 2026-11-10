@@ -398,6 +398,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-agentstatus-index",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "b53f3f5e10243d7cd57b04bfd08e49efe12fc87e",
+      "path": "tools/nodecode-agentstatus-index",
+      "description": "AgentStatus Index: search a public index of MCP servers and call a tool on one you pick",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Carmel-Labs-Inc",
+        "repo": "Carmel-Labs-Inc/agentstatus-mcp-index",
+        "commit": "8678c389f76a928a530d868eb9f51ead14e02783",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-agentvault",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5ed77408e3a97b241e61753fd736eaba42a81f28",
@@ -493,6 +511,26 @@
         }
       ],
       "category": "models"
+    },
+    {
+      "name": "nodecode-airlock",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "b0012a21ed21dcdcef6dd88efa3e8d55880686be",
+      "path": "tools/nodecode-airlock",
+      "description": "Run commands through your Airlock policy gate, and check the signed receipt",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "ironclad",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "justrunme",
+        "repo": "justrunme/hermes-airlock-plugin",
+        "commit": "a35cf831045450e4f207a6843e2cbf912151236c",
+        "license": "MIT"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-aistupidlevel",
@@ -629,6 +667,24 @@
         "nodecode"
       ],
       "category": "models"
+    },
+    {
+      "name": "nodecode-ambassly",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "a96e2789986d5c179b3c0512861a336a5af8f4b2",
+      "path": "tools/nodecode-ambassly",
+      "description": "Ambassly: Stripe affiliate programs, links, referrals and commissions through its hosted MCP server",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "MelMayssonOwen",
+        "repo": "MelMayssonOwen/hermes-plugins",
+        "commit": "f203c3f897784d731ef48bc0974104a4d08cf5f8",
+        "license": "MIT"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-ando",
@@ -820,6 +876,24 @@
       "category": "web"
     },
     {
+      "name": "nodecode-api-indonesia",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "dcc4aa31e421ad3dbb0717a6c6bc74f83715961b",
+      "path": "tools/nodecode-api-indonesia",
+      "description": "Indonesian public data through API Indonesia's hosted MCP server: regions, postal codes, holidays, prayer times, BMKG",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "khmuhtadin",
+        "repo": "khmuhtadin/api-indonesia-examples",
+        "commit": "73d9d4bc060ad4814d0c95c9b3f5f328d07858d5",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-apify",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "bb8e36323a804f616dd1215aa3039c79ea470861",
@@ -836,6 +910,36 @@
         "license": "MIT"
       },
       "category": "web"
+    },
+    {
+      "name": "nodecode-apinex",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "330a2717f27a30b4b0d7e922789f7927a3c003d9",
+      "path": "providers/nodecode-apinex",
+      "description": "APInex: Claude over the Messages wire, and the OpenAI-compatible vendors and free tier, on one key",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Apinex-AI",
+        "repo": "Apinex-AI/hermes-provider-apinex",
+        "commit": "d838363f40c8c2ac3d0254c69c43cef11f9dec79",
+        "license": "MIT"
+      },
+      "serves": [
+        {
+          "name": "APInex",
+          "provider": "apinex",
+          "sign_in": "key"
+        },
+        {
+          "name": "APInex (OpenAI-compatible)",
+          "provider": "apinex-openai",
+          "sign_in": "key"
+        }
+      ],
+      "category": "models"
     },
     {
       "name": "nodecode-apple",
@@ -1529,6 +1633,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-brownout",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "36710a34a7c1b2bd699bb64cd666ad7468ffb9dc",
+      "path": "tools/nodecode-brownout",
+      "description": "Notices a host that lost mains power, measures battery runway, and parks tool calls",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Osiyomeoh",
+        "repo": "Osiyomeoh/brownout",
+        "commit": "6d983d5da32c6cdd6a3551426de87d44a78dbfea",
+        "license": "MIT"
+      },
+      "category": "automation"
+    },
+    {
       "name": "nodecode-browser-profiles",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
@@ -1565,6 +1687,24 @@
       "category": "web"
     },
     {
+      "name": "nodecode-buildpilot",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "4b0f02d73b7de188facfde7d3ecb30001cb67e0e",
+      "path": "tools/nodecode-buildpilot",
+      "description": "Projects, their tasks and their progress checkpoints, kept locally",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Justnevo",
+        "repo": "Justnevo/buildpilot",
+        "commit": "037d8eda0ba53d741e4f0bcfdc246cc6bab1dcc7",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-bulkpublish",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "2f2efae17a21ba277b1fb93f3fc4346f78981065",
@@ -1578,6 +1718,24 @@
         "author": "bulkpublish",
         "repo": "bulkpublish/hermes-bulkpublish",
         "commit": "530589907c6f791aacd35e1f708dbe8949e7e87f",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-bumblebee",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "6337b34e9a2272e70bab56383ba6b9d9414f4918",
+      "path": "tools/nodecode-bumblebee",
+      "description": "Known-compromised npm and PyPI releases among the packages installed in a folder",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "kahnanX",
+        "repo": "kahnanX/bumblebee-guard",
+        "commit": "8cdf7e03493eedbd8fd7abb5a2aed53b230e53c6",
         "license": "MIT"
       },
       "category": "tools"
@@ -2292,6 +2450,24 @@
       "category": "models"
     },
     {
+      "name": "nodecode-clef",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "835216e6dcdba3cce558e56a9461e05524344810",
+      "path": "tools/nodecode-clef",
+      "description": "Clef's music tools: transpose chords, spell piano chords, map guitar tab to piano notes and find music guides",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "MelMayssonOwen",
+        "repo": "MelMayssonOwen/hermes-plugins",
+        "commit": "f203c3f897784d731ef48bc0974104a4d08cf5f8",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-cline-pass",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "211fc1c1da184157337f78e0b1e9a95a7c48f5f3",
@@ -2309,6 +2485,24 @@
         }
       ],
       "category": "models"
+    },
+    {
+      "name": "nodecode-cloro",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "02b31d654fd6c6e2ee33610f18c7db936b0d7d10",
+      "path": "tools/nodecode-cloro",
+      "description": "cloro: live Google results as one model tool, with your own key",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "cloro-dev",
+        "repo": "cloro-dev/hermes-plugin-cloro",
+        "commit": "7189fbd9ab14aafaa3fb18f419ca76d46aa1bc4a",
+        "license": "MIT"
+      },
+      "category": "web"
     },
     {
       "name": "nodecode-cloud-files",
@@ -7668,6 +7862,25 @@
         "author": "SnoobieJunes",
         "repo": "SnoobieJunes/hermes-muse-harness",
         "commit": "5cc2d060dee651345c75a75e4a52abb2272462be",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-music-jam",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "c4014e81221757514a15fa756c7902455397c3b3",
+      "path": "tools/nodecode-music-jam",
+      "description": "A four-piece synthesized band on a local page, conducted by tools",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "usocket"
+      ],
+      "credits": {
+        "author": "vdimarco",
+        "repo": "vdimarco/agent-music-jam",
+        "commit": "009c918b89e7ba98550de0755b47d1e5e7bc96a0",
         "license": "MIT"
       },
       "category": "tools"
