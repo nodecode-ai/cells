@@ -1,0 +1,9 @@
+// nodecode-apinex's section of ~/.nodecode/config.jsonc. Secrets stay out
+// of it: the key is the APINEX_API_KEY environment variable, or a key saved
+// with /connect.
+{
+  "apinex": {
+    // where the APInex gateway is served; a relay's address goes here
+    "base_url": "https://api.apinex.bond/v1"
+  }
+}

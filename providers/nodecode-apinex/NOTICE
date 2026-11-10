@@ -1,0 +1,22 @@
+nodecode-apinex is a rewrite of Apinex-AI's Apinex-AI/hermes-provider-apinex:
+
+https://github.com/Apinex-AI/hermes-provider-apinex
+commit d838363f40c8c2ac3d0254c69c43cef11f9dec79
+
+MIT, Copyright (c) 2026 APInex (LICENSE)
+
+The rewrite keeps what the plugin gives a Hermes user: the two provider ids,
+`apinex` for the Claude family over APInex's Messages endpoint and
+`apinex-openai` for the GPT, Gemini, DeepSeek, GLM, Qwen, Kimi, Grok, MiniMax,
+MiMo, Muse and Hunyuan models and the Free tier over the OpenAI-compatible
+endpoint, both at https://api.apinex.bond/v1 and both on the one
+APINEX_API_KEY; the per-model capability matrix (its context windows and
+vision flags); the rule that splits the gateway's model list between the two
+wires, dropping media, embedding, speech and non-tool entries; and the
+never-answer-another-provider's-key behaviour it shared with its runtime.
+What was left out is above the plugin's own work and not in it: the row is a
+Nodecode catalog row rather than a Hermes ProviderProfile, its two hooks are
+Nodecode's, and the model list it fetched from /v1/models at run time is
+bundled in models.json, laid out as that endpoint lists it, so nothing here
+dials the gateway. The gateway addresses and the model rows are the
+original's data. Nothing of the original's Python is included.
