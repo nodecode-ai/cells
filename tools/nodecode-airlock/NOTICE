@@ -1,0 +1,39 @@
+nodecode-airlock is a rewrite of justrunme's justrunme/hermes-airlock-plugin:
+
+  https://github.com/justrunme/hermes-airlock-plugin
+  commit a35cf831045450e4f207a6843e2cbf912151236c
+  MIT License, Copyright (c) 2026 Andrey Lesnikov (LICENSE)
+
+Rewritten: the client half of the plugin, in Common Lisp. What it does is
+kept route by route and rule by rule: POST /api/arena with the language and
+code (and input_text when there is one), GET /healthz demanding ok=true,
+GET /api/receipt/{id}; the pre-call validation of a clean https origin with
+no userinfo, path, query or fragment, and an Ed25519 key of exactly 64
+lowercase hex characters; the fail-closed refusal of redirects, non-JSON
+bodies and statuses at or past 400; the bearer token kept out of anything
+else; the receipt's own shape check; RFC 8785 canonical JSON, which receipts.py
+took from a package and jcs.lisp writes out; SHA-256 over those bytes; Ed25519
+verification under a key that is never fetched from the server; and the
+binding rules of binding.py, field for field -- a receipt_id that is not the
+signed hash, an outer verdict that disagrees, an allow whose status is not
+"executed", truncated or report_invalid execution, an exit_code that is not
+an exact JSON integer or disagrees, and stdout/stderr that do not hash to the
+signed digests all refuse rather than display. The BLOCKED / ALLOWED /
+VERIFIED words and the exit codes 126 / 75 / 74 / 78 / 125 are the plugin's.
+
+Its shape is one agent-facing tool, airlock_run, one command, /airlock, and
+the verbs in AIRLOCK, instead of Hermes's terminal environment provider.
+
+Left out, and why: Hermes's own shell wrapping (the terminal environment
+provider seam, BaseEnvironment duck type, cwd markers, stdin plumbing and
+per-command process handles) is not rewritten, because Nodecode's shell is its
+own and the cell reaches Airlock through a tool rather than under every shell
+call. The plugin's stdin_data refusal, its cwd refusal and its refusal of
+truncated executions are kept in substance: there is no stdin field, no cwd
+field, and truncated output is refused rather than shown as bound. The inline
+receipt that the arena may carry is preferred over a second fetch, as the
+plugin preferred it. The opt-in demo host and demo key the plugin documents
+are not baked in as defaults -- there is no default host here either -- and
+the plugin's own Python tests, its config_schema and its doctor output are
+not carried over: the section declaration and this folder's tests are their
+counterparts.
