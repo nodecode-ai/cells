@@ -1,0 +1,17 @@
+// The `oathkeeper` section of ~/.nodecode/config.jsonc, commented: this
+// folder is documentation, not config, and holds no secret.
+{
+  "oathkeeper": {
+    // The oath to enforce. Absent means ~/.nodecode/oathkeeper/oath.txt,
+    // the file you write: one rule a line, the plugin's own format.
+    "oath_file": "~/.nodecode/oathkeeper/oath.txt",
+    // Report files under the oath's patterns that changed outside an
+    // approved call -- an edit by another process, by you, by a second agent.
+    "watch_changes": true,
+    // Files up to this size (bytes) are fingerprinted by content digest;
+    // larger ones by size and modification time.
+    "hash_limit_bytes": 1000000,
+    // How many files one pattern's fingerprint covers.
+    "max_files": 5000
+  }
+}
