@@ -1,0 +1,21 @@
+nodecode-minimax-search is a rewrite of pdonizete's pdonizete/hermes-minimax-search:
+https://github.com/pdonizete/hermes-minimax-search
+commit f2af5191e70269fdf6aee1954ab6888d652c1651
+MIT, Copyright (c) 2026 Paulo Donizeti Gardinalli Filho (@pdonizete) (LICENSE)
+
+What was rewritten: the one capability the original's provider advertises — a
+web search through the MiniMax Token Plan endpoint
+`POST /v1/coding_plan/search`, with the query sent as `q` (not `query`, which
+the endpoint refuses as 2013 "invalid params"), the credential read in the
+original's order (a key written in the section, else the variable the section
+names, else `MINIMAX_CODE_PLAN_KEY`, `MINIMAX_CODING_API_KEY`,
+`MINIMAX_OAUTH_TOKEN`, `MINIMAX_API_KEY`), the global and CN hosts, the
+result count clamped to the endpoint's ceiling of ten, the `organic[]` rows
+(title, link, snippet, date) read back in order, the in-body
+`base_resp.status_code` error recognised as a failure, and a failed status
+answered as text rather than an exception. What was left out: the original's
+web-search-provider subclassing and its setup-panel schema, which are its
+harness's registration and onboarding surfaces and have no meaning here — the
+cell's section, its tool and its help topic take their place — and its
+`MINIMAX_REGION` / `MINIMAX_API_HOST` environment switches, which the
+section's `region` and `base_url` members state in one place instead.

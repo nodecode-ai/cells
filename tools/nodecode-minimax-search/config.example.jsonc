@@ -1,0 +1,10 @@
+{
+  // MiniMax Token Plan web search: one tool on a sk-cp- key.
+  // Secrets as references, never inline.
+  "minimax-search": {
+    "api_key_env": "MINIMAX_CODE_PLAN_KEY",
+    "region": "global",
+    "max_results": 5,
+    "timeout_seconds": 30
+  }
+}
