@@ -1,0 +1,29 @@
+nodecode-icon-index is a rewrite of minutechreview's minutechreview/hermes-icon-index:
+
+  https://github.com/minutechreview/hermes-icon-index
+  commit 807e511696189e26cc4aca0a4dca27a7fb3b52a2
+  MIT License, Copyright (c) 2026 Rayan Abdul Cader (LICENSE)
+
+Rewritten: the plugin's whole model-facing surface, as three Nodecode tools
+(icon_search, icon_get, icon_save), the /icon-index command and the manual on
+(help :icon-index). The 40-icon catalog ships as data.lisp, the same titles,
+categories, meanings and search words the plugin bundled; the search keeps the
+plugin's weights over title, tags, category and description, and its
+prefix-matching; the eight preset colours keep their codes; the four formats
+keep the plugin's file names, sizes and descriptions, and a non-orange colour
+still has only the GLB and the PNG; the embed snippets are the plugin's own
+(iframe viewer, HTML with model-viewer, React, three.js with MeshoptDecoder, a
+plain img), plus a markdown image so the icon can be shown in this chat; and
+icon_save still writes only into the folder it is given, never overwriting a
+file, creating the folders it needs. The 3D viewer URL and the pinned CDN base
+are the plugin's, and both are section settings.
+
+Left out: the Hermes Desktop pane with its spinning gallery, colour picker,
+copy-embed-code and Download GLB buttons, and the ::icon-index transcript
+directive that drew a draggable 3D card in Hermes's chat, because a Nodecode
+cell has no such pane or directive - the same icon is shown here through the
+markdown and iframe embeds icon_get answers, which a person pastes or the
+model writes. The plugin's JSON catalog is a Lisp defparameter instead of a
+parsed file, so a layer can extend it. The Python plugin's own desktop build
+script and its pane code are not carried: nothing in the cell is built from
+JavaScript, and the viewer page stays the remote page the plugin named.
