@@ -1,0 +1,23 @@
+nodecode-song-gift is a rewrite of GptsApp's GptsApp/custom-song-gift-mcp:
+
+  https://github.com/GptsApp/custom-song-gift-mcp
+  commit 2b436a21a5b68422cc009633e56dd3aa244b453e
+  MIT, Copyright (c) Custom Song Gift (declared in plugin.json)
+
+The plugin was a declarative package: a plugin.json with the ChatGPT app
+interface block and a per-tool review, an mcp.json naming the hosted MCP
+server https://customsonggift.org/api/mcp with no authentication, and one
+skill file describing the occasions and styles. It held no code at all. This
+rewrite keeps the server's four read-only tools by their own names --
+list_occasions, list_styles, guide_story_and_lyrics and get_pricing_options
+-- at the same endpoint, and speaks MCP's streamable HTTP to that endpoint
+itself through nlk:http (one initialize, then the tool), so no MCP transport,
+no Hermes runtime and no manifest are needed. Because the server serves its
+own schema at runtime and the pinned commit carries no copy of it, each tool
+declares the members worth naming, sends only what a call filled in, and
+carries an "extra" object that passes any argument of the server's own tool
+through unchanged. The skill's guidance and the manifest's description are
+the cell's manual topic, (help :song-gift), and the operator's command is
+/song-gift. The interface block is left out: display name, brand colours,
+composer icon and sample prompts are app-store metadata, and a cell has its
+own listing. Nothing of the original is vendored.
