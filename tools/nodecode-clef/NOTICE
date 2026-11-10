@@ -1,0 +1,21 @@
+nodecode-clef is a rewrite of MelMayssonOwen's MelMayssonOwen/hermes-plugins:
+
+  https://github.com/MelMayssonOwen/hermes-plugins
+  commit f203c3f897784d731ef48bc0974104a4d08cf5f8
+  MIT License, Copyright (c) 2026 Opsibyte (LICENSE)
+
+The original is an Agent Plugins v1 package: plugin.json, an mcp.json naming
+the streamable-HTTP server https://clefdrills.com/mcp, and one skill under
+skills/ that taught the model when to call the four tools the server lists.
+The rewrite keeps all four tools (find_music_guides, transpose_chords,
+spell_piano_chord, tab_to_piano_notes) with the server's own member names,
+talked to directly as JSON-RPC over the image's own HTTP call instead of by
+an MCP client, and answers them as lines rather than JSON envelopes; the
+plugin's offline transposition helper (skills/clef-music-tools/scripts/
+transpose.py) is ported into chords.lisp, so transpose_chords needs no server.
+Left out: the MCP package manifest and the skill's prose. Nodecode cells are
+directories and a slash command, not Agent Plugins packages, and the drills
+and practice instructions the skill carried are teaching text the model is
+given here as a manual topic's primer rather than as a skill file. The tool
+list is also no longer discovered from the server at run time, which is the
+one place it could change under the cell.
