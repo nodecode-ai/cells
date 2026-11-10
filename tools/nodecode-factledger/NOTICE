@@ -1,0 +1,37 @@
+nodecode-factledger is a rewrite of explorelifehus-eng's explorelifehus-eng/factledger:
+
+  https://github.com/explorelifehus-eng/factledger
+  commit 77843ab263d8678bf44ce4b50b88d62cc5ae9b7e
+  MIT, Copyright (c) 2026 Giannis (LICENSE)
+
+The rewritten plugin is the `plugin` folder of that commit: its ledger library,
+its nine tools and its skill. What stays the same is the behaviour a user gets:
+a TSV ledger of typed facts under a home of its own, one row per (scope,
+subject, predicate) holding at a time, a new value closing the row it supersedes
+with `valid_to` and `superseded_by` rather than deleting it, and the same ten
+columns in the same order, so a file written by the original reads here and the
+other way round. The verbs are the original's nine — add, show, search, history,
+compile, stale, export, check, stats — with the same arguments, the same
+refusals (a fact without a source is not written, a confidence outside the three
+is refused, a key with an empty part is refused) and the same answers: the
+active truth as of a date, the superseded history, a compiled view that never
+exceeds its budget, the stale rows with their age, a JSON export, the integrity
+check and the totals.
+
+The harness seams are Nodecode's: the config section is the cell's section
+(`path` is the original's `db_path`, resolved at call time as it was there), the
+nine tools are one tool with an `action`, the bundled skill's guidance lives in
+the tool's contract and in `(help :factledger)`, and the operator's surface is
+`/factledger`. The verbs are also exported as functions so the operator can call
+them from eval, which the original's harness had no equivalent of.
+
+Left out: the bundled skill as a file, because a Nodecode request carries every
+manual topic's one line and the full text behind `(help :factledger)` — that is
+the same trigger the skill's description was. The original's CLI (`factledger.py`
+with its `--db`, `--aliases` and `--out` flags) is left out as a separate entry
+point: `/factledger` and the exported verbs answer the same, and `compile --out`
+with them, since the ledger file is the artifact. Its NFKC normalization is
+reduced to trimming, lowercasing and collapsing whitespace, because the Lisp
+image has no Unicode compatibility fold; a key written in full-width characters
+is therefore its own key here. Its Windows rename retry is left to the home's
+atomic file seam, which writes a temp beside the file and renames once.
