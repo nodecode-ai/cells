@@ -1,0 +1,23 @@
+// The section ~/.nodecode/config.jsonc may carry for the daily edition cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it, and an absent one refuses at start because no interest is named.
+{
+  "daily-edition": {
+    // The one required member: what you want to read about, a phrase per
+    // interest. Each phrase is sent to the provider when an edition is
+    // compiled, and becomes that interest's section of the page.
+    "interests": ["fusion energy", "housing in Malaga"],
+    // How many stories one edition prints, 1 to 40.
+    "max_stories": 20,
+    // Interest phrases left out of the edition.
+    "muted": [],
+    // Words that star a story and keep it at the top of the page.
+    "watchwords": [],
+    // One interest's fetch ceiling, in seconds.
+    "timeout_seconds": 12,
+    // The query feed an interest is expanded into; {query} is the phrase.
+    "provider": "https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en",
+    // The longest answer one action gives, in characters.
+    "max_chars": 12000
+  }
+}
