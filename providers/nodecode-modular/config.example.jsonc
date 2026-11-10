@@ -1,0 +1,6 @@
+{
+  "modular": {
+    // where Modular Cloud is served; a relay's address goes here
+    "base_url": "https://api.modular.com/v1"
+  }
+}
