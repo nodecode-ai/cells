@@ -1,0 +1,32 @@
+nodecode-gmi-video is a rewrite of zkasuran's zkasuran/hermes-gmi-media:
+
+  https://github.com/zkasuran/hermes-gmi-media
+  commit 6760b29d6f9f93f47cef08702bda876fb10af652
+  Apache-2.0, Copyright 2026 zkasuran (LICENSE)
+
+What was rewritten: the original's GmiVideoProvider -- capabilities, model
+selection and generate() -- is two tools and two verbs in this cell. The same
+GMI request queue is spoken directly (GET models, GET models/<id>, POST
+requests, GET requests/<id>) through the cell's own HTTP call, in place of the
+original's httpx client; the live-schema mapping is carried over whole, so a
+model's declared parameter names, option lists, nearest-value clamping, image
+URL check, required-default fill, payload validation and dropped-option report
+all behave as gmi_media.py does; the submit-and-poll loop keeps its backoff,
+its 5xx retries, its terminal statuses and its deadline; the result download
+keeps the HTTPS-only, no-bare-address check and the byte cap; the one-hour
+model catalog keeps its TTL; and the price text, the interval price unit, the
+request id and the scrubbed error text are the original's. The four
+paragraphs it gave its picker are the (help :gmi-video) primer. The
+GMI_API_KEY it read through Hermes secret scope is the gmi-video section's
+api_key or api_key_env, with the environment variable still read, and the
+Hermes video cache is the section's output_dir or the organism's cache.
+
+What was left out, and why: the VideoGenProvider registration itself, and with
+it register(), the capabilities() advertisement, get_setup_schema() and
+list_models(), which a Hermes video picker read and a Nodecode has no lane
+for -- the same data is gmi_video_models and the section's model and
+image_model; the ThreadPoolExecutor catalog refresh, because one tool call
+reads the catalog and there is no picker that must answer in 4.5 seconds; the
+reference-image list, which the original also ignored and reported; and the
+Hermes-only secrets scope and dotenv handling. LICENSE is the original
+repository's LICENSE, unchanged.

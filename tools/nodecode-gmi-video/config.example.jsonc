@@ -1,0 +1,12 @@
+// The gmi-video section of ~/.nodecode/config.jsonc, as /settings writes it.
+// A key comes from console.gmicloud.ai.
+{
+  "gmi-video": {
+    "api_key": "...",                 // or leave it out and export GMI_API_KEY
+    "model": "Minimax-Hailuo-02",       // the text-to-video default
+    "image_model": "Minimax-Hailuo-2.3-Fast", // the image-to-video default
+    "timeout_seconds": 900,               // how long one job may take
+    "poll_seconds": 2,                    // between two status checks
+    "output_dir": "~/Videos/gmi"          // where a finished video is saved
+  }
+}
