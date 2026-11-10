@@ -1,0 +1,28 @@
+nodecode-eyes is a rewrite of Agenziamaia's Agenziamaia/eyes:
+
+  https://github.com/Agenziamaia/eyes
+  commit 5f30bd487be26ed9b074fddd3a4408709b92154c
+  MIT, Copyright (c) 2026 Giulio Di Stefano (agenziamaia) (LICENSE)
+
+What was rewritten: the one measurement engine, in Common Lisp against
+Nodecode's own seams. The plugin's transform_tool_result hook is this cell's
+:TOOL point hook, which wraps one tool dispatch and appends the notes to the
+tool's own answer; ffprobe and ffmpeg are still the only things run, with the
+same arguments the plugin used -- 96x96 grayscale frames for filled and
+motion, ebur128 and silencedetect for loudness and silences, and an 8x1 tile
+contact sheet. The three faults the plugin names (almost black or white,
+nearly empty frame, barely moves, effectively silent) and the measured note's
+wording are its own, so a reader of one recognises the other. The kill switch
+is the section: "enabled": false, or the cell switched off in /cells.
+
+What was left out, and why: the contact sheets go to the folder the section
+names rather than into the harness's cache, because a Lisp cell has one folder
+it was given and writes nowhere else; the "written in the last five minutes"
+window, the three-files-a-result cap and both timeouts are section settings
+here rather than constants; a tool the result does not name but the call's
+arguments do is found in both, as the plugin found it by serialising the
+arguments; and the plugin's $EYES_OFF environment switch is the section's own
+"enabled": false, which the loader already honours. Two tools, eyes_measure
+and eyes_status, and the /eyes command are additions: a model that wants to
+measure a file it did not just write, and an operator who wants to see what
+the cell is set to, had nothing to call in the original.
