@@ -1,0 +1,13 @@
+{
+  // The two lanes and the model each runs on, as provider/model the way
+  // (models "provider") lists them. Heavy plans and decides; light implements.
+  "coding-route": {
+    "heavy": "openai-codex/gpt-6-astra",
+    "light": "openai-codex/gpt-5.6-luna",
+    // Optional: one rung of each model's own ladder. Empty keeps the model's.
+    "heavy_effort": "high",
+    "light_effort": "medium",
+    // The longest coding_route_result waits for an answer.
+    "timeout_seconds": 1800
+  }
+}
