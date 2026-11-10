@@ -1,0 +1,30 @@
+nodecode-linear-digest is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-linear-digest:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-linear-digest
+  commit cb8cac04dbe3839bf75557757df56d3f3c31e3e9
+  MIT License, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+The plugin was a Hermes tool, a skill and a scheduled no-agent script over one
+GraphQL query: the open Linear issues assigned to one personal API key, in four
+groups -- overdue, due today, not updated for N days, and the rest -- with the
+headings counted, the issue lines tab-separated, at most thirty of them shown,
+a title forced onto one line, a URL kept only when it is https on linear.app,
+and up to ten pages of fifty read per run. This rewrite keeps that query and
+that list: the same document, the same four groups and order, the same caps and
+the same words for an unreadable due date or a refused URL, answered as the
+linear_digest tool, printed by /linear-digest, and explained on (help
+:linear-digest). It speaks the same GraphQL endpoint directly through nlk:http,
+with the key read from the cell's section or from LINEAR_API_KEY and sent as
+the Authorization value with no Bearer prefix, to api.linear.app and nowhere
+else. Nothing is written to Linear in either.
+
+What was left out: the schedule, unschedule and status subcommands and the
+morning script they wrote, because a Nodecode cell is started by the gateway and
+a prompt that runs on a clock is the cron cell's job; the profile-scoped secret
+reader, the settings file under the plugin's own directory and the loopback
+rehearsal variable, which existed for that script's own tests; the registered
+skill, whose guidance is now the manual topic the model reads every turn; and
+the timezone re-binding the script did for a child process, since the list is
+built in this image on the clock the cell already reads. Nothing of the original
+is vendored: there was no code to reuse, only the wire it spoke and the rules
+it enforced.
