@@ -1,0 +1,37 @@
+nodecode-permission-canvas is a rewrite of TANGBUDU's TANGBUDU/permission-canvas:
+
+  https://github.com/TANGBUDU/permission-canvas
+  commit 3a3086066051f5cc7a6ee52c20d62395b814da3f
+  MIT, Copyright (c) 2026 TANGBUDU (LICENSE)
+
+The original was a Hermes Agent computer-use backend: it wrapped a desktop
+driver, kept a policy file of per-control rules (green operate, blue read
+only, yellow one approval, black invisible and masked), matched a captured
+accessibility tree against those rules, checked every dispatched input, and
+redacted the hidden controls out of the screenshot and the tree before the
+model saw them. Its policy engine is policy.lisp here, rule for rule: the
+same four levels with the same ranks, the same scope fields (app, role,
+label, label_regex, window_title_regex, pid, window_id), the same
+"the most restrictive match wins", the same fail-closed reading of a scope
+field the driver did not report (with the same exception for a green rule),
+the same unidentified level for an unlabeled control in a restricted
+window, the same concealed-by-overlap and concealed-by-descent withholding,
+the same title privacy pattern, the same fixed content-free messages, and
+the same one-operation approval keyed on the action, the control's
+fingerprint, the arguments and a digest of the whole policy. Its approval
+store is approvals.json here: pending, approved once, denied - the model
+never approves itself.
+
+What the rewrite adds is the boundary the cell has instead of a driver
+wrapper: the model asks permission_canvas_check before it acts and
+permission_canvas_observe before it looks, and a person writes the rules
+and grants one exact operation with /permission-canvas. What it left out is
+what needed the original's runtime and a Windows desktop: the cua-driver
+MCP transport and its screenshot capture, the Tkinter Canvas panel (its
+tree outline, its window picker and its private preview), the accessibility
+helper, the focus-provenance model that refused typing after an unproven
+focus change, the browser occlusion retry, and the OS file lock that paused
+the agent while the panel was open - a pause is an explicit command here
+instead. Nothing of the original is bundled and nothing of it runs: the
+cell is Lisp over files in one folder, with no key, no network and no
+subprocess.
