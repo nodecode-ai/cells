@@ -1,0 +1,21 @@
+nodecode-neuralwatt is a rewrite of 0xGingi's 0xGingi/neuralwatt-hermes:
+
+  https://github.com/0xGingi/neuralwatt-hermes
+  commit 008e6147b9376527579b4446467db40d9423f8da
+
+MIT, Copyright (c) 2026 0xGingi (LICENSE)
+
+The nine read-only tools are rewritten in Common Lisp against Nodecode's cell
+contract, with the same endpoints, the same parameters and the same data: service
+health, the model catalog and its prices, quota, a combined dashboard, energy,
+usage breakdowns, request rows and session analytics. What changed is the
+plumbing around them: the key is read from the cell's own config section rather
+than from the harness's secret scope, every answer is formatted text rather than
+a JSON string, and the aggregation a comparison or a ranking needs is computed
+here from the same per-request pages. Two shapes of the original are left out
+because the contract has no equivalent: its per-tool emoji and toolset label,
+and its `check_fn`, which hid the six account tools when no key was set -- this
+cell needs the key to start at all, so all nine tools appear together. The
+keyless call of the three public views (health, models, prices) is therefore not
+kept, and neither is the `NEURALWATT_BASE_URL` environment override: the base URL
+is a section member, which is where a Nodecode cell declares its host.
