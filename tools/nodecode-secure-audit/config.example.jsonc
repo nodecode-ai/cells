@@ -1,0 +1,17 @@
+{
+  // secure-audit: every member is optional; these are the defaults.
+  "secure-audit": {
+    // Risk score, 0-100, at or above which a scan answers block. A critical
+    // rule -- an instruction override, a destructive command -- blocks alone.
+    "block_score": 80,
+    // Risk score at or above which a scan answers review.
+    "review_score": 50,
+    // How much of one text a scan reads; the rest is reported as unscanned.
+    "scan_max_length": 200000,
+    // The character a masked span repeats.
+    "mask_char": "*",
+    // Another home for security_audit to read; "" reads this operator's own
+    // Nodecode home.
+    "audit_path": ""
+  }
+}
