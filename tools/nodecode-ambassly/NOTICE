@@ -1,0 +1,31 @@
+nodecode-ambassly is a rewrite of MelMayssonOwen's MelMayssonOwen/hermes-plugins:
+
+  https://github.com/MelMayssonOwen/hermes-plugins
+  commit f203c3f897784d731ef48bc0974104a4d08cf5f8
+  MIT License, Copyright (c) 2026 Opsibyte (LICENSE)
+
+Rewritten: the plugin's `ambassly` package -- `mcp.json`'s one streamable-HTTP
+server at https://ambassly.com/api/mcp, keyed by a Bearer scoped key, and the
+`ambassly-affiliate-program` skill's playbook -- as one Nodecode cell. The
+cell speaks that server's own protocol (initialize, notifications/initialized,
+tools/list, tools/call over JSON-RPC, reading a JSON or an event-stream
+answer) instead of needing an MCP client beside it, so every tool the server
+offers is still reachable, under the same key and at the same endpoint, and
+the key is sent there and nowhere else. The skill's playbook is the text of
+(help :ambassly), unchanged in substance: pick the merchant side or the
+creator's side first, confirm a program's values before creating it, treat
+each commission as a person's decision, one link per piece of content, report
+the numbers returned and never estimate a missing one, and keep keys and
+Stripe signing secrets out of messages.
+
+Left out, and why: the plugin's `plugin.json` extension block that told Hermes
+to ask before a write-capable call. Nodecode has no per-server trust flag, so
+the cell carries the same posture in two ways instead -- the tool description
+says which calls are writes and that a commission is the person's decision,
+and the playbook asks for an explicit answer before approve_commission,
+reject_commission, create_program or add_stripe_webhook_secret. Also left
+out: the server's per-tool input schemas, which are still served and still
+read (the cell hands the model the catalog at run time) but are not projected
+onto two Nodecode tools, because the tool list is the server's and changes
+there, not here. The Claude Code and Cursor snippets in
+`references/setup.md` belong to other clients and have no counterpart here.
