@@ -1,0 +1,18 @@
+nodecode-island is a rewrite of ethanwiegert's ethanwiegert/agent-inception:
+
+  https://github.com/ethanwiegert/agent-inception
+  commit 4143348e3b5180a95ec76d23fe6443c1a106ec1e
+  MIT License, Copyright (c) 2026 Ethan Wiegert (LICENSE)
+
+Rewritten: the plugin's two halves that a Nodecode cell can carry, which were a
+manifest wiring the game's MCP server over streamable HTTP and a bundled skill
+that taught a villager how to play. The cell speaks that MCP endpoint itself
+(initialize, notifications/initialized, tools/list and tools/call over
+nlk:http, one session a run, JSON or event-stream answers) and carries the
+skill's playbook as (help :island), next to two tools, /island and the
+`island` section that holds the endpoint. Left out: the Desktop half, a
+Hermes-only viewer pane and the settings page that fed it, because Nodecode has
+no plugin frame to register; the plugin's `trust: full` declaration, which was
+Hermes' way of skipping per-call approval, because Nodecode asks the model for
+the call and nothing else; and the game itself, which the original never
+bundled either.
