@@ -1,0 +1,33 @@
+nodecode-ark is a rewrite of medomohamed22's medomohamed22/hermes-ark:
+
+  https://github.com/medomohamed22/hermes-ark
+  commit a23e529c1f636aa49d974576cdc5cb15fc8242d3
+  MIT, Copyright (c) 2026 medomohamed22 (LICENSE)
+
+What was rewritten. The original kept a whole Hermes home -- memory, SOUL,
+skills, config, cron, sessions, every profile -- in a repository it owned:
+snapshots deduplicated by content, an AES-256-GCM seal whose key was wrapped
+by the passphrase, a retention policy, item-level restore with a preview, a
+status that noticed a brain that had suddenly shrunk, and a model tool
+(`ark_checkpoint`) plus `/ark` for the operator. This cell keeps that design
+on one narrower subject, a Nodecode home: `config.jsonc` and the cells folder
+(layer, memory, skills, installed cells), content-addressed objects, a seal,
+snapshots with manifests, the keep-last/hour/day/month policy, `/ark status`,
+`snap`, `list`, `show`, `diff`, `verify`, `restore`, `prune`, the
+`ark_checkpoint` tool, and the size-drop alarm. The store is local; the
+manifest names paths and sizes, never file text outside the sealed objects.
+
+What was left out, and why. The off-site copy (`push`/`pull`/`repair`) and
+its S3-compatible backend: SigV4 signing and multipart transfer would more
+than double the cell for a feature a folder sync does just as well, so the
+repository is a folder you may point at a drive or a synced directory. The
+Hermes-only scopes (`memory`, `soul`, `cron`, `skill:NAME`, `profile/...`)
+become the home's own paths, restored by path. The tool-execution middleware
+and tamper watchdog that stopped an agent from deleting its own backups are
+not rewritten: a Nodecode cell cannot see another cell's tool calls, so the
+declaration's own `ark_checkpoint` and `/ark` remain, and the alarm moved
+into `/ark status`, where the operator reads the drift and the shrink. The
+attempt at AES was replaced by a keyed HMAC-SHA-256 stream with an
+encrypt-then-MAC tag, because the image carries one digest and no block
+cipher; a passphrase change (re-keying) is likewise not offered. Web and
+desktop pages of the original are not ported: `/ark` is the surface here.
