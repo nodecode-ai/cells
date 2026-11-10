@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell — documentation,
+// not config: the folder gets pushed and holds no secret. The declaration in
+// cell.lisp is the authority; this is an illustration of it. A present section
+// is enabled; "enabled": false vetoes it.
+{
+  "invinoveritas-receipts": {
+    "enabled": true,
+    // the service base; there is no other endpoint
+    "api_url": "https://api.babyblueviper.com",
+    // the environment variable holding the key — never the key itself here
+    "api_key_env": "INVINOVERITAS_API_KEY",
+    "timeout_seconds": 10,
+    "listed": 10
+  }
+}

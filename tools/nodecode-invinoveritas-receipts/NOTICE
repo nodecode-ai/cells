@@ -1,0 +1,26 @@
+nodecode-invinoveritas-receipts is a rewrite of babyblueviper1's babyblueviper1/hermes-invinoveritas:
+
+  https://github.com/babyblueviper1/hermes-invinoveritas
+  commit 6a4f9c7b49beac69899f18f3bcf1d0b340297624
+  MIT, Copyright (c) 2026 Invinoveritas SpA (LICENSE)
+
+What was rewritten: the whole plugin, in Common Lisp against the Nodecode cell
+contract. The canonical JSON (sorted keys, compact, UTF-8 as it stands), the
+32-byte nonce kept here, the SHA-256 of the decision context and the two
+salted commitments are the same shapes the original hashed and asked for;
+POST /decision-receipt with the same question, options, choice, context hash
+and decider object, and the same bearer key, is the same call; the local
+ledger is still one JSON object a line under the plugin's own data, holding
+the event, the receipt, the salt, the choice and the context, so a receipt can
+be opened later. Verification is the same free, unauthenticated
+POST /verify-proof.
+
+What was left out: Hermes's three hooks — post_approval_response,
+post_llm_call and on_session_end — with their background thread, their
+turn-ledger snapshot (turn_scope) and their scope switch. Nodecode has no
+Guardian approval callback of that shape, so the rewrite is a verb the model
+or the operator calls: three tools (issue_receipt, verify_receipt,
+check_receipt) and /invinoveritas-receipts, rather than a listener. The receipt itself, and
+everything that makes one checkable, is unchanged. Opening a receipt here is a
+recomputation in the cell (check_receipt) where the original left it to the
+operator's own sha256sum.
