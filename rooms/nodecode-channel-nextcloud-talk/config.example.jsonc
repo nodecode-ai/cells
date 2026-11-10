@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "channels": {
+    "nextcloud-talk": {
+      "server_url": "https://cloud.example.com",
+      "username": "nodebot",                       // the account's Nextcloud user id
+      "app_password_file": "~/.nodecode/secrets/nextcloud-talk.password",  // or "app_password_env"
+      "allowed_users": ["kim"],                     // the Nextcloud user ids it answers
+      "free_rooms": [],                            // room tokens that answer every message
+      "poll_timeout_seconds": 10,
+      "discovery_seconds": 60,
+      "max_rooms": 20
+    }
+  }
+}
