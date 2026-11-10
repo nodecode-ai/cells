@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config. A present section is enabled; set
+// "enabled": false to switch it off. The declaration in cell.lisp is the
+// authority.
+{
+  "brownout": {
+    "enabled": true,
+    "poll_seconds": 15,       // how fast a power loss is noticed
+    "critical_pct": 15,       // park itself at or below this charge
+    "critical_minutes": 10,   // ...or below this measured runway
+    "auto_resume": true,      // let tool calls through when power returns
+    "ups": "",                // a NUT UPS name for upsc; empty reads the OS
+    "allow_when_parked": []   // tools that still run while parked
+  }
+}
