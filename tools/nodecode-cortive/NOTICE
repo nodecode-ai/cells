@@ -1,0 +1,7 @@
+nodecode-cortive is a rewrite of KadenDevAi's KadenDevAi/hermes-cortive:
+
+  https://github.com/KadenDevAi/hermes-cortive
+  commit 3eb2f4935994c6b7ea0d7067428d3051f9388fc6
+  MIT, Copyright (c) 2026 Kaden Desmarais (LICENSE)
+
+The original is a Python memory provider for Hermes Agent: it opened the Cortive desktop app's SQLite library read-only, registered three tools (cortive_search, cortive_get, cortive_collections) and a system-prompt block, injected up to three captures per turn, and registered two hooks - one refusing another tool's call that pointed at the library folder, one hiding secrets saved in the library from every other tool's output. This rewrite keeps the three tools, the ranking (bm25 normalised against the best candidate, plus recency, tag and title boosts; more matched words first; duplicates by content hash collapsed; encrypted and deleted captures skipped), the source and date filters, the read-only handle (pragma query_only), the first hook, a /cortive command and the manual, all in Common Lisp against Nodecode's cell contract, reading the same file with the SQLite binding the image already loads. Left out: the local-socket meaning search through the running Cortive app (this cell matches words only), the automatic per-turn recall, the secret-hiding transform hook, and the password/secret patterns themselves - a call that names the library is refused instead. No Python, no bundled code of the original, nothing fetched at run time.
