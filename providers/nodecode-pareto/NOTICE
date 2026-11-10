@@ -1,0 +1,16 @@
+nodecode-pareto is a rewrite of pareto-inference's pareto-inference/hermes-pareto-provider:
+
+  https://github.com/pareto-inference/hermes-pareto-provider
+  commit 647bd6f8b71aee079eec2b0e954cfb18b4eb6e2a
+  MIT License, Copyright (c) 2026 Spice Finance Inc (Pareto Inference) (LICENSE)
+
+The plugin is one module that registers a provider profile; the rewrite is the
+same profile as a Nodecode cell: its name, aliases and description, its
+default address and `PARETO_API_KEY`, its three models with the 1M window,
+tool calls and reasoning it declared for them, its reasoning_effort ladder
+with `ultra` sent as `max`, and its bare-name to `vendor/model` mapping. The
+Hermes-only parts were left out because Nodecode has no equivalent: the
+models.dev lookup id, the prompt-cache-key and auxiliary-model hints (the chat
+lane already streams every request and Pareto streams) and the profile
+inheritance the plugin used only to supply those. No plugin code runs here:
+the cell is Common Lisp against Nodecode's own provider seams.

@@ -1,0 +1,6 @@
+{
+  "pareto": {
+    // where Pareto Inference is served; a relay's address goes here
+    "base_url": "https://api.paretoinference.com/v1"
+  }
+}
