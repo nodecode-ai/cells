@@ -1,0 +1,21 @@
+// nodecode-memory-bridge: the operator's section, in ~/.nodecode/config.jsonc.
+// A placeholder name, so nothing outside this folder is touched.
+{
+  "memory-bridge": {
+    // The folder of markdown notes the model may search and read.
+    "root": "~/shared-memory",
+    // Root-relative patterns that may be read: * stays inside one folder
+    // name, ** spans any number of them. Deny always wins over allow.
+    "allow": ["projects/**", "decisions/**"],
+    "deny": ["**/private/**"],
+    // How much one search, one snippet and one read may answer.
+    "max_results": 5,
+    "snippet_chars": 300,
+    "total_chars": 4000,
+    "read_chars": 8000,
+    // The walk's bounds: a file bigger than this, or one not UTF-8, is skipped.
+    "max_file_kb": 256,
+    "max_depth": 8,
+    "max_files": 2000
+  }
+}
