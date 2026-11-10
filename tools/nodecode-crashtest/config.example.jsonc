@@ -1,0 +1,13 @@
+// The crashtest cell's section of ~/.nodecode/config.jsonc.
+// Nothing here is required: a present section runs on these defaults.
+{
+  "crashtest": {
+    // Most faults in one armed turn.
+    "max_faults": 3,
+    // Chance, in percent, that each later eligible call faults; the first of
+    // each family always does.
+    "fault_percent": 50,
+    // Add the rating under the reply. The run is saved either way.
+    "show_scorecard": true
+  }
+}

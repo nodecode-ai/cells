@@ -1,0 +1,36 @@
+nodecode-crashtest is a rewrite of salch-cred's crash-test:
+
+  https://github.com/salch-cred/crash-test
+  commit 00f30620de92a470721b19a158fe26ceee8b0025 (2026-11-08)
+  MIT License, Copyright (c) 2026 visual-gate contributors (LICENSE)
+
+The plugin was 900 lines of Python registering five Hermes hooks and one slash
+command. This rewrite keeps what a user gets from it -- the four fault
+profiles, the loud/silent safety line, the seed that makes runs comparable,
+the scoring table and the one-star cap, the scorecard under the reply, the
+saved run and the model comparison, and the practice drill with its known
+answer -- in one Common Lisp file against the cell contract.
+
+The five Hermes hooks became the organism's own seams: `pre_llm_call` is the
+`:ROUND` point at round one, `pre_tool_call` and `transform_tool_result` are
+the two halves of one `:TOOL` hook, and `transform_llm_output` is advice on
+the assistant-message record, where the turn's final text is durable and the
+scorecard can ride it. `on_session_end` became the round-one handover that
+closes a run the turn never replied under, so a run still cannot leak past
+its turn.
+
+Left out, and why:
+
+- The HTML report. The rewrite saves each run as one readable Lisp form under
+the home's `crash-test/reports/` folder, which is what `/crashtest report`
+and `/crashtest compare` read; a browser page of it added a stylesheet, not a
+rating.
+- The `CRASH_TEST` environment variable. It existed to arm a run from a
+scripted Hermes process; `/crashtest start profile seed` is the way in here.
+- Hermes' tool names. The read-only list and the read-only `eval` forms are
+Nodecode's (`look`, `read`, `websearch`, `(sh "ls -la")`), and the eager
+tool set the original exempted (`clarify`, `memory`, `todo`) is replaced by
+the session verbs this organism has.
+
+The fault wording, the profiles, the point table and the star thresholds are
+the original's, unchanged.
