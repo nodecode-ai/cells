@@ -1,0 +1,38 @@
+nodecode-lastscanned is a rewrite of dragonhuntr's dragonhuntr/lastscanned-plugin:
+
+  https://github.com/dragonhuntr/lastscanned-plugin
+  commit 7d51abaf682fd21c2efa611ef4d51f415e282548
+  MIT, Copyright (c) 2026 dragonhuntr (LICENSE)
+
+The rewritten plugin is the whole repository at that commit: a portable Agent
+Plugins v1 package with no program of its own -- one Streamable HTTP MCP
+server at https://mcp.lastscanned.com/mcp, declared in mcp.json, and one
+skill in skills/lastscanned/SKILL.md. All four of the server's tools are
+carried over with their names and their arguments: track_package and
+track_packages (a tracking number or an ocean container number, with an
+optional carrier id), get_rates (USPS, UPS and FedEx quotes between two
+postal codes, with weight, weight unit, residential, dimensions and their
+unit, carriers, and the two country codes) and list_carriers. The wire is
+MCP's streamable HTTP as the plugin declares it: one POST per JSON-RPC
+message to the endpoint, initialize and the initialized notification once
+per start with the Mcp-Session-Id echoed on every later request, and an
+answer that is either one JSON body or an SSE stream whose data: lines carry
+the message -- the framing the plugin's skill never had to speak, because a
+client spoke it for the plugin. The skill's guidance is the cell's manual,
+(help :lastscanned): the four tools and what each takes, that a tracking
+number's carrier is detected unless it is named, the ocean lines that work
+and that a leased container needs its line named, that a quote buys nothing,
+that delivered on a container means the empty box came back, and that each
+tracked number and each quote counts toward the account. LICENSE is the
+repository's LICENSE, unchanged.
+
+What was left out, and why: Agent Plugins v1 itself (plugin.json, mcp.json
+and the skill packaging), because a cell is a Lisp system and the section
+below it is its manifest; the OAuth sign-in that documentation/NATIVE-SETUP.md
+offers, because a browser grant needs a callback this cell does not host, so
+the cell takes an API key -- written, named by an environment variable, or
+none at all for the free daily allowance; the readOnlyHint note, which in
+Hermes skips an approval prompt the cell does not have, so the manual says
+instead that a call counts toward the account; and the REST API's watches and
+webhooks, which the plugin did not ship either. Python and the MCP client
+library it would have used are replaced by the image's own nlk:http.
