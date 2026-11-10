@@ -1,0 +1,34 @@
+nodecode-fashio is a rewrite of fashiolabs's fashiolabs/fashio-agent-plugin:
+https://github.com/fashiolabs/fashio-agent-plugin
+commit 1901c1a576e752cbd1496e79006882d2f6c61a36
+MIT, Copyright (c) 2026 Fashiolabs (LICENSE)
+
+What was rewritten: the capability the original's package points at — Fashio's
+AI fashion photography on the user's own key. The original is configuration
+only (an Agent Plugins v1 plugin.json and mcp.json naming Fashio's hosted MCP
+server, plus one skill), and that server wraps Fashio's public REST API, so the
+rewrite speaks that API directly from the cell: GET /v1/account for the diamond
+balance and plan; GET /v1/models, /v1/fashion-models, /v1/venues, /v1/poses
+and /v1/ready-template-sets for the catalogues a generation picks from;
+POST /v1/uploads for an image, read by signature as the endpoint reads it;
+POST /v1/generations and GET /v1/generations/{id} for a job and its result
+URLs, with the same toolId, images, pose, ratio, customPrompt, motionPrompt,
+targetRatio, jewelryType, shotType, stylePreset, backgroundColor and duration
+body the documentation specifies, and a preset replayed through templateSetId;
+GET, POST and DELETE /v1/template-sets for the saved presets; and
+POST /v1/catalog-jobs for a curated ready set with optional shotIds, its per
+shot charge and its pack progress. The credential is the same bearer API key,
+read from FASHIO_API_KEY unless the section names another variable. The
+skill's instruction to state the price and wait for the user's yes became
+confirm: true on every call that spends diamonds, and on the delete.
+
+What was left out: the MCP transport itself (initialize, tools/list,
+tools/call and its thirteen tool descriptions), which is the harness's way of
+reaching the same API and has no meaning once the tools are native; the
+original's markdown skill and its Agent Plugins and Claude Code manifests,
+whose prose lives here as (help :fashio), the tools' own descriptions and the
+section's guide; the upload_image tool's base64 body, replaced by a local path;
+and the three ready-set tools' separate wrappers, folded into
+fashio_catalog kind:"ready_sets" and fashio_catalog_job. Nothing else of the
+original is missing: the tool set is served by the remote server at run time,
+so pinning it was never possible there either.
