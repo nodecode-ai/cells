@@ -1,0 +1,20 @@
+nodecode-dyscalculia is a rewrite of Dyscalculia-io's Dyscalculia-io/dyscalculia-agent-plugin:
+
+  https://github.com/Dyscalculia-io/dyscalculia-agent-plugin
+  commit a8083b1ba3667998025ed1bab15500ed8096ac35
+  MIT, Copyright (c) 2026 Dyscalculia.io (LICENSE)
+
+Rewritten: the plugin was configuration only -- one hosted MCP server and one
+skill -- so the rewrite speaks that same endpoint (https://mcp.dyscalculia.io/mcp)
+from Lisp with the image's own HTTP call, and gives its six read-only tools as
+six model tools in the DYSCALCULIA package, plus /dyscalculia and a manual
+topic. The skill's guidance -- present a range across studies, cite the study
+behind a figure, never state a figure the tools did not return, and the test is
+a screening not a diagnosis -- is the primer (help :dyscalculia) answers.
+
+Left out: the plugin's install and enable lines, which were Hermes's own, and
+the Agent Skills packaging (`skills/dyscalculia-research/SKILL.md`, npx
+`skills add`), which is the same text as the primer and would be a second copy
+to keep in step. The server is spoken, not reimplemented, so the figures stay
+the publisher's; the cell adds one thing the plugin did not have, a max_chars
+bound on how much of an answer reaches the model.
