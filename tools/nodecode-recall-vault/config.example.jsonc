@@ -1,0 +1,20 @@
+{
+  // Nothing here is required: a fresh vault starts with a 1 NEAR
+  // per-transaction cap, a 2 NEAR daily cap, a 0.5 NEAR confirm threshold and
+  // the original's demo testnet allowlist. /recall-vault set changes them.
+  "recall-vault": {
+    // Where the rules, today's spending and the remembered rules are kept,
+    // under the home unless the path is absolute. The ledger, ledger.json,
+    // sits beside it.
+    "store_file": "recall-vault/policy.json",
+    // How many decisions the audit ledger keeps.
+    "max_ledger": 200,
+    // Ask "Allow once" or "Deny" before a payment above the confirm threshold
+    // runs; false blocks it instead.
+    "confirm_by_ask": true,
+    // How long that question waits, in seconds.
+    "ask_seconds": 120,
+    // Put the rules in front of the model at every request.
+    "inject": true
+  }
+}
