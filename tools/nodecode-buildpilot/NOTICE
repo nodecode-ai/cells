@@ -1,0 +1,25 @@
+nodecode-buildpilot is a rewrite of Justnevo's Justnevo/buildpilot:
+
+  https://github.com/Justnevo/buildpilot
+  commit 037d8eda0ba53d741e4f0bcfdc246cc6bab1dcc7
+  MIT, Copyright (c) 2026 BuildPilot contributors (LICENSE)
+
+Rewritten: the plugin's whole surface, as Common Lisp against the Nodecode
+cell contract. The six tools keep their names and their arguments
+(add_project, list_projects, add_task, update_task, checkpoint,
+get_project_context), the three task states are the same, and a project's
+context is still its details, its tasks and its newest checkpoint in one
+answer. The schema that was built in Python with CREATE TABLE IF NOT EXISTS is
+one JSON document holding the same three lists and the same id counters,
+written atomically and created on first use; the SQLite driver and the
+Python runtime are gone. list_projects gained an optional search over a
+project's name and description, /buildpilot was added to show the store to a
+person, and checkpoints_kept bounds how many checkpoints one project keeps.
+
+Left out: the Python SQLite layer itself (sqlite3, its connection context
+manager and the row-to-dict conversion), which the JSON document replaces,
+and the Hermes profile directory the database path was derived from, which is
+the Nodecode home here. Nothing of the original's behaviour was dropped: the
+same six verbs, the same three tables' fields, and the same refusals on an
+empty name, an unknown project, an unknown task and a status outside the
+three.
