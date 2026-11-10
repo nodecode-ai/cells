@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "gmi-speech": {
+    "api_key": "",                     // the GMI Cloud key; or name the variable below
+    "api_key_env": "GMI_API_KEY",      // read when api_key is empty
+    "model": "minimax-tts-speech-2.6-turbo", // empty: the first speech model GMI accepts
+    "voice": "English_expressive_narrator",  // empty: the model's own default
+    "speed": "",                      // a number; the model clamps it to its range
+    "format": "mp3",                  // mp3, wav, flac or ogg; a model falls back to what it offers
+    "directory": "voice/",            // where the recordings are kept, under the home
+    "api_base_url": "https://console.gmicloud.ai/api/v1/ie/requestqueue/apikey",
+    "poll_timeout_seconds": 300        // how long one job is followed; 30 to 1800
+  }
+}

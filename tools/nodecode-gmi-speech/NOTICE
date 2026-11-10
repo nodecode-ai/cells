@@ -1,0 +1,32 @@
+nodecode-gmi-speech is a rewrite of zkasuran's zkasuran/hermes-gmi-media:
+
+  https://github.com/zkasuran/hermes-gmi-media
+  commit 6760b29d6f9f93f47cef08702bda876fb10af652
+  Apache-2.0, Copyright (c) 2026 zkasuran (LICENSE)
+
+The rewritten part is the repository's gmi-speech plugin: a Hermes text-to-speech
+provider over GMI Cloud's request queue (gmi_media.py and __init__.py). Its wire
+is carried over as it was -- GET /models, GET /models/<id>, POST /requests with a
+model and a payload, GET /requests/<id> until the job finishes, then the
+audio_url in the outcome. So is what it did with a schema: the parameter names
+discovered from the model's own declaration (voice_id or voice, prompt or text,
+format or audio_encoding, speed or speaking_rate), an unsupported container
+falling back to one the model offers together with the file extension that
+container names, a pace clamped to the model's range, a required parameter
+filled from its declared default, an invalid voice or option refused with the
+values there are, and the download restricted to HTTPS on a public hostname,
+following a few redirects, under a 50 MB cap, written beside the target and
+moved into place. The speech model preference (minimax-tts-speech-2.6-turbo,
+then inworld-tts-1.5-mini), the two fallback voice names, and the hour the
+catalog was cached for are the plugin's too.
+
+What was left out, and why: the Hermes TTSProvider registration itself (there is
+no voice pipeline to join in a cell -- the same wire is three tools and a
+command); the image and video halves of the shared gmi_media module, whose
+request shapes and picker only exist for the sibling plugins; the catalog that
+read every model's schema at once with a thread pool, because this cell reads
+the one schema a call needs, once an hour, and lists the ids with a single
+request; the price text and model picker metadata, which the Hermes setup screen
+read and a tool call does not need; and the scrub-every-field pass over a
+response, since here the credential is removed from what a failure shows and no
+user media path is ever sent.
