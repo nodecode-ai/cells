@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "hyprland": {
+    "enabled": true,
+    "pointer_bin": "~/.local/bin/hypr-vinput",
+    "capture_width": 1600,
+    "grid": true,
+    "ruler_step": 200,
+    "scope": "screen",
+    "enforce_target": true,
+    "capture_dir": "hyprland-captures/"
+  }
+}
