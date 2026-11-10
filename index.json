@@ -108,7 +108,7 @@
     {
       "name": "nodecode-acp",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "0463692b09fdffde99aef8a55103b5ff10fa722f",
+      "commit": "3308a2bf2f8adfc87d0bf383fbee5ac18ee296ff",
       "path": "providers/nodecode-acp",
       "description": "Claude Code, Codex, Gemini CLI or any ACP agent as a session's agent",
       "license": "MIT",
