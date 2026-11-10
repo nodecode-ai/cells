@@ -1,0 +1,29 @@
+nodecode-jp-address is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-address:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-address
+  commit 318384409054e0d43329ed4cf002ea61014f3d6c
+  MIT License, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+Rewritten: the plugin's one tool, `address_split`, as a Nodecode tool of the
+same name beside a `/jp-address` command; the two files it reads from
+Geolonia's published address data (the national prefecture/municipality list
+and one municipality's town file); the normalization that drops separators
+and folds fullwidth digits and the fullwidth hyphen; the longest-prefix match
+through prefecture, municipality and town, with the boundary rule that keeps a
+one-character town from swallowing a longer name; the digit run before 丁目,
+条, 線, 号, 地割 or 番町 read as the kanji numeral the file spells; the loose
+Arabic form that lists both readings when a chome-less row shares the name;
+the coarser-but-safe rule that refuses a level 3 answer when a longer sibling
+name exists; the point taken from the town, else the municipality, else the
+prefecture, with the level that says how coarse it is; the levels, the
+`other` remainder, the refusal statuses and the CC BY 4.0 attribution. The
+`JP_ADDRESS_BASE_URL` environment variable became the section's `base_url`,
+checked here because it becomes a URL.
+
+Left out: Unicode NFKC beyond the forms an address is written in, so
+compatibility kanji and halfwidth kana are compared as written rather than
+folded (the original folded them); the redirect guard and the gzip and byte
+caps of its own HTTP client, which Nodecode's HTTP seam supplies instead; and
+the Hermes skill that told the model to prefer the tool over web search, which
+is this cell's help topic and tool description here. The original's
+`machiaza_id` values ride an ambiguous answer unchanged.
