@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell — documentation,
+// not config: the folder is pushed and holds no secret.
+{
+  "edinet": {
+    "enabled": true,
+    "api_key": "…",              // free, from FSA's EDINET API materials page (WEEK0060)
+    "api_key_env": "EDINET_API_KEY",
+    "base_url": "https://api.edinet-fsa.go.jp/api/v2",
+    "timeout_seconds": 30,
+    "max_calendar_days": 31,    // 31 at most: EDINET's list API is one day per request
+    "pace_seconds": 1
+  }
+}
