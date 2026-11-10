@@ -1,0 +1,23 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The token is free, applied for once at
+// https://info.gbiz.go.jp/hojin/various_registration/form
+// (申請区分「トークン利用(WebAPI・データダウンロード)」); GBIZINFO_API_TOKEN in
+// the environment is read either way.
+{
+  "jp-corporate": {
+    "enabled": true,
+
+    // The token from the 「Web API 利用申請完了」 email.
+    "api_key": "...",
+
+    // Or the name of the variable that holds it, when it is kept elsewhere.
+    // "api_key_env": "GBIZINFO_API_TOKEN",
+
+    // The API base, only when a mirror of the API answers instead.
+    // "endpoint": "https://api.info.gbiz.go.jp/hojin/v2/hojin",
+
+    // One request's ceiling, in seconds.
+    "timeout_seconds": 20
+  }
+}
