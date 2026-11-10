@@ -1,0 +1,27 @@
+nodecode-openpaths is a rewrite of lee101's lee101/hermes-openpaths:
+https://github.com/lee101/hermes-openpaths
+commit d1e55ac08dabaae1e399d4a3a9da9f68346efd00
+MIT, Copyright (c) 2026 Lee Penkman (LICENSE)
+
+Rewritten: the provider profile itself (its default base of
+https://openpaths.io/v1, its OPENPATHS_API_KEY variable, its curated model
+list, and the reasoning_effort mapping its build_api_kwargs_extras method
+works out) as a Nodecode catalog row, one /models read and one request-body
+hook. The mapping keeps the original's rules: xhigh is sent as high, an
+auto-think route with no effort is sent auto, reasoning turned off is sent
+none, and a level outside OpenPaths' vocabulary is lowered to the nearest one
+it takes rather than passed through.
+
+Added, because Nodecode's catalog is where a picker reads its list: the row
+itself, since models.dev publishes no OpenPaths entry, and the /models read
+at start and hourly, which the original's profile also did.
+
+Left out, and why: the Hermes seams the original imported (providers.base,
+ProviderProfile, register_provider) have no place here, so the profile is a
+catalog row and its two methods are one /models read and one request-body
+hook. The provider aliases (openpath, open-paths, open-path) have no
+Nodecode equivalent, where a provider id is matched exactly. The original's
+default_aux_model of auto-easy-task is not written into anyone's config by
+the cell: the auxiliary target is the operator's pick in /models. The
+OPENPATHS_BASE_URL variable becomes the section's base_url, the one place
+Nodecode reads an address from.
