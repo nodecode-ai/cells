@@ -1,0 +1,22 @@
+nodecode-music-jam is a rewrite of vdimarco's vdimarco/agent-music-jam:
+
+  https://github.com/vdimarco/agent-music-jam
+  commit 009c918b89e7ba98550de0755b47d1e5e7bc96a0
+  MIT License, Copyright (c) 2026 Agent Music Jam contributors (LICENSE)
+
+Rewritten in Common Lisp: the four roles and their controls, the local pattern
+rules note for note, the session shape, the arrangement queue that holds every
+change until a bar boundary, per-musician undo, save and restore, the standard
+MIDI writer, and the ten tools the original registered (jam_start, jam_inspect,
+jam_stop, jam_direct, jam_configure, jam_schedule, jam_undo, jam_save,
+jam_restore, jam_export) with the same names and arguments. The loopback page
+is reimplemented: the same four cards, transport, clock and keyboard, with the
+band synthesized in the page's own Web Audio and every API call carrying the
+token the address holds.
+
+Left out, and why: the original's two model planners (a conductor and one
+planner a role, run as Hermes child sessions) are gone, so a direction is read
+by the original's own stand-alone rule vocabulary instead of a model; the
+browser's recorded WAV download went with them, and jam_export writes MIDI.
+Hermes's profile-scoped state is replaced by the Nodecode home. The page is
+served by the cell's own listener on 127.0.0.1 rather than the gateway's port.
