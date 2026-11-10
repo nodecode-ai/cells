@@ -488,6 +488,24 @@
       "category": "models"
     },
     {
+      "name": "nodecode-ai-visibility",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "e52714474bd638ec61ae97dd2d2598203b346092",
+      "path": "tools/nodecode-ai-visibility",
+      "description": "AI visibility: whether AI crawlers can read a site, and its brand mentions in AI answers",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "meelis545",
+        "repo": "meelis545/qqq-ai-visibility-mcp",
+        "commit": "06278fa89aef5ad40605722f494b069905f62732",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-aihubmix",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "8c7dced8ed145799c0e1abbc36b3318cc91664b6",
@@ -6311,6 +6329,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-holidays",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "c7748281535c04ee3b487bdb9194e2af201573d1",
+      "path": "tools/nodecode-holidays",
+      "description": "Public holidays for a country and year, with workday checks, counts and deadline math",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Akloenx123",
+        "repo": "Akloenx123/hermes-public-holidays",
+        "commit": "d73f177b13c368c5c2445f6595f4008ed6c79a78",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-holographic",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "e487f1a3b630f52bb985dab15d5748eb6e4d430f",
@@ -9424,6 +9460,24 @@
       "category": "models"
     },
     {
+      "name": "nodecode-octoprint",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "b7f1514d488d24f593c7d648cbbe8a4463d7a5af",
+      "path": "tools/nodecode-octoprint",
+      "description": "OctoPrint printer: job progress, temperatures, webcam still, pause, resume, cancel",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "TakeshiTGAL",
+        "repo": "TakeshiTGAL/hermes-plugin-print-job-watch",
+        "commit": "61cf86ed8c1a348c2d9956368e1abf7f51bb40fa",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-oddsradar",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "d1c58750ac2b90d7cc519a8bc883f5d9d2fbf8af",
@@ -10494,6 +10548,24 @@
       "category": "voice"
     },
     {
+      "name": "nodecode-polymarket",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "c4dfdea6ef21e0c779ce7303bc3011dd11d9a299",
+      "path": "tools/nodecode-polymarket",
+      "description": "Polymarket: live odds, 24h movers, attention signals, a price-alert watchlist and a briefing, read-only",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "HATWHY4041",
+        "repo": "HATWHY4041/prediction-market-scout",
+        "commit": "c11bf13fb70c94550669efdd7c9e46c1e8a408af",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-ports",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "57d8f8ee5dba418de8c97b95f20e9ad5a65dc3e5",
@@ -10531,6 +10603,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-postkitty",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "4b2d6b8e83619ee33c2eacc6aeffe2f86de3b467",
+      "path": "tools/nodecode-postkitty",
+      "description": "One draft, photo or video into checked, upload-ready files for eight social platforms, as five tools",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "mertkayacs",
+        "repo": "mertkayacs/postkitty",
+        "commit": "490d8f992387b610c3b6f32cd87d800dc58c8010",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-pr-studio",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "7f57d5909393be724632904305aac06994b68146",
@@ -10547,6 +10637,24 @@
         "license": "MIT"
       },
       "category": "desktop"
+    },
+    {
+      "name": "nodecode-prediction-markets",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "119de4ad413cf3e27803e05768048137d2bcbdc6",
+      "path": "tools/nodecode-prediction-markets",
+      "description": "Prediction-market calculators: EV, Kelly sizing, Bayesian updating, odds conversion, base-rate gaps and combo edge",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "predictionmarketspicks",
+        "repo": "predictionmarketspicks/mcp",
+        "commit": "d1abeb5562f54f0f6950d117669dce290fe1a1b6",
+        "license": "MIT"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-print3d",
@@ -10616,6 +10724,42 @@
         "author": "Yicheng-Mark",
         "repo": "Yicheng-Mark/hermes-windows-plugins",
         "commit": "5bad3fb2baf04ce6befecfefce6d14f4c9c98934",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-procgen-studio",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "6f49c542c5d8ca5dd96264db4512737479a8ffc0",
+      "path": "tools/nodecode-procgen-studio",
+      "description": "Draw image assets as code -- SVG and pixel grids -- rendered locally to PNG with a seed",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "iamlukethedev",
+        "repo": "iamlukethedev/hermes-procgen-studio",
+        "commit": "204b063ca5dcb81c050299b9fcaa47ea5a437553",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-progress-squash",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "52f066757ebe34c2b9a2761e7ab123191b8aca95",
+      "path": "tools/nodecode-progress-squash",
+      "description": "Collapses terminal progress-bar redraws into the final frame, shrinking tqdm and git clone output",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "pierrenode",
+        "repo": "pierrenode/hermes-progress-squash",
+        "commit": "044e6f1128037a58a76d5f6ff71df1607b4c1c63",
         "license": "MIT"
       },
       "category": "tools"
@@ -10693,6 +10837,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-proof-run",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "ef3358140390583b45f235adf5235f95e931b79f",
+      "path": "tools/nodecode-proof-run",
+      "description": "Records a demonstrated run and gates its reuse on exact arguments and fresh reads",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "raffieeey",
+        "repo": "raffieeey/hermes-proof-run",
+        "commit": "36f3f4111b6d8cd5cf67d53eaf54e62148fcf3ca",
+        "license": "MIT"
+      },
+      "category": "automation"
+    },
+    {
       "name": "nodecode-proofgate",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "b40e82ae655ee095cd2abf297a483888b055858a",
@@ -10709,6 +10871,24 @@
         "license": "MIT"
       },
       "category": "tools"
+    },
+    {
+      "name": "nodecode-protocol-chaos",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "f9f6d5268f9f6b6b6b72fc2b5315e0c130042a42",
+      "path": "tools/nodecode-protocol-chaos",
+      "description": "Protocol Chaos: the user's long-lived matters, on their own server, in context before the model answers and recorded after",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "chaos-xxl",
+        "repo": "chaos-xxl/protocol-chaos",
+        "commit": "cb3f13a51b3d81e224eeadde68e1f55d6b2770d2",
+        "license": "Apache-2.0"
+      },
+      "category": "memory"
     },
     {
       "name": "nodecode-protonmail",
@@ -10823,6 +11003,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-pushgate",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "328c67f7344179ae37971394f78d9f219805adff",
+      "path": "tools/nodecode-pushgate",
+      "description": "Blocks git push and gh pr create until your check has passed on exactly the content being pushed",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "cirwel",
+        "repo": "cirwel/hermes-receipts",
+        "commit": "0dd1a374cc70ce388040f99adc908c7054ed8fa9",
+        "license": "Apache-2.0"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-pushover",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5ba82cd3c6c0bd661e23781cdd2c4ef217ff87ab",
@@ -10859,6 +11057,79 @@
       "category": "memory"
     },
     {
+      "name": "nodecode-qrblox",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "3b2170577e8ff0f4bccc5f8be2e65b0739bdd7d7",
+      "path": "tools/nodecode-qrblox",
+      "description": "Qrblox: draft QR codes, audio codes and menus on a merchant account",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Terahertz-Inc",
+        "repo": "Terahertz-Inc/qrblox-mcp",
+        "commit": "da68c941d725e38e7c6812a67df6648a7ac5169f",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-quegly",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "a2d6c5aa9282850dc3b042d72616d1617855cd24",
+      "path": "tools/nodecode-quegly",
+      "description": "Schedule, publish and measure social posts on Quegly: workspaces, accounts, uploads, posts and analytics, as eight tools the model calls",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "quegly",
+        "repo": "quegly/agent",
+        "commit": "6a16be804680eeeef98043675d708f591b27a001",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-raise",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "da54aca60f3a2840f58978b693e13c951fd085eb",
+      "path": "tools/nodecode-raise",
+      "description": "Draft-only fundraising desk: ranks investors on cited evidence and gates every draft",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "GenesisEngine-Triolith",
+        "repo": "GenesisEngine-Triolith/raise",
+        "commit": "0926ac346b8b083f87bb052a12c6aefa6f74b096",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-ram-first-context",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0a0b3bfe717d09e0c2c5ef0a060d511e8b436fa8",
+      "path": "tools/nodecode-ram-first-context",
+      "description": "RAM-first context: read-only keyword recall over a live Mnemosyne SQLite memory database",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "ether-btc",
+        "repo": "ether-btc/ram-first-context",
+        "commit": "364992afde615e8588e285fbb4dd6fe8d57f6869",
+        "license": "MIT"
+      },
+      "category": "memory"
+    },
+    {
       "name": "nodecode-rea",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "69b91fd59dac356e3a1dc0e68394d319a7d0d688",
@@ -10872,6 +11143,60 @@
         "author": "NousResearch",
         "repo": "NousResearch/hermes-official-plugins",
         "commit": "1690b63a4790cb821fb6a319ba524815d4e09411",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-reachmap",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "03dafe597f8a3d80b8afb4fe4588c46302219dd4",
+      "path": "tools/nodecode-reachmap",
+      "description": "What this machine can reach right now: browsers, services, MCP, CLIs, drives",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "MindSproutStudios",
+        "repo": "MindSproutStudios/hermes-reachmap",
+        "commit": "f927ac96a63ecff6d7e614250d7a80b226f9a4b9",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-reaction-feedback",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "08f45abbf18d678acac7475ef391935da1900424",
+      "path": "tools/nodecode-reaction-feedback",
+      "description": "The emoji reactions a user leaves on the agent's messages, read as a short note at the next turn",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "AhmetArif0",
+        "repo": "AhmetArif0/hermes-reaction-feedback",
+        "commit": "50d8dbd0fb9f89ce1002ad378a8b656e52a617e1",
+        "license": "MIT"
+      },
+      "category": "general"
+    },
+    {
+      "name": "nodecode-reaction-ledger",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "4178c5c7a92cf7f7214ff77ddb097718b4e85c8e",
+      "path": "tools/nodecode-reaction-ledger",
+      "description": "Reaction Ledger: the emoji reactions left in your chats, by emoji, chat and day",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "olric3015",
+        "repo": "olric3015/hermes-plugins",
+        "commit": "c3cf4f480a7a7ee33be542703dd00d5b90bce7cc",
         "license": "MIT"
       },
       "category": "tools"
@@ -10893,6 +11218,42 @@
         "license": "MIT"
       },
       "category": "general"
+    },
+    {
+      "name": "nodecode-recall",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "4999d6e87ce62a85795f58dcc148a41751a5ca5d",
+      "path": "tools/nodecode-recall",
+      "description": "Private on-device index of your own documents: search, read and cite local files",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "memeshee",
+        "repo": "memeshee/hermes-recall",
+        "commit": "99c9a6a4a290af705d42c7336cd7fb57ca3eb9d6",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-recall-vault",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "fb597e3a02ffa2c977ae2846b2c79c4288e73550",
+      "path": "tools/nodecode-recall-vault",
+      "description": "A money policy vault: caps, an allowlist and a ledger over payment-like tool calls",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "tydavid5",
+        "repo": "tydavid5/recall-vault",
+        "commit": "e564eb53143840540d1987b48906e1602050c73f",
+        "license": "MIT"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-receipts",
@@ -10929,6 +11290,43 @@
         "license": "MIT"
       },
       "category": "models"
+    },
+    {
+      "name": "nodecode-recued",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "227b0244c91083994be0f540c12430dc989de60c",
+      "path": "tools/nodecode-recued",
+      "description": "This computer's own Recued server as mcp tools: notes, tasks and the things the user owns, every change waiting on their approval",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "recued",
+        "repo": "recued/agent-plugin",
+        "commit": "c9c37fb055925e423ff9a28d1376efad3d4c49f7",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-redaction-pack",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "6ff7921b6ba623fac031a7b4b27a69364a3cbe7c",
+      "path": "tools/nodecode-redaction-pack",
+      "description": "Masks 71 more vendor credential formats in the text you send and in tool output",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "pierrenode",
+        "repo": "pierrenode/hermes-redaction-pack",
+        "commit": "febd8bfe9971a3242d0ca18e8e7ca71d685d503b",
+        "license": "MIT"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-refusal",
@@ -13615,6 +14013,24 @@
         "license": "MIT"
       },
       "category": "platform"
+    },
+    {
+      "name": "nodecode-zatca",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "0f3e67aa20ee79edac5c8d2f86cf8354223b8116",
+      "path": "tools/nodecode-zatca",
+      "description": "Saudi 15% VAT math and ZATCA Phase 2 invoice field checks",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "qeemah-cloud",
+        "repo": "qeemah-cloud/hermes-plugin-zatca",
+        "commit": "fc8696db3579360ed226e52db6fd8b6d7e9f0515",
+        "license": "MIT"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-zeromem",
