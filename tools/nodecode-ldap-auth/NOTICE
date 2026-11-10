@@ -1,0 +1,47 @@
+nodecode-ldap-auth is a rewrite of angel12's angel12/hermes-ldap-auth:
+
+  https://github.com/angel12/hermes-ldap-auth
+  commit 7b871ef375239275e29b1934bbed8ae7573afea3
+  MIT License, Copyright (c) 2026 angel12
+  Portions copyright (c) 2025 Nous Research (_shared.py, adapted from hermes-agent) (LICENSE)
+
+What was rewritten: the provider's directory half is rewritten in Common Lisp,
+without ldap3 or any Python: ber.lisp writes and reads the LDAPv3 messages a
+password bind needs (BindRequest, SearchRequest, SearchResultEntry, the result
+that ends a search, the StartTLS ExtendedRequest, Unbind) and the two escapes
+the original used (RFC 4514 for a DN template, RFC 4515 for a filter); wire.lisp
+opens one connection per attempt over usocket with cl+ssl for TLS, refuses an
+empty password before any bind, binds the user with it, binds a service account
+first when the section says search-then-bind and rejects a filter that matches
+anything but one entry, evens out the unknown-user timing with a dummy bind,
+never chases a referral, and checks group membership on the user's own
+connection with the original's three-schema filter (member, uniqueMember,
+memberUid); token.lisp keeps its stateless HMAC-signed session, here with a
+payload of escaped name=value pairs and a base64url signature. The configuration
+is the original's, key for key: server_url, user_dn_template or
+user_search_base with user_search_filter, bind_dn/bind_password, require_group,
+start_tls, allow_insecure, ca_certs_file, email_attribute,
+display_name_attribute, display_name, secret, session_ttl_seconds,
+refresh_ttl_seconds, timeout_seconds, verify_user_on_refresh, with the same
+mutual exclusion, the same {username} placeholder check, the same TLS rule and
+the same minimum secret length.
+
+What was left out, and why: Hermes's dashboard-auth framework is not Nodecode's.
+The seam the original plugged into - a login form, /auth/password-login, session
+cookies, refresh, WebSocket tickets, logout, audit logging and the rate limit -
+belongs to that dashboard, so this cell contributes what the provider itself
+did: ldap_login (the bind, the identity, a minted session), ldap_verify (a
+token read back without the directory), ldap_lookup and /ldap-auth (the entry
+behind a username), and (help :ldap-auth). The refresh endpoint, the cookie
+handling and the login rate limit are the harness's there and remain the
+caller's here; the two tokens are answered as text and it is the caller who
+stores them. The environment-variable overrides (HERMES_DASHBOARD_LDAP_*) go
+with that harness's config precedence: Nodecode's config.jsonc and /settings are
+the two ways to set the section. The display_name member is kept for a form
+label the caller may show. Python's ldap3 is replaced by the protocol code
+above, so nothing is installed to use it.
+
+What the rewrite adds: the lookup and the command, which the original only had
+inside the login path; a refusal for a section with no bind mode rather than a
+provider that silently declines to register; and the reason a directory
+rejected the service account, in the answer, rather than in a log line.
