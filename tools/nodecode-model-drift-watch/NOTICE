@@ -1,0 +1,31 @@
+nodecode-model-drift-watch is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-model-drift:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-model-drift
+  commit 0102786ba4812e8581f3f6234a453eb26137fa52
+
+MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+What was rewritten: everything. The original is Python running inside another
+agent's plugin API, calling that host's LLM bridge, reading its config and
+registering a tool, a slash command and a CLI subcommand; this is Common Lisp
+running as a Nodecode cell, calling NLE:COMPLETE for the model and keeping its
+runs in one JSON-lines file under the home. The ideas kept whole are the ones
+the plugin is for: a fixed question set graded by exact rules, the same model's
+own baseline, an exact one-sided test on the pooled counts, a per-question
+count of what fell and what rose, a minimum drop worth reporting, a confirming
+second run, a significance level, a failed measurement that is never drift, and
+a report written to be read as-is.
+
+What was left out, and why: the token and dollar budget caps (the rewrite
+reports a token ceiling through estimate and leaves the spending to the
+provider's own bill, there being no pricing table in this image); the growing
+baseline beyond baseline_runs with a minimum gap between baseline runs; the
+code category and running the model's Python answers to grade them, which the
+original had off by default anyway; the answer-length alert as an alert of its
+own (the length shift is reported beside a drop, not raised by itself);
+multiple watched targets in one call; per-category tests with a Holm
+correction (one pooled test answers now); user-supplied suite files; the
+provider/model override grants; the scheduling, which the plugin did through
+its host's cron API and which here is the cron cell's, with a prompt that runs
+the check. The fourteen questions are this rewrite's own, in the shape of the
+original's default suite.
