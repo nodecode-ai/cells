@@ -1,0 +1,23 @@
+nodecode-hyperactive is a rewrite of justin06lee's justin06lee/hyperactive:
+
+  https://github.com/justin06lee/hyperactive
+  commit 2f147d3e6a1a91389d4d50991b46a546b5ea804b
+  MIT, Copyright (c) 2026 Justin (LICENSE)
+
+Rewritten: the goal tree (life > year > quarter > week), follow-ups, promises in
+both directions, decisions with a review date, and tap cards -- a question with a
+recommended answer, asked, re-asked once, and settled only when the stakes are
+low, through the same three typed actions the original allowed (move a follow-up,
+schedule one, set a goal's status). The pulse keeps the same rule the original's
+cron job had: whatever is due becomes one message, at most max_items of them,
+each naming the goal it serves, with quiet hours deferring and never dropping.
+The six ha_* tools, /hyperactive (in place of /ha) and the words of the briefs
+and cards follow the original.
+
+Left out: Hermes' cron jobs and the two shim scripts, replaced by one worker
+inside the cell and one standing notice, since Nodecode has no cron of its own
+outside the cron cell and no separate delivery target; the agent-mode daily
+brief, which on Nodecode is a prompt (the data behind it is /hyperactive brief);
+the Hermes CLI (`hermes hyperactive ...`), the Telegram reaction path, the
+pre-LLM-call hook that read a one-word reply as an answer, and SQLite, replaced
+by one JSON file under the home.
