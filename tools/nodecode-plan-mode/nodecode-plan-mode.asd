@@ -10,6 +10,7 @@
   :description "Enforced plan mode: the agent plans, you approve, then it edits"
   :license "MIT"
   :version "0.1.0"
+  :author "100yenadmin (original), Nodecode (rewrite)"
   :depends-on ("nodecode")
   :serial t
   :components ((:file "cell"))

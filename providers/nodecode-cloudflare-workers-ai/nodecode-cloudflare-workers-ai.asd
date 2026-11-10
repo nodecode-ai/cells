@@ -15,6 +15,7 @@
   :description "Cloudflare Workers AI: its models, context windows and per-model reasoning effort"
   :license "MIT"
   :version "0.1.0"
+  :author "AhmetArif0 (original), Nodecode (rewrite)"
   :depends-on ("nodecode")
   ;; what /models offers this folder by before it is installed: picking it installs it, then asks for its key
   :properties ((:serves (:provider "cloudflare-workers-ai" :name "Cloudflare Workers AI" :sign-in "key")))

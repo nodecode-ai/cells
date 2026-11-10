@@ -15,6 +15,7 @@
   :description "Laso Finance: spend USDC on prepaid cards, gift cards and payouts, from chat"
   :license "MIT"
   :version "0.1.0"
+  :author "LasoFinance (original), Nodecode (rewrite)"
   :depends-on ("nodecode")
   :serial t
   :components ((:file "package")

@@ -15,6 +15,7 @@
   :description "Hopper: a curated list of OpenRouter models, as a Nodecode provider"
   :license "MIT"
   :version "0.1.0"
+  :author "mykeura (original), Nodecode (rewrite)"
   :depends-on ("nodecode")
   ;; what /models offers this folder by before it is installed: picking it
   ;; installs it, then asks for its key

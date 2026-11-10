@@ -14,6 +14,7 @@
   :description "AnyAPI.ai: one key for many vendors' models, listed by the routes that take tool calls"
   :license "MIT"
   :version "0.1.0"
+  :author "es697 (original), Nodecode (rewrite)"
   :depends-on ("nodecode")
   ;; what /models offers this folder by before it is installed: picking it installs it, then asks for its key
   :properties ((:serves (:provider "anyapi" :name "AnyAPI.ai" :sign-in "key")))

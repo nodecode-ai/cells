@@ -10,6 +10,7 @@
   :description "Talk to nodecode through a MAX messenger bot"
   :license "MIT"
   :version "0.1.0"
+  :author "Realmagnum (original), Nodecode (rewrite)"
   :depends-on ("nodecode-channel-kit")
   :serial t
   :components ((:file "package")

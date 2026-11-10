@@ -11,6 +11,7 @@
   :description "Keeps the agent from rewriting or wiping what it remembers about its operator"
   :license "MIT"
   :version "0.1.0"
+  :author "churnast (original), Nodecode (rewrite)"
   :depends-on ("nodecode")
   :components ((:file "cell"))
   :in-order-to ((test-op (test-op "nodecode-memory-shield/test"))))

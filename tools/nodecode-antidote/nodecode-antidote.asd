@@ -16,6 +16,7 @@
   :description "Guardrails on what a tool call reads and sends"
   :license "MIT"
   :version "0.1.0"
+  :author "GroveMinting (original), Nodecode (rewrite)"
   :depends-on ("nodecode")
   :components ((:file "cell"))
   :in-order-to ((test-op (test-op "nodecode-antidote/test"))))

@@ -16,6 +16,7 @@
   :description "Every turn verbatim in one local file, recalled with provenance"
   :license "MIT"
   :version "0.1.0"
+  :author "ptaranat (original), Nodecode (rewrite)"
   :depends-on ("nodecode")
   :serial t
   :components ((:file "package")

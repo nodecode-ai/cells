@@ -12,6 +12,7 @@
   :description "How much of each AI subscription is left, read from the plans themselves"
   :license "MIT"
   :version "0.1.0"
+  :author "lvabarajithan (original), Nodecode (rewrite)"
   :depends-on ("nodecode")
   :components ((:file "cell"))
   :in-order-to ((test-op (test-op "nodecode-ai-usage/test"))))

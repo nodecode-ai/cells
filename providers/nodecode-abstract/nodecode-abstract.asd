@@ -14,6 +14,7 @@
   :description "Abstract: GLM-5.3, DeepSeek-V4-Flash and Kimi-K3 over the Responses API"
   :license "MIT"
   :version "0.1.0"
+  :author "abstractpbc (original), Nodecode (rewrite)"
   :depends-on ("nodecode")
   ;; what /models offers this folder by before it is installed: picking it installs it, then asks for its key
   :properties ((:serves (:provider "abstract" :name "Abstract" :sign-in "key")))

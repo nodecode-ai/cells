@@ -16,6 +16,7 @@
   :description "Agent-authored workflow graphs run in the background: after-edges, fan-outs, gates, resume"
   :license "MIT"
   :version "0.1.0"
+  :author "jacobhausler (original), Nodecode (rewrite)"
   :depends-on ("nodecode")
   :serial t
   :components ((:file "package")

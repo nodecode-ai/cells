@@ -10,6 +10,7 @@
   :description "Talk to nodecode over X Chat: X's end-to-end encrypted direct messages"
   :license "MIT"
   :version "0.1.0"
+  :author "NousResearch (original), Nodecode (rewrite)"
   ;; The kit brings what the wire is made of (cl+ssl, usocket, babel,
   ;; cl-base64, cl-ppcre); ironclad's SHA-256 is what the sealing is made of.
   :depends-on ("nodecode-channel-kit" "ironclad/digest/sha256")
