@@ -1,0 +1,33 @@
+nodecode-doctrine is a rewrite of percyhendrux123-prog's percyhendrux123-prog/hermes-axiom-agent:
+
+  https://github.com/percyhendrux123-prog/hermes-axiom-agent
+  commit 1861b7820d5866e36b07dc54bb647f9eefa94bd5
+
+MIT, Copyright (c) 2026 Percy Keith Stewart (LICENSE)
+
+doctrine.md is that repository's axiom_agent/DOCTRINE.md, unchanged; its
+README dedicates both copies to the public domain under CC0 1.0. What was
+rewritten: the standing injection is a harness section (`standing-section`
+advising `nle::read-harness-sections`) instead of a pre-model-call hook, and
+the two forms and their caps are kept -- 1,800 characters compact, 4,000 full,
+800 for the owner's additions -- with the compact form built from each
+article's opening sentence where the original selected sentences by position,
+so the shipped wording stays the only copy of the prose. The `/doctrine`
+command keeps its four verbs (status, show, show n, plugins) and its footer,
+and the same answers are Lisp verbs in the `doctrine` package. The owner's
+additions file is kept, read with the image's own reader, from the home's
+`doctrine.md` or a path the section names, with the same 800-character cap in
+a request and no cap in `show`.
+
+What was left out: the Hermes runtime probes. The original asked its host
+`ctx.has_plugin()` for five enforcer plugins and scanned the top-level `name:`
+line of their `plugin.yaml` manifests under the Hermes user-plugins folder, to
+say an article was ENFORCED. Those plugins are separate cells here, so the
+doctrine's own `*Enforced by:*` lines are parsed as the original parsed them
+and each name is mapped to the cell that carries it; a cell is installed when
+a folder of that name sits in the home's cells folder, where presence is
+enabled. There is no manifest scan, no YAML of any kind, and no probe of a
+running plugin, so `standing` and `hermes-gatekeeper` read ADVISED until a cell
+carries them. The `form`/`inject` settings are the original's; `additions` and
+`cells_dir` are added so both the owner's file and the report can be pointed
+somewhere in a test.
