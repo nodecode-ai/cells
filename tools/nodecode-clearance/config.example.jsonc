@@ -1,0 +1,25 @@
+{
+  // clearance: who may call which tool. No key, nothing to sign in to.
+  "clearance": {
+    // one `platform:user_id=tier` per sender; `telegram:*` is a whole
+    // platform, `*` is everyone. /clearance set writes one.
+    "users": ["telegram:123456789=owner", "discord:987654321=admin"],
+
+    // whoever nobody named, and your own TUI, CLI and page sessions
+    "default_tier": "guest",
+    "local_tier": "owner",
+
+    // session-id prefixes that are chat platforms, read only when the channel
+    // cells are off; a running one's lane answers exactly
+    "platforms": ["telegram", "discord", "slack", "matrix", "whatsapp", "imessage", "email", "x"],
+
+    // refusals and tier changes, names only, in <home>/clearance/audit.jsonl
+    "audit": true,
+
+    // change or add a tier, field by field: allow, deny, rate_per_hour,
+    // chat, manage, audit. The owner tier always keeps full access.
+    "tiers": {
+      "user": { "allow": ["@web", "@media", "@memory", "@skills"], "rate_per_hour": 30 }
+    }
+  }
+}
