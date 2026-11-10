@@ -1,0 +1,9 @@
+nodecode-meeting is a rewrite of taxbax's taxbax/meeting-overlay:
+
+  https://github.com/taxbax/meeting-overlay
+  commit 2c7859f1407f516c543d4409abab98d9b2e8928a
+  MIT License, Copyright (c) 2026 taxbax (LICENSE)
+
+Rewritten: the Python plugin's file surface, in Common Lisp. scripts/listen.py's two transcript files (rolling.txt, a capped tail, and full.txt, every line) and the line format it wrote are the cell's data model; scripts/dedupe.py's echo rule is here as an exact normalized match over the last ten lines, with the phone tag winning; scripts/answer.py's Records tree (Records/YYYY/MM/week-of-Monday/) and its transcript-plus-notes record are what meeting_save writes; and skill/SKILL.md's operating advice (read the transcript live, answer short, say STALE rather than inventing, what-should-I-say / follow-up / recap) is the help topic the model reads. The plugin's answer engine is gone as a program because the model reading the transcript does that work itself.
+
+Left out, and why: the macOS audio capture (sounddevice, faster-whisper, a BlackHole loopback) needs Python and native audio libraries, so the cell reads a transcript file that any transcriber — the original's listen.py included — can append instead of capturing sound itself; the launchd agents, the phone PWA server and the desktop pane are Hermes-only surfaces with no Nodecode counterpart; the hosted answer call to Nous inference and the OpenRouter fallback were the plugin's way of reaching a model, which a Nodecode session already is; and the original's fuzzy similarity ratio (0.55 over word lists) is simplified to an exact normalized match, which drops the same echoed sentence and nothing else.
