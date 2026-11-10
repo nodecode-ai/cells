@@ -1,0 +1,11 @@
+{
+  // Otari, the open-source LLM gateway, as a provider. The section is on
+  // unless it says "enabled": false.
+  "otari": {
+    // The gateway's API base; the chat lane appends /chat/completions to it.
+    // The hosted one is https://api.otari.ai/api/v1; the EU region is
+    // https://eu.api.otari.ai/api/v1; a self-hosted Otari is its address
+    // plus /api/v1.
+    "base_url": "https://api.otari.ai/api/v1"
+  }
+}
