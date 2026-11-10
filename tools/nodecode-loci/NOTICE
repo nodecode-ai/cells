@@ -1,0 +1,29 @@
+nodecode-loci is a rewrite of AskLoci's AskLoci/loci-plugins:
+
+  https://github.com/AskLoci/loci-plugins
+  commit 51dca9ab524b7a7953292d2d70ace87bf97ed5ec
+
+MIT, Copyright (c) 2026 Cozu LLC (LICENSE)
+
+What was rewritten: the whole plugin. The original is a Hermes Agent plugin
+made of no code at all: a manifest pointing at the Loci app's own
+streamable-HTTP MCP server on loopback (with the app's discovery file
+answering the URL and the token), and two skills of prose guidance for the
+tools that server advertises. This cell is Common Lisp: it reads the same
+section-shaped facts (endpoint, token, a token file), discovers the token in
+the same discovery file, speaks the same JSON-RPC over the image's own HTTP
+call, and reaches the same tools with the same arguments -- loci_status,
+loci_generate, loci_map, loci_files, loci_extract, loci_search, loci_index,
+loci_transcribe -- through three model tools (loci_status, loci_call,
+loci_generate), a /loci command and the (help :loci) topic. The two skills'
+guidance lives in that one primer and in the tool descriptions. Nothing is
+fetched at run time and there is no Python.
+
+What was left out: the MAC-only installer walk-through (the pinned disk image,
+its SHA-256 check and the /reload-mcp step), because a cell is installed by
+the organism and re-read by (restart-cells); the harness's own approval
+prompt for write-capable calls, which a cell's tools do not carry; and the
+Hermes-only manifest fields (app-bundle presence, plist version, liveness
+polling), of which the cell keeps the one that matters: the discovery file
+the app writes. A tool the app does not advertise is not invented here: the
+cell lists what the running app admits to and proxies to that.
