@@ -1,0 +1,20 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it. Every tier must name a model, and
+// every tier the same provider: the level a turn runs is a model id, never
+// an API host.
+{
+  "model-picker": {
+    "low_model": "a small model on this provider",
+    "default_model": "the everyday model on this provider",
+    "high_model": "the strongest model on this provider",
+    "provider": "the provider id all three belong to",
+    "classifier_model": "",
+    "escalate_after": 3,
+    "keep_previous": true,
+    "low_best_for": ["short single-file edits", "look-ups"],
+    "default_best_for": ["multi-step reasoning", "planning before coding"],
+    "high_best_for": ["money-moving transactions", "security-sensitive decisions"]
+  }
+}
