@@ -1,0 +1,31 @@
+nodecode-lowrouter is a rewrite of carboniferio's carboniferio/hermes-lowrouter-provider:
+
+  https://github.com/carboniferio/hermes-lowrouter-provider
+  commit 93a8353d495443d8157c423979ac9df2a8589db6
+  Apache-2.0, Copyright (c) 2026 carboniferio (LICENSE)
+
+What was rewritten: the plugin's one payload, `lowrouter/__init__.py`, which
+registers a Hermes model provider named `lowrouter` on base
+https://api.lowrouter.ai/v1 with the ambient LOWROUTER_API_KEY, filters
+/v1/models down to the `auto/` and `alias/` chat models that take tool calls
+and fit at least 64,000 tokens of context, reads each route's context window
+from the same answer (cached an hour per key and base under a hash of the
+key), falls back to four named models when the catalog does not answer, and
+shows the EUR credit balance from /v1/credits in /usage. In Common Lisp that
+is a catalog row carrying the filtered routes (the plugin's four fallbacks
+until the live catalog answers, and again whenever it does not), a credential
+hook that reads LOWROUTER_API_KEY and answers a public credential without
+one, a command `/lowrouter` for the balance and `/lowrouter models` for the
+live list, and a section carrying the base. `plugin.yaml`, `README.md` and
+the test suite around the payload were read for what the profile means, not
+copied.
+
+What was left out, and why: the `lowrouter` provider alias, the
+`default_aux_model` and the per-key catalog cache have no direct
+counterpart — Nodecode names a provider once, its auxiliary model is
+`general.auxiliary_model`, and the worker refetches the catalog hourly
+instead of caching per key. Nothing converts euros to dollars in either. The
+plugin's live `/v1/models` read is the cell's own read, made with the
+credential the core resolves, and the route metadata it publishes beyond the
+window (price ranges, carbon estimates, candidate hosts) is left to
+LowRouter's own model page.
