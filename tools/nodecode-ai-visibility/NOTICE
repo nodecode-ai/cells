@@ -1,0 +1,24 @@
+nodecode-ai-visibility is a rewrite of meelis545's meelis545/qqq-ai-visibility-mcp:
+  https://github.com/meelis545/qqq-ai-visibility-mcp
+  commit 06278fa89aef5ad40605722f494b069905f62732
+  MIT, Copyright (c) 2026 QQQ OÜ (LICENSE)
+
+Rewritten: the plugin carries no code of its own -- a portable manifest that
+points a harness at the hosted MCP server https://qqq.ee/mcp -- so what is
+rewritten is the conversation with that server. One JSON-RPC 2.0 tools/call
+per check, POSTed with the headers a Streamable HTTP server expects, its
+answer read either as one JSON object or as server-sent events, and the text
+the server writes for the person returned whole: the crawler and readiness
+checks of check_ai_visibility, the stored brand-mention and citation report
+of get_public_report, and the tool description of get_tool_info. The domain
+and language arguments, the en/et pair, the bare-domain normalisation and
+the rule that the result text is shown as it came, links included, follow
+the original's skill. The original's three tool names are kept as the three
+tool names here.
+
+Left out: the Hermes skills/ and clawhub/ folders as files -- their guidance
+is the help topic and the tool descriptions. Also left out: the MCP session
+handshake (initialize and the Mcp-Session-Id header), which the original's
+own documented curl calls skip as well; a server that starts to require one
+is a Gaps entry, not a silent retry. And the plugin's per-client config
+files for other harnesses, which say nothing a cell can use.
