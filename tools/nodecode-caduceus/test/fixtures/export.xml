@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<HealthData locale="en_US">
+ <Record type="HKQuantityTypeIdentifierStepCount" sourceName="iPhone" unit="count" creationDate="2026-01-01 20:00:00 +0000" startDate="2026-01-01 08:00:00 +0000" endDate="2026-01-01 09:00:00 +0000" value="1500"/>
+ <Record type="HKQuantityTypeIdentifierStepCount" sourceName="iPhone" unit="count" creationDate="2026-01-01 21:00:00 +0000" startDate="2026-01-01 12:00:00 +0000" endDate="2026-01-01 13:00:00 +0000" value="1500"/>
+ <Record type="HKQuantityTypeIdentifierStepCount" sourceName="iPhone" unit="count" creationDate="2026-01-02 21:00:00 +0000" startDate="2026-01-02 12:00:00 +0000" endDate="2026-01-02 13:00:00 +0000" value="3000"/>
+ <Record type="HKQuantityTypeIdentifierStepCount" sourceName="iPhone" unit="count" creationDate="2026-01-03 21:00:00 +0000" startDate="2026-01-03 12:00:00 +0000" endDate="2026-01-03 13:00:00 +0000" value="4000"/>
+ <Record type="HKQuantityTypeIdentifierRestingHeartRate" sourceName="Watch" unit="count/min" creationDate="2026-01-01 07:00:00 +0000" startDate="2026-01-01 07:00:00 +0000" endDate="2026-01-01 07:00:00 +0000" value="58"/>
+ <Record type="HKQuantityTypeIdentifierRestingHeartRate" sourceName="Watch" unit="count/min" creationDate="2026-01-02 07:00:00 +0000" startDate="2026-01-02 07:00:00 +0000" endDate="2026-01-02 07:00:00 +0000" value="60"/>
+ <Record type="HKQuantityTypeIdentifierRestingHeartRate" sourceName="Watch" unit="count/min" creationDate="2026-01-03 07:00:00 +0000" startDate="2026-01-03 07:00:00 +0000" endDate="2026-01-03 07:00:00 +0000" value="72"/>
+ <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Watch" value="HKCategoryValueSleepAnalysisAsleepCore" creationDate="2026-01-01 07:00:00 +0000" startDate="2026-01-01 00:00:00 +0000" endDate="2026-01-01 07:00:00 +0000"/>
+</HealthData>

@@ -1,0 +1,25 @@
+nodecode-caduceus is a rewrite of electricsheephq's electricsheephq/caduceus:
+
+  https://github.com/electricsheephq/caduceus
+  commit 8dd0c77ac80ce3b56a4b3285fbeca6c0fe83b767
+  Apache-2.0, Copyright (c) Electric Sheep (LICENSE)
+
+Rewritten: the four tools (caduceus_search, caduceus_genome, caduceus_trend,
+caduceus_capture) and the /caduceus command, their argument names and the
+shape of what they answer; the privacy levels and categories (open and
+standard, hidden and unlocked categories, sensitive categories, the category a
+medication's own name implies); the absolute-path rule for imported files;
+the DNA raw data import for 23andMe and AncestryDNA files; the APOE and
+enzyme derivations; the Apple Health and FHIR imports and the trend answers
+(series, compare, labs, check); the local HTML variant report and health
+brief; and the words "information with limits, not medical advice".
+
+Left out, and why: the SQLite vault with its FTS5 index is four tab-separated
+files, so no database library has to be bundled and the vault stays readable;
+CPIC's exported pair and allele tables and the GLP-1 research data are
+replaced by a small evidence pack of common chip markers and gene-drug
+entries, written for this rewrite, with CPIC's guideline pages as their
+sources; Europe PMC and NCBI research-watch queries, the background job
+runner, Promethease .zip reports beyond one member, Apple Health clinical
+records, and the Hermes-only skills (setup, guide, report-a-problem) are not
+part of this cell, which has no network path at all.
