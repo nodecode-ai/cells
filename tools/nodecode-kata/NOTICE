@@ -1,0 +1,23 @@
+nodecode-kata is a rewrite of opeblow's opeblow/kata:
+
+  https://github.com/opeblow/kata
+  commit cc59b08f1bbeeb02524c060faac04edb34de0564
+  MIT, Copyright (c) 2026 opeblow (LICENSE)
+
+Rewritten: the record of tool calls (a `:tool` hook, in memory, arguments
+masked by name and by shape), the miner (per-session runs, windows of 2..N
+tool names counted across separate sessions, fragments dropped when a longer
+window repeats at least as often), the template inference reduced to constants
+and named parameters (the original also recovers data flow from an earlier
+step's result), the compile/run/forget lifecycle with the routines in one JSON
+file of the cell's own, and the operator surface (one tool, one `/kata` command
+and one manual topic, where the original had a dashboard page served by a
+FastAPI router). Left out, because Nodecode's own seams and one JSON file of
+the cell's own do not need them: the FastAPI dashboard and its JavaScript
+bundle; SQLite and the plugin's own migrations; leave-one-out scoring (the
+rewrite reports a fit rate but does not refuse on it); the twelve validator
+checks, so a routine whose steps share no value is compiled rather than
+rejected; effect classification and the approval rule for side-effecting
+routines; the token and time baseline measured from the host's request log;
+and the redaction of results (results are clipped, not masked, and never leave
+the image).
