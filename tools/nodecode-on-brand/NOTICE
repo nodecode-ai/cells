@@ -1,0 +1,37 @@
+nodecode-on-brand is a rewrite of Mhiah's Mhiah/On-Brand:
+
+  https://github.com/Mhiah/On-Brand
+  commit bd53e9d2fa62898a4fc3cd36da9f977dd8e1ef9b
+  MIT, Copyright (c) 2026 Mhiah (LICENSE)
+
+What was rewritten, and how: the plugin is Common Lisp against the Nodecode
+cell contract instead of Python against the Hermes plugin API. The rule engine
+is the same rule for rule -- the two persons, banned words, the exact
+spellings, required phrases, the character, hashtag, emoji and exclamation
+limits, and both compliance packs with their negations and their disclaimers
+-- and the score is the original's (100, 22 a hard violation, 8 a soft one).
+The brand profile keeps every field the original's had, and the linter is
+still the only judge: the same copy always scores the same. The four tools
+keep their names and their job (onbrand_check, onbrand_rules, onbrand_learn,
+onbrand_voiceover), the /onbrand commands are the same set, and the storage
+is one file in the folder the section names instead of a profile directory of
+JSON files. What was three Hermes hooks is two Nodecode seams: a standing
+harness section (pre_llm_call) and the :tool point, which refuses an outbound
+call the way pre_tool_call did; the review loop is the model's own turn
+(check, rewrite, check again) with the whole rule list in the failure.
+
+What was left out, and why: the reply rewrite at the end of a turn
+(transform_llm_output). In Hermes a cell could watch the assistant's whole
+reply and replace each ```copy block with a model-rewritten one; Nodecode has
+no seam that hands a cell the reply to rewrite before it is shown, and the
+cell does not call a model of its own. So the repair is the model's turn: the
+linter says exactly what is wrong, and onbrand_check with fix=true repairs
+the pinned spellings at once. For the same reason onbrand_learn drafts a
+profile from what the samples show -- who talks, the ceilings, the spelling,
+the pack -- instead of asking a model for a tone; the tone, the banned words
+and the required phrases are the operator's to add, and the tool says so.
+Left out with them: hold_stream (a streaming switch a cell cannot reach), the
+max_repairs setting and its time budget, the Desktop pane and its status-bar
+chip (the /on-brand log and status are the same feed), the pre_tool_call gate
+patterns as a user-editable set is kept as a section member, and the starter
+brands are the original's two, unchanged.
