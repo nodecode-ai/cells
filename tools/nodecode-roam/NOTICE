@@ -1,0 +1,41 @@
+nodecode-roam is a rewrite of vcruz305's vcruz305/hermes-roam:
+
+  https://github.com/vcruz305/hermes-roam
+  commit 8b9fba41fea77f2fe2d6d572cffd43039d2da11f
+  Apache-2.0, Copyright (c) 2026 Victor Cruz (LICENSE)
+
+The rewritten plugin is the repository at that commit. What it does for a
+person is what this cell does: one sealed bundle of the home in storage they
+own, pushed from one machine and restored onto another, looked at first and
+restored second, with the model able to look and push while the restore that
+writes stays the operator's. The three tools keep the original's names --
+roam_status, roam_push, roam_pull -- and its answers keep the same members
+(success, message, version, files, bytes, applied, the per-file plan), and
+the original's /roam command is a Nodecode slash command of that name. Its
+discipline is kept as well: AES-256-GCM with a random nonce, a head signed
+with an HKDF subkey and used as the AEAD's associated data so an edited store
+fails authentication, one digest of the contents for comparing two machines,
+a push refused when the store moved past what this home last saw, a restore
+planned before it writes, every replaced file backed up under .roam/backups/
+with a journal, a path outside the home refused, and allow_agent_apply off by
+default so the model cannot write files on its own.
+
+What was rewritten, and how: the engine is Common Lisp against the Nodecode
+cell contract instead of Python against the Hermes plugin API. The original's
+tar archive became one file of this cell's own format -- magic, head, meta,
+sealed body -- so a reader needs no tar and no pickle; the scope is one
+declared include/exclude list over the Nodecode home instead of the
+original's shared and local profile slices; and the state that used to be
+Hermes's own bookkeeping (last version, last digest, when it last pushed) is
+one small JSON file under .roam/. The passphrase is read from an environment
+variable or a file the section names, never from the config itself.
+
+What was left out, and why: the S3 signer and the git backend. A cell may
+reach HTTP and the CLI the user has, and should not carry SigV4 for one
+vendor; a presigned S3 or R2 URL, a WebDAV endpoint or a signing proxy gives
+the same store over the one HTTPS path, and a git repository is a folder that
+git already syncs. The cron-installed scheduled push, the pre-LLM hook that
+looked for a newer remote, and the bundled setup skill are the section and
+the primer now: Nodecode's own /settings and (help :roam) carry what the
+skill used to say, and a push is a tool call or a shift between two
+machines rather than a timer.

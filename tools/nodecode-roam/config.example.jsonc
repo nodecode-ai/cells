@@ -1,0 +1,22 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell -- documentation,
+// not config: the folder gets pushed and holds no secret. A present section is
+// enabled; "enabled": false vetoes it. The passphrase is named here, never
+// written here: the variable holds it, or a file does.
+{
+  "roam": {
+    "enabled": true,
+    "store": "~/Sync/nodecode-roam/",
+    // or one https URL you can PUT to: a presigned S3/R2 URL, a WebDAV
+    // folder, a small signing proxy in front of a bucket.
+    // "store": "https://example-bucket.example/roam/bundle",
+    "passphrase_env": "NODECODE_ROAM_PASSPHRASE",
+    // "passphrase_file": "~/.nodecode/.roam-pass",
+    "profile": "default",
+    "include": ["config.jsonc", "cells/"],
+    "exclude": [".cache/", ".git/", "store/", ".roam/", "node_modules/"],
+    // "authorization_env": "ROAM_STORE_AUTHORIZATION",
+    "operation_timeout": 60,
+    "allow_agent_apply": false,
+    "backup_keep": 5
+  }
+}
