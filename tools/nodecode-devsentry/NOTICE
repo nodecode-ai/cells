@@ -1,0 +1,26 @@
+nodecode-devsentry is a rewrite of Archangel20's Archangel20/devsentry:
+
+  https://github.com/Archangel20/devsentry
+  commit 0475b45a3ac2abe14f54bb841fb44ba7ef230fe1
+  MIT, Copyright (c) 2026 DevSentry (LICENSE)
+
+Rewritten: the three tools the plugin registered -- `inspect_project`,
+`diagnose_error` and `review_changes` -- with their names, their arguments and
+the JSON each one answered. The inventory keeps the same skip list of
+dependency, build, cache and version-control directory names and the same
+extension table (with Lisp counts added), the traceback reader keeps the same frame patterns and the
+same leads per exception name, and the diff reader keeps the same two scopes,
+the same bound of forty files, the same omission of a patch for a path that
+looks like a credential, and the same git configuration overridden for the
+run (aliases, hooks, external diff, textconv, fsmonitor, a scrubbed
+environment). The Python regular expressions are cl-ppcre scanners here, and
+the git subprocess is the image's own bounded runner, its process tree killed
+past the section's timeout.
+
+Left out: the Hermes plugin plumbing (the `register(ctx)` call, the toolset
+name and the Python packaging), the `--name-status` rename's old path being
+re-read for a second patch, and the JSON reduction's exact field order. What
+those covered was the host, not the behaviour: a cell declares its three
+tools instead of registering them, and the answer keeps every field the
+original carried, reduced by the same rules when it grows past the output
+bound.
