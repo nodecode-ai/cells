@@ -1,0 +1,34 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The speech is made by the VoiceStudio desktop app: a section
+// only says where its server answers.
+{
+  "voicestudio": {
+    "enabled": true,
+
+    // The address the VoiceStudio app answers on. Start the app first; while
+    // it is not running every tool answers that it could not reach it.
+    "base_url": "http://127.0.0.1:3900",
+
+    // The voice a call names none: a profile id such as "narrator". Empty,
+    // a call must name one -- /vs-voices lists what the server offers.
+    "default_voice": "",
+
+    // Where the audio files are written, under the home. The answers name
+    // the file, so a user can play it in any player or copy it into a project.
+    "directory": "voice-studio/",
+
+    // Seconds one generation may take: a chaptered audiobook is long.
+    "timeout": 600,
+
+    // Seconds a call waits for the server to answer at all, and for one
+    // status or job read.
+    "connect": 3,
+    "probe": 3,
+
+    // How long a render or a dub is waited for: polls job reads, poll_interval
+    // seconds apart, before the cell answers with the job id to resume.
+    "poll_interval": 10,
+    "polls": 60
+  }
+}
