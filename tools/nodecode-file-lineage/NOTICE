@@ -1,0 +1,28 @@
+nodecode-file-lineage is a rewrite of P0GL0L's P0GL0L/hermes-lineage:
+
+  https://github.com/P0GL0L/hermes-lineage
+  commit 5d9027158efd517930479bc35601d17a71452369
+
+  MIT, Copyright (c) 2026 Charles Bonetti / ASV Labs (LICENSE)
+
+What was rewritten: the agent-side core. The original registered ten observer
+hooks on Hermes and built a SQLite graph of files, URLs, queries, tool calls,
+model calls, turns and agents, with receipts, a signing key, a re-fetching
+verify and a desktop page. Here one observer on the :TOOL point of a Nodecode
+tool call does the same work: it hashes what the call wrote (named by
+`write-file`/`edit`, or found by walking the session's folder before and after
+`sh`, `eval` and `patch`), records the files and URLs the call named as
+observed, scans the artifact's own text for evidenced sources, and takes what
+the session had seen earlier as inferred. The same three bases, the same
+credential skip list, and a receipt JSON with the artifact's hash, versions,
+producer and sources. `/file-lineage` and two model tools replace the original's
+slash command and CLI.
+
+What was left out, and why: the SQLite store is a JSON file under the cell's
+home, since a cell has no database dependency; model-call, turn, agent and
+search nodes are not recorded, because a Nodecode turn is not the same shape
+as a Hermes one and the artifact's own receipt is what a reader asks for; the
+HMAC install key and the sidecar signature check, the `verify --refetch`
+network path, the Mermaid/Graphviz exporters' depth options and the desktop
+page are not carried over. The sidecar is written, and its body digest is
+verifiable, without a signature.
