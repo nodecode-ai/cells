@@ -1874,7 +1874,7 @@
     {
       "name": "nodecode-channel-max",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "b499bbec1dd174cc53ce17375e3ec70b9e8856fb",
+      "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
       "path": "rooms/nodecode-channel-max",
       "description": "Talk to nodecode through a MAX messenger bot",
       "license": "MIT",
@@ -11380,7 +11380,7 @@
     {
       "name": "nodecode-zeromem",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
+      "commit": "4add9c66846eee9a125feaf93374eef65c6418b4",
       "path": "tools/nodecode-zeromem",
       "description": "Every turn verbatim in one local file, recalled with provenance",
       "license": "MIT",
