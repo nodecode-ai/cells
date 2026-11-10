@@ -1,0 +1,34 @@
+nodecode-ms-decision is a rewrite of guglxni's guglxni/ms-decision-provider:
+
+  https://github.com/guglxni/ms-decision-provider
+  commit a28887362a55f9b4b03362568760ce6d0ae903e5
+  MIT, Copyright (c) 2026 Aaryan Guglani (LICENSE)
+
+What was rewritten: provider.py's Microsoft-Decision-1 client is carried into
+Common Lisp. The one POST to {base}/providers/microsoft/v1/systemone, its
+three typed question shapes (noul, choice, score), the batched decide call,
+the api-key header, the deployment default ms-decision-1, the environment
+names AZURE_FOUNDRY_API_KEY and AZURE_FOUNDRY_BASE_URL, the endpoint check
+that accepts only an https <resource>.openai.azure.com host and strips a
+/resource path or a trailing slash, the sanitized HTTP error that never echoes
+the body, and the rule that nothing is sent until both the endpoint and the
+key are set all keep their behaviour. The four registered tools keep their
+names (decision_noul, decision_choice, decision_score, decide) and answer
+the endpoint's JSON with the whole probability distribution, as the plugin
+did. The optional pre_tool_call gate is carried onto the :TOOL point: the
+same idea (only a fixed tool label and allowlisted operation words leave the
+machine, never arguments), the same fixed risk set reduced to Nodecode's own
+tool names, the same approve and block modes and block threshold, with the
+operator asked through Nodecode's own question board instead of Hermes's
+approval prompt.
+
+What was left out, and why: Hermes's plugin context (register(ctx), the tool
+and hook registries) is replaced by the cell declaration, so there is no
+plugin.yaml or __init__.py. The per-process HMAC rule_key that let Hermes
+cache an approval for one exact call has no counterpart here: Nodecode asks
+per call and keeps no approval rule on disk, so the key and the cache are
+gone. The shadow replay harness under tests/ (replay.py, decision_cases.json
+and its metrics) is not carried; the cell's own offline tests stand in its
+place. The plugin's secret-scope reader (agent.secret_scope.get_secret) is
+replaced by the shared auth.json entry api_keys.ms-decision and the
+environment variable, which is how a Nodecode cell reaches a key.
