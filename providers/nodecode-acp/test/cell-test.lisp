@@ -137,6 +137,28 @@ the fake's prompt-count file."
       (is (search "hi-from-the-agent" (or (and result (nlk:tool-result-event-result result)) "")) "with its output"))
     (is (equal '("turn.completed") (acp-ends "acp-run")))))
 
+(deftest acp-cell-words-a-command-the-shell-has-no-family-for ()
+  "A command reads as a bash call with it does: one no family names (echo,
+false) as its line, not as `acp', running and failed alike, and one a
+family names (ls) by that family."
+  (with-acp-session ("acp-echo" dir)
+    (acp-turn "acp-echo" "run echo rotation ok")
+    (acp-turn "acp-echo" "run false")
+    (acp-turn "acp-echo" "run ls -la")
+    (let ((calls (mapcar #'nlk:tool-call-event-arguments
+                         (session-events "acp-echo" :type 'nlk:tool-call-event))))
+      (is (= 3 (length calls)) "each command is a call")
+      (loop for (command error-p) in '(("echo rotation ok" nil) ("false" t) ("ls -la" nil))
+            for arguments in calls
+            for bash = (nlk:encode-json-object (nlk:json-object "command" command))
+            for words = (nle::tool-arguments-activity "acp" arguments :error-p error-p)
+            do (is words (format nil "~a has words" command))
+               (is (equal (nle::activity-title (nle::tool-arguments-activity "bash" bash :error-p error-p))
+                          (and words (nle::activity-title words)))
+                   (format nil "~a reads as its bash call does" command))
+               (is (equal (nle::tool-activity-verb "bash" bash) (nle::tool-activity-verb "acp" arguments))
+                   (format nil "~a runs as its bash call does, not as running acp" command))))))
+
 (deftest acp-cell-asks-before-the-agent-writes ()
   (with-acp-session ("acp-write" dir)
     (let ((asked nil))

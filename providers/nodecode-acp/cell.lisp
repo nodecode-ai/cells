@@ -91,8 +91,9 @@ among the models."
 
 (defun activity (next name arguments &rest keys &key metadata error-p &allow-other-keys)
   "TOOL-ARGUMENTS-ACTIVITY advice: an acp call's activity, from the kind and
-the input its agent gave it -- a read reads, an edit edits, a command is
-read as the shell command it is -- plus every file its result changed."
+the input its agent gave it -- a read reads, an edit edits, a command reads
+as a bash call with that command does, its line where no family names it --
+plus every file its result changed."
   (if (not (equal name "acp"))
       (apply next name arguments keys)
       (let ((call (call-object arguments)))
@@ -107,17 +108,21 @@ read as the shell command it is -- plus every file its result changed."
                          ((and (equal kind "search") (text-of call "pattern"))
                           (list (list :search (text-of call "pattern") nil)))
                          ((and (equal kind "fetch") (text-of call "url"))
-                          (list (list :fetch (text-of call "url") nil)))
-                         (command (nle::shell-command-entries command)))))
-            (let ((diff (and (hash-table-p metadata) (gethash "workspace_diff" metadata))))
-              (when (hash-table-p diff)
-                (loop for file across (or (gethash "files" diff) #())
-                      for changed = (and (hash-table-p file) (text-of file "path"))
-                      when (and changed (notany (lambda (entry) (equal (second entry) changed)) entries))
-                        do (setf entries (append entries (list (list :edit changed nil)))))))
-            (when entries
-              (nle::activity-from-entries entries :head (and command (not path) command)
-                                                  :error-p error-p)))))))
+                          (list (list :fetch (text-of call "url") nil))))))
+            ;; A command reads as core's bash call with it does: by its family
+            ;; where one names it (ls lists), else by its line (echo, false),
+            ;; never as the bare tool name an activity of no entries left.
+            (if (and command (null entries))
+                (nle::tool-call-activity "bash" command :metadata metadata :error-p error-p)
+                (let ((diff (and (hash-table-p metadata) (gethash "workspace_diff" metadata))))
+                  (when (hash-table-p diff)
+                    (loop for file across (or (gethash "files" diff) #())
+                          for changed = (and (hash-table-p file) (text-of file "path"))
+                          when (and changed (notany (lambda (entry) (equal (second entry) changed)) entries))
+                            do (setf entries (append entries (list (list :edit changed nil))))))
+                  (when entries
+                    (nle::activity-from-entries entries :head (and command (not path) command)
+                                                        :error-p error-p)))))))))
 
 (defun title (next row activity)
   "ROW-TOOL-TITLE advice: an acp call the shell has no words for is titled
