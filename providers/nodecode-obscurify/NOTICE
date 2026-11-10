@@ -1,0 +1,27 @@
+nodecode-obscurify is a rewrite of Obscurify-ai's Obscurify-ai/hermes-obscurify-provider:
+https://github.com/Obscurify-ai/hermes-obscurify-provider
+commit 72ce6f5cf6d297c01d23198a84c21b561fa0698c
+MIT, Copyright (c) 2026 Obscurify.ai (LICENSE)
+
+Rewritten: the provider profile (its base of https://obscurify.ai/v1, its
+OBSCURIFY_API_KEY variable, its signup address and its OpenAI-compatible chat
+wire) as a Nodecode catalog row, the public /v1/models read that builds the
+model list and each model's context window, the filter that leaves decision
+models and models under the 64K floor out of the picker (the floor is the
+section's min_context_tokens now), the featured fallback list with the
+capabilities the original checked for it, and the reasoning_effort mapping --
+Nodecode's `off' goes out as the API's `none'.
+
+Added, because Nodecode's catalog is where a picker reads its list: the
+catalog read runs once at start and hourly after that (the original read on
+the first listing and cached for an hour), and a failed read leaves the list
+already read standing.
+
+Left out, and why: the Hermes private seams the original imported
+(providers.base, ProviderProfile, register_provider) have no place here, so the
+profile is a catalog row and its two methods (fetch_models,
+get_model_context_length) are one catalog read and the rows it builds. Its
+EFFORTS table carried an `ultra' rung above `max' that its API mapped to
+`max'; Nodecode's ladder ends at `max', so the entry has nothing to map. The
+utm_source=hermes tag on its signup address is a referral marker, and this
+rewrite does not carry one.
