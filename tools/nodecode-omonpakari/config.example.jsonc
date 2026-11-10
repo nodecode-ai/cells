@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell. The
+// declaration in cell.lisp is the authority; this is an illustration.
+// A present section is enabled; "enabled": false vetoes it. Nothing here is
+// required: the journal works without a key, and a key adds pressure.
+{
+  "omonpakari": {
+    "enabled": true,
+    "data_dir": "~/.nodecode/omonpakari",
+    "openweather_api_key_env": "OPENWEATHER_API_KEY",
+    "latitude": "59.91",
+    "longitude": "10.75",
+    "window_h": 24,
+    "quiet_context": true
+  }
+}

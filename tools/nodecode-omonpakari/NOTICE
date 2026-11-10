@@ -1,0 +1,20 @@
+nodecode-omonpakari is a rewrite of tamamo510's tamamo510/omonpakari:
+  https://github.com/tamamo510/omonpakari
+  commit 8da1d8ab1a45de362c2491146f0946e8b4467045
+  MIT, Copyright (c) 2026 tamamo510 (LICENSE)
+
+What was rewritten: the seven tools, the reference table of absorption
+interactions with its sources, the cycle arithmetic that answers a window of
+dates rather than a single day, the life notes, the composed states and the
+pressure reading with its level and trend, and above all the pre_llm_call
+hook: before each reply a short quiet picture of today is added to the
+standing context, so suggestions are weighed against the person's body and
+habits first. The original keeps its journal in the host's SQLite plugin
+database; this rewrite keeps the same journal, marks, notes and pressure
+samples in one JSON file under the organism's home, through no database
+driver. What was left out: the background hourly pressure refresh thread and
+the cron-turn switch (a Nodecode turn is a turn the person started), the
+duplicate detection that dropped a repeated note from a conversation, and the
+per-medication count limits are kept but not surfaced in the picture. Nothing
+of the original's code runs: it is Common Lisp against Nodecode's cell
+contract, and OpenWeather is the one host it speaks to.
