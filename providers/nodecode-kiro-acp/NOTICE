@@ -1,0 +1,29 @@
+nodecode-kiro-acp is a rewrite of tobenwarrior's tobenwarrior/hermes-kiro-provider:
+
+https://github.com/tobenwarrior/hermes-kiro-provider
+commit 02c4dd06585436751145961658a22b773f23a0ef
+MIT, Copyright (c) 2026 tobenwarrior (LICENSE)
+
+Rewritten: the provider a turn rides (a `kiro-cli acp' subprocess on the
+user's own Kiro login), the ACP session lifecycle (initialize at protocol
+version 1, session/new, the model and the reasoning effort as session config
+options, one session/prompt per round), the fold of the streamed
+session/update text into the turn, the OpenAI-schema prompt with the
+<tool_call> block contract and its parsing back into tool calls, the
+fs/read_text_file and fs/write_text_file bridge, the permission answer, the
+rule that a turn naming the provider itself means the session's own model,
+the argument list the section names, and the note when the CLI is missing
+or logged out. Reimplemented in Common Lisp against the Nodecode cell
+contract: one lane whose stream function spawns the CLI and speaks the
+protocol, one hook answering the credential, one listing the models.
+
+Left out: the plugin's inheritance of its harness's in-tree ACP client
+(agent.copilot_acp_client) and the provider-profile plumbing that came with
+it (the `kiro', `kiro-cli' and `kiro-acp-agent' aliases, the acp://kiro
+marker base URL, the chat_completions api_mode); the live model catalog
+fetched from a throwaway session/new and cached for an hour, which only fed
+the harness's model picker (the section's `models' names the same thing
+without spawning a process at listing time); the HERMES_KIRO_ACP_COMMAND,
+KIRO_CLI_PATH and HERMES_KIRO_ACP_ARGS environment overrides, which the
+section's `command' and `args' state; and the Copilot-flavored error
+translation, replaced by the same note at the point of failure.

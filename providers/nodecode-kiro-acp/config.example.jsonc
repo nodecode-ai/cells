@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. The declaration in cell.lisp is the authority.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "kiro-acp": {
+    "enabled": true,
+    "command": "kiro-cli",
+    "args": ["acp"],
+    "models": ["default"],
+    "effort": ""
+  }
+}
