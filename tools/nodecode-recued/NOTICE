@@ -1,0 +1,7 @@
+nodecode-recued is a rewrite of recued's recued/agent-plugin:
+
+  https://github.com/recued/agent-plugin
+  commit c9c37fb055925e423ff9a28d1376efad3d4c49f7
+  MIT License, Copyright (c) 2026 Recued (LICENSE)
+
+Rewritten: mcp.json's one server entry, recued --mcp, is now the mcp.servers member this cell writes for the user (cell.lisp, server-entry), so Nodecode's own nodecode-mcp cell connects it and turns each tool into a function; skills/recued/SKILL.md is the manual topic recued, whole, in cell.lisp (+primer+), with only the names of the surrounding harness changed; the setup steps the plugin's README and the skill tell a user are the ones /recued and the topic repeat. Nothing was left out: the plugin had no code of its own, and the MCP client it relied on is a shipped Nodecode cell, so the protocol is not reimplemented here. The repository's .mcp.json (the same server for clients that read that file) has no counterpart, since Nodecode reads mcp.servers.

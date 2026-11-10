@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+//
+// The entry under mcp.servers is the one this section writes; with
+// auto_connect on, the cell adds it at start when it is not there, and
+// /recued connect adds it on demand.
+{
+  "recued": {
+    "enabled": true,
+    "server_name": "recued",
+    "command": "recued",
+    "args": ["--mcp"],
+    "timeout_seconds": 120,
+    "auto_connect": true
+  }
+}
