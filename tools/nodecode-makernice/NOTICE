@@ -1,0 +1,33 @@
+nodecode-makernice is a rewrite of makernice's makernice/makernice-plugin:
+
+  https://github.com/makernice/makernice-plugin
+  commit ebdff055312c9e19f27caa0fe108661d64e74643
+  MIT, Copyright (c) 2026 Makernice Team (LICENSE)
+
+What was rewritten: the original is configuration only -- a plugin.json, an
+mcp.json naming the remote MCP server at mcp.makernice.com, and four skills
+(makernice-setup, product-video, trend-remix, cost-planner). Everything the
+user gets from it is served by that server, so the cell is its client in
+Common Lisp: it speaks MCP's streamable-HTTP protocol (initialize,
+notifications/initialized, tools/call, the Mcp-Session-Id header, a JSON or
+event-stream answer) to the same url, and registers the server's eight tools
+under the same names with a makernice_ prefix -- list_models, estimate_cost,
+generate, check_job, cancel_job, list_trends, get_balance, get_topup_link --
+with the descriptions and the input parameters the plugin's evals pin. The one
+flow all four skills teach is kept as the primer behind (help :makernice) and
+made a local rule where a local rule is possible: generate refuses without the
+price the user approved (max_cost_usd, the amount_usd estimate_cost answered)
+and without a stable request_id, so a retry is never charged twice; a forgotten
+session (HTTP 404) re-runs the handshake once; a refused token names where the
+token came from, never the token.
+
+What was left out, and why: the OAuth sign-in itself. The original left it to
+whichever client installed the plugin (Claude Code's /mcp, Hermes's
+auth: oauth, Cursor, Gemini CLI), and the cell takes the bearer it issues in
+its section or the environment instead of running a browser flow of its own --
+so the sign-in is one step the user does once in a client that has one. The
+skills' four documents are one primer rather than four files, because a cell's
+manual is one text read with every request. The per-client install
+instructions in the README (Claude Code's plugin marketplace, Cursor's folder,
+Gemini CLI, LobeHub, `npx skills add`) are not repeated: the cell is the
+client. LICENSE is the original repository's LICENSE, unchanged.

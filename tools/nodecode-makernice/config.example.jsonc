@@ -1,0 +1,13 @@
+{
+  // The Makernice cell: its own section of config.jsonc, or /settings.
+  "makernice": {
+    // The bearer Makernice's sign-in issues for https://mcp.makernice.com/mcp.
+    // Leave it out and export MAKERNICE_TOKEN, or name a file that holds it.
+    "token": "…",
+    // "token_env": "MAKERNICE_TOKEN",
+    // "token_file": "~/.nodecode/secrets/makernice-token",
+    "url": "https://mcp.makernice.com/mcp",
+    // One request's ceiling in seconds; check_job's wait_s sits inside it.
+    "request_timeout": 30
+  }
+}
