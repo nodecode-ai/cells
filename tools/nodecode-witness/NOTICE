@@ -1,0 +1,33 @@
+nodecode-witness is a rewrite of BenCoy09's BenCoy09/hermes-witness:
+https://github.com/BenCoy09/hermes-witness
+commit cabc8f70e8d8eb8d058c3e14365b212152d9900b
+
+MIT, Copyright (c) 2026 Hermes Witness contributors (LICENSE)
+
+What was rewritten: the whole plugin, in Common Lisp, against Nodecode's cell
+contract. The rules, their weights and the A/B/C/D thresholds are the
+original's, one for one (its trail.py and evidence.py): an unresolved
+failure at the moment of writing, the same error repeated, a verify script
+written and never run, a verification claim with no passing command, a
+high-impact action that drops one of the operator's own recorded rules,
+placeholders, unsupported confidence. The dispositions are the original's
+too: the gate quarantines a grade-D skill and is reversible, trust and
+release are the operator's alone and never the model's, and every decision
+lands in a sha256-chained ledger.
+
+What it reads instead of what the original read: the trail is Nodecode's own
+store -- each tool result with the arguments of the call that made it --
+rather than Hermes's post-tool-call hook, so the result is the harness's
+own failure bit and no result text has to be parsed to know a call failed.
+The operator's rules come from the memories kept as definitions
+(define-memory) rather than from MEMORY.md and USER.md. The write seam is
+advice on NLK:RECORD-DEFINITIONS, the moment a definition is kept, rather
+than a skill_manage tool call. The model is told what the grade found
+through a standing notice in its prompt rather than a pre_llm_call hook.
+
+What was left out: the CLI subcommands (report, show, trust, release, mode,
+verify, trace are /witness verbs, and NDJSON trace rows are kept in memory
+for one run), the demo fixture, and the "degraded after real use" outcome
+counter -- the rewrite counts a skill's uses from the use ledger's own view
+lines and each of those sessions' outcome from its tool results when the
+report is read, instead of recording an outcome at session end.
