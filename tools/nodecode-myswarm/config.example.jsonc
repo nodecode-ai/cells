@@ -1,0 +1,12 @@
+{
+  // Where myswarm reads an agents.md from and writes into. Left out, the cell
+  // uses the working directory of the session that calls it.
+  "workspace": "",
+  // The cell's own folder: an import keeps the agents.md it replaced here, and
+  // a default export lands here. Required before an import.
+  "data_dir": "~/.nodecode/myswarm",
+  // The name an export takes when the call names no path.
+  "default_export_filename": "myswarm-export.md",
+  // The diagram's frame: box characters, or 7-bit ASCII.
+  "default_style": "unicode"
+}
