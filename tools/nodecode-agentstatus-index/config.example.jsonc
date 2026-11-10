@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "agentstatus-index": {
+    "enabled": true,
+    "server_url": "https://index.mcp.agentstatus.dev/mcp",
+    "timeout_seconds": 30,
+    "max_chars": 6000,
+    "default_host": "any"
+  }
+}
