@@ -1,0 +1,23 @@
+nodecode-reachmap is a rewrite of MindSproutStudios's MindSproutStudios/hermes-reachmap:
+
+  https://github.com/MindSproutStudios/hermes-reachmap
+  commit f927ac96a63ecff6d7e614250d7a80b226f9a4b9
+  MIT, Copyright (c) 2026 MindSprout Studios (LICENSE)
+
+The plugin's scanners are here as Common Lisp against Nodecode's cell
+contract: the DevTools probe that asks each browser on its port what it is
+and which tabs it holds, the tab-to-service table, the sign-in read off a
+page title, the listening-port and PATH scans, the MCP server list, the
+drives, the capability tool and its find verb, the /reachmap command, the
+denial matcher that catches a reply saying a reach is missing, and the
+compact map frozen into each session's prompt. Each is reimplemented, not
+translated: the scanners exchange JSON over loopback through nlk:http and
+test a port with one TCP connect, so no Python, no Hermes runtime and no
+plugin directory is needed.
+
+Left out: the SQLite ledger of when each capability appeared and vanished
+(its history readout and its rows per scan), the FastAPI web page and status
+chip the plugin drew in Hermes's own UI, the Hermes credential store, and the
+post-hook that rewrote a finished reply in place -- here the check answers
+the model instead of editing it, since a Nodecode cell contributes a tool and
+a prompt section rather than a message transform.
