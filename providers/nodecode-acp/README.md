@@ -13,7 +13,10 @@ session shows what it does:
 - its words as the answer and its thinking (and its plan, as a checklist)
   as the turn's thinking;
 - each call it makes as a row, in Nodecode's words where they fit (Read,
-  Edited, Ran `$ command`), with the agent's own title otherwise;
+  Edited, Searched, Ran `$ command`), led by the agent's own words for it
+  where it gives some: Claude Code's one-line description of each command
+  (`Run the test suite`), a subagent's task, its title for a call Nodecode
+  has no words for (`Update TODOs: ...`) - never the bare `acp`;
 - what a call changed in the folder, as the row's diff, the same as a
   Nodecode tool's;
 - its permission asks as the page's question card, with the agent's own

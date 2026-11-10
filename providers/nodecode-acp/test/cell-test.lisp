@@ -4,7 +4,7 @@
 ;;;;
 ;;;; Every agent here is test/fake-agent.py: a python3 program that speaks the
 ;;;; Agent Client Protocol on stdio and answers by its prompt's first word
-;;;; (write, run, plan, wait, count, crash, anything else echoed), so a turn
+;;;; (write, run, describe, plan, wait, count, crash, anything else echoed), so a turn
 ;;;; runs through the real wire, the real process and the real turn loop with
 ;;;; no network and no model. Its prompt count lives in a temp state file,
 ;;;; which is how a test sees that a restarted agent loaded the same session.
@@ -138,9 +138,8 @@ the fake's prompt-count file."
     (is (equal '("turn.completed") (acp-ends "acp-run")))))
 
 (deftest acp-cell-words-a-command-the-shell-has-no-family-for ()
-  "A command reads as a bash call with it does: one no family names (echo,
-false) as its line, not as `acp', running and failed alike, and one a
-family names (ls) by that family."
+  "A command reads by its family where one names it (ls lists), else by its
+line (echo, false) -- running and failed alike, never as `acp'."
   (with-acp-session ("acp-echo" dir)
     (acp-turn "acp-echo" "run echo rotation ok")
     (acp-turn "acp-echo" "run false")
@@ -148,16 +147,35 @@ family names (ls) by that family."
     (let ((calls (mapcar #'nlk:tool-call-event-arguments
                          (session-events "acp-echo" :type 'nlk:tool-call-event))))
       (is (= 3 (length calls)) "each command is a call")
-      (loop for (command error-p) in '(("echo rotation ok" nil) ("false" t) ("ls -la" nil))
+      (loop for (command error-p expected) in '(("echo rotation ok" nil "echo rotation ok")
+                                                ("false" t "false")
+                                                ("ls -la" nil "Listed"))
             for arguments in calls
-            for bash = (nlk:encode-json-object (nlk:json-object "command" command))
             for words = (nle::tool-arguments-activity "acp" arguments :error-p error-p)
-            do (is words (format nil "~a has words" command))
-               (is (equal (nle::activity-title (nle::tool-arguments-activity "bash" bash :error-p error-p))
-                          (and words (nle::activity-title words)))
-                   (format nil "~a reads as its bash call does" command))
-               (is (equal (nle::tool-activity-verb "bash" bash) (nle::tool-activity-verb "acp" arguments))
-                   (format nil "~a runs as its bash call does, not as running acp" command))))))
+            for title = (and words (nle::activity-title words))
+            for verb = (nle::tool-activity-verb "acp" arguments)
+            do (is (and title (search expected title)) (format nil "~a reads as ~s: ~s" command expected title))
+               (is (not (search "acp" verb)) (format nil "~a runs as its words, not as running acp: ~s" command verb))))))
+
+(deftest acp-cell-words-a-call-as-its-agent-describes-it ()
+  "A call carries its agent's own words as its description, which its row and
+its running verb read first: a command the first line of the description its
+input gives, a call the shell has no words for (a subagent) its title."
+  (with-acp-session ("acp-said" dir)
+    (acp-turn "acp-said" "describe echo hello")
+    (let ((calls (mapcar #'nlk:tool-call-event-arguments
+                         (session-events "acp-said" :type 'nlk:tool-call-event))))
+      (is (= 2 (length calls)) "a command and a subagent")
+      (destructuring-bind (&optional command subagent) calls
+        (let ((said (and command (nlk:json-value (nlk:decode-json command) :string "description")))
+              (task (and subagent (nlk:json-value (nlk:decode-json subagent) :string "description"))))
+          (is (equal "Say hello" said) "the command carries its description's first line")
+          (is (equal "Check the callers" task) "the subagent carries its title"))
+        (let ((words (nle::tool-arguments-activity "acp" command)))
+          (is (equal "Say hello" (and words (nle::activity-note words))) "as its note")
+          (is (equal "Say hello" (nle::tool-activity-verb "acp" command)) "which it runs as"))
+        (let ((words (nle::tool-arguments-activity "acp" subagent)))
+          (is (equal "Check the callers" (and words (nle::activity-title words))) "and reads as it"))))))
 
 (deftest acp-cell-asks-before-the-agent-writes ()
   (with-acp-session ("acp-write" dir)

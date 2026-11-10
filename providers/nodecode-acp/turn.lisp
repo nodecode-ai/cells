@@ -13,7 +13,8 @@
 ;;;;                         call and result once it ends (or once it asks to
 ;;;;                         run), the files it changed as the result's
 ;;;;                         workspace diff, its words the shell's own
-;;;;                         (ACTIVITY, cell.lisp)
+;;;;                         (ACTIVITY, cell.lisp), and the agent's own
+;;;;                         words for it as its `description' (CALL-WORDS)
 ;;;;   usage_update / reply  the turn's usage: tokens, the agent's own cost
 ;;;;
 ;;;; A session/request_permission is the question card the page and the
@@ -171,16 +172,43 @@ the path of a diff it carries."
         thereis (and (hash-table-p item) (equal (gethash "type" item) "diff")
                      (eq (gethash "oldText" item :null) :null))))
 
+(defparameter +words-limit+ 120
+  "The longest an agent's words for one call stand on its row, in characters.")
+
+(defun one-line (text)
+  "TEXT's first non-blank line, trimmed and clipped to +WORDS-LIMIT+, or NIL."
+  (let ((line (and (stringp text)
+                   (find-if (lambda (line) (plusp (length line)))
+                            (mapcar (lambda (line) (string-trim '(#\Space #\Tab #\Return) line))
+                                    (uiop:split-string text :separator '(#\Newline)))))))
+    (cond ((null line) nil)
+          ((<= (length line) +words-limit+) line)
+          (t (concatenate 'string (string-right-trim " " (subseq line 0 (1- +words-limit+))) "…")))))
+
+(defun call-words (call path)
+  "The agent's own words for CALL, one line, or NIL: the description its input
+gives (Claude Code writes one for every command and every subagent), else its
+title when the shell has none of its own -- no PATH, command, pattern or url,
+as a plan, a skill or a tool of the agent's own (`Update TODOs: ...')."
+  ;; Carried as the call's `description', which every surface reads as its
+  ;; note in any process: a row says what the agent said it does, never the
+  ;; bare tool name, even in a shell that lays no cell's words.
+  (or (one-line (input-text call "description" "command_description"))
+      (and (not (or path (input-text call "command" "cmd" "pattern" "query" "url")))
+           (one-line (call-title call)))))
+
 (defun call-arguments (fold call)
   "CALL as its `acp' call's arguments: what the shell's words are read from."
   (let* ((input (call-raw-input call))
          (encoded (and input (nlk:encode-json-object input)))
-         (path (call-path call)))
+         (path (call-path call))
+         (words (call-words call path)))
     (nlk:encode-json-object
      (nle::json-object
       "agent" (agent-title (fold-agent fold))
       "title" (or (call-title call) "")
       "kind" (or (call-kind call) "other")
+      :when words "description" words
       :when (input-text call "command" "cmd") "command" (input-text call "command" "cmd")
       :when path "path" (relative-path fold path)
       :when (input-text call "pattern" "query") "pattern" (input-text call "pattern" "query")
