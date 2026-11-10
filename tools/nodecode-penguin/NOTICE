@@ -1,0 +1,27 @@
+nodecode-penguin is a rewrite of Crystal32378's Crystal32378/hermes-penguin:
+
+  https://github.com/Crystal32378/hermes-penguin
+  commit d63015de74effae451d5286cc080b6a3afddd6ad
+  MIT License, Copyright (c) 2026 Crystal Chang (LICENSE)
+
+Rewritten: the whole engine, in Common Lisp -- the minute-precision resolution of
+a local time to one instant (a time the clocks skipped, a time they read twice,
+and the earlier/later choice), the reading of that instant in every zone asked
+for, the working-window test with its overnight shift and its equal-hours rule,
+the search for the windows where the whole of a meeting fits inside every
+member's hours, and the shapes both tools answer. The four tools keep their
+names and their arguments (penguin_convert, penguin_overlap, penguin_save_team,
+penguin_get_team), the team object keeps its members and windows, and a saved
+team keeps the same id rule. One thing changed under the engine: the plugin
+carried its own pinned copy of the IANA database, and a cell reads the tz
+database this machine already keeps, so the zoneinfo_dir setting names it and
+an unreadable one refuses at start. /penguin and the (help :penguin) topic are
+additions, not part of the original.
+
+Left out: the Desktop page -- the four-clock planner, the arrival animation,
+the control-room artwork, the medal and stamp, the soundtrack and its feature
+track, and the /preview route that fed them. A cell has no page of its own, and
+the slider's question (does this whole meeting fit?) is answered by
+penguin_overlap over the same team. Also left out: Hermes profile state for
+saved teams, replaced by one JSON file under the home; and the plugin's
+FastAPI routes, which a cell answers as a tool or a slash command.
