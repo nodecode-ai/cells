@@ -1,0 +1,23 @@
+nodecode-meme-studio is a rewrite of MrHydeDev's MrHydeDev/meme-studio-mcp-plugin:
+
+  https://github.com/MrHydeDev/meme-studio-mcp-plugin
+  commit 8d8f27722f2549b8154ec7ef9cce609d8a62addb
+  MIT License, Copyright (c) 2026 MrHydeDev (LICENSE)
+
+Rewritten: the plugin's whole surface, which was configuration only -- an MCP
+server entry for https://memes.mrhyde.dev/mcp and one skill teaching the four
+steps. Its five tools (suggest_templates, search_templates, get_template,
+popular_templates, create_meme) are here as the same five, forwarded by name
+to that same endpoint over Streamable HTTP from Common Lisp; the skill's steps
+and rules live in the (help :meme-studio) primer, and its first step is also
+/meme for the operator. The picture a tool answer carries in base64 is written
+under output_dir here and named in the text the model reads, so the file
+survives the answer; the server's own JSON -- edit_url included -- is passed
+through unretyped.
+
+Left out: the Hermes-specific packaging (plugin.json, the extensions block that
+marks the server untrusted) because a cell is a folder with an .asd, and the
+skill's advice to add the server with `claude mcp add` or `codex mcp add`,
+which edits another client's config -- the cell is the connector here. Also
+left out: the base64-through-curl trick for saving a picture on a machine with
+a terminal, since the cell writes the file itself.
