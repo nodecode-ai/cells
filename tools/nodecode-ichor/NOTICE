@@ -1,0 +1,27 @@
+nodecode-ichor is a rewrite of mystiquemide's mystiquemide/ichor:
+
+  https://github.com/mystiquemide/ichor
+  commit e204b791a23a2495ef556a26b5627b5511290e3c
+  MIT, Copyright (c) 2026 Mystique Mide (LICENSE)
+
+Rewritten: the correction detector (the rejecting openers, the redirect phrases
+and their guards, and the re-sent message that is a retry pair), the local
+scrubber and its counts, the local mistake labels, the card text, the store (one
+JSONL file under the home instead of a SQLite database of its own, with the same
+pending / kept / shared / discarded statuses and a discarded pair keeping no
+text), the /ichor verbs (status, review, keep, share, discard, export, share,
+set repo / public / private, off, on, off --global, forget-all), the TRL
+conversational export and the Atropos pairs file, and the optional upload to a
+Hugging Face dataset with the token read from the environment and sent only to
+huggingface.co. Hermes published a post_llm_call hook with the turn's text;
+Nodecode publishes the turn's own facts, so the rewrite reads the completed
+turn from the event log through the :FRAME point, and its own verbs answer
+strings an eval form can call.
+
+Left out: the Atropos environment and reward modules (the export writes their
+pairs.jsonl and names the folder, but ships no Python), the one-character card
+replies claimed off the gateway's admission hook (k / s / d now settle a pair
+through /ichor keep, share and discard), the in-place edit of a posted card on
+Telegram, Discord and Slack, and the optional side-question judge that asked the
+session's own agent for a two-to-four-word label -- the local labels from the
+operator's words stand in its place, so no extra model call is made.
