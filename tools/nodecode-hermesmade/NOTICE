@@ -1,0 +1,26 @@
+nodecode-hermesmade is a rewrite of Noshkoto's Noshkoto/hermesmade:
+  https://github.com/Noshkoto/hermesmade
+  commit 8a99f1be66b0423d1a2166d70285974c5d39c584
+  MIT, Copyright (c) 2026 @HermesAgentTips (LICENSE)
+
+The plugin was one Python library behind four surfaces - a /sharebot slash
+command, a `hermes hermesmade` CLI, a desktop page and one agent tool - all
+talking to the shelf at hermesmade.lol: a shared bot was a Hermes profile
+distribution packed from an allowlist, pattern-scanned for secrets, uploaded
+as a .tar.gz with the author's @handle, and a downloaded bot was verified
+against its sha256, checked against the same allowlist and installed into a
+profile of its own. This rewrite keeps the shelf and its three acts: preview a
+listing (GET /api/bots/<id> and its package, nothing written), add it (the
+checksum, the allowlist, the same six top-level names, then a folder under the
+bots directory), and share a folder (SOUL.md, config.yaml, skills/ and cron/
+packed, scanned, and posted as multipart with the handle, a re-share sending
+the manage token so it updates the listing instead of duplicating it). It is
+Common Lisp against nlk:http, so no Python, no harness plugin API and no
+desktop page are needed. What was left out: the Grok Bot migration (it needed
+another Hermes plugin and Hermes' own importer), the desktop confirm page and
+its routes (the cell's tools and /hermesmade are the surface instead), the
+per-profile secret scope, which a Nodecode section replaces, and the
+interactive yes/@handle confirmation - the slash command takes the handle, and
+the model's share tool uses the section's. Where the plugin installed a Hermes
+profile, this cell installs a plain folder of the same files, since Nodecode
+has no profiles. Nothing of the original is vendored.
