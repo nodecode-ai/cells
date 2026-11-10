@@ -1,0 +1,27 @@
+nodecode-smol is a rewrite of smol-machines's smol-machines/hermes-smolmachines:
+
+  https://github.com/smol-machines/hermes-smolmachines
+  commit 056dec38e7bbda6d0f72ea8b3606e2f4e19aa120
+  MIT, Copyright (c) 2026 smol machines (LICENSE)
+
+Rewritten: the plugin's terminal backend -- the one thing it did, sending
+Hermes's terminal, file and code tools into a smol machine, a microVM on the
+same computer -- as a Nodecode cell's two tools and one command: smol_run runs
+one shell command in a machine, smol_machines reads the machines this computer
+holds, and /smol does both from the composer, with (help :smol) for the manual.
+The machine is the same: local, hardware-virtualized, booted from the OCI image
+the section names, with nothing of the host mounted into it; one-off machines
+are removed when their command exits, and a named one keeps its files for the
+next call, which is what the plugin's container_persistent setting chose. The
+cell drives the engine's own smolvm CLI instead of importing the Python SDK, so
+nothing Python is bundled; the answer keeps the fields a caller needs (exit
+code, output, the machine, its image, whether the network was on, the seconds
+it took, and notes) in JSON instead of a Python result object. Left out: the
+plugin's placement inside Hermes -- it replaced the harness's whole terminal,
+where a cell is one verb beside the others -- and so its per-task machine
+naming, its fork of Hermes's exec_stream into a pipe and its 11 MiB truncation
+marker, which are Hermes's own plumbing; also its sub-agent and computer-use
+limits, which have no counterpart here. Added, because a Nodecode cell answers
+one call at a time: the timeout, the output ceiling and the image as settings,
+an extra_args list for a CLI flag the cell does not name, and the machine list
+as a tool.
