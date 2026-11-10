@@ -1,0 +1,24 @@
+nodecode-foundry is a rewrite of dolepee's dolepee/hermes-plugin-foundry:
+
+  https://github.com/dolepee/hermes-plugin-foundry
+  commit 9345a56954d219f923a05712a7a68e44df5099a2
+  MIT, Copyright (c) 2026 Iyanda Abdulqodir Adedolapo (LICENSE)
+
+Rewritten: the one sentence a request is read as (a folder to watch or a URL to poll, one
+file type, an interval in minutes, a name and a slug from what it names), the two
+archetypes with their state of what has already been reported, the one root every write
+lands under with symlinks followed and a path outside it refused, the static scan over the
+generated text, and the five verbs — plan, build, test, list, catalog — as tools and as
+one slash command. The state is a text file of names rather than SQLite, a database being
+a dependency a cell does not need for a list of names it already reported; the check is the
+reader run with evaluation off plus the scan, rather than a test subprocess, because
+nothing generated is executed here at all.
+
+Left out: the Hermes manifest and plugin surface (`plugin.yaml`, `__init__.py`, the
+`pre_tool_call` and `post_approval_response` hooks and the tool-execution middleware),
+which a cell does not have — the root is the fence, so a path outside it refuses in words
+instead of asking for an approval — and the printed list of files it generates for a
+Hermes plugin, since a cell's folder is not a manifest. Also left out: the request reader's
+longer sentence-archetype table for suffix punctuation and output-purpose clauses; a
+request here names one file type or refuses, which is the same fail-closed posture with a
+smaller rule.
