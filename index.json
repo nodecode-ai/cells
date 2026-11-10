@@ -63,6 +63,24 @@
       "category": "models"
     },
     {
+      "name": "nodecode-account-pool",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "5462efd4148a63874c207a4361dec0fb692b29ca",
+      "path": "tools/nodecode-account-pool",
+      "description": "Account Pool: several Claude and Codex accounts in one pool, with usage, best, park and wake",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "roqianjas",
+        "repo": "roqianjas/hermes-account-pool",
+        "commit": "7a4fc9fd976ed68de9e6f70ba326ef2053741e69",
+        "license": "MIT"
+      },
+      "category": "models"
+    },
+    {
       "name": "nodecode-acedatacloud",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "4d1c285cc1661b97e62b66be36caa87d986169d9",
@@ -1775,6 +1793,24 @@
         "license": "MIT"
       },
       "category": "web"
+    },
+    {
+      "name": "nodecode-bubblewrap",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "5539e6f19bf133733b13a9736ae43a65d6f7a31c",
+      "path": "tools/nodecode-bubblewrap",
+      "description": "Bubblewrap: run a command in its own bwrap sandbox, read-only host, secrets hidden",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "NousResearch",
+        "repo": "NousResearch/hermes-official-plugins",
+        "commit": "e7a218f26db88426ab3e7376f0e000b6e356f5e7",
+        "license": "MIT"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-buildpilot",
@@ -3533,6 +3569,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-deepcanary",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "6146355089f46cd5c714ffeeaa642ce1774f3d00",
+      "path": "tools/nodecode-deepcanary",
+      "description": "An attention inbox with levels and quiet hours for the operator",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Oscar-Williams",
+        "repo": "Oscar-Williams/dsh-deepcanary",
+        "commit": "07a56658e8e6130644da68c68b57067dbe3c09c4",
+        "license": "MIT"
+      },
+      "category": "automation"
+    },
+    {
       "name": "nodecode-deepgram-voice",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "ddccebbf39e3fad157944a8414a42c5cee596fcd",
@@ -3569,6 +3623,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-deepsec",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "c529c26b155ddeb003589a1736e8c2c338b7be4a",
+      "path": "tools/nodecode-deepsec",
+      "description": "A local security review of a tree: secrets, risky code, agent-config and supply-chain checks, as tools",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Unclecheng-li",
+        "repo": "Unclecheng-li/DeepSec",
+        "commit": "fff031fc01fb36b95348214c8ee359f6ede8aa8b",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-deepseek-search",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "933c3bada94bd941cf1285dd7d97b252ac1b6d83",
@@ -3585,6 +3657,24 @@
         "license": "MIT"
       },
       "category": "web"
+    },
+    {
+      "name": "nodecode-defend",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "b9de8e52c04a27b064781a0eb7fe8fcf3d844ca0",
+      "path": "tools/nodecode-defend",
+      "description": "Injection, jailbreak and secret scanning: scans a tool call's text before it runs, with allow, ask and block tiers",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "PerryLink",
+        "repo": "PerryLink/dsh-defend",
+        "commit": "6c1e28e5fa29d2473fe21d32b883091af681ba21",
+        "license": "Apache-2.0"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-deferred-questions",
@@ -4022,6 +4112,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-dpapi-secrets",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "6410ad4a3e1ad4348cc8dd5dd112632ad930f429",
+      "path": "tools/nodecode-dpapi-secrets",
+      "description": "Windows DPAPI secrets: one encrypted store of named keys, resolved by name",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Yicheng-Mark",
+        "repo": "Yicheng-Mark/hermes-windows-plugins",
+        "commit": "5bad3fb2baf04ce6befecfefce6d14f4c9c98934",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-dreaming",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
@@ -4348,6 +4456,24 @@
         "author": "tuancookiez-hub",
         "repo": "tuancookiez-hub/hermes-enhance-prompt",
         "commit": "8417827ff80db2335e18742c1f5317aeb4b036cb",
+        "license": "MIT"
+      },
+      "category": "general"
+    },
+    {
+      "name": "nodecode-enhance-scope",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "300cef84eb12499a4afba9cecada3988b58a2afe",
+      "path": "tools/nodecode-enhance-scope",
+      "description": "Enhance: your text at the end of every system prompt, the opening line rewritten, and a tool veto",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "wufeng0105",
+        "repo": "wufeng0105/dsh-enhance",
+        "commit": "cdb615a37ca7a453bd5859aef4dbf9accfcc330b",
         "license": "MIT"
       },
       "category": "general"
@@ -7587,6 +7713,25 @@
       "category": "memory"
     },
     {
+      "name": "nodecode-ldap-auth",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "a3eef43dcf072e71b85a0bf9851b092d55f32292",
+      "path": "tools/nodecode-ldap-auth",
+      "description": "LDAP / Active Directory password login: verify a bind, mint a session, look a name up",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "ironclad"
+      ],
+      "credits": {
+        "author": "angel12",
+        "repo": "angel12/hermes-ldap-auth",
+        "commit": "7b871ef375239275e29b1934bbed8ae7573afea3",
+        "license": "MIT"
+      },
+      "category": "general"
+    },
+    {
       "name": "nodecode-ledgerline",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
@@ -8098,6 +8243,25 @@
         "license": "MIT"
       },
       "category": "tools"
+    },
+    {
+      "name": "nodecode-mask",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "19605954bbc36ca04c570b0b95129a7c46bb941a",
+      "path": "tools/nodecode-mask",
+      "description": "Masks phones, emails, ID cards, bank cards and keys in the text you send",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "PerryLink",
+        "repo": "PerryLink/dsh-mask",
+        "commit": "11402b9b71cda30233934b8f77aaca776dbe185d",
+        "license": "Apache-2.0"
+      },
+      "category": "general"
     },
     {
       "name": "nodecode-mcp-creator",
@@ -10280,6 +10444,24 @@
       "category": "memory"
     },
     {
+      "name": "nodecode-pentester",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "e7e8b574df104db631a8d5bb4bf9e6f75fb2fb65",
+      "path": "tools/nodecode-pentester",
+      "description": "PTES pentest run: seven stages, nineteen specialists, deliverables on disk",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "fb0sh",
+        "repo": "fb0sh/dsh-pentester",
+        "commit": "1c69c8e4bd7923fa1e8da38c4b4521a90acd55f0",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-pep",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "3d83e80a496e86d8dd674c87dbc801385d66be68",
@@ -10488,6 +10670,24 @@
         "repo": "mauricemohr88-debug/hermes-plugin-guard",
         "commit": "857d881be77249c192c5fefa8254db186a7abbca",
         "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-plugin-vet",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "fc3d6e58f7bb3664224345f2b747cc46e0cb0aec",
+      "path": "tools/nodecode-plugin-vet",
+      "description": "Plugin Vet: a five-dimension supply-chain risk card for a repository, npm package or folder",
+      "license": "Apache-2.0",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "PerryLink",
+        "repo": "PerryLink/dsh-skill-pack-security",
+        "commit": "1545368e5d16a48fa17f6c269ccae2b7ba4f7975",
+        "license": "Apache-2.0"
       },
       "category": "tools"
     },
@@ -11329,6 +11529,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-redteam-gates",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "a0fc0a6d7a80a904cb65d15aa31d51b0be65d618",
+      "path": "tools/nodecode-redteam-gates",
+      "description": "Red-team stage gates checked by a tool: what a stage's artifacts hold, and what is missing",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "SeaOf0",
+        "repo": "SeaOf0/dsh-redteam-model",
+        "commit": "ce24bb25e35df8c8514e00e0d98f1a36d2e2a562",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-refusal",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "5deacde05f0f4b3d21032174d532139e06870b0b",
@@ -11360,6 +11578,24 @@
         "author": "TakeshiTGAL",
         "repo": "TakeshiTGAL/hermes-plugin-reinfolib",
         "commit": "cfb17760af4b44df2057a262c16f90dfef5066ee",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-relay",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "7e4728fcd855f1afef6eb6992f091ee308727e4b",
+      "path": "rooms/nodecode-relay",
+      "description": "Relay: a second listener in front of your page, with a password and paired devices",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "sorsama",
+        "repo": "sorsama/deepseek-harness-relay",
+        "commit": "62d7315bce02cb42c3c326effc8c39f5cfd29666",
         "license": "MIT"
       },
       "category": "tools"
@@ -11594,6 +11830,24 @@
       "category": "models"
     },
     {
+      "name": "nodecode-safe-swap",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "ce12ad46655548cdf558fc5333863cafe7483598",
+      "path": "tools/nodecode-safe-swap",
+      "description": "Swap destructive shell commands for reversible twins: rm -r to quarantine, force push to a lease.",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "itsolaph",
+        "repo": "itsolaph/hermes-safe-swap",
+        "commit": "6e66f5fe6651e25951fcd3592a7ac2e75787e7f6",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-scalekit",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "327616077bf834825b041b754871735b87496dfa",
@@ -11637,6 +11891,25 @@
       "category": "models"
     },
     {
+      "name": "nodecode-scar",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "836513e7603d7ef15b6715128ecaea356d8d7167",
+      "path": "tools/nodecode-scar",
+      "description": "Scar: the rm shape an operator denied is stopped when it comes back",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "TakeshiTGAL",
+        "repo": "TakeshiTGAL/hermes-plugin-scar",
+        "commit": "fd87a37f895dd557d9d9efc8ce6fc5e4d8ce3735",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-scratchpad",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "065d2db7bda3a6f3674a3bf544ce85439aab3963",
@@ -11673,6 +11946,45 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-sealed",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "dd49a768f6adf04b28f1e6ff92275714a9390091",
+      "path": "tools/nodecode-sealed",
+      "description": "An encrypted store of environment variables, in the original's AES-256-GCM format, loaded into the process at start",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "ironclad",
+        "ironclad/aead/gcm",
+        "ironclad/cipher/aes"
+      ],
+      "credits": {
+        "author": "kailashrajh",
+        "repo": "kailashrajh/hermes-sealed",
+        "commit": "9ab8bd2e6c81d055905e9558358177fca2cee5e2",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-secret-drop",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "4d35ed5b639227a58749c306ff330dc7e499159f",
+      "path": "tools/nodecode-secret-drop",
+      "description": "Drop a secret into the environment without it entering the conversation, and redact exact copies of it",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "Goitonthefloor",
+        "repo": "Goitonthefloor/hermes-secret-drop",
+        "commit": "505bd3b47937ae453d4a54a2ee2455a4d274bf42",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-secret-gate",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "830997010e9ee95b9361a7b228eefaa9809bd8c9",
@@ -11687,6 +11999,81 @@
         "author": "MSAbhishek22",
         "repo": "MSAbhishek22/hermes-secret-gate",
         "commit": "03b99206c02e0c92dccff69976121850773e5b46",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-secret-guard",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "f572dc9e0da0c581a3393b6460cfb3866dcf8e77",
+      "path": "tools/nodecode-secret-guard",
+      "description": "Keeps API keys out of the conversation: register a key by name, redact its value from every tool result, refuse credential reads",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre",
+        "ironclad/digest/sha256"
+      ],
+      "credits": {
+        "author": "ChasClogston",
+        "repo": "ChasClogston/hermes-secret-guard",
+        "commit": "b823a9ebeca0847a6c7a5bd73f0678d6b4657924",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-secret-handoff",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "bf61602d6fcd2c1ef333181b8ce45cc86dd7a275",
+      "path": "tools/nodecode-secret-handoff",
+      "description": "A password typed into the page it is for, and never into the transcript",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "aean0x",
+        "repo": "aean0x/hermes-secret-handoff",
+        "commit": "f669c2a8adce468790be46ad70cfd312df53ba79",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-secretshield",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "552a62fdc9c900c4377a49a55769c6ea335c07c1",
+      "path": "tools/nodecode-secretshield",
+      "description": "Stops credentials from passing through tool calls, and keeps a local incident ledger",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "Whydiriki700",
+        "repo": "Whydiriki700/secretshield",
+        "commit": "d3561130502cf8f773c01574bef79d870cf5a52d",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-secure-audit",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "006db8763bbdda625617f3facf325990fe512aa4",
+      "path": "tools/nodecode-secure-audit",
+      "description": "Prompt-injection scan, Chinese-PII redaction and a local configuration audit",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "PensiveFei",
+        "repo": "PensiveFei/dsh-secure-audit",
+        "commit": "ae94c94183ef785702d34cc90e08705e8c32177b",
         "license": "MIT"
       },
       "category": "tools"
@@ -12031,6 +12418,24 @@
         "author": "raitoxlol",
         "repo": "raitoxlol/hermes-slash-router",
         "commit": "2088919f4c59927aa2d47f21bb12e639453c1a2a",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-smol",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "024bbcf4520fcb72591df03ae71b6786ca505513",
+      "path": "tools/nodecode-smol",
+      "description": "Runs shell commands in a local smol machine: a microVM with its own kernel, apart from your files",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "smol-machines",
+        "repo": "smol-machines/hermes-smolmachines",
+        "commit": "056dec38e7bbda6d0f72ea8b3606e2f4e19aa120",
         "license": "MIT"
       },
       "category": "tools"
@@ -12534,6 +12939,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-taint-sentry",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "313c111a5d28b83df9a1bcc37e57ded68070226d",
+      "path": "tools/nodecode-taint-sentry",
+      "description": "Stamps every tool result with where it came from, then gates credential reads, egress and instruction-file writes while a session carries untrusted content",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "YAN-XBT",
+        "repo": "YAN-XBT/hermes-sentry",
+        "commit": "5f74fe9c923f228a2b6e6aa95d362b71b94bfc20",
+        "license": "MIT"
+      },
+      "category": "general"
+    },
+    {
       "name": "nodecode-talaria",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "225f4bd409ff5503b499e15c65cb7088fb37d5e5",
@@ -12793,6 +13216,24 @@
       "category": "web"
     },
     {
+      "name": "nodecode-tirith",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "e3cae6ddb1ff7081a3d259afc23c92b38b29c5e4",
+      "path": "tools/nodecode-tirith",
+      "description": "Checks every shell command with your installed tirith before it runs",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "sheeki03",
+        "repo": "sheeki03/hermes-plugin-tirith",
+        "commit": "42862b4e49cc5a46985973d982e2bf3969ad724f",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-tls-posture",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "f0a25f13d7052673d7334867178893aa16574e23",
@@ -12932,6 +13373,24 @@
         "author": "Cygnux-Labs",
         "repo": "Cygnux-Labs/Tracekit",
         "commit": "d41c68e335a0986100b8747729659798bcf9d949",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-triplescan",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "c7f7b87718fea37bd34ea50bef1967cbdf2dc66d",
+      "path": "tools/nodecode-triplescan",
+      "description": "Triplescan: Gitleaks, OSV-Scanner and Semgrep over one folder, with an honest verdict",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "dafka007",
+        "repo": "dafka007/hermes-security-audit",
+        "commit": "60a7661bbe2f255c507d620275c59782cabe0335",
         "license": "MIT"
       },
       "category": "tools"
@@ -13364,6 +13823,29 @@
         "license": "MIT"
       },
       "category": "models"
+    },
+    {
+      "name": "nodecode-vt-check",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "fdf042db2baa737fa783980f2562e7e4f55cd9ce",
+      "path": "tools/nodecode-vt-check",
+      "description": "VirusTotal reputation for downloads, links, domains and IPs",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "chipz",
+        "flexi-streams",
+        "ironclad/digest/sha256",
+        "ironclad/digest/sha1",
+        "ironclad/digest/md5"
+      ],
+      "credits": {
+        "author": "Aravinth-Earth",
+        "repo": "Aravinth-Earth/vt-check",
+        "commit": "a358e56c742c836de04be2cf02c49b8797713a26",
+        "license": "MIT"
+      },
+      "category": "tools"
     },
     {
       "name": "nodecode-warm",
