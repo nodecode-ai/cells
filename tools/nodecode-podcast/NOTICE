@@ -1,0 +1,18 @@
+nodecode-podcast is a rewrite of suhas-svg's suhas-svg/hermes_podcast:
+https://github.com/suhas-svg/hermes_podcast
+commit 1c0c4ed9fd4c04e341ef094f5b18d7ebcfceefc6
+MIT, Copyright (c) 2026 suhas-svg (LICENSE)
+
+The Python plugin's four modules were rewritten as one Common Lisp cell: the script
+parser (script.py) is `parse-script` with the same rules and refusals, the speech
+synthesiser (synth.py) speaks each line over Microsoft Edge's read-aloud socket
+instead of the edge-tts package, the mastering (mix.py) shells out to ffmpeg for the
+same loudness pass, chime, pauses and chapter metadata, and the episode store
+(episodes.py) writes the same `episode.mp3`, `transcript.md` and `episode.json` under
+one folder per episode. The three tools and `/podcast` keep the original's answers in
+shape, and the shipped skill's guidance is the `(help :podcast)` text. Left out: the
+Hermes CLI sub-commands (`hermes podcast list|play|voices|doctor`, whose `/podcast`
+counterparts remain), the automatic Telegram/Discord/email delivery of an episode,
+the `daily-briefing` automation blueprint (a cron cell prompt covers it), and the
+parallel synthesis and pacing — lines are spoken one at a time, which the voice
+service prefers.
