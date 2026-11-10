@@ -1,0 +1,13 @@
+{
+  // The relay the Hermes Bridge app on the phone dials. The relay's own
+  // default is http://127.0.0.1:8766; on one network you can point this at
+  // the phone's own HTTP server instead.
+  "url": "http://127.0.0.1:8766",
+  // The pairing code the app shows. Sent as a Bearer token to that address
+  // and nowhere else; kept out of the chat.
+  "token": "<pairing code>",
+  // One call's ceiling, in seconds.
+  "timeout_seconds": 30,
+  // How much of one answer a tool result carries.
+  "max_output_chars": 20000
+}
