@@ -1,0 +1,24 @@
+nodecode-glorya is a rewrite of Glorya-AI's Glorya-AI/hermes-plugin:
+https://github.com/Glorya-AI/hermes-plugin
+commit e6ffa2bb4e6180686ebf276ff5b9744c029842f8
+MIT, Copyright (c) 2026 Glorya (LICENSE)
+
+What was rewritten: the plugin's reach of the Glorya MCP server, in Common Lisp. The five kinds
+of job (image ad, video ad, landing page, website, campaign) and the tool each is created with,
+the options each takes (a video style, a campaign's platform and daily budget, its approval
+before launch), the get_job / respond / refine / publish_site / cancel_job / get_brand /
+get_credits / list_campaigns / list_sites / list_video_formats calls, the status, question and
+file fields the plugin renders, the download of finished files with an https-only, size-capped
+write, the follow-up of a job with its open questions reported back, and the /glorya command
+with its verbs and its --format / --review / --platform / --budget flags all follow the
+original. The MCP transport (initialize, the Mcp-Session-Id, tools/call over Streamable HTTP)
+is written here, because a Nodecode cell reaches the same server itself instead of through
+Hermes' MCP client and its OAuth token; the section's token_env / token_file is that token.
+
+What was left out: Hermes' own surfaces. The `hermes glorya setup` CLI command, the plugin's
+pre_tool_call approval prompt (a campaign or a publish asks in the conversation here instead),
+its transform_tool_result rewrite of a tool answer, the desktop Studio tab (desktop/plugin.js
+and the FastAPI routes behind it), the two scheduled blueprints, and the one-message-edited-in-
+place progress post - a Nodecode cell reports a change as a standing notice and as a line in the
+next request's context. Nothing of the original code is bundled; the rewrite is Lisp and speaks
+the same Glorya server.
