@@ -7144,6 +7144,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-jailbreaks",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "d661e82fb9c56a666536e448127c92a2bc0b694b",
+      "path": "tools/nodecode-jailbreaks",
+      "description": "A working collection of jailbreak prompts, indexed: which model each one targets, what kind it is, and any of them quoted by line",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "togg53192-cmd (the collection), Nodecode (this cell)",
+        "repo": "togg53192-cmd/jailbreaks",
+        "commit": "ee999ee66d31828a39fe155a52ce66d42db7bf18",
+        "license": "MIT"
+      },
+      "category": "security"
+    },
+    {
       "name": "nodecode-jet-browser",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "0caf25cdb1f545c15058a55112eff08e0d06b148",
