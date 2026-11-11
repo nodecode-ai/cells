@@ -750,6 +750,8 @@ source coordinates, the reply gesture included."
           "user_name" (nlk:json-value data :string "author"
                                       "username")
           "message_id" (nlk:json-value data :string "id")
+          ;; when it was sent, by Discord's clock: the line's time (NCK:HANDLE-TAG)
+          "sent_at" (snowflake-seconds (nlk:json-value data :string "id"))
           ;; The reply gesture. Discord's own pointer to another
           ;; message is the whole branch structure of a flat channel:
           ;; a reply to anything a lane produced continues that lane.

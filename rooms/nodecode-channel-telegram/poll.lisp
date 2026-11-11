@@ -165,6 +165,8 @@ no chat id."
         "user_name" (or (nlk:json-value from :string "username")
                         (nlk:json-value from :string "first_name"))
         "message_id" (number-string (gethash "message_id" message))
+        ;; when it was sent, by Telegram's clock: the line's time (NCK:HANDLE-TAG)
+        "sent_at" (let ((date (gethash "date" message))) (and (integerp date) date))
         ;; The reply gesture. Telegram's own pointer to another message
         ;; is the whole branch structure of a flat chat: a reply to
         ;; anything a lane produced continues that lane.

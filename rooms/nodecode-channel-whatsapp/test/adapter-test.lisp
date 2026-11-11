@@ -28,7 +28,7 @@
       (let ((room (format nil "whatsapp-~a" (wa-jid +wa-kim+))))
         (is-lane-carrying "whatsapp" room (format nil "~a-mASK1" room) "whatsapp-chat"
                           "(WhatsApp number 15551110000)" "(ncw:request"))
-      (is (wire-row "kim (operator) [mASK1 u15551110000]: hi bot" (first messages-seen) "content"))
+      (is (untimed-row "kim (operator) [mASK1 u15551110000]: hi bot" (first messages-seen) "content"))
       ;; The account's own words from its phone, and a stranger's, ask nothing.
       (fake-wa-push fake (wa-message +wa-kim+ "note to self" :id "MINE" :from-me t))
       (fake-wa-push fake (wa-message +wa-lee+ "let me in" :id "STRANGER" :push-name "lee"))
@@ -48,7 +48,7 @@
         (is (equal +wa-group+ (gethash "chat" answer)))
         (is (equal "M1" (gethash "quote" answer))))
       (is (some (lambda (row) (search "[mM1 u15551110000]: what is up"
-                                      (or (ignore-errors (nlk:json-value row :string "content")) "")))
+                                      (untimed (or (ignore-errors (nlk:json-value row :string "content")) ""))))
                 (coerce (first messages-seen) 'list)) "the model reads the ask, not the mention that routed it")
       (let ((candidate (ncw:whatsapp-message-candidate (wa-message +wa-kim+ "x" :group +wa-group+))))
         (ncw::note-chat ncw::*whatsapp-adapter* candidate)
@@ -99,7 +99,7 @@
             (fake-wa-push fake (nlk:json-object "event" "poll_vote" "chat" chat "group" nil "from" (wa-person +wa-kim+)
                                                 "push_name" "kim" "poll_id" poll-id "options" (vector "Ship")))
             (is (await (:timeout 15) (= 2 (length (wa-answers fake "whatsapp reply")))) "the vote was answered as its line")
-            (is (some (lambda (rows) (some (lambda (row) (search "ship it now" (or (ignore-errors (nlk:json-value row :string "content")) "")))
+            (is (some (lambda (rows) (some (lambda (row) (search "ship it now" (untimed (or (ignore-errors (nlk:json-value row :string "content")) ""))))
                                            (coerce rows 'list)))
                       messages-seen) "the model read the choice's line")))
         ;; A call is declined, and the caller told to send a voice message.
@@ -118,7 +118,7 @@
       (sleep 1)
       (is (= 1 (length (wa-answers fake "whatsapp reply"))) "the old one was skipped")
       (is (equal "LATE" (gethash "quote" (first (wa-answers fake "whatsapp reply")))) "the late one answered")
-      (is (some (lambda (rows) (some (lambda (row) (search "while you were offline" (or (ignore-errors (nlk:json-value row :string "content")) "")))
+      (is (some (lambda (rows) (some (lambda (row) (search "while you were offline" (untimed (or (ignore-errors (nlk:json-value row :string "content")) ""))))
                                      (coerce rows 'list)))
                 messages-seen) "and the model read how late it was"))))
 

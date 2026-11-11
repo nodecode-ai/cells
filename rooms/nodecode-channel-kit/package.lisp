@@ -56,7 +56,7 @@ it over any platform, and the /channels status surface.")
    ;; the adapters that ask whether an edit involves the bot
    #:decide-inbound #:set-other-addressees #:mention-involves-p
    #:candidate-addressed-p #:candidate-pressed-p #:candidate-joined-p #:discord-mention-p #:telegram-mention-p
-   #:source-field #:handle-tag #:+channel-seams-primer+
+   #:source-field #:handle-tag #:candidate-sent-at #:line-time #:+channel-seams-primer+
    ;; outbound.lisp
    #:split-text-chunks #:execute-plan #:make-dexador-executor #:multipart-body-p
    #:make-recording-executor #:make-scripted-response #:execute-delivery

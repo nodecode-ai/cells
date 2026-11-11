@@ -129,7 +129,9 @@ adapter and the fake gateway have stopped."
       ;; The section takes no mention, so the ask reached the lane as one
       ;; the room meant for it: its line reads as what was said, nothing
       ;; added — how the room reaches the lane is the contract's to say.
-      (is (wire-row "kim (operator) [m77 u42]: hello organism"
+      ;; the line's time is the one Discord minted the message id at
+      (is (wire-row (format nil "kim (operator) [m77 u42 ~a]: hello organism"
+                            (nck:line-time (+ nlk:+unix-epoch+ (ncd::snowflake-seconds "77"))))
                     (first messages-seen) "content"))
       (is-exchange-written-back-once
        "discord-123" "discord-123-m77"

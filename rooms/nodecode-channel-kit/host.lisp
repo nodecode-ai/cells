@@ -4349,6 +4349,8 @@ an ask, or rejected with its reason on the status surface."
   (when (or (plusp (length text)) attachments)
     (set-channel-status (host-id host) :last-event-at-ms
                         (* 1000 (- (get-universal-time) nlk:+unix-epoch+)))
+    ;; when it was sent, before anything reads its line: the bracket carries it
+    (stamp-sent-at candidate)
     (multiple-value-bind (action reason)
         ;; A peer's line is marked before the policy reads it, and counted
         ;; in its thread's run of peer asks after (PEER-RUN).
