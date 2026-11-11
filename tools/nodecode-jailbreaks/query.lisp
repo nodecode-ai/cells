@@ -313,22 +313,32 @@ entry; PATH reads a local copy instead of fetching."
               (hits (loop for line in all
                           for n from 1
                           when (contains-p text line) collect (cons n line))))
-         (if (null hits)
-             (format nil "no line of ~a carries ~s. That file is ~d lines, ~:d bytes."
-                     (entry-key record) text (length all) (entry-bytes record))
-             (format nil "~a, every line carrying ~s~%~a~%~a~@[~%~a carrying ~s~]"
-                     (entry-key record) text
-                     (numbered (subseq hits 0 (min 20 (length hits))))
-                     (source-line)
-                     (when (> (length hits) 20)
-                       (format nil "the first 20 of ~d lines of ~a" (length hits) (entry-key record)))
-                     (when (> (length hits) 20) text)))))
+         (cond
+           ((null hits)
+            (format nil "no line of ~a carries ~s. That file is ~d lines, ~:d bytes."
+                    (entry-key record) text (length all) (entry-bytes record)))
+           (t
+            (let ((shown (subseq hits 0 (min 20 (length hits)))))
+              (format nil "~a, every line carrying ~s~%~a~@[~%(the first 20 of ~d, of ~a)~]~%~a"
+                      (entry-key record) text (numbered shown)
+                      (and (> (length hits) 20) (length hits)) (entry-key record)
+                      (source-line)))))))
       (t (format nil "give a word to look for, or a line range as 12 or 1-40. ~a is ~d lines.~%~a"
                  (entry-key record) (entry-lines record) (source-line))))))
 
+(defun vendor-named-p (text)
+  "The folder TEXT names, spelled as the collection spells it, or NIL. A prefix
+of three letters or more names one too: 'Zhipu' finds 'Zhipu AI'."
+  (when (and (stringp text) (>= (length (string-trim '(#\Space) text)) 3))
+    (let ((wanted (string-trim '(#\Space) text)))
+      (or (find wanted (vendors) :test #'string-equal)
+          (find-if (lambda (vendor)
+                     (eql 0 (cl:search (string-downcase wanted) (string-downcase vendor))))
+                   (vendors))))))
+
 (defun grep-text (text &key entry)
   "Every line of every prompt (or of one, when ENTRY is given) that carries TEXT.
-Fetches each file once, and says how many it searched."
+Fetches each file once, and says how many prompts it searched."
   (let* ((records (if entry
                       (list (etypecase entry
                               (list entry)
@@ -346,15 +356,18 @@ Fetches each file once, and says how many it searched."
                   for n from 1
                   when (contains-p text line)
                     do (push (list (entry-key record) n line) hits)))
-        (error (e) (push (entry-key record) failed))))
+        (error () (push (entry-key record) failed))))
     (setf hits (nreverse hits))
-    (format nil "~a~%~@[(no line of ~d prompts carries ~s)~%~]~@[~a~%~]~a~@[~%could not fetch: ~{~a~^, ~}~]"
-            (if hits
-                (format nil "~{~a~^~%~}"
-                        (loop for (key n line) in (subseq hits 0 (min 40 (length hits)))
-                              collect (format nil "  ~va ~5d  ~a" 20 key n line)))
-                (format nil "no line of ~d prompts carries ~s" searched text))
-            (and hits searched) text
-            (when (> (length hits) 40)
-              (format nil "(the first 40 of ~d lines, across ~d prompts)" (length hits) searched))
-            (source-line) failed)))
+    (if (null hits)
+        (format nil "~a~@[~%could not fetch: ~{~a~^, ~}~]~%~a"
+                (format nil "no line of ~d prompt~:p carries ~s." searched text)
+                (and failed (nreverse failed)) (source-line))
+        (let* ((lines (format nil "~{~a~^~%~}"
+                               (loop for (key n line) in (subseq hits 0 (min 40 (length hits)))
+                                     collect (format nil "  ~va ~5d  ~a" 20 key n line))))
+               (more (when (> (length hits) 40)
+                       (format nil "the first 40 of ~d lines, across ~d prompts" (length hits) searched)))
+               (lost (when failed (format nil "could not fetch: ~{~a~^, ~}" (nreverse failed)))))
+          (format nil "~a~%~a~@[~%~a~]~@[~%~a~]~%~a"
+                  (format nil "~d line~:p across ~d prompt~:p carrying ~s" (length hits) searched text)
+                  lines more lost (source-line))))))

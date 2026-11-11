@@ -193,4 +193,6 @@
     (is (cl:search "a named voice or a posture" kinds) "kinds gives the legend")
     (is (cl:search "The Jack register" persona) "a kind narrows to its entries")
     (is (cl:search "opus-v1" folder) "a folder narrows to its own")
+    (is (cl:search "the Zhipu AI folder" (nodecode-jailbreaks::run-slash "Zhipu AI" nil)) "a folder whose name carries a space is a folder, not a key")
+    (is (string= "Zhipu AI" (nodecode-jailbreaks::vendor-named-p "Zhipu")) "and a prefix of it names it too")
     (is (cl:search "kind:    persona" one) "a key gives one entry, whole, even with no network to read it")))
