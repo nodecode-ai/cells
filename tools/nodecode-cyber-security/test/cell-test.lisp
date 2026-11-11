@@ -32,8 +32,7 @@
   ;; names, not on a second id the feed may retire.
   (setf *sp-outputs* '(("php" "8.2.35" 0)))
   (is (eq :ok (getf (find "php2shell" (nodecode-cyber-security:check) :test #'equal :key (lambda (r) (getf r :id)))
-                    :status))
-      "a fixed php passes"))
+                    :status)) "a fixed php passes"))
 
 (deftest cyber-security-slash-shows-one-advisory-in-full (with-stubbed-security)
   (let ((text (nodecode-cyber-security:run-slash "show php2shell" nil)))
