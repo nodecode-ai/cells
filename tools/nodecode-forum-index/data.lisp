@@ -13,6 +13,14 @@
   "Dread /d/hacking post b2a0fc81f18dbd6f2068, 10 Nov 2026, relayed on X by @solminingpunk"
   "Where the list comes from, as a person would cite it.")
 
+(defparameter +captured+ "11 Nov 2026"
+  "The day the four screenshots behind this cell were read.")
+
+(defparameter +gap+
+  "The poster's \"Dangerous\" section is named in the post but not here: its rows sit below the fold
+of the four screenshots this cell was built from. The post itself (onion) completes it."
+  "The one part of the source this cell does not carry, said in the answer rather than left to guesswork.")
+
 (defparameter +legend+
   '(("malware" . "high-quality discussion and services about malware")
     ("leaks" . "extensive data leaks in the community")

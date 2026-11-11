@@ -152,4 +152,5 @@ Ask for one by name, or narrow it: a category (fraud, leaks, hacking, cracking, 
 
 (defun source-line ()
   "Where the list comes from, said once."
-  (format nil "Source: ~a. A snapshot: the list is the poster's, and no forum on it is vouched for here." +source+))
+  (format nil "Source: ~a. Read ~a. A snapshot: the list is the poster's, and no forum on it is vouched for here."
+          +source+ +captured+))

@@ -53,13 +53,15 @@ is a browser away. Do not fetch, crawl or 'verify' them unless asked: the list i
 
 (defun list-text (&key category tier)
   "The rows of one category or tier, with the source under them."
-  (let ((rows (forums-matching :category category :tier tier)))
-    (format nil "~a~%~a"
+  (let* ((rows (forums-matching :category category :tier tier))
+         (gap (and (null rows) tier (string-equal tier "dangerous"))))
+    (format nil "~a~%~@[~a~%~]~a"
             (forum-list-text rows
                               :heading (cond ((and category tier) (format nil "~a forums, ~a" category tier))
                                              (category (format nil "~a forums" category))
                                              (tier (format nil "~a forums" tier))
                                              (t "every forum in the list")))
+            (and gap +gap+)
             (source-line))))
 
 (defun find-text (name)

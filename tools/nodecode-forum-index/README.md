@@ -31,6 +31,8 @@ It does not fetch, crawl or verify anything: the directory answers from the list
 
 ## Read it with care
 
+It is a snapshot of 10 November 2026, read on 11 November. One part of the poster's list is not in it: the rows under their `Dangerous` heading sat below the fold of the four screenshots this was built from, so `/forum-index dangerous` says so rather than implying the list has no dangerous forums. The post itself completes it.
+
 These are places where people buy and sell stolen data, malware, accounts and carding, and none of them is vouched for - the poster says so in the post, and this cell repeats it with every answer. A forum on the list can be seized, dead, or run by the people it claims to protect you from. The tiers are the poster's: *established* means around a long time and active, *rising* means concerns have been raised (Darkforums was compromised in 2023), and the rest are listed without one.
 
 ## Set it up
