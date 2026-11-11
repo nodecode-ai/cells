@@ -1011,6 +1011,29 @@ holds, and one lane of it in room 123, torn down after BODY."
     (sleep 0.35)
     (is (= 2 (typing-beats host executor)) "silence past the cap ends the beat")))
 
+(deftest channel-host-typing-holds-while-a-call-is-in-flight ()
+  ;; A call still running is the turn working, though it shows nothing until
+  ;; it lands (a CI wait, a long build): its surface keeps the beat past the
+  ;; silence cap. Once it lands, silence counts again; and a call older than
+  ;; +TYPING-CALL-CAP-MS+ holds it no longer, so a hung tool cannot type forever.
+  (nlk:bind ((executor (nck:make-recording-executor))
+             (host (test-host :executor executor :name "typing-call"))
+             (nck::+typing-cap-ms+ 300) (nck::+typing-call-cap-ms+ 1200)
+             (digest (queued-lane-digest host "chat-1-m1")))
+    (is (= 1 (typing-beats host executor)) "a live surface gets its first beat")
+    (nck:digest-note-call-start digest "call-1" "bash" "{\"command\":\"sleep 600\"}" (nck:now-ms))
+    (sleep 0.45)
+    (is (= 2 (typing-beats host executor)) "a call in flight past the silence cap keeps its beat")
+    (sleep 0.2)
+    (is (= 3 (typing-beats host executor)) "and keeps it on the platform's refresh")
+    (nck:digest-note-call-result digest "call-1" (nck:now-ms) :output "done")
+    (sleep 0.35)
+    (is (= 3 (typing-beats host executor)) "once the call landed, silence past the cap ends the beat")
+    (nck:digest-note-call-start digest "call-2" "bash" "{\"command\":\"sleep 600\"}" (nck:now-ms))
+    (is (= 4 (typing-beats host executor)) "the next call brings it back")
+    (sleep 1.3)
+    (is (= 4 (typing-beats host executor)) "a call past the call cap holds the beat no longer")))
+
 ;;; --- commands ---------------------------------------------------------------
 
 (deftest channel-host-slash-line-is-a-command-answered-in-the-room (with-temp-store ())
