@@ -1,0 +1,16 @@
+nodecode-forum-index
+=====================
+
+The code in this folder is MIT (see LICENSE).
+
+The directory it carries is a list published on Dread, in the /d/hacking forum,
+as the post "Hacking forums and their links"
+(b2a0fc81f18dbd6f2068), dated 10 November 2026, and relayed on X by
+@solminingpunk (https://x.com/ImVibhek/status/2120370962025599002, a reply to
+https://x.com/solminingpunk/status/2120285444180959571). The poster's names,
+links, categories, tiers and notes are reproduced as published; the categories
+of two entries -- Lolz Forum's "accounts", and the shorthand on a few rows --
+are the relay's reading, marked in DATA.LISP by their notes.
+
+No software of any forum's is included, and nothing here is a vouch for any of
+them.

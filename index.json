@@ -5181,6 +5181,24 @@
       "category": "models"
     },
     {
+      "name": "nodecode-forum-index",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "8263cf69d0786280668f59e25d9bff7ac83c46dd",
+      "path": "tools/nodecode-forum-index",
+      "description": "A directory of hacking, fraud and security forums: who trades in what, and where",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "the Dread /d/hacking poster (the list), Nodecode (this cell)",
+        "repo": "solminingpunk/status/2120285444180959571",
+        "commit": "b2a0fc81f18dbd6f2068 (the Dread post)",
+        "license": "MIT"
+      },
+      "category": "security"
+    },
+    {
       "name": "nodecode-found",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "13eda34cec678a04ce7e696fa762240736a82f80",
@@ -12881,6 +12899,25 @@
         "repo": "thetasigmaio/hermes-t3-control",
         "commit": "aeb5493e30e744b414cbfe88a70adb1acd59a1c8",
         "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "nodecode-t3mp3st",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "001ca0c33f4af3464dc3f1686df739d8aa2f3eaa",
+      "path": "tools/nodecode-t3mp3st",
+      "description": "Drive a running T3MP3ST War Room: launch a mission, watch it, read findings",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "Pliny the Elder",
+        "repo": "elder-plinius/T3MP3ST",
+        "commit": "29824d5625ede419ac8cdae418c8f4c72c6270f7",
+        "license": "AGPL-3.0"
       },
       "category": "tools"
     },
