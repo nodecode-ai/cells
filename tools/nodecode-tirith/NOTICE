@@ -1,0 +1,23 @@
+nodecode-tirith is a rewrite of sheeki03's sheeki03/hermes-plugin-tirith:
+
+https://github.com/sheeki03/hermes-plugin-tirith
+commit 42862b4e49cc5a46985973d982e2bf3969ad724f
+MIT, Copyright (c) 2026 tirith contributors (LICENSE)
+
+The plugin hooked Hermes's pre_tool_call, post_tool_call and transform_tool_result
+for its terminal and background-process tools. This rewrite keeps the program, the
+check and its invocation (tirith check --json --non-interactive --shell posix, the
+command on standard input, run in the command's folder, TIRITH_OFFLINE=1 when
+offline), the verdict table (allow runs; warn runs with the warning appended; a
+block refuses or asks; a failed check refuses), the finding filters with their
+guarded rule ids, the messages, and the setting names a tirith policy is written
+against. Nodecode has one tool, eval, so the hook reads an eval form for the
+commands it runs -- (sh ...), (uiop:run-program ...), (sb-ext:launch-program ...),
+a ($ "name") a strings object resolves -- and checks those texts, never the Lisp
+around them; a form whose command is built from a variable is checked whole, as
+text. What was left out: the startup capability probe (an unknown option and a
+contract command), replaced by a version floor of 0.5.0 and the verdict's own
+requires_approval field; the background-process input tracking, which Nodecode's
+single tool has no counterpart for; the cwd-after-cd bookkeeping, since Nodecode
+runs the command in the session's folder; and the plugin's approval keys, because
+the one question a block can ask here offers Allow once or Deny, never "always".

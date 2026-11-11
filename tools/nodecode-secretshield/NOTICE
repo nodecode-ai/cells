@@ -1,0 +1,22 @@
+nodecode-secretshield is a rewrite of Whydiriki700's Whydiriki700/secretshield:
+
+  https://github.com/Whydiriki700/secretshield
+  commit d3561130502cf8f773c01574bef79d870cf5a52d
+  MIT, Copyright (c) 2026 Riki Wahyudi (LICENSE)
+
+Rewritten: the detector table (vendor credential formats plus one assignment
+context), the masked preview, the four modes (enforce, redact, warn, off) and
+the `disabled_kinds` setting, the metadata-only incident ledger, and the two
+user surfaces (`/secretshield` and the `shield_status` tool, from the
+original's `/shield` and `shield_status`). Hermes's hooks are Nodecode's hook
+chain on its single `:TOOL` point: the pre-call phase stops or rewrites the
+arguments, the post-call phase records what a tool printed. The original's
+first-turn note is one `:ROUND` hook.
+
+Left out: the finished-reply rewrite (`transform_llm_output`). Nodecode streams
+a reply as it is written, and there is no point at which a finished reply can
+be rewritten without holding the stream, so a credential quoted in a reply is
+caught on its way back out as a tool call, or by `/secretshield <text>`.
+Also left out: the `hermes secretshield` subcommand (a Nodecode cell has one
+command and one tool), and the plugin's own test file, whose cases are
+rewritten here.

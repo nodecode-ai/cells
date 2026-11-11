@@ -1,0 +1,25 @@
+nodecode-vt-check is a rewrite of Aravinth-Earth's Aravinth-Earth/vt-check:
+
+  https://github.com/Aravinth-Earth/vt-check
+  commit a358e56c742c836de04be2cf02c49b8797713a26
+  MIT License, Copyright (c) 2026 Aravinth S (LICENSE)
+
+Rewritten: the four tools the plugin registered (vt_check_file, vt_check_url,
+vt_check_ip, vt_status) as the verbs VT-CHECK:CHECK-FILE, CHECK-URL, CHECK-IP
+and STATUS plus the same four tools and a /vt-check command; the same three
+VirusTotal v3 endpoints (files/<sha256>, urls/<base64 url id>, domains/<name>,
+ip_addresses/<ip>) with the x-apikey header and the same 404-is-unknown
+reading; the same verdict rules (an engine detection is a red flag for a file,
+a link or an IP needs three engines or five percent of the responders, and the
+worst signal wins); the defanging of pasted indicators; the SHA-256 / SHA-1 /
+MD5 local hashing; the archive forensics read in memory (path traversal,
+symlink and encrypted entries, decompression bombs, double extensions,
+documents whose content is an executable, nested archives three deep); the
+opt-in URL submission; and the cached lookups bounded by cache_ttl_hours.
+
+Left out: the Hermes plugin plumbing itself -- plugin.yaml, the context
+object, the secret scope and the JSON-shaped tool results, which are now the
+cell's declaration, its section and a block of text the model reads -- the
+bundled SKILL.md, whose guidance is the manual topic (help :vt-check), and
+the repository's bin/vt-check command line, pyproject and pytest suite, which
+stand outside its plugin folder.

@@ -1,0 +1,20 @@
+nodecode-deepsec is a rewrite of Unclecheng-li's Unclecheng-li/DeepSec:
+
+  https://github.com/Unclecheng-li/DeepSec
+  commit fff031fc01fb36b95348214c8ee359f6ede8aa8b
+
+MIT, Copyright (c) 2026 VibeGuard contributors (LICENSE)
+
+Rewritten: the plugin's four model tools -- deepsec_scan, deepsec_agent_audit,
+deepsec_supply_chain and deepsec_report -- with the finding shape they answered (rule,
+severity, title, target, line, evidence, suggestion, layer), their severity summary,
+the saved-result JSON a report renders, and the three settings that steered them (how
+many findings an answer carries, whether test folders are read, and the severity floor).
+The rules and the file walk behind them are Common Lisp here, where the original shelled
+out to its own Python CLI.
+
+Left out: the original CLI's Tree-sitter AST layer and its optional LLM review of source,
+which needed that CLI and a provider key; the signed-scope penetration-testing lane the
+same repository ships as a sibling plugin; and the CLI's own report templates and
+attack-chain page, replaced by markdown, json, sarif and text renderers. The rewrite reads
+files, never runs them, and dials nothing.

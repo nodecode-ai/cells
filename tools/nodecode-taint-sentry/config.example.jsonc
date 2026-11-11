@@ -1,0 +1,26 @@
+// The taint-sentry section of the shared config. Nothing here is required:
+// the cell gates a tainted session the moment it is on.
+"taint-sentry": {
+  // enforce gates a tainted session; monitor records receipts and gates
+  // nothing; off does nothing at all.
+  "mode": "enforce",
+
+  // how long a mark stays live, in seconds.
+  "taint_ttl_seconds": 1800,
+
+  // hosts a tainted session may send data to without being held.
+  "allow_hosts": ["localhost", "127.0.0.1", "::1"],
+
+  // paths the policy never gates: a scratch folder the agent is meant to use.
+  "allow_paths": [],
+
+  // a tool whose result is never treated as untrusted, or always is.
+  "trusted_tools": [],
+  "untrusted_tools": [],
+
+  // rule names to turn down to allow, as /taint-sentry policy names them:
+  // credential_read, credential_exfil, egress_send, write_outside,
+  // instruction_write, instruction_poison, plugin_tamper, artifact_exec,
+  // delegate.
+  "disabled_rules": []
+}
