@@ -12441,6 +12441,25 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-sluice",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "45a6778e337c3ef9443d4b8a8e752fb256dd5df3",
+      "path": "tools/nodecode-sluice",
+      "description": "Runs the agent's commands in a staged copy of a workspace and applies only what you approve",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "ironclad/digest/sha256"
+      ],
+      "credits": {
+        "author": "orjinameh",
+        "repo": "orjinameh/airlock",
+        "commit": "e0e5084dcf559c5a392549aa1a892bcf75b64154",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-smol",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "024bbcf4520fcb72591df03ae71b6786ca505513",
