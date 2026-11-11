@@ -36,6 +36,21 @@ jobs:
       - name: Install and load every entry
         run: .github/check.sh "$HOME/.local/bin/nodecode"
 
+  check-sh:
+    # check.sh on a host that holds a release's build tree judges what a
+    # user's machine gets (check-test.sh). Ubuntu's runners forbid
+    # unprivileged user namespaces by default; a build host allows them.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Allow unprivileged user namespaces
+        run: |
+          if sysctl -n kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+      - name: check.sh hides a build tree
+        run: .github/check-test.sh
+
   lint:
     # Nodecode's own structural lint over every Lisp file here, read from
     # Nodecode main, so a cell is held to the rules the core is held to.
