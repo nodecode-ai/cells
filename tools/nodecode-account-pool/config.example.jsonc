@@ -1,0 +1,22 @@
+// The section ~/.nodecode/config.jsonc may carry for the Account Pool cell --
+// documentation, not config: the declaration in cell.lisp is the authority.
+// One entry per account in accounts, as label:provider:ENV_VAR, the provider
+// anthropic or openai-codex (or label:ENV_VAR for a Claude account). Each
+// entry's token is read from the environment variable it names, so the
+// config file itself holds no secret. With no account's variable set the
+// cell refuses at start, naming them. "enabled": false vetoes it.
+{
+  "account-pool": {
+    "accounts": [
+      "claude-main:anthropic:CLAUDE_MAIN_TOKEN",   // a Claude Pro/Max sign-in's access token
+      "claude-backup:anthropic:CLAUDE_BACKUP_TOKEN",// the second subscription
+      "codex-main:openai-codex:CODEX_MAIN_TOKEN"    // a ChatGPT Plus/Pro sign-in's access token
+    ],
+    "cache_seconds": 60,          // how long one account's usage answer is reused
+    "timeout_seconds": 12,       // one usage read's ceiling
+    "wake_timeout_seconds": 60,  // one wake request's ceiling
+    "wake_model": "claude-haiku-4-5", // the Claude model a wake sends to
+    "codex_wake_model": "gpt-5.4-mini", // the Codex model a wake sends to
+    "state_file": "account-pool/parked.txt" // where park decisions are kept
+  }
+}

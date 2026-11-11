@@ -1,0 +1,32 @@
+nodecode-secret-handoff is a rewrite of aean0x's aean0x/hermes-secret-handoff:
+
+  https://github.com/aean0x/hermes-secret-handoff
+  commit f669c2a8adce468790be46ad70cfd312df53ba79
+  MIT, Copyright (c) 2026 aean0x (LICENSE)
+
+The original is one Python plugin folder for Hermes Agent: `handoff.py`
+registered a `request_secret` tool that resolved a CDP target, checked that
+the page's origin matched the requested service, asked the human through the
+host's stock clarify prompt, classified the reply (inject, cancel, ignore),
+re-checked the live origin and that focus was on a password or
+one-time-code input, typed the value over a direct CDP websocket, and
+returned a status object — never the value — clearing its RAM slot in a
+finally block.
+
+The rewrite keeps that judgement and changes what it is built on. The
+clarify prompt becomes a canonical Nodecode seam: the cell serves a small
+password form on loopback (its own public route on the gateway's port), the
+operator types the value into that, and the waiting tool call is answered by
+it; `/secret-handoff` can also answer or cancel by hand. The browser side is
+the same: `nlk:http` reads the CDP target list, and one websocket-driver
+connection runs the origin-and-focus guard and `Input.insertText`. The
+secret is held in a struct in RAM, dropped when the handoff ends, and no
+code path puts it in a tool result, a notice or a log line. Left out: the
+original's own clarify-signature probing and its stack walk for the host's
+clarify callback (Nodecode has no such callback), its reply classification
+by typed words (a form has no words to classify), the `frame_id` OOPIF
+parameter and the empty-field retry with per-character key events (the
+rewrite types once and reports what happened). Configuration moved from
+environment variables to the cell's section, and a non-loopback `cdp_url`
+is refused unless `allow_remote_cdp` is on, where the original simply
+trusted whatever the environment named.

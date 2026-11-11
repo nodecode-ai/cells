@@ -1,0 +1,40 @@
+nodecode-sluice is a rewrite of orjinameh's orjinameh/airlock:
+
+  https://github.com/orjinameh/airlock
+  commit e0e5084dcf559c5a392549aa1a892bcf75b64154
+  MIT License, Copyright (c) 2026 Peter Stephen (LICENSE)
+
+Rewritten: the store, the review and the apply, in Common Lisp. A workspace
+is copied twice under <NODECODE_HOME>/plugin-data/sluice/ -- the stage the
+agent works in and the baseline it is compared to -- with .gitignore rules
+and dependency folders kept out, symlinks that point outside the workspace
+listed as skipped, and files over the section's size limit skipped by name.
+The manifest of digests, the staged copy the review reads, the numbered
+units (a block of changed lines, or a created, deleted, renamed, replaced or
+mode-changed file), the atomic per-file apply with its conflict and
+symlink-escape checks, the stage discarded when asked, and stages untouched
+for 14 days pruned, are the plugin's, module for module: stage, diffing,
+applying, classify. So is the irreversibility classifier: an unquoted ; | &
+or newline separates commands, a NAME=value prefix and sudo are read
+through, bash -c and eval are read recursively, and installs, pushes,
+network writes, publishes, outside writes and deletes, and a downloaded
+script run by a shell are the findings it names. The primer, the four tools
+and /sluice carry the plugin's own words where they still apply.
+
+Its shape is four agent-facing tools -- sluice_run, sluice_diff, sluice_apply,
+sluice_discard -- and one command, /sluice, instead of Hermes's terminal
+environment provider.
+
+Left out, and why: Hermes's terminal-environment seam (the provider class,
+its probe, its prompt note and the path rewriting applied to every tool call
+the harness made) is not rewritten, because Nodecode's shell is its own and
+nothing here can put a copy under it; the rewriting survives inside
+sluice_run, which maps the workspace's paths into the stage and back. The
+pre_tool_call hook and its approval prompt are replaced by the gate in
+sluice_run: a held command answers NOT CONTAINED and runs nothing until the
+call says allow: true, where the plugin raised Hermes's own prompt (and
+failed closed in unattended runs). The plugin's SHA-256 digests are MD5 here,
+a change detector rather than a signature; its fcntl file lock between two
+applies is not carried over, nor is rename detection across a directory
+move; its pytest suite, config_schema and doctor output are not either: the
+section declaration and this folder's tests are their counterparts.

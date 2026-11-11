@@ -1,0 +1,28 @@
+nodecode-redteam-gates is a rewrite of SeaOf0's SeaOf0/dsh-redteam-model:
+
+  https://github.com/SeaOf0/dsh-redteam-model
+  commit ce24bb25e35df8c8514e00e0d98f1a36d2e2a562
+  MIT License, Copyright (c) 2026 SeaOf0 (LICENSE)
+
+Rewritten: the stage-gate half of the original's runtime plugins - the schema
+of 32 gates over 8 work modes (pentest, code-audit, binary-analysis,
+attack-defense, av-evasion, incident-response, cloud-security, ctf-solver), the
+structural checks behind them (a file present and not empty, its required
+markers, a filled markdown table, a 64-digit hash, a hashed sample
+registration under artifacts/), the audit trail appended to gate-log.md, and
+the schema listing - as two tools, a command and a manual topic, in Common
+Lisp. The original's Chinese marker words are the English ones this cell's
+manual names; a marker is a substring match, exactly as there.
+
+Left out, because a harness seam or a service stands behind each one: the
+presets themselves (persona, playbook, skills and refs, which in the original
+are agent presets a mode is started with; this cell carries the gates and the
+mode of work they belong to, not the prose of each playbook); the
+operation-state.json goal contract and the coverage arithmetic the report
+gates add on top of their checks; and the other sixteen runtime plugins -
+route-boost's per-round envelope, sec-enforce's interception, refusal-guard,
+trace-vault, the hunter platform search, the results screens, the attack atlas
+and the scanner wrappers - which each stand on their own.
+
+The original's gate checks and their file names are carried as they were; the
+verdict wording, the answer shape and the log line are this rewrite's.

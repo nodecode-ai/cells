@@ -1,0 +1,22 @@
+// The `triplescan` section of ~/.nodecode/config.jsonc. Every member is
+// optional: a scan starts on the defaults below, and a program that is not on
+// PATH is reported as UNRESOLVED rather than refusing the start.
+{
+  "triplescan": {
+    // The programs: a name on PATH, or a path to it.
+    "gitleaks": "gitleaks",
+    "osv_scanner": "osv-scanner",
+    "semgrep": "semgrep",
+    // Semgrep's --config. "auto" fetches rules from Semgrep's registry and may
+    // send Semgrep's metrics; name a local rules file or folder to keep a scan
+    // offline.
+    "semgrep_config": "auto",
+    // One scanner's ceiling in seconds, 10 to 1800.
+    "timeout_seconds": 300,
+    // How many findings one scanner reports at most.
+    "max_findings": 200,
+    // Ask Allow once or Deny before a model call runs the scanners.
+    "ask": false,
+    "ask_seconds": 120
+  }
+}
