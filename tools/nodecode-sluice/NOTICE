@@ -33,7 +33,7 @@ sluice_run, which maps the workspace's paths into the stage and back. The
 pre_tool_call hook and its approval prompt are replaced by the gate in
 sluice_run: a held command answers NOT CONTAINED and runs nothing until the
 call says allow: true, where the plugin raised Hermes's own prompt (and
-failed closed in unattended runs). The plugin's SHA-256 digests are MD5 here,
+failed closed in unattended runs). The plugin's SHA-256 digests are kept,
 a change detector rather than a signature; its fcntl file lock between two
 applies is not carried over, nor is rename detection across a directory
 move; its pytest suite, config_schema and doctor output are not either: the

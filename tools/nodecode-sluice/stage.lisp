@@ -8,15 +8,14 @@
 ;;;; whether the real workspace has moved underneath the review. The plugin
 ;;;; kept the same two trees under the Hermes home and hashed with SHA-256;
 ;;;; this keeps them under <NODECODE_HOME>/plugin-data/sluice/ and hashes
-;;;; with the MD5 SBCL carries, which is a change detector and not a signature.
+;;;; with SHA-256 too, through the ironclad every release carries: a change
+;;;; detector here, not a signature.
 
 (in-package #:nodecode-sluice)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (require :sb-md5))
-
 ;; Bumped when a manifest's shape changes; an older stage is simply retaken.
-(defparameter *manifest-version* 1)
+;; 2: the digests are SHA-256, where 1 held MD5.
+(defparameter *manifest-version* 2)
 
 (defparameter *skip-dirs*
   '("node_modules" "__pycache__" ".venv" "venv" ".pytest_cache" ".mypy_cache"
@@ -79,10 +78,12 @@ resolved, or NIL when it names no directory."
 
 (defun digest-string (text)
   "A digest of TEXT's UTF-8 bytes, as hex: change detection, not a signature."
-  (hex-of (sb-md5:md5sum-sequence (sb-ext:string-to-octets text :external-format :utf-8))))
+  (hex-of (ironclad:digest-sequence :sha256 (sb-ext:string-to-octets text :external-format :utf-8))))
 
 (defun digest-file (path)
-  (ignore-errors (hex-of (sb-md5:md5sum-file path))))
+  "A digest of the bytes of the file at PATH, as hex, read as a stream; NIL
+when it cannot be read."
+  (ignore-errors (hex-of (ironclad:digest-file :sha256 path))))
 
 ;;; --- entries ---------------------------------------------------------------
 
