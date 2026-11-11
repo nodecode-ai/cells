@@ -5181,6 +5181,24 @@
       "category": "models"
     },
     {
+      "name": "nodecode-forum-index",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "abfc8d9148dc97612ff168881b6df4a5c2fa1d83",
+      "path": "tools/nodecode-forum-index",
+      "description": "A directory of hacking, fraud and security forums: who trades in what, and where",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "the Dread /d/hacking poster (the list), Nodecode (this cell)",
+        "repo": "solminingpunk/status/2120285444180959571",
+        "commit": "b2a0fc81f18dbd6f2068 (the Dread post)",
+        "license": "MIT"
+      },
+      "category": "security"
+    },
+    {
       "name": "nodecode-found",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "13eda34cec678a04ce7e696fa762240736a82f80",
