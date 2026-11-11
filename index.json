@@ -8961,6 +8961,24 @@
       "category": "models"
     },
     {
+      "name": "nodecode-model-tiers",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "f30eed6370609d064d87bd4b354d9623ed3aaadd",
+      "path": "tools/nodecode-model-tiers",
+      "description": "The Claude model hierarchy as the leaked Claude Code prompt tells it: the Mythos tier above Opus, with line numbers",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "elder-plinius (the leak), Nodecode (this cell)",
+        "repo": "elder-plinius/CL4R1T4S",
+        "commit": "84cd1bf98a8bc395cdcd44b9f420484d0d60881a",
+        "license": "MIT"
+      },
+      "category": "security"
+    },
+    {
       "name": "nodecode-modular",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "adf805ee432e420e8fdc40fe91a32469b00bab22",
