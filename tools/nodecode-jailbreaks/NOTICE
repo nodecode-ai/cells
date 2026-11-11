@@ -1,0 +1,28 @@
+nodecode-jailbreaks
+===================
+
+The code in this folder is MIT (see LICENSE).
+
+The prompts this cell indexes are not ours. They are one collection:
+
+  togg53192-cmd/jailbreaks
+  https://github.com/togg53192-cmd/jailbreaks
+  51 prompt files in 19 folders, 716,315 bytes (727,644 with its README)
+  head ee999ee66d31828a39fe155a52ce66d42db7bf18, 11 November 2026
+  read 12 November 2026
+  16,208 stars at the time of reading
+
+The collection carries NO licence file: no LICENSE, no terms in the README beyond
+a "research and educational purposes only" warning. So this cell redistributes
+none of it. DATA.LISP holds each file's path, size, line count and sha256, all
+measured; a prompt is fetched from the author's own repository when a reader asks
+for it, cached in that reader's home, and quoted with its file and line. If a
+quotation is a problem, the file name and the line number say which one to point
+at.
+
+What is ours: the reading - which model each file targets, what kind of file it
+is, which files are byte-identical to each other, and the one-line description
+of each. Where our reading and a file disagree, the file wins: quote it.
+
+No prompt is reproduced in DATA.LISP. Nothing here is a claim that any prompt
+works on any model it was not written for.
