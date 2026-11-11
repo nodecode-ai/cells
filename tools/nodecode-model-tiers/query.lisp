@@ -1,17 +1,58 @@
-;;;; query.lisp --- the hierarchy read four ways, and the file quoted.
+;;;; query.lisp --- the archive, the hierarchy, and any document quoted by line.
 ;;;;
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
-;;;; The hierarchy answers offline: DATA.LISP carries it. Only QUOTE-TEXT goes
-;;;; to the network, and only once -- it puts the file under the cache and reads
-;;;; it from there after that.
+;;;; The hierarchy and the archive index answer offline: DATA.LISP carries them.
+;;;; Only QUOTE-TEXT reaches the network, and only once per document -- it puts
+;;;; that document under the cache and reads the cache after that.
 
 (in-package #:nodecode-model-tiers)
 
-;;; --- reading one entry -----------------------------------------------------------
+;;; --- the archive ------------------------------------------------------------------
+
+(defun files ()
+  "Every document the cell can quote, in the archive's order."
+  +files+)
+
+(defun file-key (file) (getf file :key))
+(defun file-path (file) (getf file :path))
+(defun file-vendor (file) (getf file :vendor))
+(defun file-document (file) (getf file :document))
+(defun file-bytes (file) (getf file :bytes))
+(defun file-lines (file) (getf file :lines))
+(defun file-sha (file) (getf file :sha256))
+(defun file-says (file) (getf file :says))
+
+(defun vendors ()
+  "The vendors whose documents the archive holds, once each, in order of appearance."
+  (remove-duplicates (mapcar #'file-vendor (files)) :test #'string-equal))
+
+(defun file-by-key (key)
+  "The document KEY most nearly names: its own key, else one starting with it,
+else one whose key or document contains it; a string that names none is NIL."
+  (let ((wanted (string-downcase (or key ""))))
+    (when (plusp (length wanted))
+      (or (find wanted (files) :test #'string= :key (lambda (f) (string-downcase (file-key f))))
+          (find-if (lambda (f) (contains-p wanted (file-key f))) (files))
+          (find-if (lambda (f) (contains-p wanted (file-document f))) (files))))))
+
+(defun files-matching (&key vendor text)
+  "The documents of one vendor, or those whose key, document or summary mentions TEXT."
+  (remove-if-not
+   (lambda (file)
+     (and (or (null vendor) (zerop (length vendor))
+              (string-equal vendor (file-vendor file)))
+          (or (null text) (zerop (length text))
+              (contains-p text (file-key file))
+              (contains-p text (file-document file))
+              (contains-p text (file-says file))
+              (contains-p text (file-vendor file)))))
+   (files)))
+
+;;; --- the hierarchy ----------------------------------------------------------------
 
 (defun models ()
-  "Every model the file names, in the file's order."
+  "Every model the archive names, in the archive's order."
   +models+)
 
 (defun model-name (model) (getf model :name))
@@ -23,11 +64,11 @@
 (defun model-api (model) (getf model :api))
 
 (defun model-tier-name (model)
-  "The model's tier, as the file spells it."
+  "The model's tier, as the archive spells it."
   (tier-name (model-tier model)))
 
 (defun tiers ()
-  "The tiers the file names, from the top of the ladder down."
+  "The tiers the archive names, from the top of the ladder down."
   +tier-order+)
 
 (defun tier-key (tier)
@@ -49,19 +90,21 @@
   (cdr (assoc (tier-key tier) +tiers+)))
 
 (defun tier-models (tier)
-  "Every model on one tier, the file's order kept."
+  "Every model on one tier, the archive's order kept."
   (models-matching :tier (tier-name tier)))
 
 (defun event-when (event) (getf event :when))
 (defun event-what (event) (getf event :what))
+(defun event-file (event) (getf event :file))
 (defun event-line (event) (getf event :line))
 
-(defun events () "The dates the file gives, in order." +events+)
+(defun events () "The dates the archive gives, in order." +events+)
 
-(defun facts () "The questions this file is worth opening for." +facts+)
+(defun facts () "The questions the archive is worth opening for." +facts+)
 (defun fact-question (fact) (getf fact :question))
 (defun fact-answer (fact) (getf fact :answer))
-(defun fact-lines (fact) (getf fact :lines))
+(defun fact-file (fact) (getf fact :file))
+(defun fact-line (fact) (getf fact :line))
 
 ;;; --- matching --------------------------------------------------------------------
 
@@ -73,16 +116,18 @@
        (plusp (length needle))
        (not (null (search (string-downcase needle) (string-downcase haystack))))))
 
+(defun quote-text-of (quote) (getf quote :text))
+
 (defun model-mentions-p (model text)
   "Whether TEXT appears in anything the entry says."
   (or (contains-p text (model-name model))
       (contains-p text (tier-name (model-tier model)))
       (contains-p text (model-availability model))
       (contains-p text (model-note model))
-      (some (lambda (quote) (contains-p text (cdr quote))) (model-quotes model))))
+      (some (lambda (quote) (contains-p text (quote-text-of quote))) (model-quotes model))))
 
 (defun models-matching (&key tier text)
-  "The models that satisfy every given filter. TIER is a tier name as the file
+  "The models that satisfy every given filter. TIER is a tier name as the archive
 spells it (mythos, opus); TEXT is matched against the name, the tier, the
 availability, the note and every quote. With no filter, every model."
   (remove-if-not
@@ -113,14 +158,12 @@ or a name containing it. A tier that has exactly one model names it too."
 
 ;;; --- what a person reads ----------------------------------------------------------
 
-(defun quote-line-number (quote) (car quote))
-(defun quote-sentence (quote) (cdr quote))
-
 (defun model-quote-lines (model)
-  "The entry's quotes as the lines a person reads, each with the file's line number."
+  "The entry's quotes as the lines a person reads, each with its document and line."
   (format nil "~{~a~^~%~}"
           (mapcar (lambda (quote)
-                    (format nil "  line ~a: ~a" (quote-line-number quote) (quote-sentence quote)))
+                    (format nil "  ~a line ~a: ~a"
+                            (getf quote :file) (getf quote :line) (quote-text-of quote)))
                   (model-quotes model))))
 
 (defun name-width ()
@@ -137,10 +180,10 @@ or a name containing it. A tier that has exactly one model names it too."
 
 (defun model-block (model)
   "One model as the block a person reads: where it sits, whether they can have it, and its own words."
-  (format nil "~a~%  tier: ~a - ~a~%  available: ~a~@[~%  since: ~a~]~@[~%  api: ~a~]~%  note: ~a~%  the file says:~%~a"
+  (format nil "~a~%  tier: ~a - ~a~%  available: ~a~@[~%  since: ~a~]~@[~%  api: ~a~]~%  note: ~a~%  the archive says:~%~a"
           (model-name model)
           (model-tier-name model)
-          (or (tier-sentence (model-tier model)) "a tier the file does not describe")
+          (or (tier-sentence (model-tier model)) "a tier the archive does not describe")
           (model-availability model)
           (model-since model)
           (model-api model)
@@ -150,80 +193,113 @@ or a name containing it. A tier that has exactly one model names it too."
 (defun model-list-text (models &key (heading nil))
   "MODELS as the lines of one listing, HEADING above them."
   (if (null models)
-      "no model in the file matches that."
-      (format nil "~@[~a (~d)~%~]~{~a~^~%~}"
-              heading (length models) (mapcar #'model-row models))))
+      "no model in the archive matches that."
+      (format nil "~@[~a~%~]~{~a~^~%~}"
+              (and heading (format nil "~a (~d)" heading (length models)))
+              (mapcar #'model-row models))))
 
 (defun hierarchy-text ()
-  "The ladder itself: tier by tier, top down, the models the file puts on each."
+  "The ladder itself: tier by tier, top down, the models the archive puts on each."
   (format nil "~{~a~^~%~%~}"
           (loop for tier in (tiers)
                 for on-tier = (tier-models tier)
                 collect (format nil "~a - ~a~%~@[~{~a~^~%~}~]"
                                 (string-upcase (tier-name tier))
-                                (or (tier-sentence tier) "a tier the file does not describe")
+                                (or (tier-sentence tier) "a tier the archive does not describe")
                                 (when on-tier
                                   (mapcar (lambda (m)
                                             (format nil "  ~a: ~a" (model-name m) (model-availability m)))
                                           on-tier))))))
 
 (defun timeline-text ()
-  "The dates the file gives, in order."
+  "The dates the archive gives, in order."
   (format nil "~{~a~^~%~}"
           (mapcar (lambda (event)
-                    (format nil "  ~va ~a~@[  (line ~a)~]"
+                    (format nil "  ~va ~a~@[  (~a line ~a)~]"
                             (+ 2 (reduce #'max (events) :key (lambda (e) (length (event-when e)))))
-                            (event-when event)
-                            (event-what event) (event-line event)))
+                            (event-when event) (event-what event)
+                            (event-file event) (event-line event)))
                   (events))))
 
+(defun file-key-width ()
+  "The column the document keys are padded to."
+  (1+ (reduce #'max (files) :key (lambda (f) (length (file-key f))))))
+
+(defun file-row (file)
+  "One document as the line an index gives."
+  (format nil "  ~va ~va ~a~%      ~a~%      ~:d bytes, ~:d lines, sha256 ~a"
+          (file-key-width) (file-key file)
+          10 (file-vendor file)
+          (file-document file)
+          (file-says file)
+          (file-bytes file) (file-lines file) (subseq (file-sha file) 0 16)))
+
+(defun files-text (files &key (heading nil))
+  "FILES as the index a person reads, HEADING above them."
+  (if (null files)
+      "no document in the archive matches that."
+      (format nil "~@[~a~%~]~{~a~^~%~}"
+              (and heading (format nil "~a (~d)" heading (length files)))
+              (mapcar #'file-row files))))
+
 (defun summary-text ()
-  "How many models, on which tiers, from where."
-  (format nil "~d models on ~d tiers, from one file of ~:d bytes (~:d lines).~%~%~a"
-          (length (models)) (length (tiers))
-          (getf +file+ :bytes) (getf +file+ :lines)
+  "How many models, on which tiers, over how many documents, from where."
+  (format nil "~d models on ~d tiers, quoted from ~d documents (~:d bytes) of ~a.~%~%~a"
+          (length (models)) (length (tiers)) (length (files))
+          (reduce #'+ (files) :key #'file-bytes) (getf +archive+ :name)
           (hierarchy-text)))
 
 (defun source-line ()
   "The provenance line every answer ends with."
-  (format nil "Source: ~a (~:d bytes, sha256 ~a). Read ~a."
-          +source+ (getf +file+ :bytes)
-          (subseq (getf +file+ :sha256) 0 16)
-          +captured+))
+  (format nil "Source: ~a at ~a, read ~a. The hierarchy is quoted from ~a."
+          (getf +archive+ :name) (subseq (getf +archive+ :head) 0 9) +captured+ +primary+))
 
 (defun source-block ()
-  "The provenance, whole: the file, its digest, its commit, and where to read it."
-  (format nil "file:    ~a~%bytes:   ~:d~%lines:   ~:d~%sha256:  ~a~%commit:  ~a (~a)~%in:      elder-plinius/CL4R1T4S~%read it: ~a~%read on: ~a~%~%~a"
-          (getf +file+ :path) (getf +file+ :bytes) (getf +file+ :lines)
-          (getf +file+ :sha256) (getf +file+ :commit) (getf +file+ :committed)
-          (getf +file+ :url) +captured+
-          "Every word above is quoted from that file, not from a vendor page. Where a vendor and the file disagree, this cell gives the file's reading of itself."))
+  "The provenance, whole: the archive, its head, and the primary document's digest."
+  (let ((file (file-by-key +primary+)))
+    (format nil "archive: ~a~%head:    ~a (~a)~%read:    ~a~%~%documents: ~d, ~:d bytes in all~%~%primary: ~a~%  path:   ~a~%  bytes:  ~:d~%  lines:  ~:d~%  sha256: ~a~%~%~a"
+            (getf +archive+ :name) (getf +archive+ :head) (getf +archive+ :head-date) +captured+
+            (length (files)) (reduce #'+ (files) :key #'file-bytes)
+            (file-key file) (file-path file) (file-bytes file) (file-lines file) (file-sha file)
+            "Every word above is quoted from that archive, not from a vendor page. Where a vendor and the archive disagree, this cell gives the archive's reading of it.")))
 
-;;; --- the file itself, for a quote the data does not carry ---------------------------
+;;; --- the documents themselves -------------------------------------------------------
 
 (defun cache-directory ()
-  "The directory a fetched copy of the file lives in."
+  "The directory the fetched documents live in."
   (merge-pathnames "nodecode-model-tiers/"
                    (uiop:ensure-directory-pathname
                     (or (ignore-errors (uiop:xdg-cache-home)) "~/.cache/"))))
 
-(defun file-path ()
-  "Where a fetched copy of the file lives."
-  (merge-pathnames "CLAUDE-CODE-FABLE-5.2.txt" (cache-directory)))
+(defun cache-path (file)
+  "Where the local copy of FILE lives."
+  (merge-pathnames (format nil "~a~@[.~a~]" (file-key file)
+                           (let ((dot (position #\. (file-path file) :from-end t)))
+                             (and dot (subseq (file-path file) (1+ dot)))))
+                   (cache-directory)))
 
-(defun fetch-file (&key force)
-  "The path of a local copy of the file, downloading it once unless FORCE. Signals
-an error when there is no copy and the download fails."
-  (let ((path (file-path)))
+(defun raw-url (file)
+  "The URL FILE is fetched from."
+  (format nil "https://raw.githubusercontent.com/elder-plinius/CL4R1T4S/main/~a"
+          (substitute #\% #\Space (file-path file))))
+
+(defun fetch-file (&key file force)
+  "The path of a local copy of FILE (a document, or its key), downloaded once unless
+FORCE. Signals an error when there is no copy and the download fails."
+  (let* ((document (etypecase file
+                      (list file)
+                      (string (or (file-by-key file)
+                                  (error "no document in the archive is named ~s" file)))))
+         (path (cache-path document)))
     (when (or force (not (probe-file path)))
       (ensure-directories-exist path)
       (let ((status (nth-value 2 (uiop:run-program
-                                  (list "curl" "-fsSL" "--max-time" "120" "-o" (namestring path)
-                                        (getf +file+ :raw))
+                                  (list "curl" "-fsSL" "--max-time" "180" "-o" (namestring path)
+                                        (raw-url document))
                                   :ignore-error-status t))))
         (unless (and (zerop status) (probe-file path))
           (ignore-errors (delete-file path))
-          (error "could not fetch ~a (curl exited ~a)" (getf +file+ :raw) status))))
+          (error "could not fetch ~a (curl exited ~a)" (raw-url document) status))))
     path))
 
 (defun split-lines (text)
@@ -232,8 +308,8 @@ an error when there is no copy and the download fails."
     (loop for line = (read-line in nil nil) while line collect line)))
 
 (defun read-lines (from to &key path)
-  "The file's lines FROM..TO as a string, each numbered. PATH defaults to a fetched copy."
-  (let* ((lines (split-lines (uiop:read-file-string (or path (fetch-file)))))
+  "The file at PATH, lines FROM..TO as a string, each numbered."
+  (let* ((lines (split-lines (uiop:read-file-string path)))
          (lo (max 1 (min from to)))
          (hi (min (length lines) (max from to))))
     (if (> lo hi)
@@ -259,27 +335,35 @@ an error when there is no copy and the download fails."
   (format nil "~{~a~^~%~}"
           (mapcar (lambda (hit) (format nil "~5d  ~a" (car hit) (cdr hit))) hits)))
 
-(defun quote-text (&key text lines lines-text path)
-  "The file's own words: the LINES-TEXT range when given, else every line that
-carries TEXT, numbered, at most 20. The one verb here that reaches the network."
-  (let* ((path (or path (fetch-file)))
-         (range (line-range (or lines-text lines))))
+(defun quote-text (&key text lines-text file path)
+  "One document's own words: the LINES-TEXT range when given, else every line that
+carries TEXT, numbered, at most twenty. FILE names the document (its key, by
+default the primary one); PATH reads a local copy instead of fetching. The one
+verb here that reaches the network."
+  (let* ((document (if file (or (file-by-key file)
+                                (error "no document in the archive is named ~s" file))
+                       (file-by-key +primary+)))
+         (path (or path (fetch-file :file document)))
+         (range (line-range lines-text)))
     (cond
       (range
-       (format nil "~a~%~a" (read-lines (car range) (cdr range) :path path) (source-line)))
+       (format nil "~a, lines ~a-~a~%~a~%~a"
+               (file-key document) (car range) (cdr range)
+               (read-lines (car range) (cdr range) :path path) (source-line)))
       ((and text (plusp (length text)))
        (let* ((all (split-lines (uiop:read-file-string path)))
               (hits (loop for line in all
                           for n from 1
                           when (contains-p text line) collect (cons n line))))
          (if (null hits)
-             (format nil "no line of the file carries ~s. The file is ~:d lines, ~:d bytes."
-                     text (length all) (getf +file+ :bytes))
-             (format nil "~a~%~a~%~a"
+             (format nil "no line of ~a carries ~s. That document is ~:d lines, ~:d bytes."
+                     (file-key document) text (length all) (file-bytes document))
+             (format nil "~a~%~a~%~a~%~a"
                      (numbered (subseq hits 0 (min 20 (length hits))))
                      (if (> (length hits) 20)
-                         (format nil "(the first 20 of ~d lines carrying ~s)" (length hits) text)
+                         (format nil "(the first 20 of ~d lines of ~a carrying ~s)"
+                                 (length hits) (file-key document) text)
                          "")
-                     (source-line)))))
-      (t (format nil "give a word to look for, or a line range as 117 or 116-122. The file is ~:d lines.~%~a"
-                 (getf +file+ :lines) (source-line))))))
+                     (source-line) (file-key document)))))
+      (t (format nil "give a word to look for, or a line range as 117 or 116-122. ~a is ~:d lines.~%~a"
+                 (file-key document) (file-lines document) (source-line))))))

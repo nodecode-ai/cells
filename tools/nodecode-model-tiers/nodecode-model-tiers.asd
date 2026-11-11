@@ -17,7 +17,7 @@
   :description "The Claude model hierarchy as the leaked Claude Code prompt tells it: the Mythos tier above Opus, with line numbers"
   :license "MIT"
   :author "elder-plinius (the leak), Nodecode (this cell)"
-  :version "0.1.0"
+  :version "0.2.0"
   :depends-on ("nodecode")
   :serial t
   :components ((:file "package")

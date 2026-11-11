@@ -3,24 +3,29 @@ nodecode-model-tiers
 
 The code in this folder is MIT (see LICENSE).
 
-Every sentence the cell quotes is from one file:
+Every sentence the cell quotes is from one of thirteen documents in one
+archive:
 
-  ANTHROPIC/CLAUDE-CODE-FABLE-5.2.txt
-  in elder-plinius/CL4R1T4S
-  https://github.com/elder-plinius/CL4R1T4S/blob/main/ANTHROPIC/CLAUDE-CODE-FABLE-5.2.txt
-  957,315 bytes, 7,832 lines
-  sha256 d54e74e3ffd318c3cd0df3ea71f3e54efdd862ee5d988c03206bff10834e3522
-  committed 9 November 2026, 21:02:55Z (84cd1bf9)
+  elder-plinius/CL4R1T4S
+  https://github.com/elder-plinius/CL4R1T4S
+  head 93a584765460c2fb0ad58380bba476f2149df138, 9 November 2026
+  read 11 November 2026
 
-The words are Anthropic's: a system prompt for Claude Code, leaked and published
-by elder-plinius under CL4R1T4S's AGPL-3.0. The cell reproduces short quotations
-from it with their line numbers, for commentary and reference, and does not
-redistribute the file: model_tiers_quote fetches it from the repository above and
-caches it in the reader's own home. If a quotation is a problem, the line number
-says which one to point at.
+The archive's size, line count and sha256 for each document are in DATA.LISP,
+and every quote names its document and its line. The largest and most useful
+of them is ANTHROPIC/CLAUDE-CODE-FABLE-5.2.txt: 957,315 bytes, 7,832 lines,
+sha256 d54e74e3ffd318c3cd0df3ea71f3e54efdd862ee5d988c03206bff10834e3522.
 
-The hierarchy, the notes and the answers are our reading of that file; where the
-file and a vendor page disagree, the cell gives the file's reading of itself.
-Nothing here is a claim that Anthropic published any of it.
+The words in those documents are each vendor's own - Anthropic's, OpenAI's,
+Z.ai's, Meta's, Cursor's, Cline's - leaked and published by elder-plinius under
+CL4R1T4S's AGPL-3.0. The cell reproduces short quotations with their line
+numbers, for commentary and reference, and does not redistribute the documents:
+model_tiers_quote fetches one from the archive and caches it in the reader's own
+home. If a quotation is a problem, the document key and the line number say
+which one to point at.
+
+The hierarchy, the notes and the answers are our reading of those documents;
+where a document and a vendor page disagree, the cell gives the document's
+reading of itself. Nothing here is a claim that any vendor published any of it.
 
 No software of any model's is included.
