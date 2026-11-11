@@ -470,6 +470,57 @@ started."
           (is (equal '("claude-fable-5-2" "claude-haiku-4-5-20251001") (mapcar (lambda (row) (getf row :id)) rows)) "what the login may call, nothing else"))))
     (is (member "claude-code" (nle::listable-provider-ids) :test #'equal) "/models fetches it")))
 
+(defparameter +cc-capable-listing+
+  "{\"data\":[{\"type\":\"model\",\"id\":\"claude-sonnet-5-5\",\"max_input_tokens\":1000000,
+              \"capabilities\":{\"effort\":{\"supported\":true,\"max\":{\"supported\":true},\"low\":{\"supported\":true},\"high\":{\"supported\":true},\"xhigh\":{\"supported\":false}},
+                              \"thinking\":{\"supported\":true,\"types\":{\"adaptive\":{\"supported\":true},\"between_tools\":{\"supported\":true},\"disabled\":{\"supported\":false},\"enabled\":{\"supported\":false}}}}},
+             {\"type\":\"model\",\"id\":\"claude-haiku-4-5-20251001\",\"max_input_tokens\":200000}],
+    \"has_more\":false}"
+  "Anthropic's /v1/models with what a model declares of effort and thinking.")
+
+(deftest claude-code-cell-takes-effort-and-thinking-from-the-listing ()
+  ;; The core asked a claude-code model's thinking types with the lane's
+  ;; placeholder key, which Anthropic refuses: a round without thinking on
+  ;; Sonnet 5.5 sent "disabled", got a 400 and went again. The login's own
+  ;; listing declares each model's thinking types and effort rungs.
+  (with-cc-round ()
+    (nlk:bind ((nle::*anthropic-thinking-types* (make-hash-table :test #'equal))
+               (nle::*provider-models-cache-path* "listing.json")
+               (fetches 0)
+               (config (nle::make-effective-provider-config
+                        :lane "claude-code" :endpoint "https://api.anthropic.com/v1/messages"
+                        :model "claude-sonnet-5-5" :api-key "placeholder")))
+      (clrhash nodecode-claude-code::*listed*)
+      (with-stubbed-fdefinition (nle::http-fetch (url &rest args)
+                                  (declare (ignore url args))
+                                  (incf fetches)
+                                  (values +cc-capable-listing+ 200))
+        (is (equal '("adaptive" "between_tools")
+                   (sort (copy-list (nle::anthropic-thinking-types config :fetch t)) #'string<)) "what the listing declares, asked with the login")
+        (is (= 1 fetches) "one listing")
+        (is (equal "between_tools" (nle::anthropic-thinking-off config)) "so thinking goes off the way the model takes, with no 400 first")
+        (is (equal '("low" "high" "max") (getf (gethash "claude-sonnet-5-5" nodecode-claude-code::*listed*) :effort)) "the rungs it declares, weakest first")
+        (clrhash nle::*anthropic-thinking-types*)
+        (is (null (nle::anthropic-thinking-types
+                   (nle::make-effective-provider-config
+                    :lane "claude-code" :endpoint "https://api.anthropic.com/v1/messages"
+                    :model "claude-haiku-4-5-20251001" :api-key "placeholder")
+                   :fetch t)) "a model that declares none is sent disabled, as before")
+        (is (= 1 fetches) "the kept listing answers, no second fetch")))))
+
+(deftest claude-code-cell-gives-a-model-no-catalog-has-the-listings-rungs ()
+  (with-temp-auth (auth "{}")
+    (with-cell-stop ((claude-code-start "command" "/nonexistent/claude"))
+      (with-catalog-fixture (catalog "{\"anthropic\":{\"models\":{\"claude-haiku-4-5\":{\"limit\":{\"context\":200000,\"output\":64000}}}}}")
+        (let ((nle::*auth-file-path* auth)
+              (nle::*provider-models-memo* nil)
+              (nle::*model-capability-memo* nil))
+          (clrhash nodecode-claude-code::*listed*)
+          (setf (gethash "claude-new-9" nodecode-claude-code::*listed*) (list :effort '("low" "high") :thinking nil))
+          (is (equal '("low" "high") (nle::model-capability-effort-levels (nle::resolve-model-capability "claude-new-9" "claude-code"))) "a model shipped today takes the rungs its listing declares")
+          (is (null (nle::model-capability-effort-levels (nle::resolve-model-capability "claude-haiku-4-5" "claude-code"))) "Anthropic's own row still answers for one it knows")
+          (clrhash nodecode-claude-code::*listed*))))))
+
 (deftest claude-code-cell-lists-its-own-models-beside-the-login ()
   (with-cell-stop ((claude-code-start "command" "/nonexistent/claude" "models" (vector "claude-haiku-4-5" "claude-fable-5-2")))
     (let ((ids (mapcar (lambda (row) (getf row :id))

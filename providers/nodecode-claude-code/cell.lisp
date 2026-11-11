@@ -113,14 +113,48 @@ for +LISTING-ROUND+: the relay keeps it, so nothing leaves through the CLI."
   (values (%author-request (nlk:decode-json +listing-round+)
                            :model "sonnet" :directory (uiop:temporary-directory))))
 
+(defvar *listed* (make-hash-table :test #'equal :synchronized t)
+  "Model id -> (:EFFORT LEVELS :THINKING TYPES), what the login's last
+listing in this image declared of it (capabilities.effort, weakest rung
+first, and capabilities.thinking.types), each NIL when it declared none.")
+
+(defun declared (entry &rest path)
+  "The names under ENTRY's object at PATH whose own `supported' is true, or
+NIL when ENTRY declares no such object."
+  (let ((object (apply #'nlk:json-value entry :object path)))
+    (and (hash-table-p object)
+         (loop for name being the hash-keys of object using (hash-value value)
+               when (and (hash-table-p value) (nlk:json-value value :boolean "supported"))
+                 collect name))))
+
+(defun models-url ()
+  "The Models API beside the lane's endpoint, as the core keys a model's
+thinking types by it (ANTHROPIC-THINKING-TYPES)."
+  (nle::anthropic-models-url (concatenate 'string +upstream+ "/v1/messages")))
+
+(defun note-declared (entry &aux (id (nlk:json-value entry :string "id")))
+  "Keep what the listing ENTRY declares of its model's effort and thinking."
+  ;; The thinking types go to the core's own table as well, so a round that
+  ;; takes thinking off spells it the way the model takes: Sonnet 5.5 refuses
+  ;; "disabled", and its first such round was a 400 and a retry.
+  (when id
+    (let ((effort (sort (declared entry "capabilities" "effort") #'<
+                        :key (lambda (level) (or (nle::effort-rank level) most-positive-fixnum))))
+          (thinking (declared entry "capabilities" "thinking" "types")))
+      (setf (gethash id *listed*) (list :effort effort :thinking thinking))
+      (when thinking
+        (setf (gethash (cons (models-url) id) nle::*anthropic-thinking-types*) thinking)))))
+
 (defun listing-rows (text rows)
   "ROWS, the kernel's reading of the listing TEXT, each with the window
 Anthropic's max_input_tokens gives it, and the section's models the listing
-leaves out (an alias, an id it does not name) after them."
+leaves out (an alias, an id it does not name) after them. What each entry
+declares of effort and thinking is kept (NOTE-DECLARED)."
   (let ((windows (make-hash-table :test #'equal)))
     (loop for entry across (or (nlk:json-value (nlk:decode-json text) :array "data") #())
           for id = (nlk:json-value entry :string "id")
           for window = (nlk:json-value entry :integer "max_input_tokens")
+          do (note-declared entry)
           when (and id window (plusp window)) do (setf (gethash id windows) window))
     (append (mapcar (lambda (row &aux (row (copy-list row)))
                       (unless (getf row :context-window)
@@ -157,6 +191,23 @@ sends (LOGIN-HEADERS), or NIL and why it could not be asked."
       (login-listing)
       (apply next provider arguments)))
 
+(defun thinking-types (next url config)
+  "FETCH-ANTHROPIC-THINKING-TYPES advice: a claude-code model's thinking
+types are what the login's own listing declares of it."
+  ;; The core asks GET /v1/models/<id> with the lane's key, which for
+  ;; claude-code is a placeholder Anthropic refuses: it then sent "disabled"
+  ;; and learned the model's spelling from the 400. A listing kept from this
+  ;; image answers at once; else one is asked. A model the listing does not
+  ;; name (an alias) declares nothing, as before; a listing that fails is no
+  ;; answer, and the next round asks again.
+  (if (claude-code-config-p config)
+      (let ((model (nle::effective-provider-config-model config)))
+        (multiple-value-bind (kept present) (gethash model *listed*)
+          (cond (present (values (getf kept :thinking) t))
+                ((nth-value 1 (login-listing)) (values nil nil))
+                (t (values (getf (gethash model *listed*) :thinking) t)))))
+      (funcall next url config)))
+
 (defun listable (next &rest arguments)
   "LISTABLE-PROVIDER-IDS advice: claude-code among the providers whose
 listing /models fetches; one that cannot be asked says why in its row."
@@ -176,12 +227,26 @@ core makes of it under claude-code, its window the login's listing's."
   ;; The day a model ships, models.dev has no row for it, and the core takes
   ;; a window from the provider's own cached listing (LISTED-CONTEXT-WINDOW)
   ;; -- claude-code's, not anthropic's, which only an API key fetches.
+  ;; Its effort ladder, too, is the listing's when no catalog names one.
   (if (equal provider +provider+)
       (let ((row (funcall next model-id "anthropic")))
         (if (nle::model-capability-known-p row)
             row
-            (funcall next model-id provider)))
+            (with-listed-effort (funcall next model-id provider) model-id)))
       (funcall next model-id provider)))
+
+(defun with-listed-effort (row model-id &aux (levels (getf (gethash model-id *listed*) :effort)))
+  "ROW, or when it names no effort ladder and the login's listing declared
+one for MODEL-ID, ROW with that ladder."
+  (if (and levels (null (nle::model-capability-effort-levels row)))
+      (nle::make-model-capability
+       :context-tokens (nle::model-capability-context-tokens row)
+       :context-tokens-operator-p (nle::model-capability-context-tokens-operator-p row)
+       :output-limit (nle::model-capability-output-limit row)
+       :reasoning-p t
+       :effort-levels levels
+       :known-p (nle::model-capability-known-p row))
+      row))
 
 (defun price (next model-id provider)
   "MODEL-PRICE advice: a claude-code model is priced as the Anthropic row of
@@ -231,5 +296,6 @@ API, as openai-codex prices its subscription models."
   (:hook 'nle::configured-provider-inventory #'inventory)
   (:hook 'nle::listable-provider-ids #'listable)
   (:hook 'nle::list-provider-models #'listing)
+  (:hook 'nle::fetch-anthropic-thinking-types #'thinking-types)
   (:hook 'nle::resolve-model-capability #'capability)
   (:hook 'nle::model-price #'price))
