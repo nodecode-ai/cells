@@ -364,6 +364,24 @@ started."
               (nle::provider-error () t)) "the failure stands: only a login refusal is sent again"))
       (is (zerop (hash-table-count nodecode-claude-code::*authored*)) "and the next round asks the CLI again"))))
 
+(deftest claude-code-cell-forgets-a-fresh-request-that-failed ()
+  (with-temp-file (record :contents "")
+    (with-cc-round (:record (uiop:native-namestring record))
+      (with-stubbed-fdefinition
+          (dex:post (asked &rest args)
+           (declare (ignore asked args))
+           (error 'dex:http-request-failed :status 400 :body "{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Claude Code 2.1.245 does not support this model; version 2.1.280 or newer is required.\"}}"
+                                           :headers (make-hash-table :test #'equal) :uri "https://api.anthropic.com/v1/messages" :method :post))
+        (is (handler-case (let ((nle::*provider* "claude-code") (nle::*model* "claude-haiku-4-5") (nle::*api-key* nil))
+                            (nle::call-anthropic-streaming (user-context "read notes"))
+                            nil)
+              (nle::provider-error () t)) "the request the CLI wrote is refused"))
+      (is (plusp (length (uiop:read-file-string record))) "the CLI wrote that round's request")
+      (is (zerop (hash-table-count nodecode-claude-code::*authored*)) "and a request that failed is not kept")
+      (with-open-file (out record :direction :output :if-exists :supersede) (declare (ignore out)))
+      (cc-round)
+      (is (plusp (length (uiop:read-file-string record))) "so the next round asks the CLI again, an updated one after `claude update'"))))
+
 (deftest claude-code-cell-relay-keeps-a-header-value-whole ()
   (nlk:bind (((method target headers)
               (nodecode-claude-code::parse-head

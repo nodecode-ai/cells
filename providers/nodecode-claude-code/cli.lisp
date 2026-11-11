@@ -346,8 +346,10 @@ MODEL on WINDOW's route; REQUEST decoded, its messages still the CLI's."
 ;;; starting it is most of a round's cost before the first byte goes out
 ;;; (0.8 s for claude.exe on Windows, 0.17 s on Linux, every round). Within a
 ;;; session the CLI's session id then stays one, as Claude Code's own does.
-;;; Kept REUSE_SECONDS at most, well inside the CLI login's lifetime; a reused
-;;; request that fails is forgotten, and one the API refuses for its login
+;;; Kept REUSE_SECONDS at most, well inside the CLI login's lifetime; a request
+;;; that fails, the CLI's fresh one or one sent again, is forgotten, so the next
+;;; round asks the CLI (an updated one, after `claude update') rather than
+;;; resending what was refused; a reused one the API refuses for its login
 ;;; (401, 403) is written again by the CLI and sent once more (WALK).
 
 (defstruct (authored (:copier nil))
@@ -441,10 +443,11 @@ is past REUSE-SECONDS or past +AUTHORED-LIMIT+."
     (if key (remhash key *authored*) (clrhash *authored*))))
 
 (defun author-request (body &key model window directory session fresh)
-  "(values HEADERS ENDPOINT OCTETS KEY): the round's Messages request, the
-claude CLI's for BODY with BODY's own messages, run in DIRECTORY, MODEL on
-WINDOW's route. A request the CLI wrote for the same inputs in SESSION is
-sent again (KEY names it, NIL when the CLI ran) unless FRESH."
+  "(values HEADERS ENDPOINT OCTETS REUSED KEY): the round's Messages request,
+the claude CLI's for BODY with BODY's own messages, run in DIRECTORY, MODEL
+on WINDOW's route. A request the CLI wrote for the same inputs in SESSION is
+sent again (REUSED names it, NIL when the CLI ran) unless FRESH; KEY is what
+the request is kept under either way, for FORGET-AUTHORED when it fails."
   (let* ((key (authoring-key body :model model :window window :directory directory :session session))
          (kept (and (not fresh) (kept-authored key))))
     (multiple-value-bind (headers endpoint request)
@@ -456,4 +459,5 @@ sent again (KEY names it, NIL when the CLI ran) unless FRESH."
               (values headers endpoint request)))
       (values headers endpoint
               (nlk:encode-json-octets (nlk:copy-json-object request "messages" (request-messages body)))
-              (and kept key)))))
+              (and kept key)
+              key))))

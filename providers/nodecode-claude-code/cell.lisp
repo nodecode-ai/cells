@@ -52,7 +52,8 @@ names; the home directory outside a turn."
 (defun walk (next fold &rest keys &key config request-json &allow-other-keys)
   "WALK-PROVIDER-STREAM advice: a claude-code round sends the request the
 CLI wrote for its body, and folds the answer with Nodecode's tool names.
-A request sent again (AUTHOR-REQUEST) that fails is forgotten, and one the
+A request that fails, the CLI's fresh one or one sent again (AUTHOR-REQUEST),
+is forgotten, so the next round asks the CLI anew; one sent again that the
 API refuses for its login is written afresh by the CLI and sent once more."
   (if (claude-code-config-p config)
       (let* ((body (nlk:decode-json request-json))
@@ -62,24 +63,26 @@ API refuses for its login is written afresh by the CLI and sent once more."
                            :directory (round-directory)
                            :session (and turn (getf turn :session-id))))
              (rest (alexandria:remove-from-plist keys :request-json :headers :endpoint)))
-        (flet ((send (headers endpoint octets)
-                 (apply next (unprefixed-fold fold)
-                        :request-json octets :headers headers :endpoint endpoint rest)))
-          (multiple-value-bind (headers endpoint octets reused) (apply #'author-request body author)
-            (if (null reused)
-                (send headers endpoint octets)
-                (block round
-                  (handler-bind
-                      ((nle::provider-error
-                         (lambda (condition)
-                           (forget-authored reused)
-                           ;; refused before a byte of answer, so nothing was folded
-                           (when (member (nle::provider-error-status condition) '(401 403))
-                             (return-from round
-                               (multiple-value-bind (headers endpoint octets)
-                                   (apply #'author-request body :fresh t author)
-                                 (send headers endpoint octets)))))))
-                    (send headers endpoint octets)))))))
+        (flet ((send (key headers endpoint octets)
+                 (handler-bind ((nle::provider-error
+                                  (lambda (condition)
+                                    (declare (ignore condition))
+                                    (forget-authored key))))
+                   (apply next (unprefixed-fold fold)
+                          :request-json octets :headers headers :endpoint endpoint rest))))
+          (multiple-value-bind (headers endpoint octets reused key) (apply #'author-request body author)
+            (block round
+              (handler-bind
+                  ((nle::provider-error
+                     (lambda (condition)
+                       ;; refused before a byte of answer, so nothing was folded
+                       (when (and reused (member (nle::provider-error-status condition) '(401 403)))
+                         (return-from round
+                           (multiple-value-bind (headers endpoint octets reused key)
+                               (apply #'author-request body :fresh t author)
+                             (declare (ignore reused))
+                             (send key headers endpoint octets)))))))
+                (send key headers endpoint octets))))))
       (apply next fold keys)))
 
 (defun credential (op next)
