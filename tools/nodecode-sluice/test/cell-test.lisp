@@ -54,6 +54,47 @@
                        line))))
         (is (search "TWO" text) "and the real file now carries the approved line")))))
 
+(deftest sluice-cell-apply-lands-a-numbered-or-named-selection
+  (with-workspace (workspace ("a.txt" (format nil "one~%"))
+                             ("b.txt" (format nil "two~%")))
+    (let ((stage (nodecode-sluice::ensure-stage*)))
+      (flet ((stage-file (name text)
+               (with-open-file (out (format nil "~a/~a" (nodecode-sluice::stage-path stage) name)
+                                    :direction :output :if-exists :supersede :external-format :utf-8)
+                 (write-string text out)))
+             (real-file (name)
+               (with-open-file (in (format nil "~a~a" workspace name) :external-format :utf-8)
+                 (let ((text (make-string (file-length in))))
+                   (subseq text 0 (read-sequence text in))))))
+        (stage-file "a.txt" (format nil "ONE~%"))
+        (stage-file "b.txt" (format nil "TWO~%"))
+        (let ((review (tool-answer "sluice_diff" (nlk:json-object))))
+          (is (and (search "[1]" review) (search "[2]" review))
+              (format nil "both changes are numbered: ~a" review)))
+        (let ((answer (tool-answer "sluice_apply" (nlk:json-object "selection" "2"))))
+          (is (search "applied 1 change" answer)
+              (format nil "a numbered selection lands that one change: ~a" answer)))
+        (is (search "TWO" (real-file "b.txt")) "the numbered change is in the real file")
+        (is (search "one" (real-file "a.txt")) "and the change left out is not")
+        (tool-answer "sluice_diff" (nlk:json-object))
+        (let ((answer (tool-answer "sluice_apply" (nlk:json-object "selection" "a.txt"))))
+          (is (search "applied 1 change" answer)
+              (format nil "a changed file's path lands that file: ~a" answer)))
+        (is (search "ONE" (real-file "a.txt")) "the named file's change is in the real file")))))
+
+(deftest sluice-cell-selection-reads-numbers-ranges-and-paths
+  (let ((units (loop for id from 1 to 5
+                     collect (nodecode-sluice::make-unit id (format nil "f~d.txt" id) :modify))))
+    (flet ((selection (text) (nodecode-sluice::parse-selection text units)))
+      (is (equal '(1 2 3 4 5) (selection "all")) "all is every change")
+      (is (equal '(2) (selection "2")) "one number is that change")
+      (is (equal '(1 3 4 5) (selection "1,3-5")) "a list and a range, in order")
+      (is (equal '(2 4) (selection "4 2")) "spaces separate too, and the answer is sorted")
+      (is (equal '(3) (selection "f3.txt")) "a changed file's path is its changes")
+      (is (signals-error nodecode-sluice:sluice-error (selection "9")) "a number with no change is refused")
+      (is (signals-error nodecode-sluice:sluice-error (selection "soon")) "and so is a word that is neither"))))
+
+
 (deftest sluice-cell-apply-refuses-a-file-that-moved-underneath-it
   (with-workspace (workspace ("a.txt" (format nil "one~%")))
     (let ((stage (nodecode-sluice::ensure-stage*)))

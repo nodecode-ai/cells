@@ -159,8 +159,8 @@ ask the operator to run /sluice diff."
                         (fail "cannot read ~s: use numbers like 1,3-5, a changed file's path, or all" part)))
                     (loop for number from (parse-integer low) to (parse-integer high)
                           do (if (member number valid) (pushnew number chosen)
-                                 (fail "there is no change number ~d" number)))))))))
-    (sort chosen #'<))))
+                                 (fail "there is no change number ~d" number))))))))))
+    (sort chosen #'<)))
 
 ;;; --- the verbs the tools and /sluice share ----------------------------------
 
