@@ -57,8 +57,7 @@ once its socket is open; the provider answers `slack reply'."
       ;; the line's time is the message's ts, Slack's clock
       (is (wire-row (format nil "kim (operator) [m~a uU1 ~a]: hi bot" ts
                             (nck:line-time (+ nlk:+unix-epoch+ 1700000001)))
-                    (first messages-seen) "content")
-          "the line names its speaker by the name Slack gives")
+                    (first messages-seen) "content") "the line names its speaker by the name Slack gives")
       ;; Slack sends an unacknowledged envelope again; the ask is one turn.
       (fake-slack-push fake (slack-event-envelope "e1" (slack-message "D1" ts "hi bot"
                                                                       :channel-type "im")))
