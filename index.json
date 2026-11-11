@@ -8963,7 +8963,7 @@
     {
       "name": "nodecode-model-tiers",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "f30eed6370609d064d87bd4b354d9623ed3aaadd",
+      "commit": "8c0e6d4c17b678bb665cf2f824b15a89371f4bae",
       "path": "tools/nodecode-model-tiers",
       "description": "The Claude model hierarchy as the leaked Claude Code prompt tells it: the Mythos tier above Opus, with line numbers",
       "license": "MIT",
