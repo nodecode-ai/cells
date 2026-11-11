@@ -423,7 +423,10 @@ to reach the platform."
   ;; whole prompt at that point, so every lane would pay the standing section
   ;; uncached.
   (format nil "This session is one lane of a shared ~a ~a. Every user ~
-line reads \"<speaker> [m<message id> u<user id>]: <text>\"; a line that ~
+line reads \"<speaker> [m<message id> u<user id> <day date time>]: <text>\", ~
+the time when the message was sent on this machine's clock (~a), so the ~
+time between lines is real: a line hours after the one before it is a new ~
+moment, not a continuation. A line that ~
 answers a message carries the answered id too, as r<message id> — the ~
 message the ask's \"this\" means. The speaker label and the bracket are ~
 set by the adapter, not typed by the speaker. A message's further lines are ~
@@ -464,7 +467,7 @@ that has no link (a private conversation, a local file) is named as such.~%~
 ~a~%~
 ~%~
 ~a~%~a~@[~%~%~a~]"
-          name noun
+          name noun (line-clock-zone)
           (if owners
               (format nil "A label ending in \"~a\" marks the ~a's operator ~
 (~a~p ~{~a~^, ~}); no other label carries that mark."

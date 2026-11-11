@@ -13,6 +13,14 @@
   (dolist (source '(nodecode-cron::wake-source-turns nodecode-cron::wake-source-goals))
     (is (member source nodecode-cron::*wake-sources*) (format nil "~a is on *wake-sources*" source))))
 
+(deftest cron-cell-wake-digest-title-drops-the-whole-bracket ()
+  ;; A channel line's bracket closes on the time it was sent (#420): the title
+  ;; drops it whole, and a title cut inside it drops what is there.
+  (is (equal "alice fix the build"
+             (nodecode-cron::clean-title "alice [m1 u2 r3 Tue 2026-11-10 15:39]: fix the build")))
+  (is (equal "alice fix the build" (nodecode-cron::clean-title "alice [m1 u2]: fix the build")))
+  (is (equal "alice" (nodecode-cron::clean-title "alice [m1 u2 Tue 2026-11"))))
+
 (deftest cron-cell-wake-digest-turn-lines ()
   (let* ((now (nlk:iso-universal "2026-11-03T12:00:00Z"))
          (lines (nodecode-cron::turn-lines

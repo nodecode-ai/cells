@@ -37,9 +37,11 @@ second 12:00:00, so consecutive windows share no fact and drop none."
     (list "occurred_at >= ? and occurred_at < ?" (iso (1+ since)) (iso (1+ now)))))
 
 (defun clean-title (title)
-  "TITLE without the adapter's [m.. u.. r..] bracket a channel session's
+  "TITLE without the adapter's [m.. u.. r.. time] bracket a channel session's
 first line carries, on one line."
-  (string-trim " :" (nlk:one-line (ppcre:regex-replace-all "\\[m\\d+(?: [ur]\\d*)*\\]?:?" (or title "") "")
+  ;; the time is words of its own ("Tue 2026-11-10 15:39"), and a title cut
+  ;; short may end inside the bracket
+  (string-trim " :" (nlk:one-line (ppcre:regex-replace-all "\\[m\\d+(?: [^\\]\\s]+)*\\]?:?" (or title "") "")
                                   :cap 80)))
 
 (defun session-namer ()

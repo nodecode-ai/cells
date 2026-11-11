@@ -14,9 +14,11 @@
 
 (nlk:access (adapter nct::telegram-adapter))
 
-(defun telegram-scripted-updates ()
+(defun telegram-scripted-updates (date)
+  "One update: kim's \"hi bot\", sent at DATE, unix seconds."
   (cell-json (format nil "{\"ok\": true, \"result\": [{\"update_id\": 7, \"message\": ~a}]}"
-                      (tg-json 1 "\"text\": \"hi bot\"" :user-name "kim"))))
+                      (tg-json 1 (format nil "\"date\": ~d, \"text\": \"hi bot\"" date)
+                               :user-name "kim"))))
 
 (defun test-telegram-adapter (&key executor (lanes "tg-test-lanes")
                                    bot-username bot-user-id allowed-updates)
@@ -35,6 +37,8 @@ threads: the request, platform and seam tests drive it directly."
    :bindings ((lock (bt2:make-lock :name "tg-e2e"))
               (recorded '())
               (polls 0)
+              ;; when kim said it: just now, younger than a catch-up's minute
+              (date (- (get-universal-time) nlk:+unix-epoch+ 5))
               (executor
                 (nck:make-plan-executor
                  :run (lambda (plan)
@@ -47,7 +51,7 @@ threads: the request, platform and seam tests drive it directly."
                                         (cell-json "{\"ok\": true,
                                        \"result\": {\"message_id\": 90}}"))
                                        ;; The same update twice: a poll retry redelivery.
-                                       ((<= polls 2) (telegram-scripted-updates))
+                                       ((<= polls 2) (telegram-scripted-updates date))
                                        (t (cell-json "{\"ok\": true}")))))))))
    :section (nlk:json-object
              "enabled" t
@@ -69,7 +73,10 @@ threads: the request, platform and seam tests drive it directly."
                "chat_id" "555" "disable_notification" nil (:any "reply_parameters" "message_id") 1)))
   (is-lane-carrying "telegram" "telegram-555" "telegram-555-m1" "telegram-chat"
                     "(Telegram user id 42)" "(nct:request \"POST\" PATH")
-  (is (wire-row "kim (operator) [m1 u42]: hi bot" (first messages-seen) "content"))
+  ;; the line's time is Telegram's date for the message, not when it was read
+  (is (wire-row (format nil "kim (operator) [m1 u42 ~a]: hi bot"
+                        (nck:line-time (+ nlk:+unix-epoch+ date)))
+                (first messages-seen) "content"))
   (is-exchange-written-back-once
    "telegram-555" "telegram-555-m1"
    "the redelivered update admitted no second turn")
@@ -179,7 +186,7 @@ threads: the request, platform and seam tests drive it directly."
                               "(thread). The bot is @orgbot, user id 777.")
                  (nck:ask-where ask)))
       "(Telegram user id 42)"
-      ("[m<message id> u<user id>]" "and explains the handle bracket")
+      ("[m<message id> u<user id> <day date time>]" "and explains the handle bracket")
       ("(nct:request \"POST\" PATH" "and teaches the one door to the Bot API")
       (is (search nct::+telegram-api-primer+ contract))
       "do not send it again yourself"

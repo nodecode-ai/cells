@@ -139,7 +139,9 @@ thread as the reply gesture."
         "user_id" (nlk:json-value event :string "user")
         "user_name" user-name
         "message_id" ts
-        ;; The thread is the reply gesture: its first message is what this
+        ;; when it was sent, by Slack's clock: the line's time (NCK:HANDLE-TAG)
+        "sent_at" (let ((ms (ts-ms ts))) (and ms (floor ms 1000)))
+        ;; The reply gesture: its first message is what this
         ;; one answers, and a lane that ask opened goes on here.
         "reply_to_message_id" root
         "addressed" (and root

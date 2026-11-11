@@ -527,6 +527,12 @@ a restart keeps, where NOW-MS counts from the image's own start."
   "The Unix milliseconds the snowflake ID was minted at."
   (+ (ash (parse-integer id) -22) +discord-epoch-ms+))
 
+(defun snowflake-seconds (id)
+  "The Unix seconds the snowflake ID was minted at -- when its message was
+sent -- or NIL for an ID that is no snowflake."
+  (and (stringp id) (plusp (length id)) (every #'digit-char-p id)
+       (floor (snowflake-ms id) 1000)))
+
 (defun ms-snowflake (ms)
   "The smallest snowflake minted at Unix milliseconds MS."
   (ash (- ms +discord-epoch-ms+) 22))

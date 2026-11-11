@@ -54,7 +54,7 @@
         (is (equal "private-api" (gethash "method" answer))))
       (is-lane-carrying "imessage" "imessage-iMessage;-;+15550001" "imessage-iMessage;-;+15550001-mASK1"
                         "imessage-channel" "(iMessage handle +15550001)" "(nci:request")
-      (is (wire-row "Kim (operator) [mASK1 u+15550001]: hi bot" (first messages-seen) "content"))
+      (is (untimed-row "Kim (operator) [mASK1 u+15550001]: hi bot" (first messages-seen) "content"))
       (is (await (:timeout 15) (plusp (count-session-events "imessage-iMessage;-;+15550001-mASK1" "turn.completed"))))
       (is (= 1 (length (bb-sends fake "imessage reply"))) "what was said before the first read opened nothing")
       (is (not (nlk:session-exists-p "imessage-iMessage;-;+15550001-mOLD")))
@@ -76,7 +76,7 @@
           (is (equal "ROOT" (gethash "selectedMessageGuid" answer)) "inline, under the ask"))
         (is (await (:timeout 15) (plusp (count-session-events lane "turn.completed"))))
         (is (some (lambda (row) (search "[mROOT u+15550001]: what is up"
-                                        (or (ignore-errors (nlk:json-value row :string "content")) "")))
+                                        (untimed (or (ignore-errors (nlk:json-value row :string "content")) ""))))
                   (coerce (first messages-seen) 'list)) "the model reads the ask, not the name that called the bot")
         (is (await (:timeout 10) (member "like" (mapcar (lambda (body) (gethash "reaction" body))
                                                         (bb-calls fake "message" "react"))
