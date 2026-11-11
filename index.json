@@ -12885,6 +12885,25 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-t3mp3st",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "001ca0c33f4af3464dc3f1686df739d8aa2f3eaa",
+      "path": "tools/nodecode-t3mp3st",
+      "description": "Drive a running T3MP3ST War Room: launch a mission, watch it, read findings",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "cl-ppcre"
+      ],
+      "credits": {
+        "author": "Pliny the Elder",
+        "repo": "elder-plinius/T3MP3ST",
+        "commit": "29824d5625ede419ac8cdae418c8f4c72c6270f7",
+        "license": "MIT"
+      },
+      "category": "tools"
+    },
+    {
       "name": "nodecode-tab-watchdog",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "2d8af91add186006ea208e8ca8811b7f2f6d9dd2",
