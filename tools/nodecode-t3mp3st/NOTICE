@@ -1,0 +1,15 @@
+nodecode-t3mp3st -- a Nodecode cell that drives a running T3MP3ST War Room.
+
+T3MP3ST is by Pliny the Elder: https://github.com/elder-plinius/T3MP3ST
+It is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
+
+This cell copies no code from T3MP3ST and links nothing from it. It speaks to
+the War Room that program serves on loopback -- the same HTTP/JSON API its own
+UI reads -- as an independent program the user installs and runs themselves.
+That separation is deliberate: the AGPL covers T3MP3ST, and this cell stays
+MIT because none of T3MP3ST's code is distributed in it.
+
+The names T3MP3ST, TEMPEST and the War Room belong to that project. This cell
+is an independent client, and is not endorsed by it.
+
+Everything here is MIT: see LICENSE.
