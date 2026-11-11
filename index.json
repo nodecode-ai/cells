@@ -7146,7 +7146,7 @@
     {
       "name": "nodecode-jailbreaks",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "d661e82fb9c56a666536e448127c92a2bc0b694b",
+      "commit": "77bc0ccb819e9328bb0dc087147f0114e332bd76",
       "path": "tools/nodecode-jailbreaks",
       "description": "A working collection of jailbreak prompts, indexed: which model each one targets, what kind it is, and any of them quoted by line",
       "license": "MIT",
