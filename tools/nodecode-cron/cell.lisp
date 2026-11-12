@@ -460,7 +460,7 @@ thread, and the standing line for the jobs that keep the gateway up."
                      (declare (ignore session-id))
                      (wake-slash args))
             :description "Wake-ups of its own: on, off, or one now")
-  (:help :cron "cron:add schedules a prompt (\"every day at 9am\", \"in 45m\"); a fire's answer arrives as your next turn" +primer+)
+  (:help :cron "scheduled prompts" +primer+)
   (:route "/api/cron/jobs" #'jobs-route)
   (:command "cron" (lambda (args session-id)
                      (declare (ignore session-id))
