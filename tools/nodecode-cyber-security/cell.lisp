@@ -117,7 +117,7 @@ panel."
     (:guide "nothing is required: the advisory feed is read from the cells repository and refreshed on its own; feed_url points at a mirror, refresh_hours sets how often")
     ("feed_url" :string :default *feed-url* :doc "where the advisory feed is read from")
     ("refresh_hours" :integer :default 6 :min 1 :doc "how often the feed is re-read"))
-  (:help :security "cyber security, start here for breaches, CVEs, patches or 'check/secure my website or server': (security:report :dir \"/var/www/site\" :host \"example.com\"), then (help :security) for checking and patching a site" +manual+)
+  (:help :security "breaches, CVEs, patches" +manual+)
   (:command "security" 'run-slash
             :description "Recent breaches and the patch for each; check this machine")
   (:start (lambda ()

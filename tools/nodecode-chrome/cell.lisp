@@ -329,7 +329,7 @@ session's own eval, whether its Chrome work stays in background tabs."
                                          :extension-origin (unpacked-extension-origin
                                                             (extension-directory))))
             (nle:on-stop #'close-bridge)))
-  (:help :chrome "chrome: the operator's real, signed-in Chrome - snapshot, click, type, navigate" +primer+)
+  (:help :chrome "the operator's Chrome" +primer+)
   (:command "chrome" (lambda (args session-id) (run-subcommand session-id args))
             :label "Chrome"
             :catches 'chrome-error

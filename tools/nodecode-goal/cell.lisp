@@ -1087,7 +1087,7 @@ the answer's text, and the panel."
   (:hook :frame (nle:observer #'observe "goal"))
   (:hook 'nle:turn-budget #'budget-hook)
   (:hook 'nle:name-session #'naming-hook)
-  (:help :goal "goal: /goal keeps the session taking turns until a check passes (a command exits 0, or a judge says MET), tried one way or several and the best kept; goal:start, goal:status, goal:stop" +primer+)
+  (:help :goal "turns until a check passes" +primer+)
   (:command "goal" 'run-slash
             :catches 'goal-error
             :description "Keep working until a check passes: set a goal, read where it stands, or stop it")

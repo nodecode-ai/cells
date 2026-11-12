@@ -101,4 +101,4 @@ nested objects a flat section cannot carry."
   ;; provider default depends on which keys are set: the declaration carries
   ;; what it can and this reads the rest.
   (:settings 'read-settings)
-  (:help :web "web:search finds pages or papers (arxiv), web:fetch reads a page or a PDF" +primer+))
+  (:help :web "search, fetch" +primer+))
