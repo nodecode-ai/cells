@@ -115,11 +115,11 @@
       +lane+
       (funcall next provider)))
 
-(defun pi-base (next provider)
+(defun pi-base (next provider &rest args)
   "Pi credentials never follow an arbitrary configured base_url."
   (if (pi-source provider)
       "https://chatgpt.com/backend-api/codex"
-      (funcall next provider)))
+      (apply next provider args)))
 
 (defun call-pi-helper (source entry probe)
   "Private subprocess transport. Never include its output in diagnostics."
