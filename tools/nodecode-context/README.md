@@ -15,7 +15,9 @@ free window, "unnecessary" and fear of losing an answer. Still not after every t
 call, and not while a subproblem is still open (a wipe in
 the middle of a level was followed by 15 calls and one game action).
 
-The final answer follows the edit and stands alone. A model that wrote its
+The final answer comes after the edit and stands alone, and the rule says so
+in a sentence of its own, at the end: folded into the checkpoint line it read
+as one more reason to edit, and short asks gained a round. A model that wrote its
 findings beside the edit call would end the turn on "all three answers are in
 the message above", and a room or an RPC caller reads only that last message:
 2 of 20 three-part asks on Cyber v1 lost their answer that way before the rule
