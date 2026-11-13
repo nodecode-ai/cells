@@ -15,6 +15,13 @@ free window, "unnecessary" and fear of losing an answer. Still not after every t
 call, and not while a subproblem is still open (a wipe in
 the middle of a level was followed by 15 calls and one game action).
 
+The final answer comes after the edit and stands alone, and the rule says so
+in a sentence of its own, at the end, the checkpoint line left as it was. A
+model that wrote its findings beside the edit call would end the turn on "all
+three answers are in the message above", and a room or an RPC caller reads
+only that last message: 2 of 20 three-part asks on Cyber v1 lost their answer
+that way before the rule said so.
+
 The full rule is always in the protected `context` harness block. It is not a
 ranked knowledge entry: index budgets, aging, context-file edits and history
 eviction cannot prune it. The normal prompt pin keeps its bytes stable across
