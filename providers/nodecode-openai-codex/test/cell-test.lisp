@@ -9,15 +9,20 @@
 
 (in-package #:nodecode.test)
 
-(define-test-slice "openai-codex" "OPENAI-CODEX-CELL-" :start nodecode-openai-codex:start-cell)
+;; Portable legacy fixtures never discover the operator's Pi store. Automatic
+;; discovery fixtures explicitly enable it behind a synthetic helper stub.
+(define-test-slice "openai-codex" "OPENAI-CODEX-CELL-" :start nodecode-openai-codex:start-cell
+  :defaults (("pi_accounts" nil)))
 
 (define-cell-lifecycle-tests "openai-codex"
-  (:hooks 'nle::models-catalog-table :credential 'nle::responses-request-body 'nle::walk-provider-stream
-          'nle::note-body-wire)
+  (:hooks 'nle::models-catalog-table :credential 'nle::resolve-provider-credential 'nle::responses-request-body 'nle::walk-provider-stream
+          'nle::note-body-wire 'nle::configured-provider-lane 'nle::provider-base-url
+          'nle::snapshot-effective-provider-config 'nle::configured-provider-inventory
+          'nle::list-provider-models)
   (:command "openai-codex")
   (:running (is (nle::find-lane-by-name "openai-codex" nil) "the lane is registered"))
   (:stopped (is (null (nle::find-lane-by-name "openai-codex" nil)) "and taken back out"))
-  (:refused ("base_url" 5) ("originator" 5)))
+  (:refused ("base_url" 5) ("originator" 5) ("pi_auth_file" 5)))
 
 ;;; --- fixtures --------------------------------------------------------------------
 

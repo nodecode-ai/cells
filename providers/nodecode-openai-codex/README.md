@@ -22,6 +22,30 @@ the Codex CLI sends it:
 Ported from [oh-my-pi](https://github.com/can1357/oh-my-pi)'s `openai-codex`
 provider and sign-in. See [NOTICE](NOTICE).
 
+## Existing Pi accounts
+
+This source version can also reuse exact Pi Codex accounts (`openai-codex`,
+`openai-codex-2`, …) without copying credentials or signing in again.
+The cell automatically imports non-secret source metadata and lists those exact
+account IDs in Nodecode's normal `/models` picker, using the existing Codex model
+catalog and Responses wire. No hand-written per-account providers or invented
+aliases are needed. Account failover is optional and uses Nodecode's normal
+Backup chain, not multi-pass pools. See [Pi accounts](PI-AUTH.md)
+for setup, supported paths, refresh ownership and privacy limits.
+
+Pi reuse needs Node.js 22+ and an installed Pi 1.1-compatible package; the native
+sign-in path does not. Portable native tests mock the helper; installed-Pi
+transport checks are a separate opt-in system. Run helper tests from this cell
+folder with:
+
+```sh
+node --test test/pi-auth-test.mjs test/pi-auth-sdk-test.mjs
+```
+
+Set `NODECODE_PI_PACKAGE_DIR` to the installed coding-agent package directory to
+include SDK locking/refresh proofs; their stores are synthetic and HTTP is mocked.
+The native cell runner below covers the original sign-in and mocked Pi account behavior.
+
 ## Sign in
 
 ```
@@ -146,10 +170,18 @@ billed per token.
 From this repository's root:
 
 ```sh
-tools/test-cell.sh nodecode-openai-codex
+NODECODE_SRC=/path/to/nodecode .github/test-cell.sh providers/nodecode-openai-codex
 ```
 
 The sign-in's callback listens on a free loopback port the test dials. Every
 OpenAI endpoint is a stubbed `dex:post`, so nothing reaches OpenAI.
+
+For a developer checkout (from Nodecode's `src/`), register this cell's path and
+run `asdf:test-system :nodecode-openai-codex` in SBCL with a 4096MiB heap and
+8MB control stack. The separate
+`asdf:test-system :nodecode-openai-codex/pi-integration-test` requires Node.js and
+an installed Pi package; it invokes the private pipe against synthetic files
+only. Set `NODECODE_PI_PACKAGE_DIR` explicitly when launcher discovery is not
+available. It never opens the operator's credential store.
 
 MIT licensed.
