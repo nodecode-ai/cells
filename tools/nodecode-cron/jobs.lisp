@@ -43,6 +43,11 @@
   (created-at 0 :type integer)
   (origin nil :type (or null string))
   (timeout nil :type (or null integer))
+  ;; A shell command run before each scheduled fire (CHECK-DUE, ticker.lisp):
+  ;; exit 0 lets the fire go with the command's output as run context, exit 1
+  ;; lets the due instant pass with no turn, anything else is a failed check.
+  ;; NIL fires every time.
+  (check nil :type (or null string))
   ;; A settled answer waiting to be sent to ORIGIN as its next request:
   ;; (:input :answer :at). Kept on the row until the ingress admits it,
   ;; so a restart in between loses nothing.
@@ -114,6 +119,7 @@ dash, trimmed, at most 32 characters; \"job\" when nothing survives."
    "created_at" (unix-from-universal job.created-at)
    :opt "origin" job.origin
    :opt "timeout" job.timeout
+   :opt "check" job.check
    :opt "report" (let ((report job.report))
                    (and report
                         (nlk:json-object "input" (getf report :input)
@@ -201,6 +207,7 @@ dash, trimmed, at most 32 characters; \"job\" when nothing survives."
    :created-at (universal-from-unix (or (nlk:json-value object :integer "created_at") 0))
    :origin (nlk:json-value object :string "origin")
    :timeout (nlk:json-value object :integer "timeout")
+   :check (nlk:json-value object :string "check")
    :report (let* ((report (nlk:json-value object :object "report"))
                   (input (nlk:json-value report :string "input"))
                   (answer (nlk:json-value report :string "answer"))
@@ -272,11 +279,12 @@ job listing, record and resume answer carries."
   "The whole record; what (cron:show id) answers."
   (format nil "job ~a~%  name: ~a~%  state: ~(~a~)~%  schedule: ~a~%  next: ~a~%  ~
                fires: ~d~%  last: ~a~@[, ~d failed in a row~]~%  session: ~a~%  cwd: ~a~%  ~
-               timeout: ~a~%  origin: ~a~%  report: ~a~%  prompt: ~a"
+               timeout: ~a~%  check: ~a~%  origin: ~a~%  report: ~a~%  prompt: ~a"
           job.id job.name job.state
           (schedule-display job.schedule) (next-text job) job.fires
           (last-text job) (and (> job.failures 1) job.failures) job.session (or job.cwd "-")
           (if job.timeout (duration-text job.timeout) "default")
+          (or job.check "none: every fire runs")
           (or job.origin "-")
           (if job.report
               (format nil "waiting to be sent to ~a (since ~a)"

@@ -54,6 +54,7 @@
   :components ((:file "support")
                (:file "schedule-test")
                (:file "cell-test")
+               (:file "check-test")
                (:file "wake-test")
                (:file "import-test")
                (:file "wake-sources-test")

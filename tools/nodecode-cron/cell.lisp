@@ -23,7 +23,8 @@
 ;;;; model-facing ((cron:jobs), (cron:show), (cron:runs)).
 ;;;;
 ;;;; Config, a sibling top-level key next to `notify' and `websearch':
-;;;;   "cron": {"enabled": true, "timeout_minutes": 10, "pause_after_failures": 3}
+;;;;   "cron": {"enabled": true, "timeout_minutes": 10, "pause_after_failures": 3,
+;;;;            "check_timeout_seconds": 60}
 ;;;; Jobs are not config: they live in the store, written by the verbs.
 
 (in-package #:nodecode-cron)
@@ -38,7 +39,7 @@
   "Scheduled prompts are available through the nodecode-cron cell: Lisp functions in the
 cron: package, called through eval. Every one returns a string; every refusal is ERROR:
 CRON-ERROR with the reason.
-  (cron:add \"schedule\" \"prompt\" &key name cwd timeout-minutes model provider)   schedule one.
+  (cron:add \"schedule\" \"prompt\" &key name cwd timeout-minutes model provider check)   schedule one.
       Schedules: \"30m\" / \"every 2h\" / \"every hour\" (recurring interval); \"in 45m\" (once, that
       far from now); \"at 17:30\" (once, the next such time); \"every day at 9am\" / \"weekdays at
       9:30\" / \"every monday 9am\" / \"every mon,wed at 18:00\" (recurring, wall clock); five-field
@@ -48,7 +49,7 @@ CRON-ERROR with the reason.
   (cron:jobs)   one line per job: id, state, schedule, next fire (wall time and
       time left), last outcome.
   (cron:show \"id\")   the whole record.   (cron:runs \"id\" &optional 10)   the last outcomes.
-  (cron:edit \"id\" &key schedule prompt name cwd timeout-minutes)   (cron:pause \"id\")
+  (cron:edit \"id\" &key schedule prompt name cwd timeout-minutes check)   (cron:pause \"id\")
   (cron:resume \"id\")   (cron:remove \"id\")   (cron:run \"id\" &optional \"extra context\") fires now.
 Each job runs in its own durable session, cron-<id>: its transcript is the record, and
 (recall-log :session-id \"cron-<id>\" ...) reads it from anywhere. A fire's whole final answer
@@ -62,6 +63,13 @@ what it has. A job whose fires fail 3 times in a row (the section's pause_after_
 pauses itself, and the session that scheduled it is told once, with the last failure;
 (cron:resume \"id\") runs it again. A job's own session cannot add, edit, resume, run or
 remove jobs.
+A job that waits on something - a build, a file, a reply - takes :check \"shell command\": the
+command runs before each scheduled fire, in the job's cwd, at no model cost. Exit 0 fires,
+with the command's output as run context; exit 1 lets the instant pass with no turn (the
+job's last outcome reads quiet); any other exit, or a command past the section's
+check_timeout_seconds (60), is a failed check, counted toward the pause like a failed fire.
+grep -q, test and [ ] answer 0 or 1 already: :check \"grep -q 'board done' run.log\".
+(cron:edit \"id\" :check nil) drops it; (cron:run \"id\") fires without it.
 
 Wake-ups of its own: (cron:wake :on :min \"15m\" :max \"4h\" :allowance 2 :calls 40) turns on
 one wake job, \"wake\", whose turns nobody types; (cron:wake :off) stops it until the next :on,
@@ -95,11 +103,18 @@ line, and may pick its next wake with (cron:wake-next \"2h\" \"why\") inside the
   (unless (and (stringp prompt) (plusp (length (string-trim '(#\Space #\Newline) prompt))))
     (fail "prompt must be a non-empty string")))
 
-(define-verb add-job (schedule prompt &key name cwd timeout-minutes model provider
+(defun valid-check (check)
+  "CHECK as a job keeps it: a shell command, or NIL for none."
+  (cond ((null check) nil)
+        ((and (stringp check) (plusp (length (nlk:trimmed check)))) check)
+        (t (fail ":check must be a shell command string, or NIL for none, not ~s" check))))
+
+(define-verb add-job (schedule prompt &key name cwd timeout-minutes model provider check
                                           (now (get-universal-time)))
   "The whole of (cron:add) behind an explicit clock: parse, make the record
 and its session, pin, persist, poke. Returns the job."
   (check-prompt prompt)
+  (valid-check check)
   (with-cron-lock
     (refuse-from-job-session)
     (let* ((parsed (parse-schedule schedule :now now))
@@ -116,7 +131,8 @@ and its session, pin, persist, poke. Returns the job."
                           :created-at now
                           :origin origin
                           :timeout (and timeout-minutes
-                                        (timeout-seconds-from-minutes timeout-minutes)))))
+                                        (timeout-seconds-from-minutes timeout-minutes))
+                          :check check)))
       (ensure-job-session job)
       (when (and (or model provider) (nlk:store-open-p))
         (nlk:record-session-model-selection job.session :provider provider :model model))
@@ -128,13 +144,13 @@ and its session, pin, persist, poke. Returns the job."
       (nle:keep-running (format nil "the cron job ~a" job.name))
       job)))
 
-(defun add (schedule prompt &key name cwd timeout-minutes model provider)
+(defun add (schedule prompt &key name cwd timeout-minutes model provider check)
   "Schedule PROMPT. Answers the job's id, schedule, next fire and session."
   (let ((job (add-job schedule prompt :name name :cwd cwd
                                       :timeout-minutes timeout-minutes
-                                      :model model :provider provider)))
-    (format nil "job ~a added: ~a; next fire ~a; session ~a"
-            job.id (schedule-display job.schedule)
+                                      :model model :provider provider :check check)))
+    (format nil "job ~a added: ~a~@[, gated by its check~*~]; next fire ~a; session ~a"
+            job.id (schedule-display job.schedule) job.check
             (next-text job) job.session)))
 
 (define-verb jobs ()
@@ -159,8 +175,9 @@ registry is written after it -- the ticker woken too, with POKE."
            (persist-jobs)
            ,@(when poke '((poke))))))))
 
-(define-job-verb edit (id &key schedule prompt name cwd timeout-minutes)
-  "Change job ID in place. A new schedule counts from now." (:refuse t)
+(define-job-verb edit (id &key schedule prompt name cwd timeout-minutes (check nil check-p))
+  "Change job ID in place. A new schedule counts from now; :check NIL drops
+the check." (:refuse t)
   (refuse-wake-job job "edit")
   (when schedule
     (let* ((now (get-universal-time))
@@ -178,6 +195,8 @@ registry is written after it -- the ticker woken too, with POKE."
     (setf (job-cwd job) cwd))
   (when timeout-minutes
     (setf (job-timeout job) (timeout-seconds-from-minutes timeout-minutes)))
+  (when check-p
+    (setf (job-check job) (valid-check check)))
   (job-text job))
 
 (define-job-verb pause (id)
@@ -429,7 +448,7 @@ remove (id) -- and answers {text, jobs}, the verb's answer and the jobs after."
   "The registry off the store, the fires recovered with it, the one ticker
 thread, and the standing line for the jobs that keep the gateway up."
   (with-cron-lock
-    (setf *inflight* '())
+    (setf *inflight* '() *checks* '())
     (load-jobs)
     ;; A job whose session still runs a recovered turn gets an in-flight record.
     (dolist (job *jobs*)
@@ -446,7 +465,7 @@ thread, and the standing line for the jobs that keep the gateway up."
   ;; The registry row stays in the store; the in-image list is dropped.
   (nle:on-stop (lambda ()
                  (setf *worker* (nlk:worker-stop *worker*))
-                 (with-cron-lock (setf *inflight* '() *jobs* '()))))
+                 (with-cron-lock (setf *inflight* '() *checks* '() *jobs* '()))))
   (let ((active (count :active *jobs* :key #'job-state)))
     (when (plusp active)
       (nle:keep-running (format nil "~d cron job~:p" active)))))
@@ -457,7 +476,9 @@ thread, and the standing line for the jobs that keep the gateway up."
     ("timeout_minutes" :integer :default 10 :min 1
                        :doc "how long a fire's turn may run before its calls are refused")
     ("pause_after_failures" :integer :default 3 :min 0
-                            :doc "failed fires in a row that pause a job and tell the session that scheduled it; 0 never pauses"))
+                            :doc "failed fires in a row that pause a job and tell the session that scheduled it; 0 never pauses")
+    ("check_timeout_seconds" :integer :default 60 :min 1
+                             :doc "how long a job's :check command may run before it is killed and counted as a failed check"))
   (:start #'install)
   (:hook :frame (nlk:observer #'observe-frame "cron"))
   (:hook 'nle:turn-budget #'budget-hook)
