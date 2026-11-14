@@ -28,6 +28,15 @@
 ;;;; tool calls are refused and its answer is what it has, so a slow fire
 ;;;; still reports and the ticker never cancels one.
 ;;;;
+;;;; Each fire stands on its own. A fire that failed or was cancelled leaves
+;;;; its prompt on the job session's chain with no answer behind it, and the
+;;;; next fire's prompt would join it in one user message -- a job failing
+;;;; every minute sent every failed prompt again before its own. So before a
+;;;; fire, the fires at the tip of its session that failed or were cancelled
+;;;; are taken back off the visible chain (TAKE-BACK-FAILED-FIRES), the head
+;;;; move a retracted prompt takes: their facts stay in the log, and the
+;;;; job's LAST and the board still say what happened.
+;;;;
 ;;;; An answer is also RETURNED to the session that scheduled the job (the
 ;;;; job's ORIGIN) as that session's next request: one user message -- the
 ;;;; fire line, a colon, the whole answer -- through the same
@@ -159,6 +168,42 @@ schedule, the delivery rule, the limit. Data, so a layer can reword it.")
 (defparameter +line-limit+ 160
   "How much of an answer's first line rides on the board and the record.")
 
+;;; --- a failed fire is taken back --------------------------------------------------------
+
+(defun cron-fire-turn-p (turn-id)
+  "Whether TURN-ID is a fire: a turn the cron started, its invocation's
+source kind `cron'."
+  (let* ((text (nlk:events :turn-id turn-id :kind nlk::+kind-turn-started+
+                           :as :value :columns '("invocation_json")))
+         (invocation (and (stringp text) (ignore-errors (nlk:decode-json text)))))
+    (and invocation (equal "cron" (nlk:json-value invocation :string "source" "kind")))))
+
+(defun take-back-failed-fires (job)
+  "Move JOB's session head back past the fires at its tip that failed or were
+cancelled, so the next fire's request carries none of their prompts; => the
+turns taken back, oldest first."
+  ;; A turn the operator typed into the job's session is theirs and stays, and
+  ;; the walk stops at the first fire that completed. The move is a retract:
+  ;; no redo leads back to a failed fire. The caller has seen no turn running;
+  ;; the move re-checks that in its own transaction.
+  (let ((session job.session)
+        (parents nil)
+        (taken '()))
+    (when (and (nlk:store-open-p) (nlk:session-exists-p session))
+      (loop for turn = (nlk:session-head-turn-id session) then (gethash turn parents)
+            while (and turn
+                       (member (nlk:turn-terminal-kind turn)
+                               (list nlk::+kind-turn-failed+ nlk::+kind-turn-cancelled+)
+                               :test #'equal)
+                       (cron-fire-turn-p turn))
+            do (push turn taken)
+               (unless parents
+                 (setf parents (nlk:session-composed-parents session))))
+      (when taken
+        (nle::headless-head-move session (gethash (first taken) parents) "user_message"
+                                 nlk:+head-move-reason-retract+)))
+    taken))
+
 ;;; --- firing ---------------------------------------------------------------------------
 
 (defun advance-job (job now due &aux (next (if (job-wake job)
@@ -192,6 +237,11 @@ session."
       (set-last job now "overrun" "previous fire still running")
       (post job :warning "cron ~a: previous fire still running; this fire skipped" id)
       (return-from fire-job nil))
+    ;; Each fire stands on its own: the failed fires before it are taken back
+    ;; first. One that cannot be is warned about, and the fire still goes.
+    (nlk:with-handlers ((error (condition)
+                          (warn "cron: the failed fires of ~a not taken back: ~a" id condition)))
+      (take-back-failed-fires job))
     (let ((fire (make-fire :job-id id :session job.session))
           ;; The fire that makes the job's session names it for the job, as
           ;; every list reads it: "minute check · every 1m", not the fire's
