@@ -47,7 +47,7 @@ to xAI.
 
 ## Grok Imagine: the `xai_oauth_image` tool
 
-With the cell running, the model has one more tool beside `codex_sub_image`:
+With the cell running, the model has one more tool, `xai_oauth_image`:
 
 ```
 xai_oauth_image {"prompt": "a red fox in snow", "output": "fox.png",
@@ -87,10 +87,9 @@ object verbatim (`cost_in_usd_ticks` when xAI sends it), `rate_limit` holds
 the `x-ratelimit-*` response headers verbatim, and `limits` puts both into
 one sentence, saying "xAI reported no usage" or "no rate-limit headers"
 when that is what came back. xAI reports no image quota or remaining-images
-figure for a subscription sign-in, so the tool never shows one. `/limits`
-(little-helpers) shows the SuperGrok credit usage percent that
-`cli-chat-proxy.grok.com` reports; whether image requests count against
-that credit is xAI's to say, and this cell does not claim it.
+figure for a subscription sign-in, so the tool never shows one. Whether
+image requests count against a SuperGrok credit is xAI's to say, and this
+cell does not claim it.
 
 ### Failure modes
 
