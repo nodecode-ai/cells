@@ -177,6 +177,89 @@ session ORIGIN when given."
     (is (equal "cancelled" (getf (nodecode-cron::job-last job) :status)))
     (is (equal "cron fails: cancelled: operator" (cron-board-text "fails")))))
 
+(defun cron-fold-texts (session)
+  "What a turn in SESSION folds from the chain its head can see: each wire
+message as its JSON text."
+  (mapcar (lambda (message) (shasht:write-json message nil))
+          (nle::messages-at-boundary
+           (nle::history-turns-from-events (nle::collect-visible-session-events session)) 0)))
+
+(deftest cron-cell-a-failed-fire-is-taken-back-before-the-next (with-cron-runtime (:store t))
+  ;; A fire that failed left its prompt on the job's chain with no answer, and
+  ;; the next fire's prompt joined it in one user message: a job failing every
+  ;; minute sent every failed prompt again before its own. The submit here is
+  ;; the kernel's admission as NLE:SUBMIT makes it, with no worker: the test
+  ;; ends each turn itself and hands its frame to the observer.
+  (let ((turns '()))
+    (with-stubbed-fdefinitions ((nodecode-cron::submit-prompt (session prompt command-id job-id)
+                                  (let ((admission (nlk:admit-active-turn-input
+                                                    session command-id prompt
+                                                    :invocation (nlk:default-invocation
+                                                                 "turn.start" command-id
+                                                                 :source "cron" :id job-id))))
+                                    (push (nlk::active-input-admission-turn admission) turns)
+                                    (values (nlk:active-input-admission-disposition admission)
+                                            (nlk:active-input-admission-turn-id admission)))))
+      (labels ((id (turn) (nlk:durable-turn-turn-id turn))
+               (frame (type &optional payload)
+                 (cell-publish "nodecode-cron" (cell-frame-op type :session "cron-board"
+                                                                :turn (id (first turns))
+                                                                :payload payload)))
+               (answer (text)
+                 (nlk:record-assistant-message
+                  (first turns) (nlk:make-json-object "role" "assistant" "content" text))
+                 (nlk:complete-turn (first turns) nil)
+                 (frame "turn.assistant_message_completed"
+                        (nlk:json-object "message" (nlk:json-object "role" "assistant" "content" text)))
+                 (frame "turn.completed"))
+               (refuse ()
+                 (nlk:fail-turn (first turns) (make-condition 'simple-error
+                                                              :format-control "the provider refused"))
+                 (frame "turn.failed" (nlk:json-object "detail" "the provider refused")))
+               (visible-p (turn) (gethash (id turn) (nlk:session-visible-turn-set "cron-board"))))
+        (cron-add "every 1h" "Check the board" :name "board")
+        (let ((due (+ +cron-now+ 3600)))
+          (is (= 1 (nodecode-cron::tick due)) "fire 1")
+          (answer "Board clear")
+          (nodecode-cron::tick (+ due 30))
+          (is (= 1 (nodecode-cron::tick (+ due 3600))) "fire 2")
+          (refuse)
+          (nodecode-cron::tick (+ due 3630))
+          (is (equal "failed" (getf (nodecode-cron::job-last (nodecode-cron::find-job "board")) :status)))
+          ;; A fire the cell before this one left failed on top of it: the
+          ;; tip of a session that has been failing a while.
+          (nodecode-cron::submit-prompt "cron-board" "[cron \"board\", backlog fire] Check the board"
+                                        "cron:board:backlog" "board")
+          (refuse)
+          (destructuring-bind (backlog fire-2 fire-1) turns
+            (is (= 1 (nodecode-cron::tick (+ due 7200))) "fire 3")
+            (let ((fire-3 (first turns))
+                  (fold (cron-fold-texts "cron-board")))
+              (is (visible-p fire-1) "the fire that answered stays on the chain")
+              (is (not (visible-p fire-2)) "the failed fire is off it")
+              (is (not (visible-p backlog)) "and so is every failed fire at its tip")
+              (let ((parent (gethash (id fire-3) (nlk:session-composed-parents "cron-board")))
+                    (moved (nlk:events :session-id "cron-board" :kind nlk::+kind-head-moved+
+                                       :order :newest :as :payload)))
+                (is (equal (id fire-1) parent) "fire 3 follows the fire that answered")
+                (is (some (lambda (text) (search "fire 3," text)) fold) "fire 3's request carries its prompt")
+                (is (some (lambda (text) (search "Board clear" text)) fold) "and the answer before it")
+                (is (notany (lambda (text) (or (search "fire 2," text) (search "backlog fire" text))) fold) "and no failed fire's prompt")
+                (is (nlk:events :turn-id (id fire-2) :kind nlk::+kind-input-committed+) "the failed fire stays in the log")
+                (is (equal nlk:+head-move-reason-retract+ (nlk:json-value moved :string "reason")) "taken back as a retract, which offers no redo"))
+              (answer "Board clear again")
+              (nodecode-cron::tick (+ due 7230))
+              ;; A turn the operator typed into the job's session is theirs:
+              ;; it fails, and the next fire leaves it where it is.
+              (push (nlk::active-input-admission-turn
+                     (nlk:admit-active-turn-input "cron-board" "operator-1" "What changed?"))
+                    turns)
+              (refuse)
+              (let ((operator (first turns)))
+                (is (= 1 (nodecode-cron::tick (+ due 10800))) "fire 4")
+                (is (visible-p operator) "the operator's failed turn stays")
+                (is (visible-p fire-3))))))))))
+
 (deftest cron-cell-lateness-within-grace-fires-and-beyond-it-misses ()
   (with-cron-runtime (:submits t :job (job "every 2h" "x" :name "late"))
     ;; Due at 12:00, seen at 12:30: inside the hour of grace.
