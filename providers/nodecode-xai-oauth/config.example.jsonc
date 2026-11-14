@@ -6,7 +6,15 @@
   "xai-oauth": {
     "enabled": true,
 
-    // Where xAI is served. The Responses lane appends /responses.
-    "base_url": "https://api.x.ai/v1"
+    // Where xAI is served. The Responses lane appends /responses;
+    // xai_oauth_image appends /images/generations.
+    "base_url": "https://api.x.ai/v1",
+
+    // The existing directory xai_oauth_image writes into; it takes leaf
+    // filenames only and never overwrites.
+    "media_root": ".",
+
+    // The Grok Imagine model xai_oauth_image asks.
+    "image_model": "grok-imagine-image"
   }
 }

@@ -23,8 +23,14 @@
 ;;;;   WALK-PROVIDER-STREAM    the conversation in x-grok-conv-id
 ;;;;   /xai-oauth              login (a device code), logout, status
 ;;;;
+;;;; and one tool, image.lisp's:
+;;;;
+;;;;   xai_oauth_image         Grok Imagine: a prompt to a new file in
+;;;;                           media_root, on the stored sign-in only
+;;;;
 ;;;; Config, a sibling top-level key:
-;;;;   "xai-oauth": {"base_url": "https://api.x.ai/v1"}
+;;;;   "xai-oauth": {"base_url": "https://api.x.ai/v1", "media_root": ".",
+;;;;                 "image_model": "grok-imagine-image"}
 ;;;; A vetoed section ("enabled": false) installs nothing, and xai-oauth is
 ;;;; then whatever models.dev alone makes of it.
 
@@ -95,12 +101,17 @@ for xAI's prompt cache."
   (:section ("xai-oauth")
     (:guide "sign in from /xai-oauth (a SuperGrok or X Premium+ account; open the address, enter the code), or set XAI_OAUTH_TOKEN; base_url is where xAI is served")
     ("base_url" :string :default +base+
-     :doc "the xAI API base the Responses lane appends /responses to"))
+     :doc "the xAI API base the Responses lane appends /responses to")
+    ("media_root" :string :default "."
+     :doc "existing directory xai_oauth_image writes into; it takes leaf filenames only")
+    ("image_model" :string :default +image-model+
+     :doc "the Grok Imagine model xai_oauth_image asks"))
   (:start #'start)
   (:hook 'nle::models-catalog-table #'catalog)
   (:hook :credential #'credential)
   (:hook 'nle::responses-request-body #'body)
   (:hook 'nle::walk-provider-stream #'walk)
+  (:tool +image-tool+ (image-schema) 'generate-image)
   (:command "xai-oauth" 'run-command
             :description "Sign in to xAI Grok (SuperGrok or X Premium+) with a device code"
             :session nil))

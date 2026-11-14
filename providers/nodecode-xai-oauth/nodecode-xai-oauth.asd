@@ -22,6 +22,7 @@
   :components ((:file "package")
                (:file "provider")
                (:file "signin")
+               (:file "image")
                (:file "cell"))
   :in-order-to ((test-op (test-op "nodecode-xai-oauth/test"))))
 
