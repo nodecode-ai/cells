@@ -1263,6 +1263,24 @@
       "category": "tools"
     },
     {
+      "name": "nodecode-attack-frameworks",
+      "git": "https://github.com/nodecode-ai/cells",
+      "commit": "032159eb2d553cc90635cd0c0f5b07f91468a69e",
+      "path": "tools/nodecode-attack-frameworks",
+      "description": "LLM-driven attack frameworks already seen in real intrusions: what they are, and what they leave behind",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode"
+      ],
+      "credits": {
+        "author": "DFIR Radar (the facts), Nodecode (this cell)",
+        "repo": "DFIR_Radar/status/2121287724430774519",
+        "commit": "2121287724430774519 (the DFIR Radar post)",
+        "license": "MIT"
+      },
+      "category": "security"
+    },
+    {
       "name": "nodecode-aurora",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "27f573a58456b3b58d87e912e3e570c8950446ca",
