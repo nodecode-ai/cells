@@ -12,6 +12,10 @@
     // Failed fires in a row that pause a job: it stops firing and the
     // session that scheduled it is told once, with the last failure.
     // (cron:resume "id") runs it again; 0 never pauses.
-    "pause_after_failures": 3
+    "pause_after_failures": 3,
+    // Seconds a job's :check command may run before it is killed and
+    // counted as a failed check. A check decides whether a due fire is
+    // worth a turn: exit 0 fires, exit 1 lets the instant pass with none.
+    "check_timeout_seconds": 60
   }
 }
