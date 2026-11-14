@@ -14006,6 +14006,20 @@
       "category": "web"
     },
     {
+      "name": "nodecode-web-remote",
+      "git": "https://github.com/sirouk/cells",
+      "commit": "0251831a16e8a2661447000ffc709e6f1ed37204",
+      "path": "rooms/nodecode-web-remote",
+      "description": "Reach this organism from the rest of the tailnet over its own https port, pairing each device with a code",
+      "license": "MIT",
+      "depends_on": [
+        "nodecode",
+        "usocket",
+        "dexador"
+      ],
+      "category": "rooms"
+    },
+    {
       "name": "nodecode-web-search-plus",
       "git": "https://github.com/nodecode-ai/cells",
       "commit": "a53e46534e2ef9919ff1941555eca5237a7ad170",
