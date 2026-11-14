@@ -20,7 +20,7 @@
 
 (define-test-slice "cron" "CRON-CELL-" :start nodecode-cron:start-cell)
 
-(defmacro with-cron-runtime ((&key (timeout-minutes 10) store submits job) &body body)
+(defmacro with-cron-runtime ((&key (timeout-minutes 10) config store submits job) &body body)
   "Run BODY with the cell started (settings, hooks, /cron, an empty
 registry) and no ticker thread; stopped on unwind."
   ;; STORE runs it all over a temp store; SUBMITS — T, or
@@ -30,7 +30,7 @@ registry) and no ticker thread; stopped on unwind."
   ;; every test drives TICK by hand.
   (let* ((body (if job `((let ((,(first job) (cron-add ,@(rest job)))) ,@body)) body))
          (form `(let ((nodecode-cron::*ticker* nil))
-                  (with-cell-stop ((cron-start "timeout_minutes" ,timeout-minutes))
+                  (with-cell-stop ((cron-start "timeout_minutes" ,timeout-minutes ,@config))
                     ,@(if submits
                           `((with-captured-submits ,(if (listp submits) submits '()) ,@body))
                           body)))))

@@ -26,7 +26,9 @@
   ;; that passed). NEXT-AT is the due instant the ticker sleeps toward, NIL
   ;; when there is none. LAST is the newest outcome as a plist (:at :status
   ;; :line :turn-id). TIMEOUT is seconds, NIL for the section's default.
-  ;; ORIGIN is the session that added the job.
+  ;; ORIGIN is the session that added the job. FAILURES is the run of failed
+  ;; fires since the last one that answered: at the section's
+  ;; pause_after_failures the job pauses itself (SETTLE-FIRE).
   (id "" :type string)
   (name "" :type string)
   (schedule nil :type (or null schedule))
@@ -37,6 +39,7 @@
   (next-at nil :type (or null integer))
   (fires 0 :type integer)
   (last nil :type list)
+  (failures 0 :type integer)
   (created-at 0 :type integer)
   (origin nil :type (or null string))
   (timeout nil :type (or null integer))
@@ -107,6 +110,7 @@ dash, trimmed, at most 32 characters; \"job\" when nothing survives."
                                        "status" (getf last :status)
                                        :opt "line" (getf last :line)
                                        :opt "turn_id" (getf last :turn-id))))
+   :when (plusp job.failures) "failures" job.failures
    "created_at" (unix-from-universal job.created-at)
    :opt "origin" job.origin
    :opt "timeout" job.timeout
@@ -193,6 +197,7 @@ dash, trimmed, at most 32 characters; \"job\" when nothing survives."
                       :status (nlk:json-value last :string "status")
                       :line (nlk:json-value last :string "line")
                       :turn-id (nlk:json-value last :string "turn_id"))))
+   :failures (or (nlk:json-value object :integer "failures") 0)
    :created-at (universal-from-unix (or (nlk:json-value object :integer "created_at") 0))
    :origin (nlk:json-value object :string "origin")
    :timeout (nlk:json-value object :integer "timeout")
@@ -266,11 +271,11 @@ job listing, record and resume answer carries."
 (defun job-text (job)
   "The whole record; what (cron:show id) answers."
   (format nil "job ~a~%  name: ~a~%  state: ~(~a~)~%  schedule: ~a~%  next: ~a~%  ~
-               fires: ~d~%  last: ~a~%  session: ~a~%  cwd: ~a~%  timeout: ~a~%  ~
-               origin: ~a~%  report: ~a~%  prompt: ~a"
+               fires: ~d~%  last: ~a~@[, ~d failed in a row~]~%  session: ~a~%  cwd: ~a~%  ~
+               timeout: ~a~%  origin: ~a~%  report: ~a~%  prompt: ~a"
           job.id job.name job.state
           (schedule-display job.schedule) (next-text job) job.fires
-          (last-text job) job.session (or job.cwd "-")
+          (last-text job) (and (> job.failures 1) job.failures) job.session (or job.cwd "-")
           (if job.timeout (duration-text job.timeout) "default")
           (or job.origin "-")
           (if job.report

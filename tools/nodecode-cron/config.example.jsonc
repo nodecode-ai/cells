@@ -8,6 +8,10 @@
     // Minutes a fired turn may run: its budget. Past it the fire's tool
     // calls are refused and it answers with what it has. A job may pin its
     // own with :timeout-minutes.
-    "timeout_minutes": 10
+    "timeout_minutes": 10,
+    // Failed fires in a row that pause a job: it stops firing and the
+    // session that scheduled it is told once, with the last failure.
+    // (cron:resume "id") runs it again; 0 never pauses.
+    "pause_after_failures": 3
   }
 }

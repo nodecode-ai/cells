@@ -23,7 +23,7 @@
 ;;;; model-facing ((cron:jobs), (cron:show), (cron:runs)).
 ;;;;
 ;;;; Config, a sibling top-level key next to `notify' and `websearch':
-;;;;   "cron": {"enabled": true, "timeout_minutes": 10}
+;;;;   "cron": {"enabled": true, "timeout_minutes": 10, "pause_after_failures": 3}
 ;;;; Jobs are not config: they live in the store, written by the verbs.
 
 (in-package #:nodecode-cron)
@@ -58,7 +58,10 @@ running. Never poll for it: end your turn, and it arrives as the next one.
 Its first line also stands on every attached shell as a notice under cron:<id>; a fire that
 answers exactly SILENT, or nothing at all, sends nothing. A fire's time limit (:timeout-minutes,
 default 10) is its turn's budget: past it the fire's tool calls are refused and it answers with
-what it has. A job's own session cannot add, edit, resume, run or remove jobs.
+what it has. A job whose fires fail 3 times in a row (the section's pause_after_failures)
+pauses itself, and the session that scheduled it is told once, with the last failure;
+(cron:resume \"id\") runs it again. A job's own session cannot add, edit, resume, run or
+remove jobs.
 
 Wake-ups of its own: (cron:wake :on :min \"15m\" :max \"4h\" :allowance 2 :calls 40) turns on
 one wake job, \"wake\", whose turns nobody types; (cron:wake :off) stops it until the next :on,
@@ -189,8 +192,10 @@ registry is written after it -- the ticker woken too, with POKE."
     (unless next
       (fail "job ~a has no fire left (~a); (cron:edit ~s :schedule ...) gives it one"
             id (schedule-display (job-schedule job)) id))
+    ;; A resumed job starts a fresh run: the failures that paused it are behind it.
     (setf (job-state job) :active
-          (job-next-at job) next)
+          (job-next-at job) next
+          (job-failures job) 0)
     (format nil "job ~a resumed; next fire ~a" id (at-text next))))
 
 (define-job-verb remove (id)
@@ -448,9 +453,11 @@ thread, and the standing line for the jobs that keep the gateway up."
 
 (nle:define-cell cron
   (:section ("cron")
-    (:guide "timeout_minutes bounds one fire's turn; a job may name a limit of its own")
+    (:guide "timeout_minutes bounds one fire's turn; a job may name a limit of its own. pause_after_failures stops a job whose fires keep failing")
     ("timeout_minutes" :integer :default 10 :min 1
-                       :doc "how long a fire's turn may run before its calls are refused"))
+                       :doc "how long a fire's turn may run before its calls are refused")
+    ("pause_after_failures" :integer :default 3 :min 0
+                            :doc "failed fires in a row that pause a job and tell the session that scheduled it; 0 never pauses"))
   (:start #'install)
   (:hook :frame (nlk:observer #'observe-frame "cron"))
   (:hook 'nle:turn-budget #'budget-hook)

@@ -41,6 +41,17 @@
 ;;;; own. Until the ingress takes the message the report waits on the job's
 ;;;; row (durably, across a restart).
 ;;;;
+;;;; A job whose fires keep failing stops itself: a prompt the provider
+;;;; refused is refused again when it is sent again unchanged, and a failed
+;;;; fire has no answer to report, so without this the job fired on with
+;;;; nobody told but the board. Each failed fire adds one to the job's
+;;;; FAILURES and any fire that answers sets it back to zero; when the run
+;;;; reaches the section's pause_after_failures (0 never), the job is
+;;;; paused, the board says why, and its origin is owed ONE report --
+;;;; the pause line, a colon, the last failure and how to resume -- sent
+;;;; the way an answer is. The wake is left to its own back-off
+;;;; (WAKE-SETTLED).
+;;;;
 ;;;; THREAD RULE: SUBMIT-PROMPT is the one seam that reaches the organism's
 ;;;; ingress -- a fire into the job's session and a report into its origin
 ;;;; both go through it -- called on the ticker thread or a verb's caller
@@ -264,6 +275,62 @@ local time, the schedule, the session that holds the whole run.")
 output in one user message.
 Data, so a layer can reword it.")
 
+(defparameter *pause-input*
+  "[cron ~s paused ~a after ~d failed fires in a row, schedule ~a; its session is ~a]"
+  "The first line of the request that tells the origin its job paused
+itself: the job, the local time, the run of failures, the schedule, the
+session that holds the failed fires.
+Data, so a layer can reword it.")
+
+(defparameter *pause-answer*
+  "The last one failed~@[: ~a~]. The job fires no more until (cron:resume ~s); ~
+(cron:edit ~s :prompt \"...\") changes what it sends, (cron:remove ~s) drops it, and ~
+(cron:runs ~s) lists the failed fires."
+  "What follows the pause line: the last failure and the verbs that act on it.
+Data, so a layer can reword it.")
+
+(defun origin-to-tell (job &aux (origin job.origin))
+  "The session a report on JOB goes to: its origin, unless it has none or the
+origin is the job's own session."
+  (and (stringp origin) (plusp (length origin))
+       (not (string= origin job.session))
+       origin))
+
+(defun failures-limit ()
+  "How many failed fires in a row pause a job; 0 never does."
+  (if *cron* (setting :pause-after-failures) 3))
+
+(defun pause-on-failures-p (job &aux (limit (failures-limit)))
+  "Whether JOB's run of failed fires has reached the limit: an ordinary job
+still active; the wake backs off by itself (WAKE-SETTLED)."
+  (and (plusp limit)
+       (>= job.failures limit)
+       (eq job.state :active)
+       (null (job-wake job))))
+
+(defun pause-on-failures (job now detail-line)
+  "JOB's fires failed its limit of times in a row: pause it, say why on the
+board, and owe its origin one report."
+  (let* ((id job.id)
+         (detail (and (plusp (length detail-line)) detail-line))
+         (input (format nil *pause-input* job.name (local-text now) job.failures
+                        (schedule-display job.schedule) job.session))
+         (answer (format nil *pause-answer* detail id id id id)))
+    (setf job.state :paused)
+    (post job :error "cron ~a paused after ~d failed fires in a row~@[: ~a~]; (cron:resume ~s) runs it again"
+          id job.failures detail id)
+    (when (origin-to-tell job)
+      (let ((pending job.report))
+        ;; An answer still waiting for the origin goes first; the pause rides
+        ;; after it in the same request, so neither is lost.
+        (setf job.report
+              (if pending
+                  (list :input (getf pending :input)
+                        :answer (format nil "~a~%~%~?" (getf pending :answer)
+                                        *report-message* (list input answer))
+                        :at (getf pending :at))
+                  (list :input input :answer answer :at now)))))))
+
 ;;; --- settling -----------------------------------------------------------------------------
 
 (defun silent-answer-p (answer)
@@ -287,6 +354,8 @@ REPLY, trimmed and case-insensitive -- or no answer at all."
          ;; Silence: the marker alone — SILENT, [SILENT], NO_REPLY, NO REPLY,
          ;; trimmed and case-insensitive — or no answer at all. A blank is
          ;; silence too: a real failure arrives as a failure, never as a blank.
+         ;; Any fire that answers ends a run of failures.
+         (setf job.failures 0)
          (if (silent-answer-p fire.answer)
              (progn
                ;; A silent fire is a success: a failure or a cancel still
@@ -297,13 +366,10 @@ REPLY, trimmed and case-insensitive -- or no answer at all."
                (when (member (getf job.last :status) '("failed" "cancelled") :test #'equal)
                  (post-clear job))
                (set-last job now "silent" nil turn-id))
-             (let ((line (nlk:first-line (nlk:trimmed fire.answer) +line-limit+))
-                   (origin job.origin))
+             (let ((line (nlk:first-line (nlk:trimmed fire.answer) +line-limit+)))
                (set-last job now "ok" (and (plusp (length line)) line) turn-id)
                ;; The report owed to the origin: none without one, or when it is the job's own.
-               (when (and (plusp (length line))
-                          (stringp origin) (plusp (length origin))
-                          (not (string= origin job.session)))
+               (when (and (plusp (length line)) (origin-to-tell job))
                  (setf job.report
                        (list :input (format nil *report-input* job.name (local-text now)
                                             (schedule-display job.schedule) job.session)
@@ -312,7 +378,10 @@ REPLY, trimmed and case-insensitive -- or no answer at all."
                      (if (plusp (length line)) line "(finished with no text)")))))
         ((equal status "turn.failed")
          (set-last job now "failed" detail-line turn-id)
-         (post job :error "cron ~a failed: ~a" id detail-line))
+         (incf job.failures)
+         (if (pause-on-failures-p job)
+             (pause-on-failures job now detail-line)
+             (post job :error "cron ~a failed: ~a" id detail-line)))
         (t
          (set-last job now "cancelled" detail-line turn-id)
          (post job :info "cron ~a: cancelled~@[: ~a~]" id
