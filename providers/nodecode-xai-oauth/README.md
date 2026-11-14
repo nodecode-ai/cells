@@ -99,6 +99,8 @@ cell does not claim it.
 | sign-in expired, refresh refused | the refresh's credential error; nothing sent |
 | output name taken (any of the four extensions, links too) | `... already exists in media_root`; nothing sent |
 | bad name, ratio, resolution or argument | refusal naming it; nothing sent |
+| name longer than a filesystem holds (stem over 250 bytes) | `... is too long`; nothing sent |
+| the filesystem refuses the write for another reason | `could not write <name> in media_root: <the system's words>`; no file |
 | `base_url` not https on `x.ai` | refusal; the token is not sent |
 | xAI refuses (plan, policy, rate limit) | `xAI refused the image request: HTTP N: <xAI's words>`; no retry, no other credential, no file |
 | xAI answers without `b64_json`, or not JSON | `no image bytes`; no file |

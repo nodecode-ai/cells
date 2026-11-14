@@ -82,7 +82,14 @@ is a leaf filename ending in one of +IMAGE-TYPES+."
                  (member (string-downcase (subseq name (1+ dot))) +image-types+ :test #'string=))
       (error "output must be a leaf filename inside media_root ending .png, .jpg, .jpeg or .webp, not ~s"
              name))
-    (values (subseq name 0 dot) (string-downcase (subseq name (1+ dot))))))
+    (let ((stem (subseq name 0 dot))
+          (longest (1+ (reduce #'max +image-types+ :key #'length))))
+      ;; whichever format xAI answers, the stem under every type must be a name
+      ;; a filesystem holds, or the taken check would miss it and xAI be asked
+      (when (> (+ (length (sb-ext:string-to-octets stem :external-format :utf-8)) longest) 255)
+        (error "output ~s is too long: the name before its extension may take at most ~d bytes"
+               name (- 255 longest)))
+      (values stem (string-downcase (subseq name (1+ dot)))))))
 
 (defun media-root ()
   "The media_root directory as a native namestring ending in a slash; it must exist."
@@ -182,6 +189,11 @@ JPEG or WebP."
       name
       (format nil "~a.~a" stem type)))
 
+(defun link-new (from to)
+  "Hard-link FROM to the new name TO, refused when TO exists: SB-POSIX:LINK
+behind a function of this cell, as that one is inline and a test cannot stub it."
+  (sb-posix:link from to))
+
 (defun write-new-file (path bytes root)
   "Write BYTES to PATH, which must not exist: into a temp file in ROOT, then a
 hard link, which refuses an existing PATH, then the temp file unlinked --
@@ -197,9 +209,11 @@ nothing is left behind, whatever happens."
                        (sb-posix:fsync fd))
              ;; closing the fd-stream closes FD
              (close stream))
-           (handler-case (sb-posix:link temp path)
-             (sb-posix:syscall-error ()
-               (error "~a already exists in media_root; choose a new filename" (file-namestring path)))))
+           (handler-case (link-new temp path)
+             (sb-posix:syscall-error (condition)
+               (if (eql (sb-posix:syscall-errno condition) sb-posix:eexist)
+                   (error "~a already exists in media_root; choose a new filename" (file-namestring path))
+                   (error "could not write ~a in media_root: ~a" (file-namestring path) condition)))))
       (ignore-errors (sb-posix:unlink temp)))))
 
 ;;; --- what the answer says -------------------------------------------------------

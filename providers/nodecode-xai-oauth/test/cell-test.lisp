@@ -435,6 +435,24 @@ newest first."
     (is (null requests) "nothing was asked of xAI")
     (is (equal "keep" (alexandria:read-file-into-string (merge-pathnames "fox.jpg" media))))))
 
+(deftest xai-oauth-cell-image-says-a-refused-write-as-it-is ()
+  (with-xai-oauth-images (requests media)
+      ((list :post +xai-oauth-images-url+ 200 (xai-oauth-image-body +xai-oauth-jpeg+ "image/jpeg") '()))
+    (with-stubbed-fdefinitions
+        ((nodecode-xai-oauth::link-new (from to)
+           (error 'sb-posix:syscall-error :errno sb-posix:eperm :name "link")))
+      (let ((refusal (xai-oauth-image-refusal "prompt" "a fox" "output" "fox.png")))
+        (is (and refusal (not (search "already exists" refusal))) "a filesystem that refuses hard links is not a taken name")
+        (is (and refusal (search "fox.jpg" refusal) (search "not permitted" refusal)) "the refusal names the file and the system's words")))
+    (is (equal '() (xai-oauth-media-names media)) "nothing is left behind")))
+
+(deftest xai-oauth-cell-image-refuses-a-name-too-long-before-asking ()
+  (with-xai-oauth-images (requests media) ()
+    (let ((name (format nil "~a.png" (make-string 300 :initial-element #\f))))
+      (is (search "too long" (xai-oauth-image-refusal "prompt" "a fox" "output" name)) "a name no filesystem holds is refused, not mistaken for a free one"))
+    (is (null requests) "nothing was asked of xAI")
+    (is (equal '() (xai-oauth-media-names media)))))
+
 (deftest xai-oauth-cell-image-refuses-paths-and-unknown-arguments ()
   (with-xai-oauth-images (requests media) ()
     (dolist (name '("../fox.png" "sub/fox.png" "/tmp/fox.png" "." "fox.gif" "fox" ""))
