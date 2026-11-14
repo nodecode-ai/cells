@@ -176,8 +176,7 @@ registry is written after it -- the ticker woken too, with POKE."
            ,@(when poke '((poke))))))))
 
 (define-job-verb edit (id &key schedule prompt name cwd timeout-minutes (check nil check-p))
-  "Change job ID in place. A new schedule counts from now; :check NIL drops
-the check." (:refuse t)
+  "Change job ID in place. A new schedule counts from now; :check NIL drops the check." (:refuse t)
   (refuse-wake-job job "edit")
   (when schedule
     (let* ((now (get-universal-time))
