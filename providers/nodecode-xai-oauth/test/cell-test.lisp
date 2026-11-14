@@ -264,3 +264,216 @@ each poll interval the flow would have slept."
           (is (equal 'NIL
                      (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
       (is (search "not one of its choices" (cell-entry "nodecode-xai-oauth" "xai-oauth" "frobnicate"))))))
+
+;;; --- Grok Imagine: the xai_oauth_image tool -----------------------------------------
+;;;
+;;; Synthetic throughout: every xAI answer is scripted from a stubbed dex:post
+;;; or dex:get, every store a temp auth.json, every media_root a temp
+;;; directory. The bytes are the heads of a JPEG and a PNG -- what the tool
+;;; sniffs -- not pictures.
+
+(defparameter +xai-oauth-jpeg+
+  (coerce #(255 216 255 224 0 16 74 70 73 70 0 1 1 0 0 1 0 1 0 0 255 217) '(vector (unsigned-byte 8))))
+
+(defparameter +xai-oauth-png+
+  (coerce #(137 80 78 71 13 10 26 10 0 0 0 13 73 72 68 82 0 0 0 1 0 0 0 1) '(vector (unsigned-byte 8))))
+
+(defun xai-oauth-image-body (bytes mime &rest more)
+  "An images/generations answer carrying BYTES as MIME, the way xAI encodes it,
+with MORE (alternating keys and values) beside data."
+  (nlk:encode-json-object
+   (apply #'nlk:make-json-object
+          "data" (vector (nlk:json-object "b64_json" (cl-base64:usb8-array-to-base64-string bytes)
+                                          "mime_type" mime
+                                          "revised_prompt" "a red fox in snow, revised"))
+          more)))
+
+(defun xai-oauth-image-entry (&key (token "tok-img") (expires-in 3600))
+  "A stored sign-in whose access token is TOKEN, expiring in EXPIRES-IN seconds."
+  (nlk:json-object "access_token" token "refresh_token" "r-img"
+                   "expires_at" (+ (xai-oauth-now) expires-in) "email" "grok@example.com"))
+
+(defmacro with-xai-oauth-images ((requests media &key (entry '(xai-oauth-image-entry)) config)
+                                 (&rest answers) &body forms
+                                 &aux (pending (gensym "ANSWERS")) (stored (gensym "ENTRY")))
+  "FORMS with the cell started on CONFIG and media_root MEDIA (a fresh temp
+directory), a temp auth.json holding ENTRY as the sign-in (NIL: none), and
+every exchange answered in order from ANSWERS, each (METHOD URL STATUS BODY
+HEADERS), HEADERS an alist. REQUESTS collects (METHOD URL HEADERS CONTENT),
+newest first."
+  `(with-temp-workspace (,media)
+     (with-cell-stop ((xai-oauth-start "media_root" (namestring ,media) ,@config))
+       (with-temp-auth (auth "{}")
+         (let ((nle::*auth-file-path* (pathname auth))
+               (nle::*api-key* nil)
+               (,requests '())
+               (,pending (list ,@answers)))
+           (alexandria:when-let (,stored ,entry)
+             (nodecode-xai-oauth::save-entry ,stored nle::*auth-file-path*))
+           (flet ((next-answer (method url args)
+                    (push (list method url (getf args :headers) (getf args :content)) ,requests)
+                    (destructuring-bind (&optional asked-method asked-url status body headers)
+                        (pop ,pending)
+                      (assert (and (eq method asked-method) (equal url asked-url)) ()
+                              "asked ~a ~a, scripted ~a ~a" method url asked-method asked-url)
+                      ;; as dexador answers: body, status, headers, address, stream
+                      (values body status (alexandria:alist-hash-table headers :test 'equal)
+                              (quri:uri url) nil))))
+             (with-stubbed-fdefinitions
+                 ((dex:post (url &rest args) (next-answer :post url args))
+                  (dex:get (url &rest args) (next-answer :get url args)))
+               ,@forms)))))))
+
+(defun xai-oauth-image (&rest pairs)
+  "The registered xai_oauth_image tool called with PAIRS, its JSON answer decoded."
+  (let ((tool (nle::find-tool "xai_oauth_image")))
+    (assert tool () "xai_oauth_image is not registered")
+    (nlk:decode-json (funcall (third tool) (apply #'nlk:make-json-object pairs)))))
+
+(defun xai-oauth-image-refusal (&rest pairs)
+  "The words the registered tool refuses PAIRS with, or NIL when it answers."
+  (handler-case (progn (apply #'xai-oauth-image pairs) nil)
+    (error (condition) (princ-to-string condition))))
+
+(defun xai-oauth-media-names (media)
+  "The names in MEDIA, dangling links and dot files included, sorted."
+  (sort (mapcar #'file-namestring
+                (directory (merge-pathnames (make-pathname :name :wild :type :wild) media)
+                           :resolve-symlinks nil))
+        #'string<))
+
+(defparameter +xai-oauth-images-url+ "https://api.x.ai/v1/images/generations")
+
+(deftest xai-oauth-cell-image-tool-comes-and-goes-with-the-cell ()
+  (with-cell-stop ((xai-oauth-start))
+    (is-present (tool (nle::find-tool "xai_oauth_image")) "a start registers xai_oauth_image"
+      (is (equalp #("prompt" "output")
+                  (nlk:json-value (getf (second tool) :parameters) :array "required")))
+      (is (search "never an API key" (getf (second tool) :description))))
+    (funcall stop)
+    (setf stop nil)
+    (is (null (nle::find-tool "xai_oauth_image")) "a stop takes it back")))
+
+(deftest xai-oauth-cell-image-sends-the-sign-in-and-keeps-xais-bytes ()
+  (with-xai-oauth-images (requests media)
+      ((list :post +xai-oauth-images-url+ 200
+             (xai-oauth-image-body +xai-oauth-jpeg+ "image/jpeg"
+                                   "usage" (nlk:json-object "cost_in_usd_ticks" 200000000))
+             '(("x-ratelimit-remaining-requests" . "59") ("content-type" . "application/json"))))
+    (let ((answer (xai-oauth-image "prompt" "a red fox in snow" "output" "fox.png"))
+          (path (merge-pathnames "fox.jpg" (truename media))))
+      (destructuring-bind ((method url headers content)) requests
+        (let ((body (nlk:decode-json content)))
+          (is (eq :post method))
+          (is (equal +xai-oauth-images-url+ url))
+          (is (equal "Bearer tok-img" (xai-oauth-header headers "Authorization"))
+              "the sign-in's token is the bearer")
+          (is (equal "grok-imagine-image" (nlk:json-value body :string "model")))
+          (is (equal "a red fox in snow" (nlk:json-value body :string "prompt")))
+          (is (eql 1 (nlk:json-value body :integer "n")))
+          (is (equal "b64_json" (nlk:json-value body :string "response_format")))
+          (is (equal "1:1" (nlk:json-value body :string "aspect_ratio")) "omp's default ratio")
+          (is (equal "1k" (nlk:json-value body :string "resolution")) "omp's default resolution")))
+      (is (equal (namestring path) (nlk:json-value answer :string "path"))
+          "a JPEG answer keeps its own extension")
+      (is (equalp +xai-oauth-jpeg+ (alexandria:read-file-into-byte-vector path))
+          "the file holds xAI's bytes, not a re-encode")
+      (is (equal "image/jpeg" (nlk:json-value answer :string "mime_type")))
+      (is (equal "fox.png" (nlk:json-value answer :string "requested")))
+      (is (eql (length +xai-oauth-jpeg+) (nlk:json-value answer :integer "bytes")))
+      (is (equal "a red fox in snow, revised" (nlk:json-value answer :string "revised_prompt")))
+      (is (eql 200000000 (nlk:json-value answer :integer "usage" "cost_in_usd_ticks"))
+          "the usage xAI reported, as it reported it")
+      (is (equal "59" (nlk:json-value answer :string "rate_limit" "x-ratelimit-remaining-requests")))
+      (is (null (nlk:json-value answer :string "rate_limit" "content-type")) "only rate-limit headers")
+      (is (search "cost_in_usd_ticks=200000000" (nlk:json-value answer :string "limits")))
+      (is (equal '("fox.jpg") (xai-oauth-media-names media)) "nothing else is left in media_root"))))
+
+(deftest xai-oauth-cell-image-keeps-a-name-its-bytes-match ()
+  (with-xai-oauth-images (requests media :config ("image_model" "grok-imagine-image-2.0"))
+      ((list :post +xai-oauth-images-url+ 200 (xai-oauth-image-body +xai-oauth-png+ "image/png") '()))
+    (let ((answer (xai-oauth-image "prompt" "a lighthouse" "output" "light.png"
+                                   "aspect_ratio" "16:9" "resolution" "2k"))
+          (body (nlk:decode-json (fourth (first requests)))))
+      (is (equal "grok-imagine-image-2.0" (nlk:json-value body :string "model")) "image_model names the model")
+      (is (equal "16:9" (nlk:json-value body :string "aspect_ratio")))
+      (is (equal "2k" (nlk:json-value body :string "resolution")))
+      (is (equal (namestring (merge-pathnames "light.png" (truename media)))
+                 (nlk:json-value answer :string "path")))
+      (is (equal "image/png" (nlk:json-value answer :string "mime_type")))
+      (is (null (nlk:json-value answer :object "usage")))
+      (is (search "reported no usage" (nlk:json-value answer :string "limits"))
+          "silence is said, not filled in"))))
+
+(deftest xai-oauth-cell-image-asks-with-the-sign-in-only ()
+  (with-xai-oauth-images (requests media :entry nil) ()
+    (let ((nle::*api-key* "configured-key"))
+      (nle::save-provider-api-key "xai-oauth" "saved-key" :auth-path nle::*auth-file-path*)
+      (with-stubbed-fdefinition (nle::credential-env (name)
+                                 (cdr (assoc name '(("XAI_OAUTH_TOKEN" . "tok-env") ("XAI_API_KEY" . "xai-key"))
+                                             :test #'equal)))
+        (let ((refusal (xai-oauth-image-refusal "prompt" "a fox" "output" "fox.png")))
+          (is (search "/xai-oauth login" refusal) "it asks for the sign-in")
+          (is (null (search "tok-env" refusal))))))
+    (is (null requests) "no configured key, saved key or token variable asks in its place")
+    (is (null (xai-oauth-media-names media)))))
+
+(deftest xai-oauth-cell-image-refreshes-an-expiring-sign-in-first ()
+  (with-xai-oauth-images (requests media :entry (xai-oauth-image-entry :token "tok-old" :expires-in 10))
+      ((list :get "https://auth.x.ai/.well-known/openid-configuration" 200 (second +xai-oauth-discovery+) '())
+       (list :post "https://auth.x.ai/oauth2/token" 200
+             "{\"access_token\":\"tok-new\",\"refresh_token\":\"r-new\",\"expires_in\":3600}" '())
+       (list :get "https://auth.x.ai/oauth2/userinfo" 401 "{}" '())
+       (list :post +xai-oauth-images-url+ 200 (xai-oauth-image-body +xai-oauth-jpeg+ "image/jpeg") '()))
+    (xai-oauth-image "prompt" "a fox" "output" "fox.jpg")
+    (is (equal "Bearer tok-new" (xai-oauth-header (third (first requests)) "Authorization"))
+        "the refreshed token asks")
+    (is (equal "tok-new" (nlk:json-value (nle::read-auth-file nle::*auth-file-path*)
+                                         :string "oauth_tokens" "xai-oauth" "access_token"))
+        "and is stored, as a round's refresh stores it")
+    (is (probe-file (merge-pathnames "fox.jpg" media)))))
+
+(deftest xai-oauth-cell-image-never-overwrites ()
+  (with-xai-oauth-images (requests media) ()
+    (alexandria:write-string-into-file "keep" (merge-pathnames "fox.jpg" media))
+    (sb-posix:symlink "/nonexistent/target.png" (namestring (merge-pathnames "owl.png" media)))
+    (is (search "already exists" (xai-oauth-image-refusal "prompt" "a fox" "output" "fox.png"))
+        "a JPEG answer would land on fox.jpg, so fox.png is refused before asking")
+    (is (search "already exists" (xai-oauth-image-refusal "prompt" "an owl" "output" "owl.png"))
+        "a dangling link counts as taken")
+    (is (null requests) "nothing was asked of xAI")
+    (is (equal "keep" (alexandria:read-file-into-string (merge-pathnames "fox.jpg" media))))))
+
+(deftest xai-oauth-cell-image-refuses-paths-and-unknown-arguments ()
+  (with-xai-oauth-images (requests media) ()
+    (dolist (name '("../fox.png" "sub/fox.png" "/tmp/fox.png" "." "fox.gif" "fox" ""))
+      (is (search "leaf filename" (xai-oauth-image-refusal "prompt" "a fox" "output" name)) name))
+    (is (search "prompt" (xai-oauth-image-refusal "output" "fox.png")))
+    (is (search "api_key" (xai-oauth-image-refusal "prompt" "a fox" "output" "fox.png" "api_key" "k"))
+        "no key rides in through the arguments")
+    (is (search "aspect_ratio" (xai-oauth-image-refusal "prompt" "a fox" "output" "fox.png" "aspect_ratio" "7:5")))
+    (is (search "resolution" (xai-oauth-image-refusal "prompt" "a fox" "output" "fox.png" "resolution" "8k")))
+    (is (null requests))))
+
+(deftest xai-oauth-cell-image-says-xais-refusal-and-tries-nothing-else ()
+  (with-xai-oauth-images (requests media)
+      ((list :post +xai-oauth-images-url+ 403
+             "{\"code\":\"forbidden\",\"error\":\"Your plan does not include image generation\"}" '()))
+    (let ((refusal (xai-oauth-image-refusal "prompt" "a fox" "output" "fox.png")))
+      (is (search "403" refusal))
+      (is (search "does not include image generation" refusal) "xAI's own words")
+      (is (null (search "tok-img" refusal)) "the token is never said"))
+    (is (eql 1 (length requests)) "one request, no second try with another credential")
+    (is (null (xai-oauth-media-names media)))))
+
+(deftest xai-oauth-cell-image-refuses-an-answer-without-image-bytes ()
+  (with-xai-oauth-images (requests media)
+      ((list :post +xai-oauth-images-url+ 200 "{\"data\":[{\"url\":\"https://imgen.x.ai/a.jpeg\"}]}" '())
+       (list :post +xai-oauth-images-url+ 200
+             (xai-oauth-image-body (coerce #(60 104 116 109 108 62) '(vector (unsigned-byte 8))) "image/png") '())
+       (list :post +xai-oauth-images-url+ 200 "not json" '()))
+    (is (search "no image bytes" (xai-oauth-image-refusal "prompt" "a" "output" "a.png")))
+    (is (search "not a PNG, JPEG or WebP" (xai-oauth-image-refusal "prompt" "b" "output" "b.png")))
+    (is (search "no image bytes" (xai-oauth-image-refusal "prompt" "c" "output" "c.png")))
+    (is (eql 3 (length requests)))
+    (is (null (xai-oauth-media-names media)) "a refused answer leaves nothing, not even a temp file")))
