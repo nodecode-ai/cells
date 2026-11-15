@@ -1,0 +1,24 @@
+nodecode-zero-breach
+Copyright 2026 Nodecode contributors
+
+The Lisp in this folder (package.lisp, engine.lisp, cell.lisp, test/) is
+MIT-licensed, like the rest of the cells repository.
+
+The scanner under vendor/ is not:
+  Zero Breach Toolkit
+  Copyright 2026 archivegenocide.com
+  Built on Zero Breach (https://github.com/interplains/zero-breach), by the
+  same authors, under the same licence.
+  Apache License, Version 2.0 -- a copy is this folder's LICENSE file.
+  Vendored unmodified at commit 2525377788feb8335052ba08981f37239091307a;
+  see vendor/VENDOR.md for exactly what was taken.
+
+The indicator files under vendor/iocs/ carry their own provenance: every value
+in them was read by the vendor out of the cited research (The Citizen Lab,
+Microsoft, ESET, Google Threat Intelligence Group, Amnesty and others), and the
+citations are in each file's header. `iocs/curated_mercenary.txt` is CC0 1.0.
+
+NOT AFFILIATED, NOT ENDORSED
+This cell wraps the toolkit; it is not the toolkit's own distribution. A bug
+in the words this cell prints belongs here, a bug in what the scan found
+belongs upstream at the repository above.
