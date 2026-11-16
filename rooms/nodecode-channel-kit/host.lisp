@@ -4259,11 +4259,39 @@ the line."
              (let ((admission (submit-ask ask "turn.start" "msg")))
                (case (nlk:active-input-admission-disposition admission)
                  (:started (bind-admitted-turn lane admission))
-                 (:duplicate (drop-duplicate-admission host lane admission))))))))
+                 (:duplicate (drop-duplicate-admission host lane admission))
+                 ;; A turn started on the lane after the read that sent
+                 ;; ASK here (STEER-PARKED-ASK).
+                 (:queued (steer-parked-ask host lane ask admission))))))))
     (error (condition)
       (warn "~a ingress for ~a failed: ~a"
             (host-id host) ask.lane condition)
       (fail-lane host lane (princ-to-string condition)))))
+
+(defun steer-parked-ask (host lane ask admission)
+  "ASK, which the engine parked as a follow-up -- ADMISSION -- behind a turn
+that started on LANE after the kit read it idle, taken back and steered into
+that turn: the lane's next turn, in its place among the lines after it."
+  ;; 2026-11-16, a team thread: a peer's line reached the lane between one
+  ;; turn's end and the start of the turn a parked steer opened, the kit read
+  ;; the lane idle, and the gate submitted the line as a fresh turn. The
+  ;; engine parked it as a follow-up, which every steer passes over
+  ;; (NLK::DEQUEUE-NEXT-TURN), and in a thread where every line steers it ran
+  ;; eight turns and 83 minutes later, after its talk had closed. A lane read
+  ;; running is steered (CONTINUE-LANE); this is that steer, a moment late. A
+  ;; follow-up the turn's end promoted already runs as its own turn.
+  (nlk:when-let (parked (nlk:withdraw-pending-prompt
+                         ask.lane (nlk:active-input-admission-prompt-id admission)))
+    (let ((steered (handler-case (submit-ask ask "turn.steer" "steer"
+                                             :steer (getf parked :turn-id))
+                     ;; That turn ended in between: ASK starts the next one.
+                     (nlk:turn-lifecycle-error ()
+                       (submit-ask ask "turn.start" "steer")))))
+      (case (nlk:active-input-admission-disposition steered)
+        ;; A steer runs on the slot of the turn it cuts short, so the one
+        ;; this ask claimed at the gate goes back.
+        (:steered (promote-next host lane.owner-id))
+        (:started (bind-admitted-turn lane steered))))))
 
 ;;; --- reactions from the room (a gesture on a message of ours) ----------------------
 ;;; A reaction is a line the room said without typing one: it arrives as a
