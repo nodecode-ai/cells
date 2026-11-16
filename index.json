@@ -14026,7 +14026,7 @@
     {
       "name": "nodecode-web-remote",
       "git": "https://github.com/sirouk/cells",
-      "commit": "24337231ca3f397f99818814c6807a7d437f6322",
+      "commit": "19fde54d53ee83f3b86865fb6637d1daa8d905e2",
       "path": "rooms/nodecode-web-remote",
       "description": "Reach this organism from the rest of the tailnet over its own https port, pairing each device with a code",
       "license": "MIT",
