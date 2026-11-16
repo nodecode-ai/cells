@@ -341,23 +341,96 @@ holds."
   ;; the lane.
   (if (lane-origin lane) nil message-id))
 
-;;; Bots a person names together talk in their thread: a peer's line that
-;;; steers this bot's running turn (team.lisp HEAR-IN-RUNNING-TURN) is what
-;;; the answer of the turn it started builds on, so that answer goes up as a
-;;; reply to it. The line is in the thread by construction, so the reference
-;;; resolves where the lane's own ask would not.
+;;; A line typed in a lane's thread, or a peer's line in a team's thread
+;;; (team.lisp HEAR-IN-RUNNING-TURN), is what the answer of the turn it
+;;; starts builds on, so that answer goes up as a reply to it. The line is in
+;;; the thread by construction, so the reference resolves where the lane's own
+;;; ask would not. A line that reaches a settled lane is noted here, for the
+;;; turn the gate admits; one that steers a running turn is noted with its
+;;; steer (LANE-STEERED-LINES).
 (nlk:define-side-table lane-heard-line (:test #'eq :synchronized t)
-  "Lane -> (MESSAGE-ID . TURN-ID): the newest peer line that steered the
-lane's running turn TURN-ID.")
+  "Lane -> (MESSAGE-ID . TURN-ID): the line the lane's next answer replies
+to, from any turn but TURN-ID -- the one that was running when it came, if
+any.")
 
 (defun heard-reply (lane turn-id)
-  "The message LANE's answer from TURN-ID replies to, taken: the peer line a
-turn before it heard, the one TURN-ID was started to weigh. NIL for the turn
-the line cut short, and for a lane that heard none."
+  "The message LANE's answer from TURN-ID replies to, taken: the line a turn
+before it heard, the one TURN-ID was started to weigh. NIL for the turn the
+line cut short, and for a lane that heard none."
   (let ((entry (lane-heard-line lane)))
     (when (and entry turn-id (not (equal (cdr entry) turn-id)))
       (setf (lane-heard-line lane) nil)
       (car entry))))
+
+(defun take-heard-line (lane turn-id)
+  "LANE's heard line, taken when it was noted while TURN-ID ran -- NIL: while
+the lane was settled -- else NIL."
+  (let ((entry (lane-heard-line lane)))
+    (when (and entry (equal (cdr entry) turn-id))
+      (setf (lane-heard-line lane) nil)
+      (car entry))))
+
+;;; Lines that steer one running turn each run a turn of their own, in the
+;;; order they were said (NLK::DEQUEUE-NEXT-TURN), and each of those turns
+;;; answers its own line. A steer is known by the command id the kit submits
+;;; it under, which the engine keeps as the prompt id of the input that starts
+;;; its turn, so a turn finds its line however many steers wait behind it. One
+;;; slot per lane, overwritten by each steer, let the first line's answer
+;;; reply to the line said after it, and the second line's to none.
+(nlk:define-side-table lane-steered-lines (:test #'eq :synchronized t)
+  "Lane -> the lines that steered its running turn and have not started their
+own, oldest first: each a plist (:COMMAND ID :ASK MESSAGE-ID :REPLY
+MESSAGE-ID :TURN TURN-ID), the turn set once the steer's input opens it.")
+
+(defvar *steered-lines-lock* (bt2:make-lock :name "steered lines")
+  "Guards each read and write of LANE-STEERED-LINES: the transport thread
+notes a steer, the publishing thread binds and takes it.")
+
+(defun note-steered-line (lane command-id ask-id reply-id)
+  "Note that LANE's running turn is steered under COMMAND-ID: the turn the
+steer opens answers ASK-ID, as a reply to REPLY-ID; either may be NIL."
+  (bt2:with-lock-held (*steered-lines-lock*)
+    (setf (lane-steered-lines lane)
+          (append (remove command-id (lane-steered-lines lane)
+                          :key (lambda (line) (getf line :command)) :test #'equal)
+                  (list (list :command command-id :ask ask-id :reply reply-id :turn nil)))))
+  command-id)
+
+(defun forget-steered-line (lane command-id)
+  "Drop LANE's steer COMMAND-ID, which opens no turn: the engine refused it,
+or the turn it was to cut had ended and the ask went through the gate."
+  (bt2:with-lock-held (*steered-lines-lock*)
+    (setf (lane-steered-lines lane)
+          (remove command-id (lane-steered-lines lane)
+                  :key (lambda (line) (getf line :command)) :test #'equal)))
+  nil)
+
+(defun bind-steered-line (lane prompt-id turn-id)
+  "TURN-ID starts from LANE's input PROMPT-ID: when that input is a steer of
+the kit's, the turn is the one that answers its line."
+  (when (and prompt-id turn-id)
+    (bt2:with-lock-held (*steered-lines-lock*)
+      (setf (lane-steered-lines lane)
+            (mapcar (lambda (line)
+                      (if (equal prompt-id (getf line :command))
+                          (list* :turn turn-id line)
+                          line))
+                    (lane-steered-lines lane))))))
+
+(defun take-steered-line (lane turn-id)
+  "=> the plist of the line that steered LANE into TURN-ID, taken, or NIL
+for a turn no steer of the kit's opened."
+  (when turn-id
+    (bt2:with-lock-held (*steered-lines-lock*)
+      (let ((line (find turn-id (lane-steered-lines lane)
+                        :key (lambda (line) (getf line :turn)) :test #'equal)))
+        (when line
+          (setf (lane-steered-lines lane) (remove line (lane-steered-lines lane))))
+        line))))
+
+(nlk:define-side-table digest-heard-line (:weakness :key :synchronized t)
+  "Turn digest -> the line its turn was steered in by, which its answer
+replies to (TAKE-STEERED-LINE).")
 
 (defun forget-thread-origin (lane)
   "The answer landed in the ask's room: the lane owes nothing more."
