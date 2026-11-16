@@ -497,11 +497,52 @@ origin noted — ORIGIN the keys past the three that place it."
               (nck:lane-active-turn-id lane) "t3")
         (nck::continue-lane host lane (nck:make-ask :room "chat-100-t42" :lane "chat-100-t42-m5" :message-id "m8"
                                                     :target '(:channel-id "100" :thread-id "42") :prompt "and this"))
-        (is (equal '("m8" . "t3") (nck::lane-heard-line lane)) "a running one too, once the turn it cut has answered")
-        (setf (nck::lane-heard-line lane) nil)
+        (is (null (nck::lane-heard-line lane)) "a running one keeps no line for whichever answer comes next")
+        (is (equal "m8" (getf (first (nck::lane-steered-lines lane)) :reply)) "but notes it with its steer, for the turn that steer opens")
+        (setf (nck::lane-steered-lines lane) nil)
         (nck::continue-lane host lane (nck:make-ask :room "chat-100" :lane "chat-100-t42-m5" :message-id "m9"
                                                     :target '(:channel-id "100") :prompt "from the channel"))
         (is (null (nck::lane-heard-line lane)) "a line from the parent channel takes no reference")))))
+
+(deftest channel-thread-each-line-that-steers-a-turn-is-the-one-its-answer-replies-to ()
+  ;; Two lines typed in the thread while the lane's turn runs both steer it,
+  ;; and each runs a turn of its own, in the order they were said. Each of
+  ;; those turns answers the line that started it: the first line's answer
+  ;; goes up as a reply to the first line, not to the line said after it, and
+  ;; the second line's answer as a reply to the second.
+  (let ((held (bt2:make-semaphore :name "held-round"))
+        (calls 0))
+    (with-provider-stub (nil (when (= 1 (incf calls))
+                               (bt2:wait-on-semaphore held :timeout 20))
+                             (wire-message "assistant" :content (format nil "answer ~d" calls)))
+      (with-ask-host (host thread-ask-host :responses (replies "42") :threads t
+                      :name "thread-steer-anchors")
+        (setf (nck:host-policy host)
+              (channel-policy :allowed-channels '("100") :channel-match :discord
+                              :require-mention t :mention-target "999"
+                              :mention-test #'nck:discord-mention-p))
+        (thread-ask host "<@999> capital of australia?")
+        (is-present (lane (await-lane host "chat-100-t42-m5")) "the ask opened its lane"
+          (is (await (:timeout 10) (nck:lane-active-turn-id lane)) "and its turn runs, held in its round")
+          (flet ((line (message text)
+                   (nck:handle-candidate
+                    host (nck:mark-joined-thread
+                          host (test-candidate :thread "42" :parent "100" :message message
+                                               :text text)))))
+            (is (eq :answer (line "6" "and new zealand?")) "the first line steers the running turn")
+            (is (eq :answer (line "7" "and fiji?")) "and so does the line said after it"))
+          (bt2:signal-semaphore held)
+          (is (await (:timeout 20) (= 3 (count-session-events "chat-100-t42-m5" "turn.started"))) "each line ran a turn")
+          (let ((inputs (mapcar #'nlk:turn-started-input
+                                (nlk::events :session-id "chat-100-t42-m5" :kind "turn.started"))))
+            (is (search "and new zealand?" (or (second inputs) "")) "the first line's turn ran first")
+            (is (search "and fiji?" (or (third inputs) "")) "and the second line's after it"))
+          (flet ((answered (said)
+                   (plan-matching (recorded-plans executor) :path "/rooms/42/messages" :content said)))
+            (is (await (:timeout 10) (and (answered "answer 2") (answered "answer 3"))) "both turns answer in the thread")
+            (loop for (said reply) in '(("answer 1" nil) ("answer 2" "6") ("answer 3" "7"))
+                  do (is-present (posted (answered said)) "each turn's answer is posted"
+                       (is (equal reply (plan-field posted "reply_to")) "as a reply to the line that started its turn, the ask's to none")))))))))
 
 (deftest channel-thread-an-answer-built-on-a-peers-line-replies-to-it ()
   ;; Bots a person names together talk in their thread: the answer of the turn
@@ -808,7 +849,10 @@ origin noted — ORIGIN the keys past the three that place it."
             (is (search "and fiji?" (or (third inputs) "")) "and the line after it runs after it"))
           (flet ((answered (said)
                    (plan-matching (recorded-plans executor) :path "/rooms/42/messages" :content said)))
-            (is (await (:timeout 10) (and (answered "answer 2") (answered "answer 3"))) "the turns the two lines ran answer in the thread"))
+            (is (await (:timeout 10) (and (answered "answer 2") (answered "answer 3"))) "the turns the two lines ran answer in the thread")
+            (loop for (said reply) in '(("answer 1" nil) ("answer 2" "6") ("answer 3" "7"))
+                  do (is-present (posted (answered said)) "each turn's answer is posted"
+                       (is (equal reply (plan-field posted "reply_to")) "as a reply to the line that started its turn, the ask's to none"))))
           (is (await (:timeout 10) (zerop (nck::room-book-running-total (nck::host-book host)))) "and every slot is back once the lane settles"))))))
 
 (deftest channel-thread-new-in-the-thread-starts-the-next-line-fresh ()

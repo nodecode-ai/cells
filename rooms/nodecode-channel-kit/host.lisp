@@ -1762,9 +1762,11 @@ the thread and the ask as they stand."
          (wordless-completion-p (and assistant-facts (null text)))
          (status-id digest.status-id)
          (origin (lane-thread-origin lane))
-         ;; An answer built on a peer's line goes up as a reply to that line,
-         ;; and pings nobody: the peer reads it as the thread's context.
-         (heard (heard-reply lane turn-id))
+         ;; An answer built on a line the thread holds -- a peer's, or one
+         ;; typed there -- goes up as a reply to that line, and pings nobody:
+         ;; the peer reads it as the thread's context. A turn a line steered
+         ;; in answers that line, whatever was said after it.
+         (heard (or (digest-heard-line digest) (heard-reply lane turn-id)))
          ;; The answer that closes its thread's talk is the final answer: the
          ;; person's, under its heading, and a reply to no peer -- so it wakes
          ;; no one (TALK-FINAL-P).
@@ -2135,12 +2137,18 @@ enqueueing a reaction step."
                         ;; The turn is now the thing that has shown nothing yet: the
                         ;; stall window counts from here.
                         (digest-note-visible digest now)
-                        ;; A turn the gate did not admit — a steer promoted into its own
-                        ;; turn, a prompt typed into the session from a TUI — answers
-                        ;; the message that triggered the lane last.
-                        (setf ask-id (or (turn-digest-ask-id digest) (lane-trigger-message-id lane))
-                              (turn-digest-ask-id digest) ask-id
-                              steered (and fresh-p (eq (turn-digest-phase previous) :steered)))))
+                        ;; A turn the gate did not admit answers the line that steered
+                        ;; it in, as a reply to it where the line is the thread's
+                        ;; (TAKE-STEERED-LINE); one no line of the room's opened -- a
+                        ;; prompt typed into the session from a TUI -- the message that
+                        ;; triggered the lane last.
+                        (let ((line (take-steered-line lane turn-id)))
+                          (nlk:when-let (reply (getf line :reply))
+                            (setf (digest-heard-line digest) reply))
+                          (setf ask-id (or (turn-digest-ask-id digest) (getf line :ask)
+                                           (lane-trigger-message-id lane))
+                                (turn-digest-ask-id digest) ask-id
+                                steered (and fresh-p (eq (turn-digest-phase previous) :steered))))))
                     ;; A turn a steer opened answers the ask the cut turn was
                     ;; given as well: the room records both lines as its ask.
                     (unless took-over
@@ -2237,6 +2245,10 @@ enqueueing a reaction step."
                                                                  (and (fact-message-tool-calls payload)
                                                                       (not (silent-answer-p text))))
                                             (digest-note-visible digest now))))
+    ;; The input a turn starts from names the steer that opened it, if one
+    ;; of the kit's did: its prompt id is the steer's command id.
+    ("turn.input_committed" (bind-steered-line lane (nlk:json-value payload :string "prompt-id") turn-id)
+                            (return-from note-turn-fact nil))
     (t (return-from note-turn-fact nil)))
   t)
 
@@ -3336,19 +3348,26 @@ its id, and this image as the transport."
   ;; command makes.
   (nlk:default-invocation action command-id :source "channel" :id lane-id))
 
+(defun ask-command-id (ask tag)
+  "The engine command id ASK is submitted under, tagged TAG: the prompt id the
+input that starts its turn records."
+  (format nil "~a-~a-~a" ask.lane tag (ask-identity ask)))
+
 (defun submit-ask (ask action tag &rest keys)
   "Read ASK's attachments in and submit it to its lane as ACTION, the command
 id tagged TAG; KEYS ride along to NLE:SUBMIT."
   (multiple-value-bind (prompt images) (ask-prompt-and-attachments ask)
-    (let ((command-id (format nil "~a-~a-~a" ask.lane tag (ask-identity ask))))
+    (let ((command-id (ask-command-id ask tag)))
       (apply #'nle:submit ask.lane prompt :command-id command-id :images images
              :invocation (lane-invocation command-id ask.lane action) keys))))
 
-(defun continue-lane (host lane ask &aux (active-turn lane.active-turn-id)
-                                         (message-id ask.message-id))
+(defun continue-lane (host lane ask &key heard &aux (active-turn lane.active-turn-id)
+                                                    (message-id ask.message-id))
   "LANE's next turn from ASK, an ask that addresses a lane already open —
 the one authority for what a continuation does, whatever gesture made it: a
-reply typed at the lane, or a reaction left on something it posted."
+reply typed at the lane, or a reaction left on something it posted. HEARD
+is a line the answer replies to besides one ASK's own message is: a peer's,
+which a heard ask carries no message of."
   ;; A turn already running is STEERED: it ends at its next round boundary and
   ;; ASK runs as the lane's next turn, no slot changing hands and no fork
   ;; happening. A settled lane takes ASK through the gate as its next turn,
@@ -3362,38 +3381,49 @@ reply typed at the lane, or a reaction left on something it posted."
   ;; the thread holds: the answer it starts goes up as a reply to it
   ;; (HEARD-REPLY), where the lane's own ask -- in the parent channel -- can
   ;; take none. A peer's reply to us is talked back to the same way.
-  (nlk:when-let (origin (and message-id (lane-origin lane)))
-    (when (equal (getf ask.target :thread-id) (getf origin :thread-id))
-      (setf (lane-heard-line lane) (cons message-id active-turn))))
-  (cond
-    ((null active-turn) (gate-ask host ask))
-    (t (when message-id
-         (setf lane.trigger-message-id message-id))
-       (setf lane.target (lane-delivery-target lane ask.target) lane.last-active-ms (now-ms)
-             lane.voice ask.voice)
-       ;; A line heard while the turn runs carries no message of its own to
-       ;; bind (HEARD-ASK): a reply to a peer's message is the peer's.
-       (bind-addresses host lane ask.target (and message-id (list message-id)))
-       (schedule-reaction host lane message-id +reaction-seen+)
-       ;; The steered text opens the lane's next turn, whose TURN.STARTED sets
-       ;; the lane prompt (NOTE-TURN-FACT): each exchange the room records
-       ;; names its own ask.
-       (run-ask-ingress
-        host ask
-        (lambda ()
-          (handler-case (submit-ask ask "turn.steer" "steer" :steer active-turn)
-            ;; The one refusal that is a race rather than an error: the turn
-            ;; settled between our read of the lane and the admission. That ask
-            ;; is re-admitted as a fresh turn on the same lane, which is what the
-            ;; person replying meant.
-            (nlk:turn-lifecycle-error ()
-              (gate-ask host ask))
-            (error (condition)
-              (warn "~a: steer ~a refused: ~a"
-                    (host-id host) (ask-identity ask) condition)
-              (if host.worker
-                  (on-worker host (fail-lane host lane (princ-to-string condition)))
-                  (fail-lane host lane (princ-to-string condition))))))))))
+  (let ((reply (or heard
+                   (nlk:when-let (origin (and message-id (lane-origin lane)))
+                     (and (equal (getf ask.target :thread-id) (getf origin :thread-id))
+                          message-id)))))
+    (cond
+      ((null active-turn)
+       (when reply
+         (setf (lane-heard-line lane) (cons reply nil)))
+       (gate-ask host ask))
+      (t (when message-id
+           (setf lane.trigger-message-id message-id))
+         (setf lane.target (lane-delivery-target lane ask.target) lane.last-active-ms (now-ms)
+               lane.voice ask.voice)
+         ;; A line heard while the turn runs carries no message of its own to
+         ;; bind (HEARD-ASK): a reply to a peer's message is the peer's.
+         (bind-addresses host lane ask.target (and message-id (list message-id)))
+         (schedule-reaction host lane message-id +reaction-seen+)
+         ;; The steered text opens a turn of its own, whose TURN.STARTED sets
+         ;; the lane prompt (NOTE-TURN-FACT): each exchange the room records
+         ;; names its own ask, and each answer replies to its own line, however
+         ;; many lines steer the turn before it ends (LANE-STEERED-LINES).
+         (let ((command-id (note-steered-line lane (ask-command-id ask "steer")
+                                              message-id reply)))
+           (run-ask-ingress
+            host ask
+            (lambda ()
+              (handler-case (submit-ask ask "turn.steer" "steer" :steer active-turn)
+                ;; The one refusal that is a race rather than an error: the turn
+                ;; settled between our read of the lane and the admission. That ask
+                ;; is re-admitted as a fresh turn on the same lane, which is what the
+                ;; person replying meant.
+                (nlk:turn-lifecycle-error ()
+                  (forget-steered-line lane command-id)
+                  (when reply
+                    (setf (lane-heard-line lane) (cons reply active-turn)))
+                  (gate-ask host ask))
+                (error (condition)
+                  (forget-steered-line lane command-id)
+                  (warn "~a: steer ~a refused: ~a"
+                        (host-id host) (ask-identity ask) condition)
+                  (if host.worker
+                      (on-worker host (fail-lane host lane (princ-to-string condition)))
+                      (fail-lane host lane (princ-to-string condition))))))))))))
 
 (defun conversation-lane (host candidate &aux (target (channel-target candidate)))
   "The live lane CANDIDATE talks to without a reply gesture, or NIL: on a
@@ -4282,6 +4312,10 @@ that turn: the lane's next turn, in its place among the lines after it."
   ;; follow-up the turn's end promoted already runs as its own turn.
   (nlk:when-let (parked (nlk:withdraw-pending-prompt
                          ask.lane (nlk:active-input-admission-prompt-id admission)))
+    ;; The line ASK answers was noted for the turn the gate would admit
+    ;; (CONTINUE-LANE); it goes with the steer, to the turn that steer opens
+    ;; (LANE-STEERED-LINES), not to the answer of the turn it cuts short.
+    (note-steered-line lane (ask-command-id ask "steer") ask.message-id (take-heard-line lane nil))
     (let ((steered (handler-case (submit-ask ask "turn.steer" "steer"
                                              :steer (getf parked :turn-id))
                      ;; That turn ended in between: ASK starts the next one.

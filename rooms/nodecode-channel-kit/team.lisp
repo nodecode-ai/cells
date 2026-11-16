@@ -551,14 +551,13 @@ it works. => T when it steered."
     (when (and lane (lane-active-turn-id lane)
                (steering-line-p host candidate)
                (not (heard-after-final-p host candidate)))
-      ;; A peer's untagged line is what the next answer builds on: it goes up
-      ;; as a reply to it (DELIVER-ANSWER). A board post is a status line, and
-      ;; a person's line said to someone else is theirs.
-      (nlk:when-let (id (and (candidate-bot-p candidate)
-                             (null (parse-board-line (gethash "text" candidate)))
-                             (source-field candidate "message_id")))
-        (setf (lane-heard-line lane) (cons id (lane-active-turn-id lane))))
-      (continue-lane host lane (heard-ask host candidate lane))
+      ;; A peer's untagged line is what the answer of the turn it steers in
+      ;; builds on: it goes up as a reply to it (DELIVER-ANSWER). A board post
+      ;; is a status line, and a person's line said to someone else is theirs.
+      (continue-lane host lane (heard-ask host candidate lane)
+                     :heard (and (candidate-bot-p candidate)
+                                 (null (parse-board-line (gethash "text" candidate)))
+                                 (source-field candidate "message_id")))
       t)))
 
 ;;; --- the brief -------------------------------------------------------------------
