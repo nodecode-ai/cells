@@ -76,13 +76,13 @@ catalog kept), stop it."
          (progn
            (is (not (eq :idle (mcp::server-state (mcp-server "probe")))) "a torn catalog is none")
            (is (eq :ready (mcp-wait-ready "probe")))
-           (is (= 10 (length (mcp::saved-tools (mcp::server-spec (mcp-server "probe")))))
-               "and the connect keeps a whole one again"))
+           (let ((kept (mcp::saved-tools (mcp::server-spec (mcp-server "probe")))))
+             (is (= 10 (length kept)) "and the connect keeps a whole one again")))
       (funcall stop))))
 
 (deftest mcp-cell-tool-cache-holds-no-secret (with-mcp-log-dir)
   (let ((entry (mcp-fixture-entry)))
     (setf (gethash "env" entry) (nlk:json-object "FIXTURE_TOKEN" "s3cret-value"))
     (mcp-keep-catalog (list "probe" entry)))
-  (is (not (search "s3cret-value" (uiop:read-file-string (mcp::tool-cache-path "probe"))))
-      "the kept file names how a server is reached, never an env value"))
+  (let ((text (uiop:read-file-string (mcp::tool-cache-path "probe"))))
+    (is (not (search "s3cret-value" text)) "the kept file never holds an env value")))
