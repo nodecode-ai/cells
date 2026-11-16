@@ -848,7 +848,7 @@ origin noted — ORIGIN the keys past the three that place it."
   ;; its own name already, and costs no call.
   (let ((asked '()))
     (with-saved-globals ((nle::*session-naming* :inline))
-      (with-stubbed-fdefinition (nle:complete (system user &key session-id max-tokens fallback-p)
+      (with-stubbed-fdefinition (nle:complete (system user &key session-id max-tokens fallback-p purpose)
                                   (push user asked)
                                   "Title: \"Capital of Australia vs Sydney.\"")
         (with-ask-host (host thread-ask-host :answers ("Canberra") :responses (replies "42" "p1")
