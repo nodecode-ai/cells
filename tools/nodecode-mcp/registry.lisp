@@ -8,12 +8,14 @@
 ;;;; call, a catalog refresh) and is held for seconds; the STATE-LOCK guards
 ;;;; the published fields a status line reads and is held for microseconds.
 ;;;;
-;;;; Who connects: one short-lived thread per server at start and on
-;;;; restart, holding the call lock for the handshake and the first
-;;;; tools/list — START-CELL returns at once, the gateway never waits on a
-;;;; server. A call that arrives meanwhile waits for the lock against its
-;;;; own deadline and reports "still connecting" if that passes: one
-;;;; deadline end to end, never lock-timeout plus request-timeout.
+;;;; Who connects: at start, a server whose catalog is kept (tool-cache.lisp)
+;;;; stands :IDLE on it and is connected by its first call; any other gets
+;;;; one short-lived thread, as does every restart, holding the call lock
+;;;; for the handshake and the first tools/list — START-CELL returns at
+;;;; once, the gateway never waits on a server. A call that arrives
+;;;; meanwhile waits for the lock against its own deadline and reports
+;;;; "still connecting" if that passes: one deadline end to end, never
+;;;; lock-timeout plus request-timeout.
 ;;;;
 ;;;; Recovery is the retired Zig client's: a server in :ERROR gets ONE
 ;;;; reconnect attempt per call, on the caller's thread, inside the call's
@@ -37,7 +39,7 @@
 
 (nlk:define-record (server (:copier nil))
   spec
-  (state :disconnected)                 ; :disconnected :connecting :ready :error :disabled :refused :stopped
+  (state :disconnected)                 ; :disconnected :idle :connecting :ready :error :disabled :refused :stopped
   (error-text nil)
   client
   (tools '() :type list)                ; tool plists (:name :description :schema)
@@ -196,9 +198,25 @@ to answer the handshake (a process's start-up inside it) and how long to list."
           server.connected-at (get-universal-time)
           server.timing (list connect-ms list-ms)
           server.sign-in nil))
+  (save-tools server.spec tools)
   (sync-tool-functions server)
   (set-state server :ready)
   (refresh-primer))
+
+(defun publish-idle (server &aux (spec server.spec))
+  "SERVER from the catalog it listed last (tool-cache.lisp): its functions,
+then :IDLE, with no process started and no connection made -- its first call
+connects it. T; NIL when SERVER has to connect to be known: no catalog kept
+for the way it is reached, `lazy': false, or a state that is not plain
+:DISCONNECTED. Call before the primer is built; it does not rebuild it."
+  (nlk:when-let (tools (and spec.lazy-p
+                            (eq server.state :disconnected)
+                            (saved-tools spec)))
+    (bt2:with-lock-held ((server-state-lock server))
+      (setf server.tools tools))
+    (sync-tool-functions server)
+    (set-state server :idle)
+    t))
 
 ;;; --- a command that signs in on its own -----------------------------------
 ;;; mcp-remote and its kind hold every request until a browser comes back to
@@ -313,7 +331,7 @@ the model last saw (its functions answer MCP-OFFLINE until a reconnect)."
                                       (error 'mcp-offline :server name :detail detail)))
                                (case server.state
                                  (:ready server.client)
-                                 ((:error :disconnected :connecting)
+                                 ((:error :disconnected :idle :connecting)
                                   (cond ((pending-sign-in-p server)
                                          (if (resume-sign-in server deadline)
                                              server.client
@@ -372,6 +390,7 @@ TOOLS LIST-MS), the listing's own milliseconds."
   (let* ((tools (list-tools client deadline))
          (list-ms (elapsed-ms start (now-seconds))))
     (bt2:with-lock-held ((server-state-lock server)) (setf server.tools tools))
+    (save-tools server.spec tools)
     (sync-tool-functions server)
     (refresh-primer)
     (values tools list-ms)))

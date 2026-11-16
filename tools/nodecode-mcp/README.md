@@ -80,5 +80,16 @@ also how a call is cancelled. A server's `ping` or `tools/list_changed` is
 seen only while a call is reading. One short-lived thread per server connects
 at start, so the gateway never waits.
 
+## Idle until called
+
+Every catalog a server lists is kept as `~/.nodecode/mcp/NAME.tools.json`,
+keyed by how the server is reached (its command and args, or its URL; never a
+secret). The next start publishes that catalog -- the functions and the
+`(help :mcp)` lines -- and starts no process: the server reads `idle`, and its
+first call starts it inside that call's deadline. A session that calls no MCP
+tool starts no MCP server. A server with no kept catalog, a changed command or
+URL, or `"lazy": false` (on the `mcp` section or on one entry) connects at start
+as before.
+
 Tests: `just mcp-check` in nodecode, over an in-memory transport, the Python
 fixture server in `test/` and an HTTP fixture.

@@ -29,7 +29,7 @@
 
 (defun do-tools (name)
   (destructuring-bind (&key state tools error &allow-other-keys) (server-snapshot (find-server name))
-    (if (eq state :ready)
+    (if (member state '(:ready :idle))
         (nlk:one-line
          (format nil "MCP: ~a (~d tool~:p)~@[: ~{~a~^, ~}~]"
                  name (length tools)
@@ -45,7 +45,7 @@
   (destructuring-bind (&key name state tool-count error &allow-other-keys) (server-snapshot server)
     (format nil "~a ~(~a~)~@[ ~d tool~:p~]~@[ (~a)~]"
             name (if (eq state :disabled) "off" state)
-            (and (eq state :ready) tool-count)
+            (and (member state '(:ready :idle)) tool-count)
             (and (member state '(:error :refused)) error (nlk:one-line error :cap 160)))))
 
 (defun servers-panel ()
@@ -360,9 +360,12 @@ register /mcp; the stop thunk takes it all down."
     (let ((registry (make-registry-from-section section)))
       (when registry.servers
         (setf *registry* registry)
+        ;; A kept catalog stands its server :IDLE until a call needs it;
+        ;; any other connects now, on its own thread.
+        (dolist (server registry.servers)
+          (unless (publish-idle server)
+            (spawn-connect server)))
         ;; (help :mcp), and its line on every request
         (refresh-primer)
-        (register-mcp-command)
-        (dolist (server registry.servers)
-          (spawn-connect server)))))
+        (register-mcp-command))))
   (lambda () (stop-cell)))
