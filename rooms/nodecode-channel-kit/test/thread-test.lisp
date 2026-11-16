@@ -498,8 +498,7 @@ origin noted — ORIGIN the keys past the three that place it."
         (nck::continue-lane host lane (nck:make-ask :room "chat-100-t42" :lane "chat-100-t42-m5" :message-id "m8"
                                                     :target '(:channel-id "100" :thread-id "42") :prompt "and this"))
         (is (null (nck::lane-heard-line lane)) "a running one keeps no line for whichever answer comes next")
-        (is (equal "m8" (getf (first (nck::lane-steered-lines lane)) :reply))
-            "but notes it with its steer, for the turn that steer opens")
+        (is (equal "m8" (getf (first (nck::lane-steered-lines lane)) :reply)) "but notes it with its steer, for the turn that steer opens")
         (setf (nck::lane-steered-lines lane) nil)
         (nck::continue-lane host lane (nck:make-ask :room "chat-100" :lane "chat-100-t42-m5" :message-id "m9"
                                                     :target '(:channel-id "100") :prompt "from the channel"))
