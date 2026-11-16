@@ -2351,7 +2351,12 @@ digest into, and the detail its PAYLOAD carries — NIL for any other kind."
                      host lane target
                      (nth-value 1 (post-message host target (format nil "~a~%~%~a" +note-head+ text)
                                                 :mentions host.owners :what what)))))))))))
-      ((note-turn-fact host lane kind payload turn-id))
+      ;; Each turn's start writes the lane's where down in its session, off
+      ;; this thread (KEEP-LANE-WHERE): the lane the reaper lets go is taken
+      ;; back from its id alone, and its where from there.
+      ((progn (when (equal kind "turn.started")
+                (on-worker host (keep-lane-where lane)))
+              (note-turn-fact host lane kind payload turn-id)))
       ;; A terminal fact enqueues the finish job, the only path that posts turn output.
       (t
        (multiple-value-bind (phase detail) (terminal-phase kind payload)
@@ -4204,6 +4209,8 @@ the line."
                            :parent-session-id ask.room
                            :owner-id ask.owner-id)))
     (bind-addresses host lane ask.target (list ask.message-id))
+    ;; An ask is a person's line again: the lane is no longer a wake's.
+    (forget-lane-woken lane)
     (setf lane.prompt ask.prompt
           ;; Brought current on every ask, a fresh fork and a continuation
           ;; alike: a lane the kit moved into a thread learns its thread id
@@ -4803,16 +4810,46 @@ on. => the lane, or NIL for an id that names no lane of HOST."
   (ppcre:register-groups-bind (room message) ("(?s)^(.+)-m([^-]+)\\z" session-id)
     (let ((target (session-target prefix session-id)))
       (when (and target (nlk:session-exists-p session-id))
-        (prog1 (intern-lane host.lanes session-id
-                            :target target
-                            :trigger-message-id (unless (equal message (getf target :thread-id)) message)
-                            :parent-session-id room)
-          (with-room-book (book host) (take-slot book (make-ask :owner-id nil))))))))
+        (let ((lane (intern-lane host.lanes session-id
+                                 :target target
+                                 :trigger-message-id (unless (equal message (getf target :thread-id)) message)
+                                 :parent-session-id room)))
+          ;; Where it is, as its last turn was told (KEEP-LANE-WHERE): a cron
+          ;; report hours on ran in a thread with its where withdrawn.
+          (setf lane.where (kept-lane-where session-id)
+                (lane-woken lane) t)
+          (with-room-book (book host) (take-slot book (make-ask :owner-id nil)))
+          lane)))))
 
 ;;; --- the worker tick, start and stop ------------------------------------------------------
 
 (defparameter +where-section+ "where"
   "The live section naming which surface a lane runs on.")
+
+(defparameter +where-key+ "channel-where"
+  "The session-state key a lane's where is kept under, in its own session.")
+
+(defun kept-lane-where (session-id)
+  "The where SESSION-ID's lane last ran under (KEEP-LANE-WHERE), or NIL."
+  (when (nlk:store-open-p)
+    (nlk:with-handlers ((error () nil))
+      (nlk:when-let (json (nlk:session-state-get session-id +where-key+))
+        (let ((kept (nlk:decode-json json)))
+          (and (hash-table-p kept) (nlk:json-value kept :string "where")))))))
+
+(defun keep-lane-where (lane &aux (where lane.where))
+  "Write LANE's where into its own session's state when it is not what is
+kept there: what ADOPT-LANE takes back once the reaper has let the lane go."
+  ;; The where is the ask's, and the ask is gone with the reaped lane: a
+  ;; turn on the lane's session after that -- a cron report, a background
+  ;; job's wake -- would run told nothing of where it is.
+  (when (and (stringp where) (plusp (length where)) (nlk:store-open-p)
+             (nlk:session-exists-p lane.session-id)
+             (not (equal where (kept-lane-where lane.session-id))))
+    (nlk:with-handlers ((error (condition)
+                          (warn "~a: where not kept: ~a" lane.session-id condition)))
+      (nlk:session-state-put lane.session-id +where-key+
+                             (nlk:encode-json-object (nlk:json-object "where" where))))))
 
 (defun lane-where-section (session-id)
   "SESSION-ID's `where' live section as ((NAME . TEXT)), or NIL when the id
@@ -4828,9 +4865,42 @@ names no lane of any started host."
          (where (and lane lane.where (plusp (length lane.where))
                      (format nil "Where you are: ~a" lane.where)))
          (note (and lane (lane-thread-note lane (platform-noun host.platform))))
-         (text (format nil "~{~a~^ ~}" (remove nil (list where note)))))
+         (woken (and lane (lane-woken-note host lane)))
+         (text (format nil "~{~a~^ ~}" (remove nil (list where note woken)))))
     (when (plusp (length text))
       (list (cons +where-section+ text)))))
+
+(defun lane-woken-note (host lane &aux (target lane.target)
+                                       (noun (if (getf target :thread-id) "thread" "chat")))
+  "For LANE, taken back by a turn after the reaper let it go (ADOPT-LANE), the
+sentences that say the surface went on without it, and which of HOST's other
+lanes runs there now; NIL for any other lane."
+  ;; 2026-11-16: a button pressed on a reaped lane's answer opened a second
+  ;; lane in its thread, at the room's head, and it shipped and proved the
+  ;; work; a cron report then woke the first lane, which knew nothing of the
+  ;; second and ran the same proof again. A woken lane's history stops at its
+  ;; own last turn: the room's record after that -- other lanes' exchanges,
+  ;; people's lines -- reached the lanes forked since, never this one.
+  (when (lane-woken lane)
+    (let ((running (sort (loop for other in (let ((found '()))
+                                              (map-lanes host.lanes
+                                                         (lambda (other) (push other found)))
+                                              found)
+                               for at = other.target
+                               when (and (not (eq other lane))
+                                         (not (lane-retired other))
+                                         other.active-turn-id
+                                         other.trigger-message-id
+                                         (equal (getf at :channel-id) (getf target :channel-id))
+                                         (equal (getf at :thread-id) (getf target :thread-id)))
+                                 collect other.trigger-message-id)
+                         #'string<)))
+      (format nil "This turn woke this lane after it had gone idle: what was said in this ~a ~
+since its last turn, and what other lanes of yours did there, is not in your history.~
+~[~*~; Another lane of yours is running in it now, on the ask ~{m~a~}.~:; Other lanes of yours ~
+are running in it now, on the asks ~{m~a~^, ~}.~] Read the ~a's newest messages before you act, ~
+so you do not do again what was done there meanwhile."
+              noun (length running) running noun))))
 
 (defun live-section-advice ()
   "Advice on NLE::READ-LIVE-SECTIONS appending the asking lane's `where'."

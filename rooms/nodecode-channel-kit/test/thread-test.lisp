@@ -408,6 +408,50 @@ origin noted — ORIGIN the keys past the three that place it."
       (is (= 1 (started)) "the ask ran once")
       (is (= 1 (length (plans-matching (recorded-plans executor) :content "the answer"))) "and was answered once"))))
 
+(deftest channel-thread-a-wake-on-a-reaped-lane-is-told-where-it-is ()
+  ;; 2026-11-16: a cron job's report woke a thread lane the reaper had let go
+  ;; hours before, and the woken turn ran with its where section withdrawn:
+  ;; ADOPT-LANE took the lane back from its id alone, and the surface every
+  ;; turn of the lane was told went with the reaped lane. A second lane, opened
+  ;; meanwhile by a press on the first one's answer, was shipping the same
+  ;; work, and the woken lane knew nothing of it. The woken turn is told where
+  ;; it is, as every turn of the lane before it was, that the thread went on
+  ;; without it, and which lane runs there now.
+  (let ((seen '()))
+    (nle:hook 'nle::read-live-sections "wake-where" (nck::live-section-advice))
+    (with-provider-stub (context
+                         (push (shasht:write-json (nle::compiled-turn-context-messages context) nil)
+                               seen)
+                         (wire-message "assistant" :content "the answer"))
+      (with-ask-host (host thread-ask-host :responses (list (reply 200 "id" "42"))
+                      :name "wake-where")
+        (nlk:with-cleanup ((nle:unhook 'nle::read-live-sections "wake-where"))
+        (flet ((lane () (nck:find-lane (nck:host-lanes host) "chat-100-t42-m5")))
+          (thread-ask host "<@999> watch the gate")
+          (is (await (:timeout 10) (and (lane) (not (nck::lane-live-p (lane))))))
+          (is-carrying (asked (or (first seen) ""))
+            "Where you are: test room 42"
+            (:absent "woke this lane"))
+          ;; The reaper lets the lane go; the job's report wakes it.
+          (nck:remove-lane (nck:host-lanes host) "chat-100-t42-m5")
+          ;; Another lane of the bot's runs in the thread, opened on m9.
+          (setf (nck::lane-active-turn-id
+                 (nck:intern-lane (nck:host-lanes host) "chat-100-t42-m9"
+                                  :target '(:channel-id "100" :thread-id "42")
+                                  :trigger-message-id "9"))
+                "t9")
+          (setf seen '())
+          (nle:submit "chat-100-t42-m5" "[cron \"gate-watch\" fired]: GATE CHANGED" :source "cron")
+          (is (await (:timeout 15) (and (lane) seen (not (nck::lane-live-p (lane))))) "the wake ran")
+          ;; Told from its first request, never that it is nowhere.
+          (is-carrying (woke (or (first (last seen)) ""))
+            "Where you are: test room 42"
+            "This turn woke this lane after it had gone idle"
+            "is not in your history"
+            "Another lane of yours is running in it now, on the ask m9."
+            "Read the thread's newest messages before you act"
+            (:absent "(withdrawn)"))))))))
+
 (deftest channel-a-line-holds-its-turn-without-its-first-frame ()
   ;; A line learned its turn only from TURN.STARTED's frame, and one the fold
   ;; missed was left running with no turn, which nothing ends. It holds the

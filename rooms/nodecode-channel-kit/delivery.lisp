@@ -634,6 +634,10 @@ the model's explicit choice, in the order handed."
 (nlk:define-side-table lane-retired (:test #'eq :synchronized t)
   "Lane -> T once its room's head moved under it.")
 
+(nlk:define-side-table lane-woken (:test #'eq :synchronized t)
+  "Lane -> T while it runs on a turn that took it back after the reaper let it
+go (ADOPT-LANE), until an ask comes to it again (LANE-WOKEN-NOTE).")
+
 (defun remove-lane (lanes session-id)
   "Drop the lane and every address that routed to it."
   (bt2:with-lock-held ((lane-table-lock lanes))
@@ -642,6 +646,7 @@ the model's explicit choice, in the order handed."
         ;; The lane is being reaped: forget its thread origin entirely.
         (forget-lane-origin lane)
         (forget-lane-retired lane)
+        (forget-lane-woken lane)
         (remhash lane.session-id *answer-files*)
         (remhash lane.session-id *answer-choices*))
       (remhash session-id lanes.table)
