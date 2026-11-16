@@ -199,6 +199,16 @@ when a wait for it was taken up again (a sign-in held it)."
                   deadline)
     result))
 
+(defun tool-plist (object)
+  "One tools/list entry as (:name :description :schema), or NIL for one
+without a name."
+  (nlk:when-let (name (nlk:json-value object :text "name"))
+    (list :name name
+          :description (or (nlk:json-value object :string "description") "")
+          :schema (or (nlk:json-value object :object "inputSchema")
+                      (nlk:json-value object :object "input_schema")
+                      (nlk:make-json-object)))))
+
 (defun list-tools (client deadline)
   "The server's catalog as a list of tool plists, following nextCursor up
 to +MAX-LIST-PAGES+ pages and keeping +MAX-TOOLS-PER-SERVER+ entries."
@@ -210,13 +220,8 @@ to +MAX-LIST-PAGES+ pages and keeping +MAX-TOOLS-PER-SERVER+ entries."
                 for next = (nlk:json-value result :text "nextCursor")
                 ;; Each entry as (:name :description :schema); one without a name is skipped.
                 append (loop for object across (nlk:json-array result "tools")
-                             for name = (nlk:json-value object :text "name")
-                             for description = (or (nlk:json-value object :string "description") "")
-                             for schema = (or (nlk:json-value object :object "inputSchema")
-                                              (nlk:json-value object :object "input_schema"))
-                             when name
-                               collect (list :name name :description description
-                                             :schema (or schema (nlk:make-json-object))))
+                             for tool = (tool-plist object)
+                             when tool collect tool)
                 until (or (null next) (>= pages +max-list-pages+)))))
     (when (> (length tools) +max-tools-per-server+)
       (warn "mcp: keeping ~d of ~d tools (the cap)"

@@ -214,7 +214,7 @@ tool whose folded name matches."
       snapshot
     (format nil "~a: ~(~a~)~@[, ~d tool~:p~]~@[ (~a)~], ~a~@[, server ~a~]"
             name state
-            (and (eq state :ready) tool-count)
+            (and (member state '(:ready :idle)) tool-count)
             (and error (nlk:one-line error :cap 200))
             transport
             (and server-info (format nil "~a~@[ ~a~]"
@@ -231,7 +231,8 @@ file header) and return the result as text."
   (check-type server-name string)
   (check-type tool-name string)
   (nlk:bind ((server (find-server server-name))
-             (tool (and (eq server.state :ready)
+             ;; An idle server's catalog is the one it kept: the arguments resolve against it.
+             (tool (and (member server.state '(:ready :idle))
                         (server-tool server tool-name)))
              (name (if tool (getf tool :name) tool-name))
              ((arguments timeout limit) (build-arguments (and tool (getf tool :schema)) args))

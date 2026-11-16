@@ -6,12 +6,13 @@
 ;;;; writes: a real function in the MCP package, named SERVER/TOOL with both
 ;;;; halves folded to kebab-case (read_file and readFile both become
 ;;;; read-file; a fold collision keeps the later tool's raw lowercase name),
-;;;; compiled with a real &key lambda list from the tool's inputSchema so
+;;;; made with a real &key lambda list from the tool's inputSchema so
 ;;;; DESCRIBE shows the arguments, its description as the docstring, and
-;;;; exported. The body is one APPLY of CALL, the chokepoint, which is also
+;;;; exported -- by the interpreter, not the compiler (WRAPPER-FUNCTION). The body is one APPLY of CALL, the chokepoint, which is also
 ;;;; the escape hatch for a name that folded away.
 ;;;;
-;;;; Generated at connect time and after every tools/list, outside the eval
+;;;; Generated at connect time, after every tools/list, and from a kept
+;;;; catalog at start (tool-cache.lisp), outside the eval
 ;;;; seam: the scribe records nothing, EVOLVED sees no collision, and a
 ;;;; tool that vanishes from a fresh list is FMAKUNBOUND. Symbols stay
 ;;;; exported once seen, because a layer file the model keeps may read
@@ -39,6 +40,18 @@ name (non-symbol characters as dashes), then a numbered suffix."
     (setf (gethash candidate taken) t)
     candidate))
 
+(defun wrapper-function (lambda-form)
+  "LAMBDA-FORM as a function, made by the evaluator's interpreter: no
+compile, so a catalog of a hundred and more tools is defined in
+microseconds, at every boot and every listing. Its lambda list reads back
+as the compiled one's would, and a call's own cost is the one APPLY beside
+the round trip it makes. Compiled where the image carries no interpreter."
+  (or (ignore-errors
+       (let* ((sb-ext:*evaluator-mode* :interpret)
+              (function (eval lambda-form)))
+         (and (functionp function) function)))
+      (compile nil lambda-form)))
+
 (defun define-tool-function (server-name tool symbol)
   "Compile and install SYMBOL as the function calling TOOL on SERVER-NAME."
   (let* ((schema (getf tool :schema))
@@ -59,7 +72,7 @@ name (non-symbol characters as dashes), then a numbered suffix."
                                         timeout limit &allow-other-keys)
               (declare (ignore ,@(mapcar #'cdr pairs) timeout limit))
               (apply #'call ,server-name ,(getf tool :name) ,rest))))
-    (setf (fdefinition symbol) (compile nil lambda-form))
+    (setf (fdefinition symbol) (wrapper-function lambda-form))
     (setf (documentation symbol 'function)
           (with-output-to-string (out)
             (let ((description (string-trim '(#\Space #\Newline) (or (getf tool :description) ""))))
