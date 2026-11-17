@@ -537,7 +537,17 @@ message as its JSON text."
         (nodecode-cron::tick (+ due 7205))
         (is (null (nodecode-cron::job-report job)) "a queued request counts as sent")
         (is (search "its session is cron-inbox]: Nothing new."
-                    (getf (first (cron-submits-to "s-origin")) :prompt)))))))
+                    (getf (first (cron-submits-to "s-origin")) :prompt))))
+      ;; A room's kit steers the request into the lane that holds the
+      ;; origin's thread now (the channel kit's WAKE-ADVICE): delivered too.
+      (nodecode-cron::tick (+ due 14400))
+      (cron-finish "cron-inbox" "One new thread.")
+      (with-captured-submits (:disposition :steered)
+        (nodecode-cron::tick (+ due 14405))
+        (is (null (nodecode-cron::job-report job)) "a steered request counts as sent")
+        (is (= 1 (length (cron-submits-to "s-origin"))) "and is not sent again")
+        (nodecode-cron::tick (+ due 14410))
+        (is (= 1 (length (cron-submits-to "s-origin"))) "on the next tick either")))))
 
 (deftest cron-cell-a-report-the-ingress-refuses-waits-on-the-row ()
   (with-cron-runtime (:store t :submits t)

@@ -4902,6 +4902,92 @@ are running in it now, on the asks ~{m~a~^, ~}.~] Read the ~a's newest messages 
 so you do not do again what was done there meanwhile."
               noun (length running) running noun))))
 
+;;; A thread is one conversation (CONVERSATION-LANE): a line typed there talks
+;;; to the lane running a turn in it, else the one active there last. A wake
+;;; -- a cron job's report, a background job's word, any in-process submitter's
+;;; input -- names the session it was set up from instead, and that lane may
+;;; no longer be the thread's: the reaper let it go and a later line forked
+;;; another, or another lane ran there since. 2026-11-17: a cron report woke
+;;; such a lane while the lane working the thread ran the same work; both
+;;; wrote the same report, and it went up twice, 27 s apart. Told the other
+;;; lane ran (LANE-WOKEN-NOTE), the woken lane looked twice, saw nothing yet,
+;;; and was writing when the other posted. The wake goes where a typed line
+;;; would: it steers the current lane's running turn, or is its next turn.
+
+(defun superseding-lane (host session-id &aux (own (find-lane host.lanes session-id)))
+  "HOST's lane that holds SESSION-ID's thread now, when SESSION-ID names a lane
+of HOST's in a thread -- live, or one the reaper let go -- that is not the
+thread's current lane (THREAD-LANE); NIL otherwise."
+  (let ((target (if own
+                    (lane-target own)
+                    (and (ppcre:scan "(?s)^.+-m[^-]+\\z" session-id)
+                         (session-target (platform-session-prefix host.platform) session-id)))))
+    ;; A lane running a turn is its thread's current lane.
+    (when (and (getf target :thread-id) (not (and own (lane-active-turn-id own))))
+      (let ((current (thread-lane host nil target)))
+        (and current
+             (not (eq current own))
+             (not (equal (lane-session-id current) session-id))
+             current)))))
+
+(defun wake-frame (session-id source)
+  "What a wake meant for SESSION-ID's lane is to the current lane it reached."
+  (let ((ask (ppcre:register-groups-bind (message) ("-m([^-]+)\\z" session-id) message)))
+    (format nil "[A ~a wake sent to an earlier lane of yours in this thread~@[, the one on the ~
+ask m~a,~] reached you instead: a thread is one conversation, and you are the lane working in ~
+it now. Take it up with what you know of the thread, and post nothing its newest messages ~
+already say.]" (or source "background") ask)))
+
+(defun wake-current-lane (lane session-id prompt next keys
+                          &aux (active (lane-active-turn-id lane)) (id (lane-session-id lane)))
+  "Put PROMPT, a wake an in-process submitter meant for SESSION-ID, into LANE
+through NEXT, the rest of NLE:SUBMIT, framed (WAKE-FRAME): a steer of its
+running turn, else its next turn. KEYS are the submitter's. => NEXT's admission."
+  (let* ((framed (format nil "~a~%~a" (wake-frame session-id (getf keys :source)) prompt))
+         (command-id (or (getf keys :command-id)
+                         (format nil "~a-wake-~a-~a" id (now-ms) (nlk:short-digest prompt 8))))
+         (rest (uiop:remove-plist-keys '(:command-id :steer) keys)))
+    (setf (lane-last-active-ms lane) (now-ms))
+    (flet ((start ()
+             (apply next id framed :command-id command-id rest)))
+      (if (null active)
+          (start)
+          ;; The turn the steer opens answers the lane's own ask, as the
+          ;; turn it cut short would have.
+          (progn
+            (note-steered-line lane command-id (lane-trigger-message-id lane) nil)
+            (handler-case (apply next id framed :command-id command-id :steer active rest)
+              ;; The turn settled between our read of the lane and the steer:
+              ;; the wake is the lane's next turn.
+              (nlk:turn-lifecycle-error ()
+                (forget-steered-line lane command-id)
+                (start))
+              (error (condition)
+                (forget-steered-line lane command-id)
+                (error condition))))))))
+
+(defun wake-advice (host)
+  "Advice on NLE:SUBMIT: a wake an in-process submitter puts into a thread
+lane of HOST's that is not its thread's current lane reaches the current one
+instead (WAKE-CURRENT-LANE); every other submit is NEXT's."
+  ;; The kit's own asks carry an invocation, and a steer names the turn it
+  ;; cuts: neither is a wake.
+  (lambda (next session-id prompt &rest keys &key steer invocation &allow-other-keys)
+    (let ((current (and (null steer) (null invocation) (stringp session-id)
+                        (nlk:with-handlers ((error (condition)
+                                              (warn "~a: wake for ~a not routed: ~a"
+                                                    (host-id host) session-id condition)
+                                              nil))
+                          (superseding-lane host session-id)))))
+      (if current
+          ;; A current lane with no session behind it takes nothing: the wake
+          ;; runs where it was sent (ADOPT-LANE, LANE-WOKEN-NOTE).
+          (handler-case (wake-current-lane current session-id prompt next keys)
+            (nlk:unknown-session (condition)
+              (warn "~a: wake for ~a stays there: ~a" (host-id host) session-id condition)
+              (apply next session-id prompt keys)))
+          (apply next session-id prompt keys)))))
+
 (defun live-section-advice ()
   "Advice on NLE::READ-LIVE-SECTIONS appending the asking lane's `where'."
   (lambda (next session-id)
@@ -4965,6 +5051,7 @@ turns their budget."
               (funcall next op)))
   (nle:hook 'nle:turn-budget (format nil "channel-~a" id) (budget-advice host))
   (nle:hook 'nle:name-session (format nil "channel-~a" id) (naming-advice host))
+  (nle:hook 'nle:submit (format nil "channel-~a" id) (wake-advice host))
   (pushnew host *hosts*)
   (when (nlk:store-open-p)
     (note-paired host (paired host)))
@@ -4988,6 +5075,7 @@ turns their budget."
   (nle:unhook :frame (format nil "channel-~a" (host-id host)))
   (nle:unhook 'nle:turn-budget (format nil "channel-~a" (host-id host)))
   (nle:unhook 'nle:name-session (format nil "channel-~a" (host-id host)))
+  (nle:unhook 'nle:submit (format nil "channel-~a" (host-id host)))
   (when host.worker
     (stop-delivery-worker host.worker))
   (nlk:with-handlers ((error (condition)

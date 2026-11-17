@@ -608,7 +608,9 @@ miss every due job, write the row once."
                                       (format nil "cron:~a:report:~d" (job-id job)
                                               (unix-from-universal (getf report :at)))
                                       (job-id job)))
-                     '(:started :queued :duplicate))
+                     ;; A room's kit may steer a report into the lane that
+                     ;; holds the origin's thread now: delivered too.
+                     '(:started :queued :steered :duplicate))
              (setf job.report nil
                    changed t)))))
       (dolist (job (copy-list *jobs*))
