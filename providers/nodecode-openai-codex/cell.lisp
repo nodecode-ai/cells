@@ -8,7 +8,7 @@
 ;;;;   the openai-codex lane    the Responses fold under a name and a family
 ;;;;                            of its own (provider.lisp MAKE-LANE)
 ;;;;   MODELS-CATALOG-TABLE     the catalog carries openai-codex: this lane,
-;;;;                            the Codex backend's base, omp's bundled models,
+;;;;                            the Codex backend's base, the account's models,
 ;;;;                            so /models lists them and a turn resolves its
 ;;;;                            lane and address as for any catalog provider
 ;;;;   :CREDENTIAL              the saved sign-in's access token, refreshed
@@ -47,17 +47,19 @@
   "(BASE . MERGED): the last catalog the core answered, and that catalog with
 openai-codex's row in it.")
 
-(defun catalog (next &aux (base (funcall next)) (memo *catalog*))
+(defvar *merged-generation* nil)
+
+(defun catalog (next &aux (base (funcall next)) (memo *catalog*) (generation *catalogue-generation*))
   "MODELS-CATALOG-TABLE advice: the catalog with openai-codex's row, made once
 per catalog the core reads."
-  (if (and (car memo) (eq (car memo) base))
+  (if (and (car memo) (eq (car memo) base) (eql generation *merged-generation*))
       (cdr memo)
       (let ((merged (make-hash-table :test 'equal)))
         (when (hash-table-p base)
           (maphash (lambda (id provider) (setf (gethash id merged) provider)) base))
         (setf (gethash +provider+ merged)
               (catalog-row (and (hash-table-p base) (gethash +provider+ base))))
-        (setf *catalog* (cons base merged))
+        (setf *catalog* (cons base merged) *merged-generation* generation)
         merged)))
 
 (defun entry-credential (entry source)
@@ -73,26 +75,22 @@ holding only access_token) sends, from SOURCE."
                                :installation-id (nlk:json-value entry :text "installation_id")))))
 
 (defun credential (op next)
-  "The :CREDENTIAL answer for openai-codex: the saved sign-in, refreshed when
-due, else the token OPENAI_CODEX_OAUTH_TOKEN holds; else a probe reads as no
-credential and a round is refused with what to do."
-  ;; Never NEXT for this provider: the ladder's environment rung knows the
-  ;; four core families, not this lane's. A refresh is a round's business: a
-  ;; probe (no endpoint) reads the store as it is, without the network.
-  (if (equal (getf op :provider) +provider+)
-      (let ((entry (stored-entry (getf op :auth))))
-        (cond (entry
-               (entry-credential (if (getf op :endpoint)
-                                     (fresh-entry (getf op :auth-path) entry)
-                                     entry)
-                                 :oauth))
-              ((some #'nle::credential-env +env+)
-               (entry-credential (nlk:json-object "access_token" (some #'nle::credential-env +env+)) :env))
-              ((getf op :endpoint)
-               (error 'nle:credential-error
-                      :detail "openai-codex: not signed in; sign in from /openai-codex"))
-              (t (nle:make-credential "public" :public))))
-      (funcall next op)))
+  "Resolve just this sign-in, refreshing for a request but never for a probe."
+  (unless (equal (getf op :provider) +provider+)
+    (return-from credential (funcall next op)))
+  (let* ((entry (stored-entry (getf op :auth)))
+         (endpoint (getf op :endpoint))
+         (credential (cond (entry
+                            (entry-credential (if endpoint (fresh-entry (getf op :auth-path) entry) entry)
+                                              :oauth))
+                           ((some #'nle::credential-env +env+)
+                            (entry-credential (nlk:json-object "access_token" (some #'nle::credential-env +env+)) :env))
+                           (endpoint
+                            (error 'nle:credential-error
+                                   :detail "openai-codex: not signed in; sign in from /openai-codex"))
+                           (t (nle:make-credential "public" :public)))))
+    (when endpoint (note-account +provider+ (credential-scope credential)))
+    credential))
 
 (defun body (next context &aux (body (funcall next context))
                                 (config (nle::compiled-turn-context-provider-config context)))
@@ -105,19 +103,24 @@ credential and a round is refused with what to do."
   "WALK-PROVIDER-STREAM advice: a round on this lane carries the Codex
 headers, and its stream is read the Codex way."
   (if (ours-p config)
-      (apply next (codex-fold fold) :headers (append headers (round-headers config))
-             (alexandria:remove-from-plist keys :headers))
+      (let ((*round-provider* (nle::effective-provider-config-provider config)))
+        (ensure-catalogue config)
+        (apply next (codex-fold fold) :headers (append headers (round-headers config))
+               (alexandria:remove-from-plist keys :headers)))
       (apply next fold keys)))
 
 (defun start ()
   "Register the lane; on stop take it out, drop the merged catalog, end a
 waiting sign-in and clear what the cell said."
   (setf *catalog* (cons nil nil))
+  (clear-catalogue)
+  (load-snapshots)
   (let ((lane (make-lane)))
     (nle::register-provider-lane lane)
     (nle:on-stop (lambda ()
                    (setf nle::*provider-lanes* (remove lane nle::*provider-lanes*))
                    (setf *catalog* (cons nil nil))
+                   (clear-catalogue)
                    (cancel-login)
                    (nle:notice nil :key +key+)))))
 
@@ -127,10 +130,13 @@ waiting sign-in and clear what the cell said."
     ("base_url" :string :default +base+
      :doc "the Codex backend: its root, its /codex, or its /codex/responses")
     ("originator" :string :default "codex_cli_rs"
-     :doc "the client name the sign-in and every request carry"))
+     :doc "the client name the sign-in and every request carry")
+    ("client_version" :string :default ""
+     :doc "client version sent for a model listing; empty asks for the full catalogue"))
   (:start #'start)
   (:hook 'nle::models-catalog-table #'catalog)
   (:hook :credential #'credential)
+  (:hook 'nle::list-provider-models #'listing)
   (:hook 'nle::responses-request-body #'body)
   (:hook 'nle::walk-provider-stream #'walk)
   (:hook 'nle::note-body-wire #'note-response)
