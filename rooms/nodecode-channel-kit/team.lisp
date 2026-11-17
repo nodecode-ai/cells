@@ -162,11 +162,17 @@ no board carries."
     (or (find tag +board-kinds+ :test #'string=)
         (error "a board carries ~{~(~a~)~^, ~} posts, not ~s" +board-kinds+ kind))))
 
+(defparameter +board-head-scanner+
+  (ppcre:create-scanner "^\\s*(?:\\*\\*[A-Za-z]+\\*\\*\\s+)?s\\d+\\s*·\\s*")
+  "A head TEXT may open with that BOARD-LINE writes itself: [**KIND**] sN ·.")
+
 (defun board-line (kind slot text &key score scorer)
   "The words one post shows: **KIND** sN, its score when it carries one, the
-key of the scorer that measured it or that it posts, then TEXT."
+key of the scorer that measured it or that it posts, then TEXT -- less a slot
+it opens with, which the line names once."
   (format nil "**~a** s~d~@[ · score ~a~]~@[ · scorer ~a~] · ~a" kind slot score scorer
-          (nlk:clip (nlk:trimmed text) +board-post-cap+ :ellipsis "…")))
+          (nlk:clip (nlk:trimmed (ppcre:regex-replace +board-head-scanner+ text ""))
+                    +board-post-cap+ :ellipsis "…")))
 
 (defun parse-board-line (text)
   "(values KIND SLOT SCORE WORDS SCORER) of TEXT when it is a board post, else
@@ -616,14 +622,56 @@ answers you here. ~a"
   (or (find platform *hosts* :key #'host-id :test #'string-equal)
       (error "no ~a channel is running" platform)))
 
-(defun post-on-board (host lane thread-id kind text &key score scorer)
-  "Post one KIND line as this bot on THREAD-ID's board from LANE, naming the
-key SCORER when it carries one, and keep it there. => (:POSTED :MESSAGE :LINE)."
-  (let* ((slot (or (slot-of host thread-id (host-self-id host))
+(defun board-lane (host thread-id)
+  "HOST's lane in THREAD-ID: the one running a turn there, else the one active
+there last; NIL when HOST has none there."
+  (let ((found '()))
+    (map-lanes (host-lanes host)
+               (lambda (lane &aux (target (lane-target lane)))
+                 (when (or (equal (getf target :thread-id) thread-id)
+                           (equal (getf target :channel-id) thread-id))
+                   (push lane found))))
+    (or (find-if #'lane-active-turn-id found)
+        (first (sort found #'> :key #'lane-last-active-ms)))))
+
+(defun stored-thread-room (host thread-id)
+  "The room session the store keeps for THREAD-ID on HOST's platform -- the
+one active last -- or NIL."
+  (when (nlk:store-open-p)
+    (let ((prefix (platform-session-prefix (host-platform host)))
+          (mark (format nil "-t~a" thread-id)))
+      (loop for session in (nlk:list-sessions)
+            for id = (getf session :id)
+            for target = (and (stringp id) (search mark id) (session-target prefix id))
+            when (equal (getf target :thread-id) thread-id)
+              return (target-room-id prefix target)))))
+
+(defun board-target (host thread-id)
+  "(values TARGET ROOM): where a post on THREAD-ID's board goes, and the room
+session its slots are kept in -- a lane of HOST's there (BOARD-LANE), else the
+thread's room as the store keeps it. An error when HOST has neither."
+  ;; Never the turn running there: 2026-11-18, a cron job told to post a
+  ;; SCORER on a thread's board ran in its own session after the reaper had
+  ;; let the thread's lane go, and the post failed `no lane answers' -- the
+  ;; bot held its slot and the thread was open. A post needs the surface and
+  ;; the slot, and the thread's room names both.
+  (let ((prefix (platform-session-prefix (host-platform host)))
+        (lane (board-lane host thread-id)))
+    (if lane
+        (values (lane-target lane) (target-room-id prefix (lane-target lane)))
+        (let ((room (or (stored-thread-room host thread-id)
+                        (error "no lane or room of this bot's is in ~a" thread-id))))
+          (values (session-target prefix room) room)))))
+
+(defun post-on-board (host target thread-id kind text &key score scorer room)
+  "Post one KIND line as this bot on THREAD-ID's board, to TARGET, naming the
+key SCORER when it carries one, and keep it there; ROOM is the room session
+the thread's slots are kept in. => (:POSTED :MESSAGE :LINE)."
+  (let* ((slot (or (slot-of host thread-id (host-self-id host) room)
                    (error "this bot holds no slot on the board of ~a" thread-id)))
          (line (board-line kind slot text :score score :scorer scorer)))
     (multiple-value-bind (posted ids failure)
-        (post-message host (lane-target lane) line :ping nil
+        (post-message host target line :ping nil
                       :what (format nil "~(~a~) post on ~a's board" kind thread-id))
       (when posted
         (note-thread-spoken thread-id)
@@ -638,14 +686,15 @@ key SCORER when it carries one, and keep it there. => (:POSTED :MESSAGE :LINE)."
 
 (defun board-post (thread kind text &key (platform "discord"))
   "Post one KIND line -- :claim, :scorer, :finding, :fail, :adopt, :solved --
-as this bot on THREAD's board, from the turn running there. A FINDING, ADOPT
-or SOLVED carries this bot's newest verified score, never a typed one, and the
-key of the scorer that measured it; a SCORER, its own command's key. SOLVED
-only after a verify reached the target."
+as this bot on THREAD's board, from any turn or none -- a cron job's, a turn
+in another room. A FINDING, ADOPT or SOLVED carries this bot's newest verified
+score, never a typed one, and the key of the scorer that measured it; a
+SCORER, its own command's key. SOLVED only after a verify reached the target."
   ;; Stamped an act first: it posts, so the snippet calling it is never
   ;; watched and run again (NLE:RECEIPT).
   (nle:receipt "calls" (list :verb "board-post"))
-  (multiple-value-bind (host lane) (running-answer "board-post" platform nil thread nil)
+  (nlk:bind ((host (board-host platform))
+             ((target room) (board-target host thread)))
     (let* ((kind (board-kind kind))
            (newest (first (board-scores host thread)))
            (scored (member kind +scored-kinds+ :test #'string=))
@@ -655,8 +704,8 @@ only after a verify reached the target."
                                kind thread)))))
       (when (and (string= kind "SOLVED") (not (getf newest :solved)))
         (error "SOLVED takes a verify that reached the target; the newest measured ~a" score))
-      (post-on-board host lane thread kind text
-                     :score score
+      (post-on-board host target thread kind text
+                     :score score :room room
                      :scorer (cond (scored (getf newest :scorer))
                                    ((string= kind "SCORER") (scorer-key (scorer-command text))))))))
 
