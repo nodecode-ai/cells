@@ -416,6 +416,30 @@ its board posted."
                    (getf post :line))))
       (is (equal "4/4" (getf (first (nck::board-posts host "42")) :score)) "and the board keeps it"))))
 
+(deftest channel-team-a-post-needs-no-turn-in-its-thread (with-temp-store ())
+  ;; 2026-11-18: a cron job told to post a SCORER on a thread's board ran in
+  ;; its own session after the reaper had let the thread's lane go, and the
+  ;; post failed `no lane answers': the bot held its slot and the thread was
+  ;; open. A post goes to the thread itself -- through a lane of the bot's
+  ;; there, running or idle, else the thread's room -- from any turn, or none.
+  (with-team-thread (host "42" :peers '(("777" . "elektra")))
+    (let ((nck::*hosts* (list host))
+          (executor (nck::host-executor host)))
+      (nlk:create-session :id "chat-100-t42")
+      (is-present (post (nck:board-post "42" :claim "bisect the config loader" :platform "test")) "a post with no lane in the thread"
+        (is (getf post :posted))
+        (is (equal "**CLAIM** s1 · bisect the config loader" (getf post :line))))
+      (is (equal "/rooms/42/messages" (nck:request-plan-path (first (last (recorded-plans executor))))) "posted in the thread")
+      (is (equal "**CLAIM** s1 · the parser" (getf (nck:board-post "42" :claim "s1 · the parser" :platform "test") :line)) "a slot the words name already is named once")
+      ;; A later image knows the slots only from the room's state.
+      (nck::save-thread-slots host "42" "chat-100-t42")
+      (remhash (cons "test" "42") nck::*thread-slots*)
+      (is (getf (nck:board-post "42" :fail "the cache" :platform "test") :posted) "the slot the room keeps")
+      (let ((lane (running-thread-lane host)))
+        (setf (nck:lane-active-turn-id lane) nil)
+        (is (getf (nck:board-post "42" :fail "the loader" :platform "test") :posted) "a lane there with no turn running"))
+      (is (signals-error error (nck:board-post "43" :claim "elsewhere" :platform "test")) "a thread with no board of this bot's"))))
+
 (deftest channel-team-verify-reads-the-score-from-stdout-alone ()
   ;; A scorer's stderr comes after its last line: an EXIT trap's complaint
   ;; naming a pid scored that pid once, and higher is better, so the bogus
