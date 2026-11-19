@@ -1332,11 +1332,14 @@ the lane has none."
      (let ((,digest (lane-digest ,lane)))
        (when ,digest ,@body))))
 
-(defmacro with-turn-digest ((digest lane turn-id now) &body body)
+(defmacro with-turn-digest ((digest lane turn-id now &key part) &body body)
   "BODY under LANE's lock with DIGEST bound to the lane's digest for TURN-ID,
-opened at NOW when the lane holds none for it (LANE-TURN-DIGEST)."
+opened at NOW when the lane holds none for it (LANE-TURN-DIGEST). PART, a
+fact a turn leaves on its way, skips BODY, to NIL, when that turn has
+ended: a late part never takes the card of the turn that runs now."
   `(bt2:with-lock-held ((lane-lock ,lane))
-     (let ((,digest (lane-turn-digest ,lane ,turn-id ,now))) ,@body)))
+     (let ((,digest (lane-turn-digest ,lane ,turn-id ,now :part ,part)))
+       (when ,digest ,@body))))
 
 (defun warn-lane (host lane what detail)
   (warn "~a ~a for ~a failed: ~a" (host-id host) what lane.session-id detail))
@@ -2179,7 +2182,7 @@ enqueueing a reaction step."
     ("turn.tool_call_started" (let ((name (nlk:json-value payload :string "tool-name"))
                                     (call-id (nlk:json-value payload :string "call-id"))
                                     (arguments (nlk:json-value payload :string "arguments")))
-                                (with-turn-digest (digest lane turn-id now)
+                                (with-turn-digest (digest lane turn-id now :part t)
                                   (digest-note-tool-call digest)
                                   ;; A step of the turn, its words classified from its
                                   ;; arguments: the card says what the call is doing,
@@ -2194,7 +2197,7 @@ enqueueing a reaction step."
                               (output (nlk:json-value payload :string "result"))
                               (failed (nlk:json-value payload :boolean "failed")))
                           (when call-id
-                            (with-turn-digest (digest lane turn-id now)
+                            (with-turn-digest (digest lane turn-id now :part t)
                               (digest-note-call-result digest call-id now :metadata metadata
                                                                           :output output :failed failed)))))
      ;; The round moved to another model: the card says so, with the
@@ -2203,7 +2206,7 @@ enqueueing a reaction step."
     ("turn.provider_fallback" (let ((to (nlk:json-value payload :string "to-model"))
                                     (reason (nlk:json-value payload :string "reason")))
                                 (when to
-                                  (with-turn-digest (digest lane turn-id now)
+                                  (with-turn-digest (digest lane turn-id now :part t)
                                     (setf (turn-digest-fallback-text digest)
                                           (format nil "fell back to ~a~@[ (~a)~]" to
                                                   (and reason (substitute #\Space #\_ reason))))
@@ -2215,7 +2218,7 @@ enqueueing a reaction step."
      ;; thought, its price, and what it ran on: the card's footer, as the
      ;; TUI's meter and finish divider read the same fact.
     ("turn.usage" (flet ((field (type key) (nlk:json-value payload type key)))
-                    (with-turn-digest (digest lane turn-id now)
+                    (with-turn-digest (digest lane turn-id now :part t)
                       ;; The round is over: the next one counts from nothing.
                       (digest-note-round-over digest)
                       (digest-note-usage
@@ -2234,7 +2237,7 @@ enqueueing a reaction step."
                                     :finish-reason (field :string "finish-reason"))))))
     ("turn.assistant_message_completed" (let ((text (fact-message-content payload))
                                               (reasoning (fact-message-reasoning payload)))
-                                          (with-turn-digest (digest lane turn-id now)
+                                          (with-turn-digest (digest lane turn-id now :part t)
                                             (digest-note-round digest text reasoning)
                                             ;; A round that called tools keeps the turn going: whatever it
                                             ;; said, it said while the work goes on, and its card shows it
@@ -2368,6 +2371,7 @@ digest into, and the detail its PAYLOAD carries — NIL for any other kind."
                   (digest
                     (with-turn-digest (digest lane turn-id now)
                       (setf lane.active-turn-id nil)
+                      (note-turn-ended lane turn-id)
                       (if background-pending
                           ;; The work it started is still going: the
                           ;; digest stays running, waiting on it.

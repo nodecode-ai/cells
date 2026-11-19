@@ -229,7 +229,12 @@ past the last send (a fresh start, last-sent 0, is immediately due)."
   (agent nil :type (or null string))
   ;; The newest ask's own words (ASK-SAID): what its turn's card is named
   ;; from. Appended last, for the reason WHERE is.
-  (said "" :type string))
+  (said "" :type string)
+  ;; The ids of the lane's newest turns that ended, newest first, at most
+  ;; +ENDED-TURNS-KEPT+: a part one of them leaves after its end never takes
+  ;; the digest (LANE-TURN-DIGEST). Guarded by the lane lock. Appended last,
+  ;; for the reason WHERE is.
+  (ended-turn-ids '() :type list))
 
 (nlk:access (lane channel-lane))
 
