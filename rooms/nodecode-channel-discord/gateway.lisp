@@ -615,7 +615,10 @@ api_base's, set at each start.")
   "MESSAGE's attachments as the candidate's attachments array: one entry
 each with the url to fetch, the declared type, filename and size, the
 attachment's own id — the same file seen twice, in a message and in a reply
-to it, is one file — and the seconds a voice message declares."
+to it, is one file — and the seconds a voice message declares. A video
+carries no seconds: Discord declares the length of every video upload, and
+has no video note, so a Discord video is a file to open, never a recording
+to hear (NCK::RECORDING-ATTACHMENT-P)."
   ;; NIL when it carries none. Every file rides: the kit reads what it can in
   ;; and saves the rest for the lane's tools (NCK::READ-ATTACHMENT). A url on
   ;; a host that is not Discord's is not fetched: the bot's own fetch would
@@ -637,7 +640,8 @@ to it, is one file — and the seconds a voice message declares."
                                   "filename" (or (nlk:json-value attachment :string "filename")
                                                  "")
                                   "size" (or (nlk:json-value attachment :integer "size") 0)
-                                  "seconds" (nlk:json-value attachment :number "duration_secs")))
+                                  "seconds" (and (not (and type (ppcre:scan "(?i)^video/" type)))
+                                                  (nlk:json-value attachment :number "duration_secs"))))
                  'vector))))
 
 ;;; --- who a message names ---------------------------------------------------------
