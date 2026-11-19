@@ -866,6 +866,37 @@ whose d object is D-JSON. KEYS reach the router as they are."
       "the answered voice message rides the reply"
       (is-shape recording ("id" "1549867778293502102") ("media_type" "audio/ogg")))))
 
+(deftest channel-discord-a-video-is-a-file-not-a-recording ()
+  ;; Discord declares duration_secs on every video upload, a screen recording
+  ;; with no sound among them. Discord has no video note, so the length rides
+  ;; no video: the kit saves it for the lane's tools instead of sending it to
+  ;; transcription, in the message and in a reply to it.
+  (let* ((video "{\"id\": \"a14\", \"url\": \"https://cdn.discordapp.com/screen.mp4\",
+                  \"content_type\": \"video/mp4\", \"filename\": \"screen.mp4\",
+                  \"size\": 1457024, \"duration_secs\": 37.0999}")
+         (said (dgw-said "m14" "" :fields (format nil "\"flags\": 4, \"attachments\": [~a]," video)))
+         (reply (dgw-said "m15" "what does this show"
+                          :fields (format nil "\"referenced_message\": {
+                        \"id\": \"m14\", \"content\": \"\", \"flags\": 4,
+                        \"author\": {\"id\": \"u1\", \"username\": \"peas\"},
+                        \"attachments\": [~a]}," video))))
+    (dolist (entry (list (first (nck:candidate-attachments said))
+                         (first (nck:candidate-attachments (gethash "reply" reply)))))
+      (is-present (entry entry)
+        "the video rides, in the message and in the reply"
+        (is-shape entry ("media_type" "video/mp4") ("filename" "screen.mp4"))
+        (is (null (gethash "seconds" entry)) "a Discord video declares no recording's seconds")
+        (is (not (nck::recording-attachment-p entry)) "a Discord video is no recording")
+        (is (nck::video-file-p entry) "a Discord video is a file to open"))))
+  ;; A voice message keeps its seconds.
+  (let ((voice (first (nck:candidate-attachments
+                       (dgw-said "m16" "" :fields "\"flags\": 8192, \"attachments\": [
+                        {\"url\": \"https://cdn.discordapp.com/voice-message.ogg\",
+                         \"content_type\": \"audio/ogg\", \"filename\": \"voice-message.ogg\",
+                         \"size\": 22399, \"duration_secs\": 5.52}],")))))
+    (is (< 5.51 (gethash "seconds" voice) 5.53) "a voice message keeps its seconds")
+    (is (nck::recording-attachment-p voice) "a voice message is a recording")))
+
 (deftest channel-discord-a-forward-is-read-whole ()
   ;; A forwarded message points at its original in another channel and
   ;; carries it as a snapshot: its words and files are what the person
