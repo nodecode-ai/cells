@@ -598,6 +598,37 @@ message of ours."
                      #'string<)))
     (is (null (nck:lane-reactions lane)))))
 
+(deftest channel-host-a-late-fact-of-an-ended-turn-leaves-the-running-card-its-own ()
+  ;; A turn's background eval can land after a steer ended that turn, while
+  ;; the next turn runs: its result names the ended turn. It must not take the
+  ;; lane's digest from the running turn, whose card would then never be
+  ;; settled or retired -- a working line with live Stop and Details for good.
+  (with-digest-host (host lane :responses (replies "s1" "d1" "s2" "d2" "s3" "e3" "a3"))
+    (earn-line "t1")
+    (is (await (:timeout 10) (= 1 (length (labelled "send_message")))) "the first turn's card posts")
+    (fact "turn.completed" (nlk:json-object "steered" t) "t1")
+    (is (await (:timeout 10) (= 1 (length (labelled "delete_message")))) "the steered turn's card is retired")
+    (earn-line "t2")
+    (is (await (:timeout 10) (= 2 (length (labelled "send_message")))) "the second turn's card posts")
+    (fact "turn.tool_result" (nlk:json-object "call-id" "c-bg" "tool-name" "eval" "result" "exited") "t1")
+    (is (equal "t2" (nck:turn-digest-turn-id (nck:lane-digest lane))) "the late result leaves the running turn's digest")
+    (is (equal "s2" (nck::turn-digest-status-id (nck:lane-digest lane))) "and the card it posted")
+    (fact "turn.completed" (nlk:json-object "steered" t) "t2")
+    (is (await (:timeout 10) (= 2 (length (labelled "delete_message")))) "the running turn's card is retired too")
+    (is-plan (second (labelled "delete_message")) :path "/rooms/123/messages/s2")
+    ;; One more turn, cut by nothing: a late result of the ended one lands
+    ;; mid-turn, and the answer still settles this turn's own card.
+    (earn-line "t3")
+    (is (await (:timeout 10) (= 3 (length (labelled "send_message")))) "the third turn's card posts")
+    (fact "turn.tool_result" (nlk:json-object "call-id" "c-bg2" "tool-name" "eval" "result" "exited") "t2")
+    (said "done" "t3")
+    (fact "turn.completed" (nlk:json-object) "t3")
+    (flet ((own-card-settled ()
+             (find-if (lambda (plan) (search "/messages/s3" (nck:request-plan-path plan)))
+                      (append (labelled "edit_message") (labelled "delete_message")))))
+      (is (await (:timeout 10) (own-card-settled)) "the answered turn's own card settles"))
+    (is (equal "t3" (nck:turn-digest-turn-id (nck:lane-digest lane))) "on the answered turn's digest")))
+
 (deftest channel-host-failure-settles-into-the-chrome ()
   ;; A failed turn is the one case where the line IS the message: nothing is
   ;; posted beside it — and its ask stays in the room's record with the notice.
