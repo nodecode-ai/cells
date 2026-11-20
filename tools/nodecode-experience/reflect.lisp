@@ -27,7 +27,8 @@
 ;;;; earlier recap landing meanwhile moves the head but is nobody moving on,
 ;;;; so the recap still lands, its user half naming the turn it belongs to;
 ;;;; an operator turn in between means that turn gets its own reflection,
-;;;; and this recap is dropped, quietly.
+;;;; and this recap is dropped, quietly. Either way the reflection's own log
+;;;; keeps one experience.recap fact: landed, or dropped and why.
 ;;;;
 ;;;; THREAD RULE: the :FRAME hook runs on the turn worker that publishes and
 ;;;; only folds and pokes; every store read, fork, submit and record runs on
@@ -241,15 +242,25 @@ CHILD), CHILD the reflection session when one was forked."
 ;;; A reflection is the same assistant with the same tools. A session this cell
 ;;; made -- a reflection -- calls the verbs its request names, keeps
 ;;; definitions, the memories and skills it keeps included, edits or forgets
-;;; them, and runs nothing else. It runs under no budget unless a layer sets
-;;; one: the fence bounds what it can do, and the spend line on every result
-;;; shows it how long it has run.
+;;; them, and runs nothing else. The fence bounds what it can do; what it may
+;;; spend is a budget like any other turn's, for it is a model call on the
+;;; operator's key: the experience section's budget_seconds, budget_calls and
+;;; budget_tokens when any is set, else *BUDGET* when a layer set it, else the
+;;; cap every other turn runs under -- none unless a layer set one. Past it a
+;;; call is refused and the reflection answers its recap with what it has.
 
 (defparameter *budget* nil
-  "The limits a reflection runs under (NLE:TURN-BUDGET): NIL,
-none, even when a layer caps every other turn. It sees its clock on every
-result and nothing stops it. Data, so a layer can set one: (:SECONDS N
-:CALLS N), either key optional.")
+  "The limits a reflection runs under (NLE:TURN-BUDGET) when the experience
+section names none: NIL, the cap every other turn runs under. Data, so a
+layer can set one: (:SECONDS N :CALLS N :TOKENS N), each key optional.")
+
+(defun reflection-budget (settings)
+  "The limits SETTINGS' budget_seconds, budget_calls and budget_tokens
+name, in NLE:TURN-BUDGET's shape, or NIL when none is set."
+  (loop for (key setting) in '((:seconds :budget-seconds) (:calls :budget-calls)
+                               (:tokens :budget-tokens))
+        for limit = (getf settings setting)
+        when limit append (list key limit)))
 
 (defparameter *verb-packages* '("NODECODE-EXPERIENCE")
   "The packages whose exported functions a session this cell made may call.")
@@ -334,11 +345,11 @@ and passes every other session's call through untouched."
     (if refusal (nle:failure refusal) (funcall next op))))
 
 (defun budget-hook (next turn)
-  "Advice on NLE:TURN-BUDGET: a session this cell made runs under *BUDGET*,
-none unless a layer set one, and never under a cap a layer set for every
-other turn."
+  "Advice on NLE:TURN-BUDGET: a session this cell made runs under the
+experience section's budget, else *BUDGET*, else the cap every other turn
+runs under; every other session's turn passes through untouched."
   (if (ours-p (getf turn :session-id))
-      *budget*
+      (or (reflection-budget *experience*) *budget* (funcall next turn))
       (funcall next turn)))
 
 (defun naming-hook (next session-id text)
@@ -443,8 +454,10 @@ summed over its rounds."
 while the origin is idle and no operator turn arrived since the reflected
 one; turns nobody asked for in between are named in the user half. A
 reflection that marked its recap (ATTENTION) records it announced: the
-room posts the answer as a note. => the recorded turn id, or NIL when the
-recap was dropped."
+room posts the answer as a note. => (values TURN-ID REASON SINCE): the
+recorded turn id, or NIL and why the recap was dropped - `empty-answer',
+`origin-gone', `not-idle', `operator-turn-since' or `not-recorded'; SINCE,
+how many turns came between, once they were counted."
   (let* ((origin reflection.origin)
          (turn reflection.turn)
          ;; The answer's non-empty lines, at most RECAP-LINES, bounded.
@@ -456,44 +469,92 @@ recap was dropped."
                            1500))
          (announce (gethash reflection.child *announced*))
          (cursor nil)
-         (turn-id nil))
-    (when (plusp (length answer))
-      (bt2:with-recursive-lock-held (nlk::*store-lock*)
-        (when (and (nlk:session-exists-p origin)
-                   (not (nlk:active-turn-p origin)))
-          (let ((since (turns-since origin turn)))
-            (unless (some (lambda (entry)
-                            (operator-turn-p (second entry) (third entry) settings))
-                          since)
-              (setf cursor (ignore-errors (nle::session-cursor origin))
-                    turn-id (nlk:record-exchange-turn
-                             origin (recap-input origin turn since) answer
-                             :command-id (format nil "experience:~a:recap" reflection.child)
-                             :announce announce
-                             :facts (reflection-facts reflection)))
-              (when turn-id
-                (setf (gethash turn-id *recorded*) t))))))
-      (when (and turn-id cursor)
-        (handler-case (nle::publish-turn-facts origin cursor)
-          (error (condition)
-            (warn "experience: recap recorded into ~a but not published: ~a"
-                  origin condition)))))
-    turn-id))
+         (turn-id nil)
+         (reason nil)
+         (between nil))
+    (if (zerop (length answer))
+        (setf reason "empty-answer")
+        (bt2:with-recursive-lock-held (nlk::*store-lock*)
+          (cond
+            ((not (nlk:session-exists-p origin)) (setf reason "origin-gone"))
+            ((nlk:active-turn-p origin) (setf reason "not-idle"))
+            (t
+             (let ((since (turns-since origin turn)))
+               (setf between (length since))
+               (if (some (lambda (entry)
+                           (operator-turn-p (second entry) (third entry) settings))
+                         since)
+                   (setf reason "operator-turn-since")
+                   (progn
+                     (setf cursor (ignore-errors (nle::session-cursor origin))
+                           turn-id (nlk:record-exchange-turn
+                                    origin (recap-input origin turn since) answer
+                                    :command-id (format nil "experience:~a:recap" reflection.child)
+                                    :announce announce
+                                    :facts (reflection-facts reflection)))
+                     (if turn-id
+                         (setf (gethash turn-id *recorded*) t)
+                         (setf reason "not-recorded")))))))))
+    (when (and turn-id cursor)
+      (handler-case (nle::publish-turn-facts origin cursor)
+        (error (condition)
+          (warn "experience: recap recorded into ~a but not published: ~a"
+                origin condition))))
+    (values turn-id reason between)))
+
+(defparameter +kind-recap+ "experience.recap"
+  "The kind of the one fact a settled reflection leaves in its own session's
+log: what became of its recap - {origin, turn, outcome `landed' or
+`dropped', reason when dropped, recap-turn when landed, since, announced,
+status}.")
+
+(defun note-recap-outcome (reflection recap-turn reason &key since)
+  "Append the +KIND-RECAP+ fact of REFLECTION, whose recap landed as
+RECAP-TURN or was dropped for REASON, into the reflection's own log. The
+origin's log and its turn accounting stay as they were. => the fact's
+position, or NIL when there is no store or no such child."
+  ;; A fact that cannot be written is warned about: it never costs the recap
+  ;; that landed, nor the settling of the next reflection.
+  (when (and (nlk:store-open-p) (nlk:session-exists-p reflection.child))
+    (handler-case
+        (values
+         (nlk:record-event reflection.child +kind-recap+
+                           (append (list :origin reflection.origin :turn reflection.turn
+                                         :outcome (if recap-turn "landed" "dropped"))
+                                   (and reason (list :reason reason))
+                                   (and recap-turn (list :recap-turn recap-turn))
+                                   (and since (list :since since))
+                                   (and (gethash reflection.child *announced*) (list :announced t))
+                                   (and reflection.status (list :status reflection.status)))))
+      (error (condition)
+        (warn "experience: what became of reflection ~a's recap is not recorded: ~a"
+              reflection.child condition)
+        nil))))
 
 (defun settle-reflection (reflection &aux (settings *experience*))
-  "The child's turn ended: record the recap, or nothing. => T when a recap
+  "The child's turn ended: record the recap, or drop it, and leave one
++KIND-RECAP+ fact in the child's log saying which and why. => T when a recap
 was recorded."
   ;; A reflection that fails or answers nothing says so only in its own
   ;; session's log. The line it writes on *ERROR-OUTPUT* is a notice in the
-  ;; transcript whenever a shell hosts the organism.
-  (and settings
-       (equal "turn.completed" reflection.status)
-       (getf settings :recap)
-       reflection.answer
-       ;; Busy, or the operator moved on: that turn gets its own reflection
-       ;; and this recap is dropped without a word - the shell already shows
-       ;; the newer turn, and the sightings landed as the reflection went.
-       (and (record-recap reflection settings) t)))
+  ;; transcript whenever a shell hosts the organism. Busy, or the operator
+  ;; moved on: that turn gets its own reflection and this recap is dropped,
+  ;; told only to the log - the shell already shows the newer turn, and the
+  ;; sightings landed as the reflection went.
+  (multiple-value-bind (recap-turn reason since)
+      (cond ((null settings) (values nil "stopped"))
+            ((equal "turn.cancelled" reflection.status) (values nil "cancelled"))
+            ((not (equal "turn.completed" reflection.status)) (values nil "failed"))
+            ((not (getf settings :recap)) (values nil "recap-off"))
+            ((null reflection.answer) (values nil "empty-answer"))
+            ;; Noted once the failed write has unwound, then signalled on to
+            ;; the reflector, which warns.
+            (t (handler-case (record-recap reflection settings)
+                 (error (condition)
+                   (note-recap-outcome reflection nil "error")
+                   (error condition)))))
+    (note-recap-outcome reflection recap-turn reason :since since)
+    (and recap-turn t)))
 
 ;;; --- the reflector thread -----------------------------------------------------------
 
