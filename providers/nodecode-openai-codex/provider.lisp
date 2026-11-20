@@ -205,19 +205,25 @@ omp's getCodexResidency."
 (defvar *threads* (make-hash-table :test 'equal :synchronized t)
   "Session id -> its THREAD; \"\" for rounds outside any turn.")
 
+(defvar *account-scope* nil
+  "The current Pi account identity while a response is folded; NIL for native sign-ins.")
+
 (defvar *installation* (uuid)
   "The installation id a sign-in that saved none is sent under: this process's.")
 
-(defun round-thread (&aux (turn (nle:turn)) (session (getf turn :session-id))
-                          (key (getf turn :turn-id)))
+(defun round-thread (&optional config &aux (turn (nle:turn)) (session (getf turn :session-id))
+                                           (key (getf turn :turn-id))
+                                           (account (or (and config (nle::credential-attribute config :pi-account))
+                                                        *account-scope*))
+                                           (scope (if account (list (or session "") account) (or session ""))))
   "(values THREAD SESSION-ID): the identity of the round this thread runs,
 a new Codex turn opened when Nodecode's turn moved; SESSION-ID is NIL outside
 a turn."
-  (let ((thread (or (gethash (or session "") *threads*)
+  (let ((thread (or (gethash scope *threads*)
                     (progn
                       ;; a bound, not an eviction policy: identities are cheap to remake
                       (when (> (hash-table-count *threads*) 1024) (clrhash *threads*))
-                      (setf (gethash (or session "") *threads*)
+                      (setf (gethash scope *threads*)
                             (if session (make-thread :session session) (make-thread)))))))
     (unless (and (equal key (thread-turn-key thread)) (thread-turn thread))
       (setf (thread-turn-key thread) key
@@ -304,7 +310,7 @@ once, then remembered. An item whose bytes carry no id key is itself."
 (defun shape-body (body context &aux (config (nle::compiled-turn-context-provider-config context)))
   "BODY, the Responses request the core built for CONTEXT, as the Codex
 backend takes it (omp's transformRequestBody)."
-  (multiple-value-bind (thread) (round-thread)
+  (multiple-value-bind (thread) (round-thread config)
     (let ((installation (installation-id config))
           (effort (nle::effective-provider-config-reasoning-effort config)))
       ;; the backend refuses a caller's output cap and every sampling control
@@ -326,7 +332,7 @@ backend takes it (omp's transformRequestBody)."
 (defun round-headers (config)
   "The headers a Codex round carries beside its bearer (omp's
 createCodexHeaders); the account and residency ride on the credential."
-  (multiple-value-bind (thread session) (round-thread)
+  (multiple-value-bind (thread session) (round-thread config)
     (let ((installation (installation-id config)))
       `(("OpenAI-Beta" . "responses=experimental")
         ("originator" . ,(setting :originator))
