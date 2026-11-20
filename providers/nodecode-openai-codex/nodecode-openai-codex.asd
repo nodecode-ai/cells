@@ -24,6 +24,7 @@
   :components ((:file "package")
                (:file "provider")
                (:file "signin")
+               (:file "catalog")
                (:file "cell"))
   :in-order-to ((test-op (test-op "nodecode-openai-codex/test"))))
 
@@ -33,6 +34,7 @@
   :depends-on ("nodecode-openai-codex" "nodecode/test")
   :pathname "test/"
   :serial t
-  :components ((:file "cell-test"))
+  :components ((:file "cell-test")
+               (:file "catalog-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-openai-codex-tests)))
