@@ -170,7 +170,8 @@ names; forget the thread after."
   (is (equal "14/14" (nck::scorer-score (format nil "wrote /data/scratch/score-141/7.log~%14/14"))) "a path that holds score- is no score line")
   (is (equal "4/5" (nck::scorer-score (format nil "Score=4/5~%done"))) "score= counts, in any case")
   (is (equal "5" (nck::scorer-score (format nil "highscore: 9~%5"))) "score must start a word")
-  (is (nck::scorer-cut-p 124) "timeout's own exit is a cut")
+  (is (nck::scorer-cut-p :timeout) "the bound's own cut is a cut")
+  (is (nck::scorer-cut-p 124) "a timeout inside the command is a cut")
   (is (nck::scorer-cut-p 143) "a signal's exit is a cut")
   (is (not (nck::scorer-cut-p 1)) "a failing scorer still scores")
   (is (not (nck::scorer-cut-p 0)))
@@ -181,6 +182,48 @@ names; forget the thread after."
       (is (null (nck::note-board-post host again)) "the same message is kept once")
       (is (null (nck::note-board-post host impostor)) "a post in another bot's slot is not kept"))
     (is (= 1 (length (nck::board-posts host "42"))))))
+
+(deftest channel-team-a-scorer-ends-with-its-bound-and-with-its-evaluation ()
+  ;; The scorer leads a process group of its own: the bound takes its whole
+  ;; tree, and a caller that unwinds -- (eval-interrupt), a stopped turn --
+  ;; takes it down. Under `timeout' a scorer's background work held the
+  ;; pipe open past the cut, and an interrupted verify left the scorer
+  ;; running on, holding the box lock it had taken, with nobody to read it.
+  (let ((started (get-internal-real-time)))
+    (multiple-value-bind (output code) (nck::run-scorer "sleep 20 & echo begun; sleep 20" nil 0.5)
+      (is (eq :timeout code) "the bound fell")
+      (is (nck::scorer-cut-p code) "so the run is a cut")
+      (is (search "begun" output) "what it printed before the cut is kept")
+      (is (< (- (get-internal-real-time) started) (* 5 internal-time-units-per-second)) "its background sleep went with the cut")))
+  #-win32
+  (let* ((pids (uiop:tmpize-pathname (merge-pathnames "scorer-pids" (uiop:temporary-directory))))
+         (caller (bt2:make-thread
+                  (lambda ()
+                    (catch 'unwound
+                      (nck::run-scorer (format nil "sleep 30 & echo $! > '~a'; echo $$ >> '~a'; sleep 30"
+                                               (namestring pids) (namestring pids))
+                                       nil 60)))
+                  :name "board-verify caller"))
+         (ids (loop repeat 200
+                    for ids = (ignore-errors (mapcar #'parse-integer (uiop:read-file-lines pids)))
+                    until (= 2 (length ids))
+                    do (sleep 0.05)
+                    finally (return ids))))
+    (flet ((running-p (pid)
+             ;; a zombie waiting on init to reap it has ended
+             (and (nlk:pid-live-p pid)
+                  (not (search ") Z " (or (ignore-errors
+                                           (uiop:read-file-string (format nil "/proc/~d/stat" pid)))
+                                          ""))))))
+      (is (= 2 (length ids)) "the scorer and its background sleep both started")
+      (bt2:interrupt-thread caller (lambda () (throw 'unwound :unwound)))
+      ;; Bounded: under UIOP the throw never landed until the scorer ended by itself.
+      (is (eq :unwound (sb-thread:join-thread (bt2:thread-native-thread caller) :timeout 5 :default :still-running)) "the verify unwound out of the scorer at once")
+      (is (loop repeat 60 thereis (notany #'running-p ids) do (sleep 0.05))
+          (format nil "the scorer's tree ended with the verify: ~a" (remove-if-not #'running-p ids)))
+      (dolist (id ids)
+        (when (running-p id) (ignore-errors (sb-posix:kill id sb-posix:sigkill))))
+      (ignore-errors (delete-file pids)))))
 
 (deftest channel-team-the-best-measured-result-writes-the-one-answer ()
   ;; A bot a peer outscored answers silently; the leader answers; equals go
