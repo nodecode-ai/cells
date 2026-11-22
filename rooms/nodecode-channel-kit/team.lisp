@@ -715,20 +715,26 @@ SCORER, its own command's key. SOLVED only after a verify reached the target."
 (defun run-scorer (command directory timeout)
   "(values OUTPUT EXIT-CODE SHOWN) of COMMAND run by bash in DIRECTORY, cut
 off after TIMEOUT seconds: OUTPUT what it printed, the only text its score is
-read from, and SHOWN that with what it wrote to stderr under a stderr line."
+read from, EXIT-CODE :TIMEOUT when the cut fell, and SHOWN that with what it
+wrote to stderr under a stderr line."
+  ;; NLK:RUN-BOUNDED, never UIOP:RUN-PROGRAM under `timeout': the scorer
+  ;; leads a process group of its own, so the cut takes its whole tree, and
+  ;; an evaluation that unwinds -- (eval-interrupt), a stopped turn -- takes
+  ;; it down too. Under UIOP the scorer ran on after both, holding the shared
+  ;; box lock it had taken, with nobody to read its score.
   (multiple-value-bind (output errors code)
-      (uiop:run-program (list "timeout" (princ-to-string timeout) "bash" "-c" command)
-                        :directory (and directory (uiop:ensure-directory-pathname directory))
-                        :output :string :error-output :string :ignore-error-status t)
+      (nlk:run-bounded (list "bash" "-c" command) :seconds timeout :directory directory)
     (let ((output (or output "")))
       (values output code (if (plusp (length (nlk:trimmed (or errors ""))))
                               (format nil "~a~&stderr:~%~a" output errors)
                               output)))))
 
 (defun scorer-cut-p (code)
-  "Whether exit CODE says the scorer never reached its last line: TIMEOUT's
-124 when the cut fell, or 128+N when a signal ended it."
-  (and (integerp code) (or (= code 124) (> code 128))))
+  "Whether exit CODE says the scorer never reached its last line: :TIMEOUT
+when the cut fell (124 from a `timeout' inside the command), or 128+N when
+a signal ended it."
+  (or (eq code :timeout)
+      (and (integerp code) (or (= code 124) (> code 128)))))
 
 (defun scorer-score (output)
   "The score OUTPUT, a scorer's stdout, ends on: the last `score: S' (or
@@ -788,8 +794,9 @@ one. => (:SCORE :IMPROVED :BEST :SOLVED :PLATEAU :LEADER :SCORER :EXIT :OUTPUT).
         ;; A cut run printed only what came before the cut: an early part's
         ;; N/M is not the score the whole run ends on, so it scores nothing.
         (when (scorer-cut-p code)
-          (error "the scorer was cut off (exit ~a) before its last line, so it scores nothing:~%~a"
-                 code (text-end shown 1200)))
+          (error "the scorer was cut off (~a) before its last line, so it scores nothing:~%~a"
+                 (if (eq code :timeout) (format nil "at its ~a s bound" timeout) (format nil "exit ~a" code))
+                 (text-end shown 1200)))
         (let* ((score (or (scorer-score output)
                           (error "the scorer printed no score (exit ~a): its last line must be N/M or a number alone, and stderr is not read:~%~a"
                                  code (text-end shown 1200))))
