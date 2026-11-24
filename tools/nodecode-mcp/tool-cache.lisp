@@ -3,10 +3,11 @@
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
 ;;;; Every catalog a server publishes -- at connect, and again on a list
-;;;; that follows tools/list_changed -- is kept beside its stderr log,
-;;;; under the way the server is reached: TRANSPORT-TEXT, the command and
-;;;; its args or the url and a header count, never a secret. The next
-;;;; START-CELL reads it back: the functions and the (help :mcp) lines come
+;;;; that follows tools/list_changed -- is kept beside its stderr log, with
+;;;; the instructions its initialize gave, under the way the server is
+;;;; reached: TRANSPORT-TEXT, the command and its args or the url and a
+;;;; header count, never a secret. The next START-CELL reads it back: the
+;;;; functions and the (help :mcp) lines, its instructions among them, come
 ;;;; from the kept catalog, the server stands :IDLE with no process and no
 ;;;; connection, and its first call connects it inside that call's own
 ;;;; deadline. A session that calls no MCP tool starts no MCP server -- no
@@ -22,15 +23,18 @@
 
 (in-package #:nodecode-mcp)
 
-(defparameter +tool-cache-version+ 1
-  "The kept catalog's format; a file of another version is no catalog.")
+(defparameter +tool-cache-version+ 2
+  "The kept catalog's format; a file of another version is no catalog. 2 keeps
+the server's instructions: a server kept by 1 connects once at boot, so it
+never stands idle without them.")
 
 (defun tool-cache-path (name)
   (merge-pathnames (format nil "~a.tools.json" name) *log-directory*))
 
-(defun save-tools (spec tools)
-  "Keep TOOLS as the catalog SPEC's server listed last. A failure warns and
-keeps nothing: the next boot connects that server instead."
+(defun save-tools (spec tools instructions)
+  "Keep TOOLS as the catalog SPEC's server listed last, with INSTRUCTIONS, what
+its initialize said about using it (NIL for none). A failure warns and keeps
+nothing: the next boot connects that server instead."
   (nlk:with-handlers ((error (condition)
                         (warn "mcp ~a: its catalog could not be kept: ~a" spec.name condition)
                         nil))
@@ -43,12 +47,14 @@ keeps nothing: the next boot connects that server instead."
                                               (nlk:json-object "name" (getf tool :name)
                                                                "description" (getf tool :description)
                                                                "inputSchema" (getf tool :schema)))
-                                    tools))))
+                                    tools)
+                       :opt "instructions" instructions)))
     t))
 
 (defun saved-tools (spec &aux (path (tool-cache-path spec.name)))
-  "The catalog SPEC's server listed last, as tool plists; NIL when none is
-kept for the way SPEC reaches it."
+  "The catalog SPEC's server listed last, as tool plists, and the instructions
+kept with it as the second value; NIL when none is kept for the way SPEC
+reaches it."
   (when (probe-file path)
     (nlk:with-handlers ((error (condition)
                           (warn "mcp ~a: its kept catalog is unreadable: ~a" spec.name condition)
@@ -57,6 +63,7 @@ kept for the way SPEC reaches it."
         (when (and (hash-table-p object)
                    (eql (nlk:json-value object :integer "version") +tool-cache-version+)
                    (equal (nlk:json-value object :string "reached") (transport-text spec)))
-          (loop for entry across (or (nlk:json-array object "tools") #())
-                for tool = (and (hash-table-p entry) (tool-plist entry))
-                when tool collect tool))))))
+          (values (loop for entry across (or (nlk:json-array object "tools") #())
+                        for tool = (and (hash-table-p entry) (tool-plist entry))
+                        when tool collect tool)
+                  (result-instructions object)))))))

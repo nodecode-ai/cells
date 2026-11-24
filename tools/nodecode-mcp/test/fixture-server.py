@@ -20,6 +20,7 @@ Lisp client's contract needs to see:
          state per request held; sign_out forgets it again)
   more tools: sign_out (listed with --sign-in), chatty (listed with --chatty:
          prints an authorization address on stderr, answers 0.3 s later)
+  --instructions TEXT: initialize answers TEXT as the server's instructions
 """
 import json
 import sys
@@ -33,6 +34,7 @@ ARGS = sys.argv[1:]
 SLOW_INIT = "--slow-init" in ARGS
 PAGES = "--pages" in ARGS
 MANY = int(ARGS[ARGS.index("--many") + 1]) if "--many" in ARGS else 0
+INSTRUCTIONS = ARGS[ARGS.index("--instructions") + 1] if "--instructions" in ARGS else None
 if "--stderr-noise" in ARGS:
     sys.stderr.write("fixture: hello from stderr\n")
     sys.stderr.flush()
@@ -241,9 +243,12 @@ def handle(req):
     if method == "initialize":
         if SLOW_INIT:
             time.sleep(5)
-        reply(req, {"protocolVersion": (req.get("params") or {}).get("protocolVersion", "2025-06-18"),
-                    "capabilities": {"tools": {"listChanged": True}},
-                    "serverInfo": {"name": "fixture", "version": "0.0.0"}})
+        result = {"protocolVersion": (req.get("params") or {}).get("protocolVersion", "2025-06-18"),
+                  "capabilities": {"tools": {"listChanged": True}},
+                  "serverInfo": {"name": "fixture", "version": "0.0.0"}}
+        if INSTRUCTIONS is not None:
+            result["instructions"] = INSTRUCTIONS
+        reply(req, result)
     elif method == "tools/list":
         tools = catalog()
         cursor = (req.get("params") or {}).get("cursor")

@@ -43,6 +43,7 @@
   (error-text nil)
   client
   (tools '() :type list)                ; tool plists (:name :description :schema)
+  (instructions nil)                    ; what initialize said about using it, kept with the tools
   (symbols '() :type list)              ; generated function symbols
   (call-lock (bt2:make-lock :name "mcp-call"))
   (state-lock (bt2:make-lock :name "mcp-state"))
@@ -93,6 +94,7 @@ fails, saying the sign-in still waits.")
             :log-path (when (eq spec.transport :stdio) (namestring (stderr-log-path spec.name)))
             :timing server.timing
             :sign-in (getf server.sign-in :url)
+            :instructions server.instructions
             :server-info (let ((client server.client)) (and client client.server-info))))))
 
 (defun make-registry-from-section (section)
@@ -195,10 +197,11 @@ to answer the handshake (a process's start-up inside it) and how long to list."
 :READY, then the primer -- a reader that sees :ready finds the functions defined."
   (bt2:with-lock-held ((server-state-lock server))
     (setf server.tools tools
+          server.instructions (let ((client server.client)) (and client client.instructions))
           server.connected-at (get-universal-time)
           server.timing (list connect-ms list-ms)
           server.sign-in nil))
-  (save-tools server.spec tools)
+  (save-tools server.spec tools server.instructions)
   (sync-tool-functions server)
   (set-state server :ready)
   (refresh-primer))
@@ -208,15 +211,17 @@ to answer the handshake (a process's start-up inside it) and how long to list."
 then :IDLE, with no process started and no connection made -- its first call
 connects it. T; NIL when SERVER has to connect to be known: no catalog kept
 for the way it is reached, `lazy': false, or a state that is not plain
-:DISCONNECTED. Call before the primer is built; it does not rebuild it."
-  (nlk:when-let (tools (and spec.lazy-p
-                            (eq server.state :disconnected)
-                            (saved-tools spec)))
-    (bt2:with-lock-held ((server-state-lock server))
-      (setf server.tools tools))
-    (sync-tool-functions server)
-    (set-state server :idle)
-    t))
+:DISCONNECTED. Its instructions come back with the catalog. Call before the
+primer is built; it does not rebuild it."
+  (multiple-value-bind (tools instructions)
+      (and spec.lazy-p (eq server.state :disconnected) (saved-tools spec))
+    (when tools
+      (bt2:with-lock-held ((server-state-lock server))
+        (setf server.tools tools
+              server.instructions instructions))
+      (sync-tool-functions server)
+      (set-state server :idle)
+      t)))
 
 ;;; --- a command that signs in on its own -----------------------------------
 ;;; mcp-remote and its kind hold every request until a browser comes back to
@@ -390,7 +395,7 @@ TOOLS LIST-MS), the listing's own milliseconds."
   (let* ((tools (list-tools client deadline))
          (list-ms (elapsed-ms start (now-seconds))))
     (bt2:with-lock-held ((server-state-lock server)) (setf server.tools tools))
-    (save-tools server.spec tools)
+    (save-tools server.spec tools server.instructions)
     (sync-tool-functions server)
     (refresh-primer)
     (values tools list-ms)))

@@ -80,6 +80,36 @@ catalog kept), stop it."
              (is (= 10 (length kept)) "and the connect keeps a whole one again")))
       (funcall stop))))
 
+(deftest mcp-cell-tool-cache-keeps-the-instructions (with-mcp-log-dir)
+  ;; An idle server's manual is the kept one: its instructions say when to call
+  ;; it at all, so they cannot wait for a first call.
+  (mcp-keep-catalog (list "probe" (mcp-fixture-entry "--instructions" "Call echo first.")))
+  (let ((stop (mcp:start-cell (mcp-config "probe" (mcp-fixture-entry "--instructions" "Call echo first.")))))
+    (unwind-protect
+         (progn
+           (is (eq :idle (mcp::server-state (mcp-server "probe"))) "the next start stands it idle")
+           (is (search (format nil "~%  probe:~%    Call echo first.") (mcp::primer-text)) "the manual has them")
+           (is (equal (format nil "probe:~%Call echo first.") (mcp:instructions "probe"))))
+      (funcall stop))))
+
+(deftest mcp-cell-tool-cache-of-an-older-version-connects (with-mcp-log-dir)
+  ;; A catalog kept before instructions were would stand the server idle without them.
+  (mcp-keep-catalog (list "probe" (mcp-fixture-entry "--instructions" "Call echo first.")))
+  (let* ((path (mcp::tool-cache-path "probe"))
+         (object (nlk:decode-json (uiop:read-file-string path))))
+    (setf (gethash "version" object) 1)
+    (remhash "instructions" object)
+    (nlk:write-file-atomically path (nlk:encode-json-object object)))
+  (let ((stop (mcp:start-cell (mcp-config "probe" (mcp-fixture-entry "--instructions" "Call echo first.")))))
+    (unwind-protect
+         (progn
+           (is (not (eq :idle (mcp::server-state (mcp-server "probe")))) "a version 1 catalog is none")
+           (is (eq :ready (mcp-wait-ready "probe")))
+           (is (search "Call echo first." (mcp::primer-text)) "the connect brings the instructions")
+           (let ((kept (nth-value 1 (mcp::saved-tools (mcp::server-spec (mcp-server "probe"))))))
+             (is (equal "Call echo first." kept) "and keeps them with the catalog")))
+      (funcall stop))))
+
 (deftest mcp-cell-tool-cache-holds-no-secret (with-mcp-log-dir)
   (let ((entry (mcp-fixture-entry)))
     (setf (gethash "env" entry) (nlk:json-object "FIXTURE_TOKEN" "s3cret-value"))
