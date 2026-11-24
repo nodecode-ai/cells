@@ -155,3 +155,15 @@ the thread it was given."
       (let ((done (await-run (first colab::*order*))))
         (is (member (colab::run-state done) '(:succeeded :failed)) "the run reached a final state")
         (is (probe-file (colab::run-log-path done)) "its log is on disk")))))
+
+(deftest colab-cell-a-printed-runtime-never-shows-its-secret ()
+  ;; A printed runtime rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never the runtime's token.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-colab::make-runtime :endpoint "endpoint-1" :accelerator "T4" :url "https://colab.example" :token secret))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the runtime shows the runtime's token")
+    (is (search "RUNTIME" (first shown)) "the printed runtime names its type")))

@@ -66,6 +66,12 @@ could not be reached. A 3xx is answered, not followed: the caller refuses it."
                     (:copier nil))
   base-url api-key timeout read-attempts (session-id nil) (initialized nil) (next-id 0))
 
+(defmethod print-object ((client client) stream)
+  ;; Never the slots: API-KEY is the wallet's key. A printed client rides
+  ;; every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (client stream :type t :identity t)
+    (format stream "~a" (client-base-url client))))
+
 (defun settings-integer (key fallback)
   "SETTING KEY as an integer >= 0, FALLBACK when it is not a number."
   (let ((value (ignore-errors (setting key))))

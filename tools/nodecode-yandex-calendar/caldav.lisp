@@ -29,6 +29,12 @@
   (allowed '() :type list)
   (calendar-list nil))
 
+(defmethod print-object ((client client) stream)
+  ;; Never the slots: PASSWORD is the account's app password. A printed client
+  ;; rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (client stream :type t :identity t)
+    (format stream "~a" (client-login client))))
+
 ;;; --- URLs and credentials ------------------------------------------------------
 
 (defun base64 (text)

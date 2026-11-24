@@ -217,3 +217,15 @@
              (nodecode-yandex-calendar::percent-decode
               (nodecode-yandex-calendar::percent-encode "/calendars/me@yandex.ru/x.ics"
                                                          :safe "@/"))) "percent escapes round-trip"))
+
+(deftest yandex-calendar-cell-a-printed-client-never-shows-its-secret ()
+  ;; A printed client rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never the app password.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-yandex-calendar::%make-client :login "me@yandex.ru" :password secret))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the client shows the app password")
+    (is (search "CLIENT" (first shown)) "the printed client names its type")))

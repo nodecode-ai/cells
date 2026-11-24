@@ -163,3 +163,15 @@ stub records through."
     (let ((said (nodecode-glasses:run-command "say hello from the shell" nil)))
       (is (search "200" said) "one query goes down the same path a device takes")
       (is (equal "hello from the shell" (second (first *submitted*))) said))))
+
+(deftest glasses-cell-a-printed-pair-never-shows-its-secret ()
+  ;; A printed pair rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never the device's token.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-glasses::make-pair :token secret))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the pair shows the device's token")
+    (is (search "PAIR" (first shown)) "the printed pair names its type")))

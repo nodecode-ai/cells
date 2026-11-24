@@ -473,6 +473,12 @@ cancelled turn unwinds from here."
   (signatures (make-hash-table :test 'equal))
   (boundary-length nil))
 
+(defmethod print-object ((session session) stream)
+  ;; Never the slots: TOKEN is the workflow's GitLab credential. A printed
+  ;; session rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (session stream :type t :identity t)
+    (format stream "workflow ~a" (session-workflow-id session))))
+
 (defvar *sessions* (make-hash-table :test 'equal :synchronized t)
   "Session key -> SESSION: the workflows waiting on a tool, per instance,
 model and conversation.")

@@ -13,6 +13,12 @@
 (defstruct (band-server (:constructor %make-server))
   socket port token jam thread (stopping nil))
 
+(defmethod print-object ((server band-server) stream)
+  ;; Never the slots: TOKEN is what a player must present. A printed band
+  ;; server rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (server stream :type t :identity t)
+    (format stream "port ~a" (band-server-port server))))
+
 (defparameter *max-body* 8000000
   "The largest request body the service reads, as the original's ceiling.")
 
