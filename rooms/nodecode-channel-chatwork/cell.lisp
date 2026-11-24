@@ -414,6 +414,12 @@ it has read to."
   (catch-up-seconds +max-catchup-seconds+ :type integer)
   (laps 0 :type integer))
 
+(defmethod print-object ((adapter chatwork-adapter) stream)
+  ;; Never the slots: TOKEN is the account's API token, and a printed adapter
+  ;; rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (adapter stream :type t :identity t)
+    (format stream "account ~a" (chatwork-adapter-account-id adapter))))
+
 (defvar *chatwork-adapter* nil "The live lane, or NIL when it is stopped.")
 
 (defun chatwork-headers (adapter)

@@ -59,6 +59,12 @@ it for dead and opens another.")
 
 (nlk:access (adapter slack-adapter))
 
+(defmethod print-object ((adapter slack-adapter) stream)
+  ;; Never the slots: BOT-TOKEN is the app's credential, and a printed adapter
+  ;; rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (adapter stream :type t :identity t)
+    (format stream "bot ~a" (or (slack-adapter-bot-user-id adapter) "(not ready)"))))
+
 (defvar *slack-adapter* nil
   "The live Slack adapter, or NIL when the lane is stopped.")
 

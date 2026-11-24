@@ -284,3 +284,15 @@ once its socket is open; the provider answers `slack reply'."
         (is (equal '(("C1" . "#general") ("G2" . "#ops (private)") ("D1" . "DM with kim"))
                    (ncs:probe-channel-choices section)))
         (is (equal '(("U1" . "kim")) (ncs:probe-user-choices section)))))))
+
+(deftest channel-slack-a-printed-adapter-never-shows-its-secret ()
+  ;; The adapter rides conditions, backtraces and eval results: printed any
+  ;; way, it names itself and never the bot token.
+  (let* ((token "secret-that-must-never-print-0123456789")
+         (adapter (ncs::%make-slack-adapter :bot-token token))
+         (shown (list (prin1-to-string adapter)
+                      (princ-to-string adapter)
+                      (princ-to-string (make-condition 'type-error :datum adapter
+                                                       :expected-type 'nck:channel-host)))))
+    (is (notany (lambda (text) (search token text)) shown) "no printing of the adapter shows the bot token")
+    (is (search "SLACK-ADAPTER" (first shown)) "the printed adapter names its type")))

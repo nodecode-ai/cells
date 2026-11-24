@@ -194,3 +194,15 @@
                    (error (condition) (princ-to-string condition)))))
     (is (and refused
              (or (search "refuses to start open" refused) (search "allowed_groups" refused))) "no allowlist, no lane")))
+
+(deftest onebot-cell-a-printed-adapter-never-shows-its-secret ()
+  ;; The adapter rides conditions, backtraces and eval results: printed any
+  ;; way, it names itself and never the access token.
+  (let* ((token "secret-that-must-never-print-0123456789")
+         (adapter (channel-onebot::make-onebot-adapter :token token :self-id "7"))
+         (shown (list (prin1-to-string adapter)
+                      (princ-to-string adapter)
+                      (princ-to-string (make-condition 'type-error :datum adapter
+                                                       :expected-type 'nck:channel-host)))))
+    (is (notany (lambda (text) (search token text)) shown) "no printing of the adapter shows the access token")
+    (is (search "ONEBOT-ADAPTER" (first shown)) "the printed adapter names its type")))
