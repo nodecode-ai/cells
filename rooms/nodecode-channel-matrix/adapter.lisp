@@ -42,6 +42,12 @@
 
 (nlk:access (adapter matrix-adapter))
 
+(defmethod print-object ((adapter matrix-adapter) stream)
+  ;; Never the slots: TOKEN is the account's access token, and a printed
+  ;; adapter rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (adapter stream :type t :identity t)
+    (princ (or (matrix-adapter-bot-user-id adapter) "(not ready)") stream)))
+
 (defvar *matrix-adapter* nil
   "The live Matrix adapter, or NIL when the lane is stopped.")
 

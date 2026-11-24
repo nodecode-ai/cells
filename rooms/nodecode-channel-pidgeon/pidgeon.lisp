@@ -176,6 +176,12 @@ mail addressed to the agent's own address is addressed to the agent."
   ;; reply in that thread answers.
   (inbound (make-hash-table :test #'equal)))
 
+(defmethod print-object ((adapter pidgeon-adapter) stream)
+  ;; Never the slots: KEY is the service's API key, and a printed adapter
+  ;; rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (adapter stream :type t :identity t)
+    (format stream "~d address~:p" (length (pidgeon-adapter-addresses adapter)))))
+
 (defvar *pidgeon-adapter* nil "The live lane, or NIL when it is stopped.")
 
 ;;; --- plans ----------------------------------------------------------------------

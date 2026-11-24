@@ -49,6 +49,12 @@
 
 (nlk:access (adapter discord-adapter))
 
+(defmethod print-object ((adapter discord-adapter) stream)
+  ;; Never the slots: TOKEN is the bot's credential, and a printed adapter
+  ;; rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (adapter stream :type t :identity t)
+    (format stream "bot ~a" (or (discord-adapter-bot-user-id adapter) "(not ready)"))))
+
 (defun discord-gateway-send (adapter payload)
   "Put PAYLOAD on the gateway socket from any thread."
   ;; => T when it was
