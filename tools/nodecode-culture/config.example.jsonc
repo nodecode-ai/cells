@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "culture": {
+    "enabled": true,
+    "home_country": "Germany",
+    "max_gaps": 5,
+    "max_highlights": 5,
+    "include_hofstede": true
+  }
+}

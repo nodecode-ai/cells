@@ -1,0 +1,22 @@
+nodecode-jina is a rewrite of Adolanium's Adolanium/hermes-jina:
+
+  https://github.com/Adolanium/hermes-jina
+  commit 98505951a3d26230dc30dfd47a502fcdc396f793
+  MIT, Copyright (c) 2026 Adolanium (LICENSE)
+
+The plugin was one Python module: a web backend registered through its
+harness' provider API, so the harness' own web_extract and web_search calls
+were routed to Jina Reader (POST https://r.jina.ai/) and Jina Search (GET
+https://s.jina.ai/) when the operator chose it. It added no tools of its own.
+This rewrite keeps both operations and every decision the plugin made about
+them — the anonymous Reader works without a key while search requires one, a
+key rides as a bearer token to Jina only, only http and https urls are sent,
+images are dropped from the Markdown, search answers snippets rather than
+page content and at most 20 of them, one broken url in a batch fails alone,
+and a refused call names the status and Jina's own message. The two
+operations are the cell's two tools, called through nlk:http, so no Python,
+no harness provider API and no backend switch are needed. What was left out:
+the backend selection itself (a cell is present or absent), the parallel
+reads the plugin did two or five urls at a time (this cell reads them in
+turn), and the harness' per-profile secret scope, which a Nodecode section
+replaces. Nothing of the original is vendored.

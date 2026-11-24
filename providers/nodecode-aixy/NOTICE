@@ -1,0 +1,19 @@
+nodecode-aixy is a rewrite of aixy-tech's aixy-tech/aixy-hermes-plugin:
+https://github.com/aixy-tech/aixy-hermes-plugin
+commit 38422435bb065bd6649f9d1288506b57790ab0eb
+MIT, Copyright (c) 2026 Aixy (LICENSE)
+
+The plugin's session wizard was rewritten as a provider cell. What carried
+over is the shape of the integration: one OpenAI-chat base named by the
+configuration, the project key read from AIXY_API_KEY or saved through the
+harness' own credential writer, the catalog read with one authenticated GET of
+{base}/models (a redirect refused, so the key is never forwarded, and each id
+listed once with the context length only when the gateway advertises one), the
+base validated as HTTPS or loopback HTTP with no credentials, query or
+fragment, and the X-Aixy-Session-ID header that groups a conversation in Aixy
+Activity. The plugin's prompt-and-confirm flow is not code here: Nodecode's
+/connect saves the key, /models and /setup pick the model, and /aixy reads the
+gateway's catalog on demand. The optional MCP OAuth step of setup is left out,
+because Nodecode's own mcp cell is what connects an MCP server; no wizard
+state, no config rewriting of a foreign harness, and no dependencies are
+carried over.

@@ -1,0 +1,29 @@
+nodecode-belive-aihub is a rewrite of belivetech's belivetech/hermes-belive-aihub:
+
+  https://github.com/belivetech/hermes-belive-aihub
+  commit 5d022b5a7190c673162965f4593b5a86f14e2c84
+  MIT, Copyright (c) 2026 BeLive Technology (LICENSE)
+
+Rewritten: the provider profile — the `belive-aihub` id, its OpenAI-compatible
+base and its staging base, the `BELIVE_TOKENHUB_API_KEY` workspace key, and the
+`chat_completions` wire — and the part that gives the plugin its point: the
+picker is filled from the hub's own model list, keeping only the rows whose
+catalog says text output, tool support, and a ready Chat Completions endpoint
+that takes tools, with the plugin's `fallback_models` answering when that list
+is unreachable and a successful empty answer kept empty. The plugin's 4 MiB
+catalog ceiling and 8-second deadline ride along. In Nodecode the profile is a
+row in the models.dev catalog table, two hooks and a worker that fetches the
+catalog once at start.
+
+Left out: the Hermes-side plumbing, which has no Nodecode counterpart and no
+bearing on what a user gets — `register_provider`, the `ProviderProfile`
+dataclass and its fields, the `fetch_models` and `live_context_length` hooks
+(Nodecode resolves a model's context window from the same catalog row it lists
+the model from, so no second hook restates it), and the plugin's
+`default_aux_model` and `default_vision_model` (Nodecode picks its own
+auxiliary model, and offers an image to the models whose catalog says they read
+one). The plugin's custom no-redirect opener is not restated either: Nodecode's
+one HTTP verb takes no redirect policy, and discovery is sent only to the hub's
+two official HTTPS bases. The repository's `hermes plugins install` advice,
+`VALIDATION.md`, the qualification record and the Python test suite are the
+plugin's own, and are not carried.

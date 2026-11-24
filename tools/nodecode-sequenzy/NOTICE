@@ -1,0 +1,27 @@
+nodecode-sequenzy is a rewrite of Sequenzy's Sequenzy/skills:
+
+  https://github.com/Sequenzy/skills
+  commit a28b9f1461d3483abbafdd7b404c49fe800c4d32
+  MIT, Copyright (c) 2026 Sequenzy (LICENSE)
+
+plugins/sequenzy is that repository's Hermes Agent package: plugin.json, an
+mcp.json that runs a bridge to the vendor's remote MCP server, and one skill
+(skills/sequenzy-email-marketing) that teaches an agent the platform's
+workflows. It ships no code of its own.
+
+cell.lisp is the rewrite: the same account, reached directly over Sequenzy's
+REST API with the operator's own API key instead of through an OAuth-bridged
+MCP server. It keeps what an agent acts on -- the account and its key
+permissions, subscribers (read and add), the lists, tags and segments a
+campaign targets, campaigns and their state, delivery and engagement numbers,
+and one transactional send -- as seven model tools, a /sequenzy command and
+seven read-only verbs called through eval. The API shapes it reads are the
+vendor's published API reference.
+
+Left out: the OAuth sign-in bridge (a cell runs no Node helper; the key is
+pasted into its section), the MCP server's runtime tool list in full -- the
+sequences, templates, segments, inbox, webhooks, integrations, warehouse and
+mobile operations the original documents in its skill -- and that skill's
+prose, which is guidance for an agent working a CLI the cell does not need.
+What a send answers with is unchanged: an accepted send id, with the vendor's
+idempotency key honoured.

@@ -1,0 +1,30 @@
+nodecode-anysearch is a rewrite of vollegrewar's vollegrewar/hermes-plugin-anysearch:
+
+  https://github.com/vollegrewar/hermes-plugin-anysearch
+  commit 43c1757a5d12d4d7adb4e74326c99182f4957b6f
+  MIT, Copyright (c) 2026 vollegrewar (LICENSE)
+
+The rewritten plugin is the whole repository at that commit: a Hermes web
+backend that serves the standard web_search and web_extract tools from
+AnySearch's REST API. Its wire is carried over unchanged: POST /v1/search
+with a query, max_results clamped to 1..10 and format markdown, and the
+result fields title, url and content-or-snippet; POST /v1/extract once per
+URL with the page wrapped under "data"; the MCP fallback that asks /mcp with
+one JSON-RPC tools/call for the extract tool, reads the first text block of
+result.content[] and parses that text once more as a JSON document; the
+"data:" stream framing either endpoint may answer with; the failure shapes
+(an HTTP status or an unreadable body reported, not raised, and one URL's
+error kept to its own line); and the optional key, read from ANYSEARCH_API_KEY
+in the environment, here with the plugin manifest's env var turned into the
+cell's section. LICENSE is the repository's LICENSE, unchanged.
+
+What was left out, and why: the Hermes provider interface itself
+(agent.web_search_provider.WebSearchProvider and its registration), because
+Nodecode's websearch cell keeps its engines in a fixed list a cell cannot add
+one to, so the two endpoints are two tools of the cell's own,
+anysearch_search and anysearch_extract, with /anysearch and (help :anysearch)
+beside them; the Exa -> AnySearch and Firecrawl -> AnySearch chains, because
+they rank another provider first and that order belongs to the caller rather
+than to this cell; Python's httpx, replaced by the image's own nlk:http; and
+the plugin manifest's version, badge and display-name fields, which the cell's
+section and the cells list carry instead.

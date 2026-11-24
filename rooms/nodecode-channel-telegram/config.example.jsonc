@@ -19,7 +19,7 @@
       // Whose word is standing policy in the chat.
       "owner": ["<user id>"],
       // true: a private chat from someone no list names is answered with a
-      // pairing code; /channels pair CODE lets them in. A private chat
+      // pairing code; /channels lets them in with it. A private chat
       // allowed_chats does not name is refused before it gets that far.
       "pairing": true,
       // true: in groups, answer when @mentioned or replied to.

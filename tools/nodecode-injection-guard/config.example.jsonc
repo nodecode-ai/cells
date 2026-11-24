@@ -1,0 +1,16 @@
+// The injection-guard section of ~/.nodecode/config.jsonc. Nothing here is
+// required: without it every default below stands, and the cell screens the
+// moment it is on. A present section is an enabled one; "enabled": false
+// turns the cell off without removing the folder.
+{
+  "injection-guard": {
+    "mode": "enforce",
+    "threshold": 6,
+    "protected_tools": ["web_extract", "web_search", "browser_", "read_file",
+                        "read_url", "fetch", "gmail", "email", "ocr"],
+    "file_reader_tools": ["read_file", "read_url"],
+    "exempt_families_for_reads": ["destructive"],
+    "protect_all_tools": false,
+    "max_scan_chars": 200000
+  }
+}

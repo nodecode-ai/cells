@@ -1,0 +1,10 @@
+// The apify section of ~/.nodecode/config.jsonc, as /settings writes it.
+// A token comes from console.apify.com: Settings, then Integrations.
+{
+  "apify": {
+    "api_token": "apify_api_...",   // or leave it out and export APIFY_API_TOKEN
+    "search_results": 5,             // web results one (apify:search "q") answers
+    "search_timeout": 90,            // seconds one search may take
+    "max_chars": 50000               // how much of a dataset one apify_collect carries
+  }
+}

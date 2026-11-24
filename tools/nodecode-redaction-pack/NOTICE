@@ -1,0 +1,21 @@
+nodecode-redaction-pack is a rewrite of pierrenode's pierrenode/hermes-redaction-pack:
+
+https://github.com/pierrenode/hermes-redaction-pack
+commit febd8bfe9971a3242d0ca18e8e7ca71d685d503b
+MIT, Copyright (c) 2026 pierrenode (LICENSE)
+
+The plugin handed 71 vendor-prefixed regexes to Hermes's secret redactor through
+one additive seam, register_redaction_patterns, and registered nothing else. This
+rewrite keeps the table row for row -- vendor, token name, the same pattern, and
+the source it came from -- and drops the Python: the patterns are compiled by
+cl-ppcre and applied at the seam Nodecode does have, the advice on the fold that
+projects the event log onto the provider-shaped messages of one turn. The user
+text of every message and every tool result is masked on a copy on its way out;
+the log keeps the originals. The two mask shapes are the original's -- the first
+six and last four characters in ordinary text, a non-reusable sentinel for a
+tool result -- and a matcher that throws passes the text through, as the
+original's fail-open posture did. What was left out: the plugin's own seam, which
+Nodecode does not have, so a mask reaches the provider and not literally every
+line of the log this image writes; the formats the original left out on purpose
+stay out for the same reasons, and the newest formats whose shape no published
+source pins down are not guessed at.

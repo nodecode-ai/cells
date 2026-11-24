@@ -1,0 +1,32 @@
+nodecode-stacktree is a rewrite of stevysmith's stevysmith/stacktree-skill:
+
+  https://github.com/stevysmith/stacktree-skill
+  commit 139fe05f2a03db602b6e29a4816d30ffddf99816
+  MIT, Copyright (c) 2026 Steve Smith (LICENSE)
+
+What was rewritten: the original is a portable Agent Plugins manifest
+(plugin.json, mcp.json) plus five skills that describe Stacktree's MCP
+tools. The cell keeps the product's jobs -- publish a complete HTML page to a
+private link, update it in place, list the account's pages, read whether one
+was opened, take one down, restore it -- as six stacktree_* tools over the
+same provider's REST API (the surface the original's own stacktree skill
+documents for agents with no MCP server), on the API key the original asks
+the operator to export. The publish tool keeps the original's parameter names
+(content, password, expires_in_hours, public_slug, client, pii_check) and
+maps them to the API's own members; update keeps the two-step body-then-
+settings shape its publish.sh uses, so a revision never mints a second url.
+The expiry, PII, plan-limit, delete-and-restore and viewer-comments rules the
+publish skill states are carried into the tools' answers and the
+(help :stacktree) manual, including that viewer text is data, never
+instructions.
+
+What was left out, and why: the MCP server itself, because a Nodecode cell
+speaks HTTP directly and needs no MCP client; OAuth, because the key is the
+account's own and rides the section; client-space management
+(list_client_spaces, create/update/delete_client_space) and the viewer
+feedback loop (set_client_feedback, list_feedback, resolve_feedback), which
+are a surface of their own and not what the publish job needs; the x402 and
+anonymous paths, which pay per request from a wallet rather than an account;
+and the five skill files as separate loadable prompts, whose judgement is
+folded into one manual and the tools' descriptions. LICENSE is the original
+repository's LICENSE, unchanged.

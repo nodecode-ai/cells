@@ -1,0 +1,28 @@
+nodecode-myswarm is a rewrite of tomkubik's tomkubik/hermes-myswarm:
+
+  https://github.com/tomkubik/hermes-myswarm
+  commit 5a7cf3ced917234a292359ce436c609c3285c3c4
+  MIT License, Copyright (c) 2026 MySwarm Contributors (LICENSE)
+
+What was rewritten: the whole plugin, in Common Lisp, against the Nodecode
+cell contract. The agents.md reader (its four readings: sections, tables,
+bullet lines and the plugin's own shared ASCII block), the abbreviated
+table, the box-and-arrow topology, the pure 7-bit copy-paste block, the
+deterministic PII scrubber and the markdown export, and the import that
+keeps the file it replaced and reverts to it, are the original's behaviour
+re-expressed over the same text. The original's .svg and .png renderings of
+the diagram became the block itself plus an ASCII frame, since a cell writes
+text.
+
+What was left out, and why: every model call. The original asked the
+operator's model to parse a freeform agents.md, to scrub a second time
+contextually, to audit an import, and to art-direct a generated image
+(myswarm_visualize_image). A cell that answers the same way whatever model
+is talking does the readings with regular expressions only: a freeform file
+with no heading, table or bullet becomes one monolithic agent rather than a
+model's guess at the agents inside it, the scrubber is the deterministic
+stage alone, and the import's security reading is its rule set without the
+model pass. The generated themed image is therefore not here. The
+original's Hermes-only CLI (`hermes myswarm`) became /myswarm, and its
+pre_tool_call approval hook became the verb's own refusals, since Nodecode
+asks a person for approval through its own tool gate.

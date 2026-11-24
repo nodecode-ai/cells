@@ -1,0 +1,27 @@
+// The local-mcp section of ~/.nodecode/config.jsonc, commented.
+//
+// The LMCP app is installed separately; this section says how to find it and
+// what of it an unattended run may call. Every member is optional: with the
+// app in ~/Applications or /Applications and no section at all, the cell
+// starts it and offers every tool it lists.
+{
+  "local-mcp": {
+    // Only when the app is somewhere else. A machine with no LMCP refuses at
+    // start, naming this member.
+    // "server_path": "~/Applications/LMCP.app/Contents/MacOS/local-mcp-server",
+
+    // What the server is started with; --auto is the app's own default.
+    "server_args": ["--auto"],
+
+    // Scope: the LMCP tool names this session may call. Empty include (the
+    // default) offers every tool; a name in exclude is never offered.
+    // "include": ["mail_search", "calendar_events", "daily_brief"],
+    // "exclude": ["terminal_run", "mail_send"],
+
+    // One exchange with the server, in seconds.
+    "timeout_seconds": 30,
+
+    // LMCP_DISABLE_TELEMETRY=1 for the server process. The app keeps its own.
+    "disable_telemetry": true
+  }
+}

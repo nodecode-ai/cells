@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it, and nothing is required.
+{
+  "flightlog": {
+    "dir": "~/notes/flightlog/",  // where the store lives; flightlog/ under the home unless answered
+    "keep_runs": 200,             // runs kept, newest first
+    "notice": true,               // raise a flagged run as a standing notice
+    "swallowed_errors": 1,        // tool errors in a run that still said it was fine
+    "loop_repeats": 5,            // the same tool with the same arguments this many times
+    "cost_spike_pct": 300,        // tokens this percent of the job's median
+    "effort_collapse_pct": 25,    // tool calls under this percent of the job's median
+    "min_baseline_runs": 3        // healthy runs a job needs before its baseline speaks
+  }
+}

@@ -1,0 +1,30 @@
+nodecode-cognee is a rewrite of topoteretes's topoteretes/cognee-integrations:
+
+  https://github.com/topoteretes/cognee-integrations
+  commit b132740960181e712f15c76ee80519cbd15fdb5d
+  Apache-2.0, Copyright (c) 2025 topoteretes (LICENSE)
+
+The rewritten plugin is integrations/hermes-agent of that commit. Its four
+portable tools keep their names, descriptions and parameters (cognee_recall,
+cognee_remember, cognee_forget, cognee_switch_dataset), its HTTP transport
+keeps its wire (X-Api-Key whenever a key is set; POST /api/v1/recall with
+query, top_k, datasets and the graph scope; the multipart POST
+/api/v1/remember with run_in_background; POST /api/v1/forget by dataset or
+by datasetId + dataId; GET /api/v1/datasets and its data pages), and its
+behaviour is carried over: one recall never reads the session cache, a
+document is named after its content so identical content is the server's
+no-op, forgetting is two-phase with confirm=true and the original's caps (100
+documents scanned, 8 candidates, 240-character previews), and an item with
+no readable text is a miss rather than a hit.
+
+What was left out, and why: the local-server mode, which downloads and
+installs the cognee package from PyPI into a private Python venv (a Lisp cell
+bundles no Python, so base_url names a server the user started or a remote
+one); the per-turn capture and the session-end improve() bridge, because the
+Nodecode seam that reads standing sections once per turn carries no
+per-message payload, so the model calls cognee_remember instead; the
+code-graph lane and the recap tool, which read repositories indexed by the
+original's CLI and the harness's session table; and the prompt decorations
+(the system-prompt block, the memory-hit counter and the "> Cognee:" credit
+line), which are Hermes prompt text rather than a tool. LICENSE is the
+repository's LICENSE, unchanged.

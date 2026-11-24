@@ -1,0 +1,22 @@
+nodecode-telnyx is a rewrite of team-telnyx's team-telnyx/hermes-inference-provider:
+https://github.com/team-telnyx/hermes-inference-provider
+commit f53c20e80f84b4a880a7f2b4f1ed2f8b3fa1d11c
+MIT, Copyright (c) 2026 Telnyx LLC (LICENSE)
+
+Rewritten: the provider profile itself — its name and description, its base of
+https://api.telnyx.com/v2/ai/openai, the TELNYX_API_KEY variable and key page,
+its curated fallback model list (models.json here), and its rules that no
+output cap is volunteered, because a cap beside function tools trips Telnyx
+error 10015 on hosted models — as a Nodecode catalog row and a credential hook;
+the live catalog the profile fetched itself is now the core's own listing of
+any catalog provider, which already sends the lane's Bearer key.
+
+Left out, and why: the profile's own fetch_models and its hermes-cli user
+agent (the core's listing replaces both), its task filter on the catalog
+rows (Telnyx currently lists chat models only, and the core's listing keeps
+ids, display names, windows and owners rather than task labels), and the per-1M
+price normalization (the core's listing reads no rates, so the bundled rows
+carry no cost rather than a guessed one). Its default auxiliary model has no
+per-provider home in Nodecode, so it is not carried over. The two private host
+imports the original needs — hermes_cli.__version__ and
+hermes_cli.urllib_security — have no place here.

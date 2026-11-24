@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for the icon-index cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it, and an absent one runs on the defaults below. Only icon_save
+// fetches anything: search, metadata and embed code read the bundled catalog.
+{
+  "icon-index": {
+    // Where the icon files are fetched from: the library's own public files,
+    // at a pinned commit. https only; nothing but the icon id and colour
+    // rides in the path, and no key is sent.
+    "asset_base": "https://cdn.jsdelivr.net/gh/minutechreview/3d-icons@aee7c0abd462cb20202df81a2cc171e5ab2d3f06",
+    // The 3D viewer the iframe and the markdown embed point at; it runs in
+    // the user's browser as a page of its own, never inside this image.
+    "viewer_url": "https://motion.minutechbuilds.com/icons/viewer.html",
+    // How long one file download may take, in seconds.
+    "timeout": 60
+  }
+}

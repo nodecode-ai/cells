@@ -1,0 +1,9 @@
+nodecode-safe-swap is a rewrite of itsolaph's itsolaph/hermes-safe-swap:
+
+  https://github.com/itsolaph/hermes-safe-swap
+  commit 6e66f5fe6651e25951fcd3592a7ac2e75787e7f6
+  MIT, Copyright (c) 2026 itsolaph (LICENSE)
+
+The rewriting rules, the POSIX blocks they generate, the receipt files and the restore and purge scripts were rewritten in Common Lisp from the original's Python: the shell scanner, the rm-to-quarantine move with its blast-radius count, the `git push --force` to lease rewrite, and the snapshot-first rules for `git reset --hard`, `checkout --`, `restore`, `clean`, `stash drop/clear` and `branch -D` are the same decisions written again, not a wrapper. Instead of Hermes' three hooks on its terminal tool, one hook wraps Nodecode's `sh`, which is where an eval snippet's command string crosses into a process: it rebuilds the command and annotates the answer, the way the original's pre_tool_call and transform_tool_result did together.
+
+Left out, and why: the SQLite receipts database (a receipt is a directory of plain files here, so an undo survives without it, and there is no schema to migrate); receipt status and exit code (the note carries what ran, and the quarantine carries what is recoverable); the five-second config re-read (the section is read at start -- `restart-cells` after an edit, as every cell does); the original's handling of redirections inside an `rm` (a command carrying one is left as written and reported); and the size caps on a `git clean` snapshot. The `shellscan` parser is simpler than the original's: a command it cannot read is left alone and reported, never guessed at.

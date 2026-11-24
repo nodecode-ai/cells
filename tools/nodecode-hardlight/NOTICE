@@ -1,0 +1,25 @@
+nodecode-hardlight is a rewrite of nosliwhtes's nosliwhtes/hardlight-ui:
+
+  https://github.com/nosliwhtes/hardlight-ui
+  commit 2254efe3ba6df2fa5962cd8ed352b5fad80306d4
+  MIT License, Copyright (c) 2026 Seth Wilson and Hardlight UI contributors (LICENSE)
+
+The original is a Hermes Agent plugin: five stateless tools (hardlight_reference,
+hardlight_direction, hardlight_inspect, hardlight_contrast, hardlight_navigation), one
+skill (skills/frontend-design/SKILL.md) and a /hardlight command. What is rewritten here
+is the same five tools and the same command in one Common Lisp cell, against Nodecode's
+own declarations: the reference topics, the exact style IDs, the WCAG thresholds, the
+surface defaults, the direction packet's worksheet and verification matrix, the graph
+analysis with its limits and the bounded walk are all the original's, in the original's
+words where the words are the substance. The guides and the two data files ride with the
+cell under data/, unchanged. The skill is the cell's manual, (help :hardlight), and its
+one line rides every request.
+
+What is left out, and why: the optional local-browser runner (hardlight/browser.py), which
+needs Playwright and an already installed browser to capture a page, is not carried -- it
+is a CLI-only extra, the cell runs no browser, and the answers state the same limitation;
+the JSON CLI (hardlight/cli.py) is covered by the five tools and /hardlight; the HTML
+findings come from a tag scan rather than Python's HTMLParser, so a malformed tag is
+matched by shape rather than parsed; and the walk resolves the root and skips symbolic
+links by comparing true names, where the original opens every ancestor with O_NOFOLLOW.
+Nothing of the Python package, and no Node, Python or original source, is carried.

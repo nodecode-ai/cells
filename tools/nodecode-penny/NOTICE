@@ -1,0 +1,28 @@
+nodecode-penny is a rewrite of HelperLabs's HelperLabs/penny-hermes:
+
+  https://github.com/HelperLabs/penny-hermes
+  commit 0887dae11062165a78be9fb6c7b85c810a3353b5
+  MIT, Copyright (c) 2026 Helper Labs (LICENSE)
+
+The plugin was a Hermes memory provider: it registered with the Hermes
+runtime, which put a block of Penny's core memory and recently recalled notes
+into the system prompt of every turn, fetched in a background thread from
+Penny's hosted MCP server, and offered three tools -- penny_profile,
+penny_search and penny_remember -- over that server's penny_read and
+penny_write. Its OAuth login (dynamic client registration, PKCE, a loopback
+callback, tokens kept in the Hermes profile) was a subcommand of its own.
+This rewrite keeps the three tools, their arguments, the bounds they
+enforced, the endpoint (https://app.mypenny.ai/mcp), MCP revision
+2025-03-26, the exchange the plugin's client used (initialize,
+notifications/initialized, tools/call) and the rule that a save counts only
+when Penny answers with a receipt; it speaks that endpoint through nlk:http,
+so it needs no MCP transport and no Hermes runtime. The token is read from
+the cell's own section -- inline, from a named variable, or from a named
+file, a Penny CLI's auth.json included -- because a cell has no subcommand
+of its own to run a login. Left out: the automatic prompt prefetch (a cell's
+model calls penny_profile and penny_search when it needs them), the plugin's
+OAuth login flow with its browser callback, its private-only scoping over
+spaces (the cell renders the scope Penny labels each note with), and its
+refusal to run outside a primary local conversation, which the cell's tools
+have no equivalent of; a saved note names its source as "nodecode" rather
+than "hermes". Nothing of the original is vendored.

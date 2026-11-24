@@ -1,0 +1,32 @@
+nodecode-insight is a rewrite of BrokeSkill's BrokeSkill/Hermes-Insight:
+
+  https://github.com/BrokeSkill/Hermes-Insight
+  commit a61cdf643621ae106958f99078a17d94f9ea5289
+  MIT License, Copyright (c) 2026 BrokeSkill (LICENSE)
+
+Rewritten: the stateless `hermes insight` backend's one completion — the
+term, the format template as the whole system instruction, and up to two
+search results handed over as a citation context the answer must cite by the
+exact URL — with the renderer's default template and its writing rules, the
+search that takes five rows from a SearXNG instance and keeps two, the rule
+that nothing is fetched without a searxng URL, the provider it talks to (an
+OpenAI-compatible base URL, a bearer key and a model id, one /chat/completions
+request at 1200 tokens and temperature 0.3), and the 120-second timeout. The
+Python (httpx, ThreadPoolExecutor, argparse) is Common Lisp here: nlk:http
+for both exchanges, one section declaration for the settings, one
+nlk:define-contract declaration for the tool, and the same verb behind a tool
+and a slash command.
+
+Left out: the renderer, which is Hermes Desktop's own UI — the selection
+watcher, the streaming popup, the provider and model pickers, the settings
+panel, the markdown and code-block rendering, and the per-result thumbnail
+fetched from each image host (SSRF-guarded, 400 KB) and inlined as a data URI,
+which is where the backend's base64 lives. Left out with it: the image
+candidate filter that drops search listings, the provider inventory and
+model qualification the backend read out of Hermes's own config and picker
+context, the fallback to Hermes's web-search tool (a cell names its SearXNG
+instance explicitly instead), and the follow-up round that extracted a URL
+when the model answered with a tool call. Translations: the term limit of 200
+characters is gone (a term is whatever the caller passes), and `{term}` in the
+template is now replaced by the term, where the backend always left the
+placeholder standing.

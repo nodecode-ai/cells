@@ -1,0 +1,22 @@
+nodecode-channel-max is a rewrite of Realmagnum's Realmagnum/hermes-max-integration:
+
+  https://github.com/Realmagnum/hermes-max-integration
+  commit 50c7a9a7c16b6207a079b7b883718dd863e9e951
+  MIT, Copyright (c) 2026 Realmagnum / Hermes Agent community (LICENSE)
+
+Rewritten: the MAX bot API calls the adapter makes — the long-poll read of
+/updates with its marker, the message plans (POST /messages, PUT and DELETE by
+message id, the typing action), the JSON shapes a message update and a sent
+message are read as, the /me check a probe makes, and the pieces of a
+message that name who said it and where — in Common Lisp over Nodecode's
+channel kit, which supplies the session, admission and delivery machinery the
+original plugin had of its own.
+
+Left out, and why: the response by webhook (a public endpoint the operator
+must expose; long polling gives the same messages without one), file, voice and
+picture sending with MAX's two-step upload, voice-message transcription, the
+table-to-image renderer with its optional Playwright and Chromium download,
+inline keyboards and callback buttons, the bundled Russian Trusted Root CA
+(Nodecode's TLS trust is the system's), and the desktop sidebar. Each is a
+feature of the original's runtime rather than of the conversation, and the
+first two are where a rewrite would start if operators ask for them.

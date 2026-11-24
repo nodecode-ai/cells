@@ -1,0 +1,27 @@
+nodecode-deferred-questions is a rewrite of web3blind's
+web3blind/hermes-deferred-questions:
+
+  https://github.com/web3blind/hermes-deferred-questions
+  commit eb54ec9efc79539251603d4777cd084fb9d8587e
+  MIT, Copyright (c) 2026 Denis Skripnik (web3blind) (LICENSE)
+
+What was rewritten. The whole plugin, as one Nodecode cell: the durable
+question ledger, the four actions of its `deferred_questions` tool
+(request, get, list, cancel) and the CLI's own verbs, the option-number
+answers, the idempotency key that makes one question of two writes, the
+absolute expiry, and the answer that reaches the agent in a later turn
+rather than blocking the one that asked. The ledger is one JSON file
+under the home instead of a SQLite database, and it holds questions and
+answers unencrypted, as the original's does.
+
+What was left out, and why. The gateway transport layer: the original
+posted through the host's Telegram, Discord, Slack, VK, LINE, WhatsApp,
+Feishu and other adapters, with per-platform buttons, route-and-recipient
+answer binding, callback decoders and edit receipts. A Nodecode cell has
+no such gateway, so a question reaches the operator as a standing notice
+and as `/dq`, and the answer is bound to the question's id and to the
+session that asked rather than to a chat route. The Unix-socket wake
+notice and the event-driven worker went with it: nothing here runs in the
+background, the answer is read at the next model request. The header-repair
+and quarantine machinery that guarded the SQLite file likewise went: a JSON
+file written atomically needs neither.

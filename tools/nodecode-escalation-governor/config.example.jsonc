@@ -1,0 +1,18 @@
+// The escalation-governor cell's section of ~/.nodecode/config.jsonc.
+// Every member has a default: an absent section is a running cell.
+{
+  "escalation-governor": {
+    // Tool errors in a row that trip the session. 0 never trips on them.
+    "consecutive_errors": 3,
+    // Provider errors since the last successful tool result. 0 turns it off.
+    "api_errors": 3,
+    // The same call, same arguments, repeated. 0 turns it off.
+    "repeat_calls": 3,
+    // Model rounds since the last successful tool result. 0 turns it off.
+    "no_progress_rounds": 12,
+    // How many attempted calls the packet lists, newest last.
+    "max_packet_actions": 12,
+    // Tell the operator, in a notice, when a session trips.
+    "notify": true
+  }
+}

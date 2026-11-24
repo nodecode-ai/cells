@@ -120,6 +120,8 @@ THREADS is the book the plans and the lap share."
    :plan-reaction #'reaction-plans
    :plan-respond #'respond-plan
    :plan-control-ack #'ack-plan
+   ;; A row that asks for its text asks in a modal, opened by the press.
+   :plan-ask #'ask-modal-plan
    :plan-file (lambda (target pathname &rest keys) (apply #'file-plan threads target pathname keys))
    :choices t
    :answer-body #'slack-answer-body
@@ -415,6 +417,14 @@ button press is relayed to the kit, which acts on it."
          (slack-handle-event adapter event (nlk:json-value payload :string "team_id"))))
       ((equal type "slash_commands")
        (nlk:when-let (candidate (slack-command-candidate payload))
+         (handle-candidate host candidate)
+         candidate))
+      ((and (equal type "interactive") (slack-ask-candidate payload))
+       ;; the modal a row that asks opened, submitted: the row's line
+       (let ((candidate (slack-ask-candidate payload)))
+         (setf (gethash "user_name" (gethash "source" candidate))
+               (or (slack-user-name adapter (source-field candidate "user_id"))
+                   (source-field candidate "user_name")))
          (handle-candidate host candidate)
          candidate))
       ((equal type "interactive")

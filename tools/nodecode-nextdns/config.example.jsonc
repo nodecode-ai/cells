@@ -1,0 +1,24 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "nextdns": {
+    "enabled": true,
+    // the environment variable holding your NextDNS API key
+    // (my.nextdns.io/account, at the bottom of the page)
+    "api_key_env": "NEXTDNS_API_KEY",
+    // or the key written here instead
+    // "api_key": "<your key>",
+    // the id in your DNS-over-HTTPS URL, dns.nextdns.io/<id>; leave it empty
+    // and nextdns_profile lists the profiles the key can see
+    "profile_id": "",
+    // what the cell calls itself at NextDNS; a default library user agent
+    // is refused with a 403
+    "user_agent": "nodecode-nextdns/0.1 (+https://nodecode.ai)",
+    // one request's ceiling in seconds
+    "timeout_seconds": 20,
+    // the most log rows one answer carries
+    "max_rows": 200
+  }
+}

@@ -1,0 +1,25 @@
+nodecode-minimax-image is a rewrite of rriggs's rriggs/hermes-plugin-minimax-image:
+https://github.com/rriggs/hermes-plugin-minimax-image
+commit 5a07a0f67d74a67ac426d7b901f8bfc60f28951c
+
+MIT, Copyright (c) 2026 Colorado Rob (LICENSE)
+
+What was rewritten: the plugin's one backend (__init__.py) became a Nodecode cell
+in Common Lisp. Kept from it: the two models and their upgrade rule (image-01
+for a prompt, image-01-live when a source image is named), the three aspect
+ratios in MiniMax's W:H form, the config-keyed API base and environment
+variable name, the 1500-character prompt limit, the local-path-to-data-URI
+inlining with its 10 MB cap, the POST to <api>/v1/image_generation with
+response_format "url" and subject_reference entries of type "character", the
+answer read from data.image_urls, and the base_resp status_code/status_msg
+error shape. MiniMax's links expire within a day, so the picture is downloaded
+and written under the cell's output_dir at once, as the plugin cached it under
+its own home.
+
+What was left out, and why: the plugin.yaml manifest, the Hermes provider
+registration and its ImageGenProvider class, and the per-request env-var lookup
+on every call, none of which exist outside that runtime - here the cell declares
+one section, one tool (minimax_image) and one command (/minimax-image), and
+reads the key once at start. The plugin's mimetypes-based guessing of a source
+image's type is replaced by reading the first bytes, so only bytes that really
+are an image are sent. The `n` count stays at the original's 1.

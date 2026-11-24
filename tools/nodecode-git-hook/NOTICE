@@ -1,0 +1,40 @@
+nodecode-git-hook is a rewrite of aean0x's aean0x/hermes-git-hook:
+
+  https://github.com/aean0x/hermes-git-hook
+  commit a7303c89b429704a31e2df4212ec4f08ee76692a
+  MIT License, Copyright (c) 2026 aean0x (LICENSE)
+
+Rewritten: the four callbacks as two hook points. Hermes Agent calls
+pre_tool_call, post_tool_call, post_llm_call and on_session_end; Nodecode has
+one point around a tool call (:TOOL, wrapping the call, so the before and the
+after are the two sides of one function) and one before a model request
+(:ROUND), which is where a turn's end lands and the queue is flushed. The
+contract is kept whole: the allowlist of roots, the dirty-gated
+ff-only pull once per worktree per session, the value-carrying dirty set (a
+path's status, size and write date, so an edit to a file that was already
+dirty is still a delta, and dirt nobody touched is left alone), staging only
+the turn's own paths with literal pathspecs, the secret and scratch-name
+filters, `-c core.fsmonitor=` and no terminal prompts on every run, a commit
+with `user.useConfigOnly`, push to the branch's own upstream, the policy
+refusal that drops the hook's own commit with `reset --soft` and closes the
+branch for the session, and fail-open at every step so a hook can never fail
+the tool call it wraps. Git runs through the kernel's bounded subprocess seam
+instead of `subprocess.run`, so no polling loop was needed. The notes the
+original returned from its hooks (which Hermes discarded) go to the board as
+one standing notice, where the operator sees them and the model reads them in
+the next request.
+
+Left out: the environment-variable knobs (GIT_HOOK_ROOTS, GIT_HOOK_COMMIT,
+GIT_HOOK_PUSH, GIT_HOOK_COMMIT_MSG, GIT_HOOK_COMMIT_PATH, the timeout and
+budget variables, PROJECTS_ROOT, HERMES_HOME) -- the `git-hook` section
+carries them as typed settings, and `/git-hook` moves the two switches at
+run time. The `fcntl` lock file inside the worktree's git directory is gone:
+the cell serializes its own state with one in-image lock and lets git's own
+index lock do the rest, so nothing of its own is written into a repository.
+The stale-path rescue (`git ls-files` for paths a turn created and deleted) is
+kept, as is the per-worktree upstream check. Left out too: the `mtime_ns`
+precision of the signature (file-write-date is second-granular, as Nodecode's
+own staleness memos are), the "unpushed retry" bookkeeping of a commit that
+failed on a *transient* push error is kept in memory only, and /tmp and
+/var/tmp are no longer excluded from the sync (a session's own scratch
+worktree often lives there), while /nix, /proc, /sys, /dev and /run still are.

@@ -1,0 +1,35 @@
+nodecode-zatca is a rewrite of qeemah-cloud's qeemah-cloud/hermes-plugin-zatca:
+
+  https://github.com/qeemah-cloud/hermes-plugin-zatca
+  commit fc8696db3579360ed226e52db6fd8b6d7e9f0515
+  MIT License, Copyright (c) 2026 Qeemah Cloud (قيمة) (LICENSE)
+
+What was rewritten: the plugin's two tool handlers (__init__.py:
+_handle_vat_calculate and _handle_zatca_validate) and the two JSON schemas
+they registered are rewritten in Common Lisp. ksa_vat_calculate and
+zatca_validate_invoice keep their names, their members and their meaning: a
+15% standard-rate split into taxable amount, VAT and total in SAR, from either
+end; and the field rules the original named - the version 4 UUID (BR-KSA-03),
+the 15-digit seller VAT number starting and ending with 3 (BR-KSA-06), the
+positive invoice counter value (BR-KSA-14), the VAT at the rate of the taxable
+amount and the total as the sum (BR-KSA-52, BR-KSA-53) - with the same 0.05
+SAR tolerance on the last two. What the handlers answered as a JSON object the
+tools here answer as text, which is what a tool result is: the same figures,
+phrased for the model to repeat.
+
+What was left out, and why: nothing of the original's behaviour is missing.
+The one thing it did not do is the two rules its own schema advertised and its
+handler never ran - the issue date (BR-KSA-05) and the issue time in AST
+(BR-KSA-25) - so the rewrite runs them, and only when the call carries them.
+
+What the rewrite adds: the zatca config section (seller_vat, so a call need
+not repeat the seller's number; vat_rate_percent, the original's fixed 15,
+for the 5% invoices dated before July 2020; tolerance_halalas, the original's
+fixed 0.05 SAR), /zatca for the operator, (help :zatca), and answer text that
+names each failed rule by the code ZATCA gives it.
+
+Two small differences of arithmetic, both deliberate: amounts are carried as
+whole halalas and a half halala rounds up, where the original rounded a
+Python float half to even; and the check count is the number of rules that
+ran, where the original answered 4 minus the number of errors, which goes
+negative once a fifth rule fails.

@@ -1,0 +1,40 @@
+nodecode-voicestudio is a rewrite of aska-digital's aska-digital/protean-voice-studio:
+
+  https://github.com/aska-digital/protean-voice-studio
+  commit efe5c1910ee22de7e911a9c8a8625027781f2729
+  MIT, Copyright (c) 2026 aska-digital (LICENSE)
+
+Rewritten: the whole client, in Common Lisp over the cell's HTTP seam, with
+the plugin's own routes and form fields -- /generate for a short take (text,
+profile_id, speed, seed; the x-seed header and the server's own audio_path
+answer both honoured), /setup/status and /profiles, /gallery/voices,
+/archetypes and /personalities for the three kinds of voice, the design path
+(/design/describe into /profiles with kind=design and vd_states) and the
+clone path (/profiles with kind=clone and the recording as a file part),
+/audiobook/plan, /audiobook, the server-sent progress stream it answers
+(started, per-chapter, done) with the artifact fetched from /audio/<output>,
+the job reads behind /jobs/<id> and the job lists, /audiobook/resume/<id>,
+/batch/enqueue and /batch/jobs/<id>, and /dub/translate as the other door
+for a dub. Also kept: the plugin's six tool names and its six --flag
+commands (/vs-speak, /vs-design, /vs-voices, /vs-longform, /vs-dub,
+/vs-status), its ceilings (6000 characters for a take, 2000 for a voice
+description), the 0.25-to-4.0 pace, the wav/m4a sample and mp4/mov/mkv/
+webm/m4v video allowlists, the chapter count and the refusal of markup a
+voice cannot perform, the per-language dub result with the languages that
+failed named, and the recovery lines -- the server unreachable, an unknown
+voice, a duplicate name, an interrupted render to resume. Its reading of the
+markdown script (# headings split chapters, ## stays body text) is the same.
+
+Left out: Hermes' tool registry and the JSON envelopes the plugin answered
+with -- the answers here are readable text naming the file, which is what a
+chat surface shows; the plugin's bookkeeping under its own data directory,
+since the audio is written under this cell's section folder instead; and the
+module-level settings the plugin read once at register() time, which are this
+cell's section.
+
+Two hardening changes: an explicit out_path is a bare file name inside the
+section's folder (the plugin allowed any path its own check accepted), and
+the clone sample passes the same allowlist and location gate as every other
+input file (the plugin checked only its extension). The VoiceStudio
+application itself is not bundled: it is a separate desktop app, and this
+cell only speaks to the server it runs.

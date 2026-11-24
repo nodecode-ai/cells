@@ -1,0 +1,32 @@
+{
+  // OneBot 11: a QQ bot through your own self-hosted bridge.
+  "channels": {
+    "onebot": {
+      // The bridge's HTTP API root (NapCat, Lagrange, LLOneBot, go-cqhttp).
+      "base_url": "http://127.0.0.1:3000",
+
+      // The bridge's access token, if it has one; leave both unset otherwise.
+      "token_env": "ONEBOT_ACCESS_TOKEN",
+      // "token_file": "~/.nodecode/secrets/onebot-token",
+
+      // QQ group numbers the bot serves and answers in.
+      "allowed_groups": ["123456789"],
+
+      // QQ numbers allowed to drive the bot in a private chat.
+      "allowed_users": ["987654321"],
+      "owner": ["987654321"],
+
+      // Groups where every message is answered, an at or not.
+      "free_response_groups": [],
+
+      // In a group, answer only an at of the bot or a reply to one of its own.
+      "require_mention": true,
+
+      // Seconds between history reads.
+      "poll_seconds": 5,
+
+      // Asks said while the bot was away are answered when at most this old.
+      "catch_up_minutes": 1440
+    }
+  }
+}

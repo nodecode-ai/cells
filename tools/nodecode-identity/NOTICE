@@ -1,0 +1,30 @@
+nodecode-identity is a rewrite of indigokarasu's hermes-identity-plugin:
+
+  https://github.com/indigokarasu/hermes-identity-plugin
+  commit 8f51e0ed7c69992b8494389fb93ec0e02bcca734
+  MIT License, Copyright (c) 2026 Indigo Karasu (LICENSE)
+
+What was rewritten: the four identity files and their per-line usage
+tracking, the view, edit, dashboard, list-profiles, switch-profile and
+reset-usage verbs, the three slash words and the two hooks that stamp a line
+the model repeats, as one Common Lisp cell over Nodecode's own seams. The
+matching heuristic is the original's: a line's first sixty characters, or
+the value after its colon when that is at least twelve characters and not a
+stop word. The stored form is the original's too — one key a line
+("SOUL.md:3"), one timestamp — in a JSON file beside the identity files
+instead of inside the plugin folder.
+
+What was left out, and why: the dashboard's web front end
+(dashboard/dist/index.js and its FastAPI routes) is Hermes' own web UI, so
+the dashboard is text the model and the shell read; the ANSI colours are the
+words green, yellow, orange and red; the CLI subcommands printed what the
+tools already answer; and the `profile` argument on view, edit and dashboard
+went, because a Nodecode profile is a home of its own, so the identity
+folder is already the running profile's. Profiles themselves are Nodecode's:
+switch writes the sticky profile a later launch boots into, as Hermes'
+active_profile did. AGENT.md still falls back to HERMES.md, and MEMORY.md and
+USER.md still read from memories/ when that is where they are.
+
+One thing was added, because the stamps need it: the four files ride every
+turn's standing context (`prompt`, on by default), as the whole identity
+file did in the original's system prompt.

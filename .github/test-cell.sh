@@ -30,10 +30,18 @@ src=${NODECODE_SRC:-$HOME/nodecode/nodecode}
 rev=$(git -C "$src" rev-parse --short=12 "$(cat "$here/.github/nodecode-rev")")
 root=$HOME/.cache/nodecode-cells
 tree=$root/tree-$rev
+# A Nodecode from before its system moved to the root keeps nodecode.asd in
+# src/; a newer one keeps it at the root, its test system reading test/ and
+# tools/ beside src/.
+if git -C "$src" cat-file -e "$rev:nodecode.asd" 2>/dev/null; then
+  paths="nodecode.asd src resources test tools" system=$tree
+else
+  paths="src resources" system=$tree/src
+fi
 if [ ! -d "$tree/src" ]; then
   mkdir -p "$root"
   tmp=$(mktemp -d "$root/tree-$rev.XXXX")
-  git -C "$src" archive "$rev" src resources | tar -x -C "$tmp"
+  git -C "$src" archive "$rev" $paths | tar -x -C "$tmp"
   mv -T "$tmp" "$tree" 2>/dev/null || rm -rf "$tmp"
 fi
 home=$root/homes/$slot
@@ -43,7 +51,7 @@ ln -sfn "$HOME/.sbclrc" "$home/.sbclrc"
 ln -sfn "$HOME/.cache/common-lisp" "$home/.cache/common-lisp"
 registry=""
 for folder in "$here"/*/nodecode-*/ "$cell/"; do registry="$registry #p\"$folder\""; done
-cd "$tree/src"
+cd "$system"
 exec unshare -rn sh -c 'ip link set lo up && exec "$@"' sh \
   env -i PATH="$PATH" TERM="${TERM:-dumb}" LANG=C.UTF-8 \
   HOME="$home" XDG_CACHE_HOME="$home/.cache" NODECODE_HOME="$home/.nodecode" \

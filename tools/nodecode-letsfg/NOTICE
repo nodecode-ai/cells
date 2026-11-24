@@ -1,0 +1,23 @@
+nodecode-letsfg is a rewrite of LetsFG's LetsFG/LetsFG:
+
+  https://github.com/LetsFG/LetsFG
+  commit 7c0e7b5122725baacd446585306770fce4fc7d52 (integrations/hermes)
+  MIT License, Copyright (c) 2026 LetsFG (MENTAL BALANCE sp. z o.o.) (LICENSE)
+
+Rewritten: the plugin's one integration — the hosted LetsFG MCP server at
+https://letsfg.co/mcp (Streamable HTTP, JSON-RPC) — as an MCP client of the
+cell's own over Nodecode's HTTP, with the plugin's tools registered as the
+five model-facing tools the model calls (search flights, search hotels, the
+offers a search collected, the write path, and any other LetsFG tool by
+name), and its travel-booking skill, including the rules that keep a booking
+safe, as the cell's manual topic, /letsfg and its primer. The repository's
+LICENSE is unchanged beside this file.
+
+Left out: the Hermes manifest, the `hermes mcp add` sign-in command and the
+portable-MCP conflict it documents (this cell is the client, so there is no
+connector to declare), and the three tools the plugin says exist only for
+LetsFG's in-app cards in other clients (booking_setup,
+get_flight_search_status, get_hotel_search_status) — the two result tools
+answer the same information here. The OAuth client registration and the
+browser round trip are Hermes's, not the plugin's: the cell reads the bearer
+token a LetsFG sign-in produced from token_env or token_file.

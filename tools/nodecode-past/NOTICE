@@ -1,0 +1,36 @@
+nodecode-past is a rewrite of pastdotdev's pastdotdev/hermes-plugin:
+
+  https://github.com/pastdotdev/hermes-plugin
+  commit 22f7abdd1e73bebda6f876cd1f07fe383c25ada4
+  MIT, Copyright (c) 2026 past (LICENSE)
+
+The rewritten plugin is past_hermes of that commit. Its wire is carried over
+unchanged: POST /api/v1/recall with a bearer project key, the query, the
+identity, the limit and level "low", answering results with an occurredAt and
+a content per memory; POST /api/v1/ingest/batch with items whose id is the
+session's first sitting and then the session and the sitting's number, so a
+resent sitting replaces its own. Its behaviour is carried over too: the
+recall block with its marker, its count line and one dated line per memory on
+a character budget; the same conservative redaction of keys and tokens on the
+query and on the content; sessions cut into sittings where they went quiet,
+at least five minutes, thirty unless the section says otherwise; content
+hashes gating the send so an unchanged sitting is never sent twice; and the
+cleaning of what Hermes or past injected from what the person said.
+
+What changed: the harness seams are Nodecode's. The section of config.jsonc
+is the config, recall rides the :round point and is written into the turn
+with NLK:RECORD-TURN-CONTEXT-PROMPT instead of a provider's prefetch, a
+finished turn arrives on the :frame point instead of through sync_turn, the
+flush is a worker instead of a session-end callback, past_recall is a
+registered tool and /past is a slash command instead of a provider's CLI.
+
+What was left out, and why: the on-disk session buffer under ~/.past/hermes
+and its crash recovery, because a cell keeps the running session in memory
+and sends a sitting when it closes or when the cell stops; the shared
+~/.past/config.json and the hermes pastdotdev setup / status commands, since
+the section, /settings and /past are the same surface here and PAST_API_KEY
+is still read; and the Hermes messaging-gateway opt-out, because a cell
+cannot tell a shared room from a private session, so a home that serves
+several people turns recall and ingest off or keeps a project per person.
+
+LICENSE is past's repository LICENSE, unchanged.

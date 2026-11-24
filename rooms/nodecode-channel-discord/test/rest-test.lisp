@@ -603,19 +603,18 @@ Manage Threads, the bot's own managed role holding nothing."
 (deftest channel-discord-commands-plan ()
   ;; The catalog as the application's global commands: one bulk overwrite,
   ;; names Discord would refuse left out rather than failing the sync,
-  ;; descriptions cut to 100 and never empty, one optional `args' option
-  ;; for a command with a usage.
+  ;; descriptions cut to 100 and never empty. A command is its name: none
+  ;; takes an option, whatever an entry still carries beside it.
   (let* ((plan (ncd:commands-plan
                 "app1"
-                (list (list :name "help" :description "Show commands" :usage "")
+                (list (list :name "help" :description "Show commands")
                       (list :name "models"
                             :description (make-string 150 :initial-element #\d)
                             :usage "/models [provider] [model]"
                             :autocomplete t)
-                      (list :name "evict" :description "Drop"
-                            :usage "/evict [percent]")
-                      (list :name "Bad Name" :description "x" :usage "")
-                      (list :name "bare" :description "" :usage ""))
+                      (list :name "evict" :description "Drop")
+                      (list :name "Bad Name" :description "x")
+                      (list :name "bare" :description ""))
                 :timeout-seconds 9))
          (body (nck:request-plan-body plan)))
     (is-plan plan :method "PUT" :path "/applications/app1/commands" :retry t
@@ -623,18 +622,46 @@ Manage Threads, the bot's own managed role holding nothing."
     (is (= 4 (length body)) "a name Discord would refuse is left out")
     (let ((help (aref body 0)))
       (is-shape help ("name" "help") ("type" = 1 "a chat input command")
-        ("description" "Show commands") ("options" null "a bare command takes no option")))
-    (let ((models (aref body 1)))
-      (is (= 100 (length (gethash "description" models))))
-      (is-present (option (aref (gethash "options" models) 0))
-        "a command with a usage takes one string option"
-        (is-shape option ("type" = 3) ("name" "args") ("description" "/models [provider] [model]")
-          ("required" null "and optional") ("autocomplete" eq t))))
-    (is (null (gethash "autocomplete" (aref (gethash "options" (wire-row "evict" body "name")) 0))))
+        ("description" "Show commands")))
+    (is (= 100 (length (gethash "description" (aref body 1)))))
+    (is (notany (lambda (command) (gethash "options" command)) body) "no command takes an option")
     (is (equal "bare" (gethash "description" (wire-row "bare" body "name"))))
     (is (ncd:discord-command-name-p "memory-index"))
     (is (not (ncd:discord-command-name-p "Memory")))
     (is (not (ncd:discord-command-name-p "")))))
+
+(deftest channel-discord-a-row-that-asks-opens-a-modal ()
+  ;; A press on a row that asks for its text is answered with a modal: type
+  ;; 9 on the press's own callback, not retried, its custom_id the press's
+  ;; data, named after the ask's label, one required line of text under that
+  ;; label with the ask's placeholder -- each cut to Discord's caps. A
+  ;; candidate that is no press opens none.
+  (let* ((ask (nlk:json-object "label" "Name" "line" "/rename" "placeholder" "The new name"))
+         (data (nck:press-token "/rename" :ask ask))
+         (press (lambda (&optional pressed)
+                  (nlk:json-object "text" "/rename"
+                                   "source" (nlk:json-object
+                                             "platform" "discord" "channel_id" "c1"
+                                             "press_data" data "interaction_id" "i9"
+                                             "interaction_token" "tok" :when pressed "pressed" t)))))
+    (multiple-value-bind (plan form-p) (ncd:interaction-modal-plan (funcall press t) ask :timeout-seconds 3)
+      (is (eq t form-p) "the platform's own form")
+      (is-plan plan :method "POST" :path "/interactions/i9/tok/callback" :retry nil
+                    :label "interaction_modal" :timeout 3 "type" 9
+                    (:string "data" "custom_id") data (:string "data" "title") "Name")
+      (let ((input (aref (nlk:json-value (aref (nlk:json-value (nck:request-plan-body plan) :array "data" "components") 0)
+                                         :array "components")
+                         0)))
+        (is-shape input ("type" = 4) ("custom_id" "text") ("label" "Name") ("style" = 1 "one line")
+          ("required" eq t) ("placeholder" "The new name"))))
+    (let* ((long (nlk:json-object "label" (make-string 60 :initial-element #\n) "line" "/rename"
+                                  "placeholder" (make-string 120 :initial-element #\p)))
+           (body (nck:request-plan-body (ncd:interaction-modal-plan (funcall press t) long)))
+           (input (aref (nlk:json-value (aref (nlk:json-value body :array "data" "components") 0) :array "components") 0)))
+      (is (= 45 (length (nlk:json-value body :string "data" "title"))))
+      (is (= 45 (length (nlk:json-value input :string "label"))))
+      (is (= 100 (length (nlk:json-value input :string "placeholder")))))
+    (is (null (ncd:interaction-modal-plan (funcall press) ask)) "a command typed is no press")))
 
 (deftest channel-discord-interaction-response-plan ()
   ;; An interaction is answered in two steps: held open first — a deferred
@@ -923,6 +950,80 @@ its section included."
       (delete-file shot)))
   (is (null (ncd:message-media (nlk:json-object "id" "s1")))))
 
+(deftest channel-discord-a-card-edit-refused-its-upload-still-lands-its-words ()
+  ;; Past a server's edit upload cap Discord refuses an edit that uploads a
+  ;; file -- 429, code 400009 -- and takes the same edit keeping its pictures
+  ;; by id. A card that gained a picture asked with it on every tick and its
+  ;; words froze with it (Foresight Labs Private, 2026-11-09): the refused edit
+  ;; goes again without the new picture, the channel's next edits upload none
+  ;; for the pause Discord named, and the first edit after it carries it.
+  (let ((new (temp-path "card-held" "png"))
+        (refused (lambda (&optional (code 400009))
+                   (nck:make-scripted-response 429 (nlk:json-object "code" code "retry_after" 30
+                                                                    "message" "limit")))))
+    (alexandria:write-byte-vector-into-file (coerce #(137 80 78 71) '(vector (unsigned-byte 8))) new
+                                            :if-exists :supersede)
+    (unwind-protect
+         (labels ((card (headline)
+                    (list :state :working :elapsed "3s" :headline headline
+                          :images (list (list "step-1.png" "/gone/old.png" "old.png")
+                                        (list "step-2.png" (namestring new) "shot.png"))))
+                  (plan (channel headline &rest keys)
+                    (apply #'ncd:edit-message-plan (list :channel-id channel) "s1" "w"
+                           :card (card headline) :media '(("step-1.png" . "900")) keys))
+                  (payload (plan &aux (body (nck:request-plan-body plan)))
+                    (if (hash-table-p body)
+                        body
+                        (nlk:decode-json (cdr (assoc "payload_json" body :test #'equal)))))
+                  (uploads-p (plan) (not (hash-table-p (nck:request-plan-body plan))))
+                  (shown (plan)
+                    (let ((gallery (find 12 (card-parts (payload plan))
+                                         :key (lambda (part) (gethash "type" part)))))
+                      (map 'list (lambda (item) (nlk:json-value item :string "media" "url"))
+                           (gethash "items" gallery))))
+                  (run (responses plan &aux (executor (nck:make-recording-executor
+                                                        :responses responses
+                                                        :retry-after-fn #'ncd::discord-retry-after-ms)))
+                    (values (nck:execute-plan (ncd::hold-refused-uploads executor) plan)
+                            (nck:recording-executor-plans executor))))
+           ;; Refused for its upload: the same edit goes again, the new picture
+           ;; left out, the kept one still shown by its id.
+           (multiple-value-bind (result plans) (run (list (funcall refused)) (plan "held-1" "Looking"))
+             (is (nck:execution-ok-p result) "the card's edit lands")
+             (is (= 2 (length plans)))
+             (is (uploads-p (first plans)) "the first ask carries the new picture")
+             (is (not (uploads-p (second plans))) "the second uploads nothing")
+             (is (equal '("attachment://step-1.png") (shown (second plans))))
+             (is (equal '("900") (map 'list (lambda (kept) (gethash "id" kept))
+                                      (gethash "attachments" (payload (second plans))))))
+             (is (search "### Looking" (gethash "content" (first (card-parts (payload (second plans))))))))
+           ;; Held: the channel's next edit leaves the new picture out from the
+           ;; start, another channel's still carries it.
+           (is (not (uploads-p (plan "held-1" "Still looking"))))
+           (is (uploads-p (plan "held-2" "Looking")))
+           ;; The pause over, the picture rides the next edit.
+           (setf (gethash "held-1" ncd::*edit-upload-holds*) (1- (nck:now-ms)))
+           (is (uploads-p (plan "held-1" "Looking again")))
+           ;; A settle retries: its refusals spent, it still goes without the picture.
+           (multiple-value-bind (result plans)
+               (run (list (funcall refused) (funcall refused) (funcall refused)) (plan "held-3" "Done" :retry t))
+             (is (nck:execution-ok-p result))
+             (is (= 2 (length plans)))
+             (is (not (uploads-p (second plans)))))
+           ;; Any other refusal is the answer as it was: an edit budget spent
+           ;; (30046), or an edit that uploaded nothing.
+           (multiple-value-bind (result plans) (run (list (funcall refused 30046)) (plan "held-4" "Looking"))
+             (is (not (nck:execution-ok-p result)))
+             (is (= 1 (length plans)))
+             (is (not (ncd::edit-uploads-held-p "held-4"))))
+           (multiple-value-bind (result plans) (run (list (funcall refused))
+                                                    (ncd:edit-message-plan '(:channel-id "held-5") "s1" "words"))
+             (is (not (nck:execution-ok-p result)))
+             (is (= 1 (length plans)))))
+      (dolist (channel '("held-1" "held-2" "held-3" "held-4" "held-5"))
+        (remhash channel ncd::*edit-upload-holds*))
+      (delete-file new))))
+
 (deftest channel-discord-a-card-stays-inside-discords-caps ()
   ;; One V2 message holds 40 components however nested and 4000 characters of
   ;; text: the fullest card the kit draws — four steps with their Output, a
@@ -1036,38 +1137,6 @@ its section included."
   (is (equal "<a:nc_running:9>"
              (ncd:emoji-spelling (nlk:json-object "id" "9" "name" "nc_running" "animated" t))))
   (is (equal "<:nc_done:8>" (ncd:emoji-spelling (nlk:json-object "id" "8" "name" "nc_done")))))
-
-(deftest channel-discord-autocomplete-plan ()
-  ;; The one answer an autocomplete request takes: its callback, the
-  ;; completion result, at most 25 choices cut to Discord's caps, never
-  ;; retried — the menu waits three seconds only.
-  (let* ((plan (first (ncd:interaction-autocomplete-plans
-                       '(:id "i1" :token "tok")
-                       (list (list :name "a6api/grok-4.6" :value "a6api grok-4.6")
-                             (list :name (make-string 150 :initial-element #\n)
-                                   :value (make-string 150 :initial-element #\v))))))
-         (body (nck:request-plan-body plan))
-         (choices (nlk:json-value body :array "data" "choices")))
-    (is-plan plan :method "POST" :path "/interactions/i1/tok/callback"
-                  :label "interaction_autocomplete" :retry nil)
-    (is (= 8 (gethash "type" body)) "APPLICATION_COMMAND_AUTOCOMPLETE_RESULT")
-    (is (= 2 (length choices)))
-    (is-shape (aref choices 0) ((:string "name") "a6api/grok-4.6")
-      ((:string "value") "a6api grok-4.6"))
-    (is (= 100 (length (nlk:json-value (aref choices 1) :string "name"))))
-    (is (= 100 (length (nlk:json-value (aref choices 1) :string "value")))))
-  (let* ((many (loop for index below 40
-                     collect (list :name (format nil "n~d" index)
-                                   :value (format nil "v~d" index))))
-         (plan (first (ncd:interaction-autocomplete-plans '(:id "i2" :token "tok") many)))
-         (choices (nlk:json-value (nck:request-plan-body plan)
-                                  :array "data" "choices")))
-    (is (= 25 (length choices)) "Discord's menu holds 25 choices"))
-  (let* ((plan (first (ncd:interaction-autocomplete-plans '(:id "i3" :token "tok") '())))
-         (choices (nlk:json-value (nck:request-plan-body plan)
-                                  :array "data" "choices")))
-    (is (= 0 (length choices)) "no choices is an answer: nothing to show")))
-
 
 (deftest channel-discord-failed-steps-have-a-red-cross ()
   ;; Existing application success/spinner emojis must not hide a failure.

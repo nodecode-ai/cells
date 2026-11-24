@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "pocket-watch": {
+    // Nothing here is required. With no jobs_file the reports read the jobs
+    // the Nodecode cron cell keeps in the store.
+    // "jobs_file": "jobs.json",
+    "limit": 50,
+    "report_chars": 4000,
+    // Where the health bands fall: 80 or better is healthy, under 40 critical.
+    "warn_below": 80,
+    "crit_below": 40
+  }
+}

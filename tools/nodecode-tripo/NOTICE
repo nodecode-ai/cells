@@ -1,0 +1,29 @@
+nodecode-tripo is a rewrite of Adolanium's Adolanium/hermes-tripo:
+
+  https://github.com/Adolanium/hermes-tripo
+  commit 09b26f6b3b2662a0fe86dc782283bc4cddf7a196
+  MIT, Copyright (c) 2026 Adolanium (LICENSE)
+
+The rewritten plugin is the repository root of that commit: its Python
+package (__init__.py, client.py, plans.py, tools.py, settings.py) and the
+skill it shipped. Its fourteen tools keep their names, parameters and wire
+shapes: the v3 envelope on https://openapi.tripo3d.ai/v3, the create
+endpoints (text-to-model, image-to-model, multiview-to-model, text-to-image,
+image-to-image, edit-multiview, models/texture, mesh/segment,
+mesh/complete, mesh/uv, mesh/decimate, models/convert, animations/rig-check,
+animations/rig, animations/retarget), /files uploads replaced by their
+file_token, the terminal statuses, the error codes with their hints, the
+per-call credit estimates from Tripo's published list, polling until a task
+finishes, and a download that never overwrites a name it finds.
+
+What was left out, and why: the Hermes Desktop half (dashboard/plugin_api.py,
+desktop/plugin.js -- a three.js viewer, a library pane and a status chip),
+which is a web UI the plugin host serves and this cell has no page to put
+it on; the approval hook (Hermes's pre_tool_call prompt), because Nodecode's
+cell contract has no approval seam, so each create answer states its
+estimated cost and the model says what it spends before it spends it; the
+per-chat spend counter and the local history file, which a tool call here
+has no session to feed, the task ids the answers return standing in for it; the platform hook that noted where a session is shown, whose
+only use was choosing viewer-line versus MEDIA:-line hints; the bundled
+three.js and the local-file library; and the GLB summary of a downloaded
+model. LICENSE is the original repository's LICENSE, unchanged.

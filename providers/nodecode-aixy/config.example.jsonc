@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key itself lives in auth.json (/connect) or AIXY_API_KEY.
+{
+  "aixy": {
+    "enabled": true,
+
+    // Where Aixy is served. The chat lane appends /chat/completions, the
+    // listing and /aixy append /models.
+    "base_url": "https://api.aixy-gateway.com/v1",
+
+    // The header a turn's conversation id rides, so Aixy Activity groups a
+    // conversation's requests. "" sends none.
+    "session_header": "X-Aixy-Session-ID"
+  }
+}

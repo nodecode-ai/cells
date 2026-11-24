@@ -1,0 +1,10 @@
+{
+  // ambassly: Ambassly's hosted MCP server, with a scoped key.
+  "ambassly": {
+    // the variable holding a scoped Ambassly key; a company key runs the
+    // merchant side, an affiliate key one creator's portal
+    "api_key": "AMBASSLY_API_KEY",
+    "url": "https://ambassly.com/api/mcp",
+    "timeout_seconds": 30
+  }
+}

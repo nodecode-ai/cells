@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "t3": {
+    "enabled": true,
+    "base_url": "http://127.0.0.1:3773",
+    "token_env": "T3_ORCHESTRATION_TOKEN",
+    "timeout_seconds": 20,
+    "max_threads": 20,
+    "message_limit": 20,
+    "default_runtime_mode": "approval-required"
+  }
+}

@@ -1,0 +1,33 @@
+nodecode-fish-audio is a rewrite of 100yenadmin's 100yenadmin/fish-audio-hermes:
+
+  https://github.com/100yenadmin/fish-audio-hermes
+  commit 606afb54aa1a354cc8eac0b17f3da3a105ac55a7
+  Apache License 2.0, Copyright 2026 Electric Sheep (100yenadmin) (LICENSE)
+
+Rewritten: the three tools and their whole call path -- fish_speak's text,
+voice, model, format, speed, language and multi-speaker arguments, the
+bracket emotion cues passed through to the model that reads them, the
+prosody/speed body and the model header, and the saved, never-overwritten
+audio file the answer names; fish_transcribe's upload of a local file with
+timestamps, diarization, speaker hints, audio-event tags and the SRT written
+beside the audio; fish_voices' search, this-account listing, single voice
+and clone-from-samples, including the speaker-consent gate and the private
+or unlisted visibility a clone lands in; the per-profile section for the key
+(an inline secret or the environment variable it names), the base URL, the
+speech and transcription models, the default voice, the output container and
+the folder the files go to; the refusals that cost nothing -- an empty text,
+a speed out of range, an unreadable or oversize file, a kind Fish Audio does
+not take, a missing key -- and Fish Audio's own sentence plus the fix for a
+failed status; and the /fish command, which prints the settings, searches
+the library and shows one voice.
+
+Left out: the Hermes-only surfaces -- the registered TTS and STT providers
+that make Fish speak every reply, the two hooks that append MEDIA tags and
+ask before a clone, the Desktop app and its dashboard backend, and the CLI
+setup wizard -- because a Nodecode cell contributes tools and a command, not
+a harness provider, and none of the Desktop code runs outside Hermes. Also
+left out: word-level timestamps on speech (Fish's SSE endpoint), custom
+pronunciation dictionaries, voice design and the save-a-design receipt, and
+saved voice-name aliases; each is another endpoint or another store, and the
+tools here cover the same purpose without them. The plugin's plugin.yaml
+settings schema became the cell's fish-audio config section.

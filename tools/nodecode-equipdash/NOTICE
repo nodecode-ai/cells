@@ -1,0 +1,32 @@
+nodecode-equipdash is a rewrite of equipdash's equipdash/agent:
+
+  https://github.com/equipdash/agent
+  commit 64becfb220719b1c207efeaa78d9b5f641d53fa4
+  MIT, Copyright (c) 2026 EquipDash (LICENSE)
+
+The original is an MCP server declaration (https://app.equipdash.com/mcp/v1,
+Streamable HTTP, OAuth or an API key) plus one skill that taught a model how
+to run a rental or activity shop with it. The rewrite keeps both halves in one
+cell: it speaks the same server's JSON-RPC from Common Lisp through nlk:http
+(initialize, the Mcp-Session-Id, tools/list, tools/call, and an answer that
+is either a JSON object or a one-event stream), so every tool the account's
+plan and the signed-in person's permissions offer stays reachable by name, and
+it carries the skill's guidance as (help :equipdash) -- the shop's own
+timezone, money as the tools return it, ids from this session, preview then
+the person's yes, and a plan or permission refusal passed on rather than
+retried. On top of the raw bridge it adds three tools: equipdash_tools (the
+server's own tool list, marking what is read-only), equipdash_call (one tool
+by name, where confirmed true sends the user_confirmed true -- or confirmed
+true on the two tools that spell it that way -- that the server's preview
+step asks for), and equipdash_day (get_today and get_needs_you in one call),
+and an operator's /equipdash command that reads the day.
+
+Left out: the client manifests for other harnesses (.claude-plugin/,
+.cursor-plugin/, .mcp.json), which are their install paths rather than this
+one; the repository's own icon and README, since a cell carries its own; and
+Hermes's trust: untrusted setting, which made that harness ask before every
+write-capable call -- here the gate is the cell's confirmed flag on
+equipdash_call, and the server's own readOnlyHint decides which tools need
+it. The OAuth sign-in itself is not implemented: this cell reads the token
+the shipped mcp cell keeps for the same host, or takes an API key. Everything
+the skill said about the shop's data is carried.

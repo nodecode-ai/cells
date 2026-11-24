@@ -1,0 +1,35 @@
+nodecode-xmemo is a rewrite of yonro's yonro/hermes-xmemo-plugin:
+
+  https://github.com/yonro/hermes-xmemo-plugin
+  commit 499a383778647e897d30db3e92e8c8ad4397c799
+  MIT, Copyright (c) 2026 XMemo contributors (LICENSE)
+
+The rewritten plugin is src/hermes_xmemo/xmemo of that commit. Its six core
+tools (xmemo_search, xmemo_get, xmemo_list, xmemo_recall_context,
+xmemo_remember, xmemo_update_state) keep their names, descriptions and
+parameters; its wire keeps its shapes (X-API-Key plus the agent-id headers
+against https://xmemo.dev; GET /v1/memories/search, GET
+/v1/memories/<id>/explain, POST /v1/remember, POST /v1/update_state, POST
+/v1/recall/context, POST /v1/timeline/events); and its behaviour is carried
+over: one search across every bucket and scope the account holds, the
+bilingual alias table that widens a query, the RFC 3339 filter validation
+the original does before a request leaves, the bounded context pack, the
+provenance labels on results, idempotency keys on writes, and the
+five-failure breaker its reads pause behind for two minutes. The words the
+model is given about it - the tool descriptions and the manual page - are
+the original's, condensed.
+
+What was left out, and why: the local SQLite recall cache and the durable
+outbox that retries a failed write, because a cell's writes are synchronous
+and the answer a write earns is the answer the model gets (POST
+/v1/remember carries an idempotency key, so a retry is safe); the workflow
+and destructive tools (timeline events, reminders, forget) and the feedback
+tool (mark_used), which the original keeps opt-in or internal, so only its
+six defaults are registered; the restart snapshot on session end and the
+mirroring of Hermes's own built-in memory writes, because those are seams of
+Hermes's provider interface, not of a Nodecode cell (a finished turn still
+reaches the timeline when capture_timeline is on); the agent_instance_id
+that the original persists in its own JSON file, replaced by an id generated
+at each start; and the fallback to the XMemo CLI's credential file, because
+a Nodecode cell reads its section and the environment, not another tool's
+config. LICENSE is that repository's LICENSE, unchanged.

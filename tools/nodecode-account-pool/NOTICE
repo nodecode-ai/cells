@@ -1,0 +1,26 @@
+nodecode-account-pool is a rewrite of roqianjas's roqianjas/hermes-account-pool:
+
+https://github.com/roqianjas/hermes-account-pool
+commit 7a4fc9fd976ed68de9e6f70ba326ef2053741e69
+MIT, Copyright (c) 2026 Roki Anjas (LICENSE)
+
+Rewritten: the part a Nodecode home can use without Hermes's credential pool.
+The two provider adapters are the same reads the original makes -- Anthropic's
+OAuth usage endpoint with the Claude Code client headers it uses so the
+endpoint does not rate-limit a bare client, and the Codex usage endpoint with
+the ChatGPT account id read out of the token -- and the same wake request,
+one token of one model, sent to the same vendor. From the original's command
+surface: `usage`/`report` (every account's windows), `balance` (which account
+has the most headroom: `best`), `park`/`unpark` (kept in a text file instead
+of Hermes's pool), and `wake`.
+
+Left out, because each is Hermes's own runtime or store: `hermes auth add`
+and its email verification (here an account is a line in the section and a
+token in an environment variable), the credential pool itself and the
+rotation strategy a Hermes session follows, the post-request hook that counts
+tokens per account, bot and session, the weekly park schedules, the
+five-minute balance timer, alerts and the daily summary through Hermes's send
+channel, and the Hermes Desktop Accounts page and its dashboard API. The
+weekly and forecast arithmetic the original derives from a timer has no
+history here, so the report states the windows the vendor reports and nothing
+projected.

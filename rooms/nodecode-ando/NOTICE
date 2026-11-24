@@ -1,0 +1,27 @@
+nodecode-ando is a rewrite of Ando-Corporation's Ando-Corporation/hermes-ando:
+
+  https://github.com/Ando-Corporation/hermes-ando
+  commit 1bfde877e1ed194ebf461d64e0468605d7e21a87
+
+MIT, Copyright (c) 2026 Ando Corporation (LICENSE)
+
+What was rewritten: the invitation flow (an invitation link accepted only for
+the official Ando hosts, redeemed once, its key written to a mode-600 file),
+the MCP client (initialize, tools/call and the server-sent answer, over
+nlk:http instead of the MCP SDK), the inbox sweep over the direct and updates
+scopes with its acknowledgement, the turn for each message and the reply
+posted back to the conversation or its thread, and the "I stopped before I
+could finish" notice. The original's Python, its Hermes gateway adapter and
+its CLI are not bundled; the cell declares the same config as an `ando`
+section.
+
+What was left out, and why: the realtime WebSocket transport (a ticket and a
+`ando.realtime.v1` socket, replaced by polling the durable inbox, which needs
+no websocket dependency and loses nothing the inbox does not already keep);
+file and voice attachments (upload, download and magic-byte typing, left for a
+later pass so the first port stays text-only); Ando's per-member tool
+preferences and the `disabled_tool_ids` filter; Hermes's OAuth MCP entry and
+its scoped locks (the invitation's own api key replaces the OAuth sign-in);
+and the original's Hermes-specific commands (`hermes ando connect/status/
+doctor/receiving test`), which become the `/ando` command and the cell's
+section here.

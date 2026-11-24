@@ -1,0 +1,31 @@
+nodecode-discord-presence is a rewrite of DarRahman's DarRahman/hermes-discord-presence:
+
+  https://github.com/DarRahman/hermes-discord-presence
+  commit fb49ff562015b4ae3ed88b2306f2c1de518bfb8b
+  MIT License, Copyright (c) 2026 Badar Rahman (LICENSE)
+
+Rewritten: the Discord Rich Presence card and everything that keeps it
+current — the local IPC conversation with the Discord desktop client (the
+handshake, SET_ACTIVITY and the null activity that clears it, the 32-bit
+little-endian framing, the discord-ipc-0..9 socket sweep under the runtime
+directories, the reconnect every tick and the clear on the way out), the card's
+lines (the session line with its generic, full-workspace and hidden modes, the
+activity line with the plugin's tool-name vocabulary, the model name and the
+turn's token total, the elapsed-time timestamp, the git branch read from
+.git/HEAD, the 128-character clipping), and the privacy switches the plugin
+exposed (stealth mode, hide model, hide tokens, hide the tool status, hide the
+branch). The plugin's settings were kept as the cell's section. The Python
+(pypresence, sqlite3, psutil, a background thread) is Common Lisp here: the
+socket is SBCL's own sb-bsd-sockets, the JSON is the image's, the session's
+numbers come from the turn the agent is running rather than from the harness's
+SQLite state database, and one nlk:worker is the tick.
+
+Left out: the plugin's multi-terminal presence ownership (a claim file in the
+runtime directory, and herdr's pane-focus socket, which let several Hermes
+terminals agree on one Discord card) — a Nodecode cell runs inside one
+organism and publishes one card, so the contest does not arise; the "View
+Repository" button that parsed the workspace's .git/config for a public
+github.com/gitlab.com remote; and the plugin's own Discord application id and
+artwork, since the card's name and art are now the operator's own application.
+Nothing of the plugin's Python is bundled: this folder is Common Lisp and the
+image it runs in.

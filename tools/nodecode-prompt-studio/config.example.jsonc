@@ -1,0 +1,10 @@
+{
+  // Prompt Studio: nothing here is required -- the prompt is built locally,
+  // with no provider and no key. These four only tune it.
+  "prompt-studio": {
+    "default_model": "auto",   // auto | opus | sonnet | astra: the rules a brief naming no model gets
+    "paste_cap": 12000,        // the most pasted characters one prompt carries
+    "max_tokens": 900,         // the most the polishing model may answer
+    "polish": true             // false keeps every prompt exactly as built
+  }
+}

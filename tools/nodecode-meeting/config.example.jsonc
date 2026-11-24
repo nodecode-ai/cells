@@ -1,0 +1,24 @@
+// The `meeting` section this cell reads. Nothing here is required and
+// nothing here is a secret. Copy what you need into ~/.nodecode/config.jsonc,
+// or set it in /settings, then (restart-cells "nodecode-meeting").
+{
+  "meeting": {
+    // A present section is enabled; "enabled": false vetoes it.
+    "enabled": true,
+
+    // The directory the live transcript is read from and appended to:
+    // rolling.txt (the newest window) and full.txt (every line). Point it at
+    // whatever your transcriber writes.
+    "dir": "~/.nodecode/meeting",
+
+    // Where a saved record goes. Empty means Records/ inside dir; set it to
+    // an Obsidian vault to read the same tree the original wrote.
+    "records": "",
+
+    // How much of the newest transcript rolling.txt keeps.
+    "window_chars": 20000,
+
+    // How old the transcript may be before status calls the capture dead.
+    "stale_seconds": 30
+  }
+}

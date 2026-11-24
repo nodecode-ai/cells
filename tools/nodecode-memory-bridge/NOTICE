@@ -1,0 +1,28 @@
+nodecode-memory-bridge is a rewrite of summero's summero/memory-bridge:
+
+https://github.com/summero/memory-bridge
+commit d166fbe72493050ef2651f37f8b2c267ee5f18d2
+MIT, Copyright (c) 2026 Summer Ordonez (LICENSE)
+
+What was rewritten: the two tools over one operator-approved folder of markdown, and the access rule
+in front of them. memory_bridge_search still answers, for each matching document, the id to read it
+with, a title from the first heading and a snippet around the match, ranked by how many of the
+query's words it carries and then by how often; memory_bridge_read still answers one document by
+that id, capped at read_chars with a visible marker, and a document that is missing, denied,
+oversized, a symlink or not UTF-8 all answer the same not_found_or_denied. The allow and deny
+patterns are the same root-relative globs, deny still wins over allow, and only plain-named .md
+files under the root are opened: a dot-directory is skipped, a symlink and any other file type are
+not documents, and nothing is ever written. Where the plugin read a policy.json under a Hermes
+profile, re-checking path ownership, mode bits and ACLs from open descriptors on every call, the cell
+reads its own config section -- which is the operator's own file, already their own -- and keeps the
+pattern, name, type, size and encoding rules from there.
+
+What was left out and why: the per-profile identity resolution (secret scopes, gateway routing,
+the private Hermes helpers it needed) because a Nodecode cell runs in one organism under one
+operator, so there is no second profile to tell apart; the cron and delegated-subagent opt-ins,
+because a cell has no such run to refuse; the filesystem trust walk (owner and mode of every
+ancestor, POSIX and macOS ACL parsing through ctypes, open-descriptor traversal with O_NOFOLLOW,
+device and hard-link checks, the scan budgets and the truncation look-ahead), which existed to keep
+a shared, group-writable root honest under a multi-profile gateway and which here reduces to lstat
+on each entry after the pattern filter; the JSON policy file and its strict schema, replaced by the
+section; and the JSON response envelopes, replaced by the text a Nodecode tool answers with.

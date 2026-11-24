@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "error-ledger": {
+    "enabled": true,
+    // how far back the bare /error-ledger and the tool look
+    "window_hours": 24,
+    // how many of the newest failures `recent' lists, 1 to 100
+    "recent_rows": 10
+  }
+}

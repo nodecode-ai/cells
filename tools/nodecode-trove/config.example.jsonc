@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. Nothing is required; every member bounds how
+// much one answer shows. A present section is enabled.
+{
+  "trove": {
+    "enabled": true,
+    "limit": 20,
+    "clip": 200,
+    "budget": 4000,
+    "sessions": 12
+  }
+}

@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for the crosodo cell --
+// documentation, not config: the folder holds no secret. A present section
+// is enabled; "enabled": false vetoes it, and an absent one runs on the
+// defaults below. Nothing here needs a key: the endpoint answers its lookups
+// without one.
+{
+  "crosodo": {
+    // The MCP endpoint's streamable-HTTP url. Point it at a copy of the
+    // server to talk to that copy; leave it alone for Crosodo's own.
+    "base_url": "https://crosodo.com/api/mcp",
+    // Seconds one lookup or one checkout may take.
+    "timeout_seconds": 40,
+    // The longest answer the model reads from one call, in characters: a
+    // state's row is a few thousand, so a short one is clipped rather than
+    // flooding the turn.
+    "answer_chars": 12000
+  }
+}

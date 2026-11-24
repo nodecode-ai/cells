@@ -299,7 +299,7 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
                            (nle::resolve-provider-credential "openai-codex" :auth-path auth
                                                                             :endpoint "https://chatgpt.com/x"))))
           (is (search "invalid_grant: Refresh token expired" (princ-to-string condition)))
-          (is (search "/openai-codex login" (princ-to-string condition))))))))
+          (is (search "/openai-codex" (princ-to-string condition))))))))
 
 (deftest openai-codex-cell-reads-the-token-variable-and-else-nothing ()
   (with-cell-stop ((openai-codex-start))
@@ -311,7 +311,7 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
           (is (eq :env (nle:credential-source credential)))))
       (with-stubbed-fdefinition (nle::credential-env (name) nil)
         (is (eq :none (nle::provider-auth-state "openai-codex" :auth-path auth)))
-        (is (search "/openai-codex login"
+        (is (search "/openai-codex"
                     (princ-to-string (signals-error nle:credential-error
                                        (nle::resolve-provider-credential "openai-codex" :auth-path auth
                                                                                         :endpoint "https://chatgpt.com/x")))))))))
@@ -455,3 +455,17 @@ auth.json AUTH holding STORE, URL its authorization address and POSTS the
         (is (equal "ts-1" (oc-header second "x-codex-turn-state")))
         (is (equal "ts-1" (oc-header third "x-codex-turn-state")) "the first token a turn is given stays")
         (is (equal "etag-1" (oc-header second "x-models-etag")))))))
+
+;;; --- /openai-codex typed alone --------------------------------------------------------------
+
+(deftest OPENAI-CODEX-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((openai-codex-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-openai-codex" "openai-codex" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/openai-codex login" "/openai-codex logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
+          (is (equal '("/openai-codex code")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-openai-codex" "openai-codex" "frobnicate"))))))

@@ -1,0 +1,16 @@
+// The nodecode-morning-briefing cell. Not the config itself: this is the
+// shape its `morning-briefing` section takes. Put it in ~/.nodecode/config.jsonc
+// (or set it in /settings, or the page's Settings tab).
+{
+  "morning-briefing": {
+    "latitude": "44.05",          // the place the briefing is about
+    "longitude": "-121.31",
+    "place": "Bend, Oregon",       // the dateline's name for it; the latitude when unset
+    "subreddits": ["news", "worldnews", "technology", "science"],
+    "hours": 36,                   // how fresh a headline must be
+    "max_items": 12,               // how many fit on the page
+    "radar_station": "",          // an NWS station id, e.g. KRTX, for the radar image
+    "output_dir": "",             // where the HTML page is written; this home's briefings/
+    "timeout_seconds": 20
+  }
+}

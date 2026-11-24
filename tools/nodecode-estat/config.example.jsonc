@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "estat": {
+    "enabled": true,
+    // The free application ID from the e-Stat My Page; left empty, the
+    // variable app_id_env names is read instead.
+    "app_id": "",
+    "app_id_env": "ESTAT_APP_ID",
+    // One request to e-Stat, and the most values one call returns.
+    "timeout_seconds": 20,
+    "max_rows": 50
+  }
+}

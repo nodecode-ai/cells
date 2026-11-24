@@ -1,0 +1,21 @@
+// The upstash section of ~/.nodecode/config.jsonc: one Upstash Redis database holding
+// this user's memories and searchable chat transcripts.
+{
+  "upstash": {
+    // The REST address and token from the Upstash console. Both fall back to
+    // UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN in the environment.
+    "url": "https://<name>.upstash.io",
+    "token": "<token>",
+    // Whose memories these are: the same id across sessions finds the same facts.
+    "user_id": "default",
+    // agentkit shares the keys @upstash/agentkit-sdk apps on this database write.
+    "namespace": "agentkit",
+    // Recall the memories nearest each user message into the prompt.
+    "recall": true,
+    "recall_limit": 5,
+    // Append each finished turn to the session's searchable transcript.
+    "capture": true,
+    "telemetry": false,
+    "timeout_seconds": 15
+  }
+}

@@ -1,0 +1,25 @@
+nodecode-nerve is a rewrite of keeltrace's keeltrace/hermes-nerve:
+
+  https://github.com/keeltrace/hermes-nerve
+  commit 76320ec5d764d588d9042baac60702f333896b1a
+  MIT, Copyright (c) 2026 Nerve contributors (LICENSE)
+
+What was rewritten: the decision wire (one `POST {state, model, questions}` to
+a System One endpoint, its three hosted roots and a base of the operator's
+own), the redactor every outbound state passes through, the four questions the
+original's tools asked — a choice with criteria, a ranking, the PASS/RETRY/
+REPLAN/ESCALATE verification ladder, and raw typed questions — and the pre-tool
+gate that puts a risky call to the model with the same ALLOW/APPROVAL/BLOCK
+verdicts, its rubrics, and its minimum p(ALLOW). All of it is Common Lisp in
+this folder, calling nlk:http; nothing of the original runs here.
+
+What was left out: the Hermes-only machinery around that core — the 17 tools
+and 12 hooks of Kanban supervision, SSH workers, the engineering megabytes of
+deterministic risk rules, the attention/urgency router, context curation and
+the evidence ledger, receipts and provenance, the operator control panel and
+the local backend installer that pip-installed model code into a venv. The
+rewrite keeps what a user of another harness can still have — the questions,
+the verdicts, the gate — rather than the private host internals they were
+wired into. The gate also refuses where the original could open an approval
+card in the Hermes UI: this harness has no such card, so an APPROVAL verdict
+is a refusal naming the call, and the operator runs it themselves.

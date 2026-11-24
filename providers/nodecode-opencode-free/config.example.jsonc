@@ -1,0 +1,11 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config. The declaration in cell.lisp is the authority.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "opencode-free": {
+    "command": "opencode",
+    "args": ["acp"],
+    "models": ["glm-5.3-flash-free", "deepseek-v4.1-flash-free", "big-pickle"],
+    "timeout_seconds": 600
+  }
+}

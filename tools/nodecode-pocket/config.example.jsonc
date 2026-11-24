@@ -1,0 +1,14 @@
+// The `pocket' section of ~/.nodecode/config.jsonc, as documentation: the
+// folder keeps no secret, only the name of a variable that does.
+{
+  "pocket": {
+    // The environment variable holding the Notify agent key (ntf_... or ak_...).
+    "api_token_env": "NOTIFY_API_TOKEN",
+    // The Notify project updates and questions are grouped under on the phone.
+    "project": "Nodecode",
+    // Notify's agent API, fixed unless you proxy it yourself.
+    "base_url": "https://notify.belweave.ai/api/agent",
+    // One exchange's ceiling, in seconds.
+    "timeout_seconds": 15
+  }
+}

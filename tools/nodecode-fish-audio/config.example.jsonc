@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "fish-audio": {
+    "enabled": true,
+    "api_key_env": "FISH_API_KEY",
+    "api_base_url": "https://api.fish.audio",
+    "tts_model": "s2.1-pro",
+    "stt_model": "transcribe-1-pro",
+    "voice": "",
+    "output_format": "mp3",
+    "directory": "fish-audio/"
+  }
+}

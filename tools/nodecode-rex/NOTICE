@@ -1,0 +1,42 @@
+nodecode-rex is a rewrite of kshitijk4poor's kshitijk4poor/hermes-rex-plugin:
+
+  https://github.com/kshitijk4poor/hermes-rex-plugin
+  commit ee19fe921d8dd0c2f1cec14d8cb080a4126b0754
+  MIT, Copyright (c) 2026 kshitijk4poor (LICENSE)
+
+The rewrite is the plugin's Rex integration as a Nodecode cell. What it keeps:
+the `rex` CLI as the only outside thing it runs, with `--autostart=false` so a
+call never starts a Rex server, a three-second deadline per call, and the pane
+named by REX_SESSION and REX_BLOCK; the pane-opening argv the plugin's README
+documents -- `run -b <pane> --split=… --ratio 35 --focus=false --label <name>
+--keep-open -- <command>` -- so a long command is visible beside the session
+rather than hidden; reading a pane back with `capture -b <pane> --trim`; the
+window label as the session's own words, slugged to a few lowercase words
+joined by hyphens, with one status glyph in front -- the plugin's own set, ●
+busy, ? waiting, ✓ done, ■ stopped, ✗ failed -- read back from the window each
+time so a rename by anyone keeps the rest; and the rule that only the glyph is
+the integration's, never the label. The plugin's session-start text and skill
+become the cell's manual and its tools' descriptions: where this session is,
+that long-lived commands belong in a pane, that panes opened by a session are
+read before they are closed, and that a pane never takes focus.
+
+What is left out, and why. Hermes' event hooks -- pre_llm_call,
+on_human_input_request, on_session_end, subagent_start and the kanban
+dispatcher -- have no counterpart here, so there is no automatic ● while a turn
+runs and no ? when the session waits: Nodecode's hook points are the tool call,
+the round and the frame, none of which is a turn's start or end, and a glyph
+written from every frame would be a subprocess per frame. The mark is set where
+a session says it is: rex_label, /rex mark, and the four verbs. The macOS
+alert (a notification through osascript when the pane is not in front) is left
+out with the front-app test it needs, since a Nodecode shell already shows what
+waits, and the plugin's pane-following Reader -- a Python script tailing a
+transcript or a kanban log in a new pane -- has no transcript file to follow
+here; a pane runs the command the model gives it. Rex's own session-start text
+(`rex __internal session-start`) and its skill stub (`rex __internal skill`)
+are likewise dropped: the cell's manual is written here, so nothing at run time
+depends on which Rex version is installed, and nothing about another agent's
+setup can contradict it. Automatic restoration of the window label a session
+found is dropped too: the operator clears a mark with /rex mark clear.
+
+Nothing of the original's Python is bundled. The cell runs the same rex CLI the
+plugin ran, and its own code is Common Lisp.

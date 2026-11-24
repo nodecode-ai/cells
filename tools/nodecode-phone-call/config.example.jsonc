@@ -1,0 +1,23 @@
+// The phone-call section of ~/.nodecode/config.jsonc, as /settings writes it.
+// A secret pasted into the panel lives in a 0600 file under ~/.nodecode/secrets/;
+// the folder holds no secret. Everything here is optional except a real call:
+// account_sid, auth_token and from_number make calls real, and an empty
+// allowed_numbers means nothing may be dialed at all.
+{
+  "phone-call": {
+    "account_sid": "AC00000000000000000000000000000000",
+    "auth_token": "your-twilio-auth-token",
+    "from_number": "+14155550100",
+    "allowed_numbers": ["+14155550123"],
+    "allow_all": false,
+    "user_name": "Ada",
+    "callback_number": "+14155550100",
+    "daily_call_limit": 10,
+    "max_duration_s": 300,
+    "enforce_quiet_hours": false,
+    "callee_utc_offset": 0,
+    "voice": "Polly.Joanna",
+    "language": "en",
+    "timeout_seconds": 20
+  }
+}

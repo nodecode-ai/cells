@@ -1,0 +1,14 @@
+{
+  // edit-ledger: a local ledger of the turns that changed files.
+  // Nothing here is required; an empty section records by itself.
+  "edit-ledger": {
+    // another ledger file; empty keeps it in the cell's own folder under the home
+    "file": "",
+    // rows kept once the ledger passes max_bytes
+    "keep_rows": 5000,
+    // the size in bytes at which the ledger is trimmed to keep_rows
+    "max_bytes": 2000000,
+    // the window /edit-log shows when no 6h or 7d is typed
+    "default_hours": 24
+  }
+}

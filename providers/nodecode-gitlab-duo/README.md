@@ -1,7 +1,7 @@
 # nodecode-gitlab-duo
 
 A Nodecode cell for [GitLab Duo](https://docs.gitlab.com/user/gitlab_duo/)'s
-non-agentic chat models. With it, `/gitlab-duo login` signs in with GitLab,
+non-agentic chat models. With it, `/gitlab-duo` signs in with GitLab,
 `/models` lists Duo's models (`duo-chat-opus-4-6`, `duo-chat-gpt-5-codex`, ...),
 and a turn goes through GitLab's AI gateway the way oh-my-pi sends it:
 
@@ -21,7 +21,7 @@ provider. See [NOTICE](NOTICE).
 ## Sign in
 
 ```
-/gitlab-duo login
+/gitlab-duo → Sign in
 ```
 
 answers at once with the address to open and listens on
@@ -38,7 +38,7 @@ a refresh that fails stands as a notice until the next sign-in.
 On another machine, paste the address the browser ended on, or the code:
 
 ```
-/gitlab-duo code <address or code>
+/gitlab-duo → Paste where the browser landed  the address the browser landed on
 ```
 
 If GitLab answers "The redirect URI included is not valid", register an
@@ -48,7 +48,7 @@ Or skip the sign-in: set `GITLAB_TOKEN` to a personal access token with the
 `api` scope. The sign-in wins over the variable. Nothing else is ever sent
 to GitLab: with neither, the round goes keyless and GitLab says why.
 
-`/gitlab-duo status` says whether GitLab is signed in, `/gitlab-duo logout`
+`/gitlab-duo` says whether GitLab is signed in, **Sign out** in `/gitlab-duo`
 forgets the token.
 
 ## Install

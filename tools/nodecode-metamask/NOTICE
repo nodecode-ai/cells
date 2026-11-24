@@ -1,0 +1,16 @@
+nodecode-metamask is a rewrite of akugone's akugone/hermes-metamask-wallet:
+
+  https://github.com/akugone/hermes-metamask-wallet
+  commit b56d6bbf575391d172280016abf778d31c5ca8bd
+  MIT, Copyright (c) 2026 Martin Leclercq (LICENSE)
+
+The original was a Hermes Agent plugin: ten Python tools and two hooks over the MetaMask agent wallet CLI (`mm --json`), a slash command, a background watcher for MetaMask's 2FA, and a skill the model read. This rewrite keeps the CLI and the tools: the same ten operations, the same argv, the same reading of the CLI's `{"ok": …}` envelope and its NDJSON notice lines, the same checks before a call (an address is 0x and 40 hex, an amount is a positive decimal, a hash is 0x and 64 hex, a chain id is a positive integer), and the same rules for what a write means while MetaMask waits on a 2FA. The Python is gone: the tools are Lisp verbs in one package, declared once with their JSON-Schema contracts, and they answer the CLI's own JSON rather than a retelling of it.
+
+What was left out, and why:
+
+- **The Hermes approval prompt before a write.** That is Hermes' own pre-tool-call gate, which a cell cannot raise for the shell that is not there; MetaMask's Guard Mode policy, Blockaid scan, simulation and 2FA are unchanged and are what decide a write here. The model is told to read the amount, the token, the chain and the destination back before sending.
+- **The shell-bypass guard** (`pre_tool_call` watching `terminal` and `execute_code` for a raw `mm transfer`). It escalated a bypass to the same approval prompt; with no prompt to escalate to, the rewrite relies on the tools and on `mm`'s own policy.
+- **The background 2FA watcher** (a thread per `pollingId` that posted the outcome into the chat). `mm` itself is synchronous here: a write that answers a `pollingId` says so, and `metamask_requests action="watch"` is the model's way to follow it. No thread runs between turns.
+- **The setup wizard** (`mm_setup`: install the CLI, start and complete a login, `init`, `create_wallet`, `logout`) and `mm_sign`'s typed-data `intent` prompt building. Setup is three commands in the README; the model is told what is left to do from `metamask_status`.
+- **The explicit-fee retry** (`mm wallet send-transaction` with a hand-built EIP-1559 payload and ERC-20 calldata), which the original used after a `fee_too_low` rejection. A transfer here is `mm transfer`, with MetaMask's own fee estimate.
+- **The policy editor's structured form** (limit + allowlist as arguments, merged into YAML). `metamask_policy set` takes the YAML `mm wallet policy template` prints, unchanged.

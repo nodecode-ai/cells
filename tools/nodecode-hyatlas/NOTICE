@@ -1,0 +1,30 @@
+nodecode-hyatlas is a rewrite of tuancookiez-hub's tuancookiez-hub/HyAtlas-Memory:
+
+  https://github.com/tuancookiez-hub/HyAtlas-Memory
+  commit 0428086c382456d9afaf55ba166c107f6f30759d
+  Apache-2.0, Copyright (c) tuancookiez-hub (LICENSE)
+
+The rewritten plugin is plugins/hyatlas of that commit: the Hermes side of the
+HyAtlas memory server. Its four tools keep their names and parameters
+(hyatlas_status, hyatlas_search, hyatlas_recent, hyatlas_add), the wire keeps
+the server's own /api/v1/* paths, bodies and answer shapes (search with a
+query, a user_id, an agent_id, an optional layer and a limit; list with an
+include_raw default that follows the server's mode, read from /api/v1/status;
+add with the text and its scopes), and its behaviour is carried over: the
+recall block's channel order and its hit lines (layer, saved date, event date,
+score, how often a recurring event happened, and up to two superseded
+versions), the sentence of the section that scopes every call, /hyatlas with
+its subcommands, and the per-turn capture text ("USER: …", "ASSISTANT: …",
+each message capped at 4000 characters, the pair at 12000).
+
+What was left out, and why: the Python-side plumbing Hermes needs and Nodecode
+does not (the MemoryProvider interface, the CLI and the doctor, the bundle
+install manifest); the key hand-over to the server and the auto-start of the
+hyatlas-go binary, because the cell is a client and the server is the user's
+own program with its own launcher, so the section names the address instead;
+the /api/v1/feedback call after a turn, which the server only uses to learn
+which recalled memories a reply used; the Desktop pane and the web dashboard,
+which are views the server itself serves; and the mirroring of the harness's
+built-in memory tool into HyAtlas, which the original did through a provider
+callback Nodecode has no counterpart of. LICENSE is the repository's LICENSE
+file, unchanged.

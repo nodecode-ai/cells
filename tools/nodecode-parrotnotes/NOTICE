@@ -1,0 +1,25 @@
+nodecode-parrotnotes is a rewrite of ascetx's ascetx/parrot-notes-hermes-plugin:
+
+  https://github.com/ascetx/parrot-notes-hermes-plugin
+  commit 18b2ed0d4b9eacff38e286f34bc08301afe3f0f3
+  MIT License, Copyright (c) 2026 ParrotNotes (LICENSE)
+
+The original ships no code: a portable plugin manifest (plugin.json,
+mcp.json, .claude-plugin/, .agents/) naming one hosted MCP server over
+Streamable HTTP with OAuth 2.0 and dynamic client registration, and a skill
+(skills/parrotnotes/SKILL.md) describing how an agent should work that
+server's nine tools. What this cell rewrites is the skill, as the manual on
+(help :parrotnotes) with the workflow, the two note ids and the save rules
+kept in prose, and the manifest's one effect, the mcp.servers entry, as
+/parrotnotes connect. Both are Common Lisp against Nodecode's own seams.
+
+Left out, and why: the transport. Nodecode's mcp cell already speaks
+Streamable HTTP, OAuth 2.0 and dynamic client registration, so reimplementing
+the JSON-RPC client, the browser sign-in and the token store here would be a
+second, weaker copy of a cell that ships; the nine tools arrive from the mcp
+cell as mcp:parrotnotes/<tool>, named by the server entry this one writes.
+Also left out are the manifests for the other clients (Claude Code, Codex,
+Copilot CLI) and the .claude-plugin and .agents marketplace files: they
+describe how other harnesses install the same hosted endpoint, which says
+nothing to Nodecode. The skill's per-client setup instructions are reduced to
+the one step Nodecode has, the sign-in in /mcp.

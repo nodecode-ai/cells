@@ -1,0 +1,30 @@
+nodecode-secure-audit is a rewrite of PensiveFei's PensiveFei/dsh-secure-audit:
+
+  https://github.com/PensiveFei/dsh-secure-audit
+  commit ae94c94183ef785702d34cc90e08705e8c32177b
+  MIT, Copyright (c) 2026 dsh-secure-audit contributors (LICENSE)
+
+Rewritten: the four tools of the original became three, in Common Lisp against
+Nodecode's own seams. security_scan_text keeps the rule engine's shape -- a
+severity-weighted decision with allow/review/block, per-rule reasons and
+masked snippets, English and Chinese rows, and the normalisation layer that
+folds zero-width and full-width characters, lookalike Cyrillic and Greek
+letters and bounded base64 -- with the thresholds read from the cell's
+section. security_redact_text keeps the mainland-China-first pattern table:
+mobile numbers, ID cards validated by their check digit, bank cards validated
+by Luhn, emails, IPv4 addresses, vendor API keys and credentials in a URL.
+security_audit keeps the read-only posture and the one hard rule of the
+original -- it names what it finds and never quotes a secret -- over the
+checks that transfer to this host: config secrets, config file permissions,
+secret-like environment variables, the installed cell inventory and a gateway
+bound to every interface.
+
+Left out, and why: security_redact_json (the fourth tool) handled JSON by key
+name; Nodecode's tool boundary already hands the model a typed record, and a
+text-in JSON-out variant would have needed a JSON parser for no new coverage.
+The original's session-file PII scan, its /proc/net wildcard lookup, its OWASP
+mapping and its multi-frame zstd session reader are specific to the harness it
+shipped for; Nodecode stores no sessions in that shape. The opt-in live
+registry advisory lookup and the pluggable Ollama classifier were dropped so
+the cell stays offline and keyless. The skill markdown became the cell's own
+manual topic, (help :secure-audit).

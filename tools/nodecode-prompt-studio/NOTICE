@@ -1,0 +1,27 @@
+nodecode-prompt-studio is a rewrite of bwoliveira's bwoliveira/prompt-studio:
+
+  https://github.com/bwoliveira/prompt-studio
+  commit ecead76f0b2ff4f46c09341c871e234eb1692a1a
+  MIT License, Copyright (c) 2026 Bruno Oliveira (LICENSE)
+
+Rewritten: the wizard and the three engines. The steps, their order and their
+recommended answers come from the Desktop half (desktop/src/studio-core.js,
+studio-state.js and ui-steps.js); the prompt itself comes from the per-model
+engines (desktop/src/engine-opus.js, engine-sonnet.js, engine-astra.js): the
+section order, the lines each guide asks for, the pasted-text handling with
+its stable id and its escaping, the design-pattern defaults, the deliverable
+lines, the done-when lines and the subagent rules. The answer parser and the
+step report are new, because the sheet a person clicked is a line of text
+here, and the polish replaces the per-step suggestion calls with one side call
+on the auxiliary model, keeping the built prompt when a section comes back
+missing.
+
+Left out: the Desktop chrome, which a cell cannot draw -- the sheet, the
+option cards with a key on every control, the F4 keybinding, the command
+palette entry, the sparkle beside Send, the composer write-back and the
+Send now button; the per-step suggestion pipeline (its prompts, its retry and
+its per-request deadlines); the interface language switch; the installer and
+its config writes; and the session-brief reader, since the tool's caller is
+the model that already has the session. The plugin's own packaging -- plugin.yaml,
+dashboard/, install.sh, the reproducibility and docs checks -- is Hermes's
+rather than the plugin's behaviour.

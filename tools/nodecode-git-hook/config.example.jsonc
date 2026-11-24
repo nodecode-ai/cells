@@ -1,0 +1,16 @@
+{
+  // git-hook: pull clean worktrees before reads, commit and push only what
+  // each turn changed. `roots` is required; a worktree outside every entry
+  // is never touched.
+  "git-hook": {
+    "roots": ["/home/you/projects"],
+    "pull": true,
+    "commit": true,
+    "push": true,
+    "message": "",
+    "secret_names": [],
+    "pull_timeout_seconds": 12,
+    "push_timeout_seconds": 20,
+    "budget_seconds": 20
+  }
+}

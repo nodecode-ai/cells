@@ -1,0 +1,19 @@
+{
+  // Folders scanned for SKILL.md files, recursively. Required.
+  "jev-curator": {
+    "roots": ["~/.nodecode/skills"],
+    // off: nothing asked. observe: judge and plan. apply: an apply may also move a folder.
+    "mode": "observe",
+    // Consent to send both skills' text, redacted of this cell's key, to the judgment endpoint.
+    "egress": true,
+    // Skills an apply never moves.
+    "protected": [],
+    // Empty: TYPESAFE_BASE_URL, else https://api.typesafe.ai
+    "base_url": "",
+    // Empty: TYPESAFE_DEFAULT_MODEL, else jev-latest
+    "model": "",
+    // Lexical neighbours kept per skill: how many pairs one scan judges.
+    "top_k": 5,
+    "max_pairs": 100
+  }
+}

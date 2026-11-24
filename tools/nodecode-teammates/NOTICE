@@ -1,0 +1,23 @@
+nodecode-teammates is a rewrite of 100yenadmin's 100yenadmin/hermes-teammates:
+
+  https://github.com/100yenadmin/hermes-teammates
+  commit bdfe621a8e5334f41002344da5bdfe49af01b693
+  MIT, Copyright (c) 2026 Electric Sheep (LICENSE)
+
+Rewritten: the roster of named teammates and the tools over it -- assign a
+goal, check a run and its answer, wait for runs to come to rest, message one
+(a steer while it runs, its next turn when it is at rest), stop it, and list
+the roster with this conversation's runs -- plus the /teammates command, the
+per-teammate description the agent picks by, the instructions a run works
+under, and an optional provider and model pin. The plugin's SQLite ledger and
+its own subagent lifecycle calls are replaced by Nodecode's own durable
+sessions: a run is an ordinary session under the session that assigned it, so
+its transcript carries its earlier work and the run ids are kept in the
+assigning session's per-session state.
+
+Left out: the Hermes Kanban lane and its review handoff (there is no board in
+the same sense here), the per-teammate toolset narrowing, the completion
+notice that Hermes reserved without sending, and the character-budgeted
+follow-up digest -- a follow-up in this rewrite goes to the run's own
+session, which already holds everything it did.
+

@@ -1,0 +1,31 @@
+nodecode-minecraft is a rewrite of kyssta-exe's kyssta-exe/hermes-minecraft-gateway:
+
+  https://github.com/kyssta-exe/hermes-minecraft-gateway
+  commit 8ff37a626439caecb9ceb724b5da7718eb77a8b1
+  MIT, Copyright (c) 2026 Kyssta (LICENSE)
+
+The rewritten plugin is the repository root of that commit (plugin.yaml,
+__init__.py, adapter.py, bridge/index.js). What was carried over: the shape of
+the thing — a bot that joins a Minecraft server in offline mode, gives every
+player a session of their own, relays what they type to the agent and posts the
+answer back in the game's chat; the 256-character chat limit and the [1/N]
+markers a split answer carries; the flattening of markdown and colour codes
+into what a chat line holds; public replies with optional /tell whispers; the
+allow-list and its "let everyone in" switch; the chat prefix; and the bot that
+turns in place so it does not stand like a statue.
+
+What was left out, and why: the Node.js Mineflayer bridge and the doctor
+around it (npm install at start, killing whatever held the bridge port,
+polling it over HTTP) — this cell speaks the game's protocol itself, so
+nothing is installed at run time and no port is opened; the wandering with
+jumps and looking at players, because that needs the world's physics and this
+cell only turns on the spot; Microsoft-authenticated accounts, because online
+mode needs a signed-in session this cell does not hold — it joins offline-mode
+servers, which is what the original defaulted to; and the Hermes gateway's
+own per-platform plumbing (typing notices, home channel, cron delivery), of
+which a session per player is the Nodecode form.
+
+The protocol this cell speaks is Java protocol 763 (Minecraft 1.20.1), the
+version the original's bridge was built against; the ids live in one table in
+protocol.lisp, and a server of another version is refused rather than guessed
+at. LICENSE is the original repository's LICENSE, unchanged.

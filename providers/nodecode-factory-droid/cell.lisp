@@ -64,7 +64,7 @@ checked."
   ;; as a key Factory took: any key read `works'.
   (if (equal provider +provider+)
       (values (listing-rows)
-              (and key "Factory has no endpoint that checks a key, and its API keys do not reach the LLM proxy; /factory-droid login signs in"))
+              (and key "Factory has no endpoint that checks a key, and its API keys do not reach the LLM proxy; /factory-droid signs in"))
       (apply next provider keys)))
 
 (defun pinned-p (provider model)
@@ -132,7 +132,7 @@ with Factory's identity, its tool names turned back on the GenAI wire."
                        (list :request (random-uuid) :session (random-uuid)))))
         (when (equal "public" (nle::effective-provider-config-api-key config))
           (error 'nle::provider-config-error
-                 :detail "No Factory Droid credentials found. Run /factory-droid login (WorkOS device code)."))
+                 :detail "No Factory Droid credentials found. /factory-droid signs in (a WorkOS device code)."))
         (handler-bind ((nle::provider-error
                          (lambda (condition)
                            (note-region-refusal condition (nle::effective-provider-config-model config)))))
@@ -165,7 +165,7 @@ note: the proxy's own words name no next step."
 
 (nle:define-cell factory-droid
   (:section ("factory-droid")
-    (:guide "sign in with /factory-droid login (a WorkOS device code: open the address, enter the code); base_url is Factory's host, an EU account moving to api.eu.factory.ai on its own")
+    (:guide "sign in from /factory-droid (a WorkOS device code: open the address, enter the code); base_url is Factory's host, an EU account moving to api.eu.factory.ai on its own")
     ("base_url" :string :default +host+
      :doc "the Factory host whose LLM proxy serves every wire (/api/llm/o, /a, /g)"))
   (:start #'start)
@@ -181,6 +181,4 @@ note: the proxy's own words name no next step."
   (:hook 'nle::walk-provider-stream #'walk)
   (:command "factory-droid" 'run-command
             :description "Sign in to Factory Droid with a WorkOS device code"
-            :argument-hint "login | logout | status"
-            :session nil
-            :complete 'complete-command))
+            :session nil))

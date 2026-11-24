@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell.
+// No key is needed: Markdown.new is a public service.
+{
+  "markdown-new": {
+    "enabled": true,
+    "base_url": "https://markdown.new",
+    "timeout_seconds": 60,
+    "poll_interval_seconds": 2,
+    "poll_timeout_seconds": 300,
+    "max_chars": 20000,
+    "max_upload_bytes": 10485760
+  }
+}

@@ -1,0 +1,33 @@
+nodecode-tls-posture is a rewrite of Pacific-Cloud-Solutions's Pacific-Cloud-Solutions/hermes-plugins:
+
+  https://github.com/Pacific-Cloud-Solutions/hermes-plugins
+  commit 389d300cd43de459fd6f260498ba3c2e7fff95dc
+  MIT License, Copyright (c) 2026 Pacific Cloud Solutions (LICENSE)
+
+Rewritten: the one model-facing tool, tls_posture, with its three arguments
+(a tree to audit, include_info, expiry_days); the fixed search paths it
+reads (etc/ssl/certs, etc/pki/tls/certs, the Let's Encrypt live
+directories, and the nginx and Apache configuration); the twelve checks
+TLS-001 .. TLS-012; the join between a certificate file and the server
+block that presents it, including the fullchain.pem sibling rule and
+Apache's separate chain directive; the two reading rules the original is
+careful about (a cipher string is a list of offers and exclusions, and
+nginx writes the protocol versions it enables while Apache writes the ones
+it removes, compared as whole tokens); the report shape (tool, target,
+grade, verdict, by-severity counts, findings with evidence, and a coverage
+block naming what ran, what was skipped and why); and the /tls command and
+the manual topic, which the original had no equivalent of. The Python is
+Common Lisp here: nlk:define-contract carries the tool's arguments, and the
+X.509 reader is one small DER walk in x509.lisp, so the cell needs no
+dependency beyond Nodecode itself.
+
+Left out: Python's `cryptography` and the stdlib `ssl` fallback, and with
+them the honest degradation between them — one decoder here always answers
+validity, names, key size and signature digest, so TLS-004 and TLS-005 are
+never skipped for want of a library. Also left out: the shared
+pcs-security-core contract and its taint/provenance model, replaced by the
+report shape above with the untrusted text kept in the evidence field; the
+host-level registrations core owns (the system-prompt section that says
+evidence is data, and the extra secret-redaction patterns), since a cell
+registers what it declares; and the plugin's install-scanner concerns
+(manifest keys, hostile-vocabulary lists), which have no counterpart here.

@@ -1,0 +1,21 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "process-table": {
+    "enabled": true,
+    // "auto" reads /proc on Linux, the ps command on macOS and the BSDs,
+    // and Win32_Process on Windows.
+    "reader": "auto",
+    // How many processes one call answers when it names no limit of its own.
+    "limit": 100,
+    // Clock ticks a second, for the start times /proc reports.
+    "clock_ticks": 100,
+    // How long the ps or powershell reader may take.
+    "timeout_seconds": 10,
+    // Path prefixes that mark an image as the system's own. This list
+    // replaces the built-in one.
+    "system_prefixes": ["/usr/", "/bin/", "/sbin/", "c:\\windows\\"]
+  }
+}

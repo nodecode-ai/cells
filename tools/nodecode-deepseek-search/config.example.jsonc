@@ -1,0 +1,24 @@
+// The deepseek-search cell's section. On unless it says "enabled": false.
+{
+  "deepseek-search": {
+    // the DeepSeek API key; or name the variable that holds it with api_key_env,
+    // or leave both out and put it in DEEPSEEK_API_KEY
+    "api_key": "…",
+    // "api_key_env": "DEEPSEEK_API_KEY",
+
+    // the search and fetch origin; only tests point it elsewhere
+    "base_url": "https://api.deepseek.com",
+
+    // how many hits one search asks for unless the call says otherwise (1-50)
+    "count": 5,
+    // carry each hit's page text as Markdown by default (large: a single hit can be 20 kB)
+    "need_content": false,
+    // an IPv4 or IPv6 address the search localises results to; "" sends nothing
+    "localization": "",
+
+    // how much of one fetched page comes back, in characters
+    "max_chars": 8000,
+    // one request's ceiling, in seconds
+    "timeout_seconds": 30
+  }
+}

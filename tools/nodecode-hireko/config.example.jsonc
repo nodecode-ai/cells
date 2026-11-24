@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "hireko": {
+    "tenant": "test",                                      // your Hireko organization slug
+    "stage": "beta",                                       // or "prod"
+    "username_env": "HIREKO_USERNAME",                     // the recruiter's email
+    "password_env": "HIREKO_PASSWORD",                     // and password: /hireko login reads them
+    "timeout_seconds": 60,                                 // one call's ceiling
+    "poll_timeout_seconds": 150,                           // how long an interview call waits for its link
+    "poll_interval_seconds": 6                             // and how often it asks again
+  }
+}

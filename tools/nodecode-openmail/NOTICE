@@ -1,0 +1,27 @@
+nodecode-openmail is a rewrite of openmailsh's openmailsh/hermes-plugin:
+
+  https://github.com/openmailsh/hermes-plugin
+  commit 4035b7d1f8775304443f60f67bcd636acb1a325d
+
+  MIT, Copyright (c) 2026 OpenMail (LICENSE)
+
+Rewritten in Common Lisp against Nodecode's cell contract: the nine tools
+(openmail_whoami, openmail_send, openmail_reply, openmail_list_threads,
+openmail_read_thread, openmail_list_messages, openmail_attachment_text,
+openmail_list_inboxes, openmail_create_inbox) with their arguments, the
+REST paths of the service they call, the in-thread reply that fills its
+recipient and inbox in from the thread's last inbound message when the
+caller names none, the read-state filter of the thread list, the default
+inbox resolved from the section and then from the key's only one, the
+server-side attachment text, and the anti-injection rule the original
+ships as a skill, carried in the help topic.
+
+Left out, because they are the Hermes gateway's surface rather than
+Nodecode's, or because Nodecode's declarations have no way to say the
+same thing: the websocket channel that wakes the agent on inbound mail
+with its inbox/pod scoping and sender allow-list, attachment upload on
+send and reply (the original confines model paths to its own media
+folders), the `openmail` command-line tool for administration (sender
+rules, pods, deleting an inbox, feedback), and the boolean `is_read`
+thread filter, spelled `read_state` here because an absent boolean and a
+false one are one value in a declared argument.

@@ -1,0 +1,31 @@
+nodecode-handoff is a rewrite of yuzushi-dev's yuzushi-dev/hermes-handoff:
+
+  https://github.com/yuzushi-dev/hermes-handoff
+  commit 2bab6cf77a436544f58f5b528cd0d838e6d60309
+  MIT, Copyright (c) 2026 Daniele Verì (LICENSE)
+
+Rewritten: the canonical v1 state (goal, constraints and preferences, progress
+as done / in progress / pending, key decisions, rejected attempts,
+verification, critical context, uncertainties, next steps) with its validation,
+the rendering into the one six-section markdown page the original produced,
+the secret scrub applied at the persistence boundary, the immutable,
+project-bound store with a handoff:// reference, one filing per request id
+(the same id with other content refused, not overwritten), reading a document
+back with its section check, listing the store, and the provenance line that
+says a document is the model's account and that reading it is not proof of a
+successful resume. The markdown page keeps the original's order and its
+folding of the rejected attempts, the verification and the uncertainties into
+Critical Context.
+
+Left out: the three things that were Hermes runtime rather than handoff. The
+evidence action read a bounded, redacted tail of the persisted transcript out
+of Hermes' own session database; Nodecode has no public reader of its session
+store for a cell, and the model in hand already holds the conversation. The
+opener -- the handoff-open CLI command, the Desktop pane, prepare_open,
+opening_status and the durable attempt journal that made one launch at most --
+opened a new Hermes session with its first prompt; a Nodecode session is the
+person's own to open, and /handoff plus the reference does the rest by hand.
+The optional writer model (summarize, with a model and provider of its own,
+through the host's LLM facade) has no seam here either, and it was the
+original's non-default path. Also left out: the profile state.db route
+observer on the pre_api_request hook, which only fed the opener.

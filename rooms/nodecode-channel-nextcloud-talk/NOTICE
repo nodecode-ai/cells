@@ -1,0 +1,32 @@
+nodecode-channel-nextcloud-talk is a rewrite of smilinTux's smilinTux/hermes-nextcloud-talk:
+
+  https://github.com/smilinTux/hermes-nextcloud-talk
+  commit 03f27203fd983d4714891302c49f06b404c4b02f
+  MIT, Copyright (c) 2026 smilinTux (LICENSE)
+
+The rewritten plugin is the repository root of that commit (__init__.py,
+plugin.yaml, bot/ and user/). What was carried over: the user-account
+connector — an app password for a real Nextcloud account, the OCS room list
+(/ocs/v2.php/apps/spreed/api/v4/room), the chat long poll
+(/ocs/v2.php/apps/spreed/api/v1/chat/<token> with lookIntoFuture,
+lastKnownMessageId and a timeout, 304 for a quiet room), posting with
+replyTo, the reaction endpoint, the typing signal, the 32000-character
+message cap, the `mention` admission rule with its rich
+`{mention-userN}` placeholders resolved and Talk's quoted `@"Display Name"`
+form, the same rule read outside code spans, and the leading self-mention
+stripped so a slash command arrives as one. The room description handed to
+the model as room rules, and the backlog of unanswered messages handed over
+with the next answered one, are the original's too, as is the room-type
+split between one-to-one (types 1 and 6) and group rooms.
+
+What was left out, and why: bot mode, the webhook connector with an inbound
+HTTP listener, HMAC-SHA256 on both directions, the nonce-replay cache and
+the request-body cap, because a cell reaches Talk over the account's own
+REST API and needs no port open and no secret shared with the server;
+federation-invite auto-accept and its inviter allowlist, which a cell
+replaces by the account being invited normally; the `watch` room mode and
+its periodic digest, and the multi-agent chain limit and agent allowlist,
+which are loop-avoidance bookkeeping of the original's runtime rather than
+anything Talk asks for; and the update/`/sethome` commands and the
+standalone sender, whose answers the section, `/settings` and the lane
+state give here. LICENSE is the repository's LICENSE, unchanged.

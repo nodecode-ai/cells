@@ -1,0 +1,17 @@
+{
+  // The section a cell reads. Documentation, not config: the declaration in
+  // cell.lisp is the authority, and a secret is better named here as a
+  // reference than written inline.
+  "vibeleak": {
+    "enabled": true,
+    // VibeLeak owner API key (Pro plan), scopes scan:write, scan:read and
+    // findings:read. Website assessments only; the local review needs none.
+    "api_key": "[set]",
+    // The folder /vibeleak reviews when no argument names one.
+    "root": "/",
+    // How many files one review reads at most.
+    "max_files": 200,
+    // One request's ceiling against the VibeLeak API.
+    "timeout_seconds": 30
+  }
+}

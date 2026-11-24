@@ -1,0 +1,21 @@
+nodecode-maqami-travel is a rewrite of negm17111995's negm17111995/mcp-server:
+
+  https://github.com/negm17111995/mcp-server
+  commit 6478de2d093fcf9bdd3c5dbff6d6ef267dcb56ae
+  MIT, Copyright (c) 2026 MAQAMI LLC (Ahmed Nejm) (LICENSE)
+
+The plugin was a portable manifest (plugin.json, mcp.json) plus a Node stdio
+bridge (index.js) that forwarded every MCP request to MAQAMI's hosted
+Streamable HTTP endpoint at https://mcp.maqami.co/, and the bundled
+maqami-travel-booking skill. The endpoint needs no key, and the tool list is
+the server's own. This rewrite keeps the endpoint and what a user gets from it:
+one JSON-RPC POST per call, an answer read from a JSON body or from the
+server-sent events the endpoint sends, the session header kept for the requests
+after initialize, and the booking skill carried as the manual topic (help
+:maqami) whose one line rides every request. The two tools it registers are the
+bridge's two verbs -- list the server's tools, call one -- because the server
+defines the list. What was left out: the Node process and the MCP SDK it drove,
+the plugin's MAQAMI_MCP_URL override (the section's base_url replaces it), the
+other client manifests the repository carries, and its Node test of the
+forwarder, which this cell's stubbed tests replace. Nothing of the original is
+vendored.

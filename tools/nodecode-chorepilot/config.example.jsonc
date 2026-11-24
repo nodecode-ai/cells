@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this illustrates it.
+// Exactly one of token_env and token_file, and plain http:// only to this
+// machine or a private network.
+{
+  "chorepilot": {
+    "enabled": true,
+    "url": "http://127.0.0.1:8770/mcp",
+    "token_env": "CHOREPILOT_TOKEN",
+    "timeout_seconds": 150,
+    "preload_tools": true
+  }
+}

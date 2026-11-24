@@ -1,0 +1,21 @@
+// The section ~/.nodecode/config.jsonc may carry for the handydandy cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it, and an absent one runs on the defaults below.
+{
+  "handydandy": {
+    // advise: one nudge to finish and start fresh. handoff: the agent writes
+    // a handoff with the `handoff` tool before the session is restarted.
+    "mode": "advise",
+    // A session's input tokens that count as too long; 0 turns this check off.
+    "max_input_tokens": 100000,
+    // The share of the model's context window that counts as too long, in
+    // percent; 0 turns this check off.
+    "context_percent": 50,
+    // Rounds in one session that count as too long; 0 turns this check off.
+    "max_rounds": 40,
+    // Where handoffs are filed. Empty uses the home's handoffs folder.
+    "handoff_dir": "",
+    // A CSV that gains one row per handoff (timestamp, session, path).
+    "session_log_csv": ""
+  }
+}

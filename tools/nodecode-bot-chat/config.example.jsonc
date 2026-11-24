@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. Nothing is required, and no session is in the mode until
+// /bot-chat on is typed in it, unless "scope" is "all".
+{
+  "bot-chat": {
+    "enabled": true,
+    "scope": "sessions",
+    "style": true,
+    "language": "en",
+    "preset": "default",
+    "protected_branches": ["main", "master"],
+    "external_send_tools": ["send_message", "react_to_message"],
+    "expensive_models": ["\\bpro\\b", "opus"],
+    "expensive_tools": ["delegate_task", "set_model"]
+  }
+}

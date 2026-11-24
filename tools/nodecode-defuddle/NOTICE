@@ -1,0 +1,33 @@
+nodecode-defuddle is a rewrite of annalinneajohansson82's annalinneajohansson82/hermes-defuddle:
+
+  https://github.com/annalinneajohansson82/hermes-defuddle
+  commit d28bd52eed30c397a45f0b2aba869a28ca4789c4
+  MIT, Copyright (c) 2026 annalinneajohansson82 (the repository carries no
+  LICENSE file; README.md and plugin.yaml declare MIT)
+
+The rewrite is the plugin's web-extract provider as a Nodecode cell. What it
+keeps: the program it drives, defuddle on PATH, and its argv ("parse" "--json"
+URL, one URL per run); standard input at /dev/null, so the program can never
+read a byte of the harness's own; a minute's deadline, with a process over it
+killed rather than leaked; the same reading of the JSON it prints --
+contentMarkdown as the article, title, description, site, domain, language,
+wordCount, author and published as the metadata around it; the description
+quoted line by line ahead of the article when it differs from the title; and no
+raw HTML in the answer's place when the page produced no markdown. The plugin
+took a list of URLs and ran them in parallel, checking nothing about any of
+them; the cell reads one address per call and checks it first.
+
+What is left out, and why: the provider interface. Hermes registered it as an
+extract backend its web_extract tool picked from config; Nodecode ships no
+extract registry -- its websearch cell reads pages itself -- so here the same
+reader is a verb, a tool and a command instead of a backend. Parallel extraction
+became one call per address, which is what a model calling a tool does anyway;
+the model reads one page at a time and says so. The plugin's README noted an
+SSRF post-redirect gap (defuddle follows redirects internally, so the URL it
+ends on is never re-checked); that gap was the host's to close and is unchanged
+here, with one addition of this cell's own: an address that is not http:// or
+https:// is refused before the program sees it, so the address can never be
+read as one of defuddle's flags.
+
+Nothing of the original's Python is bundled. The cell runs the same defuddle
+program the plugin ran, on PATH, and its own code is Common Lisp.

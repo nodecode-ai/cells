@@ -1,0 +1,39 @@
+nodecode-ros is a rewrite of arcabotai's arcabotai/hermes-ros:
+
+  https://github.com/arcabotai/hermes-ros
+  commit 57a67b89142a6b7659a2b40c4796f8e1cad5e542
+  MIT License, Copyright (c) 2026 Arca Computer, Inc. (LICENSE)
+
+The rewrite is the plugin's robot link, in Common Lisp against the Nodecode
+cell contract: the same nine verbs (list, echo, drive, publish, call a
+service, read the pose, take a camera snapshot, stop, report the safety
+state), the same two backends -- the built-in 2D mock robot, which needs no
+ROS at all, and a real robot or simulator behind a rosbridge websocket -- and
+the same safety interlock: a linear and angular speed ceiling, a bounded
+duration, an optional rectangular geofence checked on the projected path, a
+write allowlist for topics and services by glob, a latching e-stop that only a
+human clears, and a bounded audit of every blocked call. The plugin enforced
+that from a pre_tool_call hook because it did not own its tools; a cell does,
+so the same checks run inside the tools that write, and ros_stop is never
+blocked -- stopping always works. The mock's unicycle, its cones, its walls,
+its expiring velocity command and its three services are kept, as is the
+camera snapshot written under this home with the MEDIA: line that shows it to
+the operator, and the rosbridge protocol the plugin's own small client spoke
+(call_service, subscribe, advertise/publish), here over the image's
+websocket-driver instead of a Python dependency.
+
+What is left out, and why: the plugin's Hermes dashboard tab and its
+read-only web API, because that is Hermes' web UI and a Nodecode cell has its
+own page and `/ros`; the separate plugin data directory with estop.json,
+blocked.jsonl and last_pose.json, because the same facts are now the cell's
+own files under this home (the latch) and its ring of blocked calls in the
+process; the image-decoding helper module, because a rosbridge CompressedImage
+is written out byte for byte and a raw Image is re-encoded with the image's
+own PNG writer; and the bundled skill prompt, because the same guidance is
+the manual (help :ros) that every request carries a line of. The docker demo,
+the fake camera publisher and the turtlesim verification scripts are
+development scaffolding, not part of what a user runs.
+
+Nothing of the original's Python is bundled. The cell's own code is Common
+Lisp, it opens one websocket when a robot is configured, and with the default
+mock backend it touches nothing outside this home.

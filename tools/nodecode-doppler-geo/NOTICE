@@ -1,0 +1,25 @@
+nodecode-doppler-geo is a rewrite of mojomast's mojomast/hermes-aircraft-doppler-geolocation:
+
+  https://github.com/mojomast/hermes-aircraft-doppler-geolocation
+  commit 14b4b0c841de0a77c0eb405a311acc540d3a1b58
+  MIT License, Copyright (c) 2026 Kyle Durepos (LICENSE)
+
+Rewritten: the two tools the plugin registered, doppler_detect and
+doppler_locate, as an nle:define-cell with the same names and the same
+arguments, a /doppler command and a manual topic. The audio path is plain
+Common Lisp instead of numpy and ffmpeg: a RIFF/WAVE reader, an in-place
+radix-2 FFT over a Hann-windowed spectrogram, one ridge per frame, and the
+same straight-pass Doppler model fitted by a coarse grid over (speed, slant
+distance, closest approach) with the rest tone solved in closed form, then
+refined. The locator does the same thing in the same order: predict each
+event's curve from real ADS-B tracks at every candidate cell, score the
+least-squares misfit, turn it into a posterior, and report the best point,
+the top five, the 68 and 95 per cent areas and a confidence flag.
+
+Left out, and why: the ADS-B download (a day of adsb.lol history is about 3 GB
+streamed per uncached day, which needs a streaming tar and gzip this image does
+not carry; the cell reads the same columns from a CSV the user gives it), the
+Copernicus DEM and Open-Meteo fetch (ground elevation is sea level here unless
+the region is flat), the experimental broadband ground-reflection mode (a
+cepstrogram and a Viterbi tracker of its own), the diagnostic PNGs, and
+ffmpeg decoding (RIFF/WAVE only, so any other container is converted first).

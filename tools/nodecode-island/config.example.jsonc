@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config. The declaration in cell.lisp is the authority;
+// this is an illustration of it. A present section is enabled;
+// "enabled": false vetoes it.
+{
+  "island": {
+    "enabled": true,
+    // the world's MCP endpoint: the local world is http://localhost:5173/mcp,
+    // a hosted one is https://<link>/mcp (a link is a bearer secret)
+    "world_url": "http://localhost:5173/mcp",
+    // one exchange with the world's ceiling, in seconds
+    "timeout_seconds": 20
+  }
+}

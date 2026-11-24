@@ -1,0 +1,38 @@
+nodecode-writing-guard is a rewrite of MadeByBrain's MadeByBrain/hermes-extensions:
+
+  https://github.com/MadeByBrain/hermes-extensions
+  commit c18ef190635e386a627ba921c816dceeb28c2de8
+  MIT, Copyright (c) 2026 MadeByBrain (LICENSE)
+
+What was rewritten: the plugin is three files of pure rules (guard.py,
+phrases.py) and one registration (__init__.py) that hooked the harness's
+transform_llm_output to append one italic report line under every answer.
+The rewrite keeps the rules and the report: the dash table, the ordered
+replacement that keeps a range and a bullet and turns a spoken dash into a
+comma or a spaced hyphen, the masking of fenced code, inline code, URLs,
+markdown link targets, MEDIA and quoted lines, the language guess by word
+count, the du/Sie counting that sets aside "du/Sie" and quoted words, the
+mixing-in-one-paragraph rule and the footer's wording in both languages.
+The phrase table is the original's, all of it, with the same ids. The seam
+moved: the checks now advise NLE::EMIT-STREAM-PART, so a fragment is fixed
+where it is made and the line rides the answer itself in every shell,
+channel and transcript, and the plugin's check-draft skill became one
+standing paragraph in the prompt and the writing_guard_check tool.
+
+What was left out, and why: the du/Sie switch store (a JSON file under the
+harness's home, keyed by session, with a file lock, a 30-day retention and
+a 2000-session cap) is not reproduced -- a Nodecode cell reads the answer
+in front of it, and /writing-guard names the switch in its last report
+instead of remembering one per chat across processes. The platform filter
+(disabled_platforms: cron, subagent, kanban, batch, webhook) has no
+equivalent, because the advice sits on the stream every lane shares. The
+slash command's argument moved: /writing-guard TEXT checks a text,
+/writing-guard on|off|reset controls it, and the original's "check" word is
+still accepted before the text. A dash at the very start of a streamed
+fragment is read as a list bullet, which is what a whole-answer rewrite
+would not do.
+
+What the rewrite adds: settings for what the original hard-coded (the line's
+language, whether the primer rides the prompt), the extra_phrases and
+ignore_phrases the original had, the primer setting, and the counters
+/writing-guard reports.

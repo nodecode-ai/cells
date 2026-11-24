@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "fashio": {
+    "enabled": true,
+    // the variable holding the Fashio API key (fio_live_...), or "api_key" inline
+    "api_key_env": "FASHIO_API_KEY",
+    // empty: api.fashiolabs.com, the host the original's MCP server calls
+    "base_url": ""
+    "timeout_seconds": 60,
+    "list_limit": 20
+  }
+}

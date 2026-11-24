@@ -1,0 +1,27 @@
+nodecode-md-search is a rewrite of kuehnberger's kuehnberger/hermes-qdrant-memory:
+https://github.com/kuehnberger/hermes-qdrant-memory
+commit 5241e51274c657251776659bfb651aae4ba4bf1d
+MIT, Copyright (c) 2026 kuehnberger and the hermes-qdrant-memory contributors (LICENSE)
+
+What was rewritten: the md_search half — the heading-aware markdown chunker
+(frontmatter stripped, a section a passage, long sections split on blank
+lines), the OR-of-terms ranking over the words of a query, the excerpt
+centred on the first matching term, the two corpus rules (an explicit skip
+list, and no dot-directory), and the answer's shape: `path  [heading chain]`
+and one quoted line a result. In the original that index was SQLite's FTS5,
+built by a separate ingest script; here it is an in-memory index the cell
+builds from the folders the section names and rebuilds when it is older than
+one setting, so there is no database file, no ingest command and no service.
+The tokenizer keeps the property the original chose remove_diacritics 2 for: a
+query for `grusse` finds `Grüße`.
+
+What was left out, and why: the Qdrant memory provider that the rest of the
+plugin is — its six qdrant_* tools, the per-turn recall and capture, and the
+on-device fastembed or sentence-transformers embedder — because that is a
+separate concern with its own service and its own model download, and a
+Nodecode cell already keeps memories in a Qdrant store. The semantic
+fallback tier (a second Qdrant collection of embedded passages) went with it,
+so this rewrite is lexical only: no embeddings, no vector search, and
+therefore no multilingual or paraphrase matching. The `auto`/`always`/`never`
+`semantic` parameter went too; `root`, `query` and `limit` are the tool's
+arguments as before.

@@ -1,0 +1,20 @@
+{
+  // The three values from your Bento account: Settings, API Keys
+  // (app.bentonow.com/account/teams). Paste them here, or leave each empty and
+  // name the variable holding it -- the cell reads the original's own names.
+  "bento": {
+    "publishable_key": "",
+    "secret_key": "",
+    "site_uuid": "",
+    // The verified Bento Author addresses that may be From on a send. Empty
+    // refuses every scheduled broadcast and every transactional email.
+    "allowed_senders": [],
+    "environment": "production",
+    "bulk_threshold": 25,
+    "min_schedule_lead_minutes": 30,
+    "max_batch_size_per_hour": 5000,
+    "max_recipients_per_call": 10,
+    "allow_transactional_override": false,
+    "timeout_seconds": 30
+  }
+}

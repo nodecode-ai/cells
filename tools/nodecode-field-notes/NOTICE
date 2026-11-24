@@ -1,0 +1,44 @@
+nodecode-field-notes is a rewrite of itpartypattaya's itpartypattaya/hermes-field-notes:
+
+  https://github.com/itpartypattaya/hermes-field-notes
+  commit 74b566dd49ce6a9f249b7d1e5e12d25895592d42
+  MIT, Copyright (c) 2026 Anton Vaskov (LICENSE)
+
+The rewritten plugin is the skill `hermes-field-notes`: its note format (a
+Markdown note with a flat frontmatter block of schema_version, id, title,
+date, type, area, status and summary, and the rest in the body), its three
+note kinds, its statuses, its patch notes with a separate checks file, and
+its rule that a patch is checked read-only by static signs in the code tree --
+contains, not_contains and upstream, one edition per range of versions, the
+first edition whose bounds hold. What it answered about a check is what this
+answers: OK when every sign is there, MISSING when a target is there and its
+signs are gone, UPSTREAMED when the signs are gone and upstream's fix is in
+place, UNKNOWN when the check could not decide (no edition matches, the
+version is unknown, a target is gone, or the checks file does not decode).
+Its INDEX.md and its doctor's one verdict line, its refusal to duplicate a
+note id, and its four steps of procedure -- search before debugging, record
+after a non-trivial diagnosis, update rather than duplicate, re-check after
+an update -- are carried over as the tools' descriptions and the primer.
+
+What was rewritten, and how: the original is a Python script behind a Hermes
+skill and a set of slash commands. This is Common Lisp against the Nodecode
+cell contract: the four commands the model used (search, new, patches check,
+doctor) are four tools (fieldnote_search, fieldnote_new, fieldnote_check,
+fieldnote_doctor) with JSON answers, the command line is the /fieldnotes
+slash command, the store is the folder the section names, and the Hermes
+version the checks compare against is the code tree's own VERSION file. The
+notes are the same Markdown files with the same frontmatter, so a store from
+the original reads here and back.
+
+What was left out, and why: the bundled prose that is Hermes-specific --
+the known-pitfalls list, the patch recipes, the patch-script and upstreaming
+guides -- because they are about the Hermes core and its releases, not about
+the store this cell keeps. The Telegram dashboard (one pinned message edited
+in place) and its publish step are left out because a Nodecode cell posts
+through its own channel cells; the hourly watch and its cron job are left out
+because the cell is consulted by the model and by /fieldnotes instead of a
+scheduler. `drift` (git changes since a note was verified) and the
+`upstream.check` GitHub lookups are left out to keep every answer local and
+offline: a patch note's checks read the tree on disk and nothing else.
+`lint`'s secret-masking scan and `migrate` from older formats are left out
+with them. LICENSE is the original repository's LICENSE, unchanged.

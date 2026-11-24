@@ -292,7 +292,7 @@ are kept (omp's after-refresh hook), and so is the refresh token when Google
 sends no new one."
   (let ((refresh (nlk:json-value entry :text "refresh_token")))
     (unless refresh
-      (refuse "~a: the sign-in keeps no refresh token; run /~a login" +provider+ +provider+))
+      (refuse "~a: the sign-in keeps no refresh token; /~a signs in again" +provider+ +provider+))
     (let ((body (token-request "refresh_token" "refresh_token" refresh)))
       (nlk:json-object "access_token" (nlk:json-value body :text "access_token")
                        "refresh_token" (or (nlk:json-value body :text "refresh_token") refresh)
@@ -509,7 +509,7 @@ project, keep the token, and say how it went."
                                                 :name (format nil "~a sign-in" +provider+)))
       (format nil "Open this address in a browser and sign in with Google: ~a~%~
 Nodecode listens at ~a for Google's answer, finishes the sign-in and says so in a notice. ~
-If the browser runs on another machine, paste the address it lands on with /~a code ADDRESS."
+If the browser runs on another machine, paste the address it lands on in /~a."
               (authorize-url state redirect-uri) redirect-uri +provider+))))
 
 (defun paste (text)
@@ -517,8 +517,8 @@ If the browser runs on another machine, paste the address it lands on with /~a c
 landed on, or the code alone."
   (let ((flow *flow*)
         (trimmed (nlk:trimmed (or text ""))))
-    (cond ((null flow) (format nil "~a: no sign-in is waiting; /~a login starts one" +provider+ +provider+))
-          ((zerop (length trimmed)) (format nil "usage: /~a code ADDRESS-OR-CODE" +provider+))
+    (cond ((null flow) (format nil "~a: no sign-in is waiting; /~a starts one" +provider+ +provider+))
+          ((zerop (length trimmed)) (format nil "paste the address the browser landed on, or its code" +provider+))
           (t (multiple-value-bind (code state error)
                  (if (find #\? trimmed)
                      (callback-answer trimmed)

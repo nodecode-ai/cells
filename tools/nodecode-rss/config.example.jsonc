@@ -1,0 +1,25 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "rss": {
+    "enabled": true,
+
+    // One or more HTTP(S) feed urls, comma-, space- or newline-separated:
+    // the first subscriptions. Later ones are added with the rss tool.
+    "feeds": "https://example.com/feed.xml",
+
+    // What the reader calls itself when it fetches a feed; empty sends none.
+    "user_agent": "nodecode-rss/0.1 (+https://nodecode.ai)",
+
+    // One feed fetch's ceiling, in seconds.
+    "timeout_seconds": 15,
+
+    // How many unstarred entries a refresh keeps per feed, and how many
+    // lines the unread action answers with.
+    "max_entries": 25,
+
+    // The longest answer one action gives, in characters.
+    "max_chars": 8000
+  }
+}

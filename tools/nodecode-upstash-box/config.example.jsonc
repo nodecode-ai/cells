@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "upstash-box": {
+    "enabled": true,
+    "api_key_env": "UPSTASH_BOX_API_KEY",
+    "size": "small",              // small | medium | large
+    "runtime": "python",          // the Box base image: node, python, golang, ruby, rust, ...
+    "keep_alive": false,          // true: never paused, and billed while it runs
+    "timeout_seconds": 120,
+    "max_output_chars": 20000
+  }
+}

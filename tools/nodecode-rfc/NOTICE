@@ -1,0 +1,26 @@
+nodecode-rfc is a rewrite of EloquentBrush0x's EloquentBrush0x/hermes-context-refs:
+
+  https://github.com/EloquentBrush0x/hermes-context-refs
+  commit 7d10da5365b5f6d9cfac8c9f5ce8fdc8273f6624
+  MIT, Copyright (c) 2026 EloquentBrush0x (LICENSE)
+
+What was rewritten: the reader. Its one request to
+https://www.rfc-editor.org/rfc/rfc<number>.json and its rendering of the
+answer -- title and link, status with the published status beside it, date,
+page count, authors, source, what the document obsoletes and updates and what
+obsoletes or updates it, see-also, errata, DOI and the abstract -- are
+reimplemented in Common Lisp on the Nodecode cell contract: the number is read
+the same ways, a relation list is capped at twenty documents, an abstract at
+8000 characters, the answer at the section's max_chars, and the block still
+ends by saying it is quoted reference material. The request carries a
+user-agent the operator sets, a 1 MiB cap on the answer, the section's
+timeout, and nothing else leaves the machine.
+
+What was left out: the `@rfc:<number>` context reference itself. Hermes
+expands a typed reference into the message being sent; a Nodecode cell
+contributes tools and commands to a turn, so the record arrives through the
+rfc tool (the model's call) and /rfc (the operator's). Its autocompletion of
+the prefix is gone with it, which the plugin's README already described as
+empty. The same-host redirect rule became the client's: the address is fixed
+and its redirects are followed by the HTTP client, still capped by size and
+time.

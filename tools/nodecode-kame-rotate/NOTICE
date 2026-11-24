@@ -1,0 +1,24 @@
+nodecode-kame-rotate is a rewrite of Kame696's Kame696/kame-api-rotation-for-hermes:
+
+  https://github.com/Kame696/kame-api-rotation-for-hermes
+  commit 5e4a12f249f679ae5dcbf0d22e4ffbfeba4e5e2b
+  MIT, Copyright (c) 2026 KAME (https://github.com/Kame696) (LICENSE)
+
+Rewritten: the provider half of KAME, in Python a plugin that re-registers
+Hermes' own provider profiles with two extra client factories, becomes one
+Common Lisp cell that keeps the same promise as verbs. The pool, the ordering
+it is tried in, and the reading of a refusal are reimplemented from the
+original's companion plugin (hermes-kame-api-rotation): a 429 honouring
+Retry-After, a 401 or 403 taken as a wrong key rather than a busy one, a 5xx
+taken as a busy endpoint, each key sitting out before it is asked again, and
+any other 4xx answered as the call's own failure with the endpoint's words.
+The wire is one OpenAI-compatible /chat/completions POST; the keys are read
+from the environment variables a config section names.
+
+Left out: the in-process replacement of every provider profile, which a
+Nodecode cell has no seam for — Nodecode's provider lanes build their own
+clients, so the rewrite exposes the rotation as two tools and a command
+instead of wrapping the harness. Also left out: the companion plugin's
+dashboard, its per-home key store and its env-file syncing, which describe
+Hermes' own state; and the Anthropic Messages and Responses wires, since one
+OpenAI-compatible wire carries the pool's whole behaviour.

@@ -23,7 +23,7 @@
    #:map-telegram-message #:map-telegram-press #:next-update-offset #:+default-allowed-updates+
    #:get-updates-plan #:telegram-inbound-policy
    ;; rest.lisp
-   #:send-message-plan #:press-response-plan #:telegram-file-plan #:edit-message-plan
+   #:send-message-plan #:ask-reply-plan #:press-response-plan #:telegram-file-plan #:edit-message-plan
    #:delete-message-plan #:typing-plan #:reaction-plans #:answer-callback-plans
    #:read-back-path #:telegram-acknowledgement-p #:set-my-commands-plan
    #:telegram-command-name-p #:get-file-plan #:telegram-file-url

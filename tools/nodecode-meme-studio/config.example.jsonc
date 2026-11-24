@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell, as
+// documentation and not as config. The declaration in cell.lisp is the
+// authority; this is an illustration of it. A present section is enabled;
+// "enabled": false vetoes it. No key is needed.
+{
+  "meme-studio": {
+    "enabled": true,
+    "endpoint": "https://memes.mrhyde.dev/mcp",
+    "language": "en",
+    "output_dir": "~/.nodecode/memes",
+    "timeout_seconds": 90,
+    "max_image_bytes": 8388608
+  }
+}

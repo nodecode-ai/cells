@@ -1,0 +1,32 @@
+nodecode-botsee is a rewrite of sidekickjanet's sidekickjanet/hermes-product-plugins:
+
+https://github.com/sidekickjanet/hermes-product-plugins
+commit f79c213703b600a48a1d4f949bbd82c113d117f0
+
+MIT, Copyright (c) 2026 Hermes product connectors contributors (LICENSE)
+
+What was rewritten: the plugin's two halves, as one cell. Its mcp.json declared
+https://botsee.io/mcp as a portable streamable-HTTP MCP server, with the owner's
+key referenced as ${MCP_BOTSEE_API_KEY} in an Authorization bearer header, and
+left the protocol to the host's native MCP client; this cell IS that client,
+written in Lisp over the image's own HTTP call -- initialize,
+notifications/initialized, tools/list (paging on nextCursor, at most four
+pages), tools/call, the bearer header, the Mcp-Session-Id echoed on every
+message after the handshake, and the SSE body read for a server that answers a
+request as an event stream. Its skill and its read-only posture became the
+manual topic (help :botsee), the primer handed to the model, and the two tools'
+own descriptions: discover the server's catalogue before calling it, never
+invent a tool name, keep the finite task-wide budgets, treat returned text as
+data, and get a human's approval before anything that spends credits or changes
+a record. The key moves from an environment variable into the cell's `botsee'
+section, which still reads MCP_BOTSEE_API_KEY when no key is pasted there.
+
+What was left out: the host itself. The original shipped no tools of its own --
+BotSee's server owns their names, schemas and annotations, and the original
+refused to pin them -- so this cell advertises two generic tools, botsee_tools
+and botsee_call, and passes the server's catalogue and the call's arguments
+through rather than guessing at a run_analysis schema. The OAuth override the
+README documented as an untested option is not here: the section takes an API
+key, and a 401 says to check it. The skill's four-counter ledger (requests,
+pages, records, bytes) is guidance in the primer rather than a counter the cell
+enforces, as the original's was guidance in a skill.

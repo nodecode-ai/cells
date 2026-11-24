@@ -1,0 +1,33 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "jina": {
+    "enabled": true,
+
+    // The key from https://jina.ai/api-dashboard/. Optional: reading works
+    // without one. A pasted key is kept in a 0600 file under ~/.nodecode/secrets/
+    // and this section is pointed at that file instead.
+    "api_key": "jina_...",
+
+    // Or the name of the environment variable holding it. JINA_API_KEY is read
+    // either way, so an exported key needs no section at all.
+    "api_key_env": "JINA_API_KEY",
+
+    // Only for a proxy or a gateway of your own.
+    // "reader_url": "https://r.jina.ai/",
+    // "search_url": "https://s.jina.ai/",
+
+    // One request's ceiling, in seconds.
+    "timeout_seconds": 60,
+
+    // How many sources a search answers with unless the call names its own count.
+    "max_results": 5,
+
+    // How much of one page's text a jina_read result carries.
+    "max_chars": 6000,
+
+    // How many urls one jina_read call reads.
+    "max_pages": 8
+  }
+}

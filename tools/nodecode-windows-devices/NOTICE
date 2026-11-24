@@ -1,0 +1,9 @@
+nodecode-windows-devices is a rewrite of Yicheng-Mark's Yicheng-Mark/hermes-windows-plugins:
+
+  https://github.com/Yicheng-Mark/hermes-windows-plugins
+  commit 125c0399da5506f92482e316ccbbd6bee5a4697e
+  MIT, Copyright (c) 2026 Yicheng-Mark (LICENSE)
+
+The original is a Hermes Agent plugin of two read-only device tools, win_device_table and win_device_detail, over two CIM queries run through PowerShell. This rewrite keeps both tools by name, their arguments and their answer: the same two scripts, the same fields, the same problem codes in words, and the same notes under a listing -- how much of the tree was read, which device needs attention, and what is here by class. Around them it adds a /windows-devices command and a (help :windows-devices) topic, so a person can read the same tree without asking a model, and it answers a miss -- no such device, a machine that is not Windows -- as {"ok": false} JSON rather than as a stack the model has to translate. The PowerShell script is still the plugin's, carried as data; nothing about CIM, the codes or what the fields mean was reinvented.
+
+Left out: the plugin's packaging (plugin.yaml, pyproject.toml, its Python package layout and pytest suite), which is the harness it ran on rather than anything a user sees, and its JSON-schema files, whose shape the cell's contracts now declare once. Nothing the original reaches was dropped: it reads no file, holds no key and calls no network, and neither does the cell.

@@ -1,0 +1,35 @@
+nodecode-yandex is a rewrite of akinfold's akinfold/hermes-yandex-search-api:
+
+  https://github.com/akinfold/hermes-yandex-search-api
+  commit a143ba11735622105d1b762e61c0211e887d4800
+  MIT, Copyright (c) 2026 Roman Akinfeev (LICENSE)
+
+The rewritten plugin is the `hermes_yandex_search` folder at that commit: a
+Hermes web-search backend plus one tool, both over Yandex Cloud's Search API
+v2. Its wire is carried over unchanged: POST /v2/web/search with
+query.searchType, query.queryText, query.page, FAMILY_MODE_MODERATE,
+FIX_TYPO_MODE_ON, groupSpec GROUP_MODE_DEEP with groupsOnPage clamped to
+1..100 and docsInGroup 1, responseFormat FORMAT_XML, and the Base64 `rawData`
+decoded and read for each group's `<doc>` (url, title with its <hlword>
+tags flattened, domain, and the passages joined, else the headline); POST
+/v2/gen/search with one ROLE_USER message, searchType, fixMisspell, and an
+optional site.site list; the `folderId` every body carries; the
+`Authorization: Api-Key` header; the answer fields message.content,
+sources[].url/title/usedText, searchQueries (objects or bare strings),
+fixedMisspellQuery, isAnswerRejected and isBulletAnswer, and the one-element
+array a streaming-off answer sometimes arrives in; the refusal read out of a
+failed status's message or error member and its details[].requestId; and the
+guards in front of the XML — 2 MiB, UTF-8 only, no DTD, a strict Base64. What
+the original's own guards did with Expat's version and namespace lengths has
+no counterpart here, because this cell scans the document rather than parsing
+it, so there is no parser to version-check.
+
+Left out, and why: the harness-level `web_search` backend, because Nodecode
+has no such backend to register into — the same search is the
+`yandex_web_search` tool and `(yandex:search ...)`; the result envelope's
+`position` and `domain` split, which the numbered blocks carry implicitly; and
+the optional `region` and `localization` arguments of the original's client,
+which its own provider never passed on and no Hermes user could reach. The two
+environment variables the plugin manifest required are the section's
+`api_key_env` and `folder_id_env`, read the same way (inline first, then the
+variable). LICENSE is the repository's LICENSE, unchanged.

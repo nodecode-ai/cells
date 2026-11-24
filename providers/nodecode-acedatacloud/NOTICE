@@ -1,0 +1,25 @@
+nodecode-acedatacloud is a rewrite of AceDataCloud's AceDataCloud/AceDataCloudModelProviderHermes:
+https://github.com/AceDataCloud/AceDataCloudModelProviderHermes
+commit 568763ee21fe081562bb9bcd91e7323f8f81d6ff
+MIT, Copyright (c) 2026 Ace Data Cloud (LICENSE)
+
+Rewritten: the provider itself, as one Nodecode cell. __init__.py's profile --
+name, display name, signup address, key variable, base URL, chat_completions
+transport and its two models -- became the catalog row in PROVIDER.LISP and
+CELL.LISP, which is the one shape every Nodecode reader takes a provider in: the
+picker, /models, lane resolution, /connect's key check. Its fetch_models
+override, which narrows the account's shared model list to gpt-4.1 and
+gpt-4.1-mini and falls back to those two when the catalog is unreachable,
+became LISTING-ROWS and LISTING in CELL.LISP. plugin.yaml's requires_env
+became the section and the :CREDENTIAL hook, which reads
+ACEDATACLOUD_API_KEY and never falls through to another family's variable.
+
+Left out: the Hermes-only halves of the original, because Nodecode has its own
+for each. The plugin.yaml manifest, the hermes plugins validate/doctor gates
+and the README's picker screenshot become the cell contract, the cell's own
+test system and the .asd :properties entry; the signup_url's referral
+parameters have no Nodecode seam (its picker opens no signup link) and are
+left out rather than carried as dead data; and the CI scripts (the published
+catalog acceptance run and the unittest suite) are not ported, since the cell
+tests its own behaviour offline. The original's two model rows carry no
+pricing, and the rewrite invents none: Ace bills from its own balance.

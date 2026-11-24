@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for the AI usage cell --
+// documentation, not config: the declaration in cell.lisp is the authority.
+// Each provider's key is read from an environment variable; name the
+// variable here, or leave the member out for the usual name. Only providers
+// whose variable is set are reported, and with none set the cell refuses at
+// start naming the variables it looked for. "enabled": false vetoes it.
+{
+  "ai-usage": {
+    "copilot_token_env": "COPILOT_GITHUB_TOKEN",  // a GitHub token with Copilot access
+    "zai_key_env": "GLM_API_KEY",                  // Z.AI / GLM coding plan
+    "kimi_key_env": "KIMI_API_KEY",                // Kimi coding plan
+    "minimax_key_env": "MINIMAX_API_KEY",          // MiniMax coding plan
+    "deepseek_key_env": "DEEPSEEK_API_KEY",        // DeepSeek balance
+    "opencode_go_key_env": "OPENCODE_GO_API_KEY",  // OpenCode Go windows
+    "opencode_zen_key_env": "OPENCODE_ZEN_API_KEY",// OpenCode Zen credits
+    "cache_seconds": 60,                            // how long one answer is reused
+    "timeout_seconds": 12                           // one probe's ceiling
+  }
+}

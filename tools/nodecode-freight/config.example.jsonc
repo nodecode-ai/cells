@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for the freight cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. data_dir is required: the cell refuses to start without it,
+// because every case it keeps is written there.
+{
+  "freight": {
+    // The folder the case library lives in, on a local disk: one JSON file a
+    // case, one CSV an export.
+    "data_dir": "freight",
+    // The currency a case uses when the tool names none.
+    "currency": "CNY",
+    // How many differences one page of the list carries.
+    "page_size": 20,
+    // How many data rows one imported file may carry.
+    "max_rows": 20000
+  }
+}

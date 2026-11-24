@@ -1,0 +1,19 @@
+nodecode-plugin-vet is a rewrite of PerryLink's PerryLink/dsh-skill-pack-security:
+
+  https://github.com/PerryLink/dsh-skill-pack-security
+  commit 1545368e5d16a48fa17f6c269ccae2b7ba4f7975
+
+  Apache-2.0, Copyright (c) 2026 PerryLink (LICENSE)
+
+Rewritten: the plugin's `plugin_vet` supply-chain gate -- its nine checks (licence, SBOM,
+commit lock, install scripts, network exfiltration, obfuscation, source trust, maintenance,
+data responsibility), the five dimension scores, the PASS/WARN/FAIL verdict, the warn/deny
+gate policy and the card format -- as Common Lisp against the Nodecode cell contract, with
+one tool, one slash command and the audit method as a manual topic. The original's scan
+engine spawned an installed `osv-scanner` or `npm audit` when one was present; this cell
+does not, so the dependency dimension scores the manifest's own evidence (floating
+versions, lockfile presence) and carries no advisory lookup. Left out: the eight SKILL.md
+skill bundles in their Chinese and English editions, which dsh mounted on its model. The
+cell keeps the method they teach as `(help :plugin-vet)` and names the section for each
+finding. Also left out: the Chinese report language and the tar/zip extraction path for
+GitHub tarballs; a repository target reads its metadata, manifest and licence directly.

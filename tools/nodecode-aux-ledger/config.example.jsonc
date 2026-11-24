@@ -1,0 +1,11 @@
+{
+  // aux-ledger: one JSONL line per auxiliary (side) LLM call, and /aux.
+  "aux-ledger": {
+    // where the ledger lives; required -- the cell refuses to start without it
+    "file": "~/.nodecode/aux-ledger/calls.jsonl",
+    // false keeps reading the ledger and stops writing it
+    "record": true,
+    // rows kept when the file grows past its weight: the newest win
+    "max_rows": 5000
+  }
+}

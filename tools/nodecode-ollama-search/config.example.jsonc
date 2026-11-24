@@ -1,0 +1,11 @@
+{
+  // Ollama Cloud web search and page fetch: two tools, asked with the same
+  // key an Ollama Cloud model uses. Secrets as references, never inline.
+  "ollama-search": {
+    "api_key_env": "OLLAMA_API_KEY",
+    "base_url": "https://ollama.com",
+    "max_results": 5,
+    "timeout_seconds": 30,
+    "fetch_timeout_seconds": 60
+  }
+}

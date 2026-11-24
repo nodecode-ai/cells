@@ -1,0 +1,15 @@
+// The verifier's section of ~/.nodecode/config.jsonc. Nothing here is
+// required: absent, the cell runs and reviews nothing until /verify on.
+{
+  "verifier": {
+    "enabled": true,            // review every completed turn
+    "model": "",                // empty: the auxiliary model (/models picks it)
+    "provider": "",             // with model, a verifier on a provider of its own
+    "clip": 500,                // characters kept per tool call or result
+    "max_finding_chars": 1200,
+    "agreement": 1,             // reviews per turn; 1 is off
+    "agreement_min": 1,         // how many must raise the same finding
+    "phase_gate": false,        // review a destructive or publishing call before it runs
+    "priorities": ""            // a file of review priorities; empty looks for VERIFIER.md
+  }
+}

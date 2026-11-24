@@ -113,13 +113,13 @@ the name its upload is sent under is the name its card calls it by
       (uiop:copy-file path copy)
       copy)))
 
-(defun card-pictures (images media)
+(defun card-pictures (images media &key hold)
   "The gallery IMAGES make — a card's pictures, (NAME PATH DESCRIPTION) each,
 oldest first — on a message that holds MEDIA, (NAME . ATTACHMENT-ID) per
-picture it carries already. => (values ITEMS UPLOADS ATTACHMENTS): the
-gallery's items, the files this request sends (files[i], in order), and the
-attachments array: what the message keeps, by id, and what it gains, by
-index."
+picture it carries already; HOLD leaves out every picture it would gain.
+=> (values ITEMS UPLOADS ATTACHMENTS): the gallery's items, the files this
+request sends (files[i], in order), and the attachments array: what the
+message keeps, by id, and what it gains, by index."
   ;; A picture the message carries is kept, never sent again: a card edits
   ;; every two seconds, and each upload would be a new file that clients load
   ;; again. A new one whose file is gone is left out rather than refused.
@@ -129,7 +129,7 @@ index."
   (let ((items '()) (uploads '()) (attachments '()))
     (loop for (name path description) in (last images +card-gallery-max+)
           for kept = (cdr (assoc name media :test #'equal))
-          when (or kept (and path (probe-file path)))
+          when (or kept (and (not hold) path (probe-file path)))
             do (push (nlk:json-object "id" (or kept (length uploads)) "filename" name) attachments)
                (unless kept
                  (setf uploads (append uploads (list (staged-picture name path)))))
@@ -139,7 +139,7 @@ index."
                      items))
     (values (nreverse items) uploads (nreverse attachments))))
 
-(defun card-components (card controls &key media)
+(defun card-components (card controls &key media hold)
   "CARD (NCK:DIGEST-CARD) and its CONTROLS as a Components V2 message: one
 container, its accent the state; the state and the time in small type over
 the ask's task as its heading; what the turn is doing when no step shows it,
@@ -151,14 +151,14 @@ CONTROLS, rows of buttons, at its foot. A step wears its mark (CARD-MARK) — a
 green check done, a spinner running — and while the turn works the spinner
 opens the description too, so a working card always moves. A card whose ask
 has no title yet is titled what the turn does now, or how it ended. MEDIA is
-what the message holds already (CARD-PICTURES). => (values COMPONENTS UPLOADS
-ATTACHMENTS)."
+what the message holds already, HOLD to gain none (CARD-PICTURES). => (values
+COMPONENTS UPLOADS ATTACHMENTS)."
   ;; Discord's caps on one V2 message: 40 components however nested, 4000
   ;; characters across its text. Each part is cut so the whole stays inside
   ;; both.
   (destructuring-bind (&key state elapsed task headline thought steps earlier note meta pending images said)
       card
-    (multiple-value-bind (items uploads attachments) (card-pictures images media)
+    (multiple-value-bind (items uploads attachments) (card-pictures images media :hold hold)
       (let* ((working (eq state :working))
              ;; Under a task, what the turn does now is the running step's row,
              ;; or — between steps — the description's opening words.
@@ -214,12 +214,13 @@ ATTACHMENTS)."
                                          "components" (coerce parts 'vector)))
                 uploads attachments)))))
 
-(defun card-body (target card controls &key media reply-to edit)
+(defun card-body (target card controls &key media hold reply-to edit)
   "CARD and its CONTROLS as one Components V2 message body on TARGET (CARD-
 COMPONENTS), a silent reply to REPLY-TO; EDIT for a PATCH, which empties the
 words and embeds a message posted before cards were components would still
-carry. => (values BODY UPLOADS)."
-  (multiple-value-bind (components uploads attachments) (card-components card controls :media media)
+carry; HOLD to upload no picture. => (values BODY UPLOADS)."
+  (multiple-value-bind (components uploads attachments)
+      (card-components card controls :media media :hold hold)
     (values (nlk:json-object
              "flags" +discord-components-v2+
              :when edit "content" :null
@@ -541,9 +542,65 @@ minute is the floor, a file being heavier than a message."
                   (message-body target (or content "") :reply-to reply-to :files (list path)))
               (list path))))
 
+;;; --- a server's edit uploads, refused ---------------------------------------
+;;; Discord caps the files a server's message edits may upload: past it, an
+;;; edit that uploads one is refused whole — 429, code 400009, "This server
+;;; has exceeded the message edit attachment upload limit" — while the same
+;;; edit keeping its pictures by id and uploading none is taken. A card that
+;;; gained a picture asked with it on every tick, so its words froze with it:
+;;; 1,352 card edits refused in a day in Foresight Labs Private, a lane's card
+;;; frozen 30 minutes at a stretch while screenshot feeds spent the cap
+;;; (2026-11-09). A refused edit goes again without the pictures it would
+;;; gain, and the channel's edits leave new pictures out for the pause
+;;; Discord named; the first edit after it carries them.
+
+(defvar *edit-upload-holds* (make-hash-table :test #'equal :synchronized t)
+  "Channel id -> the NOW-MS until which a card edit there uploads no picture:
+Discord refused the server's edit uploads (EDIT-UPLOADS-REFUSED-MS).")
+
+(defun edit-uploads-held-p (channel)
+  "True while CHANNEL's card edits leave new pictures out (*EDIT-UPLOAD-HOLDS*)."
+  (let ((until (gethash channel *edit-upload-holds*)))
+    (cond ((null until) nil)
+          ((< (now-ms) until) t)
+          (t (remhash channel *edit-upload-holds*) nil))))
+
+(defun edit-uploads-refused-ms (status body)
+  "The pause Discord names, in ms, when it refused an edit for the server's
+edit uploads: 429 code 400009. NIL for any other answer."
+  ;; Its retry_after counts down to when one more upload is taken, which a
+  ;; feed waiting it out exactly takes first: the floor keeps a card from
+  ;; asking twice a second.
+  (and (eql status 429) (hash-table-p body) (eql 400009 (gethash "code" body))
+       (max 1000 (or (discord-retry-after-ms status body nil) 0))))
+
+(nlk:define-side-table upload-fallback (:test #'eq :weakness :key :synchronized t)
+  "A card edit plan that uploads pictures -> (CHANNEL . THUNK): where its
+upload counts, and the plan of the same edit uploading none.")
+
+(defun hold-refused-uploads (executor)
+  "EXECUTOR, a card edit Discord refuses for its uploads going again without
+them, and that channel's edits uploading none for the pause Discord named."
+  ;; Words before pictures: the edit that goes again is the whole card but
+  ;; for the pictures it would gain, kept ones still shown by id; a refusal
+  ;; of anything else is the executor's answer as it was.
+  (make-plan-executor
+   :run (lambda (plan &aux (result (execute-plan executor plan)))
+          (destructuring-bind (&optional channel . fallback) (upload-fallback plan)
+            (nlk:if-let (pause (and fallback (not (execution-ok-p result))
+                                    (edit-uploads-refused-ms (execution-status result)
+                                                             (execution-body result))))
+              (progn (setf (gethash channel *edit-upload-holds*) (+ (now-ms) pause))
+                     (execute-plan executor (funcall fallback)))
+              result)))))
+
 (defun edit-message-plan (target message-id text &key (timeout-seconds 30)
-                                                      retry controls card media)
-  "PATCH one message — a turn's card editing in place, or a message's words."
+                                                      retry controls card media
+                                                      (hold (edit-uploads-held-p
+                                                             (target-rest-channel target))))
+  "PATCH one message — a turn's card editing in place, or a message's words;
+HOLD uploads none of the card's new pictures, as while the channel's edit
+uploads are refused (HOLD-REFUSED-UPLOADS)."
   ;; RETRY opts into 5xx/429 retries: running updates leave it off (the next
   ;; tick supersedes a missed edit), the terminal settle turns it on (nothing
   ;; follows it). A CARD restates the whole message, its CONTROLS inside it
@@ -554,14 +611,22 @@ minute is the floor, a file being heavier than a message."
   ;; an absent list leaves them as they stand.
   (multiple-value-bind (body files)
       (if card
-          (card-body target card controls :media media :edit t)
+          (card-body target card controls :media media :hold hold :edit t)
           (nlk:json-object "content" text
                            "allowed_mentions" (nlk:json-object "parse" #())
                            :when controls "components" (controls-components controls)))
-    (rest-plan "PATCH" (format nil "/channels/~a/messages/~a"
-                               (target-rest-channel target) message-id)
-               "edit_message" retry timeout-seconds
-               (if files (discord-file-parts body files) body))))
+    (let ((plan (rest-plan "PATCH" (format nil "/channels/~a/messages/~a"
+                                          (target-rest-channel target) message-id)
+                          "edit_message" retry timeout-seconds
+                          (if files (discord-file-parts body files) body))))
+      (when files
+        (setf (upload-fallback plan)
+              (cons (target-rest-channel target)
+                    (lambda ()
+                      (edit-message-plan target message-id text :timeout-seconds timeout-seconds
+                                         :retry retry :controls controls :card card
+                                         :media media :hold t)))))
+      plan)))
 
 (defun delete-message-plan (target message-id &key (timeout-seconds 30))
   "DELETE one message — retiring a status line once the answer it stood in
@@ -702,37 +767,25 @@ letters, digits, `-' and `_' (the ASCII slice of its ^[-_\\p{L}\\p{N}]{1,32}$)."
 
 (defun commands-plan (application-id entries &key (timeout-seconds 30))
   "PUT /applications/<id>/commands — the bulk overwrite that makes ENTRIES
-((:name :description :usage) plists) the application's global command
-menu, every previous command gone."
-  ;; A command with a usage takes one optional string option, `args', the
-  ;; verbatim tail the interaction carries back — completed on the fly when
-  ;; the entry is marked :AUTOCOMPLETE. A name Discord would refuse is left
-  ;; out — one bad name fails the whole sync; descriptions are cut to
-  ;; Discord's 100 and never empty. Retried: the menu is set once per catalog
-  ;; shape.
+((:name :description) plists) the application's global command menu, every
+previous command gone."
+  ;; A command is its name: it takes no option, and picked from the menu it
+  ;; answers what it offers, a card whose rows run its lines or ask for its
+  ;; text (NCK::DIALOG-CARD). A name Discord would refuse is left out — one
+  ;; bad name fails the whole sync; descriptions are cut to Discord's 100 and
+  ;; never empty. Retried: the menu is set once per catalog shape.
   (rest-plan "PUT" (format nil "/applications/~a/commands" application-id)
              "set_commands" t timeout-seconds
              (coerce
               (loop for entry in entries
                     for name = (getf entry :name)
-                    for usage = (or (getf entry :usage) "")
                     when (discord-command-name-p name)
                       collect (nlk:json-object
                                "name" name
                                "type" 1
                                "description"
                                (nlk:clip (or (nlk:json-value (getf entry :description) :text) name)
-                                         100 :ellipsis "")
-                               :when (plusp (length usage))
-                               "options" (vector
-                                          (nlk:json-object
-                                           "type" 3
-                                           "name" "args"
-                                           "description"
-                                           (nlk:clip usage 100 :ellipsis "")
-                                           "required" nil
-                                           :when (getf entry :autocomplete)
-                                           "autocomplete" t))))
+                                         100 :ellipsis "")))
               'vector)))
 
 (defun interaction-response-plan (candidate text &key private controls panel (timeout-seconds 30))
@@ -852,25 +905,53 @@ words to the presser of PAYLOAD after its press has been answered."
                                     (split-text-chunks text (1- +discord-message-content-limit+)))
                             timeout-seconds)))
 
-(defun interaction-autocomplete-plans (payload choices &key (timeout-seconds 3))
-  "POST /interactions/<id>/<token>/callback — the one answer the autocomplete
-request PAYLOAD takes, type 8: at most 25 of CHOICES, (:name :value) plists cut
-to Discord's 100-character caps."
-  ;; Not retried: a late answer is refused as an unknown interaction, and the
-  ;; menu waits three seconds only.
-  (list (interaction-callback-plan
-         (getf payload :id) (getf payload :token)
-         (nlk:json-object
-          "type" 8                          ; the autocomplete result: no deferral admitted
-          "data" (nlk:json-object
-                  "choices"
-                  (coerce
-                   (loop for choice in (subseq choices 0 (min 25 (length choices)))
-                         collect (nlk:json-object
-                                  "name" (nlk:clip (or (getf choice :name) "") 100 :ellipsis "")
-                                  "value" (nlk:clip (or (getf choice :value) "") 100 :ellipsis "")))
-                   'vector)))
-         "interaction_autocomplete" timeout-seconds)))
+(defun capped (text limit)
+  "TEXT as a field LIMIT characters long holds it: whole when it fits, else
+cut to make room for an ellipsis."
+  (if (> (length text) limit) (nlk:clip text (1- limit) :ellipsis "…") text))
+
+(defun interaction-modal-plan (candidate ask &key prompt (timeout-seconds 3))
+  "(values PLAN T): the answer a press on a row that asks for its text takes
+(NCK:PLATFORM-PLAN-ASK) -- POST /interactions/<id>/<token>/callback type 9, a
+modal named after ASK's label holding one line of text, its placeholder
+ASK's, whose submit carries the press's own data back as its custom_id
+(ROUTE-DISCORD-INTERACTION) -- or NIL for a CANDIDATE that is no press on
+a choice."
+  ;; A modal is the one answer its press takes, inside the press's three
+  ;; seconds, so it is not retried: a late one is refused as an unknown
+  ;; interaction, and the kit then asks with a message instead. A title and
+  ;; a label hold 45 characters, a placeholder 100.
+  (declare (ignore prompt))
+  (let* ((data (source-field candidate "press_data"))
+         (label (nlk:trimmed (or (nlk:json-value ask :text "label") "")))
+         (label (if (plusp (length label)) label "Text"))
+         (placeholder (nlk:trimmed (or (nlk:json-value ask :text "placeholder") "")))
+         (id (source-field candidate "interaction_id"))
+         (token (source-field candidate "interaction_token")))
+    (when (and id token (candidate-pressed-p candidate) (stringp data) (<= 1 (length data) 100))
+      (values
+       (interaction-callback-plan
+        id token
+        (nlk:json-object
+         "type" 9                           ; MODAL
+         "data" (nlk:json-object
+                 "custom_id" data
+                 "title" (capped label 45)
+                 "components"
+                 (vector (nlk:json-object
+                          "type" 1          ; ACTION_ROW
+                          "components"
+                          (vector (nlk:json-object
+                                   "type" 4 ; TEXT_INPUT
+                                   "custom_id" "text"
+                                   "label" (capped label 45)
+                                   "style" 1 ; one line
+                                   "required" t
+                                   "max_length" 4000
+                                   :when (plusp (length placeholder))
+                                   "placeholder" (capped placeholder 100)))))))
+        "interaction_modal" timeout-seconds)
+       t))))
 
 (defun hydrate-self-roles (executor bot-user-id &key (timeout-seconds 30))
   "Ask Discord which roles the bot itself holds and note them as addresses:

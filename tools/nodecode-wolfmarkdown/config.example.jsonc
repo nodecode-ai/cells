@@ -1,0 +1,9 @@
+// Copy this to the "wolfmarkdown" section of ~/.nodecode/config.jsonc; nothing here is required.
+{
+  // the unordered list marker markdown_clean writes and markdown_verify expects
+  "list_style": "-",
+  // how many findings one report prints before it counts the rest
+  "max_issues": 20,
+  // whether markdown_clean writes the file when the call does not say
+  "write_by_default": false
+}

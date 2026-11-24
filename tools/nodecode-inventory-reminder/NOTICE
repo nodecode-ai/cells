@@ -1,0 +1,31 @@
+nodecode-inventory-reminder is a rewrite of ether-btc's inventory-reminder:
+
+  https://github.com/ether-btc/inventory-reminder
+  commit 57704f3a3788f9b6da519a9c873c45bac936cc22
+
+MIT, Copyright (c) 2026 ether-btc (LICENSE)
+
+Rewritten: the plugin's two tools, `inventory_where(term, json)` and
+`inventory_summary()`, as a Nodecode cell — the same cached digest file read
+when a tool is called (the section's `inventory_json`, else `$INVENTORY_JSON`,
+else `~/.hermes/inventory.json`), the same seven sections searched in the same
+order (skills, owned repos, foreign clones, MCP servers, CLIs, models, key
+packages), the same grouped report with a detail line per hit, the same
+`--json` shape for scripts, and the same one-line digest for a session
+bootstrap. The plugin's `inventory where` command became `/inventory-reminder`,
+`(inventory-reminder:lookup "term")` and `(inventory-reminder:digest)`, the
+tools kept their names, and the opt-in session-start digest line became the
+`inventory_summary` tool. Read-only throughout: the digest is read, never
+rewritten, and the foreign-clone section still comes from the `repos.json` the
+scanner keeps beside it.
+
+Left out: the scanners. The plugin's engine is two stdlib-only Python
+scanners (`repo-inventory.py`, `system-inventory.py`) that build the digest
+from the host with `git remote get-url`, `gh repo list`, `hermes skills list`,
+`pip list`, `systemctl list-units` and a walk for `*.gguf` files, plus
+`refresh.sh`, `setup-host.sh`, `rollback-host.sh`, `monitor.sh` and the weekly
+cron job that keeps it fresh. They are left out because they are a Python,
+systemd-and-Hermes-shaped installer around a file: the digest is the contract
+between them and the tools, so this cell reads the file (from the original's
+own default location) and a user who wants a fresh digest runs the scanners
+from the original repository. Nothing rescans per turn in the original either.

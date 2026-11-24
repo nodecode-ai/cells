@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the declaration in cell.lisp is the authority.
+// A present section is enabled; "enabled": false vetoes it. api_base and
+// model have no defaults: /document-ocr names what is still missing. Keep a
+// token out of this file: name the environment variable that holds it.
+{
+  "document-ocr": {
+    "api_base": "https://ocr.example.com/v1",
+    "model": "your-ocr-model",
+    "api_key_env": "OCR_TOKEN",
+    "max_tokens": 8192,
+    "timeout_seconds": 120,
+    "max_file_mb": 25,
+    "max_pages": 10,
+    "render_dpi": 150,
+    "allow_insecure_http": false,
+    "prompt": ""
+  }
+}

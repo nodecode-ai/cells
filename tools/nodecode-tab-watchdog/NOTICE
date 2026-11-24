@@ -1,0 +1,17 @@
+nodecode-tab-watchdog is a rewrite of web3blind's web3blind/hermes-chrome-tab-watchdog:
+
+  https://github.com/web3blind/hermes-chrome-tab-watchdog
+  commit 15b873f13df8275c59a18cbe4a9a2ec71266af50
+  MIT, Copyright (c) 2026 web3blind (LICENSE)
+
+The rewrite keeps the original's judgement of a stale tab -- a blank page left for blank_minutes,
+a second copy of a url left for duplicate_hours, a tab nothing has touched for idle_hours -- its
+bound of five closes a sweep, its refusal to close the last page, its keeping of one blank tab,
+its second look before closing and its check that each one is gone, and its settings, renamed to
+the config section's spelling. What it does not do is the original's plumbing, because Nodecode
+has no counterpart for it: the loopback CDP proxy every browser tool was routed through, the
+observer WebSocket session with its focus script, the per-call leases that proxy enabled, the
+SQLite ledger (a small JSON file under the home takes its place), and the native cron entry
+point, which is now a worker the cell starts when `auto` is on. The source is Common Lisp written
+for Nodecode's cell contract, with none of the original's Python, so a reader who compares them
+should compare the rules, not the files.

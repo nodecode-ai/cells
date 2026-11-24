@@ -1,0 +1,29 @@
+nodecode-agent-router is a rewrite of Pinutss's Pinutss/jev-agent-router:
+
+  https://github.com/Pinutss/jev-agent-router
+  commit 8cb6d67a81d4545502750c4599b427d98acf3120
+  MIT, Copyright (c) 2026 Pinuts (LICENSE)
+
+Rewritten: the whole of the original's local router — router.py's
+HeuristicRouter and its tokenizer, the stopword list, the access policies
+(scope, disabled, already failed, missing capabilities, missing permissions,
+forbidden permissions, duplicate input), the weighted score (relevance 0.45,
+capabilities 0.25, reliability 0.15, cost 0.10, latency 0.05), the three
+decisions with their abstention reasons, the single-hop fallback through a
+failed agent's fallback_id, and the MCP tool agent_route with its arguments
+and its JSON answer (models.py's AgentProfile, RouteRequest and RouteResult).
+The demo registry is kept, in English, so a fresh home has something to rank.
+
+Also rewritten: what the plugin exposed around the tool. The tool schema
+became one declared contract, the skill and the command became the same
+manual under (help :agent-router) and one slash command, /agents, and the
+verbs route, route-json and agents-text are the same decision from eval.
+
+Left out, and why: the remote judges (JEV, the OpenAI-compatible gateways
+and the model catalog behind them), the HTTP server at /v1/route and its
+demo page, the CLI, the Docker image, the benchmark runner and the regex
+secret redaction. All of them exist to rank through a model over the network;
+a cell that ranks locally in the same process needs none of them, and no key,
+no endpoint and no HTTP client is carried here. Also left out: the
+box/shape dispatch by provider (local, mock, custom, jev) — this cell ships
+the one provider the shipped plugin itself defaults to, local.

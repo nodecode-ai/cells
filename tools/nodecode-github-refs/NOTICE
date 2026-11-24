@@ -1,0 +1,35 @@
+nodecode-github-refs is a rewrite of EloquentBrush0x's EloquentBrush0x/hermes-context-refs:
+
+https://github.com/EloquentBrush0x/hermes-context-refs
+commit bb0001012c5b213ce5a09b5905d859635c440c17
+
+MIT, Copyright (c) 2026 EloquentBrush0x (LICENSE)
+
+What was rewritten: the plugin's one contribution -- a context-reference
+provider for @gh:owner/repo#123 -- is here a model tool, github_reference, and
+the same call as a Lisp verb, gh-ref:reference. A reference is parsed the same
+way (owner/repo#123, or a github.com /issues/ or /pull/ URL, everything after
+the number ignored), checked against the same name rules before any request,
+and read with the same anonymous requests: GET api.github.com/repos/O/R/issues/N
+with Accept: application/vnd.github+json and X-GitHub-Api-Version, then the
+pull request's own details and the last page or two of comments, using the URLs
+GitHub returned and only when they point back at the API root. The block the
+model reads is the original's: title and url, state (merged with its day, open,
+draft, closed with its reason), who opened it and when, the comment count,
+labels, assignees and milestone, the description with HTML comments dropped
+outside fenced code blocks and truncated at a word boundary, the newest comments
+oldest first, a note for anything that could not be read, and the line that says
+the text is quoted reference material and not instructions. A pull request adds
+its branches, commits and change size. The refusals are the original's too: a
+reference that does not parse, a number that does not exist or a private
+repository, and a used-up anonymous limit with the time it resets.
+
+What was left out: the Hermes context-reference seam itself. There is no
+@-reference hook a Nodecode cell plugs into, so nothing expands automatically
+when the operator types @gh:owner/repo#123 in a message: the model calls the
+tool (or the operator types /gh owner/repo#123, or evaluates the verb) and the
+block arrives as the call's text. Hermes's own trailing-punctuation rule and
+its 10-requests-a-minute autocomplete are gone with that seam -- the cell's tool
+needs no autocomplete and sends nothing while someone types. The JSON envelope
+of the API answer is not passed through; the same fields are rendered, which is
+what a model reads.

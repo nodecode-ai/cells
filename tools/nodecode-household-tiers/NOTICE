@@ -1,0 +1,39 @@
+nodecode-household-tiers is a rewrite of chevlume's chevlume/household-tiers:
+
+  https://github.com/chevlume/household-tiers
+  commit 1896b63f63c8f1615d974e30c3c731e895fb8d70
+  MIT License, Copyright (c) 2026 Chevlume (LICENSE)
+
+Every line of Common Lisp here is new. What was rewritten: the plugin's
+policy document, read in the same shape (sessions, default, tiers, hours,
+audit), its tier check before a tool call, its quiet hours with a window that
+may cross midnight, its audit ledger with retention and /family forget, and
+its /family digest, here /household-tiers with the same three verbs and the
+same owner-only rule. The check that ran in the gateway's pre-tool-call hook
+runs here on Nodecode's :tool point, so the refusal is the failed call the
+model reads, and the ledger and the policy live under the Nodecode home
+instead of the Hermes home.
+
+What was left out, and why:
+
+- The owner's memory withholding. The plugin rewrote every non-owner model
+  request -- stripping the boxed MEMORY.md / USER.md blocks, the external
+  provider block joined after them and <memory-context> recalls, and refusing
+  a turn whose boxed header survived. Nodecode's cells have a tool point and a
+  frame point and no request-rewrite seam, so the rewrite keeps the tiers, the
+  hours and the audit, and the section's tiers should simply leave `memory`
+  out of a non-owner list. The README says so.
+- The file_roots path gate for read_file and search_files, and the
+  local-network hostname check for the web tools. Both exist because a
+  non-owner tier could be granted those tools; Nodecode's tools are `eval`
+  and whatever a cell registers, and `eval` has full host authority whichever
+  tier calls it, so neither gate would bound anything a tier could not step
+  around.
+- The curfew as a whole-turn answer. The plugin stopped a quiet-hours turn at
+  the gateway and answered it itself; here the turn runs and its tool calls
+  are what wait, which is the seam a cell has.
+- The parent alert. The plugin asked the gateway adapter to send a message to
+  a chat it named; a Nodecode cell would need a channel cell's outbound seam,
+  and the entry never depends on another entry.
+- The /familia alias and the Spanish default messages: the command name is
+  the cell's own, so there is one spelling.

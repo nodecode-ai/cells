@@ -1,0 +1,21 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell — documentation,
+// not config: the folder gets pushed and holds no secret. The declaration in
+// cell.lisp is the authority; this is an illustration of it. A present section
+// is enabled; "enabled": false vetoes it.
+//
+// While your model takes images, nothing here is needed: see_image attaches the
+// image to the turn. api_base and model are what the other path uses, and are
+// required only when the model reads text only or image_input_mode is "text".
+{
+  "vision-inline": {
+    "enabled": true,
+    "image_input_mode": "auto",
+    "api_base": "https://api.example.com/v1",
+    "model": "your-captioning-model",
+    "api_key_env": "VISION_CAPTION_KEY",
+    "max_tokens": 1024,
+    "max_file_mb": 5,
+    "timeout_seconds": 60,
+    "allow_insecure_http": false
+  }
+}

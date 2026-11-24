@@ -1,0 +1,19 @@
+// The approvals cell's section. A sibling of "channels" at the top of
+// ~/.nodecode/config.jsonc; presence is enabled.
+{
+  "approvals": {
+    // Empty means https://api.typesafe.ai/v1 (route /systemone, model
+    // jev-latest). An openrouter.ai base takes its own route and model; any
+    // other base_url is the decision endpoint itself.
+    "base_url": "",
+    "model": "",
+    // The variable holding the key. Empty reads TYPESAFE_API_KEY, or
+    // OPENROUTER_API_KEY on the openrouter.ai route, or a key saved in
+    // ~/.nodecode/auth.json under api_keys.typesafe.
+    "key_env": "TYPESAFE_API_KEY",
+    "timeout": 20,
+    // Append every decision, good or refused, to
+    // approvals-decisions.jsonl in the Nodecode home.
+    "audit": true
+  }
+}

@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "tameru": {
+    "enabled": true,
+    "min_chars": 4000,
+    "head_lines": 8,
+    "tail_lines": 8,
+    "max_line_chars": 300,
+    "error_lines": 40,
+    "store_limit": 16,
+    "skip_tools": []
+  }
+}

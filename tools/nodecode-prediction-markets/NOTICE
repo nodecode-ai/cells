@@ -1,0 +1,29 @@
+nodecode-prediction-markets is a rewrite of predictionmarketspicks's predictionmarketspicks/mcp:
+
+  https://github.com/predictionmarketspicks/mcp
+  commit d1abeb5562f54f0f6950d117669dce290fe1a1b6
+  MIT License, Copyright (c) 2026 PredictionMarketsPicks (LICENSE)
+
+The plugin is configuration only: mcp.json (a hosted MCP server over Streamable
+HTTP) and the prediction-markets skill. The calculator half of that server is
+also shipped by the same repository as a self-contained offline build
+(`--local`), and that build is what this cell rewrites in Common Lisp:
+
+  calc.lisp        src/lib/formulas.js, src/lib/combo-price.js and the
+                   arithmetic of src/tools.js: the EV edge, Kelly sizing,
+                   Bayesian updating, probability / American / decimal
+                   conversion, the base-rate gap and the combo fair-value
+                   band, with the original's rounding and thresholds.
+  cell.lisp        the six tool schemas of src/tools.js as boundary
+                   contracts, the twelve curated base rates of
+                   src/lib/base-rates.js as data, and the skill's rules as
+                   (help :prediction-markets).
+
+Left out, and why: the other 34 tools on the hosted endpoint (live Kalshi and
+Polymarket boards, Fed odds, perps, the NFL model) answer live market data
+from predictionmarketspicks.com and are not in this repository's own source, so
+a rewrite of them would be a client of that server rather than a port of this
+code; point the mcp cell at https://predictionmarketspicks.com/api/mcp/mcp for
+them. Also left out: the branded footer each result carried (a UTM backlink to
+the site's tool page and a Kalshi signup referral), and the JSON `structured`
+mirror of every answer, which is text here.

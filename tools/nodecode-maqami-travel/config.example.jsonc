@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "maqami-travel": {
+    "enabled": true,
+    // the lead guest's nationality, ISO-3166 alpha-2: hotel rates are priced for it
+    "guest_nationality": "EG",
+    // how rates are quoted, three letters
+    "currency": "USD",
+    // the endpoint, only to point the cell at a mirror
+    "base_url": "https://mcp.maqami.co/",
+    // one request's ceiling; a live search can take half a minute
+    "timeout_seconds": 60,
+    // how much of one tool answer the model reads
+    "max_chars": 6000
+  }
+}

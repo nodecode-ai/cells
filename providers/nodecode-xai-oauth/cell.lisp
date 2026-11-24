@@ -93,7 +93,7 @@ for xAI's prompt cache."
 
 (nle:define-cell xai-oauth
   (:section ("xai-oauth")
-    (:guide "sign in with /xai-oauth login (a SuperGrok or X Premium+ account; open the address, enter the code), or set XAI_OAUTH_TOKEN; base_url is where xAI is served")
+    (:guide "sign in from /xai-oauth (a SuperGrok or X Premium+ account; open the address, enter the code), or set XAI_OAUTH_TOKEN; base_url is where xAI is served")
     ("base_url" :string :default +base+
      :doc "the xAI API base the Responses lane appends /responses to"))
   (:start #'start)
@@ -103,6 +103,4 @@ for xAI's prompt cache."
   (:hook 'nle::walk-provider-stream #'walk)
   (:command "xai-oauth" 'run-command
             :description "Sign in to xAI Grok (SuperGrok or X Premium+) with a device code"
-            :argument-hint "login | logout | status"
-            :session nil
-            :complete 'complete-command))
+            :session nil))

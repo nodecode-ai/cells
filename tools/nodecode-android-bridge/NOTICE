@@ -1,0 +1,32 @@
+nodecode-android-bridge is a rewrite of TechFlipsi's TechFlipsi/FlipsiBridge:
+
+  https://github.com/TechFlipsi/FlipsiBridge
+  commit 5f185b2d5ac8b88d127815c13ee31970d31f678a
+  MIT, Copyright (c) 2026 Raul (hermes-android, Original)
+       Copyright (c) 2026 Fabian Kirchweger / TechFlipsi (FlipsiBridge-Modifikationen) (LICENSE)
+
+Rewritten: the plugin's fifty-eight android_* tools, which were a Python module
+making one HTTP call each to a relay, are here fifty-eight tools of one table in
+Common Lisp, calling the same routes on the same relay with the same arguments,
+the same JSON bodies and the same Bearer pairing code. The relay's answers are
+passed through as they arrive; a file fetched from the phone is saved under the
+temp directory and named in a MEDIA line, as the original did. The section that
+was the plugin's environment (ANDROID_BRIDGE_URL, ANDROID_BRIDGE_TOKEN) is the
+`android-bridge` section's url and token.
+
+Left out, and why:
+
+- The relay itself (android_relay.py: an asyncio HTTP-to-WebSocket bridge, and
+  the Double-Ratchet chat/media broker beside it). It is a server in its own
+  right and a Python process; the cell speaks to one instead of starting one,
+  and `url` names it. The phone-to-cell commands, which is what the tools use,
+  are unchanged; the end-to-end encrypted chat routes have no tool here.
+- android_setup's job of starting that relay. The tool remains, and reports
+  whether the relay answers and what to do on the phone next.
+- The pre_tool_call approval hook (Hermes' request_tool_approval for SMS,
+  calls, file deletion, intents, broadcasts, APK install and relay setup). The
+  tools are the same and say in their descriptions what they touch; Nodecode's
+  own approval settings are the ones that apply, and this cell adds no gate of
+  its own. The APK update keeps its fixed source: the relay the phone trusts.
+- The original's package layout, its Hermes plugin manifest and its skill file:
+  the manual the model reads is the (help :android-bridge) topic here.

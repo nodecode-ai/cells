@@ -1,0 +1,11 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. The declaration in cell.lisp is the authority.
+{
+  "woof": {
+    "enabled": true,
+    "woof": "woof",            // or the absolute path to the command
+    "runs_dir": "",            // unset: woof-runs/ under your home
+    "python": "",              // unset: the python3 beside the woof command
+    "max_images": 4
+  }
+}

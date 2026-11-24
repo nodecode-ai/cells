@@ -1,0 +1,27 @@
+nodecode-epistemic is a rewrite of quangphucqp's quangphucqp/epistemic-harness:
+https://github.com/quangphucqp/epistemic-harness
+commit 5abd0dc482096c3f64379115fc79cc96e4e7203a
+MIT, Copyright (c) 2026 Epistemic Harness contributors (LICENSE)
+
+The rewrite keeps the prediction-then-observation loop: a case with a decision,
+the unknown that could change it and a stopping condition; a check committed
+with what it is expected to show before the tool call runs; the observation
+compared against that prediction, with a belief change recorded separately; a
+mismatch marking the claim stale until a revision addresses it; and a close that
+cannot happen while a check is pending. It also keeps the one thing the original
+did quietly — the committed tool's own result is kept, so the comparison is
+against what came back rather than a memory of it — and the reminder put in
+front of the model while a case runs. It is rewritten in Common Lisp as one
+Nodecode cell: the two tools (epistemic_case, epistemic_probe) became two
+declared contracts, the injected state became one bounded line at each request,
+and the case store is one S-expression file under the home.
+
+Left out, and why: the optional hosted method consultation (epistemic_methods,
+a TypeSafe/Jev ranking of candidate investigation methods) — it is off by
+default in the original, needs a vendor key, and Nodecode's TypeSafe traffic
+already has cells of its own. Also left out: the multi-file journaled store with
+`fcntl` leases, write-ahead journals and replay validation, which buys
+crash-recovery guarantees a personal case record does not need (this store writes
+one file and replaces it by rename); the subagent-stop and session-reset hooks;
+and the probe "recover" verb for an interrupted run, which `discard` stands in
+for.

@@ -1,0 +1,11 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell -- documentation,
+// not config: the folder gets pushed and holds no secret. Nothing in it is
+// required; a present section is enabled, "enabled": false vetoes it.
+{
+  "webly": {
+    "enabled": true,
+    "api_url": "https://api.webly.ai",
+    "timeout": 60,
+    "name": ""
+  }
+}

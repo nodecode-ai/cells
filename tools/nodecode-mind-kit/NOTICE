@@ -1,0 +1,31 @@
+nodecode-mind-kit is a rewrite of ousiaresearch's ousiaresearch/biomimetic-brain:
+
+  https://github.com/ousiaresearch/biomimetic-brain
+  commit efbf72d0afc4dff0ab212542eed584114f88d70d
+  MIT License, Copyright (c) 2026 Ousia Research (LICENSE)
+
+brain/ is that repository's brain/ folder, unchanged: its 37 *.example.json
+files, one block per subsystem plus the aggregate example. It is data:
+(mind-kit:seed) copies it into the agent directory, and nothing in it is
+compiled.
+
+cell.lisp is the rewrite of scripts/generate-brain-state.py and
+scripts/decision-gate.py in Common Lisp against Nodecode's cell contract:
+the same 25 subsystems with the same status rules (a file that is gone reads
+missing, never stale), the same health summary and critical flags, and the
+gate's 26 rules in the order docs/DECISION_GATE.md prints them, with the
+same reason codes, the same exit codes (0 PROCEED, 2 CAUTION, 1 VETO), the
+same quiet-hours logic (the entrainment window, else 23:00-05:30, with the
+real clock as ground truth and SCN trusted only when it is fresh and does not
+drift), the same confidence adjustment, and the same labelled defaults. The
+two scripts are replaced by two tools, a /mind command and the manual topic,
+and the fold writes brain-state.json the way the original did.
+
+What is left out, and why: the shell and Python maintenance passes
+(brain-snapshot.sh, brain-maintenance.sh, consolidate-mind.py) and their
+consistency check ran on a schedule and read the harness's own cron database,
+which a cell does not own; here whatever writes the subsystem files is the
+agent's business, and the cell keeps the part that reads them. Also left out:
+the Python test scripts, replaced by this folder's own offline test slice;
+the SETUP-GUIDE, VALIDATION and NOTES prose and docs/, which the manual topic
+condenses; and the repository root's SHA256SUMS and docs/, which the fold does not read.

@@ -1,0 +1,24 @@
+nodecode-health-insights is a rewrite of mwdearing's mwdearing/hermes-health-insights:
+
+  https://github.com/mwdearing/hermes-health-insights
+  commit d6d09c1f17ada6ca60368a1e0c7a7b5bd4efefc6
+  Apache-2.0, Copyright (c) mwdearing (the repository's LICENSE keeps its
+  holder line as the template's "[yyyy] [name of copyright owner]"; the
+  author is mwdearing in plugin.json) (LICENSE)
+
+What was rewritten: the original's deterministic analysis, in Lisp. The
+weekly report (a 7-day mean against a 28-day median, and a direction only
+past one MAD-based sigma), the concern rules for blood pressure, resting
+heart rate, HRV, sleep, oxygen saturation and data gaps, and the coverage and
+freshness report all read the same receiver database: samples, sleep_sessions
+and sync_runs, with SELECT only. The task's shape changed with the harness:
+the original is ten skills driving a Python command line tool, and this is one
+cell whose own tool and /vitals command answer the same questions.
+
+What was left out: the modules the original ships beyond its core (GLP-1
+monitoring, medication adherence through an external medlog command line,
+nutrition against the DRI tables, the labs database, workouts and ECG), the
+YAML configuration of units and profile, the optional narration model, and
+the synthetic demo database. The time zone comes from the section's
+utc_offset_hours rather than a named zone, because the image carries no
+time-zone database. The advice wording is the original's, shortened.

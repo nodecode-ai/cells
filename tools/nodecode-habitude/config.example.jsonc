@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "habitude": {
+    "enabled": true,
+    // the one folder of Markdown notes this cell may read, absolute
+    "vault": "~/Documents/Journal",
+    // how many excerpts one search answers with
+    "max_results": 8,
+    // seconds the in-memory index is reused; 0 rebuilds on every search
+    "refresh_seconds": 60
+  }
+}

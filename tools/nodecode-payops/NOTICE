@@ -1,0 +1,33 @@
+nodecode-payops is a rewrite of BigWave45's BigWave45/payops-hermes-:
+
+  https://github.com/BigWave45/payops-hermes-
+  commit 7712f084392769356bdb294c4b48bf99bf7faadb
+  MIT License, Copyright (c) 2026 PayOps contributors (LICENSE)
+
+Rewritten: the two model-facing tools and their argument schemas
+(payops_list_transactions, payops_reconcile), the one host they reach
+(api.paystack.co), the normalization of Paystack's transaction and
+settlement rows into provider-neutral records, the paged read with its
+per-call page cap and the warning it leaves when the cap cuts a range
+short, and the deterministic reconciliation report — per-currency
+summaries on both sides (successful and failed counts, successful
+amounts, settled and not-final settlements), duplicate references
+detected within one provider, and the original's own statement of what
+the report does not claim. The Python (urllib, dataclasses) is Common
+Lisp here: nlk:http is the one seam, one section declaration carries the
+settings, and two nlk:define-contract declarations carry the tools'
+arguments, so the schema the model is shown and the body that runs are
+one shape. The original's currency tables in money.py are kept whole, and
+drive the amount formatting the /payops command uses.
+
+Left out: the Flutterwave v4 development line, which the original's own
+README excludes from its catalog release because it needed an
+OAuth grant the harness did not support; the secret read through the
+harness's secret route, which here is the environment variable the
+section names (or a key written in the section), so a cell needs no host
+API; the no-redirect opener and the 5 MB response cap, replaced by one
+base_url that must be https and a per-call page cap, since nlk:http owns
+the dial; the Python packaging (pyproject.toml, tests, CI workflows),
+which a cell's folder and its test system already are; and the
+provider-errors list, which now carries nothing because a failed call
+answers its own refusal in words instead of an empty record.

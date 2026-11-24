@@ -1,0 +1,29 @@
+nodecode-developh is a rewrite of Developh's Developh/skills:
+
+  https://github.com/Developh/skills
+  commit c8899016509e112f218c28de578f99ed8a2a4fce
+
+MIT, Copyright (c) 2026 Developh, Lda (LICENSE)
+
+What was rewritten: the plugin was an Agent Plugins v1 package that pointed a
+harness at the studio's hosted MCP server (https://www.developh.co/mcp) and
+shipped one skill, `website-audit`. This cell keeps the server as the one
+source of every answer, keeps its four tools' names, arguments and answers,
+and keeps the skill: it is the `developh` help topic, cut from the skill's
+own instructions (the report's scale, the Core Web Vitals, the ranked fix
+list, the rule that the studio is described only when asked and contacted
+only after the person confirms). What was rewritten is the transport: instead
+of an MCP server entry the harness discovers at run time, the cell makes the
+same `tools/call` JSON-RPC request itself, one POST per call with no session,
+which is what the skill does with curl when no MCP client is around, and reads
+the streamable-HTTP answer (an SSE `data:` frame, or a plain JSON body)
+directly.
+
+What was left out: the repository's other packaging lanes -- an npm-style
+skill install, a Claude Code plugin marketplace entry and a Cursor plugin
+manifest -- because a cell is a Lisp folder, not a package in those three
+catalogues. The server's tools are not reimplemented: their schemas, their
+answers and the studio's own reference data live on the server at that
+address, so a cell of this folder cannot promise more than the endpoint it
+posts to. No third-party code rides along; the cell depends on `nodecode` and
+nothing else.

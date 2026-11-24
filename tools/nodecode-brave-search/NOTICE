@@ -1,0 +1,26 @@
+nodecode-brave-search is a rewrite of rabilrbl's rabilrbl/hermes-brave-search-plugin:
+
+https://github.com/rabilrbl/hermes-brave-search-plugin
+commit 4134cbef910c14c63e6b284b0820b30f3811ab47
+
+MIT, Copyright (c) 2026 Rabil (LICENSE)
+
+What was rewritten: the plugin's one tool, brave_web_search, is here a tool of
+the same name and the same call as a Lisp verb, brave:search. It makes the same
+request the Python did -- GET api.search.brave.com/res/v1/web/search, the
+subscription token in X-Subscription-Token, the same six parameters (query,
+count, country, search_lang, freshness, safesearch, count clamped to 1-20) --
+and lifts the same fields out of the answer: title, url, description, age,
+language, source and display_url, with the HTML tags and entities Brave sends
+cleaned off the text. The requests dependency rides the image's own HTTP call,
+and the key moves from an environment variable into the cell's `brave-search'
+section, which still reads BRAVE_API_KEY when no key is pasted there.
+
+What was left out: the JSON envelope itself. The original answered a JSON
+object with a results array; this cell answers the same fields as one block a
+result, which is what a model reads, and carries a failure as an error naming
+Brave's own sentence instead of an "error" member. The original's check_fn
+hid the tool when no key was set; here a section naming no key refuses the
+start instead, so the tool is never offered without one. Nothing else of the
+plugin is missing: it had no commands, hooks, skills or prompts beyond the
+tool's schema, which the cell's contract carries member for member.

@@ -1,0 +1,32 @@
+nodecode-athena is a rewrite of athenaforhermes's athenaforhermes/athena:
+https://github.com/athenaforhermes/athena
+commit 3ef0dbddf18545f2a2d5b2e192dada16e3b0eda8
+MIT, Copyright (c) 2026 athenaforhermes (LICENSE)
+
+What was rewritten: the catalogue read (the store's JSON API, one page asked
+for by query, with the API's wrapped and bare rows read the same way, and its
+tags read as names), the search answer's fields, install by a shallow git
+clone into the apps folder, the launch of an app's own start command in the
+background with its output in a log beside it, the stop of the process this
+cell started, the log tail, and the reading of a log that names a cause and
+the step that answers it. The tool ids are the original's: athena_search,
+athena_apps, athena_install, athena_launch, athena_stop, athena_logs,
+athena_status. The Python is Common Lisp here, and the seams that run a
+program are stubbed in the tests, so the suite runs offline.
+
+What was left out, and why: the Hermes plugin drove its own Node engine
+(pinokiod, vendored under engine/) and served a desktop UI of its own with
+routes, panels and a background HTTP server; here the verbs are native and the
+seam is a program the machine already has (git, sh, node), so no Node runtime
+is bundled and no port is opened by the cell. That also means the original's
+engine-level features have no counterpart here and are not claimed:
+athena_publish (pushing an app to a GitHub repository), athena_files (a
+browser over an app's files), athena_machines and athena_space (WSL and QEMU
+guests), athena_capabilities and athena_generate (asking an installed app
+what it can do, and calling it), athena_schedule and athena_runs (scheduled
+app runs), athena_build_app (making a new app from a template), athena_fix
+(repairing an app in place), athena_delete, athena_store_detail and
+athena_report. The credential hand-off (a credential from the harness's own
+secret store, given to an approved app as an environment variable) is left to
+the app's own settings here, because a native cell hands an app the
+environment it starts it with.

@@ -1,0 +1,10 @@
+// The klipper section of ~/.nodecode/config.jsonc.
+{
+  "klipper": {
+    "url": "http://printer.local:7125",
+    "api_key": "", // empty when this machine is in Moonraker's trusted_clients
+    "stall_minutes": 10,
+    "snapshot_max_bytes": 2000000,
+    "watch_minutes": 0 // 0 = no background watch; 5 checks every five minutes
+  }
+}

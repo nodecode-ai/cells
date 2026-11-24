@@ -1,0 +1,12 @@
+// nodecode-privacy-xray: everything here is optional.
+// Your section lives in ~/.nodecode/config.jsonc under "privacy-xray".
+{
+  "privacy-xray": {
+    "record": true,
+    "watch_terms": ["a client name", "a project code name"],
+    "home_region": "EU,DE,CH",
+    "ledger_max_mb": 5,
+    "scan_files": 300,
+    "scan_kb": 2048
+  }
+}

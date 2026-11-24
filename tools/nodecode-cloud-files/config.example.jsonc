@@ -1,0 +1,9 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+{
+  "cloud-files": {
+    "enabled": true,
+    "roots": ["/srv/notes", "/srv/projects"],
+    "max_file_mb": 100
+  }
+}

@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell -
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "iwork": {
+    "enabled": true,
+    // The folders this cell reads and writes inside; everything else is
+    // refused. ~ is accepted. Required: a start with no folder refuses,
+    // and /cells shows the folder as REFUSED until one is added.
+    "folders": ["~/Documents", "~/Desktop"],
+    // How many backups of one file to keep.
+    "backups": 10,
+    // How long one script sent to an app may take, in seconds.
+    "timeout": 180,
+    // The osascript that runs the app scripts.
+    "osascript": "/usr/bin/osascript"
+  }
+}

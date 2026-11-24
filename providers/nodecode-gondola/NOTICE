@@ -1,0 +1,27 @@
+nodecode-gondola is a rewrite of Gondola-Market's Gondola-Market/hermes-gondola-provider:
+
+  https://github.com/Gondola-Market/hermes-gondola-provider
+  commit ad3f352b6a9814f1b550c819bee5ef2fb92a1851
+  MIT, Copyright (c) 2026 Codonyat (LICENSE)
+
+Rewritten: the provider profile — the `gondola` id, its OpenAI-compatible base
+at https://api.gondola-ai.com/v1, its GONDOLA_API_KEY, its chat lane — and the
+part that gives the plugin its point: the picker carries only the chat-capable
+entries of Gondola's mixed `/v1/models`, decided by `endpoint` and then
+`modality` as the original decides it, with the configurable base standing in
+for the original's GONDOLA_BASE_URL override and the plugin's curated
+`fallback_models` answering when the catalog is unreachable. In Nodecode the
+profile is a row in the models.dev catalog table, one hook, and a worker that
+reads the catalog once at start.
+
+Left out: the Hermes-side plumbing, which has no Nodecode counterpart and no
+bearing on what a user gets — the `register_provider` call and the
+`ProviderProfile` fields, the introspection that filters profile fields and
+`fetch_models` arguments to the installed build, the private
+`hermes_cli.urllib_security` opener with its plain urllib fallback, the module
+level `_CACHE` (Nodecode's worker reads the catalog once per start instead,
+and a restart reads it again), the `gondola-ai` alias, the
+`default_aux_model`, and the `hermes plugins install`/discovery advice in
+after-install.md. Nodecode resolves the credential, the lane and the endpoint
+from the catalog row, and picks its own auxiliary model. The x402 accountless
+payment path is left out too: the plugin itself only speaks key auth.

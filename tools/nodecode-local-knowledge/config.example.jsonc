@@ -1,0 +1,19 @@
+// The local-knowledge cell's section. One member is required: roots.
+{
+  "local-knowledge": {
+    // The directories to index, one path each. ~ is your home.
+    "roots": ["~/repos/ops", "~/.nodecode/skills"],
+    // How deep below each root the walk goes.
+    "max_depth": 6,
+    // How many artifacts one walk keeps.
+    "max_files": 4000,
+    // How old a walk may be before a question walks again; 0 walks every time.
+    "max_index_age_seconds": 300,
+    // Directory names the walk never enters, on top of the built-in list.
+    "exclude_dir_names": [],
+    // How much of an artifact's text knowledge_get quotes.
+    "max_excerpt_chars": 800,
+    // The most hits a search answers when the call names no limit.
+    "max_hits": 8
+  }
+}

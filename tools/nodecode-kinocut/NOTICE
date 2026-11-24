@@ -1,0 +1,33 @@
+nodecode-kinocut is a rewrite of KyaniteLabs's KyaniteLabs/kinocut:
+
+  https://github.com/KyaniteLabs/kinocut
+  commit 31ddab08a99e09fb50e0855c61e1627d02050ac1
+  Apache-2.0, Copyright 2026 Simon Gonzalez de Cruz (LICENSE)
+
+Rewritten: the agent-facing editing surface, reimplemented in Common Lisp
+against this machine's own ffmpeg instead of a pinned Python runtime. The five
+verbs the plugin's skills lead with -- probe a file, trim it, reformat it to a
+9:16 / 1:1 / 4:5 / 16:9 frame, burn subtitles into it, and gate it on quality
+-- keep its contract: validate the request against the file's own probe
+before anything runs, never modify the source, never overwrite an output,
+write into one folder, and answer a receipt naming the exact argv and the
+length the finished file really has, not the length that was asked for. The
+trim carries the plugin's accurate/copy distinction, the reformat carries its
+crop/pad choice, and the quality check keeps its pass mark at 100 points with
+80 as the gate (its `assert_quality` threshold), scoring duration, black
+frames and silence. The plugin's per-profile settings (binary paths, output
+folder, encode quality, caption font, margin) became the cell's `kinocut`
+config section, and its `/sfx`-style library became `receipts.jsonl` read back
+by `/kino`.
+
+Left out: the 200-tool MCP catalogue and the `uvx`-pinned Python runtime that
+served it, because a cell is Lisp in the operator's own image and may not
+bundle another runtime; the Revideo and Hyperframes code-video renderers and
+their `npm ci` install; 360 dual-camera assembly and its review plans; the
+layered compositor, rescue/salvage suites, batch jobs, HLS packaging, C2PA and
+the optional AI/vision adapters with their model downloads. Those are bigger
+than one folder of five verbs; the verbs kept are the ones the plugin's own
+skill says to reach for first: doctor, probe, plan, render, quality-check.
+Where the plugin's skill asks a human to review the result before publishing,
+the cell says the same in its check receipt, because a receipt measures and
+does not see.

@@ -1,0 +1,25 @@
+nodecode-usage-guard is a rewrite of mister-ideas's mister-ideas/usage-guard:
+
+  https://github.com/mister-ideas/usage-guard
+  commit d59f798e848f5310f9e3d8673c01f383207c695e
+  MIT License, Copyright (c) 2026 mister-ideas (LICENSE)
+
+What was rewritten. The whole guard, in Common Lisp against the Nodecode cell
+contract: the two usage sources (the Claude OAuth usage endpoint and the Codex
+usage endpoint), read with each app's own sign-in, the per-source reading floor
+and freshness window, the cache that keeps the last good windows through a
+failed or rate-limited read for a grace period, the fail-open policy, the
+warning levels, the `/usage-guard` status surface, and the reading of a
+Codex rate-limit answer. The original's settings became the cell's section:
+threshold_percent, warn_percents, max_age_s, min_interval_s, stale_grace_s
+and fail_open keep their names and defaults; the per-source intervals of the
+original (180s for both subscription sources) are the default floor.
+
+What was left out, and why. The original reads usage through its host's own
+fetcher and refuses the request in the host's llm_execution middleware; a
+Nodecode cell has no pre-call veto, so the refusal is the verdict line the
+tool, the command and the round note carry, and the request is never
+blocked. The MoA preset resolution, the near-wall output-budget cap, the
+borrowed snapshots (hydrate_from_paths) and the desktop chip have no
+counterpart here: Nodecode has no MoA presets, caps its own request budgets,
+has no borrowed snapshot files, and its surfaces are the tool and the command.

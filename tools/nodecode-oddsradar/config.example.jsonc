@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell, as
+// documentation and not as config. The declaration in cell.lisp is the
+// authority; this is an illustration of it. A present section is enabled;
+// "enabled": false vetoes it. No key is needed: both Polymarket hosts are
+// public and read-only.
+{
+  "oddsradar": {
+    "enabled": true,
+    "max_watches": 50,
+    "timeout_seconds": 10,
+    "movers_min_volume": 50000,
+    "sparkline": true,
+    "data_file": ""
+  }
+}

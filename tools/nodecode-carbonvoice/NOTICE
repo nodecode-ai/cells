@@ -1,0 +1,38 @@
+nodecode-carbonvoice is a rewrite of PhononX's PhononX/hermes-plugin-carbonvoice:
+
+  https://github.com/PhononX/hermes-plugin-carbonvoice
+  commit 55867dba9c6645ce493fd955970302e59a4548ea
+  MIT License, Copyright (c) 2026 PhononX (LICENSE)
+
+Rewritten: what the plugin's adapter did with Carbon Voice's REST API, as four
+tools and one command. The personal access token and the API base URL are the
+section's, read from the variable it names. The five calls the adapter made
+are the five this cell makes — GET /whoami for the agent's own id and the
+account that created it, POST /v3/messages/recent with use_last_updated so a
+voice memo that gains its transcript a few seconds after its audio is still
+seen, GET /v5/messages/{id} for one message, POST /v5/messages/text with an
+idempotency key and a reply_to_message_id so a reply lands in the thread it
+answers, and GET /channel/{id} for a conversation's kind and its roster,
+which is where a user id becomes a display name. The three transcript shapes
+the plugin had to read (v5's flat transcript, v3's text_models with
+timecodes, and the flat webhook fields) are read here in the same order, and
+an empty one is answered as "still transcribing" exactly as the two-phase
+voice delivery made necessary. The self-loop filter is kept as exclude_self,
+against the same whoami id; the 8000-character ceiling on a message is the
+plugin's own constant; the deny-by-default allowlist, its approval prompts
+and its audit log are replaced by the fact that nothing arrives unless the
+model asks for it. The Python is Common Lisp here: nlk:http in place of
+httpx, one section declaration in place of the plugin's environment-variable
+wizard, and nlk:define-contract for each tool's arguments, so the schema the
+model is shown and the body that runs are one shape.
+
+Left out: the Hermes gateway platform half — the Socket.IO connection, the
+REST polling loop, the cursor file that catches up messages received while
+the agent was down, the acknowledgement reaction, mark-as-read, the owner
+approval prompts and the rejected-sender audit log, the thread-context cache,
+the outbound duplicate-suppression window, inbound attachment downloads and
+the voice-memo replies through a TTS pipeline. Those belong to a bot that
+runs continuously beside a gateway; here the model reads the inbox when it
+needs to and answers from the same account. Also left out: the /cv-allow-user,
+/cv-deny-user and /cv-list-allow-users commands, whose allowlist a tool cell
+has nothing to gate, and the reaction handlers of the approval flow.

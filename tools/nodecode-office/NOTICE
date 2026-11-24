@@ -1,0 +1,20 @@
+nodecode-office is a rewrite of DECRUX9812's DECRUX9812/hermes-office:
+
+  https://github.com/DECRUX9812/hermes-office
+  commit b53630cd0f0edc10645d63899a5a2515f8015fc5
+  MIT License, Copyright (c) 2026 DECRUX9812 and hermes-office contributors (LICENSE)
+
+Rewritten: the five verbs, in Common Lisp and without Python. hermes-office edits Word,
+PowerPoint and Excel through the paper-docx, paper-pptx and paper-xlsx forks; this cell reads
+the same OOXML parts directly as ZIP entries and XML text, so an edit is a string change on one
+part and a repack. Kept are what a user of the original gets: the same tools for the same
+files, a write confined to folders the operator puts on a desk, a byte-exact backup and a
+revertible receipt for every write, and Word edits left as tracked changes (w:del + w:ins)
+carrying an author.
+
+Left out, because the rewrite is a cell and not a desktop application: the Desk page and its
+workstreams, before/after previews and diffs, comment threading, accept/reject of revisions
+already in a document, PowerPoint deck composition and diff, Excel cell and formula writes,
+and the LibreOffice recalculation step (so no external program is run at all). An edit also
+matches inside one formatting run in this rewrite, where the original's libraries matched
+across runs; the tool says so when it does not find its phrase.

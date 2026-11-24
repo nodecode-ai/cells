@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "eyes": {
+    "enabled": true,
+    "sheet_dir": "~/Pictures/eyes",
+    "ffmpeg": "ffmpeg",
+    "ffprobe": "",
+    "fresh_seconds": 300,
+    "max_notes": 3,
+    "timeout_seconds": 25,
+    "tools": ["eval"]
+  }
+}

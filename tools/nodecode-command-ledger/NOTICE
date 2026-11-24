@@ -1,0 +1,32 @@
+nodecode-command-ledger is a rewrite of olric3015's olric3015/hermes-plugins:
+
+  https://github.com/olric3015/hermes-plugins
+  commit bf93fe7502464a2206f4b7878c61946f0b022b88
+
+MIT License, Copyright (c) 2026 olric3015 (LICENSE)
+
+What was rewritten: the plugin's one job - keep a row for every slash command
+run, and answer /command-log with which commands are used, how often, their
+share, in how many sessions, and when last - as a Nodecode cell. Its row shape
+(command, surface, a 12-digit SHA-256 of the session key, the timestamp;
+never the arguments and never the session key), its JSON-lines file under the
+plugin data directory, its trim to 5,000 rows past 2 MB, its options
+(/command-log session | all | Nh | Nd | platforms | days | recent [N] | clear,
+and its one-line refusal of an option it does not know) and its rule that the
+report's own command is not counted all carry over. Where the plugin subscribed
+to Hermes's pre_command hook, the cell advises the two functions a slash line
+passes through in this image: SLASH, which eval, a room and the web page's
+POST /api/gateway/slash call, and EXECUTE-SLASH-COMMAND, which a command typed
+in the terminal goes through. It still only watches: an error in the observer
+is swallowed, so a command runs exactly as it would without the cell. The two
+surfaces are cli and gateway; the same three verbs are on the manual as
+cmdlog:summary, cmdlog:recent and cmdlog:clear for a report taken through eval.
+
+What was left out, and why: Hermes's platform column (telegram, discord, ...)
+becomes the surface column, because a Nodecode cell sees the function a command
+came through and not the room it came from. The alias column is gone: a
+Nodecode command is its name, and what Hermes kept as a typed alias is a row
+of a dialog here rather than another spelling. The 2 MB byte bound is the
+section's row count instead, since one row's size no longer varies with a
+room's name. The plugin's own card image and its end-to-end harness are not
+part of the cell.

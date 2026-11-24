@@ -1,0 +1,18 @@
+{
+  // Smart glasses as a channel. Every token here is a key: whoever holds it
+  // talks to your agent, approvals included.
+  "channels": {
+    "glasses": {
+      "token": "<one device token; a secret>",
+      // or several pairs, the original's GLASSES_DEVICES shape:
+      // "devices": "ada:frames-1=token-a, ada:frames-2=token-b",
+      "path_prefix": "/glasses/",
+      "session": "glasses",
+      "auto_capture": "keywords",
+      "photo_timeout_seconds": 25,
+      "reply_length": 480,
+      "queue_length": 50,
+      "max_photo_kb": 2048
+    }
+  }
+}

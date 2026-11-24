@@ -1,0 +1,33 @@
+nodecode-deadbolt is a rewrite of seanebones-lang's seanebones-lang/deadbolt-hermes-plugin:
+
+  https://github.com/seanebones-lang/deadbolt-hermes-plugin
+  commit 177fff79a8b6308f8d182146ed8a6e21dc84c565
+  Apache-2.0, Copyright 2026 NextEleven LLC (LICENSE)
+
+The plugin registers two tools — deadbolt_prepare_write and
+deadbolt_commit_write — that make an agent propose one new text file and a
+person approve it before it exists. This rewrite keeps that whole route: the
+two tool names and their wording, the request envelope field for field
+(version, agent_id, tool, dest, arguments, nonce, expires_at, with the
+arguments' workspace, path and content), the 32-hex nonce and the five-minute
+deadline, the 32768-byte cap on an envelope, the relative-path rules, the
+review file written 0600 and never overwritten, the one outbound call to
+http://127.0.0.1:<port>/admit-action with the X-Deadbolt-Admission credential
+and no redirect, the decision codes, the refusal to write on a denial, the
+admitted-but-unknown outcome after a filesystem failure, and the tool text
+that tells the model to stop rather than approve itself. It is Common Lisp
+against Nodecode's cell contract instead of a Python plugin: the tools are
+registered by one NLE:DEFINE-CELL declaration, the same verbs are callable as
+deadbolt:prepare and deadbolt:commit through eval, and /deadbolt reports where
+the settings stand.
+
+Left out: the harness plumbing — ctx.register_tool, ctx.get_config, and the
+active profile's secret read through agent.secret_scope.get_secret, since a
+Nodecode cell declares its own section and reads this run's credential from
+it. Also left out: plugins.plugin_storage's plugin_data_dir, replaced by the
+cell's own review directory; the plugin's strict duplicate-JSON-key refusal
+on the review file; the POSIX directory-descriptor walk (O_EXCL and
+O_NOFOLLOW still carry it on SBCL, with a plain exclusive open elsewhere, so
+the Windows refusal is a fallback rather than an error); and the
+acceptance-test harness of the original. Preparation still persists after a
+commit or an expiry, as the plugin's disclosure says.

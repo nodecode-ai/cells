@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "ram-first-context": {
+    "enabled": true,
+    "db_path": "~/.hermes/mnemosyne/data/mnemosyne.db",  // the Mnemosyne database to read, read-only
+    "default_limit": 5,     // how many results /ram-first-context answers
+    "max_limit": 50,        // the ceiling a call's limit is held to
+    "busy_timeout_ms": 5000, // how long to wait on a locked database
+    "usage_log": false      // one local line per search; never the query's words
+  }
+}

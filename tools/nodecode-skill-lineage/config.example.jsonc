@@ -1,0 +1,10 @@
+{
+  // Nothing here is required: the record is a folder of files under the
+  // Nodecode home, and the verbs answer with the defaults below.
+  "skill_lineage": {
+    // Shared 8-word shingles that make a strong edge.
+    "strong_min": 3,
+    // Context edges one version lists; the rest are counted, not listed.
+    "context_edges": 50
+  }
+}

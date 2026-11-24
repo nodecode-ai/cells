@@ -51,12 +51,12 @@ reaches the router."
   (dgw-reduce (ncd:initial-gateway-session)
               "{\"op\": 10, \"d\": {\"heartbeat_interval\": 41250}}"
               :token "tok-abc" :intents 46593)
-(is (equal "identifying" (ncd:dgw-session-connection session)))
-(is-shape actions (length = 2) (first '(:start-heartbeat 41250)))
-(is (eq :send (first (second actions))))
-(is-shape (second (second actions)) ("op" = 2 "HELLO without resume identifies")
-  ((:string "d" "token") "tok-abc") ((:integer "d" "intents") = 46593)
-  ((:integer "d" "large_threshold") = 50) ((:string "d" "properties" "os") "nodecode")))
+  (is (equal "identifying" (ncd:dgw-session-connection session)))
+  (is-shape actions (length = 2) (first '(:start-heartbeat 41250)))
+  (is (eq :send (first (second actions))))
+  (is-shape (second (second actions)) ("op" = 2 "HELLO without resume identifies")
+    ((:string "d" "token") "tok-abc") ((:integer "d" "intents") = 46593)
+    ((:integer "d" "large_threshold") = 50) ((:string "d" "properties" "os") "nodecode")))
 
 (deftest channel-discord-hello-resumes-when-requested ()
   (multiple-value-bind (session actions)
@@ -114,11 +114,11 @@ reaches the router."
                     \"d\": {\"session_id\": \"sess-9\",
                             \"resume_gateway_url\":
                             \"wss://resume.example/\"}}")
-(is-shape session (ncd:dgw-session-connection "ready") (ncd:dgw-session-session-id "sess-9")
-  (ncd:dgw-session-resume-gateway-url "wss://resume.example/")
-  (ncd:dgw-session-sequence = 1 "sequence tracks from s"))
-(is (equal '(:ready "sess-9" nil) (first actions)))
-(is (eq :dispatch (first (second actions)))))
+  (is-shape session (ncd:dgw-session-connection "ready") (ncd:dgw-session-session-id "sess-9")
+    (ncd:dgw-session-resume-gateway-url "wss://resume.example/")
+    (ncd:dgw-session-sequence = 1 "sequence tracks from s"))
+  (is (equal '(:ready "sess-9" nil) (first actions)))
+  (is (eq :dispatch (first (second actions)))))
 
 (deftest channel-discord-resumed-is-connected-again ()
   ;; A resume is connected again: the lap sets /channels back to connected,
@@ -138,12 +138,12 @@ reaches the router."
                     \"d\": {\"session_id\": \"sess-9\",
                             \"application\": {\"id\": \"app1\",
                                               \"flags\": 0}}}")
-(is (equal "app1" (ncd:dgw-session-application-id session)))
-(is (equal '(:ready "sess-9" "app1") (first actions)))
-(is-values (next actions)
-    (dgw-reduce session "{\"op\": 0, \"t\": \"READY\", \"s\": 2,
+  (is (equal "app1" (ncd:dgw-session-application-id session)))
+  (is (equal '(:ready "sess-9" "app1") (first actions)))
+  (is-values (next actions)
+      (dgw-reduce session "{\"op\": 0, \"t\": \"READY\", \"s\": 2,
                               \"d\": {\"session_id\": \"sess-10\"}}")
-  (next.application-id "app1") ((first actions) '(:ready "sess-10" "app1"))))
+    (next.application-id "app1") ((first actions) '(:ready "sess-10" "app1"))))
 
 (deftest channel-discord-sequence-tracking (let ((session (ncd:make-dgw-session :sequence 5))))
   ;; s: null keeps the tracked sequence; s: N advances it.
@@ -360,8 +360,10 @@ ROUTE-DISCORD-AUTOCOMPLETE."
   (funcall route (dgw-dispatch "INTERACTION_CREATE" d-json)))
 
 (deftest channel-discord-interaction-routing ()
-  ;; A slash interaction is the command line it spells, addressed by
-  ;; construction, with its return path in the source and no message id.
+  ;; A slash interaction is the command its name spells, addressed by
+  ;; construction, with its return path in the source and no message id. A
+  ;; command is its name: the option a menu published before that sent is
+  ;; not read, and the command answers what it offers.
   (let ((candidate (dgw-interaction
                     "{\"id\": \"i1\", \"token\": \"tok\", \"type\": 2,
                       \"guild_id\": \"g1\", \"channel_id\": \"c1\",
@@ -371,7 +373,7 @@ ROUTE-DISCORD-AUTOCOMPLETE."
                       \"member\": {\"user\": {\"id\": \"u1\",
                                               \"username\": \"kim\"}}}")))
     (is-present candidate "a guild slash interaction routes"
-      (is-source candidate :text "/models a6api grok-4.6" "chat_kind" "channel" "channel_id" "c1"
+      (is-source candidate :text "/models" "chat_kind" "channel" "channel_id" "c1"
                  "workspace_id" "g1" "user_id" "u1" "user_name" "kim" "interaction_id" "i1"
                  "interaction_token" "tok" "message_id" nil)
       (is (nck:candidate-addressed-p candidate))
@@ -487,50 +489,44 @@ ROUTE-DISCORD-AUTOCOMPLETE."
                          #'ncd:route-discord-control)
                         :data))))
 
-(deftest channel-discord-autocomplete-routing ()
-  ;; An option completed while it is typed is the kit's normal completion
-  ;; request: the command, the typed tail of the focused option, who is
-  ;; typing, and the interaction's own id and token — the return path the
-  ;; one answer goes through.
-  (flet ((route (d-json) (dgw-interaction d-json #'ncd:route-discord-autocomplete)))
-    (let ((request (route
-                    "{\"id\": \"i20\", \"token\": \"tok\", \"type\": 4,
-                    \"guild_id\": \"g1\", \"channel_id\": \"c1\",
-                    \"data\": {\"name\": \"models\",
-                               \"options\": [{\"name\": \"args\", \"type\": 3,
-                                              \"value\": \"grok\",
-                                              \"focused\": true}]},
-                    \"member\": {\"user\": {\"id\": \"u1\",
-                                            \"username\": \"kim\"}}}")))
-      (is-present request "a guild autocomplete interaction routes"
-        (is-shape request (:id "i20") (:token "tok" "the answer's return path") (:command "models")
-          (:text "grok") (:user-id "u1") (:channel-id "c1"))))
-    (let ((request (route
-                    "{\"id\": \"i21\", \"token\": \"tok\", \"type\": 4,
-                    \"channel_id\": \"dm1\",
-                    \"data\": {\"name\": \"models\",
-                               \"options\": [{\"name\": \"args\", \"type\": 3,
-                                              \"value\": \"\", \"focused\": true}]},
-                    \"user\": {\"id\": \"u1\"}}")))
-      (is-present request "a DM autocomplete interaction routes"
-        (is-shape request (:user-id "u1") (:text ""))))
-    ;; Typed in a thread, it is placed as a command typed there is: the
-    ;; thread, under its channel.
-    (let ((request (route
-                    "{\"id\": \"i23\", \"token\": \"tok\", \"type\": 4,
-                    \"guild_id\": \"g1\", \"channel_id\": \"t9\",
-                    \"channel\": {\"id\": \"t9\", \"type\": 11, \"parent_id\": \"c1\"},
-                    \"data\": {\"name\": \"agent\",
-                               \"options\": [{\"name\": \"args\", \"type\": 3,
-                                              \"value\": \"\", \"focused\": true}]},
-                    \"member\": {\"user\": {\"id\": \"u1\"}}}")))
-      (is-present request "an autocomplete typed in a thread routes"
-        (is-shape request (:channel-id "c1" "under its channel") (:thread-id "t9"))))
-    (is (null (route
-               "{\"id\": \"i22\", \"token\": \"tok\", \"type\": 2,
-               \"channel_id\": \"c1\", \"data\": {\"name\": \"help\"}}")))
-    (is (null (ncd:route-discord-autocomplete
-               (dgw-dispatch "MESSAGE_CREATE" "{}"))))))
+(deftest channel-discord-a-modal-submit-is-its-rows-line ()
+  ;; A press on a row that asks for its text opens a modal
+  ;; (INTERACTION-MODAL-PLAN) whose custom_id is the press's own data. Its
+  ;; submit, a MODAL_SUBMIT interaction as Discord sends one -- the message
+  ;; the button sat on beside it -- is the presser saying the row's line with
+  ;; what they typed after it: a press, answered in place of the card,
+  ;; marked asked so it asks nothing again. Discord's newer label component
+  ;; carries the input the same way. A submit naming no ask, or carrying
+  ;; nothing typed, is no line; it is never a control press.
+  (let* ((data (nck:press-token "/rename" :back "/rename"
+                                          :ask (nlk:json-object "label" "Name" "line" "/rename"
+                                                                "placeholder" "The new name")))
+         (submit (lambda (value &key (components "action") (id data))
+                   (format nil "{\"id\": \"i30\", \"token\": \"tok\", \"type\": 5,
+                                 \"application_id\": \"app1\",
+                                 \"guild_id\": \"g1\", \"channel_id\": \"c1\",
+                                 \"data\": {\"custom_id\": ~s,
+                                            \"components\": [~a]},
+                                 \"message\": {\"id\": \"m5\", \"content\": \"\", \"flags\": 32768},
+                                 \"member\": {\"user\": {\"id\": \"u1\", \"username\": \"kim\"},
+                                            \"roles\": []}}"
+                           id
+                           (if (equal components "label")
+                               (format nil "{\"type\": 18, \"component\": {\"type\": 4, \"custom_id\": \"text\", \"value\": ~s}}" value)
+                               (format nil "{\"type\": 1, \"components\": [{\"type\": 4, \"custom_id\": \"text\", \"value\": ~s}]}" value))))))
+    (is-present (candidate (dgw-interaction (funcall submit "  Release  notes ")))
+      "a modal's submit routes"
+      (is-source candidate :text "/rename Release  notes" "chat_kind" "channel" "channel_id" "c1"
+                 "user_id" "u1" "interaction_id" "i30" "interaction_token" "tok"
+                 "application_id" "app1" "press_data" data "reply_to_message_id" "m5")
+      (is (nck:candidate-pressed-p candidate) "answered as the press would have been")
+      (is (eq t (gethash "asked" (nck:candidate-source candidate))) "and asks nothing again")
+      (is (equal "/rename" (nlk:json-value (nck:candidate-press candidate) :text "back"))))
+    (is (equal "/rename Ada" (nlk:json-value (dgw-interaction (funcall submit "Ada" :components "label"))
+                                            :string "text")) "a label carries its input too")
+    (is (null (dgw-interaction (funcall submit "   "))) "nothing typed is no line")
+    (is (null (dgw-interaction (funcall submit "Ada" :id "nck:p:0123456789ab"))) "a custom_id naming no ask is no line")
+    (is (null (dgw-interaction (funcall submit "Ada") #'ncd:route-discord-control)))))
 
 (defun dgw-reaction (event d-json &rest keys)
   "The candidate ROUTE-DISCORD-REACTION derives from the EVENT dispatch
@@ -869,6 +865,37 @@ whose d object is D-JSON. KEYS reach the router as they are."
                                    (gethash "reply" candidate))))
       "the answered voice message rides the reply"
       (is-shape recording ("id" "1549867778293502102") ("media_type" "audio/ogg")))))
+
+(deftest channel-discord-a-video-is-a-file-not-a-recording ()
+  ;; Discord declares duration_secs on every video upload, a screen recording
+  ;; with no sound among them. Discord has no video note, so the length rides
+  ;; no video: the kit saves it for the lane's tools instead of sending it to
+  ;; transcription, in the message and in a reply to it.
+  (let* ((video "{\"id\": \"a14\", \"url\": \"https://cdn.discordapp.com/screen.mp4\",
+                  \"content_type\": \"video/mp4\", \"filename\": \"screen.mp4\",
+                  \"size\": 1457024, \"duration_secs\": 37.0999}")
+         (said (dgw-said "m14" "" :fields (format nil "\"flags\": 4, \"attachments\": [~a]," video)))
+         (reply (dgw-said "m15" "what does this show"
+                          :fields (format nil "\"referenced_message\": {
+                        \"id\": \"m14\", \"content\": \"\", \"flags\": 4,
+                        \"author\": {\"id\": \"u1\", \"username\": \"peas\"},
+                        \"attachments\": [~a]}," video))))
+    (dolist (entry (list (first (nck:candidate-attachments said))
+                         (first (nck:candidate-attachments (gethash "reply" reply)))))
+      (is-present (entry entry)
+        "the video rides, in the message and in the reply"
+        (is-shape entry ("media_type" "video/mp4") ("filename" "screen.mp4"))
+        (is (null (gethash "seconds" entry)) "a Discord video declares no recording's seconds")
+        (is (not (nck::recording-attachment-p entry)) "a Discord video is no recording")
+        (is (nck::video-file-p entry) "a Discord video is a file to open"))))
+  ;; A voice message keeps its seconds.
+  (let ((voice (first (nck:candidate-attachments
+                       (dgw-said "m16" "" :fields "\"flags\": 8192, \"attachments\": [
+                        {\"url\": \"https://cdn.discordapp.com/voice-message.ogg\",
+                         \"content_type\": \"audio/ogg\", \"filename\": \"voice-message.ogg\",
+                         \"size\": 22399, \"duration_secs\": 5.52}],")))))
+    (is (< 5.51 (gethash "seconds" voice) 5.53) "a voice message keeps its seconds")
+    (is (nck::recording-attachment-p voice) "a voice message is a recording")))
 
 (deftest channel-discord-a-forward-is-read-whole ()
   ;; A forwarded message points at its original in another channel and

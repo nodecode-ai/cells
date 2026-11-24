@@ -1,0 +1,12 @@
+{
+  // The arcade cell's section. Nothing here is required: with no section at
+  // all the cabinet plays on a 16x10 grid, keeps ten scores a game, files
+  // them under YOU, and shows at most 1,200 characters of a frame.
+  "arcade": {
+    "initials": "YOU",        // the 1-3 letters your scores are filed under
+    "keep_scores": 10,         // how many scores a game's board keeps
+    "snake_width": 16,         // Neon Snake's grid, in cells across
+    "snake_height": 10,        // Neon Snake's grid, in cells down
+    "answer_chars": 1200       // how much of one frame an answer carries
+  }
+}

@@ -69,10 +69,10 @@ from the environment, else nothing to send."
                               (signin-failed (refusal)
                                 ;; stands until a sign-in succeeds: the model
                                 ;; keeps seeing why its rounds cannot go
-                                (nle:notice (format nil "~a: the sign-in could not be refreshed (~a); run /~a login"
+                                (nle:notice (format nil "~a: the sign-in could not be refreshed (~a); /~a signs in again"
                                                     +provider+ refusal +provider+)
                                             :level :warning :key +key+)
-                                (nle::credential-fail "~a; run /~a login" refusal +provider+)))
+                                (nle::credential-fail "~a; /~a signs in again" refusal +provider+)))
                             entry)))
              (nle:make-credential (nlk:json-value entry :text "access_token") :oauth
                                   (list :auth-path path :email (nlk:json-value entry :text "email")))))
@@ -114,7 +114,7 @@ answers the core's `HTTP <status> <code>'."
       (let ((token (or key (ignore-errors (nle:credential-key (nle::resolve-provider-credential provider)))))
             (url (format nil "~a~a" (string-right-trim "/" (or base (setting :base-url))) +usable-models-path+)))
         (if (or (null token) (equal token "public"))
-            (values nil (format nil "not signed in: /~a login" +provider+))
+            (values nil (format nil "not signed in: /~a signs in" +provider+))
             (handler-case
                 (multiple-value-bind (body status)
                     (dex:post url
@@ -141,7 +141,7 @@ answers the core's `HTTP <status> <code>'."
                    +provider+ (nlk:json-value entry :text "email") *flow*))
           (*flow* (format nil "~a: a sign-in is in progress" +provider+))
           ((env-token) (format nil "~a: not signed in; a token from the environment is used" +provider+))
-          (t (format nil "~a: not signed in; /~a login signs in with Cursor" +provider+ +provider+)))))
+          (t (format nil "~a: not signed in; /~a signs in with Cursor" +provider+ +provider+)))))
 
 (defun logout ()
   "Forget the kept sign-in."
@@ -150,23 +150,40 @@ answers the core's `HTTP <status> <code>'."
   (nle:notice nil :key +key+)
   (format nil "~a: signed out" +provider+))
 
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
+(defun panel (summary)
+  "The dialog bare /cursor answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "Cursor" :summary summary
+   :rows (list (panel-run "Sign in" "/cursor login" :detail "in the browser, with a Cursor account")
+               (panel-run "Sign out" "/cursor logout" :detail "forget the kept sign-in, or end one in progress"))))
+
+
 (defun run-slash (args session-id)
-  "/cursor login | logout | status"
+  "/cursor typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let* ((trimmed (nlk:trimmed (or args "")))
          (space (position-if (lambda (char) (member char '(#\Space #\Tab))) trimmed))
-         (verb (string-downcase (if (plusp (length trimmed)) (subseq trimmed 0 space) "status"))))
-    (cond ((equal verb "login") (login nle::*auth-file-path*))
+         (verb (string-downcase (if (plusp (length trimmed)) (subseq trimmed 0 space) ""))))
+    (cond ((equal verb "") (let ((text (status))) (values text (panel text))))
+          ((equal verb "login") (login nle::*auth-file-path*))
           ((equal verb "logout") (logout))
           ((equal verb "status") (status))
-          (t (format nil "usage: /~a login | logout | status" +provider+)))))
-
-(defun complete-slash (text session-id)
-  "The verbs /cursor takes, those that start with TEXT."
-  (declare (ignore session-id))
-  (loop for verb in '("login" "logout" "status")
-        when (uiop:string-prefix-p (string-downcase (nlk:trimmed (or text ""))) verb)
-          collect (list :name verb :value verb)))
+          (t (values (format nil "~a: ~a is not one of its choices" +provider+ verb) (panel (status)))))))
 
 (defun start ()
   "Register the lane; on the way down, take it out, end a sign-in in progress,
@@ -181,7 +198,7 @@ forget the conversations and clear what was said."
 
 (nle:define-cell cursor
   (:section ("cursor")
-    (:guide "sign in with /cursor login (a Cursor account), or set CURSOR_ACCESS_TOKEN; base_url is where Cursor's agent service is served")
+    (:guide "sign in from /cursor (a Cursor account), or set CURSOR_ACCESS_TOKEN; base_url is where Cursor's agent service is served")
     ("base_url" :string :default +base+
      :doc "the Cursor API base the lane's RunSSE and BidiAppend calls go to"))
   (:start #'start)
@@ -190,6 +207,4 @@ forget the conversations and clear what was said."
   (:hook 'nle::list-provider-models #'listing)
   (:command "cursor" 'run-slash
    :description "Sign in to Cursor, or out"
-   :argument-hint "login | logout | status"
-   :session nil
-   :complete 'complete-slash))
+   :session nil))

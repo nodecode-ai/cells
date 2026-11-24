@@ -105,7 +105,7 @@ bearer and the Kimi client headers."
 
 (nle:define-cell kimi-code
   (:section ("kimi-code")
-    (:guide "sign in with /kimi-code login (a device code: open the address, enter the code), or set KIMI_API_KEY; base_url is where Kimi Code is served")
+    (:guide "sign in from /kimi-code (a device code: open the address, enter the code), or set KIMI_API_KEY; base_url is where Kimi Code is served")
     ("base_url" :string :default +base+
      :doc "the Kimi Code API base the Messages lane appends /messages to"))
   (:start #'start)
@@ -116,6 +116,4 @@ bearer and the Kimi client headers."
   (:hook 'nle::walk-provider-stream #'walk)
   (:command "kimi-code" 'run-command
             :description "Sign in to Kimi Code with a device code"
-            :argument-hint "login | logout | status"
-            :session nil
-            :complete 'complete-command))
+            :session nil))

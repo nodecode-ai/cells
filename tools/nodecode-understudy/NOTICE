@@ -1,0 +1,25 @@
+nodecode-understudy is a rewrite of stffinfcti's stffinfcti/understudy:
+
+  https://github.com/stffinfcti/understudy
+  commit e0920f9e3641f0e24afe6ee01b21322c070920fd
+  MIT License, Copyright (c) 2026 stffinfcti (LICENSE)
+
+The plugin was a Hermes plugin. It read the local session database, sampled
+past decisions, replayed each on a candidate model through Hermes's own
+model facade, had a judge model compare the two answers blind, and reported a
+takeover rate, the misses and a projected monthly cost, with a PNG card and
+an HTML report beside the run record. This rewrite keeps the loop and the two
+verbs: a tool that auditions candidates on the home's recent decisions and a
+tool that reads a stored scorecard, plus the /understudy command. It reads the
+history through Nodecode's own session API, speaks one OpenAI-compatible
+chat-completions endpoint over nlk:http instead of a provider facade (so the
+candidates and the judge share one endpoint and one key), and keeps each run
+as a text scorecard under the home's understudy folder.
+
+What was left out: the Hermes dashboard page and the plugin's surfaces over
+it; the PNG card and the HTML report, which need a renderer the cell does not
+carry; the stratified sampler and the category floors; replaying whole tool
+call transcripts rather than the question and the answer the agent gave; the
+baseline re-ask of the current model; the models.dev price cache, replaced by
+the section's own `prices`; and per-source exclusions. The budget cap stays,
+enforced per call where a price is known, as the original did.

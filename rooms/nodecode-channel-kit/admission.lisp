@@ -76,10 +76,50 @@
   "A string field off the candidate's source, NIL for absent/null."
   (and (stringp value) (plusp (length value)) value))
 
-(defun handle-tag (candidate)
-  "The ids the adapter knows about a message, as \" [m<message> u<user>]\",
-or \" [m<message> u<user> r<replied-to>]\" when it answers another, or
-\"\" when it knows none."
+(defun candidate-sent-at (candidate &aux (value (gethash "sent_at" (candidate-source candidate))))
+  "When CANDIDATE's message was sent, as a universal time: source.sent_at,
+unix seconds an adapter or the kit's ingress stamped (STAMP-SENT-AT), NIL
+when none did."
+  (and (integerp value) (+ value nlk:+unix-epoch+)))
+
+(defun stamp-sent-at (candidate &optional (now (get-universal-time))
+                      &aux (source (nlk:json-value candidate :object "source")))
+  "Mark CANDIDATE with the time its message was sent, source.sent_at in unix
+seconds, unless its adapter already did: NOW, less source.late_minutes for a
+message read back after the bot was away. => the universal time, or NIL for a
+candidate with no source to carry it."
+  (when source
+    (unless (integerp (gethash "sent_at" source))
+      (let ((late (gethash "late_minutes" source)))
+        (setf (gethash "sent_at" source)
+              (- now nlk:+unix-epoch+ (if (integerp late) (* 60 late) 0)))))
+    (candidate-sent-at candidate)))
+
+(defun line-time (universal)
+  "UNIVERSAL as a room line's bracket carries it, on this machine's clock:
+\"Tue 2026-11-10 15:39\"."
+  (multiple-value-bind (second minute hour day month year weekday)
+      (decode-universal-time universal)
+    (declare (ignore second))
+    (format nil "~a ~d-~2,'0d-~2,'0d ~2,'0d:~2,'0d"
+            (nth weekday '("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun"))
+            year month day hour minute)))
+
+(defun line-clock-zone (&optional (universal (get-universal-time)))
+  "This machine's offset from UTC at UNIVERSAL, as the lane contract names
+the clock a line's time reads: \"UTC+01:00\"."
+  (multiple-value-bind (second minute hour day month year weekday dst zone)
+      (decode-universal-time universal)
+    (declare (ignore second minute hour day month year weekday))
+    ;; ZONE is hours west of Greenwich, daylight saving left out
+    (let ((east (round (* 60 (- (if dst 1 0) zone)))))
+      (format nil "UTC~:[+~;-~]~2,'0d:~2,'0d" (minusp east)
+              (floor (abs east) 60) (mod (abs east) 60)))))
+
+(defun handle-tag (candidate &aux (sent (candidate-sent-at candidate)))
+  "The ids the adapter knows about a message and when it was sent, as
+\" [m<message> u<user> Tue 2026-11-10 15:39]\", with r<replied-to> after
+the user when it answers another, or \"\" when it knows neither."
   ;; A line that is a reply names the message it answers as r<id> — the
   ;; message a "this" in the ask means. These are the handles the model needs
   ;; to reach a message over the platform API — react to it, reply to it,
@@ -87,11 +127,16 @@ or \" [m<message> u<user> r<replied-to>]\" when it answers another, or
   ;; included, so anything it has seen is addressable. Adapter-computed,
   ;; before the colon: a participant who types a bracket puts it after the
   ;; colon, in their own text.
+  ;;
+  ;; The time is the room's axis: without it a long-lived room reads as one
+  ;; conversation, and the model takes this morning's ask for last night's
+  ;; good-night (#420). It closes the bracket, after the handles.
   (format nil "~@[ [~{~a~^ ~}]~]"
-          (loop for (prefix key) in '(("m" "message_id") ("u" "user_id")
-                                      ("r" "reply_to_message_id"))
-                for value = (source-field candidate key)
-                when value collect (concatenate 'string prefix value))))
+          (append (loop for (prefix key) in '(("m" "message_id") ("u" "user_id")
+                                              ("r" "reply_to_message_id"))
+                        for value = (source-field candidate key)
+                        when value collect (concatenate 'string prefix value))
+                  (and sent (list (line-time sent))))))
 
 (defun candidate-bot-p (candidate &aux (is-bot (gethash "is_bot" (candidate-source candidate))))
   "Whether CANDIDATE's author is a bot, by the adapter's word."

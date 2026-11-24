@@ -1,0 +1,34 @@
+nodecode-telemetry is a rewrite of nujovich's nujovich/hermes-telemetry:
+
+  https://github.com/nujovich/hermes-telemetry
+  commit 872eadc4b1e6797bc72c8eed3daf54f199d2bed5
+  MIT License, Copyright (c) 2026 nujovich (LICENSE)
+
+Rewritten: the plugin's hooks, which recorded one row per provider round
+(tokens in, out, cache read and write, reasoning, the cost the core priced,
+the model and provider) and one row per tool call (name, wall time, whether it
+failed), and its one gate, which refuses a tool call once a daily, monthly or
+per-session ceiling is spent. The rewrite keeps that shape on Nodecode's own
+seams: the :frame point, where turn.usage already carries the round's token
+counts and priced cost and turn.provider_request carries its time to first
+token and stream duration; the :tool around hook, which both journals a call
+and is the one place a call can be refused before it runs; and the :round
+point, where the over-budget warning rides into the next request. The ledger
+is a JSON line file under the home, read and folded at start, and the caps
+are the cell's own section, so /budget set writes the shared config instead
+of a second budget file.
+
+Left out, and why: the OpenRouter price-list fetch and the whole local price
+catalogue with its drift and free-tier detection, because Nodecode's core
+already prices every round and the fact carries cost_known and cost_usd; the
+SQLite schema and its migrations (a line-oriented ledger answers the same
+windows and never needs migrating); the per-cron-job and per-sender budget
+scopes, folded into one per-session cap, since a cron fire and an inbound
+message are both just sessions here; the cron job's pause on a hard breach,
+which per-session refusal already covers; the standalone dashboard server
+(it binds its own port with no auth, and Nodecode's gateway already serves a
+usage view); the subagent_* and session-finalize hooks, which carry nothing
+the row needs; and the first-load setup wizard, since the section's defaults
+answer without one.
+
+SPDX-License-Identifier: MIT

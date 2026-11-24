@@ -1,0 +1,18 @@
+// nodecode-opencode-shepherd: the sheet the model reads while it watches your
+// opencode server. Only `url` is required; everything else has the value
+// opencode serve itself uses.
+{
+  "opencode-shepherd": {
+    // The address `opencode serve` (or `opencode web`) prints.
+    "url": "http://127.0.0.1:4096",
+    // HTTP basic, as the server expects: user "opencode", password from the
+    // variable named here (or inline as "password").
+    "password_env": "OPENCODE_SERVER_PASSWORD",
+    // The v2 API's path prefix, and one exchange's ceiling.
+    "api_prefix": "/api",
+    "timeout_seconds": 20,
+    // How often the watch asks what waits. 0 turns the watch off and leaves
+    // the tools answering on demand.
+    "poll_seconds": 60
+  }
+}

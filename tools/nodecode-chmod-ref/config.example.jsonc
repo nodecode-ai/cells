@@ -1,0 +1,10 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. The declaration in cell.lisp is the authority.
+// A present section is enabled; "enabled": false vetoes it. Nothing here is
+// required: the defaults are what the cell runs on out of the box.
+{
+  "chmod-ref": {
+    "enabled": true,
+    "max_target_chars": 200
+  }
+}

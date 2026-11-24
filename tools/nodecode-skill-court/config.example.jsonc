@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it. Every member is optional, and the
+// defaults are the original's.
+{
+  "skill-court": {
+    // cases with outcomes in both arms before a skill can be helped or hurt
+    "min_tasks": 3,
+    // relative token cost that counts as a difference; 0.25 is a quarter more
+    "margin": "0.25",
+    // bootstrap resamples behind every interval
+    "resamples": 2000,
+    // the bootstrap's seed, so a report reads the same twice
+    "seed": 1,
+    // stand a notice naming each quarantined skill
+    "notify": true
+  }
+}

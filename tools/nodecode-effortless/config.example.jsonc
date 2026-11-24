@@ -1,0 +1,23 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "effortless": {
+    "judge_backend": "jev",            // jev | local | custom
+    "fallback_backend": "local",       // local | custom | jev | none
+    "typesafe_key": "",                // empty reads TYPESAFE_API_KEY
+    "jev_url": "https://api.typesafe.ai/v1/systemone",
+    "jev_model": "jev-latest",
+    "local_base_url": "http://127.0.0.1:8080/v1",
+    "local_model": "",                 // empty asks for local-model
+    "custom_base_url": "",
+    "custom_model": "",
+    "custom_api_key": "",
+    "judge_timeout_seconds": 3,
+    "effort_floor": "low",
+    "effort_ceiling": "max",
+    "effort_bias": 0,
+    "apply": true,
+    "history": 20
+  }
+}

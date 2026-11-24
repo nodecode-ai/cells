@@ -1,0 +1,30 @@
+nodecode-skill-court is a rewrite of saatvik333's saatvik333/hermes-skill-court:
+https://github.com/saatvik333/hermes-skill-court
+commit de53842858cf41a1437eda30ff553d21cbf578f2
+
+MIT, Copyright (c) 2026 Saatvik Sharma (LICENSE)
+
+Rewritten: the paired with/without trial and everything the original's
+scoring.py decides -- each case is one task run in both arms, repeated pairs
+of one case are averaged per case first, every interval is a bootstrap over
+cases with a fixed seed, a verdict needs min_tasks cases judged in both arms
+and its whole 95% interval on one side, and the token rules that call a
+skill harmful when it costs more than `margin' without lifting success and
+helpful when it lifts success while costing at least a fifth less. Also the
+four verbs the model works the court with (a case added, a pair recorded, a
+report read, a skill quarantined or released), the leaderboard the report
+prints best first, the quarantine list that hides a skill without editing
+it, and the report's own sentence on what the numbers did. The original's
+SQLite store is one readable file under the home, written atomically; its
+typed settings, defaults and thresholds are the cell's config section.
+
+Left out: the Docker replay itself (a cloned Hermes profile per arm, a
+container per run, a shell check inside it), task mining from session
+history, the blind LLM judge and its injection-hardened prompt, the appeal
+that drafts and proves a fix to a skill's own text, and the automatic
+trial queue with its daily budget. A Nodecode cell runs no agent turn of its
+own, so the runs are the caller's -- the agent in the session, or an
+operator from /skill-court -- and the cell keeps the evidence, decides the
+verdict and holds the quarantine. Hiding is a standing notice naming the
+skill rather than a filter on its file, because a skill this image keeps is
+a definition, not a document on disk.

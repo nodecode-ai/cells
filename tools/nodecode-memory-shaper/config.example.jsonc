@@ -1,0 +1,27 @@
+// The memory-shaper section: what /settings writes, shown with its usual answers.
+{
+  "memory-shaper": {
+    // the flat keyword index the model reads every turn; memory/index.md
+    // under the home is the usual answer. The memory_index tool and
+    // /memory-shaper refuse until it is set.
+    "index_file": "memory/index.md",
+
+    // where the verbose topic files live; empty: the folder the index is in
+    "topics_dir": "memory",
+
+    // the fewest comma-separated keywords one entry may carry
+    "min_keywords": 5,
+
+    // the most comma-separated keywords one entry may carry
+    "max_keywords": 20,
+
+    // the longest an index line may be before its detail belongs in a topic file
+    "verbose_chars": 140,
+
+    // how much of the index rides the first request of every turn
+    "index_chars": 800,
+
+    // t when memory_index may replace the whole index file at once
+    "allow_rewrite": false
+  }
+}

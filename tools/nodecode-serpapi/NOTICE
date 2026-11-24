@@ -1,0 +1,28 @@
+nodecode-serpapi is a rewrite of serpapi's serpapi/serpapi-hermes-plugin:
+
+  https://github.com/serpapi/serpapi-hermes-plugin
+  commit f61418cb72a2771aec7526d03bf675fefd993b14
+  MIT, Copyright (c) 2026 SerpApi (LICENSE)
+
+The plugin registered one web-search provider and seven tools, and every one of
+them was one parameterised GET of https://serpapi.com/search with the engine as a
+parameter: google_light for the provider's search, then google_maps,
+google_news_light, google_shopping_light, google_hotels, google_flights,
+google_travel_explore and extract. This rewrite keeps the seven tool names, their
+argument names, their engines and the same endpoint, and calls it itself through
+nlk:http, so no Python, no httpx and no Hermes runtime are needed. The provider's
+own search is the eighth tool here, serpapi_search, because Nodecode's web-search
+lane is the shipped websearch cell rather than a pluggable provider. Each tool's
+argument list is its declared contract, so the shape the model is shown and the
+shape the body reads are one declaration. The plugin's guidance -- one engine per
+question, Markdown unless structured data is asked for, slice the result table to
+the count the call named, bound a crawl, stop on 401 or 429 instead of retrying --
+is the cell's manual topic, (help :serpapi).
+
+What was left out: the plugin's own Markdown table parser (markdown-it-py) is
+replaced by a line-based row cut of the one table each answer carries, which is
+what its limit_result_table did; its Hermes-side URL safety guard is replaced by
+a shape check (absolute http or https, a host, no credentials), since SerpApi
+fetches the page and the private-address question is its side of the wire; and
+the `web_search` / `web_extract` overrides are not re-registered, because
+Nodecode ships those tools. Nothing of the original is vendored.

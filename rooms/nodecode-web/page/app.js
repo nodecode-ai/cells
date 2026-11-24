@@ -12,17 +12,29 @@
 import { diffHtml, markdown } from "./md.js";
 import { t, translatePage } from "./i18n.js";
 import { drawRun, drawInspector, drawDashboard, drawTimeline, turnSpan, meterOf, ms, usd, plural, bytes, RANGES, JUMPS, INSPECTOR_TABS, ORIGIN_WORDS, PHONE } from "./observe.js";
-import { makeControl, WIDE } from "./control.js";
+import { makeControl, WIDE, TABS as CONTROL_TABS } from "./control.js";
+import { makePalette } from "./palette.js";
+import { makeKeys } from "./keys.js";
 import { qrCode } from "./access.js";
 import { makeFiles, putFile } from "./files.js";
+import { makeBoard, COLUMNS } from "./board.js";
 import { icon, iconButton } from "./icons.js";
+import { recordingType, startRecording } from "./voice.js";
+import { makeHelpers } from "./helpers.js";
 
 const $ = (id) => document.getElementById(id);
 const app = $("app");
 const rowsEl = $("rows");
 const ledger = $("ledger");
 const promptEl = $("prompt");
+// The ask the box wears, when a command's row asked for its text (ASK-IN-COMPOSER).
+let asking = null;
 const composer = $("composer");
+
+// The composer's microphone (voice.js): what /api/transcribe said of this
+// gateway (null: nothing reads recordings here), the recording running, and
+// whether one is being read.
+const voice = { status: null, recording: null, busy: false, timer: 0 };
 
 const TOKEN_KEY = "nodecode-web-token";
 const FOLD_KEY = "nodecode-web-fold";
@@ -129,7 +141,7 @@ function readLink() {
 }
 
 // The panes over every session or over the organism, which name no session.
-const BOARDS = ["dashboard", "control"];
+const BOARDS = ["dashboard", "control", "board"];
 
 // The views the strip offers a session -- its switch's Chat and Run, Files
 // among the acts (under More on a phone), and any a module puts there: the
@@ -151,6 +163,8 @@ function addressOf() {
   } else if (state.pane === "control") {
     put("v", "control");
     put("tab", control.tab);
+  } else if (state.pane === "board") {
+    put("v", "board");
   } else if (state.current) {
     put("s", state.current);
     if (state.pane !== "chat") put("v", state.pane);
@@ -323,6 +337,7 @@ async function api(method, path, body, type) {
 let sessionsTimer = null;
 async function loadSessions() {
   clearTimeout(sessionsTimer);
+  const asked = state.listAsked = (state.listAsked || 0) + 1;
   try {
     const list = await api("GET", "/api/gateway/sessions?limit=300");
     const known = new Map(list.map((entry) => [entry.id, entry]));
@@ -336,9 +351,13 @@ async function loadSessions() {
     for (const id of state.picking?.ids || []) if (!known.has(id)) state.picking.ids.delete(id);
     state.sessionsUnread = null;
     state.listed = true;
+    state.listReads = Math.max(state.listReads || 0, asked); // the newest read begun that has landed
     renderSessions();
     renderHead();
+    // A question from a session the list had not named yet names it now.
+    renderQuestions();
     if (!state.current) renderOpener();
+    if (state.pane === "board") boardView.sessionsMoved();
   } catch (error) {
     if (error.status === 401 && !state.token) location.reload();
     else if (error.status === 401) gate(t("{host} refused this tab's token", { host: location.host }));
@@ -532,9 +551,17 @@ function command(type, fields) {
   return id;
 }
 
+// Sessions the Board started, followed beside the one on screen until their
+// first turn is listed: the gateway starts a turn only in a session the
+// client follows.
+const boardHolds = new Set();
+
 function subscribe() {
-  const subscriptions = state.current ? [{ session_id: state.current, rows: true }] : [];
-  send({ type: "client_command", command: { type: "set_session_subscriptions", subscriptions } });
+  const ids = [...new Set([state.current, ...boardHolds].filter(Boolean))];
+  const subscriptions = ids.map((session_id) => ({ session_id, rows: true }));
+  // answers: this page draws the organism's questions and sends their answers
+  // (the guard's Allow once / Deny), so the gateway asks while it is open.
+  send({ type: "client_command", command: { type: "set_session_subscriptions", subscriptions, answers: true } });
 }
 
 function receive(message) {
@@ -569,6 +596,7 @@ function receive(message) {
       loadTarget();
       loadAccount();
       loadSlash();
+      loadVoice();
       loadTimeline();
       loadDashboard();
       control.reconnected();
@@ -590,6 +618,15 @@ function receive(message) {
       // A sign-in from a shell's /login ends in a notice; the meter is read again (cached there).
       loadAccount();
       break;
+    case "organism.questions":
+      state.questions = payload.questions || [];
+      // The gateway's clock against this tab's, for the countdown.
+      state.questionSkew = typeof payload.now === "number" ? payload.now - Date.now() / 1000 : 0;
+      for (const id of state.answering) if (!state.questions.some((q) => q.question_id === id)) state.answering.delete(id);
+      // A question from a session this tab has not listed yet: read the list, to name it.
+      if (state.questions.some((q) => !state.sessionsById.has(q.session_id))) loadSessionsSoon();
+      renderQuestions();
+      break;
     case "organism.activity": {
       const before = state.running;
       state.running = new Set((payload.sessions || []).map((entry) => entry.id));
@@ -601,6 +638,7 @@ function receive(message) {
       // A turn that ended may have spent the account's requests or credit.
       if ([...before].some((id) => !state.running.has(id))) loadAccount();
       renderSessions();
+      if (state.pane === "board") boardView.sessionsMoved();
       break;
     }
     // A pick in another tab or shell, or the default moved in Control: the
@@ -608,7 +646,7 @@ function receive(message) {
     case "model_changed": if (!payload.session_id || payload.session_id === state.current) loadTarget(); break;
     // A cell started or stopped -- a boot starts them after this tab attached
     // -- so the commands this tab read at connect are stale.
-    case "commands_changed": loadSlash(); break;
+    case "commands_changed": loadSlash(); loadVoice(); break;
     case "sync_protocol_error": toast(t("The gateway refused what this tab sent: {why}", { why: payload.message || payload.code }), { error: true }); break;
   }
 }
@@ -1258,7 +1296,12 @@ function drawWork(article, turn, live, v) {
     summary.append(showClose());
     const acts = el("div", "acts");
     for (const row of work) {
-      if (row.kind === "tool_call") acts.append(toolAct(row), ...toolDiff(row));
+      if (row.kind === "tool_call") {
+        acts.append(toolAct(row), ...toolDiff(row));
+        // A call that forked: its forks under it, as the shell draws them.
+        const forks = helpers.tree(row);
+        if (forks) acts.append(forks);
+      }
       else {
         const act = row.kind === "reasoning" ? (row.live ? thinking(row) : proseAct(row, "thought")) : proseAct(row, "said");
         if (row.voided) act.classList.add("att-void");
@@ -1498,6 +1541,90 @@ function execTail(exec, lines) {
 // kept in a window of eight lines that scrolls, the newest last, so a burst
 // of output never moves the page under the reader.
 const band = $("band");
+
+// --- questions a turn waits on (the gateway's organism.questions) ---------
+// A card above the box for each: what is asked, the call it is about, the
+// time left and one button per choice. Every session's question shows,
+// whichever session the tab is on, named with a way to open it.
+const questionsEl = $("questions");
+state.questions = [];
+state.questionSkew = 0;
+state.answering = new Set();
+let questionTick = 0;
+
+function renderQuestions() {
+  const open = state.questions;
+  clearInterval(questionTick);
+  questionTick = 0;
+  questionsEl.hidden = !open.length;
+  const sig = `${open.map((q) => `${q.question_id}:${state.sessionsById.has(q.session_id)}`).join()}|${state.current}|${[...state.answering].join()}`;
+  if (questionsEl.dataset.sig !== sig) {
+    questionsEl.dataset.sig = sig;
+    questionsEl.replaceChildren(...open.map(drawQuestion));
+  }
+  if (!open.length) return;
+  tickQuestions();
+  questionTick = setInterval(tickQuestions, 1000);
+}
+
+function drawQuestion(q) {
+  const card = el("div", "question-card");
+  card.dataset.question = q.question_id;
+  card.setAttribute("role", "alertdialog");
+  card.setAttribute("aria-label", t("Waiting on you"));
+  const head = el("div", "question-head");
+  head.append(el("span", "question-mark", t("Waiting on you")));
+  if (q.session_id !== state.current) {
+    const entry = state.sessionsById.get(q.session_id);
+    const go = el("button", "word question-session", entry ? sessionName(entry) : t("another session"));
+    go.type = "button";
+    go.dataset.act = "open";
+    head.append(go);
+  }
+  head.append(el("span", "question-left"));
+  card.append(head, el("p", "question-title", q.title));
+  if (q.detail) card.append(el("pre", "question-detail", q.detail));
+  const actions = el("div", "actions");
+  const busy = state.answering.has(q.question_id);
+  (q.choices || []).forEach((choice, at) => {
+    const button = el("button", at === 0 ? "solid" : "quiet", choiceWord(choice));
+    button.type = "button";
+    button.dataset.act = "answer";
+    button.dataset.answer = choice;
+    button.disabled = busy;
+    actions.append(button);
+  });
+  card.append(actions);
+  return card;
+}
+
+// The guard's two choices in this tab's language; any other choice as sent.
+function choiceWord(choice) {
+  if (choice === "Allow once") return t("Allow once");
+  if (choice === "Deny") return t("Deny");
+  return choice;
+}
+
+function tickQuestions() {
+  const now = Date.now() / 1000 + state.questionSkew;
+  for (const card of questionsEl.children) {
+    const q = state.questions.find((each) => each.question_id === card.dataset.question);
+    const left = q ? Math.max(0, Math.ceil(q.expires_at - now)) : 0;
+    card.querySelector(".question-left").textContent = t("{n}s left", { n: left });
+  }
+}
+
+questionsEl.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-act]");
+  const card = button?.closest(".question-card");
+  const q = card && state.questions.find((each) => each.question_id === card.dataset.question);
+  if (!q) return;
+  if (button.dataset.act === "open") { select(q.session_id); return; }
+  state.answering.add(q.question_id);
+  const id = command("answer_question", { session_id: q.session_id, question_id: q.question_id, answer: button.dataset.answer });
+  state.sent.set(id, { answer: q.question_id });
+  renderQuestions();
+});
 let bandSig = null;
 
 function drawRunning(exec) {
@@ -1814,6 +1941,8 @@ async function putBackPictures(session, { row, number }) {
 function renderTranscript() {
   const v = state.current ? state.views.get(state.current) : null;
   renderBand();
+  helpers.render(v);
+  renderQuestions();
   if (state.shown !== state.current) {
     rowsEl.replaceChildren();
     state.drawn.clear();
@@ -2552,7 +2681,7 @@ function loadDashboard() {
 
 // The panes over every session, or over the organism, stand in for the
 // session's own and take the box away.
-const board = () => state.pane === "dashboard" || state.pane === "control";
+const board = () => BOARDS.includes(state.pane);
 
 // The strip names where a board is, once: Dashboard, Control, or Control / the
 // tab open in it, Control there the way back on a phone; the page under it
@@ -2560,10 +2689,10 @@ const board = () => state.pane === "dashboard" || state.pane === "control";
 function paintPlace() {
   const title = $("title");
   if (!board() || title.isContentEditable) return;
-  title.title = state.pane === "control" ? t("this organism") : t("every session");
+  title.title = state.pane === "control" ? t("this organism") : state.pane === "board" ? t("work queued as tasks") : t("every session");
   const tab = state.pane === "control" ? control.label : null;
   if (!tab) {
-    title.textContent = state.pane === "control" ? t("Settings") : t("Dashboard");
+    title.textContent = state.pane === "control" ? t("Settings") : state.pane === "board" ? t("Board") : t("Dashboard");
     return;
   }
   const back = document.createElement("button");
@@ -2593,8 +2722,9 @@ function paintList() {
   list.hidden = !shown;
   if (!shown) { list.replaceChildren(); return; }
   const dash = state.pane === "dashboard";
+  const tasks = state.pane === "board";
   const head = el("div", "place-head");
-  head.append(el("h2", "", dash ? t("Dashboard") : t("Settings")),
+  head.append(el("h2", "", dash ? t("Dashboard") : tasks ? t("Board") : t("Settings")),
     el("span", "reading", dash ? RANGES.find(([id]) => id === state.range)?.[1] || "" : ""));
   const rows = el("div", "place-rows");
   const row = (label, data, { mark, words = "", tone = "", open = false } = {}) => {
@@ -2609,7 +2739,10 @@ function paintList() {
     return go;
   };
   if (dash) rows.append(row(t("Overview"), { jump: "top" }), ...JUMPS.map(([id, label]) => row(label, { jump: id })));
-  else for (const [label, sections] of control.places()) {
+  else if (tasks) {
+    const counts = boardView.counts();
+    rows.append(...COLUMNS.map(([id, label]) => row(label, { col: id }, { words: counts ? String(counts[id]) : "" })));
+  } else for (const [label, sections] of control.places()) {
     rows.append(el("h3", "micro", label), ...sections.map((s) => row(s.label, { tab: s.id }, s)));
   }
   list.replaceChildren(head, rows);
@@ -2642,6 +2775,32 @@ const control = makeControl({
 // HOME is defined below, with the strip: read when drawn, not now.
 const filesView = makeFiles({ state, reach, save, toast, redraw: renderObserve, moved: () => writeLink(), home: (dir) => home(dir), openImage: openLightbox });
 
+// The Board (board.js): tasks in To do, each started as a session it then follows.
+// A fork's session, opened from the Helpers band or the tree under its call:
+// the list may not hold it yet (it was made by the call), so it is read again.
+function openHelper(id) {
+  if (!id) return;
+  if (!state.sessionsById.has(id)) loadSessionsSoon();
+  select(id);
+}
+
+const helpers = makeHelpers({ state, command, toast, open: openHelper, redraw: schedule });
+
+const boardView = makeBoard({
+  state, reach, toast,
+  redraw: () => { if (state.pane === "board") { renderObserve(); } },
+  refresh: () => loadSessionsSoon(),
+  start: (cwd) => newSession(cwd || undefined, { stay: true }),
+  send: (session, text) => { boardHolds.add(session); subscribe(); sendPrompt(session, text, [], false); },
+  release: (id) => { if (boardHolds.delete(id)) subscribe(); },
+  open: (id) => { select(id); if (board()) setPane("chat"); },
+  doing: (entry) => (state.running.has(entry.id) ? "run" : entry.waits ? "ask" : "done"),
+  waitsLine, ball, since, knownFolders,
+  // Read when called: these are declared further down.
+  home: (dir) => home(dir), folderName: (dir) => folderName(dir), askFolder: (dir) => askFolder(dir),
+  desktop: () => window.nodecodeDesktop,
+});
+
 // A session's pane takes over from the board.
 function toChat() {
   if (state.pane === "control") control.hide();
@@ -2669,6 +2828,7 @@ function setPane(pane, tab) {
   if (pane === "dashboard") loadDashboard();
   if (pane === "control") control.show(tab);
   if (pane === "files") filesView.show();
+  if (pane === "board") boardView.show();
   $("observe").scrollTop = 0;
   placeComposer();
   renderHead();
@@ -2685,7 +2845,7 @@ function renderObserve() {
   placeJump();
   paintList();
   $("observe").hidden = pane === "chat";
-  $("observe").setAttribute("aria-label", pane === "control" ? t("Settings") : pane === "files" ? t("The session's folder") : t("Where the time and money went"));
+  $("observe").setAttribute("aria-label", pane === "control" ? t("Settings") : pane === "files" ? t("The session's folder") : pane === "board" ? t("Board") : t("Where the time and money went"));
   const lane = $("observe-lane");
   const timeline = state.timeline?.session === state.current ? state.timeline : null;
   if (pane === "run") {
@@ -2702,6 +2862,8 @@ function renderObserve() {
     lane.replaceChildren(control.draw());
   } else if (pane === "files") {
     lane.replaceChildren(filesView.draw());
+  } else if (pane === "board") {
+    lane.replaceChildren(boardView.draw());
   }
   const drawer = $("drawer");
   const inspect = pane === "run" && state.drawer && timeline?.data;
@@ -2928,6 +3090,101 @@ function renderTitle() {
   const name = state.current ? `${v?.turn?.active || v?.execs?.length ? "● " : ""}${sessionName(entry)} · nodecode` : "nodecode";
   document.title = news ? `(${news}) ${name}` : name;
   $("unfold").toggleAttribute("data-news", news > 0);
+  reportDesktop();
+}
+
+// --- the window around the page ---------------------------------------------------
+// A desktop app that shows this page (nodecode-desktop) hands it a bridge,
+// window.nodecodeDesktop, before the page runs. The page tells it what waits on
+// the person, for the dock's badge and the tray, and what just happened that they
+// would want to hear while looking elsewhere; the window hands back a session to
+// open, when a notification or a tray row is clicked. Without a bridge, a page
+// installed as an app badges its own icon, and a tab does nothing. The contract
+// is docs/bridge.md in nodecode-desktop: every member optional, plain data only.
+const desktop = window.nodecodeDesktop || null;
+let attentionSaid = ""; // the counts last told, so one change is told once
+let told = null; // head session -> what the window last heard it doing; null until the list is read
+const stopped = new Map(); // head session -> the list read its turn stopped at, until a later read settles it
+
+// What each session the list starts a block with is doing, the way the Needs-you,
+// Running and Done bands sort it -- a team's seats and a thread's forks count as
+// the session they hang under -- over every session, whatever the list's scope or
+// search shows; and the counts the window shows.
+function attentionNow() {
+  const own = state.sessions.filter((entry) => !isNote(entry) && !entry.standby);
+  const holding = new Set();
+  for (const id of state.running) if (!isNote(state.sessionsById.get(id))) for (const up of folds(id)) holding.add(up);
+  const runs = (entry) => state.running.has(entry.id) || holding.has(entry.id);
+  const asksUnder = new Set();
+  for (const entry of own) if (!runs(entry) && entry.waits) for (const up of folds(entry.id)) asksUnder.add(up);
+  const doing = new Map();
+  for (const entry of own) {
+    if (folds(entry.id).length) continue;
+    doing.set(entry.id, runs(entry) ? "run" : entry.waits || asksUnder.has(entry.id) ? "ask" : "done");
+  }
+  const count = (key) => [...doing.values()].filter((now) => now === key).length;
+  return { asks: count("ask"), running: count("run"), news: state.sessions.filter(unseen).length, doing };
+}
+
+// Tell the window the counts when they change, and one notification for each
+// session that starts waiting on the person or ends its turn -- unless it is the
+// one on screen in a window they are looking at. The first read of the list only
+// takes stock: what was already waiting when the page opened is the badge's, not news.
+// A turn that stops reads as done until the list is read again, and a failed one
+// waits on the person only from that read on: so done is told once a read after
+// the stop still says done, and a turn that failed is told once, as waiting.
+function reportDesktop() {
+  if (!state.listed) return;
+  const { asks, running, news, doing } = attentionNow();
+  const said = `${asks} ${running} ${news}`;
+  if (said !== attentionSaid) {
+    attentionSaid = said;
+    if (desktop) callDesktop("attention", { asks, running, news });
+    else if (navigator.setAppBadge && matchMedia("(display-mode: standalone)").matches) {
+      (asks ? navigator.setAppBadge(asks) : navigator.clearAppBadge()).catch(() => {});
+    }
+  }
+  if (!desktop) return;
+  if (!told) {
+    told = new Map(doing);
+    return;
+  }
+  const looking = document.visibilityState === "visible" && document.hasFocus();
+  const tell = (id, kind) => {
+    told.set(id, kind);
+    stopped.delete(id);
+    if (looking && id === state.current && !board()) return;
+    callDesktop("notify", { session: id, kind, title: sessionName(state.sessionsById.get(id)), body: DOING_WORDS[kind] });
+  };
+  for (const [id, now] of doing) {
+    const before = told.get(id);
+    if (now === "run") {
+      told.set(id, "run");
+      stopped.delete(id);
+    } else if (now === "ask") {
+      if (before !== "ask") tell(id, "ask");
+    } else if (before !== "run") told.set(id, "done");
+    else if (!stopped.has(id)) stopped.set(id, state.listAsked || 0);
+    else if ((state.listReads || 0) > stopped.get(id)) tell(id, "done");
+  }
+}
+
+// One call across the bridge: a member it lacks is skipped, and whatever goes wrong
+// on the window's side stays there, never in the page.
+function callDesktop(name, value) {
+  if (typeof desktop?.[name] !== "function") return;
+  try { desktop[name](value); } catch {}
+}
+
+// A session the window asks for opens as a row clicked in the list does.
+if (typeof desktop?.onOpenSession === "function") {
+  try {
+    desktop.onOpenSession((id) => {
+      if (typeof id !== "string" || !id) return;
+      select(id);
+      writeLink();
+    });
+  } catch {}
 }
 
 // A folder by its own name, the last part of its path: the box's foot keeps
@@ -3193,7 +3450,7 @@ function renderSessions() {
   const elsewhere = scope === "folder" ? state.sessions.filter((entry) => unseen(entry) && !inHere.includes(entry)).length : 0;
   $("scope").toggleAttribute("data-news", elsewhere > 0);
   if (elsewhere) $("scope").title += ` · ${t("{n} with news in other folders", { n: elsewhere })}`;
-  for (const [id, pane] of [["usage-open", "dashboard"], ["control-open", "control"]]) {
+  for (const [id, pane] of [["usage-open", "dashboard"], ["control-open", "control"], ["board-open", "board"]]) {
     if (state.pane === pane) $(id).setAttribute("aria-current", "page");
     else $(id).removeAttribute("aria-current");
   }
@@ -3849,14 +4106,17 @@ function askForCell() {
   promptEl.focus();
 }
 
-async function newSession(cwd) {
+// STAY: the page stays where it is (the Board starting a task), the new
+// session listed but not opened.
+async function newSession(cwd, { stay } = {}) {
   const id = `s-${Math.floor(Math.random() * 36 ** 8).toString(36).padStart(8, "0")}`;
   try {
     const entry = await api("POST", "/api/gateway/sessions", { session_id: id, ...(cwd ? { cwd } : {}) });
     const standby = { id, title: "", working_directory: entry?.working_directory || cwd || "", updated_at: new Date().toISOString(), standby: true };
     state.sessionsById.set(id, standby);
     state.sessions = [standby, ...state.sessions.filter((each) => each.id !== id)];
-    select(id, true);
+    if (stay) renderSessions();
+    else select(id, true);
     return id;
   } catch (error) {
     // A refusal is the gateway's answer, and asking again changes nothing; the
@@ -4147,15 +4407,140 @@ function renderComposer() {
   else $("send").removeAttribute("aria-describedby");
   $("queue").disabled = $("send").disabled;
   const running = busy();
-  promptEl.placeholder = running ? t("Enter steers this turn · Tab queues for after it")
+  promptEl.placeholder = voice.recording ? t("Listening: the microphone again reads it into the box, Esc drops it")
+    : voice.busy ? t("Reading the recording…")
+    : asking ? asking.placeholder || asking.label
+    : running ? t("Enter steers this turn · Tab queues for after it")
     : state.current ? t("Message this session") : t("The first message opens the session");
   $("send").title = running ? t("Steer this turn (Enter): it ends at its next step and this runs next") : t("Send (Enter)");
   $("send").setAttribute("aria-label", running ? t("Steer this turn") : t("Send"));
 }
 
+// --- voice: the composer's microphone ---------------------------------------------
+
+// Whether this gateway reads recordings: the channel kit's /api/transcribe. A
+// gateway without it (404) shows no microphone; one whose transcriber is not
+// set up shows it with why, which a click says.
+async function loadVoice() {
+  try {
+    voice.status = await api("GET", "/api/transcribe");
+  } catch {
+    voice.status = null;
+  }
+  renderVoice();
+}
+
+const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+
+function renderVoice() {
+  const button = $("voice");
+  const time = $("voice-time");
+  const status = voice.status;
+  button.hidden = !status || recordingType() === null;
+  const recording = voice.recording;
+  button.dataset.state = recording ? "recording" : voice.busy ? "reading" : "idle";
+  button.setAttribute("aria-pressed", recording ? "true" : "false");
+  button.setAttribute("aria-disabled", !status?.ready || voice.busy ? "true" : "false");
+  button.title = recording ? t("Read it into the box (Esc drops it)")
+    : voice.busy ? t("Reading the recording…")
+    : status?.ready ? t("Speak a message: the words land in the box, to be read over before they are sent")
+    : t("Voice input: {why}", { why: status?.why || "" });
+  button.setAttribute("aria-label", recording ? t("Stop recording") : t("Speak a message"));
+  if (!recording) button.style.removeProperty("--level");
+  time.hidden = !recording;
+  if (recording) {
+    const seconds = recording.seconds();
+    time.textContent = clock(seconds);
+    // The gateway's cap (transcription.max_seconds): the recording stops at it
+    // and is read, rather than refused whole.
+    if (status?.max_seconds && seconds >= status.max_seconds) finishVoice();
+  }
+  renderComposer();
+}
+
+async function beginVoice() {
+  if (!voice.status?.ready) {
+    toast(t("Voice input: {why}", { why: voice.status?.why || "" }), { error: true });
+    return;
+  }
+  voice.busy = true;
+  renderVoice();
+  try {
+    voice.recording = await startRecording({
+      onLevel: (level) => $("voice").style.setProperty("--level", level.toFixed(2)),
+    });
+  } catch (error) {
+    toast(error.name === "NotAllowedError" ? t("The microphone is blocked for this page: allow it, then try again")
+      : error.name === "NotFoundError" ? t("No microphone was found")
+      : t("The microphone did not open: {why}", { why: error.message }), { error: true });
+    return;
+  } finally {
+    voice.busy = false;
+    renderVoice();
+  }
+  clearInterval(voice.timer);
+  voice.timer = setInterval(renderVoice, 250);
+  renderVoice();
+}
+
+// Ends the recording: read into the box, or dropped unread when DROP.
+async function finishVoice(drop) {
+  const recording = voice.recording;
+  if (!recording) return;
+  voice.recording = null;
+  clearInterval(voice.timer);
+  if (drop) {
+    recording.cancel();
+    renderVoice();
+    return;
+  }
+  const seconds = Math.max(1, Math.ceil(recording.seconds()));
+  voice.busy = true;
+  renderVoice();
+  try {
+    const blob = await recording.stop();
+    const { text } = await api("POST", `/api/transcribe?seconds=${seconds}`, blob, blob.type || "audio/webm");
+    const words = (text || "").trim();
+    if (words) speakInto(words);
+    else toast(t("Heard no words in that recording"));
+  } catch (error) {
+    toast(t("The recording was not read: {why}", { why: error.message }), { error: true });
+  } finally {
+    voice.busy = false;
+    renderVoice();
+  }
+}
+
+// WORDS at the caret, a space between them and any word they meet.
+function speakInto(words) {
+  const { selectionStart: start, selectionEnd: end, value } = promptEl;
+  const before = value.slice(0, start);
+  const after = value.slice(end);
+  const text = (before && !/\s$/.test(before) ? " " : "") + words + (after && !/^\s/.test(after) ? " " : "");
+  promptEl.setRangeText(text, start, end, "end");
+  promptEl.dispatchEvent(new Event("input"));
+  promptEl.focus();
+  renderComposer();
+}
+
+$("voice").addEventListener("click", () => {
+  if (voice.recording) finishVoice();
+  else if (!voice.busy) beginVoice();
+});
+
+// Esc while it records drops the recording, and only that: not the turn's Stop,
+// not a sheet's close.
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !voice.recording) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  finishVoice(true);
+}, true);
+
 // The files ride the prompt as one line each under its text, naming the path
 // each went up to.
 async function submit(steer) {
+  if (asking) { submitAsk(); return; }
   const text = promptEl.value;
   const { images, files } = state;
   if ((!text.trim() && !images.length && !files.length) || !state.open || !attachedReady()) return;
@@ -4244,11 +4629,20 @@ function commandResult(result) {
   const sent = state.sent.get(result.command_id);
   if (result.status === "accepted" || result.status === "rejected") state.sent.delete(result.command_id);
   if (sent?.navigate) { navigated(result, sent); return; }
+  if (helpers.result(sent, result)) return;
   if (sent?.withdraw) {
     state.withdrawing.delete(sent.withdraw);
     if (result.status === "accepted") tookBack(sent.session, result.response || {});
     else if (result.status === "rejected") toast(result.code === "prompt_not_pending" ? t("It already ran") : result.message || result.code, { error: true });
     renderTranscript();
+    return;
+  }
+  if (sent?.answer) {
+    if (result.status === "rejected") {
+      state.answering.delete(sent.answer);
+      renderQuestions();
+      toast(result.message || result.code, { error: true });
+    }
     return;
   }
   if (sent?.interrupt) {
@@ -4442,8 +4836,7 @@ function recall(step) {
 // same place until it is put away. A line naming no command is a prompt, as
 // Discord sends one.
 
-const slash = { commands: null, loaded: 0, items: [], at: 0, asked: 0 };
-let slashTimer = null;
+const slash = { commands: null, loaded: 0, items: [], at: 0 };
 
 async function loadSlash() {
   slash.loaded = Date.now();
@@ -4467,38 +4860,53 @@ async function knownSlash(text) {
   return Boolean(slashCommand(text));
 }
 
-// A command's arguments as its usage spells them, without its own name.
-function slashArgs(command) {
-  const [first, ...rest] = (command.usage || "").split(/\s+/);
-  return first.replace(/^\//, "").toLowerCase() === command.name.toLowerCase() ? rest.join(" ") : command.usage || "";
+// What picking ITEM says: a command is its name, and typed alone it answers
+// what it offers -- its rows run its lines or ask for its text.
+function slashCompletion(item) {
+  return `/${item.command.name}`;
 }
 
-// What picking ITEM leaves in the box.
-function slashCompletion(item) {
-  if (item.choice) return `/${item.command.name} ${item.choice.value}`;
-  return `/${item.command.name}${slashArgs(item.command) ? " " : ""}`;
+// --- a row that asks for its text -------------------------------------------------
+// A command's row may ask for one line of text before its line runs (a name, a
+// code, a sentence), as a shell's composer asks for it: the box wears the row's
+// label, its placeholder says what the text is, Enter runs the line with the
+// text after it, and Esc puts the ask away, what was typed kept as a draft.
+function askInComposer(ask) {
+  closeSlash();
+  asking = { label: ask.label || t("Text"), line: ask.line, placeholder: ask.placeholder || "", verb: ask.verb || t("run") };
+  $("asking-label").textContent = asking.label;
+  $("asking-keys").textContent = t("Enter {verb} · Esc cancel", { verb: asking.verb });
+  $("asking").hidden = false;
+  promptEl.value = "";
+  fit();
+  renderComposer();
+  promptEl.focus();
+}
+
+function putAskAway() {
+  if (!asking) return false;
+  asking = null;
+  $("asking").hidden = true;
+  renderComposer();
+  return true;
+}
+
+function submitAsk() {
+  const text = promptEl.value.trim().replace(/\s*\n\s*/g, " ");
+  if (!text) { $("asking").classList.remove("nudge"); void $("asking").offsetWidth; $("asking").classList.add("nudge"); return; }
+  const line = `${asking.line} ${text}`;
+  putAskAway();
+  runSlash(line);
 }
 
 function slashInput() {
-  clearTimeout(slashTimer);
   const text = promptEl.value;
-  const naming = /^\/(\S*)$/.exec(text);
-  const arguing = !naming && /^\/(\S+) ([^\n]*)$/.exec(text);
-  if (!naming && !arguing) { showSlash([]); return; }
+  // Names alone: nothing is offered after a command's name.
+  const naming = !asking && /^\/(\S*)$/.exec(text);
+  if (!naming) { showSlash([]); return; }
   if (Date.now() - slash.loaded > 30000) loadSlash().then((ok) => { if (ok && promptEl.value === text) slashInput(); });
-  if (naming) {
-    const prefix = naming[1].toLowerCase();
-    showSlash((slash.commands || []).filter((command) => command.name.toLowerCase().startsWith(prefix)).map((command) => ({ command })));
-    return;
-  }
-  const command = slashCommand(text);
-  if (!command?.autocomplete) { showSlash([]); return; }
-  const asked = ++slash.asked;
-  slashTimer = setTimeout(async () => {
-    let choices = [];
-    try { choices = (await api("POST", "/api/gateway/slash/completions", { name: command.name, text: arguing[2], ...(state.current ? { session_id: state.current } : {}) })).choices || []; } catch {}
-    if (asked === slash.asked && promptEl.value === text) showSlash(choices.slice(0, 60).map((choice) => ({ command, choice })));
-  }, 120);
+  const prefix = naming[1].toLowerCase();
+  showSlash((slash.commands || []).filter((command) => command.name.toLowerCase().startsWith(prefix)).map((command) => ({ command })));
 }
 
 // Over the box, as wide as it, wherever it stands: the dock or the opener.
@@ -4531,8 +4939,7 @@ function showSlash(items) {
     pick.dataset.index = at;
     pick.setAttribute("role", "option");
     pick.setAttribute("aria-selected", String(at === slash.at));
-    if (item.choice) pick.append(el("span", "cmd", item.choice.name));
-    else pick.append(el("span", "cmd", `/${item.command.name}`), el("span", "args", slashArgs(item.command)), el("span", "about", item.command.description || ""));
+    pick.append(el("span", "cmd", `/${item.command.name}`), el("span", "about", item.command.description || ""));
     li.append(pick);
     return li;
   }));
@@ -4549,21 +4956,22 @@ function moveSlash(step) {
   $("slash-list").children[slash.at]?.scrollIntoView({ block: "nearest" });
 }
 
-// Tab, or a click: the pick goes in the box. Enter does the same, and runs the
-// line once the box already says it.
+// Enter, or a click: the pick runs, a command being its name. Tab puts its name
+// in the box.
 function pickSlash(run) {
   const item = slash.items[slash.at];
   if (!item) return;
   const line = slashCompletion(item);
-  if (run && line.trim() === promptEl.value.trim()) { showSlash([]); submit(false); return; }
+  if (run) { showSlash([]); runSlash(line); return; }
   promptEl.value = line;
   fit();
   promptEl.setSelectionRange(line.length, line.length);
   slashInput();
 }
 
+// The answer's head names the command, never the line a row ran.
 function showReply(line, text, how, dialog) {
-  $("slash-line").textContent = line;
+  $("slash-line").textContent = line.trim().split(/\s+/)[0];
   $("slash-text").textContent = text;
   $("slash-text").className = `reply-text${how ? ` ${how}` : ""}`;
   slashPanel(dialog);
@@ -4574,7 +4982,6 @@ function showReply(line, text, how, dialog) {
 }
 
 function closeSlash() {
-  clearTimeout(slashTimer);
   slash.items = [];
   $("slash").hidden = true;
   $("slash-list").hidden = true;
@@ -4583,8 +4990,9 @@ function closeSlash() {
 
 // The panel a command answered with, under its line: what it says of itself,
 // its picture (a QR code a phone's camera reads), and its rows, one with a
-// value putting it in the box and one with a line to run running it, as Enter
-// on it does in a shell.
+// value putting it in the box, one with a line to run running it, as Enter on
+// it does in a shell, and one that asks for its text moving to the box under
+// its label (ASK-IN-COMPOSER).
 function slashPanel(dialog) {
   const panel = $("slash-panel");
   panel.hidden = !dialog;
@@ -4594,8 +5002,10 @@ function slashPanel(dialog) {
   const rows = (dialog.rows || []).map((row) => {
     const li = el("li");
     const run = row.run?.enter;
-    const pick = el(run || row.value ? "button" : "div", "reply-row");
-    if (run) { pick.type = "button"; pick.dataset.run = run; pick.title = run; }
+    const ask = !run && row.ask?.line ? row.ask : null;
+    const pick = el(run || ask || row.value ? "button" : "div", "reply-row");
+    if (run) { pick.type = "button"; pick.dataset.run = run; }
+    else if (ask) { pick.type = "button"; pick.dataset.ask = JSON.stringify(ask); }
     else if (row.value) { pick.type = "button"; pick.dataset.value = row.value; pick.title = row.value; }
     pick.append(el("span", `reply-mark${row.mark_tone === "accent" ? " lit" : ""}`, row.mark || ""),
       el("span", "reply-label", row.label), el("span", "reply-detail", row.detail));
@@ -4697,6 +5107,9 @@ promptEl.addEventListener("keydown", (event) => {
   } else if (event.key === "Tab" && !event.shiftKey && busy() && !$("queue").disabled) {
     event.preventDefault();
     submit(false);
+  } else if (event.key === "Escape" && asking) {
+    event.preventDefault();
+    putAskAway();
   } else if (event.key === "Escape") {
     stop();
   } else if (event.key === "ArrowUp" && !promptEl.value && newestQueued()) {
@@ -4719,9 +5132,10 @@ $("slash-list").addEventListener("click", (event) => {
 });
 $("slash-close").addEventListener("click", () => { closeSlash(); promptEl.focus(); });
 $("slash-panel").addEventListener("click", (event) => {
-  const pick = event.target.closest("button[data-value], button[data-run]");
+  const pick = event.target.closest("button[data-value], button[data-run], button[data-ask]");
   if (!pick) return;
   if (pick.dataset.run) { runSlash(pick.dataset.run); return; }
+  if (pick.dataset.ask) { askInComposer(JSON.parse(pick.dataset.ask)); return; }
   closeSlash();
   promptEl.value = pick.dataset.value;
   fit();
@@ -4757,6 +5171,7 @@ rowsEl.addEventListener("click", (event) => {
     if (act.dataset.act === "copy") copyCode(act);
     else if (act.dataset.act === "fork") forkAt(act.dataset.turn);
     else if (act.dataset.act === "withdraw") takeBack(act.dataset.prompt);
+    else if (act.dataset.act === "fork-open") openHelper(act.dataset.session);
     else if (act.dataset.act === "rewind") askRewind(act.dataset.key, act.dataset.turn, Number(act.dataset.number));
     else if (act.dataset.act === "retry") retry(act);
     else answerRewind(act.dataset.act);
@@ -4783,7 +5198,7 @@ function handOver(link) {
   setTimeout(() => link.setAttribute("href", place));
 }
 
-for (const [id, go] of [["home", openNew], ["strip-home", openNew], ["usage-open", () => setPane("dashboard")], ["control-open", () => setPane("control")], ["link-open", () => setPane("control", "link")]]) {
+for (const [id, go] of [["home", openNew], ["strip-home", openNew], ["usage-open", () => setPane("dashboard")], ["control-open", () => setPane("control")], ["board-open", () => setPane("board")], ["link-open", () => setPane("control", "link")]]) {
   const link = $(id);
   link.addEventListener("click", (event) => {
     if (!inPlace(event)) { handOver(link); return; }
@@ -5255,6 +5670,11 @@ $("place").addEventListener("click", (event) => {
   if (go.dataset.tab) setPane("control", go.dataset.tab);
   else if (go.dataset.jump === "top") $("observe").scrollTo({ top: 0, behavior: "smooth" });
   else if (go.dataset.jump) $(`dash-${go.dataset.jump}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  else if (go.dataset.col) {
+    const column = document.querySelector(`.board-col[data-col="${go.dataset.col}"]`);
+    column?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+    column?.querySelector(".task-card[tabindex], .task-open")?.focus({ preventScroll: true });
+  }
 });
 let spying = false;
 $("observe").addEventListener("scroll", () => {
@@ -5435,3 +5855,91 @@ renderHead();
 renderSessions();
 if (!state.current) renderOpener();
 connect();
+
+// --- the palette and the keys ---------------------------------------------------------
+// Ctrl+K: palette.js matches what this page already holds; here is where it
+// reads it and how a pick goes there. keys.js keeps which key runs what;
+// the commands, and what each does, are below the palette.
+const keys = makeKeys();
+const VIEW_NAMES = { chat: t("Chat"), run: t("Run"), files: t("Files") };
+const palette = makePalette({
+  current: () => state.current,
+  sessions: () => state.sessions
+    .filter((entry) => !entry.standby)
+    .sort((a, b) => stamp(b.updated_at) - stamp(a.updated_at))
+    .map((entry) => ({
+      id: entry.id,
+      name: sessionName(entry),
+      detail: [entry.working_directory && folderName(entry.working_directory), entry.updated_at && since(entry.updated_at)].filter(Boolean).join(" · "),
+    })),
+  views: () => [
+    ...(state.current ? sessionViews().filter((v, i, all) => all.indexOf(v) === i).map((v) => ({
+      id: `session-${v}`, name: VIEW_NAMES[v] || v, detail: t("this session"), command: `view-${v}`,
+      hash: `s=${encodeURIComponent(state.current)}${v === "chat" ? "" : `&v=${v}`}`,
+    })) : []),
+    { id: "dashboard", name: t("Dashboard"), detail: t("usage, cost and health"), hash: "v=dashboard", command: "dashboard" },
+    { id: "board", name: t("Board"), detail: t("tasks, queued and running"), hash: "v=board", command: "board" },
+    ...CONTROL_TABS.map(([tab, label]) => ({ id: `control-${tab}`, name: `${t("Settings")}: ${label}`, detail: "", hash: `v=control&tab=${tab}`,
+      command: tab === "shortcuts" ? "shortcuts" : undefined })),
+  ],
+  actions: () => [
+    { id: "new", name: t("New session"), detail: "", command: "new-session", run: () => { openNew(); writeLink(); } },
+    ...(state.current ? [
+      { id: "model", name: t("Model and reasoning"), detail: t("this session"), command: "model", run: () => { if (board()) setPane("chat"); openModels(); } },
+      { id: "history", name: t("History"), detail: t("rewind or fork a turn"), command: "history", run: () => { if (board()) setPane("chat"); openHistory(); } },
+    ] : []),
+  ],
+  keyOf: (id) => keys.label(id),
+  commands: () => slash.commands,
+  files: async (id) => {
+    const body = await api("GET", `/api/gateway/sessions/${encodeURIComponent(id)}/files?find=1`);
+    // A nodecode from before ?find=1 answers the folder's own listing.
+    if (body.kind === "files") return { files: body.files || [], cut: !!body.cut };
+    return { files: (body.entries || []).filter((entry) => entry.kind === "file").map((entry) => entry.name), cut: true };
+  },
+  go: (hash) => { location.hash = hash; },
+  openSession: (id) => select(id),
+  compose: (text) => {
+    if (board()) { setPane("chat"); writeLink(); }
+    promptEl.value = text;
+    promptEl.dispatchEvent(new Event("input", { bubbles: true }));
+    promptEl.focus();
+    promptEl.setSelectionRange(text.length, text.length);
+  },
+});
+// The desktop app's menu opens it too.
+window.nodecodePalette = palette;
+
+// Every command a key can run, with its key as it comes; Settings:
+// Shortcuts changes any of them, and the desktop app's own join them there.
+// A view a session does not have, or a session's command with none open,
+// lets its key through to the page.
+const inSession = () => !!state.current;
+const hasView = (view) => () => !!state.current && sessionViews().includes(view);
+const toView = (view) => () => { location.hash = `s=${encodeURIComponent(state.current)}${view === "chat" ? "" : `&v=${view}`}`; };
+function toggleColumn() {
+  if (narrow.matches) app.classList.toggle("column-open");
+  else setFolded(!app.classList.contains("folded"));
+}
+keys.add([
+  { id: "palette", group: "palette", name: t("Command palette"), chord: "CmdOrCtrl+K", run: () => palette.toggle("all") },
+  { id: "quick-open", group: "palette", name: t("Open a file"), chord: "CmdOrCtrl+P", run: () => palette.toggle("files") },
+  { id: "commands", group: "palette", name: t("Find a command"), chord: "CmdOrCtrl+Shift+P", run: () => palette.toggle("commands") },
+  { id: "new-session", group: "go", name: t("New session"), chord: "", run: () => { palette.close(false); openNew(); writeLink(); } },
+  { id: "sidebar", group: "go", name: t("Show or hide the session list"), chord: "CmdOrCtrl+B", run: toggleColumn },
+  { id: "prompt", group: "go", name: t("Go to the prompt box"), chord: "", run: () => {
+    palette.close(false);
+    if (board()) { setPane("chat"); writeLink(); }
+    promptEl.focus();
+  } },
+  { id: "dashboard", group: "go", name: t("Dashboard"), chord: "", run: () => { location.hash = "v=dashboard"; } },
+  { id: "board", group: "go", name: t("Board"), chord: "CmdOrCtrl+Shift+K", run: () => { palette.close(false); location.hash = "v=board"; } },
+  { id: "settings", group: "go", name: t("Settings"), chord: "CmdOrCtrl+,", run: () => { location.hash = "v=control"; } },
+  { id: "shortcuts", group: "go", name: t("Keyboard shortcuts"), chord: "", run: () => { location.hash = "v=control&tab=shortcuts"; } },
+  { id: "view-chat", group: "session", name: t("Chat"), chord: "", when: inSession, run: toView("chat") },
+  { id: "view-run", group: "session", name: t("Run"), chord: "", when: hasView("run"), run: toView("run") },
+  { id: "view-files", group: "session", name: t("Files"), chord: "", when: hasView("files"), run: toView("files") },
+  { id: "model", group: "session", name: t("Model and reasoning"), chord: "", when: inSession, run: () => { if (board()) setPane("chat"); openModels(); } },
+  { id: "history", group: "session", name: t("History"), chord: "", when: inSession, run: () => { if (board()) setPane("chat"); openHistory(); } },
+]);
+control.useKeys(keys);

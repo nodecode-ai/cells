@@ -1,0 +1,42 @@
+nodecode-good-student is a rewrite of harrylabsj's harrylabsj/hermes-plugin-good-student:
+
+  https://github.com/harrylabsj/hermes-plugin-good-student
+  commit 021375cf1cf0dad73d7a81b997f9a383be98c1ed
+  MIT, Copyright (c) 2026 Good-student contributors (LICENSE)
+
+The plugin folder at that commit is a manifest, an MCP server entry and a
+skill; the runtime it describes is the server in its own repository, fetched
+at the pinned commit 2469cbb6f105b41a7a3ecc89b33df1f4543c06d9 of
+https://github.com/harrylabsj/good-student, and the tool descriptions and the
+analysis rules below were read there.
+
+What was rewritten: the deterministic core, in Common Lisp, against the
+Nodecode cell contract. Its fifteen MCP tools are twelve NLE:DEFINE-CELL
+tools here, keeping the original's names, arguments and answers wherever
+the answer is a fact (profiles, scores with their per-subject summary,
+candidates, confirmations, weaknesses with status, risk, confidence and
+evidence, the plan, the reassessment, the weekly brief, and a delete that
+answers only the scope until the display name is given). The rules are the
+original's: one error is suspected, a repeat across two sources raises the
+risk, an error after a correction raises it further, and only a new variant
+done with no hints moves a point -- a failed independent reassessment is
+evidenced, a passing one improving, two in a row mastered, and a mastered
+point whose review date has passed is due again; the pass line is 80% and
+the review interval 14 days, both settings here. The study-action templates
+are the original's reason -> action table, one per error reason, with its
+duration, question count, reassessment day, acceptance line and what to do
+when it does not pass. Its `/good-student` command and its guidance to the
+model are a Nodecode slash command and manual topic.
+
+What was left out, and why: the SQLite store (one JSON file in the folder
+the section names, written atomically under the folder's lock, is enough for
+one child's record and needs no dependency); the host-model recognition call
+that turns images and PDFs into candidates (the model reading this page does
+the recognizing, and hands the batch to good_student_ingest_candidates, so
+no host bridge is needed); idempotency keys and the candidate expiry sweep
+as a store job (candidates expire by their own timestamp when the waiting
+area is read); the capabilities and doctor tools, which report on a host
+this cell does not have; the error-code registry and the SQL-level export
+of a whole profile (the records file is the export). The Chinese
+authoritative skill and prompt files are folded into one English ground
+rule: a candidate is not a fact until a parent confirms it.

@@ -19,7 +19,7 @@
 ;;;; browser's cookie is kept as its digest.
 
 (defsystem "nodecode-link"
-  :description "Open this machine's page from anywhere; /link on turns it on"
+  :description "Open this machine's page from anywhere; /link turns it on"
   :license "MIT"
   :version "0.1.0"
   :depends-on ("nodecode" "ironclad/digest/sha256")

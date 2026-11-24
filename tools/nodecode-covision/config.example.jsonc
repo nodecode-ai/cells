@@ -1,0 +1,16 @@
+{
+  // The Covision connector: read-only tasks, meetings, briefs and published
+  // knowledge, through Covision's own MCP endpoint.
+  "covision": {
+    // Covision's production connector unless your organization gave another.
+    "endpoint": "https://connector.covisionperformance.com/mcp",
+
+    // Exactly one of the two: the OAuth access token inline, or the name of
+    // the environment variable holding it.
+    "access_token": "…",
+    "access_token_env": "COVISION_ACCESS_TOKEN",
+
+    // One request's ceiling, in seconds.
+    "timeout_seconds": 30
+  }
+}

@@ -1,0 +1,33 @@
+nodecode-vault is a rewrite of Guerilla-ops's Guerilla-ops/floorvault:
+
+  https://github.com/Guerilla-ops/floorvault
+  commit 62e41853d1d9bf4d84f3ff22d3755d9762efdd3c
+  MIT License, Copyright (c) 2026 Scott Lee (LICENSE)
+
+The original is plugins/hermesvault, a Hermes Agent secret-source plugin: a
+local AES-256-SIV store of agent secrets whose items are named hv:<item> or
+hv:<item>:<field>, mapped from the harness's configuration to environment
+variable names, with the key held apart from the store (an OS key store, a
+key file or a systemd credential), plus an operator CLI (setup, add, put,
+show, rm, list, env, doctor) and command bindings enforced against the
+command line the harness was started with. What was rewritten in Common Lisp:
+the store and its refs, the mapping from variable names to refs, the key
+custody by key file and by environment variable, and the operator's verbs as
+/vault plus the (vault:...) functions, with the model-facing half the
+original had none of -- five tools, of which vault_run is the equivalent of
+the original's fetch: it puts the mapped variables into a command's
+environment instead of into the harness's. The seal is AES-256-GCM from
+ironclad rather than AES-256-SIV, because ironclad is the crypto system the
+serving image already carries; per-item encryption, one key per store and
+the whole file rewritten on every change are as the original has them.
+
+What was left out, and why: the Python floorvault library and its SQLite
+store (the cell is one sealed file, so nothing has to be installed); the OS
+key-store and systemd-creds custody, which need platform bindings a cell in
+this image does not carry, so the key is a 0600 file or an environment
+variable and an operator who wants a service manager to hold it points
+key_env at what that manager exports; the command bindings enforced against
+the harness's own argv, which have no meaning for a cell that resolves on
+demand; the browser-fill login vault the original deliberately keeps apart,
+which it never read either; and the CLI's prompted `put` and `--stdin`
+fields, since /vault takes the value on its own line or the model passes it.

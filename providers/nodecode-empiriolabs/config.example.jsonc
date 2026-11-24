@@ -1,0 +1,7 @@
+{
+  "empiriolabs": {
+    // where EmpirioLabs AI is served; the chat lane appends /chat/completions.
+    // A relay in front of the service goes here; the default is the service.
+    "base_url": "https://api.empiriolabs.ai/v1"
+  }
+}

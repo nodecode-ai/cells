@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell.
+// The declaration in cell.lisp is the authority; this is an illustration.
+{
+  "detox": {
+    "enabled": true,
+    "min_size": 6000,
+    "max_report_chars": 3000,
+    "max_report_percent": 55,
+    "head_lines": 5,
+    "tail_lines": 5,
+    "excluded_tools": [],
+    "retention_days": 30,
+    "max_store_mb": 100
+  }
+}

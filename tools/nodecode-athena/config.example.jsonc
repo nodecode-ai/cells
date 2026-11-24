@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "athena": {
+    "enabled": true,
+    "apps_dir": "~/nodecode-apps",                 // required: where apps live and run
+    "catalog_url": "https://api.pinokio.co/apps",  // the store's JSON API
+    "git": "git",                                   // the git athena_install clones with
+    "timeout": 30                                   // seconds one catalogue request may take
+  }
+}

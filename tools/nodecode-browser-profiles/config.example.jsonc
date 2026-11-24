@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "browser-profiles": {
+    "enabled": true,
+    "launch_timeout": 20,
+    "profiles": {
+      "work":    {"port": 9250},
+      "scraper": {"port": 9252, "headless": true},
+      "uni":     {"port": 9251, "browser": "edge"},
+      "box":     {"host": "192.0.2.10", "port": 9222}
+    }
+  }
+}

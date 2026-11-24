@@ -1,0 +1,25 @@
+nodecode-hades-coding-workflows is a rewrite of singhguri's singhguri/hades-coding-workflows:
+
+  https://github.com/singhguri/hades-coding-workflows
+  commit b68546d66fe684a49633a9174e44362eff77cbfc
+  MIT License, Copyright (c) 2026 Gurpreet Singh (LICENSE)
+
+skills/ is that repository's skills/ folder, unchanged: the three SKILL.md
+files (dual-model-harness, subagent-driven-development, writing-plans) and
+the four reference notes they name, frontmatter and all.
+
+Rewritten: the packaging. The original is a Hermes Agent plugin -- a Python
+register() that walks its own skills/ folder and hands each SKILL.md to the
+harness -- and this folder is a Nodecode knowledge cell, whose .asd declares
+:properties ((:knowledge . t)) and no component, so the folder is recorded
+and never loaded and the index reads the same SKILL.md files in place as
+prose skills, listed by their frontmatter name and description and read whole
+with (help 'name). The README's table maps the Hermes words the skills use
+(delegate_task, todo, read_file, patch) onto Nodecode's own.
+
+Left out: the Python shim and plugin.yaml manifest, which have no Nodecode
+equivalent to write; nothing of the prose is dropped, and no script, key or
+service came with it. The one thing the skills offer that a knowledge cell
+cannot is a runtime hook -- the original registered on import, this folder is
+read on demand -- which is why the prose is kept as files rather than
+rewritten in Lisp.

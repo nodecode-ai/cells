@@ -432,10 +432,16 @@ tok/s', the rate once a second has passed -- or NIL before anything streamed."
     (setf digest.waiting-words (append digest.waiting-words (list text))))
   digest)
 
-(defun lane-turn-digest (lane turn-id now &aux (digest lane.digest))
+(defun lane-turn-digest (lane turn-id now &key part &aux (digest lane.digest))
   "LANE's digest for TURN-ID, created on first sight; a different turn id
 replaces the previous digest (the gateway serializes turns per session, so
-newest wins is chronology, not a race)."
+newest wins is chronology, not a race). PART, a fact a turn leaves on its
+way, answers NIL for a turn LANE saw end (LANE-ENDED-TURN-IDS): the digest
+stays the turn's it names."
+  ;; A part can outlive its turn: the exit of a background eval a turn started
+  ;; lands under that turn's id after a steer ended it, while the next turn
+  ;; runs. Replacing on it orphaned the running turn's card, never settled
+  ;; nor retired, and opened a running digest for a turn that is over.
   ;; Caller holds the lane lock.
   ;;
   ;; A digest opened before its turn existed — an ask holding a queued status
@@ -444,10 +450,22 @@ newest wins is chronology, not a race)."
   ;; message the ask already posted.
   (cond
     ((and digest (equal turn-id (turn-digest-turn-id digest))) digest)
+    ((and part (member turn-id lane.ended-turn-ids :test #'equal)) nil)
     ((and digest (null (turn-digest-turn-id digest))) (setf digest.turn-id turn-id) digest)
     (t (let ((fresh (lane-open-digest lane now)))
          (setf fresh.turn-id turn-id)
          fresh))))
+
+(defparameter +ended-turns-kept+ 16
+  "How many of a lane's newest ended turns it remembers (LANE-ENDED-TURN-IDS):
+more than a late part ever reaches back.")
+
+(defun note-turn-ended (lane turn-id)
+  "Remember that LANE's turn TURN-ID ended. Caller holds the lane lock."
+  (when turn-id
+    (let ((kept (remove turn-id lane.ended-turn-ids :test #'equal)))
+      (setf lane.ended-turn-ids
+            (cons turn-id (subseq kept 0 (min (length kept) (1- +ended-turns-kept+))))))))
 
 (defun lane-open-digest (lane now)
   "Open a fresh digest for an ask whose turn does not exist yet — the queued
@@ -459,6 +477,18 @@ state. Caller holds the lane lock."
 call or round it showed (DIGEST-NOTE-VISIBLE) — the same sighting the stall
 notice reads. 0 for a digest that never opened."
   (max digest.started-at-ms digest.visible-at-ms))
+
+(defun digest-typing-seen-ms (digest now)
+  "The newest moment DIGEST's turn counts as seen for its typing beat: NOW
+while a call it started is still in flight and younger than
++TYPING-CALL-CAP-MS+ (the turn is working, though a call shows nothing until
+it lands), and its newest sighting (DIGEST-SEEN-MS) otherwise."
+  ;; The card already reads an open call as work, never as a stall
+  ;; (DIGEST-CARD); the beat reads it the same way.
+  (let ((open (digest-open-step digest)))
+    (if (and open (< (- now (digest-step-started-ms open)) +typing-call-cap-ms+))
+        now
+        (digest-seen-ms digest))))
 
 ;;; --- folds (lane lock held, no I/O) ----------------------------------------
 

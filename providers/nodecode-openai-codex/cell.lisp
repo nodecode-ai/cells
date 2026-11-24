@@ -90,7 +90,7 @@ credential and a round is refused with what to do."
                (entry-credential (nlk:json-object "access_token" (some #'nle::credential-env +env+)) :env))
               ((getf op :endpoint)
                (error 'nle:credential-error
-                      :detail "openai-codex: not signed in; sign in with /openai-codex login"))
+                      :detail "openai-codex: not signed in; sign in from /openai-codex"))
               (t (nle:make-credential "public" :public))))
       (funcall next op)))
 
@@ -123,7 +123,7 @@ waiting sign-in and clear what the cell said."
 
 (nle:define-cell openai-codex
   (:section ("openai-codex")
-    (:guide "sign in with /openai-codex login (a browser), or paste the address it ends on with /openai-codex code; base_url is where the Codex backend is served; originator is the client name every request carries")
+    (:guide "sign in from /openai-codex (a browser), or paste the address it ends on in /openai-codex; base_url is where the Codex backend is served; originator is the client name every request carries")
     ("base_url" :string :default +base+
      :doc "the Codex backend: its root, its /codex, or its /codex/responses")
     ("originator" :string :default "codex_cli_rs"
@@ -135,6 +135,5 @@ waiting sign-in and clear what the cell said."
   (:hook 'nle::walk-provider-stream #'walk)
   (:hook 'nle::note-body-wire #'note-response)
   (:command "openai-codex" 'run-command
-            :description "ChatGPT Plus/Pro sign-in: login, code ADDRESS, logout, status"
-            :argument-hint "login | code ADDRESS | logout | status"
+            :description "Sign in to ChatGPT Plus/Pro in the browser, or out"
             :session nil))

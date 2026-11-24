@@ -1,0 +1,32 @@
+// The model-router section of ~/.nodecode/config.jsonc. Every member is
+// optional: an empty section ranks the preset catalog, needs no key and
+// makes no network call.
+{
+  "model-router": {
+    // A JSON catalog merged over the presets. Same shape the original read
+    // from JEV_MODELS_FILE: providers, each with its address, the name of
+    // the environment variable holding its key, and its models.
+    // "catalog_file": "~/models.json",
+
+    // balanced | best | cheapest | fastest | named
+    "default_prefer": "balanced",
+
+    // The row prefer=named pins when a call names none, as vendor:model.
+    // "default_model": "openrouter:anthropic/claude-sonnet-4",
+
+    "max_alternatives": 3,
+    "max_candidates": 50,
+
+    // Leave out rows whose key variable is not set in this process.
+    "require_keys": false,
+    // Name the rows a decision threw out, and the constraint that threw each.
+    "show_rejected": true,
+
+    // Optional second opinion: one POST of {task, models}, answered with
+    // {scores: [{id, score}]}. The key stays in the environment.
+    // "judge_url": "https://judge.example/v1/score",
+    // "judge_key_env": "JEV_API_KEY",
+    "judge_timeout": 30,
+    "judge_weight_percent": 40
+  }
+}

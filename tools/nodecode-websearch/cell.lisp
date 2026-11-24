@@ -13,6 +13,7 @@
 ;;;;                 "providers": {"brave":     {"api_key": "..."},
 ;;;;                               "exa":       {"api_key": "..."},
 ;;;;                               "tavily":    {"api_key": "..."},
+;;;;                               "deepseek":  {"api_key": "..."},
 ;;;;                               "firecrawl": {"api_key": "..."}},
 ;;;;                 "max_results": 5,
 ;;;;                 "fetch": {"max_bytes": 5242880, "limit": 6000, "reader": "http"}}
@@ -20,7 +21,8 @@
 ;;;; is redacted from any text the model sees. No key at all is the
 ;;;; zero-config shape: the public floor answers (DuckDuckGo, Firecrawl and
 ;;;; keyless Exa, merged) and fetch escalates to Firecrawl and Exa keyless;
-;;;; a key for brave, exa or tavily is the upgrade, a firecrawl key only
+;;;; a key for brave, exa, tavily or deepseek (DeepSeek's own web search)
+;;;; is the upgrade, a firecrawl key only
 ;;;; lifts its limits. fetch.reader: http (the chain), firecrawl, exa, jina.
 
 (in-package #:nodecode-websearch)
@@ -36,7 +38,7 @@
 web: package, called through eval. Both return a string.
   (web:search \"query\" &key n provider)   n results (default 5, max 10). Each result is one numbered
       line - title, snippet, date when known - with its url under it. A configured provider
-      (:provider \"brave\"|\"exa\"|\"tavily\", or websearch.provider) answers alone and may put its own
+      (:provider \"brave\"|\"exa\"|\"tavily\"|\"deepseek\", or websearch.provider) answers alone and may put its own
       answer on top; with no key the public floor answers: DuckDuckGo, Firecrawl and Exa merged, the
       pages most of them name first. An engine that fails, or a keyed provider named without a
       key, is a [note] above the results, never an error. (:provider \"arxiv\") is keyless and
@@ -90,7 +92,7 @@ nested objects a flat section cannot carry."
 
 (nle:define-cell websearch
   (:section ("websearch")
-    (:guide "no key at all is the zero-config shape: DuckDuckGo, Firecrawl and keyless Exa answer, merged; a brave, exa or tavily key under providers.<name>.api_key is the upgrade, and a firecrawl key only lifts its limits; fetch.reader picks the reader chain (http walks to firecrawl then exa; firecrawl, exa or jina reads with that one alone) and fetch.max_bytes and fetch.limit bound what one page costs")
+    (:guide "no key at all is the zero-config shape: DuckDuckGo, Firecrawl and keyless Exa answer, merged; a brave, exa, tavily or deepseek key under providers.<name>.api_key is the upgrade (deepseek is DeepSeek's own web search), and a firecrawl key only lifts its limits; fetch.reader picks the reader chain (http walks to firecrawl then exa; firecrawl, exa or jina reads with that one alone) and fetch.max_bytes and fetch.limit bound what one page costs")
     ("provider" :choice :options +provider-names+
                 :doc "the engine that answers alone; unset, the first configured key leads, else the public floor")
     ("max_results" :integer :default 5 :min 1

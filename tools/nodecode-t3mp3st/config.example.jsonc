@@ -1,0 +1,9 @@
+{
+  // The t3mp3st section of ~/.nodecode/config.jsonc. Nothing here is
+  // required when the War Room listens where it starts by itself.
+  "t3mp3st": {
+    "enabled": true,
+    "url": "http://127.0.0.1:3333",   // where the War Room answers
+    "timeout_seconds": 20              // how long one call to it may take
+  }
+}

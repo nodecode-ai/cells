@@ -1,0 +1,33 @@
+nodecode-defend is a rewrite of PerryLink's PerryLink/dsh-defend:
+
+  https://github.com/PerryLink/dsh-defend
+  commit 6c1e28e5fa29d2473fe21d32b883091af681ba21
+  Apache-2.0, Copyright (c) PerryLink (LICENSE)
+
+Rewritten: the scanner and its tiers. The original's rule tables
+(src/detect/rules.ts, src/detect/secrets.ts) are carried as Common Lisp rule
+rows with the same ids, families, categories and severities -- a trimmed
+subset, about half the rows, keeping every family and every secret grammar;
+the needles and tolerant patterns are cl-ppcre scanners where the original
+used an Aho-Corasick automaton plus regexes. The entropy gate over secret
+candidates, the "a critical secret is blocked whatever secret_action says"
+rule, the allow/ask/block tiers per family, the memory-only report that
+records a rule and never the matched text, and the two verbs (a scan, and a
+report the /defend command also prints) all come across unchanged.
+
+What was left out, and why: the original hooked three DeepSeek Harness seams
+(agent/pre-step for inbound messages, tools/pre-execute for tool arguments,
+tools/post-execute for tool results) and could put an approval card up from
+the harness's approval service. Nodecode has one tool, eval, so only the
+pre-execute seam exists: this cell hooks the :tool point, reads the call's
+form and the strings it carries, and asks the operator through the core's own
+question board (Allow once / Deny), refusing when nobody answers. The
+post-execute and pre-step seams have no counterpart here. The upstream
+session-audit event (defend/detection, with its marker probing) became the
+in-memory ring buffer /defend and defend_report read, since there is no
+session event stream to append to. The NFKC normalization that closed the
+lookalike-Unicode bypass is not carried: the scan folds case only, so a
+payload written in lookalike characters can slip a needle. The JSON report
+the original's defend_report tool answered is kept as JSON here; the
+original's Aho-Corasick matcher is replaced by per-needle scanning, which is
+slower but reads the same needles.

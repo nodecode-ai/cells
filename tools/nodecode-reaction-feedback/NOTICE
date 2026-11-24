@@ -1,0 +1,17 @@
+nodecode-reaction-feedback is a rewrite of AhmetArif0's AhmetArif0/hermes-reaction-feedback:
+https://github.com/AhmetArif0/hermes-reaction-feedback
+commit 50d8dbd0fb9f89ce1002ad378a8b656e52a617e1
+MIT, Copyright (c) 2026 AhmetArif0 (LICENSE)
+
+What was rewritten: the plugin's three gateway hooks became one cell. Its Telegram
+message and reaction hooks are the `ask` and `record` actions of the `reaction_feedback`
+tool, which a chat surface (or the model) calls; its in-memory ledger is kept per
+conversation with the same attribution rule — a reaction belongs to the turn whose user
+message it sits under — and its `pre_llm_call` injection became a harness section read at
+the start of the turn, so the note arrives by itself and is taken once. The wording of
+the note is the original's, and so are the bounds: how much of a message is quoted, how
+many messages, reactions and conversations are kept, and how long a reaction waits.
+What was left out: the Telegram-only reading of gateway payloads. Nodecode's chat rooms
+report what they see, so the cell takes `chat` and `message_id` as ordinary strings and
+integers rather than parsing a platform's update objects, and the per-profile home is
+gone because a Nodecode home is already one process with one ledger.

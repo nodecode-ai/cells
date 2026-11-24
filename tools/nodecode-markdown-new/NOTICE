@@ -1,0 +1,31 @@
+nodecode-markdown-new is a rewrite of nosliwhtes's nosliwhtes/hermes-markdown-new:
+
+  https://github.com/nosliwhtes/hermes-markdown-new
+  commit dab049e0fd338ab8f7159c120fe55490410d0a6e
+  MIT, Copyright (c) 2026 Seth Wilson (LICENSE)
+
+The plugin was a Hermes backend: one model-facing tool, markdown_new, whose
+eight operations (url_convert, search_extract, crawl_start, crawl_status,
+crawl_download, crawl_run, crawl_cancel, file_convert) it performed by
+shelling out to a companion Python CLI, plus a web-search provider that put
+the same service behind Hermes's existing web_search and web_extract tools.
+The service is the public, keyless https://markdown.new API, and the CLI was
+one HTTP client over it: POST / to convert a url, POST /search, POST /crawl,
+GET and DELETE /crawl/status/{id}, and POST /convert for an upload. This
+rewrite keeps the tool's name, its eight operation names, its argument names
+and its endpoint, and posts to the service itself through nlk:http, so no
+Python, no companion CLI and no subprocess is involved. The plugin's two
+trust boundaries are kept as well, in this cell's own words: a url must be
+public, uncredentialed and http or https, and a local upload must be a
+regular file that is not a secret store and is under the size cap. Its
+operation table, which refuses an argument the named operation does not take,
+is kept too, so a bad call is still repaired in one round. The plugin's
+safety rules for programmatic URL blocks and website policy, and the
+approval cards Hermes raised for an upload or a cancellation, have no
+counterpart to call: what was worth the approval prompt is here one rule the
+tool applies itself and says out loud, and a rewritten operation reads a
+document the user named. What was left out: the provider registration (a
+Nodecode cell registers tools, and the search is the tool's own
+search_extract), the Hermes approval round trip, the CLI's exit-code
+contract, and the result spill file it wrote under the host's cache
+directory. Nothing of the original is vendored.

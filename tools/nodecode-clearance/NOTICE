@@ -1,0 +1,28 @@
+nodecode-clearance is a rewrite of yuzuru99's yuzuru99/hermes-clearance:
+
+  https://github.com/yuzuru99/hermes-clearance
+  commit 40adfd6db365d1279733ca541e8c25383302d74e
+  MIT License, Copyright (c) 2026 yuzuru99 (LICENSE)
+
+The original is a Python plugin for Hermes: a pre-tool-call hook that reads the
+sender's platform and user id out of the gateway's session environment, a
+pre-llm-call hook that applies an hourly rate limit and appends a line naming
+the sender's tier to the turn, and a /clearance command. This rewrite keeps the
+policy — five built-in tiers, deny-by-default tool decisions where deny beats
+allow, groups and globs over tool names, per-sender assignments with platform
+and everyone wildcards, per-tier hourly limits, an owner's audit trail of
+refused calls with argument names and never their values, and a /clearance
+command that reports and assigns — and reimplements it in Common Lisp against
+Nodecode's cell contract: one :tool hook, one slash command, one manual topic
+and a `clearance` config section. What the original read from environment
+variables, this reads from the session the running turn belongs to and from the
+channel kit's lane table, so a room sender is attributed by the room itself and
+a session no channel claims is the operator's own. The group names are
+Nodecode's tools rather than Hermes's (eval is the one tool that reaches the
+whole machine), the `users` setting is a list of `platform:user_id=tier`
+entries because a section is typed data here, and /clearance set writes that
+list through Nodecode's config writer. Left out: the per-turn "this sender is
+X" note the original injected into the model's context, since a tool hook here
+cannot add to a prompt; the tier-change notice that went with it; and the
+`blocked` tier's turn refusal, which this cell enforces by refusing every tool
+the tier names, because Nodecode's chat lanes open turns the cell does not own.

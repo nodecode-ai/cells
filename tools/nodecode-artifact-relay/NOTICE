@@ -1,0 +1,33 @@
+nodecode-artifact-relay is a rewrite of eloktev's eloktev/hermes-artifact-relay:
+
+  https://github.com/eloktev/hermes-artifact-relay
+  commit c91fa9229121dd616a275a45447301eacca45e6f
+  MIT License, Copyright (c) 2026 Egor Loktev (LICENSE)
+
+Rewritten: the two agent tools, artifact_publish and artifact_read, with the
+schema, the validation and the rules the original gave them -- a multipart
+publish of Markdown or standalone HTML with a title, a summary, a format and
+an expiry of 0 to 3650 days, a 5 MiB cap, an https origin (plain http only on
+loopback), a viewer URL that must sit on that same origin under /a/, an id of
+the relay's own alphabet rather than a path, and a read that fetches the
+original source back. The token is read from the environment variable the
+original named, ARTIFACT_RELAY_API_TOKEN, or from a file. The device-code
+sign-in -- ask the control plane for a code, open its activation page, poll
+until approved, keep the token at 0600, save the service, publish one proof
+artifact -- is ported too, as /artifact-relay setup and the worker behind it,
+with /artifact-relay status and cancel around it.
+
+Left out, and why: the Hermes command line (`hermes artifact-relay setup`,
+`hermes config set`) and its `.env` editing are replaced by the cell's
+/artifact-relay command and its own 0600 token file, since a Nodecode cell
+keeps its secrets under its own home; the process-global client the plugin
+built, its `plugins.entries.artifact-relay.settings` config keys, and its
+`requirements_available` / `check_fn` gating are the cell's section and its
+registration. Provenance is kept but narrowed: the original queried the
+Hermes session store for a title, a source and a display name; a Nodecode
+session has an id and no chat, so a publish names its session id and the
+platform only, and only when include_provenance is on. The prose skill
+becomes (help :artifact-relay), whose one line rides every request. Redirects
+follow up to five, where the original refused one outright, because the
+shared HTTP seam follows them; the relay's own answers are still held to the
+configured origin.

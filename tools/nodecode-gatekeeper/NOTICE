@@ -1,0 +1,26 @@
+nodecode-gatekeeper is a rewrite of percyhendrux123-prog's percyhendrux123-prog/hermes-gatekeeper:
+
+  https://github.com/percyhendrux123-prog/hermes-gatekeeper
+  commit e6fb3d7547e5398df9ef72418ee4441386386c3a
+  MIT, Copyright (c) 2026 Percy Keith Stewart (LICENSE)
+
+What was rewritten: the policy itself, in Common Lisp, and nothing of the
+original's Python. The rules are the same and decide in the same order -- an
+absolute STOP suppression, a per-channel consent record, a recipient-local
+permitted window, an unanswered thread and a minimum gap between sends, and
+exact wording templates filled from stored variables -- with the same three
+outcomes, and the ledger keeps hashes of recipients and message bodies rather
+than the text. That ledger was SQLite with owner-only permissions; here it is
+one owner-only s-expression file under the Nodecode home. What was left out:
+the Hermes host contract that made the original a gate rather than an adviser
+-- its pre_tool_call hook, which parsed literal `hermes send` and `imsg send`
+terminal commands and its own send_message shape, its post_tool_call
+observation that closed a thread by itself, and its post_gateway_admission hook
+that watched inbound traffic for STOP words and direct-message replies. A
+Nodecode cell reaches no Hermes send command, so the same policy is offered on
+two tools the model calls around a message (gatekeeper_check and
+gatekeeper_record) and on /gatekeeper for the owner, and nothing enforces a
+message that never asks. The IANA timezone name of a consent record became a
+UTC offset, because a rewrite without a zone database does not follow a
+daylight-saving change. The original's cronjob and send-looking-tool escalation
+vocabulary has no counterpart here and was not carried over.

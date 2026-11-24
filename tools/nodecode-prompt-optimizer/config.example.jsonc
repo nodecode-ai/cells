@@ -1,0 +1,15 @@
+// The prompt-optimizer cell's section of ~/.nodecode/config.jsonc.
+// Every member is optional and the defaults are what is written here.
+{
+  "prompt-optimizer": {
+    // Which family's tactics every rewrite carries; auto reads the target
+    // model's own name, and an unknown one gets the plain rewriting rule.
+    "family": "auto",
+    // The most the rewriting model may answer, in tokens.
+    "max_tokens": 400,
+    // A prompt of fewer words than this stands as it is.
+    "min_words": 3,
+    // Keep a local record of every rewrite, which /prompt-stats reads.
+    "record": true
+  }
+}

@@ -1,0 +1,32 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell -- documentation,
+// not config: the folder gets pushed and holds no secret. The declaration in
+// cell.lisp is the authority; this is an illustration of it. A present section
+// is enabled; "enabled": false vetoes it.
+{
+  "orcaslicer": {
+    "enabled": true,
+    // the OrcaSlicer executable itself, not the .app directory. Unset, the
+    // cell tries orca-slicer on PATH and a desktop install's own path.
+    "slicer": "/usr/bin/orca-slicer",
+    // extra preset roots: each a folder holding machine/, process/ and
+    // filament/ presets. The install's own roots are always searched.
+    "profiles": ["/usr/share/OrcaSlicer/resources/profiles"],
+    // where jobs and their artifacts live; unset, orcaslicer/ under the
+    // Nodecode home.
+    "state_dir": "~/.nodecode/orcaslicer/",
+    // the printers this cell may read and upload to. kind is moonraker,
+    // octoprint or prusalink; api_key_env names an ORCA_ or HERMES_ORCA_
+    // environment variable holding the key, never the key itself.
+    "printers": [
+      {
+        "name": "voron",
+        "kind": "moonraker",
+        "url": "http://printer.lan:7125",
+        "api_key_env": "ORCA_VORON_KEY"
+      }
+    ],
+    "slice_timeout": 1800,
+    "printer_timeout": 20,
+    "max_presets": 30
+  }
+}

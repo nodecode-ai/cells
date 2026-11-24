@@ -1,0 +1,24 @@
+// The priors cell's section of config.jsonc. Nothing here is needed by the
+// read tools: they ask the hosted server with no key.
+{
+  "priors": {
+    "base_url": "https://mcp.priors.trade/mcp",
+
+    // Payments need three things: the wallet command installed once
+    // (npm install -g @priors/mcp@0.14.1), this flag, and the agent's key.
+    "wallet": false,
+    "wallet_command": ["priors-mcp"],
+
+    // A dedicated agent wallet, never a main one: a 0600 file whose parent
+    // no other user can write.
+    "key_file": "~/.priors/agent.key",
+    "agent_id": "1234",
+
+    // The only hosts pay_url may pay. Empty means any https host is payable.
+    "pay_hosts": ["check.example"],
+
+    "state_dir": "~/.priors/state",
+    "max_price_usd": "1.00",
+    "timeout_seconds": 30
+  }
+}

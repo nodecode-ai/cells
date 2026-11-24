@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for the memos cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it, and an absent one runs on the defaults below: facts in
+// ~/.nodecode/memos/memories.jsonl, ten answers a search, and nothing in a
+// prompt that the tools did not ask for.
+{
+  "memos": {
+    // Where the facts are kept. The file is one JSON object a line: a store,
+    // a supersede or a forget. Leave it out for the home's own.
+    // "file": "~/.nodecode/memos/memories.jsonl",
+    // How many memories one memos_search answers unless the call says less.
+    "limit": 10,
+    // Characters of the newest facts put in every prompt, so a session
+    // starts knowing them. 0 (the default) keeps them for the tools alone.
+    "standing": 0
+  }
+}

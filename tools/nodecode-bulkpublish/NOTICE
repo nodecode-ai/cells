@@ -1,0 +1,28 @@
+nodecode-bulkpublish is a rewrite of bulkpublish's bulkpublish/hermes-bulkpublish:
+
+https://github.com/bulkpublish/hermes-bulkpublish
+commit 530589907c6f791aacd35e1f708dbe8949e7e87f
+
+MIT, Copyright (c) 2026 BulkPublish (LICENSE)
+
+What was rewritten: the original carries no code. It is an Agent Plugins
+manifest (plugin.json), one MCP server entry (mcp.json) pointing at
+BulkPublish's hosted server with the user's key as a bearer token, and
+thirty-three prose skills teaching the server's workflow. This cell is the
+same connection, written once in Common Lisp: an MCP client over streamable
+HTTP (initialize, tools/list, tools/call, session id, SSE answers), the
+catalog of the server's own tools behind two model-facing tools and three
+eval verbs, a /bulkpublish command, and the part of the skills a reader needs
+at the moment of posting distilled into the (help :bulkpublish) manual. The
+plugin marked the server untrusted so its harness asked before every
+write-capable call; that ask is kept as one argument, "confirm", for the
+tools that publish, reply, delete, approve, retry, update, schedule, cancel or
+run a bulk action, and it can be turned off in the section.
+
+What was left out, and why: the skills' per-platform pages (character limits,
+media sizes, post types, forty-odd worked examples) are summarized rather than
+transcribed, because the server documents its own arguments and the manual
+only needs to keep the model from publishing the wrong shape; the plural
+versions of the skills (inbox, RSS, recurring posts, team approvals) are
+reached through the same tools, so no separate surface was written for them;
+and the plugin's own favicon and README prose are not carried over.

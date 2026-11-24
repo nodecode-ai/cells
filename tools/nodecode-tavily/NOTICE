@@ -1,0 +1,21 @@
+nodecode-tavily is a rewrite of tavily-ai's tavily-ai/tavily-hermes-plugin:
+
+  https://github.com/tavily-ai/tavily-hermes-plugin
+  commit ac556341056dc903988f63d627d595e468f1cfa9
+  MIT, Copyright (c) 2026 Tavily AI (LICENSE)
+
+The plugin was a portable manifest (plugin.json) and one mcp.json entry that
+pointed Hermes at Tavily's hosted MCP server, https://mcp.tavily.com/mcp/,
+authenticated with a bearer TAVILY_API_KEY or a Hermes-managed OAuth sign-in,
+plus six skills adapted from tavily-ai/skills. The server advertised five
+tools, and every one of them was one Tavily REST endpoint: search, extract,
+map, crawl and research. This rewrite keeps the five tool names, their
+argument names and the same endpoints, and posts to them itself through
+nlk:http, so no MCP transport, no Node and no local server are needed. The
+skills' guidance -- search to discover, extract what matters, bound a crawl,
+one report per question, cite the urls, stop on a credit or rate limit -- is
+the cell's manual topic, (help :tavily), and each tool's argument list is its
+declared schema. What was left out: the OAuth sign-in (a cell's section is
+one key, and Hermes owned the token store, so an API key is the way in here),
+the MCP timeout override, and the remote tools' schema discovery, which the
+declarations replace. Nothing of the original is vendored.

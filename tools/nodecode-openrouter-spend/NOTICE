@@ -1,0 +1,40 @@
+nodecode-openrouter-spend is a rewrite of AllenRobinHubert's AllenRobinHubert/openrouter-spend:
+
+  https://github.com/AllenRobinHubert/openrouter-spend
+  commit 4a54b43f82264a0703d21abec9f7e49e8650abcf
+  MIT License, Copyright (c) 2026 Allen Robin Hubert (LICENSE)
+
+The original is a Hermes desktop plugin: a status-bar chip and a popup page
+over a FastAPI backend, a /spend command, and Python that read OpenRouter's
+accounting with the key from Hermes's own profile, kept the counters in
+SQLite per key, showed them in USD and INR, and measured the month against a
+configurable baseline. What was rewritten: the one accounting read the
+plugin makes itself -- GET openrouter.ai/api/v1/key with the key in one
+Authorization header, and the plugin's whitelist of the six numeric fields
+(usage, usage_daily, usage_weekly, usage_monthly, limit, limit_remaining)
+plus byok_usage -- its refusals for a rejected key and an answer with no
+counters, its USD/INR reference rate (api.frankfurter.dev, validated against
+base/quote and a ceiling, with a manual override and a cached fallback), its
+per-key cache of the last good reading, its month-against-a-baseline line,
+and its rule that a key's label can contain part of the key, so the record
+is filed under a hash instead. The plugin's configuration surface (which
+variable holds the key, the two cache windows, the timeout, the manual rate,
+the comparison) is the cell's :section; the chip, the popup page and the
+FastAPI routes are one text report, shown by the openrouter_spend tool, by
+/openrouter-spend and by (openrouter-spend:report), with
+(openrouter-spend:history) answering the local record.
+
+What was left out, and why: the per-request ledger the plugin fed from
+Hermes's pre_api_request, api_request_error, post_auxiliary_call and
+post_tool_call hooks and its llm_execution middleware -- per-request cost,
+model, token counts and session -- and the /generation reconciliation that
+resolved missing costs from the generation ids those hooks kept, because
+Nodecode's cell contract has no point that hands a cell a provider response.
+The local record is therefore one reading per fetch, and it shows what the
+key spent between two of them. Also left out: the SQLite database and its
+migrations/snapshots tables, replaced by one JSON file; the per-profile
+fan-out over Hermes homes and the merged profile/model/token tables the
+plugin's dashboard built from state.db; the Hermes secret-scope lookup and
+the desktop plugin API (dashboard/plugin_api.py's /summary, /chat, /other and
+their manual-usage rows); and the status-bar refresh timer, since a report is
+a text the operator or the model asks for.

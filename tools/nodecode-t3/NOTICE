@@ -1,0 +1,23 @@
+nodecode-t3 is a rewrite of thetasigmaio's thetasigmaio/hermes-t3-control:
+https://github.com/thetasigmaio/hermes-t3-control
+commit aeb5493e30e744b414cbfe88a70adb1acd59a1c8
+MIT, Copyright (c) 2026 Jakub Sladek (LICENSE)
+
+Rewritten: the eleven tools of the original, over the same local T3 Code
+orchestration API -- the thread list (t3_threads), one thread with its
+messages and plan (t3_thread_read), a new thread (t3_thread_create), one
+user turn (t3_thread_send), an interrupt (t3_turn_interrupt) and a session
+stop (t3_session_stop) -- in Common Lisp: the section and its readers, the
+route allowlist, the bearer header, the dispatch commands and their RFC 3339
+timestamps and command ids, and the rendering of what T3 answers. The
+operator's way in is /t3.
+
+Left out: local-cli authentication (the original mints a five-minute token
+by running the T3 CLI and pinning its process through /proc and pidfd; a cell
+takes the token the operator already has, from the section or from
+T3_ORCHESTRATION_TOKEN) and the opt-in continuation observer with its SQLite
+ledger, which needs a patch to the host it ran on. Also left out are four
+narrower mutations of the original: setting a thread's mode, implementing a
+stored plan, answering a pending approval or question, and settling a
+thread; and its long-poll wait. Each is one more dispatch command over the
+same route, and none was needed for the lifecycle the cell carries.

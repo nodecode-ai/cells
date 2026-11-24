@@ -1,0 +1,17 @@
+// The deja cell's section, as ~/.nodecode/config.jsonc would carry it.
+// Nothing here has to be set: deja on PATH is the whole setup.
+{
+  "deja": {
+    // The deja program: its name on PATH, or the path to it.
+    // Install it with: brew install deja-vu
+    // (or: go install github.com/vshulcz/deja-vu/cmd/deja@latest)
+    "deja": "deja",
+
+    // Hand the model a session digest at a session's first request, and what
+    // each turn's prompt matches. Off leaves the tools and /deja.
+    "auto": true,
+
+    // The longest recall one turn carries, in characters.
+    "max_chars": 6000
+  }
+}

@@ -1,0 +1,13 @@
+// The cell's section of ~/.nodecode/config.jsonc. A present section is an
+// enabled one; "enabled": false vetoes the cell and installs nothing.
+// There is no key: NVIDIA Broadcast's gateway answers on loopback.
+"nvidia-broadcast": {
+  // The gateway's endpoint. 18100 is the app's default; when that port is
+  // taken the app binds the first free port from 18101, and the port it took
+  // is what goes here.
+  "url": "http://127.0.0.1:18100/gateway",
+
+  // How long one request to the gateway may take, in seconds. The file
+  // wait adds its own timeoutMs on top of this.
+  "timeout": 60
+}

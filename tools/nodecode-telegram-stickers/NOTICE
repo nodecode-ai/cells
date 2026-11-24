@@ -1,0 +1,28 @@
+nodecode-telegram-stickers is a rewrite of churnast's churnast/hermes-telegram-stickers:
+
+  https://github.com/churnast/hermes-telegram-stickers
+  commit 210ce860a06ed24b87f34d9c418f544d2afde4f0
+  MIT License, Copyright (c) 2026 churnast (LICENSE)
+
+Rewritten: the model-facing half of the plugin - telegram_sticker_find, telegram_sticker_send and
+telegram_sticker_settings with their argument schemas and answer shapes, the /stickers command's
+listing, reload and per-chat off switch, the getStickerSet and sendSticker calls and the ids
+('pack_name:12') a find answers with, the reaction table that lets words ('facepalm', 'eye roll',
+'thumbs up') and feelings find a sticker in packs without that exact emoji, the nearest-feeling
+fallback, the four Telegram-made packs used while no pack is set, the per-chat cooldown, the
+'mute a chat' switch, and the rule that a tool error carries no bot token. The Python (asyncio,
+python-telegram-bot) is Common Lisp here: nlk:http for the Bot API, one section declaration for
+the settings, four-tool shapes as nlk:define-contract declarations, and in-memory catalogs and
+pacing in place of the plugin's JSON files.
+
+Left out: everything that needs the Hermes gateway. The plugin knows which chat, forum topic and
+message a turn belongs to, so its send needs no chat id; a cell has no turn-level Telegram
+context, and takes chat_id (or the section's default_chat_id) and reply_to_message_id instead.
+The plugin's sticker-observer handler, which learns packs from stickers sent to the bot in a direct
+chat, and its pre_llm_call hint and in-chat setup walk have no equivalent here - a cell registers
+no gateway handlers and sees no turns - so the packs are the ones the section names. Also left out:
+the vision pass (/stickers describe) that described each sticker picture with the gateway's vision
+model and stored the descriptions, so picking by meaning here is the emoji tags, the reaction table
+and pack names rather than a description of the picture; the per-chat pace set in words, the ban
+list, the forget-a-pack and forget-all actions; and the on-disk catalog, descriptions and pacing
+state, which this cell keeps in memory for the life of the process.

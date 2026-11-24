@@ -1,0 +1,18 @@
+{
+  // nodecode-security-scan reads its own section; every member is optional.
+  "security-scan": {
+    // How many lines one reviewer reads at once: the walk groups files into
+    // chunks of about this. At least 200.
+    "max_chunk_lines": 4000,
+    // Ask api.osv.dev about the packages the manifests declare. Only names and
+    // versions leave the machine, never code or a path.
+    "dependency_check": true,
+    "osv_url": "https://api.osv.dev",
+    // The app addresses a scan may test once you allow it. Empty by default:
+    // then /security authorize-validation refuses, and nothing is probed.
+    "allowed_origins": ["http://localhost:3000"],
+    // What one grant allows: how long, and how many requests.
+    "grant_minutes": 60,
+    "grant_requests": 200
+  }
+}

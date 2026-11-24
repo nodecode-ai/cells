@@ -1,0 +1,20 @@
+// The `parallel-search` section this cell reads. Nothing here is required
+// and nothing here is a secret: the endpoint is anonymous. Copy what you
+// need into ~/.nodecode/config.jsonc, or set it in /settings, then
+// (restart-cells "nodecode-parallel-search").
+{
+  "parallel-search": {
+    // A present section is enabled; "enabled": false vetoes it.
+    "enabled": true,
+
+    // The MCP server. Parallel's own unless you run one that speaks
+    // Streamable HTTP and the same two tool names.
+    "endpoint": "https://search.parallel.ai/mcp",
+
+    // What a search asks for when the call names no count.
+    "max_results": 5,
+
+    // Seconds one search or one page read may take.
+    "timeout_seconds": 60
+  }
+}

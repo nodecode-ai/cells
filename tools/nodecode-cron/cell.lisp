@@ -23,7 +23,8 @@
 ;;;; model-facing ((cron:jobs), (cron:show), (cron:runs)).
 ;;;;
 ;;;; Config, a sibling top-level key next to `notify' and `websearch':
-;;;;   "cron": {"enabled": true, "timeout_minutes": 10}
+;;;;   "cron": {"enabled": true, "timeout_minutes": 10, "pause_after_failures": 3,
+;;;;            "check_timeout_seconds": 60}
 ;;;; Jobs are not config: they live in the store, written by the verbs.
 
 (in-package #:nodecode-cron)
@@ -38,7 +39,7 @@
   "Scheduled prompts are available through the nodecode-cron cell: Lisp functions in the
 cron: package, called through eval. Every one returns a string; every refusal is ERROR:
 CRON-ERROR with the reason.
-  (cron:add \"schedule\" \"prompt\" &key name cwd timeout-minutes model provider)   schedule one.
+  (cron:add \"schedule\" \"prompt\" &key name cwd timeout-minutes model provider check)   schedule one.
       Schedules: \"30m\" / \"every 2h\" / \"every hour\" (recurring interval); \"in 45m\" (once, that
       far from now); \"at 17:30\" (once, the next such time); \"every day at 9am\" / \"weekdays at
       9:30\" / \"every monday 9am\" / \"every mon,wed at 18:00\" (recurring, wall clock); five-field
@@ -48,7 +49,7 @@ CRON-ERROR with the reason.
   (cron:jobs)   one line per job: id, state, schedule, next fire (wall time and
       time left), last outcome.
   (cron:show \"id\")   the whole record.   (cron:runs \"id\" &optional 10)   the last outcomes.
-  (cron:edit \"id\" &key schedule prompt name cwd timeout-minutes)   (cron:pause \"id\")
+  (cron:edit \"id\" &key schedule prompt name cwd timeout-minutes check)   (cron:pause \"id\")
   (cron:resume \"id\")   (cron:remove \"id\")   (cron:run \"id\" &optional \"extra context\") fires now.
 Each job runs in its own durable session, cron-<id>: its transcript is the record, and
 (recall-log :session-id \"cron-<id>\" ...) reads it from anywhere. A fire's whole final answer
@@ -58,7 +59,25 @@ running. Never poll for it: end your turn, and it arrives as the next one.
 Its first line also stands on every attached shell as a notice under cron:<id>; a fire that
 answers exactly SILENT, or nothing at all, sends nothing. A fire's time limit (:timeout-minutes,
 default 10) is its turn's budget: past it the fire's tool calls are refused and it answers with
-what it has. A job's own session cannot add, edit, resume or run jobs."
+what it has. A job whose fires fail 3 times in a row (the section's pause_after_failures)
+pauses itself, and the session that scheduled it is told once, with the last failure;
+(cron:resume \"id\") runs it again. A job's own session cannot add, edit, resume, run or
+remove jobs.
+A job that waits on something - a build, a file, a reply - takes :check \"shell command\": the
+command runs before each scheduled fire, in the job's cwd, at no model cost. Exit 0 fires,
+with the command's output as run context; exit 1 lets the instant pass with no turn (the
+job's last outcome reads quiet); any other exit, or a command past the section's
+check_timeout_seconds (60), is a failed check, counted toward the pause like a failed fire.
+grep -q, test and [ ] answer 0 or 1 already: :check \"grep -q 'board done' run.log\".
+(cron:edit \"id\" :check nil) drops it; (cron:run \"id\") fires without it.
+
+Wake-ups of its own: (cron:wake :on :min \"15m\" :max \"4h\" :allowance 2 :calls 40) turns on
+one wake job, \"wake\", whose turns nobody types; (cron:wake :off) stops it until the next :on,
+(cron:wake :status) reads it, (cron:wake :now) wakes it once. Before each wake a check in Lisp,
+at no cost, skips it when the allowance (dollars per 24 hours) is spent or unknown, or when
+nothing changed and the longest gap has not run out. A wake turn reads what changed since
+the last one, may only read (its writes are refused), answers SILENT when nothing is worth a
+line, and may pick its next wake with (cron:wake-next \"2h\" \"why\") inside the bounds."
   "What (help :cron) answers while the cell runs.")
 
 ;;; --- the verbs ------------------------------------------------------------------
@@ -67,7 +86,13 @@ what it has. A job's own session cannot add, edit, resume or run jobs."
   "hermes' rule: a scheduled run that could schedule runs is a loop."
   (when (and (stringp nlk:*scribe-session-id*)
              (find nlk:*scribe-session-id* *jobs* :key #'job-session :test #'string=))
-    (fail "a scheduled job's session cannot add, edit, resume or run jobs")))
+    (fail "a scheduled job's session cannot add, edit, resume, run or remove jobs")))
+
+(defun refuse-wake-job (job verb)
+  "The wake job keeps its own verbs: its bounds and its stop are (cron:wake ...)."
+  (when (job-wake job)
+    (fail "(cron:~a) leaves the wake job alone: (cron:wake :on ...) sets its bounds and turns it on, (cron:wake :off) stops it, (cron:wake :now) wakes it once"
+          verb)))
 
 (defun timeout-seconds-from-minutes (minutes)
   (unless (and (realp minutes) (plusp minutes))
@@ -78,11 +103,18 @@ what it has. A job's own session cannot add, edit, resume or run jobs."
   (unless (and (stringp prompt) (plusp (length (string-trim '(#\Space #\Newline) prompt))))
     (fail "prompt must be a non-empty string")))
 
-(define-verb add-job (schedule prompt &key name cwd timeout-minutes model provider
+(defun valid-check (check)
+  "CHECK as a job keeps it: a shell command, or NIL for none."
+  (cond ((null check) nil)
+        ((and (stringp check) (plusp (length (nlk:trimmed check)))) check)
+        (t (fail ":check must be a shell command string, or NIL for none, not ~s" check))))
+
+(define-verb add-job (schedule prompt &key name cwd timeout-minutes model provider check
                                           (now (get-universal-time)))
   "The whole of (cron:add) behind an explicit clock: parse, make the record
 and its session, pin, persist, poke. Returns the job."
   (check-prompt prompt)
+  (valid-check check)
   (with-cron-lock
     (refuse-from-job-session)
     (let* ((parsed (parse-schedule schedule :now now))
@@ -99,7 +131,8 @@ and its session, pin, persist, poke. Returns the job."
                           :created-at now
                           :origin origin
                           :timeout (and timeout-minutes
-                                        (timeout-seconds-from-minutes timeout-minutes)))))
+                                        (timeout-seconds-from-minutes timeout-minutes))
+                          :check check)))
       (ensure-job-session job)
       (when (and (or model provider) (nlk:store-open-p))
         (nlk:record-session-model-selection job.session :provider provider :model model))
@@ -111,13 +144,13 @@ and its session, pin, persist, poke. Returns the job."
       (nle:keep-running (format nil "the cron job ~a" job.name))
       job)))
 
-(defun add (schedule prompt &key name cwd timeout-minutes model provider)
+(defun add (schedule prompt &key name cwd timeout-minutes model provider check)
   "Schedule PROMPT. Answers the job's id, schedule, next fire and session."
   (let ((job (add-job schedule prompt :name name :cwd cwd
                                       :timeout-minutes timeout-minutes
-                                      :model model :provider provider)))
-    (format nil "job ~a added: ~a; next fire ~a; session ~a"
-            job.id (schedule-display job.schedule)
+                                      :model model :provider provider :check check)))
+    (format nil "job ~a added: ~a~@[, gated by its check~*~]; next fire ~a; session ~a"
+            job.id (schedule-display job.schedule) job.check
             (next-text job) job.session)))
 
 (define-verb jobs ()
@@ -142,8 +175,9 @@ registry is written after it -- the ticker woken too, with POKE."
            (persist-jobs)
            ,@(when poke '((poke))))))))
 
-(define-job-verb edit (id &key schedule prompt name cwd timeout-minutes)
-  "Change job ID in place. A new schedule counts from now." (:refuse t)
+(define-job-verb edit (id &key schedule prompt name cwd timeout-minutes (check nil check-p))
+  "Change job ID in place. A new schedule counts from now; :check NIL drops the check." (:refuse t)
+  (refuse-wake-job job "edit")
   (when schedule
     (let* ((now (get-universal-time))
            (parsed (parse-schedule schedule :now now)))
@@ -160,6 +194,8 @@ registry is written after it -- the ticker woken too, with POKE."
     (setf (job-cwd job) cwd))
   (when timeout-minutes
     (setf (job-timeout job) (timeout-seconds-from-minutes timeout-minutes)))
+  (when check-p
+    (setf (job-check job) (valid-check check)))
   (job-text job))
 
 (define-job-verb pause (id)
@@ -169,21 +205,25 @@ registry is written after it -- the ticker woken too, with POKE."
 
 (define-job-verb resume (id)
   "Let job ID fire again, from the next due instant after now." (:refuse t)
+  (refuse-wake-job job "resume")
   (let ((next (next-fire (job-schedule job) (get-universal-time))))
     (unless next
       (fail "job ~a has no fire left (~a); (cron:edit ~s :schedule ...) gives it one"
             id (schedule-display (job-schedule job)) id))
+    ;; A resumed job starts a fresh run: the failures that paused it are behind it.
     (setf (job-state job) :active
-          (job-next-at job) next)
+          (job-next-at job) next
+          (job-failures job) 0)
     (format nil "job ~a resumed; next fire ~a" id (at-text next))))
 
 (define-job-verb remove (id)
-  "Forget job ID. Its session and transcript stay in the store." ()
+  "Forget job ID. Its session and transcript stay in the store." (:refuse t)
   (setf *jobs* (cl:remove job *jobs*))
   (format nil "job ~a removed; its session ~a keeps its history" id (job-session job)))
 
 (define-job-verb run (id &optional extra)
   "Fire job ID now, beside its schedule. EXTRA rides as run context." (:refuse t :poke nil)
+  (refuse-wake-job job "run")
   (nlk:if-let (fire (fire-job job (get-universal-time) :extra extra :manual t))
     (format nil "job ~a fired into session ~a~@[ (turn ~a)~]"
             id (job-session job) (fire-turn-id fire))
@@ -213,10 +253,9 @@ registry is written after it -- the ticker woken too, with POKE."
 
 ;;; --- /cron -------------------------------------------------------------------------
 
-(defparameter +usage+ "/cron [jobs | show ID | run ID | pause ID | resume ID | remove ID]")
 
 (defparameter +no-jobs-line+
-  "cron: no jobs; (cron:add \"every day at 9am\" \"...\") through eval"
+  "cron: no jobs; ask the agent for one, as in “every weekday at 9am, sum up my inbox”"
   "The bare /cron answer, and its hint, while no job is scheduled.")
 
 (defun summary-order (jobs)
@@ -229,14 +268,14 @@ first, then the rest in the order they arrived."
 (defun summary-text ()
   "The bare /cron answer: how many jobs, then one line per job — a vertical
 list naming each job, its state and its timing."
-  ;; Past three jobs it lists the first and points at /cron jobs for the rest;
+  ;; Past three jobs it lists the first and points at /cron for the rest;
   ;; the one-line form rides the composer hint.
   (with-cron-lock
     (if (null *jobs*)
         +no-jobs-line+
         (let* ((ordered (summary-order (reverse *jobs*)))
                (shown (subseq ordered 0 (min 3 (length ordered)))))
-          (format nil "cron: ~d job~:p~%~{- ~a~^~%~}~@[~%+~d more (/cron jobs)~]"
+          (format nil "cron: ~d job~:p~%~{- ~a~^~%~}~@[~%+~d more in /cron~]"
                   (length ordered)
                   ;; Next fire while active, else the last outcome.
                   (mapcar (lambda (job)
@@ -301,10 +340,13 @@ outcome."
                               when (plusp count)
                                 collect (format nil "~d ~(~a~)" count state)))
        :rows (let ((width (reduce #'max jobs :key (lambda (job) (length job.id)) :initial-value 0)))
-               (mapcar (lambda (job) (job-row job width)) jobs))
+               (append (mapcar (lambda (job) (job-row job width)) jobs)
+                       (when jobs
+                         (list (nle:run-row "Post the list as a notice" "/cron jobs"
+                                            :detail "every job and its next fire, kept above the composer")))))
        :searchable t
        :search-placeholder "Search jobs"
-       :empty-label "No jobs · ask for one, or (cron:add \"every day at 9am\" \"...\") through eval"
+       :empty-label "No jobs · ask the agent for one, as in “every weekday at 9am, sum up my inbox”"
        :hint "space pause/resume  enter details  esc close  ↑↓ navigate  type search"))))
 
 (defun wrapped (text width)
@@ -362,13 +404,14 @@ panel a shell opens over it, bare or for one job's record."
     ((member head '("jobs" "list") :test #'string=)
      (nle:notice (jobs-text) :level :info)
      (format nil "cron: ~d job~:p posted" (length *jobs*)))
-    ((null id) (format nil "cron: ~a needs a job id; usage ~a" head +usage+))
+    ((and (null id) (member head '("show" "run" "pause" "resume" "remove") :test #'string=))
+     (values (format nil "cron: ~a needs a job; pick one in the panel" head) (panel)))
     ((string= head "show") (values (show id) (with-cron-lock (record-panel (require-job id)))))
     ((string= head "run") (run id))
     ((string= head "pause") (pause id))
     ((string= head "resume") (resume id))
     ((string= head "remove") (remove id))
-    (t (format nil "cron: unknown subcommand ~a; usage ~a" head +usage+))))
+    (t (values (format nil "cron: ~a is not one of its choices" head) (panel)))))
 
 ;;; --- the page's route ---------------------------------------------------------------
 ;;; The web page's Control pane reads the registry as its row holds it
@@ -404,7 +447,7 @@ remove (id) -- and answers {text, jobs}, the verb's answer and the jobs after."
   "The registry off the store, the fires recovered with it, the one ticker
 thread, and the standing line for the jobs that keep the gateway up."
   (with-cron-lock
-    (setf *inflight* '())
+    (setf *inflight* '() *checks* '())
     (load-jobs)
     ;; A job whose session still runs a recovered turn gets an in-flight record.
     (dolist (job *jobs*)
@@ -421,23 +464,32 @@ thread, and the standing line for the jobs that keep the gateway up."
   ;; The registry row stays in the store; the in-image list is dropped.
   (nle:on-stop (lambda ()
                  (setf *worker* (nlk:worker-stop *worker*))
-                 (with-cron-lock (setf *inflight* '() *jobs* '()))))
+                 (with-cron-lock (setf *inflight* '() *checks* '() *jobs* '()))))
   (let ((active (count :active *jobs* :key #'job-state)))
     (when (plusp active)
       (nle:keep-running (format nil "~d cron job~:p" active)))))
 
 (nle:define-cell cron
   (:section ("cron")
-    (:guide "timeout_minutes bounds one fire's turn; a job may name a limit of its own")
+    (:guide "timeout_minutes bounds one fire's turn; a job may name a limit of its own. pause_after_failures stops a job whose fires keep failing")
     ("timeout_minutes" :integer :default 10 :min 1
-                       :doc "how long a fire's turn may run before its calls are refused"))
+                       :doc "how long a fire's turn may run before its calls are refused")
+    ("pause_after_failures" :integer :default 3 :min 0
+                            :doc "failed fires in a row that pause a job and tell the session that scheduled it; 0 never pauses")
+    ("check_timeout_seconds" :integer :default 60 :min 1
+                             :doc "how long a job's :check command may run before it is killed and counted as a failed check"))
   (:start #'install)
   (:hook :frame (nlk:observer #'observe-frame "cron"))
   (:hook 'nle:turn-budget #'budget-hook)
+  ;; The wake's observe level: every tool call of the wake's session, no other.
+  (:hook :tool #'wake-gate)
+  (:command "wake" (lambda (args session-id)
+                     (declare (ignore session-id))
+                     (wake-slash args))
+            :description "Wake-ups of its own: on, off, or one now")
   (:help :cron "cron:add schedules a prompt (\"every day at 9am\", \"in 45m\"); a fire's answer arrives as your next turn" +primer+)
   (:route "/api/cron/jobs" #'jobs-route)
   (:command "cron" (lambda (args session-id)
                      (declare (ignore session-id))
                      (run-slash args))
-            :description "Scheduled jobs: the list, jobs, show ID, run ID, pause ID, resume ID, remove ID"
-            :argument-hint "jobs | show ID | run ID | pause ID | resume ID | remove ID"))
+            :description "Scheduled jobs: each one's record, and running, pausing, resuming or removing it"))

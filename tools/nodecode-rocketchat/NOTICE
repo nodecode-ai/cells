@@ -1,0 +1,32 @@
+nodecode-rocketchat is a rewrite of HalfbitStudio's HalfbitStudio/hermes-plugin-rocketchat:
+
+  https://github.com/HalfbitStudio/hermes-plugin-rocketchat
+  commit 989a04cd5f09e57bdd88997940cd18e4d58415b2
+  MIT License, Copyright (c) 2026 hermes-plugin-rocketchat contributors
+  (Nous Research, cyb0rgk1tty, meron1122, HearthCore / Timo Goetzken) (LICENSE)
+
+Rewritten: the plugin's ten model-facing tools - rocketchat_list_channels,
+rocketchat_get_history, rocketchat_search_messages, rocketchat_get_thread,
+rocketchat_get_permalink, rocketchat_create_channel, rocketchat_post,
+rocketchat_send_file, rocketchat_dm and rocketchat_delegate - with their
+argument schemas and REST endpoints (channels.list, groups.list, rooms.info,
+channels/groups/im.history, chat.search, chat.getMessage,
+chat.getThreadMessages, chat.postMessage, im.create, rooms.media and
+rooms.mediaConfirm), the compacted message shape they answer with and its
+untrusted-content marking, the write-tools and file-upload opt-ins, the room
+allowlist, the local-file upload roots and size cap, and the delegation
+envelope that keeps two bots from replying to each other forever. The Python
+(aiohttp) is Common Lisp here: nlk:http for the server's REST API v1, one
+section declaration for the settings, and ten nlk:define-contract
+declarations for the tools' arguments, so the schema the model is shown and
+the body that runs are one shape.
+
+Left out: the inbound gateway half of the plugin - the Realtime (DDP)
+WebSocket subscription, the DDP keepalive and resume, the mention and
+free-response gating, reactions, thread-context injection, voice-note
+transcription through ffmpeg, and the topic-sync and slash-command
+forwarding. That half is how the plugin makes Hermes answer as a bot inside
+Rocket.Chat; Nodecode's own chat surfaces are cells of the rooms kind, so a
+Rocket.Chat gateway would be a second cell rather than a part of this one.
+This cell is the half a session uses from anywhere: the ten tools over the
+REST API.

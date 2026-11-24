@@ -1,0 +1,19 @@
+nodecode-mcp-serve is a rewrite of NousResearch's NousResearch/hermes-official-plugins:
+
+  https://github.com/NousResearch/hermes-official-plugins
+  commit e7a218f26db88426ab3e7376f0e000b6e356f5e7
+  MIT License, Copyright (c) 2026 Nous Research (LICENSE)
+
+The rewrite reimplements the plugin's conversation bridge as one MCP route on
+this Nodecode's own gateway port: the JSON-RPC handshake, `tools/list` and
+`tools/call`, and six tools over Nodecode's own session directory and event
+log (conversations_list, conversation_get, messages_read, events_poll,
+messages_send, channels_list), with a `/mcp-serve` command that prints the
+client configuration and a config section of its own. The original's
+Python, its `state.db` SQLite reads and its messaging-platform plumbing are
+gone: Nodecode's sessions are the conversations, `nlk:events` is the read
+and `nle:submit` is the send. Left out because they have no Nodecode
+counterpart in this cell's shape: the stdio transport (a client POSTs to the
+route instead of launching a process), `attachments_fetch` and the two
+approval tools, and `--tools`, which re-exported Hermes' own web, browser,
+vision and speech tools to the connecting agent.

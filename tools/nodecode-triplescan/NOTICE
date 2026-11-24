@@ -1,0 +1,35 @@
+nodecode-triplescan is a rewrite of dafka007's dafka007/hermes-security-audit:
+
+  https://github.com/dafka007/hermes-security-audit
+  commit 60a7661bbe2f255c507d620275c59782cabe0335
+  MIT License, Copyright (c) 2026 dafka007 (LICENSE)
+
+The rewrite is the plugin's one model-facing tool, `security_audit`, and its
+pre-tool-call approval hook, as a Nodecode cell. What it keeps: the three
+scanner invocations -- `gitleaks dir WORKSPACE --report-format json
+--report-path - --redact=100 --no-color`, `osv-scanner scan source -r
+WORKSPACE --format json`, and `semgrep scan --config CONFIG --json --quiet
+WORKSPACE` -- launched without a shell from the folder being audited; the same
+reading of their output (Gitleaks' JSON array, OSV's vulnerabilities found
+wherever they nest, Semgrep's results together with its analysis errors); the
+same statuses and the same precedence (FAIL, then UNRESOLVED, then PASS, with
+NOT_APPLICABLE for OSV-Scanner's exit 128 and BLOCKED for a folder that cannot
+be read); the same coverage_incomplete rule; the same cap of 200 findings per
+scanner and the same 10 MiB output ceiling; the same rule that a secret's value
+is never copied out (Gitleaks runs redacted and only the rule, file, line and
+fingerprint are read from its report); and the same approval gate, which here is
+one question on the tool-call hook.
+
+What is left out: the plugin's child-environment scrubbing, which stripped
+Hermes Desktop's Python and terminal variables before each scanner -- a Nodecode
+cell has none to strip -- and its HSA_* environment variables, whose settings
+now live in the cell's own config section instead of the environment. The
+approval question is behind `ask` rather than unconditional as it was in Hermes,
+because a cell that always asked would refuse every scan in a shell where
+nobody is there to answer; with it on, a call with no operator waiting is
+refused exactly as the plugin's prompt would leave the call unanswered. The
+plugin's README, its Windows notes and its test suite are not carried over; the
+cell's own tests stub the scanners instead.
+
+Nothing of the original's Python is bundled. The cell runs the same three
+programs the plugin ran, on PATH, and its own code is Common Lisp.

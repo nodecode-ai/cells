@@ -1,0 +1,27 @@
+nodecode-antidote is a rewrite of GroveMinting's GroveMinting/llmAntidote:
+
+  https://github.com/GroveMinting/llmAntidote
+  commit c7f6a5428abbdba2b48f8b5fd3494b7ae2e3c5e8
+  MIT License, Copyright (c) 2026 Grove Minting Company (LICENSE)
+
+cell.lisp rewrites the plugin's runtime half in Common Lisp: the rule family
+that names sensitive material (a dotenv or environment read, a credential
+directory, an authentication file), an egress-capable command, an upload, a
+download run through a shell and a reverse shell; the balanced, strict and
+audit modes over that family, with an operator question in balanced mode; the
+memory that a sensitive read was let through, which gates a later
+egress-capable call; a metadata-only record of the decisions; and a status
+and clear command. The plugin scanned a whole tool-call argument object in
+Python; this cell prints the form (comments dropped) plus the strings a call
+carries and scans that, and it asks through the organism's own question
+board.
+
+Left out, because Nodecode has one tool where Hermes had many: the
+capability classifier over Hermes's tool names (here the tool is read from
+the call's text, with `allow_egress` for a tool that is meant to send), and
+`safe_read_roots`, since a call carries no file-read arguments to place
+inside a root. Left out, because they are a separate product surface and not
+the runtime guard: the behavioral evaluation suite and its OpenAI-compatible
+client, `model inspect` against Hugging Face, the model lockfiles, and the
+signed fleet admission, key generation and ledger commands. The taint is the
+image's, not a session's, since the hook carries no session id.

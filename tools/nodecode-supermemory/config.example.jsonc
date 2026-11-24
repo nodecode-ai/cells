@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "supermemory": {
+    "enabled": true,
+    "api_key_env": "SUPERMEMORY_API_KEY",
+    "container_tag": "nodecode",
+    "search_mode": "hybrid",
+    "search_limit": 10,
+    "capture": true,
+    "timeout_seconds": 20
+  }
+}

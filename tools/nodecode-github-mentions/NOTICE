@@ -1,0 +1,33 @@
+nodecode-github-mentions is a rewrite of luantak's luantak/hermes-github-mentions:
+
+  https://github.com/luantak/hermes-github-mentions
+  commit d8a88220a547180663fcec76a069c8fbbf63bff9
+  author luantak (https://github.com/luantak)
+  MIT License, Copyright (c) 2026 Paul Scheduikat (LICENSE)
+
+Rewritten: the plugin's mention rules and its three moments, as three tools.
+The rules are the original's — an unread GitHub notification whose reason is a
+mention, an author in allowed_authors, the token's own @login matched with word
+boundaries around it and case-insensitively, the paragraph the mention stands in
+cut out as the request (180 characters, the mention taken out) and the thread's
+title as the topic — and so is where an answer goes: an issue or pull request
+comment, an inline reply (in_reply_to) to the pull request review comment that
+mentioned the login, and a Discussion comment. What the original posts to a
+signed local webhook to start an agent turn, this cell answers with GitHub
+itself as the state: an unread mention is a task, and answering or dismissing
+it marks the notification read, so the next call does not list it again. The
+Python (urllib, tomllib, a polling thread, a JSON state file) is Common Lisp
+here: nlk:http for api.github.com, one section declaration for the settings,
+and three nlk:define-contract declarations for the tools' arguments.
+
+Left out: the parts that exist only because the original is a Hermes gateway
+plugin — the poller and its cursor/seen state file (a cell is called, it does
+not wake itself), the HMAC-signed local webhook and its route documents, the
+Discord copies and the progress notices read from Hermes' SQLite state, and the
+English/German phrasing of the notice it formats. The health snapshot, the
+`status` and `routes` CLI subcommands and the bot-account requirement go with
+them: here the token belongs to the GitHub user Nodecode speaks as, so no
+separate bot login is needed. Discussions are listed, read and answered through
+the REST comment endpoints, so a reply to a reply inside a discussion is posted
+as a new discussion comment rather than nested under it (the original walks the
+GraphQL reply tree).

@@ -1,0 +1,17 @@
+nodecode-windows-apps is a rewrite of Yicheng-Mark's Yicheng-Mark/hermes-windows-plugins:
+https://github.com/Yicheng-Mark/hermes-windows-plugins
+commit 05a01102d3c0b43a345a94ed8b0f56317692136b
+MIT, Copyright (c) 2026 Yicheng-Mark (LICENSE)
+
+What was rewritten: the two tools, win_app_table and win_app_detail, with their
+arguments, their views, their handling of hidden SystemComponent entries, the
+32/64-bit dual install collapsed to one row, and the reading of an uninstall
+string into msiexec, appx, setup executable, script or other. The registry
+layer is rewritten too, but not against CPython's winreg: the cell asks
+reg.exe, the registry tool Windows ships, for the same four Uninstall keys and
+parses what it prints, so nothing here needs Python. One thing the original's
+tool reached for and this one reports in words instead: the JSON payload is
+now readable text, a line of notes and a line per program, because that is
+what a Nodecode tool answers with. Left out: the per-subkey "unreadable" flag,
+which winreg could raise and one `reg query /s` run cannot see -- a key that
+answers nothing is reported as a view that could not be read, in the notes.

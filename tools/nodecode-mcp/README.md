@@ -26,9 +26,21 @@ default (`:timeout` changes it).
 down after one reconnect, and names its last failure and its stderr log.
 `MCP-TIMEOUT` is a deadline that passed; the connection stays up.
 
+A server that needs a sign-in says so within seconds instead of waiting out
+its timeout. An http server that asks for OAuth says so in `/mcp`,
+where its **Sign in** answers the address to open. A stdio command that signs in on its own,
+like `npx mcp-remote URL`, prints that address on its stderr and holds every
+request until a browser comes back to its `localhost` listener. The cell
+reads the address there, keeps the process (it is the one the browser
+answers), fails each call at once with the address, and shows it under
+`(mcp:status)`; its **Sign in** in `/mcp` answers it too. Once the browser comes
+back, the request the command held goes through. A browser on another
+machine lands on a `localhost` page that does not load: paste that address
+back under its **Paste where the browser landed** in `/mcp`, and the cell hands it to the command.
+
 The model learns all this from `(help :mcp)`, which adds a live catalog of the
-tools. `/mcp status | on NAME | off NAME | restart NAME | tools NAME` answers
-one line. The web page's Control > MCP tab adds, removes, restarts and tests
+tools. `/mcp` answers one line and a row per server, whose own panel turns it on or
+off, restarts it, lists its tools, and signs it in or out. The web page's Control > MCP tab adds, removes, restarts and tests
 servers through `/api/mcp`, and its Catalog fills the form from
 `catalog.json`, a list of known servers whose recipes come from each
 project's own docs.
@@ -49,14 +61,14 @@ project's own docs.
 A url without a command is HTTP and anything else is stdio; `transport`
 overrides. Header values never appear in a status or an error. An entry that
 fails to validate shows as `refused` while the others run. Not supported:
-`cwd`, per-tool allow and deny lists, OAuth, and the old two-endpoint SSE
+`cwd`, per-tool allow and deny lists, and the old two-endpoint SSE
 transport.
 
 A header or env value can name its secret instead of holding it, so the key
 stays out of the config. `${NAME}` (or `${env:NAME}`) is a variable of the
 process running nodecode. `${file:PATH}` is a file's text, trimmed, with
 `PATH` absolute or under `~/`. Each connect reads it again, so a rotated key
-takes effect at the next reconnect (`/mcp restart NAME`). The background
+takes effect at the next reconnect (**Restart it** in `/mcp`). The background
 gateway's service doesn't get your shell's variables, so use `${file:...}`
 there. A reference that names nothing fails that server's connect and says
 which reference it was; the value itself is never shown.
@@ -67,6 +79,17 @@ Every read happens on the calling thread under that call's deadline, which is
 also how a call is cancelled. A server's `ping` or `tools/list_changed` is
 seen only while a call is reading. One short-lived thread per server connects
 at start, so the gateway never waits.
+
+## Idle until called
+
+Every catalog a server lists is kept as `~/.nodecode/mcp/NAME.tools.json`,
+keyed by how the server is reached (its command and args, or its URL; never a
+secret). The next start publishes that catalog -- the functions and the
+`(help :mcp)` lines -- and starts no process: the server reads `idle`, and its
+first call starts it inside that call's deadline. A session that calls no MCP
+tool starts no MCP server. A server with no kept catalog, a changed command or
+URL, or `"lazy": false` (on the `mcp` section or on one entry) connects at start
+as before.
 
 Tests: `just mcp-check` in nodecode, over an in-memory transport, the Python
 fixture server in `test/` and an HTTP fixture.

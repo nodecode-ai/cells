@@ -1,0 +1,44 @@
+nodecode-rtk-backends is a rewrite of petertaras's petertaras/hermes-rtk-rewrite-with-docker-support:
+https://github.com/petertaras/hermes-rtk-rewrite-with-docker-support
+commit 61701dd6e14c2392f7cebcac68f46680f3a428ee
+Apache-2.0, Copyright (c) 2024-2026 the RTK Contributors (LICENSE)
+
+The copyright line above is the holder exactly as the upstream NOTICE writes it: the
+repository's LICENSE is the unmodified Apache-2.0 text, whose appendix placeholder is
+filled in LICENSE line 189 with the same holder.
+
+That plugin's own NOTICE credits two sources it derives from, and this
+rewrite keeps both:
+
+  * kerrz2020/hermes-rtk-rewrite, https://github.com/kerrz2020/hermes-rtk-rewrite,
+    the Hermes plugin it forks (Apache-2.0);
+  * RTK's own Hermes hook, hooks/hermes/rtk-rewrite/__init__.py in
+    https://github.com/rtk-ai/rtk, Apache-2.0, whose copyright and authorship
+    belong to the RTK Contributors.
+
+RTK is a separate project by the RTK Contributors, licensed under the Apache
+License, Version 2.0. This cell claims no authorship of RTK or of RTK's command
+compression logic: all rewrite logic lives in the `rtk` binary.
+
+Rewritten: the plugin's one contribution -- the pre_tool_call hook that hands the
+command of a terminal call to `rtk rewrite` and, when RTK answers an accepted
+rewrite (exit 0 or 3), lets the call run the rewritten command, failing open on a
+missing binary, a timeout, an exit outside the protocol or any error
+(__init__.py:199-222) -- and the fork's backend gate, which rewrites a command
+only when the backend that RUNS it is one the profile opted in to, local by
+default (__init__.py:19-27, 98-139). Both are one :TOOL hook over Nodecode's tool
+dispatch, which is where an eval snippet's (sh "...") forms and a shell tool's
+`command` argument can still be changed; the exit-code protocol, the 2-second
+bound, the once-per-start availability probe, the warning when the binary is
+missing and the per-backend opt-in are translated from the original, and
+/rtk-backends reports what the hook rewrote and for which backends.
+
+Left out: the optional desktop pane and status-bar chip (desktop/plugin.js,
+desktop/), which belong to the Hermes desktop app; scripts/update.sh and the
+maintainer's sync script (scripts/), since a cell installs nothing into the
+user's machine and the RTK binary is the user's own; the optional
+container/Containerfile, which fetches a checksum-pinned RTK release into an
+image of the user's own; and the manifest and CI scaffolding that a Nodecode cell
+replaces with its own .asd.
+
+This product includes software developed by the RTK Contributors.

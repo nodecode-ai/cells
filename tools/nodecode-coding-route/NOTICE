@@ -1,0 +1,25 @@
+nodecode-coding-route is a rewrite of metamindedu's metamindedu/hermes-model-router:
+
+  https://github.com/metamindedu/hermes-model-router
+  commit e207667489ac8a796d53f875126d6ee227201112
+  MIT, Copyright (c) 2026 NewMetaW (LICENSE)
+
+What was rewritten: the two lanes and the six purposes that pick between them,
+the background job a route starts, and the reader that answers what the job
+said. The original opened a Hermes profile's config, wrote model, delegation,
+fallback and skill keys into it through Hermes' own config CLI, and started
+detached Hermes processes with a worker script; this cell starts a detached
+session of its own in the organism, pins the lane's provider, model and
+reasoning effort on it, submits the task as its first turn and reads the answer
+back out of the session's log. The route table, the two known lanes, the
+purpose-to-lane rule and the four states a job can be in are the original's.
+
+What was left out, and why: the Hermes Desktop page and the multi-profile
+settings editor (profiles, config.yaml write-back, backups, CAS and readback)
+have no counterpart outside Hermes -- Nodecode has one config, and a session
+pins its own model, so the cell declares the two routes in its section
+instead. Also left out: native-delegation and conversation fallback chains,
+Fast-tier inheritance, per-route total-runtime budgets and the fixed model
+catalogue the original shipped, whose ids belong to one provider's September
+2026 table rather than to any Nodecode install. The pinned plugin-asset
+installer and the Windows shortcut are Hermes packaging, not behaviour.

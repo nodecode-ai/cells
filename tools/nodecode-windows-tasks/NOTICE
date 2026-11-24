@@ -1,0 +1,42 @@
+nodecode-windows-tasks is a rewrite of Yicheng-Mark's Yicheng-Mark/hermes-windows-plugins:
+
+  https://github.com/Yicheng-Mark/hermes-windows-plugins
+  commit 9778252252aeec293e0d234ffe24d20de9eb2fc4
+  MIT, Copyright (c) 2026 Yicheng-Mark (LICENSE)
+
+The rewrite is the plugin's windows-tasks folder as a Nodecode cell: its two
+read-only tools, the same data, the same answers. What it keeps: the two
+powershell.exe scripts the plugin ran, character for character apart from
+their being strings here -- the error action preference and UTF-8 output
+header, the one-call listing that collects Get-ScheduledTaskInfo into a table
+keyed by path and name so a task whose state cannot be read loses only its
+last and next run, ConvertTo-Json with a depth of five and compressed, and the
+per-task Export-ScheduledTask wrapped in try/catch; the argv it ran them with
+(-NoProfile, -NonInteractive, -ExecutionPolicy Bypass, -Command) and the
+deadline that kills a call which outlives it; the reading of the answer -- a
+BOM stripped, one object read as a one-row listing, rows of a type that is not
+an object dropped -- and of the exported definition, whose XML declaration is
+skipped and whose trigger classes, schedules, repetition, actions, principal
+and settings are read into the same words: 'at logon of ...', 'every 1 day(s)
+at 03:00, repeating every PT1H for PT4H', 'the action as the command line a
+person would run'. The result-code table and the trigger-class table are the
+plugin's own, meaning for meaning, as are the filters (a path substring, a
+state, failed-only with a task that never ran not a failure, Windows' own tasks
+left out unless asked for, a limit bounded at 500), the notes that say what a
+filter left out, and the escape of the one value interpolated into PowerShell (a
+single quote doubled inside a single-quoted string). The definition's XML is
+read by this cell's own small reader -- elements, text and entities -- because
+the plugin's Python carried ElementTree and this image has no XML parser.
+
+What is left out, and why: the Python package itself (pyproject.toml, the
+setuptools packaging, the pytest suite) is not bundled; the cell is Common Lisp
+and its tests are this repository's. The plugin's CREATE_NO_WINDOW flag has no
+counterpart in SBCL's run-program, so a call started from a windowless process
+may flash a console window; nothing else about the run changed. The plugin's
+Python exceptions became one condition, windows-tasks-error, and its answers
+stay JSON with ok true or false as they were, so a model reads the same
+payload it read there.
+
+Nothing of the original's Python is bundled. The cell runs the same Windows
+PowerShell cmdlets the plugin ran, on the same machine, and its own code is
+Common Lisp.

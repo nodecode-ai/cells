@@ -1,0 +1,25 @@
+nodecode-iwork is a rewrite of Arkanji's Arkanji/iwork-studio:
+
+  https://github.com/Arkanji/iwork-studio
+  commit 551107ae937960c785d3bf8b180c573515b6d359
+  MIT License, Copyright (c) 2026 Arkanji (LICENSE)
+
+Rewritten: the verbs a user reaches for most, in Common Lisp and without Python. The
+original is a manifest that pulls a Python MCP server from PyPI and drives Apple's apps
+through osascript; this cell writes the JavaScript for Automation itself and runs it with the
+osascript macOS ships, so it installs nothing and executes nothing it did not ship. Kept are
+what a user of the original gets: the same job on the same files - read a Numbers table,
+set a cell, list and edit a Keynote deck's slides, export, and undo any write - a fence the
+operator sets (the original's IWORK_STUDIO_ROOTS, here the `folders` setting), a backup
+before every write, the file re-read and compared with what was asked before the write is
+trusted, and a restore that puts a file back byte for byte.
+
+Left out, because the rewrite is a cell and not a 65-tool server plus a Python library: the
+pure-Python route that reads and edits .numbers, .key and .pages files without the app (and
+with it the chart-aware rewriting, the byte-exact Arabic round-trip guarantee and reading a
+file on any machine), formulas and recalculation, number formats, borders, merges and cell
+styling, design kits and brand extraction, CSV import, templates, thumbnails, presenter
+notes, themes, layouts, transitions, images, charts, tables on slides, slideshow control,
+rendered-slide review and the PDF text and format checks. Where the original re-read the
+file with its own parser, this cell asks the app what it kept and puts the backup back when
+the two disagree.

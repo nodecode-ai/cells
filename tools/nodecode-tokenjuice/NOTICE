@@ -1,0 +1,20 @@
+nodecode-tokenjuice is a rewrite of vincentkoc's vincentkoc/tokenjuice:
+https://github.com/vincentkoc/tokenjuice
+commit 825eaa98214c73174156eea582042e1f8b6fdc9a
+MIT, Copyright (c) 2026 Vincent Koc (LICENSE)
+
+Rewritten: the Hermes plugin's one contribution — the transform_terminal_output
+hook, which takes captured terminal output and answers it shorter, and leaves it
+alone when the command failed, when the payload is too large, when the rewrite
+would not be strictly shorter, or when anything goes wrong. That hook is here as
+one :TOOL hook over Nodecode's eval and sh results, and the reduction the CLI
+performed (ANSI stripping, adjacent dedupe, middle clamp, head/tail with an
+omitted-line count, a minimum saving) is reimplemented in Common Lisp, together
+with the /tokenjuice report the CLI's statistics give.
+
+Left out: the tokenjuice CLI and its command-specific rule set (git, search,
+install, network and the rest), its rule files and local configuration, its
+artifact store, and the LangChain and FastMCP adapters, which the Hermes plugin
+does not load either. The original consults the CLI for every call; this rewrite
+holds no external process and no Node.js dependency, and folds every eligible
+command with one general rule.

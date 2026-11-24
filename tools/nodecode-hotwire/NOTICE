@@ -1,0 +1,45 @@
+nodecode-hotwire is a rewrite of RohanGlitched's RohanGlitched/hotwire:
+
+  https://github.com/RohanGlitched/hotwire
+  commit c66a0dd354a034da1bad4fe56bd4945f1e5c8e24
+  MIT License, Copyright (c) 2026 Rohan Borade (LICENSE)
+
+What was rewritten: the half of the plugin that decides whether a circuit works
+without anything being soldered - engine/netlist.py (the SPICE subset, its
+values, the built-in part table, the '*@' annotations, the parser) in
+netlist.lisp; engine/mna.py and engine/analyses.py (modified nodal analysis, the
+DC operating point by Newton's method with junction limiting and gmin stepping,
+the small-signal AC sweep linearised at that operating point) in sim.lisp; and
+engine/specs.py together with the verdict half of engine/workbench.py and
+engine/erc.py (the spec grammar, the metrics, the electrical rule check, the
+pass/fail verdict and the report) in analysis.lisp; engine/parts.py and
+engine/parts_data.py (preferred-value series, snapping, the grouped bill of
+materials) in parts.lisp; and engine/tune.py, engine/montecarlo.py, the explain
+half of engine/workbench.py and engine/export.py (the coordinate search over
+E-series values, the Monte Carlo yield, the per-part nudge, the SPICE deck and
+the JSON dump) in tooling.lisp. It is rewritten in Common Lisp because a
+Nodecode cell runs in the organism's own image; numpy is not loaded and none of
+the original's Python is bundled. The reference netlists in library.lisp
+(rc_lowpass, sallen_key_lowpass, passive_tone_stack) are the original
+repository's library/*.cir verbatim, minus the iterations this rewrite does not
+simulate.
+
+What was left out, and why: the plugin's audio and fabrication halves are not
+here - the sample-by-sample transient solver and WAV rendering
+(engine/audio.py: audition, the loudness-matched A/B files and the knob sweep
+while it plays), the take-matching half (engine/match.py), the stripboard
+placement and build order (engine/stripboard.py, engine/schematic.py), and the
+KiCad and schematic-SVG exports of engine/export.py. Those need a transient
+engine, a WAV reader and a layout solver; this rewrite answers the question the
+plugin existed for - does this circuit meet its specs, and what do I buy to
+build it - from the DC and small-signal half, which is the whole of it for
+filters, dividers, bias networks and gain stages. Yield spreads resistors,
+capacitors and inductors only, and draws from a fixed-seed linear congruential
+stream instead of the original's clipped normal for transistor parameters. The
+desktop pane and its live knob sweep, and the pre_llm_call hint hook, are
+surfaces of that harness and have no counterpart here: the model calls a tool,
+and the operator types /hotwire. An op-amp is ideal and linear in this rewrite
+(a voltage-controlled source of gain 1e5 in an exported deck, no saturation,
+slew or supply current), where the original modelled the output swing. Pots are
+the original's two-resistor model, and .subckt blocks, .param expressions and
+.include are refused or unread.

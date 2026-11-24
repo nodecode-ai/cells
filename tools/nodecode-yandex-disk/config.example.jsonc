@@ -1,0 +1,21 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "yandex-disk": {
+    "enabled": true,
+    // Paste the token here, or name the variable that holds it.
+    "token": "",
+    "token_env": "YANDEX_DISK_OAUTH_TOKEN",
+    // Confine every path the tools take and answer to one folder on the disk.
+    "root": "",
+    // all, read, download, write, share, delete, or single names such as
+    // "list" or "upload"; empty means all.
+    "actions": [],
+    "base_url": "https://cloud-api.yandex.net/v1/disk",
+    "timeout_seconds": 30,
+    "max_read_bytes": 1048576,
+    "max_download_bytes": 268435456
+  }
+}

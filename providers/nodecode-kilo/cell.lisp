@@ -46,7 +46,7 @@ per catalog the core reads."
         (setf *catalog* (cons base merged))
         merged)))
 
-(defparameter +expired+ "kilo: the sign-in has expired; sign in again with /kilo login"
+(defparameter +expired+ "kilo: the sign-in has expired; sign in again from /kilo"
   "What a round says when the only credential is a token past its year.")
 
 (defun credential (op next)
@@ -90,7 +90,7 @@ cell said."
 
 (nle:define-cell kilo
   (:section ("kilo")
-    (:guide "sign in with /kilo login, then approve the code it shows on the page it names; or save a key with /connect or set KILO_API_KEY; base_url is where Kilo Gateway is served")
+    (:guide "sign in from /kilo, then approve the code it shows on the page it names; or save a key with /connect or set KILO_API_KEY; base_url is where Kilo Gateway is served")
     ("base_url" :string :default +base+
      :doc "the Kilo Gateway base the chat lane appends /chat/completions to"))
   (:start #'start)
@@ -98,6 +98,5 @@ cell said."
   (:hook :credential #'credential)
   (:hook 'nle::request-body #'body)
   (:command "kilo" 'run-command
-            :description "Kilo Gateway sign-in with a device code: login, logout, status"
-            :argument-hint "login | logout | status"
+            :description "Sign in to Kilo Gateway with a device code, or out"
             :session nil))

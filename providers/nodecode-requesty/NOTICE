@@ -1,0 +1,16 @@
+nodecode-requesty is a rewrite of requestyai's requestyai/hermes-provider-requesty:
+https://github.com/requestyai/hermes-provider-requesty
+commit aa4e37d7f09dfc1e98b915d740d09e8b1b44c98d
+MIT, Copyright (c) 2026 Requesty (LICENSE)
+
+Rewritten for Nodecode: the provider profile (id, display name, base URL,
+key variable, signup page, fallback model list), its reasoning rules (only to
+a catalog-marked reasoning model, Requesty's own spelling, off sent as
+"none"), its trace id, and its model picker's source, GET /v1/models/managed
+-- which here is the /requesty command, read on demand and put into /models
+rather than fetched at load. Left out: the original's in-process cache with
+its background warm-up and its per-request price estimates in the Hermes
+dashboard's shape, because Nodecode's catalog carries the context windows and
+prices its own surfaces read, and the live managed catalog supplies those two
+fields where Requesty publishes them; and the original's own User-Agent,
+since every Nodecode request names Nodecode.

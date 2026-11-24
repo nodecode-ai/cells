@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "features": [
+    {
+      "id": "container-size",
+      "feature": "Inline-size container queries",
+      "tier": "established",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/container-type",
+      "job": "Adapt a reusable workbench or article to its own available space.",
+      "detection": "CSS.supports('container-type', 'inline-size')",
+      "fallback": "A useful single-column flow; viewport media queries may improve wider fallback layouts.",
+      "constraints": "Query an ancestor, not the element being styled. Containment changes intrinsic sizing; do not apply it to every element.",
+      "verify": "Resize the component inside a wide viewport; verify long content, keyboard order and the no-container-query fallback.",
+      "checked": "2026-10-22"
+    },
+    {
+      "id": "subgrid",
+      "feature": "Shared grid tracks with subgrid",
+      "tier": "established",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Grid_layout/Subgrid",
+      "job": "Align comparable labels and values without duplicating arbitrary track widths.",
+      "detection": "CSS.supports('grid-template-rows', 'subgrid')",
+      "fallback": "Independent grid or ordinary definition-list flow retains the same relationships.",
+      "constraints": "Do not use visual reordering to change reading order. A grid does not replace table semantics for tabular comparisons.",
+      "verify": "Use unequal label/value lengths and text resizing; inspect alignment and source order.",
+      "checked": "2026-10-22"
+    },
+    {
+      "id": "oklch",
+      "feature": "Absolute OKLCH colors",
+      "tier": "established",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/oklch",
+      "job": "Author coherent perceptual palette relationships with explicit semantic roles.",
+      "detection": "CSS.supports('color', 'oklch(60% 0.12 240)')",
+      "fallback": "Define an explicit sRGB value before an optional modern color declaration.",
+      "constraints": "Lightness is not WCAG luminance. Gamut mapping, alpha and painted backgrounds matter; current Hardlight contrast does not normalize this syntax.",
+      "verify": "Inspect actual role/state pairs; unsupported color or paint remains unknown, never a pass by lightness.",
+      "checked": "2026-10-22"
+    },
+    {
+      "id": "color-mix",
+      "feature": "Color mixing in an explicit color space",
+      "tier": "established",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/color-mix",
+      "job": "Derive a controlled decorative or state surface from semantic tokens.",
+      "detection": "CSS.supports('color', 'color-mix(in oklab, white, black)')",
+      "fallback": "Use a named explicit color token with a tested foreground pair.",
+      "constraints": "A mixed hover/disabled color is not automatically accessible. Check final paint in every applicable theme.",
+      "verify": "Inspect default, selected, hover and focus paint. Preserve unknown results from unsupported syntax.",
+      "checked": "2026-10-22"
+    },
+    {
+      "id": "text-balance",
+      "feature": "Balanced short text",
+      "tier": "established",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/text-wrap-style",
+      "job": "Improve the silhouette of short headings without editorial hard breaks.",
+      "detection": "CSS.supports('text-wrap', 'balance')",
+      "fallback": "Normal text wrapping with a readable maximum measure.",
+      "constraints": "Line limits and algorithms differ across browsers. Use pretty selectively for prose; do not rebalance every data row.",
+      "verify": "Test long headings, translations, fallback fonts and enlarged text; compare ordinary wrapping.",
+      "checked": "2026-10-22"
+    },
+    {
+      "id": "popover-auto",
+      "feature": "Non-modal auto popovers",
+      "tier": "enhancement",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/API/Popover_API",
+      "job": "Show a temporary supplementary picker or explanation while keeping the page interactive.",
+      "detection": "'popover' in HTMLElement.prototype",
+      "fallback": "Inline details/disclosure or an ordinary visible explanation.",
+      "constraints": "Popover is non-modal. Use dialog.showModal() for a modal task; do not infer an accessible menu pattern from top-layer rendering.",
+      "verify": "Exercise keyboard opening, Escape, focus return, light dismiss and the inline fallback in target browsers.",
+      "checked": "2026-10-22"
+    },
+    {
+      "id": "view-transition",
+      "feature": "Same-document view transitions",
+      "tier": "enhancement",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/API/Document/startViewTransition",
+      "job": "Show continuity during a deliberate view change without delaying the task.",
+      "detection": "typeof document.startViewTransition === 'function'",
+      "fallback": "Run the DOM update immediately; do not require animation promises for application state.",
+      "constraints": "Skip motion when prefers-reduced-motion is reduce. Same-document support does not imply cross-document or every newer subfeature.",
+      "verify": "Repeat activation and interrupt navigation; verify state, focus and history when transitions are unavailable or skipped.",
+      "checked": "2026-10-22"
+    },
+    {
+      "id": "anchor-position",
+      "feature": "Named CSS anchor positioning",
+      "tier": "enhancement",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/anchor-name",
+      "job": "Place supplementary UI beside its trigger when there is room.",
+      "detection": "CSS.supports('anchor-name', '--trigger') && CSS.supports('position-anchor', '--trigger')",
+      "fallback": "Use an inline disclosure or deliberately positioned bounded panel.",
+      "constraints": "Detect the exact placement/fallback properties used. Syntax support is not evidence of collision behavior or usable keyboard interaction.",
+      "verify": "Test viewport edges, zoom, scrolling ancestors, long content, RTL and the unanchored fallback.",
+      "checked": "2026-10-22"
+    },
+    {
+      "id": "text-trim",
+      "feature": "Text box edge trimming",
+      "tier": "enhancement",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/text-box-trim",
+      "job": "Align a carefully chosen display specimen with adjacent artwork.",
+      "detection": "CSS.supports('text-box-trim', 'trim-both')",
+      "fallback": "Normal line boxes and explicit spacing.",
+      "constraints": "A newer typography enhancement, not a reset for all text. Mixed scripts and fallback fonts have different metrics.",
+      "verify": "Inspect accented capitals, descenders, alternate scripts and fallback fonts at multiple text sizes.",
+      "checked": "2026-10-22"
+    },
+    {
+      "id": "intrinsic-motion",
+      "feature": "Intrinsic size interpolation",
+      "tier": "experimental",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/interpolate-size",
+      "job": "Optionally explain a disclosure changing size.",
+      "detection": "CSS.supports('interpolate-size', 'allow-keywords')",
+      "fallback": "Immediate native disclosure; content is visible without interpolation.",
+      "constraints": "Limited support; opt in narrowly. Never couple hidden state or essential content to animation completion.",
+      "verify": "Test interruption, reduced motion and no-support behavior with focus inside the disclosure.",
+      "checked": "2026-10-22"
+    },
+    {
+      "id": "css-if",
+      "feature": "CSS conditional values with if()",
+      "tier": "experimental",
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/if",
+      "job": "Explore conditional declarations in an isolated optional specimen.",
+      "detection": "CSS.supports('color', 'if(supports(color: oklch(60% 0.1 240)): red; else: blue)')",
+      "fallback": "Ordinary selectors, custom properties and @supports rules.",
+      "constraints": "Experimental; not a prerequisite for production layout, navigation, readability or controls. Detection of one expression does not validate all branches.",
+      "verify": "Exercise every branch and a browser without support; retain the equivalent ordinary declarations.",
+      "checked": "2026-10-22"
+    }
+  ]
+}

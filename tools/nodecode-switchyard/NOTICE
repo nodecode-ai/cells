@@ -1,0 +1,29 @@
+nodecode-switchyard is a rewrite of bgrablin's bgrablin/hermes-switchyard:
+
+https://github.com/bgrablin/hermes-switchyard
+commit 895c101d4228f12cbb7e56194f94d0e555256339
+MIT, Copyright (c) 2026 bgrablin (LICENSE)
+
+Rewritten: the decision core the plugin calls Jev. hermes_switchyard/client.py
+(the TypeSafe System One and OpenRouter Decisions endpoint, its payload of a
+state and typed questions, its answer shape, its retry policy), routing.py and
+two_stage_routing.py (the choice over skill candidates with an explicit none
+option and its needs_skill Noul, the criteria built from candidate names, the
+0.80 needs/winning/confidence thresholds, the 4,000-character task and
+200-candidate bounds) and reasoning_effort_adapter.py (the effort levels and
+the rubric for each, and the rule that the caller's level is the cap) are
+reimplemented in Common Lisp as one on-demand decision: the switchyard:route
+verb, the switchyard:skills list and the switchyard_route tool. The request
+wording is the plugin's, with the two questions asked once instead of fanned
+out over four partitions.
+
+Left out, because a Nodecode cell's own seams already own them: the plugin's
+lifecycle hooks (its automatic pre_llm_call skill recommendation, adaptive
+effort middleware, tool gating, receipts, compaction and stuck detection),
+which fired on its own schedule -- here the model or the operator asks, and
+the answer is advisory; the two-stage fan-out and its caching/deadline
+plumbing; the DOM computer-use and browser tools (a cell that drives a
+browser is a different cell, and nodecode-chrome already does it); the
+session-search rerank; the smart-approval provider; the legacy-cleanup
+command; and the plugin's own configuration surface, of which this cell keeps
+the provider, endpoint, model, effort cap and timeout.

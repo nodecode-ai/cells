@@ -1,0 +1,36 @@
+nodecode-bilinc is a rewrite of ReARCLabs's ReARCLabs/bilinc-hermes-plugin:
+
+  https://github.com/ReARCLabs/bilinc-hermes-plugin
+  commit 1ad81b4aaef8632ba5d6438384f3f063f46a0ebd
+  MIT, Copyright (c) 2026 ReARC Labs (LICENSE)
+
+The rewritten plugin is the repository root of that commit. Its four tools
+(bilinc_recall, bilinc_remember, bilinc_revise, bilinc_forget) keep their names,
+descriptions and parameters; its wire is carried over whole: POST
+/api/cloud/memory/recall, /commit, /revise and /forget on https://bilinc.space,
+Authorization: Bearer, an Idempotency-Key on every write, the same answer
+shapes (results with key, value and entry_version; entryVersion on a write), and
+an existing key refused rather than overwritten. So are its behaviour and its
+defaults: automatic recall before a turn (recall_limit 6), capture of finished
+turns as short-lived episodic records (off, 30 days), the [REDACTED] pass over
+secret-shaped strings before anything is sent, the one-minute pause after a
+failed recall, a rejected key leaving the tool to report what the API said, and
+the block of words the model is given about it (bilinc_recall, bilinc_remember,
+bilinc_revise, bilinc_forget; store only what will matter later, never secrets).
+
+What was left out, and why: mirroring the host's built-in memory tool, because
+Nodecode's own memory writes are not a hook a cell sees, so the model calls
+bilinc_remember instead; the Python prefetch and writer threads and their queue,
+because a Nodecode turn offers a :round point to inject into and the frame point
+to fold turns from, so recall runs on the round's thread under a short ceiling
+and capture on one worker; the hermes memory setup / status commands, whose
+answers the cell's config section, /settings and /bilinc give; and the certifi
+fallback, because the harness dials with the image's own trust store.
+
+Three changes a reader of the wire should know: requests identify themselves as
+bilinc-nodecode/0.1.0 with X-Bilinc-Client: nodecode-plugin, so Bilinc counts a
+rewrite as a rewrite rather than as the original; keys the cell generates use
+the prefixes nodecode_note:: and nodecode_turn:: (the original's hermes_note::
+and hermes_session::); and a content digest is SBCL's own string hash rather
+than SHA-256, which changes the generated key's spelling, not its stability.
+LICENSE is the original repository's LICENSE, unchanged.

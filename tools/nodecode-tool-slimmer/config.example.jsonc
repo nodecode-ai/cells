@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell -
+// documentation, not config. The declaration in cell.lisp is the authority.
+// Nothing here is required: with no section at all the cell trims every
+// request to the tools its words ask for, keeps its own three tools, and
+// carries every schema whenever it cannot judge.
+{
+  "tool-slimmer": {
+    "enabled": true,
+    "keep": ["tool_slimmer_status", "tool_slimmer_select", "tool_slimmer_request_full_tools"],
+    "top_k": 8,
+    "fail_open": true
+  }
+}

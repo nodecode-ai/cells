@@ -169,11 +169,15 @@
   ;; card's Details). PAYLOAD is the normal form the adapter relays (:id :data
   ;; :user-id :user-name :message-id :channel-id).
   (plan-control-ack (constantly nil) :type function)
-  ;; (payload choices &key timeout-seconds) => the request plans that answer
-  ;; one autocomplete request — the menu shown while a command's argument is
-  ;; typed; PAYLOAD is (:id :token :command :text :user-id :channel-id) and
-  ;; CHOICES the (:name :value) plists the catalog offers, possibly empty.
-  (plan-autocomplete (constantly nil) :type function)
+  ;; (candidate ask &key prompt timeout-seconds) => (values PLAN FORM-P): how
+  ;; the person CANDIDATE is, who pressed a row that asks for its one line of
+  ;; text (NLE:ASK-ROW; ASK its JSON, CANDIDATE's press_data the press), is
+  ;; asked for it. FORM-P true: PLAN opens the platform's own form -- Discord's
+  ;; modal, Slack's -- whose submit comes back as a candidate saying the line
+  ;; with the text after it (ASKED-LINE). FORM-P NIL: PLAN posts PROMPT, the
+  ;; kit's words asking for the text, as a message whose reply is the text
+  ;; (Telegram's force reply). NIL: the kit posts PROMPT itself (ASK-BY-REPLY).
+  (plan-ask (constantly nil) :type function)
   ;; (target name &key message-id timeout-seconds) => the plan that opens a
   ;; THREAD named NAME for the ask that arrived on TARGET, hung off the ask's
   ;; own MESSAGE-ID where the platform works that way, or NIL when it cannot
@@ -494,12 +498,25 @@ shows and never beside it."
   ;; is running there. The call stamps itself an act first: it changes the
   ;; answer, so the snippet calling it is never watched, and a watched one's
   ;; run again is refused before it hands anything (NLE:RECEIPT).
+  ;;
+  ;; A file the answer could not carry -- gone, over the attach cap, one
+  ;; past the count cap -- is refused here, before it is taken, the reason
+  ;; named (RIDING-ANSWER-FILES judges, as the delivery does): a receipt that
+  ;; names a file is a file that rides, and a caller told no can still post
+  ;; it as its own message.
   (nle:receipt "calls" (list :verb "answer-file" :source (namestring pathname)))
   (multiple-value-bind (host lane turn-id)
       (running-answer "answer-file" platform channel thread session)
     (declare (ignore host))
-    (list :session-id lane.session-id :turn-id turn-id
-          :files (add-answer-files lane turn-id (list (pathname pathname))))))
+    (let ((file (pathname pathname)))
+      (destructuring-bind (&optional path kind why)
+          (car (last (nth-value 1 (riding-answer-files
+                                   (append (handed-answer-files lane turn-id) (list file))))))
+        (when (eq path file)
+          (error "answer-file: ~a ~a, so the answer would not carry it~:[~;; nck:post-file posts it as its own message~] -- nothing was handed"
+                 file why (eq kind :size))))
+      (list :session-id lane.session-id :turn-id turn-id
+            :files (add-answer-files lane turn-id (list file))))))
 
 (defparameter +answer-choice-cap+ 5
   "The most choices one answer carries: one row of buttons.")
@@ -760,18 +777,20 @@ state's per-namespace key quota (512), so minting a press never fails a card.")
   "Press id -> its action, the JSON object PRESS-TOKEN made: read through
 from the store, which outlives this image.")
 
-(defun press-token (line &key tab page back back-tab back-page confirm)
+(defun press-token (line &key tab page back back-tab back-page confirm ask)
   "The data a choice carries: the id of its press, saying LINE -- the view
 the card its answer draws opens on beside it: TAB and PAGE of a dialog
 (DIALOG-CARD), BACK the line of the dialog it was pressed on, at BACK-TAB
-and BACK-PAGE, CONFIRM a line asked about before it runs."
+and BACK-PAGE, CONFIRM a line asked about before it runs, ASK the ask of a
+row that asks for its text first (NLE:ASK-ROW's, ASK-FOR-TEXT)."
   ;; The id is the action's digest: the same press is the same id on every
   ;; card and every boot, so the store holds one key per distinct press.
   (let* ((action (nlk:json-object "line" line
                                   :when tab "tab" tab :when page "page" page
                                   :when back "back" back :when back-tab "back_tab" back-tab
                                   :when back-page "back_page" back-page
-                                  :when confirm "confirm" t))
+                                  :when confirm "confirm" t
+                                  :when ask "ask" ask))
          (json (nlk:encode-json-object action))
          (id (nlk:short-digest json 12)))
     (unless (gethash id *presses*)
@@ -1275,35 +1294,12 @@ answered; who may press is Details' rule."
                                            "This step is no longer held."))))
                      (format nil "step output for ~a failed" (getf payload :id)))))
 
-;;; --- completions (a command's argument, completed while it is typed) -----------------
-;;; The platform asks for choices as the operator types an argument: the
-;;; catalog owns what completes (NLE:SLASH-COMPLETIONS), the kit owns who
-;;; may see it — the commands' own rule — and the platform owns how the
-;;; menu is answered. One request, one answer, three seconds to give it.
+;;; --- who may run a command ---------------------------------------------------------------
 
-(defun completion-allowed-p (host name user-id)
-  "Whether USER-ID may see NAME's argument completions: the commands' own
-rule — with operators declared, every command but /help is theirs."
+(defun command-allowed-p (host name user-id)
+  "Whether USER-ID may run the command NAME in HOST's rooms: with operators
+declared, every command but /help is theirs."
   (or (null host.owners) (and (stringp name) (string= name "help")) (operator-p host user-id)))
-
-(defun completion-requested (host payload)
-  "Adapter thread: one autocomplete request — PAYLOAD is the normal form
-(:id :token :command :text :user-id :channel-id :thread-id), its channel and
-thread a target."
-  ;; Answers on a worker; returns at once, the thread that runs this is the
-  ;; connection's. The command completes in the room it is typed in, the
-  ;; session it would act on, which completing never opens.
-  (on-worker host
-    ;; Choices only for an asker who may run the command.
-    (let* ((name (getf payload :command))
-           (choices (and (stringp name)
-                         (completion-allowed-p host name (getf payload :user-id))
-                         (nle:slash-completions
-                          name (getf payload :text)
-                          :session-id (target-room-id (platform-session-prefix host.platform)
-                                                      payload)))))
-      (deliver-or-warn host (host-plan host #'platform-plan-autocomplete payload choices)
-                       (format nil "completions for ~a failed" name)))))
 
 (defun stop-room-turn (room-session-id)
   "(values STOPPED-P TEXT): ask the engine to cancel the newest turn
@@ -1336,11 +1332,14 @@ the lane has none."
      (let ((,digest (lane-digest ,lane)))
        (when ,digest ,@body))))
 
-(defmacro with-turn-digest ((digest lane turn-id now) &body body)
+(defmacro with-turn-digest ((digest lane turn-id now &key part) &body body)
   "BODY under LANE's lock with DIGEST bound to the lane's digest for TURN-ID,
-opened at NOW when the lane holds none for it (LANE-TURN-DIGEST)."
+opened at NOW when the lane holds none for it (LANE-TURN-DIGEST). PART, a
+fact a turn leaves on its way, skips BODY, to NIL, when that turn has
+ended: a late part never takes the card of the turn that runs now."
   `(bt2:with-lock-held ((lane-lock ,lane))
-     (let ((,digest (lane-turn-digest ,lane ,turn-id ,now))) ,@body)))
+     (let ((,digest (lane-turn-digest ,lane ,turn-id ,now :part ,part)))
+       (when ,digest ,@body))))
 
 (defun warn-lane (host lane what detail)
   (warn "~a ~a for ~a failed: ~a" (host-id host) what lane.session-id detail))
@@ -1766,9 +1765,11 @@ the thread and the ask as they stand."
          (wordless-completion-p (and assistant-facts (null text)))
          (status-id digest.status-id)
          (origin (lane-thread-origin lane))
-         ;; An answer built on a peer's line goes up as a reply to that line,
-         ;; and pings nobody: the peer reads it as the thread's context.
-         (heard (heard-reply lane turn-id))
+         ;; An answer built on a line the thread holds -- a peer's, or one
+         ;; typed there -- goes up as a reply to that line, and pings nobody:
+         ;; the peer reads it as the thread's context. A turn a line steered
+         ;; in answers that line, whatever was said after it.
+         (heard (or (digest-heard-line digest) (heard-reply lane turn-id)))
          ;; The answer that closes its thread's talk is the final answer: the
          ;; person's, under its heading, and a reply to no peer -- so it wakes
          ;; no one (TALK-FINAL-P).
@@ -2139,12 +2140,18 @@ enqueueing a reaction step."
                         ;; The turn is now the thing that has shown nothing yet: the
                         ;; stall window counts from here.
                         (digest-note-visible digest now)
-                        ;; A turn the gate did not admit — a steer promoted into its own
-                        ;; turn, a prompt typed into the session from a TUI — answers
-                        ;; the message that triggered the lane last.
-                        (setf ask-id (or (turn-digest-ask-id digest) (lane-trigger-message-id lane))
-                              (turn-digest-ask-id digest) ask-id
-                              steered (and fresh-p (eq (turn-digest-phase previous) :steered)))))
+                        ;; A turn the gate did not admit answers the line that steered
+                        ;; it in, as a reply to it where the line is the thread's
+                        ;; (TAKE-STEERED-LINE); one no line of the room's opened -- a
+                        ;; prompt typed into the session from a TUI -- the message that
+                        ;; triggered the lane last.
+                        (let ((line (take-steered-line lane turn-id)))
+                          (nlk:when-let (reply (getf line :reply))
+                            (setf (digest-heard-line digest) reply))
+                          (setf ask-id (or (turn-digest-ask-id digest) (getf line :ask)
+                                           (lane-trigger-message-id lane))
+                                (turn-digest-ask-id digest) ask-id
+                                steered (and fresh-p (eq (turn-digest-phase previous) :steered))))))
                     ;; A turn a steer opened answers the ask the cut turn was
                     ;; given as well: the room records both lines as its ask.
                     (unless took-over
@@ -2175,7 +2182,7 @@ enqueueing a reaction step."
     ("turn.tool_call_started" (let ((name (nlk:json-value payload :string "tool-name"))
                                     (call-id (nlk:json-value payload :string "call-id"))
                                     (arguments (nlk:json-value payload :string "arguments")))
-                                (with-turn-digest (digest lane turn-id now)
+                                (with-turn-digest (digest lane turn-id now :part t)
                                   (digest-note-tool-call digest)
                                   ;; A step of the turn, its words classified from its
                                   ;; arguments: the card says what the call is doing,
@@ -2190,7 +2197,7 @@ enqueueing a reaction step."
                               (output (nlk:json-value payload :string "result"))
                               (failed (nlk:json-value payload :boolean "failed")))
                           (when call-id
-                            (with-turn-digest (digest lane turn-id now)
+                            (with-turn-digest (digest lane turn-id now :part t)
                               (digest-note-call-result digest call-id now :metadata metadata
                                                                           :output output :failed failed)))))
      ;; The round moved to another model: the card says so, with the
@@ -2199,7 +2206,7 @@ enqueueing a reaction step."
     ("turn.provider_fallback" (let ((to (nlk:json-value payload :string "to-model"))
                                     (reason (nlk:json-value payload :string "reason")))
                                 (when to
-                                  (with-turn-digest (digest lane turn-id now)
+                                  (with-turn-digest (digest lane turn-id now :part t)
                                     (setf (turn-digest-fallback-text digest)
                                           (format nil "fell back to ~a~@[ (~a)~]" to
                                                   (and reason (substitute #\Space #\_ reason))))
@@ -2211,7 +2218,7 @@ enqueueing a reaction step."
      ;; thought, its price, and what it ran on: the card's footer, as the
      ;; TUI's meter and finish divider read the same fact.
     ("turn.usage" (flet ((field (type key) (nlk:json-value payload type key)))
-                    (with-turn-digest (digest lane turn-id now)
+                    (with-turn-digest (digest lane turn-id now :part t)
                       ;; The round is over: the next one counts from nothing.
                       (digest-note-round-over digest)
                       (digest-note-usage
@@ -2230,7 +2237,7 @@ enqueueing a reaction step."
                                     :finish-reason (field :string "finish-reason"))))))
     ("turn.assistant_message_completed" (let ((text (fact-message-content payload))
                                               (reasoning (fact-message-reasoning payload)))
-                                          (with-turn-digest (digest lane turn-id now)
+                                          (with-turn-digest (digest lane turn-id now :part t)
                                             (digest-note-round digest text reasoning)
                                             ;; A round that called tools keeps the turn going: whatever it
                                             ;; said, it said while the work goes on, and its card shows it
@@ -2241,6 +2248,10 @@ enqueueing a reaction step."
                                                                  (and (fact-message-tool-calls payload)
                                                                       (not (silent-answer-p text))))
                                             (digest-note-visible digest now))))
+    ;; The input a turn starts from names the steer that opened it, if one
+    ;; of the kit's did: its prompt id is the steer's command id.
+    ("turn.input_committed" (bind-steered-line lane (nlk:json-value payload :string "prompt-id") turn-id)
+                            (return-from note-turn-fact nil))
     (t (return-from note-turn-fact nil)))
   t)
 
@@ -2343,7 +2354,12 @@ digest into, and the detail its PAYLOAD carries — NIL for any other kind."
                      host lane target
                      (nth-value 1 (post-message host target (format nil "~a~%~%~a" +note-head+ text)
                                                 :mentions host.owners :what what)))))))))))
-      ((note-turn-fact host lane kind payload turn-id))
+      ;; Each turn's start writes the lane's where down in its session, off
+      ;; this thread (KEEP-LANE-WHERE): the lane the reaper lets go is taken
+      ;; back from its id alone, and its where from there.
+      ((progn (when (equal kind "turn.started")
+                (on-worker host (keep-lane-where lane)))
+              (note-turn-fact host lane kind payload turn-id)))
       ;; A terminal fact enqueues the finish job, the only path that posts turn output.
       (t
        (multiple-value-bind (phase detail) (terminal-phase kind payload)
@@ -2355,6 +2371,7 @@ digest into, and the detail its PAYLOAD carries — NIL for any other kind."
                   (digest
                     (with-turn-digest (digest lane turn-id now)
                       (setf lane.active-turn-id nil)
+                      (note-turn-ended lane turn-id)
                       (if background-pending
                           ;; The work it started is still going: the
                           ;; digest stays running, waiting on it.
@@ -2994,7 +3011,7 @@ draws (*SETUP-CARDS*), for whom may open it (SETUP-OWNER-P)."
     (let ((card (and host (getf (gethash (platform-id (host-platform host)) *setup-cards*) :card)))
           (user (and (hash-table-p *command-source*) (gethash "user_id" *command-source*))))
       (cond ((null host)
-             "/channels setup runs in a room of the channel it sets up; `nodecode gateway setup' sets one up from a terminal")
+             "setting a channel up runs in a room of the channel it sets up; `nodecode gateway setup' sets one up from a terminal")
             ((null card)
              (format nil "~a has no setup card: `nodecode gateway setup ~a' sets it up from a terminal"
                      (platform-name (host-platform host)) (platform-id (host-platform host))))
@@ -3076,12 +3093,15 @@ refused command.")
   ;; With operators declared, every command but /help is theirs: the commands
   ;; act on the shared room and on the organism's own configuration, and the
   ;; room's contract already says whose word is policy.
-  (if (completion-allowed-p host name user)
+  (if (command-allowed-p host name user)
       ;; A press answers in place, on a card whose privacy was settled when it
-      ;; was posted.
-      (respond host candidate (lambda () (run-command host candidate line))
-               :private (and (not (candidate-pressed-p candidate))
-                             (member name +private-commands+ :test #'equal)))
+      ;; was posted; a press on a row that asks for its text asks for it first,
+      ;; and its line runs once it is given.
+      (nlk:if-let (ask (candidate-ask host candidate))
+        (ask-for-text host candidate ask)
+        (respond host candidate (lambda () (run-command host candidate line))
+                 :private (and (not (candidate-pressed-p candidate))
+                               (member name +private-commands+ :test #'equal))))
       ;; The refusal says what to do next, and carries it: Ask for access sends
       ;; the room's operators a request they answer with one press.
       (refuse host candidate (format nil "🔒 Only this room's operators can run /~a. Press Ask for access to send them a request, or send /help to see what you can use." name)
@@ -3157,6 +3177,110 @@ message that asked, pinging its author."
                                     :panel panel)))
             (note-delivery (host-id host) delivered error "command")))))))
 
+;;; --- a row that asks for its text -----------------------------------------------------
+;;; A dialog's row may ask for one line of text before its line runs
+;;; (NLE:ASK-ROW: a name, a code, a sentence), as a shell's composer asks for
+;;; it under the row's label. A press on one asks the person who pressed it,
+;;; in the platform's own form where it has one (PLATFORM-PLAN-ASK: Discord's
+;;; modal, Slack's), whose submit comes back saying the line with the text
+;;; after it (ASKED-LINE); elsewhere a message asks, and that person's reply
+;;; to it is the text (ASK-BY-REPLY, ASKED-REPLY). Either way the line then
+;;; runs as the press would have run it, under the commands' own rule, and
+;;; nobody is asked to spell it.
+
+(defparameter +ask-reply-ms+ 900000
+  "How long a message asking for a row's text waits for its reply.")
+
+(defvar *asked* (make-hash-table :test #'equal :synchronized t)
+  "(host id . address of a message asking for a row's text) -> (:LINE :USER
+:AT): what a reply to it by USER runs (ASKED-REPLY). Live-only: a restart
+drops them, and the person presses again.")
+
+(defun ask-of (press)
+  "The ask the press action PRESS carries (PRESS-TOKEN's ASK), or NIL."
+  (and press (nlk:json-value press :object "ask")))
+
+(defun candidate-ask (host candidate)
+  "The ask CANDIDATE's press carries (ASK-OF), when it is a press on a row
+that asks for its text rather than the text's answer (source.asked); NIL
+for anything else."
+  (and (platform-choices host.platform)
+       (not (gethash "asked" (candidate-source candidate)))
+       (ask-of (candidate-press candidate))))
+
+(defun asked-line (data text &aux (ask (ask-of (press-action data))))
+  "The line the row whose press carries DATA runs once TEXT, what the person
+typed for it, is given (NLE:ASK-LINE), or NIL for DATA no asking row's press
+carries, or TEXT that is nothing."
+  (let ((line (and ask (nlk:json-value ask :text "line"))))
+    (when (and (plusp (length line)) (plusp (length (nlk:trimmed (or text "")))))
+      (nle:ask-line line text))))
+
+(defun asking-prompt (ask &aux (label (nlk:trimmed (or (nlk:json-value ask :text "label") "")))
+                            (placeholder (nlk:trimmed (or (nlk:json-value ask :text "placeholder") ""))))
+  "The words a message asking for ASK's text says: its label, that a reply
+gives it, and the placeholder that says what it is."
+  (format nil "**~a**: reply to this message with it~@[~%_~a_~]"
+          (if (plusp (length label)) label "Text")
+          (and (plusp (length placeholder)) placeholder)))
+
+(defun ask-for-text (host candidate ask &aux (prompt (asking-prompt ask)))
+  "Worker thread: ask the person CANDIDATE is, who pressed a row that asks,
+for ASK's text -- in the platform's own form (PLATFORM-PLAN-ASK), else by a
+message they reply to (ASK-BY-REPLY), as well when the form would not open."
+  (multiple-value-bind (plan form-p) (host-plan host #'platform-plan-ask candidate ask :prompt prompt)
+    (if (and plan form-p)
+        (unless (execution-ok-p (execute-plan host.executor plan))
+          ;; the form's window passed, or the platform refused it: the press
+          ;; is spent, and a message asks instead
+          (warn "~a: the form asking for ~s did not open; a message asks" (host-id host)
+                (nlk:json-value ask :text "label"))
+          (ask-by-reply host candidate ask prompt nil :answered t))
+        (ask-by-reply host candidate ask prompt plan))))
+
+(defun ask-by-reply (host candidate ask prompt plan &key answered
+                     &aux (target (channel-target candidate)) (now (now-ms)))
+  "Worker thread: post PROMPT -- through PLAN, the platform's own way to ask
+for a reply, else as a reply to the card pressed -- and keep it as an ask
+the reply of the person CANDIDATE is runs ASK's line with (ASKED-REPLY).
+ANSWERED says the press was answered already. => the ids of the messages
+that ask."
+  ;; The press is answered first, the card left as it stands, so the
+  ;; platform's own spinner stops.
+  (when (and (candidate-pressed-p candidate) (not answered))
+    (nlk:when-let (hold (host-plan host #'platform-plan-respond candidate nil))
+      (execute-plan host.executor hold)))
+  (let ((ids (if plan
+                 (let ((result (execute-plan host.executor plan)))
+                   (and (execution-ok-p result)
+                        (nlk:when-let (id (funcall (platform-message-id-of host.platform)
+                                                   (execution-body result)))
+                          (list id))))
+                 (nth-value 1 (post-message host target prompt
+                                            :reply-to (source-field candidate "reply_to_message_id")
+                                            :what "ask")))))
+    (sb-ext:with-locked-hash-table (*asked*)
+      (loop for key being the hash-keys of *asked* using (hash-value entry)
+            when (> (- now (getf entry :at)) +ask-reply-ms+) do (remhash key *asked*))
+      (dolist (id ids)
+        (setf (gethash (cons (host-id host) (address-of host target id)) *asked*)
+              (list :line (nlk:json-value ask :text "line")
+                    :user (source-field candidate "user_id") :at now))))
+    ids))
+
+(defun asked-reply (host candidate text &aux (reply-to (source-field candidate "reply_to_message_id")))
+  "The line TEXT, what CANDIDATE said, runs as the reply to a message asking
+for a row's text (ASK-BY-REPLY) by the person it asked, or NIL for any other
+line; a slash line runs as itself. An ask is answered once."
+  (when (and reply-to (plusp (length text)) (not (slash-line-p text)))
+    (let* ((key (cons (host-id host) (address-of host (channel-target candidate) reply-to)))
+           (entry (gethash key *asked*)))
+      (when (and entry
+                 (equal (getf entry :user) (source-field candidate "user_id"))
+                 (<= (- (now-ms) (getf entry :at)) +ask-reply-ms+))
+        (remhash key *asked*)
+        (nle:ask-line (getf entry :line) text)))))
+
 (defun menu-entries (catalog &aux (names (mapcar (lambda (entry) (getf entry :name)) catalog)))
   "CATALOG as a platform's command menu: every command, then each of its
 aliases as a command of its own — a name already in the menu stays the one
@@ -3174,19 +3298,19 @@ command it names."
 
 (defun sync-commands (host &aux (plan-commands (platform-plan-commands host.platform)))
   "Tick thread: publish the command catalog to the platform when its shape
-— the names, the descriptions, and which argument tails complete —
-differs from the one last published — at start, and again when a cell
-registers a command later."
+— the names and the descriptions — differs from the one last published —
+at start, and again when a cell registers a command later."
   ;; Planning only; the calls run as one queued job, and the fingerprint is
   ;; recorded whether they landed or not, so a platform that refuses the menu
-  ;; is one warning per catalog shape, never a loop.
+  ;; is one warning per catalog shape, never a loop. A menu entry is a name
+  ;; and what it does, nothing typed after it: a command picked from the menu
+  ;; answers what it offers.
   (when (and plan-commands (not host.commands-in-flight-p))
     (let* ((entries (menu-entries (nle:slash-catalog)))
-           (fingerprint (format nil "~{~a=~a~:[~;+~]~^|~}"
+           (fingerprint (format nil "~{~a=~a~^|~}"
                                 (loop for entry in entries
                                       append (list (getf entry :name)
-                                                   (getf entry :description)
-                                                   (getf entry :autocomplete))))))
+                                                   (getf entry :description))))))
       (unless (equal fingerprint host.commands-published)
         (nlk:when-let (plans (host-plan host #'platform-plan-commands entries))
           (setf host.commands-in-flight-p t)
@@ -3233,19 +3357,26 @@ its id, and this image as the transport."
   ;; command makes.
   (nlk:default-invocation action command-id :source "channel" :id lane-id))
 
+(defun ask-command-id (ask tag)
+  "The engine command id ASK is submitted under, tagged TAG: the prompt id the
+input that starts its turn records."
+  (format nil "~a-~a-~a" ask.lane tag (ask-identity ask)))
+
 (defun submit-ask (ask action tag &rest keys)
   "Read ASK's attachments in and submit it to its lane as ACTION, the command
 id tagged TAG; KEYS ride along to NLE:SUBMIT."
   (multiple-value-bind (prompt images) (ask-prompt-and-attachments ask)
-    (let ((command-id (format nil "~a-~a-~a" ask.lane tag (ask-identity ask))))
+    (let ((command-id (ask-command-id ask tag)))
       (apply #'nle:submit ask.lane prompt :command-id command-id :images images
              :invocation (lane-invocation command-id ask.lane action) keys))))
 
-(defun continue-lane (host lane ask &aux (active-turn lane.active-turn-id)
-                                         (message-id ask.message-id))
+(defun continue-lane (host lane ask &key heard &aux (active-turn lane.active-turn-id)
+                                                    (message-id ask.message-id))
   "LANE's next turn from ASK, an ask that addresses a lane already open —
 the one authority for what a continuation does, whatever gesture made it: a
-reply typed at the lane, or a reaction left on something it posted."
+reply typed at the lane, or a reaction left on something it posted. HEARD
+is a line the answer replies to besides one ASK's own message is: a peer's,
+which a heard ask carries no message of."
   ;; A turn already running is STEERED: it ends at its next round boundary and
   ;; ASK runs as the lane's next turn, no slot changing hands and no fork
   ;; happening. A settled lane takes ASK through the gate as its next turn,
@@ -3259,38 +3390,49 @@ reply typed at the lane, or a reaction left on something it posted."
   ;; the thread holds: the answer it starts goes up as a reply to it
   ;; (HEARD-REPLY), where the lane's own ask -- in the parent channel -- can
   ;; take none. A peer's reply to us is talked back to the same way.
-  (nlk:when-let (origin (and message-id (lane-origin lane)))
-    (when (equal (getf ask.target :thread-id) (getf origin :thread-id))
-      (setf (lane-heard-line lane) (cons message-id active-turn))))
-  (cond
-    ((null active-turn) (gate-ask host ask))
-    (t (when message-id
-         (setf lane.trigger-message-id message-id))
-       (setf lane.target (lane-delivery-target lane ask.target) lane.last-active-ms (now-ms)
-             lane.voice ask.voice)
-       ;; A line heard while the turn runs carries no message of its own to
-       ;; bind (HEARD-ASK): a reply to a peer's message is the peer's.
-       (bind-addresses host lane ask.target (and message-id (list message-id)))
-       (schedule-reaction host lane message-id +reaction-seen+)
-       ;; The steered text opens the lane's next turn, whose TURN.STARTED sets
-       ;; the lane prompt (NOTE-TURN-FACT): each exchange the room records
-       ;; names its own ask.
-       (run-ask-ingress
-        host ask
-        (lambda ()
-          (handler-case (submit-ask ask "turn.steer" "steer" :steer active-turn)
-            ;; The one refusal that is a race rather than an error: the turn
-            ;; settled between our read of the lane and the admission. That ask
-            ;; is re-admitted as a fresh turn on the same lane, which is what the
-            ;; person replying meant.
-            (nlk:turn-lifecycle-error ()
-              (gate-ask host ask))
-            (error (condition)
-              (warn "~a: steer ~a refused: ~a"
-                    (host-id host) (ask-identity ask) condition)
-              (if host.worker
-                  (on-worker host (fail-lane host lane (princ-to-string condition)))
-                  (fail-lane host lane (princ-to-string condition))))))))))
+  (let ((reply (or heard
+                   (nlk:when-let (origin (and message-id (lane-origin lane)))
+                     (and (equal (getf ask.target :thread-id) (getf origin :thread-id))
+                          message-id)))))
+    (cond
+      ((null active-turn)
+       (when reply
+         (setf (lane-heard-line lane) (cons reply nil)))
+       (gate-ask host ask))
+      (t (when message-id
+           (setf lane.trigger-message-id message-id))
+         (setf lane.target (lane-delivery-target lane ask.target) lane.last-active-ms (now-ms)
+               lane.voice ask.voice)
+         ;; A line heard while the turn runs carries no message of its own to
+         ;; bind (HEARD-ASK): a reply to a peer's message is the peer's.
+         (bind-addresses host lane ask.target (and message-id (list message-id)))
+         (schedule-reaction host lane message-id +reaction-seen+)
+         ;; The steered text opens a turn of its own, whose TURN.STARTED sets
+         ;; the lane prompt (NOTE-TURN-FACT): each exchange the room records
+         ;; names its own ask, and each answer replies to its own line, however
+         ;; many lines steer the turn before it ends (LANE-STEERED-LINES).
+         (let ((command-id (note-steered-line lane (ask-command-id ask "steer")
+                                              message-id reply)))
+           (run-ask-ingress
+            host ask
+            (lambda ()
+              (handler-case (submit-ask ask "turn.steer" "steer" :steer active-turn)
+                ;; The one refusal that is a race rather than an error: the turn
+                ;; settled between our read of the lane and the admission. That ask
+                ;; is re-admitted as a fresh turn on the same lane, which is what the
+                ;; person replying meant.
+                (nlk:turn-lifecycle-error ()
+                  (forget-steered-line lane command-id)
+                  (when reply
+                    (setf (lane-heard-line lane) (cons reply active-turn)))
+                  (gate-ask host ask))
+                (error (condition)
+                  (forget-steered-line lane command-id)
+                  (warn "~a: steer ~a refused: ~a"
+                        (host-id host) (ask-identity ask) condition)
+                  (if host.worker
+                      (on-worker host (fail-lane host lane (princ-to-string condition)))
+                      (fail-lane host lane (princ-to-string condition))))))))))))
 
 (defun conversation-lane (host candidate &aux (target (channel-target candidate)))
   "The live lane CANDIDATE talks to without a reply gesture, or NIL: on a
@@ -3371,8 +3513,11 @@ lane running a turn there, else the one active there last."
                                               (address-of host target reply-to)))
                        (conversation-lane host candidate)))
          ;; The text as the model would read it: our own mention stripped,
-         ;; so `@bot /help' and Telegram's `/help@bot' are the command.
-         (line (candidate-said host candidate))
+         ;; so `@bot /help' and Telegram's `/help@bot' are the command; a
+         ;; reply to a message asking for a row's text is that row's line
+         ;; (ASKED-REPLY).
+         (line (let ((said (candidate-said host candidate)))
+                 (or (asked-reply host candidate said) said)))
          ;; An ask typed INSIDE an existing thread carries the parent
          ;; channel's live chatter, exactly as a thread-opening ask does; the
          ;; conversation itself is the fork's, never text read back. The
@@ -4068,6 +4213,8 @@ the line."
                            :parent-session-id ask.room
                            :owner-id ask.owner-id)))
     (bind-addresses host lane ask.target (list ask.message-id))
+    ;; An ask is a person's line again: the lane is no longer a wake's.
+    (forget-lane-woken lane)
     (setf lane.prompt ask.prompt
           ;; Brought current on every ask, a fresh fork and a continuation
           ;; alike: a lane the kit moved into a thread learns its thread id
@@ -4153,11 +4300,43 @@ the line."
              (let ((admission (submit-ask ask "turn.start" "msg")))
                (case (nlk:active-input-admission-disposition admission)
                  (:started (bind-admitted-turn lane admission))
-                 (:duplicate (drop-duplicate-admission host lane admission))))))))
+                 (:duplicate (drop-duplicate-admission host lane admission))
+                 ;; A turn started on the lane after the read that sent
+                 ;; ASK here (STEER-PARKED-ASK).
+                 (:queued (steer-parked-ask host lane ask admission))))))))
     (error (condition)
       (warn "~a ingress for ~a failed: ~a"
             (host-id host) ask.lane condition)
       (fail-lane host lane (princ-to-string condition)))))
+
+(defun steer-parked-ask (host lane ask admission)
+  "ASK, which the engine parked as a follow-up -- ADMISSION -- behind a turn
+that started on LANE after the kit read it idle, taken back and steered into
+that turn: the lane's next turn, in its place among the lines after it."
+  ;; 2026-11-16, a team thread: a peer's line reached the lane between one
+  ;; turn's end and the start of the turn a parked steer opened, the kit read
+  ;; the lane idle, and the gate submitted the line as a fresh turn. The
+  ;; engine parked it as a follow-up, which every steer passes over
+  ;; (NLK::DEQUEUE-NEXT-TURN), and in a thread where every line steers it ran
+  ;; eight turns and 83 minutes later, after its talk had closed. A lane read
+  ;; running is steered (CONTINUE-LANE); this is that steer, a moment late. A
+  ;; follow-up the turn's end promoted already runs as its own turn.
+  (nlk:when-let (parked (nlk:withdraw-pending-prompt
+                         ask.lane (nlk:active-input-admission-prompt-id admission)))
+    ;; The line ASK answers was noted for the turn the gate would admit
+    ;; (CONTINUE-LANE); it goes with the steer, to the turn that steer opens
+    ;; (LANE-STEERED-LINES), not to the answer of the turn it cuts short.
+    (note-steered-line lane (ask-command-id ask "steer") ask.message-id (take-heard-line lane nil))
+    (let ((steered (handler-case (submit-ask ask "turn.steer" "steer"
+                                             :steer (getf parked :turn-id))
+                     ;; That turn ended in between: ASK starts the next one.
+                     (nlk:turn-lifecycle-error ()
+                       (submit-ask ask "turn.start" "steer")))))
+      (case (nlk:active-input-admission-disposition steered)
+        ;; A steer runs on the slot of the turn it cuts short, so the one
+        ;; this ask claimed at the gate goes back.
+        (:steered (promote-next host lane.owner-id))
+        (:started (bind-admitted-turn lane steered))))))
 
 ;;; --- reactions from the room (a gesture on a message of ours) ----------------------
 ;;; A reaction is a line the room said without typing one: it arrives as a
@@ -4243,6 +4422,8 @@ an ask, or rejected with its reason on the status surface."
   (when (or (plusp (length text)) attachments)
     (set-channel-status (host-id host) :last-event-at-ms
                         (* 1000 (- (get-universal-time) nlk:+unix-epoch+)))
+    ;; when it was sent, before anything reads its line: the bracket carries it
+    (stamp-sent-at candidate)
     (multiple-value-bind (action reason)
         ;; A peer's line is marked before the policy reads it, and counted
         ;; in its thread's run of peer asks after (PEER-RUN).
@@ -4633,16 +4814,46 @@ on. => the lane, or NIL for an id that names no lane of HOST."
   (ppcre:register-groups-bind (room message) ("(?s)^(.+)-m([^-]+)\\z" session-id)
     (let ((target (session-target prefix session-id)))
       (when (and target (nlk:session-exists-p session-id))
-        (prog1 (intern-lane host.lanes session-id
-                            :target target
-                            :trigger-message-id (unless (equal message (getf target :thread-id)) message)
-                            :parent-session-id room)
-          (with-room-book (book host) (take-slot book (make-ask :owner-id nil))))))))
+        (let ((lane (intern-lane host.lanes session-id
+                                 :target target
+                                 :trigger-message-id (unless (equal message (getf target :thread-id)) message)
+                                 :parent-session-id room)))
+          ;; Where it is, as its last turn was told (KEEP-LANE-WHERE): a cron
+          ;; report hours on ran in a thread with its where withdrawn.
+          (setf lane.where (kept-lane-where session-id)
+                (lane-woken lane) t)
+          (with-room-book (book host) (take-slot book (make-ask :owner-id nil)))
+          lane)))))
 
 ;;; --- the worker tick, start and stop ------------------------------------------------------
 
 (defparameter +where-section+ "where"
   "The live section naming which surface a lane runs on.")
+
+(defparameter +where-key+ "channel-where"
+  "The session-state key a lane's where is kept under, in its own session.")
+
+(defun kept-lane-where (session-id)
+  "The where SESSION-ID's lane last ran under (KEEP-LANE-WHERE), or NIL."
+  (when (nlk:store-open-p)
+    (nlk:with-handlers ((error () nil))
+      (nlk:when-let (json (nlk:session-state-get session-id +where-key+))
+        (let ((kept (nlk:decode-json json)))
+          (and (hash-table-p kept) (nlk:json-value kept :string "where")))))))
+
+(defun keep-lane-where (lane &aux (where lane.where))
+  "Write LANE's where into its own session's state when it is not what is
+kept there: what ADOPT-LANE takes back once the reaper has let the lane go."
+  ;; The where is the ask's, and the ask is gone with the reaped lane: a
+  ;; turn on the lane's session after that -- a cron report, a background
+  ;; job's wake -- would run told nothing of where it is.
+  (when (and (stringp where) (plusp (length where)) (nlk:store-open-p)
+             (nlk:session-exists-p lane.session-id)
+             (not (equal where (kept-lane-where lane.session-id))))
+    (nlk:with-handlers ((error (condition)
+                          (warn "~a: where not kept: ~a" lane.session-id condition)))
+      (nlk:session-state-put lane.session-id +where-key+
+                             (nlk:encode-json-object (nlk:json-object "where" where))))))
 
 (defun lane-where-section (session-id)
   "SESSION-ID's `where' live section as ((NAME . TEXT)), or NIL when the id
@@ -4658,9 +4869,128 @@ names no lane of any started host."
          (where (and lane lane.where (plusp (length lane.where))
                      (format nil "Where you are: ~a" lane.where)))
          (note (and lane (lane-thread-note lane (platform-noun host.platform))))
-         (text (format nil "~{~a~^ ~}" (remove nil (list where note)))))
+         (woken (and lane (lane-woken-note host lane)))
+         (text (format nil "~{~a~^ ~}" (remove nil (list where note woken)))))
     (when (plusp (length text))
       (list (cons +where-section+ text)))))
+
+(defun lane-woken-note (host lane &aux (target lane.target)
+                                       (noun (if (getf target :thread-id) "thread" "chat")))
+  "For LANE, taken back by a turn after the reaper let it go (ADOPT-LANE), the
+sentences that say the surface went on without it, and which of HOST's other
+lanes runs there now; NIL for any other lane."
+  ;; 2026-11-16: a button pressed on a reaped lane's answer opened a second
+  ;; lane in its thread, at the room's head, and it shipped and proved the
+  ;; work; a cron report then woke the first lane, which knew nothing of the
+  ;; second and ran the same proof again. A woken lane's history stops at its
+  ;; own last turn: the room's record after that -- other lanes' exchanges,
+  ;; people's lines -- reached the lanes forked since, never this one.
+  (when (lane-woken lane)
+    (let ((running (sort (loop for other in (let ((found '()))
+                                              (map-lanes host.lanes
+                                                         (lambda (other) (push other found)))
+                                              found)
+                               for at = other.target
+                               when (and (not (eq other lane))
+                                         (not (lane-retired other))
+                                         other.active-turn-id
+                                         other.trigger-message-id
+                                         (equal (getf at :channel-id) (getf target :channel-id))
+                                         (equal (getf at :thread-id) (getf target :thread-id)))
+                                 collect other.trigger-message-id)
+                         #'string<)))
+      (format nil "This turn woke this lane after it had gone idle: what was said in this ~a ~
+since its last turn, and what other lanes of yours did there, is not in your history.~
+~[~*~; Another lane of yours is running in it now, on the ask ~{m~a~}.~:; Other lanes of yours ~
+are running in it now, on the asks ~{m~a~^, ~}.~] Read the ~a's newest messages before you act, ~
+so you do not do again what was done there meanwhile."
+              noun (length running) running noun))))
+
+;;; A thread is one conversation (CONVERSATION-LANE): a line typed there talks
+;;; to the lane running a turn in it, else the one active there last. A wake
+;;; -- a cron job's report, a background job's word, any in-process submitter's
+;;; input -- names the session it was set up from instead, and that lane may
+;;; no longer be the thread's: the reaper let it go and a later line forked
+;;; another, or another lane ran there since. 2026-11-17: a cron report woke
+;;; such a lane while the lane working the thread ran the same work; both
+;;; wrote the same report, and it went up twice, 27 s apart. Told the other
+;;; lane ran (LANE-WOKEN-NOTE), the woken lane looked twice, saw nothing yet,
+;;; and was writing when the other posted. The wake goes where a typed line
+;;; would: it steers the current lane's running turn, or is its next turn.
+
+(defun superseding-lane (host session-id &aux (own (find-lane host.lanes session-id)))
+  "HOST's lane that holds SESSION-ID's thread now, when SESSION-ID names a lane
+of HOST's in a thread -- live, or one the reaper let go -- that is not the
+thread's current lane (THREAD-LANE); NIL otherwise."
+  (let ((target (if own
+                    (lane-target own)
+                    (and (ppcre:scan "(?s)^.+-m[^-]+\\z" session-id)
+                         (session-target (platform-session-prefix host.platform) session-id)))))
+    ;; A lane running a turn is its thread's current lane.
+    (when (and (getf target :thread-id) (not (and own (lane-active-turn-id own))))
+      (let ((current (thread-lane host nil target)))
+        (and current
+             (not (eq current own))
+             (not (equal (lane-session-id current) session-id))
+             current)))))
+
+(defun wake-frame (session-id source)
+  "What a wake meant for SESSION-ID's lane is to the current lane it reached."
+  (let ((ask (ppcre:register-groups-bind (message) ("-m([^-]+)\\z" session-id) message)))
+    (format nil "[A ~a wake sent to an earlier lane of yours in this thread~@[, the one on the ~
+ask m~a,~] reached you instead: a thread is one conversation, and you are the lane working in ~
+it now. Take it up with what you know of the thread, and post nothing its newest messages ~
+already say.]" (or source "background") ask)))
+
+(defun wake-current-lane (lane session-id prompt next keys
+                          &aux (active (lane-active-turn-id lane)) (id (lane-session-id lane)))
+  "Put PROMPT, a wake an in-process submitter meant for SESSION-ID, into LANE
+through NEXT, the rest of NLE:SUBMIT, framed (WAKE-FRAME): a steer of its
+running turn, else its next turn. KEYS are the submitter's. => NEXT's admission."
+  (let* ((framed (format nil "~a~%~a" (wake-frame session-id (getf keys :source)) prompt))
+         (command-id (or (getf keys :command-id)
+                         (format nil "~a-wake-~a-~a" id (now-ms) (nlk:short-digest prompt 8))))
+         (rest (uiop:remove-plist-keys '(:command-id :steer) keys)))
+    (setf (lane-last-active-ms lane) (now-ms))
+    (flet ((start ()
+             (apply next id framed :command-id command-id rest)))
+      (if (null active)
+          (start)
+          ;; The turn the steer opens answers the lane's own ask, as the
+          ;; turn it cut short would have.
+          (progn
+            (note-steered-line lane command-id (lane-trigger-message-id lane) nil)
+            (handler-case (apply next id framed :command-id command-id :steer active rest)
+              ;; The turn settled between our read of the lane and the steer:
+              ;; the wake is the lane's next turn.
+              (nlk:turn-lifecycle-error ()
+                (forget-steered-line lane command-id)
+                (start))
+              (error (condition)
+                (forget-steered-line lane command-id)
+                (error condition))))))))
+
+(defun wake-advice (host)
+  "Advice on NLE:SUBMIT: a wake an in-process submitter puts into a thread
+lane of HOST's that is not its thread's current lane reaches the current one
+instead (WAKE-CURRENT-LANE); every other submit is NEXT's."
+  ;; The kit's own asks carry an invocation, and a steer names the turn it
+  ;; cuts: neither is a wake.
+  (lambda (next session-id prompt &rest keys &key steer invocation &allow-other-keys)
+    (let ((current (and (null steer) (null invocation) (stringp session-id)
+                        (nlk:with-handlers ((error (condition)
+                                              (warn "~a: wake for ~a not routed: ~a"
+                                                    (host-id host) session-id condition)
+                                              nil))
+                          (superseding-lane host session-id)))))
+      (if current
+          ;; A current lane with no session behind it takes nothing: the wake
+          ;; runs where it was sent (ADOPT-LANE, LANE-WOKEN-NOTE).
+          (handler-case (wake-current-lane current session-id prompt next keys)
+            (nlk:unknown-session (condition)
+              (warn "~a: wake for ~a stays there: ~a" (host-id host) session-id condition)
+              (apply next session-id prompt keys)))
+          (apply next session-id prompt keys)))))
 
 (defun live-section-advice ()
   "Advice on NLE::READ-LIVE-SECTIONS appending the asking lane's `where'."
@@ -4725,6 +5055,7 @@ turns their budget."
               (funcall next op)))
   (nle:hook 'nle:turn-budget (format nil "channel-~a" id) (budget-advice host))
   (nle:hook 'nle:name-session (format nil "channel-~a" id) (naming-advice host))
+  (nle:hook 'nle:submit (format nil "channel-~a" id) (wake-advice host))
   (pushnew host *hosts*)
   (when (nlk:store-open-p)
     (note-paired host (paired host)))
@@ -4748,6 +5079,7 @@ turns their budget."
   (nle:unhook :frame (format nil "channel-~a" (host-id host)))
   (nle:unhook 'nle:turn-budget (format nil "channel-~a" (host-id host)))
   (nle:unhook 'nle:name-session (format nil "channel-~a" (host-id host)))
+  (nle:unhook 'nle:submit (format nil "channel-~a" (host-id host)))
   (when host.worker
     (stop-delivery-worker host.worker))
   (nlk:with-handlers ((error (condition)

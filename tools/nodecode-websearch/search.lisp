@@ -3,7 +3,7 @@
 ;;;; SPDX-License-Identifier: MIT
 ;;;;
 ;;;; Two tiers, plus one engine that only ever answers when named. A provider
-;;;; with a key (brave, exa, tavily) answers alone, the named one first; a
+;;;; with a key (brave, exa, tavily, deepseek) answers alone, the named one first; a
 ;;;; failure or an empty answer advances to the next keyed one. With no keyed
 ;;;; answer the PUBLIC FLOOR runs: DuckDuckGo's HTML endpoint, Firecrawl's
 ;;;; keyless search and Exa's keyless MCP endpoint, all asked, their hits
@@ -32,6 +32,11 @@
 ;;;;               {answer, citations[].{title,url,text,publishedDate}}
 ;;;;   tavily      POST api.tavily.com/search {query,max_results,include_answer:"basic"}   Bearer
 ;;;;               {answer, results[].{title,url,content,published_date}}
+;;;;   deepseek    POST api.deepseek.com/anthropic/v1/messages           x-api-key
+;;;;               one deepseek-v4-flash turn given the native web_search server
+;;;;               tool; web_search_tool_result blocks carry the hits (title, url,
+;;;;               page_age), its closing text an ANSWER: line and one JSON line per
+;;;;               result it read (url, summary, date)
 ;;;;   duckduckgo  POST html.duckduckgo.com/html/ q=&kl=                  no key
 ;;;;               result blocks: result__a (title, href, often a //duckduckgo.com/l/?uddg=
 ;;;;               redirect), result__snippet; result--ad blocks skipped
@@ -59,13 +64,13 @@
 
 (in-package #:nodecode-websearch)
 
-;;; brave, exa and tavily take a key and answer alone; duckduckgo, firecrawl
-;;; and exa answer without one, as the public floor (a firecrawl key only
-;;; lifts its limits); arxiv answers without one when it is named.
-(defparameter +provider-names+ '("brave" "exa" "tavily" "duckduckgo" "firecrawl" "arxiv")
+;;; brave, exa, tavily and deepseek take a key and answer alone; duckduckgo,
+;;; firecrawl and exa answer without one, as the public floor (a firecrawl key
+;;; only lifts its limits); arxiv answers without one when it is named.
+(defparameter +provider-names+ '("brave" "exa" "tavily" "deepseek" "duckduckgo" "firecrawl" "arxiv")
   "What :provider and websearch.provider may name.")
 
-(defparameter +keyed-providers+ '("brave" "exa" "tavily"))
+(defparameter +keyed-providers+ '("brave" "exa" "tavily" "deepseek"))
 
 (defparameter +floor+ '("duckduckgo" "firecrawl" "exa")
   "The engines the public floor merges, in tiebreak order; the names that
@@ -184,6 +189,110 @@ status and the opening of what came back."
         (nlk:when-let (why (nlk:json-value object :text "error")) (fail "~a" why)))
       (values (and (string/= provider "brave") (nlk:json-value object :text "answer"))
               (rows-of object path "title" "url" snippet date n)))))
+
+;;; --- deepseek: its own web search ---------------------------------------------
+
+(defparameter +deepseek-url+ "https://api.deepseek.com/anthropic/v1/messages"
+  "DeepSeek's Anthropic-format Messages endpoint: given the native
+`web_search' server tool, DeepSeek runs its own search and answers its
+results as web_search_tool_result blocks.")
+
+(defparameter +deepseek-model+ "deepseek-v4-flash"
+  "The model that runs a DeepSeek search turn: the fast one, thinking off.")
+
+(defparameter +deepseek-answer-limit+ 800
+  "Character cap on DeepSeek's own answer above the hits.")
+
+(defun deepseek-prompt (query)
+  "The one user message a DeepSeek search turn answers."
+  (format nil "Search the web for: ~a~%~%Then answer from the search results only, in this shape and nothing else:~%ANSWER: the answer in at most three sentences~%then one line per result that bears on the search, most relevant first, each line one JSON object: {\"url\": the result's url exactly as the search returned it, \"summary\": one sentence on what the page says, \"date\": its publication date as YYYY-MM-DD, or \"\"}" query))
+
+(defun deepseek-listing (text)
+  "TEXT, DeepSeek's closing answer, as (values ANSWER LISTED): the ANSWER:
+line (and any prose under it before the first JSON line), and its JSON-object
+lines in order as ((URL SUMMARY DATE) ...)."
+  (let ((answer nil) (listed '()))
+    (dolist (line (cl-ppcre:split "\\r?\\n" text))
+      (let ((line (string-trim '(#\Space #\Tab #\` #\- #\*) line)))
+        (cond ((zerop (length line)))
+              ((char= (char line 0) #\{)
+               (let ((object (ignore-errors (nlk:decode-json line))))
+                 (nlk:when-let (url (and (hash-table-p object) (nlk:json-value object :text "url")))
+                   (push (list url
+                               (or (nlk:json-value object :string "summary") "")
+                               (nlk:json-value object :text "date"))
+                         listed))))
+              ((and (null answer) (cl-ppcre:scan "(?i)^answer:" line))
+               (setf answer (string-trim " " (subseq line 7))))
+              ((and answer (null listed))
+               (setf answer (format nil "~a ~a" answer line))))))
+    (values answer (nreverse listed))))
+
+(defun deepseek-search (key query n)
+  "DeepSeek's own web search for QUERY, KEY its DeepSeek API key."
+  ;; => (values ANSWER HITS). Only urls its web_search_result blocks carry
+  ;; become hits, so nothing the model wrote from memory is a result: those
+  ;; its closing answer lists lead, in its order, with its summary and date;
+  ;; the rest follow in the search's order, bare. A turn that ran no search,
+  ;; or whose every search failed, is a loud failure, so the chain advances.
+  (let* ((object (decode-json
+                  (http-text :post +deepseek-url+
+                             :headers (append (json-headers)
+                                              `(("x-api-key" . ,key)
+                                                ("anthropic-version" . "2023-06-01")))
+                             :content (nlk:json-object
+                                       "model" +deepseek-model+
+                                       "max_tokens" 2048
+                                       "thinking" (nlk:json-object "type" "disabled")
+                                       "tools" (vector (nlk:json-object "type" "web_search_20250305"
+                                                                        "name" "web_search"
+                                                                        "max_uses" 2))
+                                       "messages" (vector (nlk:json-object
+                                                           "role" "user"
+                                                           "content" (deepseek-prompt query))))
+                             :timeout 90)))
+         (searched '()) (closing '()) (ran nil) (errors '()))
+    ;; The closing text is what follows the last search: the preamble before
+    ;; it is not the answer.
+    (loop for block across (nlk:json-array object "content")
+          for type = (nlk:json-value block :text "type")
+          do (cond ((equal type "web_search_tool_result")
+                    (setf ran t closing '())
+                    (let ((rows (nlk:json-value block :array "content")))
+                      (if rows
+                          (loop for row across rows
+                                when (equal (nlk:json-value row :text "type") "web_search_result")
+                                  do (push row searched))
+                          (push (or (nlk:json-value block :text "content" "error_code") "failed")
+                                errors))))
+                   ((equal type "text")
+                    (push (or (nlk:json-value block :string "text") "") closing))))
+    (unless ran
+      (fail "ran no web search"))
+    (when (and (null searched) errors)
+      (fail "web search ~{~a~^, ~}" (reverse errors)))
+    (multiple-value-bind (answer listed)
+        (deepseek-listing (format nil "~{~a~^~%~}" (reverse closing)))
+      (let ((searched (reverse searched))
+            (by-url (make-hash-table :test 'equal))
+            (seen (make-hash-table :test 'equal))
+            (rows '()))
+        (dolist (row searched)
+          (let ((url (nlk:json-value row :text "url")))
+            (when (and url (not (gethash url by-url)))
+              (setf (gethash url by-url) row))))
+        (flet ((add (url snippet date)
+                 (let ((row (gethash url by-url)))
+                   (when (and row (not (gethash url seen)))
+                     (setf (gethash url seen) t)
+                     (push (make-row (nlk:json-value row :text "title") url snippet
+                                     (if (iso-date date) date (nlk:json-value row :text "page_age")))
+                           rows)))))
+          (loop for (url summary date) in listed do (add url summary date))
+          (dolist (row searched) (add (nlk:json-value row :text "url") "" nil)))
+        (values (and answer (plusp (length answer))
+                     (nlk:clip answer +deepseek-answer-limit+ :ellipsis "…"))
+                (first-hits n (nreverse rows)))))))
 
 ;;; --- exa, keyless --------------------------------------------------------------
 
@@ -461,6 +570,7 @@ it; `No results' when nothing came back."
       (cond ((string= engine "arxiv") (arxiv-search query n))
             ((string= engine "duckduckgo") (duckduckgo-search query n))
             ((and (string= engine "exa") (null key)) (exa-keyless-search query n))
+            ((string= engine "deepseek") (deepseek-search key query n))
             (t (api-search engine key query n)))
     (nlk:turn-cancelled-condition (condition) (error condition))
     (error (condition)
@@ -469,7 +579,7 @@ it; `No results' when nothing came back."
 (defun search (query &key provider n)
   "Web search for QUERY."
   ;; N results (default websearch.max_results, 5; at most 10). PROVIDER names
-  ;; one of brave, exa, tavily, duckduckgo, firecrawl, arxiv to ask first
+  ;; one of brave, exa, tavily, deepseek, duckduckgo, firecrawl, arxiv to ask first
   ;; (default websearch.provider). A provider with a key answers alone; one
   ;; that fails or answers nothing advances to the next keyed one, then to the
   ;; public floor: duckduckgo, firecrawl and keyless exa, merged. A provider

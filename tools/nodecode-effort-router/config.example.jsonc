@@ -1,0 +1,28 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it, with the defaults spelled out.
+{
+  "effort-router": {
+    "enabled": true,
+    // the environment variable holding the OpenRouter key, never the key
+    "api_key_env": "OPENROUTER_API_KEY",
+    // the only provider whose turns are routed
+    "provider": "ollama-cloud",
+    // the models the decision may pick: "<model id>: <what it is for>"
+    "grid": [
+      "deepseek-v4.1-flash: the usual choice for general work: everyday writing, explanation, summarising, ordinary coding and tool use; cheap for its size",
+      "kimi-k3: strongest at complex code and long agentic tasks: multi-file refactors, deep debugging, large repositories; slow and the most expensive",
+      "glm-5.3: strongest at rigorous reasoning: mathematics, logic, science, quantitative and financial analysis, where a wrong answer is costly",
+      "glm-5.3-flash: best reasoning-per-cost on large text: drafting, summarising, translating and structured extraction over long documents; fast",
+      "minimax-m3: fast tool calling: long sequences of API or command-line actions, repetitive automation, high throughput",
+      "nemotron-3-nano:30b: highest throughput and lowest cost: trivial single-step requests only; weak at reasoning and at long context"
+    ],
+    "decision_model": "typesafe/jev-1.13",
+    "endpoint": "https://openrouter.ai/api/alpha/decisions",
+    "confidence_percent": 50,
+    "route_per_turn": true,
+    "timeout_seconds": 8,
+    "audit": true
+  }
+}

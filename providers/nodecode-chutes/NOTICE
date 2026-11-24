@@ -1,0 +1,21 @@
+nodecode-chutes is a rewrite of TheStreamCode's TheStreamCode/hermes-chutes-provider:
+https://github.com/TheStreamCode/hermes-chutes-provider
+commit d1165cdd5c65a1179c559e9169a428adb9a36b42
+MIT, Copyright (c) 2026 Michael Gasperini (Mikesoft) (LICENSE)
+
+Rewritten for Nodecode: the provider profile (id `chutes`, display name,
+base URL, the CHUTES_API_KEY and CHUTES_BASE_URL variables, the signup page,
+the two meta-models shown before a catalog is read, the OpenAI chat lane its
+`chat_completions` api_mode names), and the catalog read: GET <base>/models
+with the key as a bearer, only the entries whose supported_features name
+`tools` (case-blind), carried into the Nodecode catalog so /models offers
+them. The original fetched the catalog whenever its host needed model ids;
+here `/chutes` reads it on demand and puts it in /models, and the window a row
+publishes (max_model_len, else context_length) rides in the catalog entry.
+Left out: the 8 MiB cap on the catalog body and the swallowed-error debug log
+(the command says why a read failed instead), the host's in-memory catalog
+cache, the `use_live_model_metadata` opt-in (inert on every released Hermes
+and unread here), the profile aliases `chutes-ai` and `chutesai` (a Nodecode
+provider is named by its id), its defensive reads of an older Hermes
+ProviderProfile's optional fields, and its private import of the host's
+credentialed-URL opener, which Nodecode's own HTTP seam replaces.

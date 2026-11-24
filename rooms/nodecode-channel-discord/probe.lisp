@@ -348,7 +348,7 @@ label) ...): every role but @everyone and the ones an integration manages."
   ("allow_bots" :choice :options '("none" "mentions" "all") :default "none"
                 :doc "other bots' messages: none ignores them, mentions answers one that @mentions this bot, all treats them as people's; the bot's own are always ignored")
   ("pairing" :boolean :default t
-             :doc "a direct message from someone not allowed is answered with a pairing code, and the operator is told; /channels pair CODE lets them in, /channels unpair ID takes it back")
+             :doc "a direct message from someone not allowed is answered with a pairing code, and the operator is told; /channels lets them in with it, and takes it back")
   ("allowed_guilds" :list :doc "server ids; empty admits every server the bot is in")
   ("require_mention" :boolean :default t
                      :doc "default for channels not listed below: answer when @mentioned, replied to, or in a DM; false answers every unlisted channel and needs the Message Content intent")
@@ -374,7 +374,7 @@ label) ...): every role but @everyone and the ones an integration manages."
   ("stream" :boolean :default t
             :doc "the model's words reach the room as it writes them, a message edited as it grows; the answer still posts fresh, pinging its asker, and its draft goes; false, each round's words arrive whole")
   ("voice_replies" :choice :options '("off" "on" "tts") :default "off"
-                   :doc "an answer comes as a voice message too, below its words: on, to an ask said in a voice message; tts, to every ask; off, never; /voice on, tts or off sets it for one room")
+                   :doc "an answer comes as a voice message too, below its words: on, to an ask said in a voice message; tts, to every ask; off, never; /voice sets it for one room")
   ("turn_budget_minutes" :integer :default 0
                         :doc "minutes an ask's turn may run: past them its tool calls are refused and it answers with what it has; 0, the default, caps nothing")
   ("answer_words" :integer :default 0
@@ -391,15 +391,15 @@ label) ...): every role but @everyone and the ones an integration manages."
   ;; Discord requires its end-to-end encryption (DAVE) for voice now, so the
   ;; first join fetches libdave into the cache — see discord/dave.lisp.
   ("voice_channel_id" :string
-                      :doc "a voice channel of the bot's own: voice_autojoin sits in it, and /voice join typed by someone in no voice channel; absent, the bot sits only beside whoever asks or whom it follows")
+                      :doc "a voice channel of the bot's own: voice_autojoin sits in it, and a join from /voice by someone in no voice channel; absent, the bot sits only beside whoever asks or whom it follows")
   ("voice_text_channel_id" :string
                            :choices #'probe-channel-choices
                            :doc "the channel the voice lane talks through — its transcript, status and answers; defaults to the voice channel's own chat")
   ("voice_speakers" :list
-                    :doc "user ids whose speech opens a turn; empty falls back to allowed_users, then owner, then whoever typed /voice join")
+                    :doc "user ids whose speech opens a turn; empty falls back to allowed_users, then owner, then whoever joined it from /voice")
   ("voice_autojoin" :boolean :default :false
                     :doc "sit in the voice channel whenever somebody is in it: join when the first person comes in, leave when the last one goes; false waits for /voice join")
   ("voice_follow" :list
                   :doc "user ids the bot follows into voice: it joins the channel the first of them sits in, moves when they move, and leaves when they leave")
   ("voice_idle_minutes" :integer :default 5
-                        :doc "a seat /voice join took is given up after this many minutes with nobody speaking to the bot; 0 stays"))
+                        :doc "a seat a join from /voice took is given up after this many minutes with nobody speaking to the bot; 0 stays"))

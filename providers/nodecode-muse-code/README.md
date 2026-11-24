@@ -1,7 +1,7 @@
 # nodecode-muse-code
 
 A Nodecode cell for Muse Code, Meta's Muse subscription. With it,
-`/muse-code login` signs in to a Meta account with a device code and mints
+`/muse-code` signs in to a Meta account with a device code and mints
 the Model API key the subscription authorizes, `/models` lists the Muse
 Spark models, and a turn on `muse-code/<model>` goes to
 `https://api.meta.ai/v1/responses` the way oh-my-pi sends it:
@@ -21,9 +21,9 @@ provider. See [NOTICE](NOTICE).
 ## Sign-in
 
 ```
-/muse-code login     answers at once with the address to open and the code to enter
-/muse-code status    signed in, and as whom
-/muse-code logout    forgets the sign-in
+/muse-code → Sign in   answers at once with the address to open and the code to enter
+/muse-code             signed in, and as whom
+/muse-code → Sign out  forgets the sign-in
 ```
 
 The device code is asked of `https://auth.meta.com/oidc` with Muse Code's

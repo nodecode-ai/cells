@@ -1,0 +1,28 @@
+nodecode-hashference is a rewrite of 0xalank's 0xalank/hermes-hashference-provider:
+
+  https://github.com/0xalank/hermes-hashference-provider
+  commit 82700f5377a46f0e7bd482c907ed04090b6305be
+  MIT, Copyright (c) 2026 0xalank (LICENSE)
+
+Rewritten: the provider profile — the `hashference` id, its OpenAI-compatible
+base, its HASHFERENCE_API_KEY and its sign-up page — and the two things that
+give the plugin its point, both read from Hashference's public catalog at
+`/models`: each model's context is its `max_input_tokens` where stated (not
+its larger window), each model's output cap is its
+`default_max_output_tokens`, and the picker keeps only what a turn can run on,
+which drops the `-messages` aliases, the models the catalog marks as unable to
+call tools, and the models that take under 64K input tokens. The plugin's
+curated `fallback_models` answer when the catalog is unreachable, and its
+per-model lookups (`fetch_models`, `get_model_context_length`,
+`get_max_tokens`) are kept. In Nodecode the profile is a row in the models.dev
+catalog table, one hook, and a worker that fetches the catalog once at start.
+
+Left out: the Hermes-side plumbing, which has no Nodecode counterpart and no
+bearing on what a user gets — the `providers.register_provider` call, the
+`ProviderProfile` fields Hermes alone reads (`auth_type`, `hostname`,
+`sign_in`), the ten-minute in-process cache (a fetch at start, retried every
+ten minutes while unreachable, answers the same for a catalog this stable) and
+`default_aux_model`, since Nodecode picks its own auxiliary model. The README's
+x402 path — paying per request with a few seconds of proof of work, no account
+— was already outside the plugin, because it needs a native RandomX solver, and
+stays out here; the repository's own pytest suite and CI are not carried over.

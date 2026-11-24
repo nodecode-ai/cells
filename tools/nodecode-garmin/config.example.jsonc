@@ -1,0 +1,14 @@
+// The garmin section of ~/.nodecode/config.jsonc. A present section is an
+// enabled one; "enabled": false turns the cell off.
+{
+  "garmin": {
+    // Make one in Garmin Connect on the web: Settings, Personal API Key.
+    // It is shown once and expires after 30 to 365 days. Never paste it in a chat.
+    "api_key": "[set]",
+    // Or keep it in the environment: the variable named here is read when api_key is empty.
+    "api_key_env": "GARMIN_PERSONAL_API_KEY",
+    // global = personal.connectapi.garmin.com; china = Garmin China accounts.
+    "region": "global",
+    "timeout_seconds": 30
+  }
+}

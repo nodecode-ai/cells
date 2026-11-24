@@ -1,0 +1,33 @@
+nodecode-flipletters is a rewrite of Terahertz-Inc's Terahertz-Inc/flipletters-mcp:
+
+  https://github.com/Terahertz-Inc/flipletters-mcp
+  commit 460880225ce2f7b95b1020622b2552aaa1a580b2
+  MIT, Copyright (c) 2026 Terahertz, Inc. (LICENSE)
+
+The rewritten plugin is the whole repository at that commit: a manifest, an
+MCP server entry, a skill and a README, with no executable code of its own.
+What it described is a hosted Model Context Protocol server at
+https://app.flipletters.com/mcp/v1, and the cell speaks to that same server
+over the same wire. Carried over: the endpoint and the Bearer flk_ key the
+manifest's mcp.json names; MCP over Streamable HTTP (one POST per JSON-RPC
+message, an event stream's last data payload as the answer, the
+Mcp-Session-Id echoed, a dropped session made again); tools/list and
+tools/call; the thirteen tools the server serves -- flipletters_flipcode_
+reference, example_board, validate_board, template_url, create_animation,
+render_board, render_status, list_teams, share_to_team, list_workspaces,
+list_postiz_destinations, list_postiz_integrations and share_to_postiz --
+with the argument names their input schemas give, camelCase included; and
+the skill's own order of work (read the reference, draft, validate, render
+or share only when asked). LICENSE is the repository's LICENSE, unchanged.
+
+What was left out, and why: the Hermes and Cursor manifest extensions
+(plugin.json's server trust flag, the .cursor-plugin variables) and the
+skills/flipletters front matter, because Nodecode has no plugin manifest and
+one skill folder, so the same guidance is the cell's (help :flipletters)
+primer and the /flipletters command instead; the local stdio variant
+(npx flipletters-mcp-server), because the cell speaks to the hosted server
+directly and installs nothing; PUBLISHING.md and server.json, which are the
+listing repository's own release paperwork rather than a user-facing
+feature. One tool was added: flipletters_tools, which lists what the live
+server offers this key, because the tool set is served at run time and the
+cell should not be the place its schema goes stale.

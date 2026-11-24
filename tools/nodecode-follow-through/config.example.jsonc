@@ -1,0 +1,8 @@
+// nodecode-follow-through: the section, as ~/.nodecode/config.jsonc carries it.
+{
+  "follow-through": {
+    // how many times one prompt may be held before a promising reply is let
+    // through; 0 turns the cell into a passive tool
+    "max_nudges": 2
+  }
+}

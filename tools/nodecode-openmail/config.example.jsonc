@@ -1,0 +1,14 @@
+// The openmail section of ~/.nodecode/config.jsonc. Secrets are named, never
+// stored here: api_key_env holds the name of the environment variable that
+// carries the key, api_key_file a file only you can read. Set exactly one.
+"openmail": {
+  "api_key_env": "OPENMAIL_API_KEY",
+  // "api_key_file": "~/.config/openmail-key",
+
+  // Optional: the inbox every call acts on when it names none. Without it the
+  // key's only inbox is used, and a key that sees several is asked to pick.
+  // "inbox_id": "inb_...",
+
+  "base_url": "https://api.openmail.sh",
+  "timeout": 30
+}

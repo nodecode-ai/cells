@@ -1,0 +1,30 @@
+nodecode-api-indonesia is a rewrite of khmuhtadin's khmuhtadin/api-indonesia-examples:
+
+  https://github.com/khmuhtadin/api-indonesia-examples
+  commit 73d9d4bc060ad4814d0c95c9b3f5f328d07858d5
+  MIT, Copyright (c) 2026 Khaisa Studio (Khairul Muhtadin) (LICENSE)
+
+Rewritten: what the package is -- a front end to API Indonesia's hosted MCP
+server at https://mcp.apiindonesia.id/mcp, reached with an aip_live_ key, and
+holding Indonesian public data from official sources (regions down to
+villages, postal codes, holidays, prayer times, BMKG, schools, hospitals,
+exchange rates, minimum wage, halal, BPOM, OJK, KBBI, Al-Quran and more).
+The manifests' facts became the cell's section (the endpoint, the REST base,
+the key's environment variable, the timeout) and the verbs the server's own
+tool set needs: one that lists it and one that calls into it, both speaking
+the server's protocol (MCP over Streamable HTTP) with the core's own HTTP
+seam. The bundled skill -- its endpoint table, the warning that a NIK or NPWP
+check is a format check, that the source in the answer's metadata is cited,
+and what a 401 and a 402 mean -- is the manual topic and the tool
+descriptions. The examples' REST style (the x-api-key header, the same host)
+became a third verb, api_indonesia_get, so a documented path is still
+reachable when the tool set served at run time lacks what a task needs.
+
+Left out, and why: the example clients in curl, JavaScript, PHP, Python and
+n8n, and the configs for other clients (mcp.json, .mcp.json, server.json,
+.claude-plugin/plugin.json) all show how to reach the same two endpoints from
+somewhere else, and a cell needs one; the Python requirements file exists to
+run one of them. None of it runs here, and no Node, python, pip or npx
+mcp-remote bridge is needed. The server's ~30 products' tool descriptions
+are not copied, since the server serves them at run time and a copy would go
+stale; the skill's endpoint table is kept because it is the fallback's map.

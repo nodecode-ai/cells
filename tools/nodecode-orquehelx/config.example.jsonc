@@ -1,0 +1,15 @@
+{
+  "orquehelx": {
+    // ask: tell the user and wait for their answer; parent_decides: the parent
+    // may resend the task on another route; wait: nothing else with it.
+    "policy": "ask",
+    // How long one delegated subagent's turn may run.
+    "seconds": 900,
+    // One object per route: name (lowercase letters, digits, '-', up to 32),
+    // provider and model. The provider is a section you already have.
+    "routes": [
+      { "name": "claude", "provider": "anthropic", "model": "claude-haiku-4-5" },
+      { "name": "codex", "provider": "openai-codex", "model": "gpt-5.5" }
+    ]
+  }
+}

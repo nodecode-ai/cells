@@ -1,0 +1,24 @@
+nodecode-tenuo is a rewrite of tenuo-ai's tenuo-ai/hermes-tenuo:
+
+  https://github.com/tenuo-ai/hermes-tenuo
+  commit 8bce830c5df9dcd06d16688a954146d8ed0c0c562
+  Apache-2.0, Copyright (c) 2026 Tenuo AI (LICENSE)
+
+Rewritten: the Hermes plugin's per-call authorization as one Nodecode cell —
+the warrant (tools and argument constraints, with an expiry), the check before
+every tool call with the refusal handed back to the model as the call's
+failure, the local JSONL audit log of every decision, and read-only access to
+the policy for the model (tenuo_check, tenuo_audit) and the operator (/tenuo).
+
+Left out: the tenuo Rust SDK and its Ed25519 warrants, which no cell can link
+without bundling a compiled library. A warrant here is a JSON file the
+operator writes, and the integrity check is an HMAC-SHA256 of that file kept
+beside it as <warrant>.sig under a key named by key_env (`/tenuo sign` writes
+it) — the same "a tampered warrant is a refusal, not a quiet promotion" rule,
+in the cryptography a Lisp image already has. Also left out: the control-plane
+stream (TENUO_CONNECT_TOKEN), which was that SDK's; minting and key rotation,
+which were `hermes-tenuo mint`; per-session and per-gateway-user warrants,
+which needed the original's session registry; and kanban per-task warrants and
+the auto-block of a task on denial, which were the Hermes kanban's — Nodecode
+sessions have no such board, so a denial here is the call's failure and an
+audit line.

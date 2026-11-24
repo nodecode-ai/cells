@@ -1,0 +1,12 @@
+{
+  // The community bot shelf: preview a bot, add it, share your own.
+  // Nothing here is required to browse or add a bot; a handle is what a
+  // shared listing is credited to.
+  "hermesmade": {
+    "site": "https://hermesmade.lol",
+    // "bots_dir": "~/bots",
+    // "handle": "yourhandle",
+    "timeout_seconds": 45,
+    "max_bytes": 2000000
+  }
+}

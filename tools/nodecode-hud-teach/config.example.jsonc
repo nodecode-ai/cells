@@ -1,0 +1,20 @@
+// nodecode-hud-teach: numbered marks and a step card on the live Mac window.
+// Copy the section you need into ~/.nodecode/config.jsonc, or set the same
+// fields in /settings. Only capture_dir is required.
+{
+  "hud-teach": {
+    // the folder screenshots are written to; the model reads one with (look PATH)
+    "capture_dir": "~/Pictures/hud-teach",
+    // where the cell keeps the overlay script, its heartbeat and the last capture
+    // (defaults to a folder of the home)
+    "directory": null,
+    // the Tcl/Tk interpreter the overlay runs on (wish, wish8.6 and wish8.5 are tried)
+    "tcl": "wish",
+    // the longest edge of a capture, in pixels
+    "max_edge": 1280,
+    // seconds marks stay up when a draw names no time
+    "ttl_seconds": 180,
+    // seconds the overlay waits with nothing on screen before it quits
+    "idle_exit_seconds": 1800
+  }
+}

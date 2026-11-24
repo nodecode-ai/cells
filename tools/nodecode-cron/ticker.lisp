@@ -28,6 +28,15 @@
 ;;;; tool calls are refused and its answer is what it has, so a slow fire
 ;;;; still reports and the ticker never cancels one.
 ;;;;
+;;;; Each fire stands on its own. A fire that failed or was cancelled leaves
+;;;; its prompt on the job session's chain with no answer behind it, and the
+;;;; next fire's prompt would join it in one user message -- a job failing
+;;;; every minute sent every failed prompt again before its own. So before a
+;;;; fire, the fires at the tip of its session that failed or were cancelled
+;;;; are taken back off the visible chain (TAKE-BACK-FAILED-FIRES), the head
+;;;; move a retracted prompt takes: their facts stay in the log, and the
+;;;; job's LAST and the board still say what happened.
+;;;;
 ;;;; An answer is also RETURNED to the session that scheduled the job (the
 ;;;; job's ORIGIN) as that session's next request: one user message -- the
 ;;;; fire line, a colon, the whole answer -- through the same
@@ -40,6 +49,29 @@
 ;;;; steer would fold the text into a running turn without a turn of its
 ;;;; own. Until the ingress takes the message the report waits on the job's
 ;;;; row (durably, across a restart).
+;;;;
+;;;; A job whose fires keep failing stops itself: a prompt the provider
+;;;; refused is refused again when it is sent again unchanged, and a failed
+;;;; fire has no answer to report, so without this the job fired on with
+;;;; nobody told but the board. Each failed fire adds one to the job's
+;;;; FAILURES and any fire that answers sets it back to zero; when the run
+;;;; reaches the section's pause_after_failures (0 never), the job is
+;;;; paused, the board says why, and its origin is owed ONE report --
+;;;; the pause line, a colon, the last failure and how to resume -- sent
+;;;; the way an answer is. The wake is left to its own back-off
+;;;; (WAKE-SETTLED).
+;;;;
+;;;; A job may carry a CHECK, a shell command that decides whether a due
+;;;; instant is worth a turn: a poll that finds nothing costs no model call.
+;;;; At the due instant the schedule moves on and the command runs on a
+;;;; thread of its own (RUN-CHECK, bounded by check_timeout_seconds), so a
+;;;; slow check holds up no other job; the tick after it ends settles it
+;;;; (SETTLE-CHECK). Exit 0 fires the job for that instant, the command's
+;;;; output riding as run context; exit 1 lets the instant pass with no turn,
+;;;; the job's LAST `quiet'; any other exit -- an error, a missing command,
+;;;; the timeout -- is a failed check, counted in FAILURES like a failed
+;;;; fire, so a broken check pauses its job and tells its origin rather than
+;;;; skipping in silence. (cron:run) fires without the check.
 ;;;;
 ;;;; THREAD RULE: SUBMIT-PROMPT is the one seam that reaches the organism's
 ;;;; ingress -- a fire into the job's session and a report into its origin
@@ -64,6 +96,11 @@ turn has said so far."
 
 (defvar *inflight* '()
   "Fires whose turn has not settled. Guarded by *LOCK*.")
+
+(defvar *wake-read* nil
+  "(SINCE NEWS GAPS): what the wake's sources said, read before the cron lock
+was taken (WAKE-READ-NEWS, wake.lisp), for its gate to use while its cursor
+still is SINCE.")
 
 (defvar *worker* nil
   "The ticker thread while it runs (an NLK:WORKER), or NIL.")
@@ -116,9 +153,11 @@ schedule, the delivery rule, the limit. Data, so a layer can reword it.")
 (cron:run ...), a fire recovered at boot -- runs under the job's timeout."
   ;; Past it the turn's tool calls are refused and it answers with what it
   ;; has.
+  ;; A wake's turn is also held to its tool calls (wake.lisp).
   (nlk:if-let (job (with-cron-lock
                      (find (getf turn :session-id) *jobs* :key #'job-session :test #'equal)))
-    (list :seconds (job-timeout-seconds job))
+    (list* :seconds (job-timeout-seconds job)
+           (and (job-wake job) (list :calls (getf (job-wake job) :calls))))
     (funcall next turn)))
 
 (defun set-last (job now status &optional line turn-id)
@@ -141,35 +180,83 @@ schedule, the delivery rule, the limit. Data, so a layer can reword it.")
 (defparameter +line-limit+ 160
   "How much of an answer's first line rides on the board and the record.")
 
+;;; --- a failed fire is taken back --------------------------------------------------------
+
+(defun cron-fire-turn-p (turn-id)
+  "Whether TURN-ID is a fire: a turn the cron started, its invocation's
+source kind `cron'."
+  (let* ((text (nlk:events :turn-id turn-id :kind nlk::+kind-turn-started+
+                           :as :value :columns '("invocation_json")))
+         (invocation (and (stringp text) (ignore-errors (nlk:decode-json text)))))
+    (and invocation (equal "cron" (nlk:json-value invocation :string "source" "kind")))))
+
+(defun take-back-failed-fires (job)
+  "Move JOB's session head back past the fires at its tip that failed or were
+cancelled, so the next fire's request carries none of their prompts; => the
+turns taken back, oldest first."
+  ;; A turn the operator typed into the job's session is theirs and stays, and
+  ;; the walk stops at the first fire that completed. The move is a retract:
+  ;; no redo leads back to a failed fire. The caller has seen no turn running;
+  ;; the move re-checks that in its own transaction.
+  (let ((session job.session)
+        (parents nil)
+        (taken '()))
+    (when (and (nlk:store-open-p) (nlk:session-exists-p session))
+      (loop for turn = (nlk:session-head-turn-id session) then (gethash turn parents)
+            while (and turn
+                       (member (nlk:turn-terminal-kind turn)
+                               (list nlk::+kind-turn-failed+ nlk::+kind-turn-cancelled+)
+                               :test #'equal)
+                       (cron-fire-turn-p turn))
+            do (push turn taken)
+               (unless parents
+                 (setf parents (nlk:session-composed-parents session))))
+      (when taken
+        (nle::headless-head-move session (gethash (first taken) parents) "user_message"
+                                 nlk:+head-move-reason-retract+)))
+    taken))
+
 ;;; --- firing ---------------------------------------------------------------------------
 
-(defun advance-job (job now due &aux (next (next-fire job.schedule now :anchor due)))
+(defun advance-job (job now due &aux (next (if (job-wake job)
+                                                 (wake-safety-next job now)
+                                                 (next-fire job.schedule now :anchor due))))
   "Move the job past the fire due at DUE: the next fire after NOW, an
-interval anchored on DUE so its phase holds; none left is :DONE."
+interval anchored on DUE so its phase holds; none left is :DONE. The wake
+job's next instant is set when its fire settles (WAKE-SETTLED); until then
+it stands at its longest gap, so a fire that never settles still wakes."
   (setf job.next-at next)
   (unless next
     (setf job.state :done))
   next)
 
-(defun fire-job (job now &key extra manual)
+(defun fire-job (job now &key extra manual due)
   "Fire JOB now: advance its schedule, then submit one prompt into its
 session."
   ;; MANUAL is a (cron:run) -- the schedule is left alone and the command id
-  ;; names this instant. Returns the FIRE in flight, or NIL when nothing was
-  ;; submitted (the previous fire still runs, the admission was a duplicate,
-  ;; the ingress refused).
+  ;; names this instant. DUE is the instant a check let through
+  ;; (SETTLE-CHECK): the schedule moved past it when the check started, and
+  ;; the command id names it. Returns the FIRE in flight, or NIL when nothing
+  ;; was submitted (the previous fire still runs, the admission was a
+  ;; duplicate, the ingress refused).
   (let* ((id job.id)
-         (due (or job.next-at now))
+         (checked due)
+         (due (or due job.next-at now))
          (command-id (if manual
                          (format nil "cron:~a:run:~d" id (unix-from-universal now))
                          (format nil "cron:~a:~d" id (unix-from-universal due)))))
-    (unless manual
+    (unless (or manual checked)
       (advance-job job now due))
     (incf job.fires)
     (when (session-turn-active-p job.session)
       (set-last job now "overrun" "previous fire still running")
       (post job :warning "cron ~a: previous fire still running; this fire skipped" id)
       (return-from fire-job nil))
+    ;; Each fire stands on its own: the failed fires before it are taken back
+    ;; first. One that cannot be is warned about, and the fire still goes.
+    (nlk:with-handlers ((error (condition)
+                          (warn "cron: the failed fires of ~a not taken back: ~a" id condition)))
+      (take-back-failed-fires job))
     (let ((fire (make-fire :job-id id :session job.session))
           ;; The fire that makes the job's session names it for the job, as
           ;; every list reads it: "minute check · every 1m", not the fire's
@@ -210,6 +297,120 @@ session."
           ;; Nothing was submitted: the fire leaves the list.
           (progn (setf *inflight* (cl:remove fire *inflight*))
                  nil)))))
+
+;;; --- the check ------------------------------------------------------------------------
+
+(nlk:define-record (check-run (:copier nil))
+  "A job's check running for one due instant: the job, the instant, the
+command and its bound, and once the command ends, its output and status."
+  ;; STATUS is NIL while the command runs. Guarded by *LOCK*.
+  (job-id "" :type string)
+  (due 0 :type integer)
+  (command "" :type string)
+  (timeout 60 :type integer)
+  (output nil :type (or null string))
+  (status nil :type (or null integer)))
+
+(defvar *checks* '()
+  "Checks not settled yet, running or ended. Guarded by *LOCK*.")
+
+(defun check-timeout-seconds ()
+  (if *cron* (setting :check-timeout-seconds) 60))
+
+(defun run-check (command directory session timeout)
+  "Run COMMAND through the shell in DIRECTORY, past TIMEOUT seconds killed;
+(values OUTPUT STATUS), as NLE:SH answers them."
+  ;; The seam a test may stub. The child reads the job's session as its own
+  ;; (NODECODE_SESSION_ID); a DIRECTORY that is NIL is that session's cwd.
+  (let ((nlk:*scribe-session-id* session))
+    (nle:sh command :directory directory :timeout timeout)))
+
+(defun start-check (job due)
+  "Run JOB's check for the instant DUE on a thread of its own; the tick after
+it ends settles it."
+  (let ((check-run (make-check-run :job-id job.id :due due :command job.check
+                                   :timeout (check-timeout-seconds)))
+        (directory job.cwd)
+        (session job.session))
+    (push check-run *checks*)
+    (nlk:spawn (format nil "cron check ~a" job.id)
+      (multiple-value-bind (output status)
+          (handler-case (run-check check-run.command directory session check-run.timeout)
+            ;; A command that cannot start at all (its folder gone) is a
+            ;; failed check like any other.
+            (error (condition) (values (princ-to-string condition) -1)))
+        (with-cron-lock
+          (setf check-run.output (or output "")
+                check-run.status (if (integerp status) status -1)))
+        ;; No ticker in a test, and none after a stop.
+        (ignore-errors (poke))))
+    check-run))
+
+(defun check-due (job now due)
+  "JOB, gated by a check, is due at DUE: move its schedule on and start the
+check, unless its last one still runs."
+  (advance-job job now due)
+  (if (find job.id *checks* :key #'check-run-job-id :test #'string=)
+      (progn (set-last job now "overrun" "previous check still running")
+             (post job :warning "cron ~a: previous check still running; this fire skipped" job.id)
+             nil)
+      (start-check job due)))
+
+(defparameter +check-context-limit+ 4000
+  "How much of a check's output rides into the fire it lets through.")
+
+(defun check-output-text (check-run)
+  "The check's output without the status lines NLE:SH appends, trimmed."
+  (nlk:trimmed (ppcre:regex-replace-all "(?m)^\\[(?:exit -?\\d+|timed out after [^\\]]*)\\]\\s*$"
+                                        (or check-run.output "") "")))
+
+(defun check-context (check-run &aux (output (check-output-text check-run)))
+  "What a check that let its fire through hands the fire: the command, and
+what it printed."
+  (format nil "the check `~a` exited 0~:[ and printed nothing~;; it printed:~%~a~@[~%[cut at ~:d characters]~]~]"
+          check-run.command (plusp (length output))
+          (subseq output 0 (min (length output) +check-context-limit+))
+          (and (> (length output) +check-context-limit+) +check-context-limit+)))
+
+(defun check-detail (check-run &aux (output (check-output-text check-run)))
+  "A failed check as one line: how it ended, then the first line it printed."
+  ;; The command stays out: a long one would push the error past the line
+  ;; limit, and (cron:show) names it.
+  (nlk:first-line
+   (format nil "check ~:[exited ~d~*~;timed out after ~*~d s~]~@[: ~a~]"
+           (search "[timed out after" (or check-run.output ""))
+           check-run.status check-run.timeout
+           (and (plusp (length output)) (nlk:first-line output +line-limit+)))
+   +line-limit+))
+
+(defun settle-check (check-run now)
+  "Take an ended check off the list and act on its job: exit 0 fires it,
+exit 1 lets the instant pass, anything else is a failure. => the FIRE
+started, or NIL."
+  (setf *checks* (cl:remove check-run *checks*))
+  (let ((job (find-job check-run.job-id))
+        (status check-run.status))
+    ;; A job removed, paused, or given another check while this one ran
+    ;; takes nothing from it. A once job that is :DONE still fires.
+    (when (and job (not (eq job.state :paused)) (equal job.check check-run.command))
+      (case status
+        (0 (fire-job job now :due check-run.due :extra (check-context check-run)))
+        (1
+         ;; A check that runs again ends a run of failed checks; a run of
+         ;; failed fires goes on until a fire answers.
+         (when (equal (getf job.last :status) "check failed")
+           (setf job.failures 0)
+           (post-clear job))
+         (set-last job now "quiet" "the check found nothing to do")
+         nil)
+        (t
+         (let ((detail (check-detail check-run)))
+           (set-last job now "check failed" detail)
+           (incf job.failures)
+           (if (pause-on-failures-p job)
+               (pause-on-failures job now detail "checks")
+               (post job :error "cron ~a: ~a" job.id detail))
+           nil))))))
 
 ;;; --- the :FRAME hook ----------------------------------------------------------------------
 
@@ -253,7 +454,70 @@ local time, the schedule, the session that holds the whole run.")
 output in one user message.
 Data, so a layer can reword it.")
 
+(defparameter *pause-input*
+  "[cron ~s paused ~a after ~d failed ~a in a row, schedule ~a; its session is ~a]"
+  "The first line of the request that tells the origin its job paused
+itself: the job, the local time, the run of failures and what failed (fires
+or checks), the schedule, the session that holds the failed fires.
+Data, so a layer can reword it.")
+
+(defparameter *pause-answer*
+  "The last one failed~@[: ~a~]. The job fires no more until (cron:resume ~s); ~
+(cron:edit ~s :prompt \"...\") changes what it sends, (cron:remove ~s) drops it, and ~
+(cron:runs ~s) lists the failed fires."
+  "What follows the pause line: the last failure and the verbs that act on it.
+Data, so a layer can reword it.")
+
+(defun origin-to-tell (job &aux (origin job.origin))
+  "The session a report on JOB goes to: its origin, unless it has none or the
+origin is the job's own session."
+  (and (stringp origin) (plusp (length origin))
+       (not (string= origin job.session))
+       origin))
+
+(defun failures-limit ()
+  "How many failed fires in a row pause a job; 0 never does."
+  (if *cron* (setting :pause-after-failures) 3))
+
+(defun pause-on-failures-p (job &aux (limit (failures-limit)))
+  "Whether JOB's run of failed fires has reached the limit: an ordinary job
+still active; the wake backs off by itself (WAKE-SETTLED)."
+  (and (plusp limit)
+       (>= job.failures limit)
+       (eq job.state :active)
+       (null (job-wake job))))
+
+(defun pause-on-failures (job now detail-line &optional (what "fires"))
+  "JOB's fires (or checks, WHAT) failed its limit of times in a row: pause
+it, say why on the board, and owe its origin one report."
+  (let* ((id job.id)
+         (detail (and (plusp (length detail-line)) detail-line))
+         (input (format nil *pause-input* job.name (local-text now) job.failures what
+                        (schedule-display job.schedule) job.session))
+         (answer (format nil *pause-answer* detail id id id id)))
+    (setf job.state :paused)
+    (post job :error "cron ~a paused after ~d failed ~a in a row~@[: ~a~]; (cron:resume ~s) runs it again"
+          id job.failures what detail id)
+    (when (origin-to-tell job)
+      (let ((pending job.report))
+        ;; An answer still waiting for the origin goes first; the pause rides
+        ;; after it in the same request, so neither is lost.
+        (setf job.report
+              (if pending
+                  (list :input (getf pending :input)
+                        :answer (format nil "~a~%~%~?" (getf pending :answer)
+                                        *report-message* (list input answer))
+                        :at (getf pending :at))
+                  (list :input input :answer answer :at now)))))))
+
 ;;; --- settling -----------------------------------------------------------------------------
+
+(defun silent-answer-p (answer)
+  "Whether ANSWER is the silence marker -- SILENT, [SILENT], NO_REPLY, NO
+REPLY, trimmed and case-insensitive -- or no answer at all."
+  (member (nlk:trimmed (or answer ""))
+          '("" "silent" "[silent]" "no_reply" "no reply")
+          :test #'string-equal))
 
 (defun settle-fire (fire now)
   "Take a terminal fire off the list and onto its job: LAST and the board."
@@ -269,9 +533,9 @@ Data, so a layer can reword it.")
          ;; Silence: the marker alone — SILENT, [SILENT], NO_REPLY, NO REPLY,
          ;; trimmed and case-insensitive — or no answer at all. A blank is
          ;; silence too: a real failure arrives as a failure, never as a blank.
-         (if (member (nlk:trimmed (or fire.answer ""))
-                     '("" "silent" "[silent]" "no_reply" "no reply")
-                     :test #'string-equal)
+         ;; Any fire that answers ends a run of failures.
+         (setf job.failures 0)
+         (if (silent-answer-p fire.answer)
              (progn
                ;; A silent fire is a success: a failure or a cancel still
                ;; standing under the job's key is over, and the board drops
@@ -281,13 +545,10 @@ Data, so a layer can reword it.")
                (when (member (getf job.last :status) '("failed" "cancelled") :test #'equal)
                  (post-clear job))
                (set-last job now "silent" nil turn-id))
-             (let ((line (nlk:first-line (nlk:trimmed fire.answer) +line-limit+))
-                   (origin job.origin))
+             (let ((line (nlk:first-line (nlk:trimmed fire.answer) +line-limit+)))
                (set-last job now "ok" (and (plusp (length line)) line) turn-id)
                ;; The report owed to the origin: none without one, or when it is the job's own.
-               (when (and (plusp (length line))
-                          (stringp origin) (plusp (length origin))
-                          (not (string= origin job.session)))
+               (when (and (plusp (length line)) (origin-to-tell job))
                  (setf job.report
                        (list :input (format nil *report-input* job.name (local-text now)
                                             (schedule-display job.schedule) job.session)
@@ -296,23 +557,35 @@ Data, so a layer can reword it.")
                      (if (plusp (length line)) line "(finished with no text)")))))
         ((equal status "turn.failed")
          (set-last job now "failed" detail-line turn-id)
-         (post job :error "cron ~a failed: ~a" id detail-line))
+         (incf job.failures)
+         (if (pause-on-failures-p job)
+             (pause-on-failures job now detail-line)
+             (post job :error "cron ~a failed: ~a" id detail-line)))
         (t
          (set-last job now "cancelled" detail-line turn-id)
          (post job :info "cron ~a: cancelled~@[: ~a~]" id
-               (and (plusp (length detail-line)) detail-line)))))))
+               (and (plusp (length detail-line)) detail-line))))
+      (when (job-wake job)
+        (wake-settled job status fire.answer now)))))
 
 ;;; --- the tick -----------------------------------------------------------------------------
 
 (defun tick (&optional (now (get-universal-time)))
   "Everything the clock owes at NOW: settle the fires that ended, fire or
 miss every due job, write the row once."
-  ;; Returns the number of fires started.
-  (with-cron-lock
+  ;; Returns the number of fires started. The wake's news is read first,
+  ;; outside the lock (WAKE-READ-NEWS).
+  (let ((*wake-read* (wake-read-news now)))
+   (with-cron-lock
     (let ((fired 0)
           (changed nil))
       (dolist (fire (cl:remove-if-not #'fire-status (copy-list *inflight*)))
         (settle-fire fire now)
+        (setf changed t))
+      ;; Every check that ended: its fire goes now, or its instant passes.
+      (dolist (check-run (cl:remove-if-not #'check-run-status (copy-list *checks*)))
+        (when (settle-check check-run now)
+          (incf fired))
         (setf changed t))
       ;; Every pending report, once: it waits without a store or a willing ingress.
       (dolist (job (copy-list *jobs*))
@@ -335,26 +608,39 @@ miss every due job, write the row once."
                                       (format nil "cron:~a:report:~d" (job-id job)
                                               (unix-from-universal (getf report :at)))
                                       (job-id job)))
-                     '(:started :queued :duplicate))
+                     ;; A room's kit may steer a report into the lane that
+                     ;; holds the origin's thread now: delivered too.
+                     '(:started :queued :steered :duplicate))
              (setf job.report nil
                    changed t)))))
       (dolist (job (copy-list *jobs*))
         (let ((due job.next-at))
           (when (and (eq job.state :active) due (<= due now))
             (setf changed t)
-            (if (> (- now due) (schedule-grace job.schedule due))
-                (let* ((late (- now due))
-                       (next (advance-job job now due)))
-                  (set-last job now "missed"
-                            (format nil "due ~a, seen ~a late" (local-text due) (duration-text late)))
-                  (post job :warning "cron ~a: missed its ~a fire by ~a~@[; next ~a~]"
-                        job.id (local-text due) (duration-text late)
-                        (and next (at-text next now))))
-                (when (fire-job job now)
-                  (incf fired))))))
+            (cond
+              ;; A wake is never missed: late or not, its due instant
+              ;; passes its gates once (WAKE-DUE).
+              ((job-wake job)
+               (when (wake-due job now)
+                 (incf fired)))
+              ((> (- now due) (schedule-grace job.schedule due))
+               (let* ((late (- now due))
+                      (next (advance-job job now due)))
+                 (set-last job now "missed"
+                           (format nil "due ~a, seen ~a late" (local-text due) (duration-text late)))
+                 (post job :warning "cron ~a: missed its ~a fire by ~a~@[; next ~a~]"
+                       job.id (local-text due) (duration-text late)
+                       (and next (at-text next now)))))
+              ;; A check decides whether the instant is worth a turn; with
+              ;; a fire still running, FIRE-JOB skips it without one.
+              ((and job.check (not (session-turn-active-p job.session)))
+               (check-due job now due))
+              (t
+               (when (fire-job job now)
+                 (incf fired)))))))
       (when changed
         (persist-jobs))
-      fired)))
+      fired))))
 
 (defparameter +longest-sleep-seconds+ 3600
   "The ticker looks at the clock at least hourly whatever the registry says.")

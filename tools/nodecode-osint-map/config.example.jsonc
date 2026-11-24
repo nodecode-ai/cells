@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it. No key is needed for the cell to run.
+{
+  "osint-map": {
+    "markets": "crypto",              // crypto, or twelvedata for equities and commodities
+    "twelvedata_api_key": "TWELVEDATA_API_KEY",  // the variable holding the optional key
+    "user_agent": "nodecode-osint-map/0.1 (+https://nodecode.ai)",
+    "timeout_seconds": 15,
+    "max_items": 20,
+    "cache_seconds": 60
+  }
+}

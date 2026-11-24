@@ -1,7 +1,7 @@
 # nodecode-zai-coding-plan
 
 A Nodecode cell for [Z.AI](https://z.ai)'s GLM Coding Plan, signed in from
-the browser. With it, `/zai-coding-plan login` signs the plan in, `/models`
+the browser. With it, `/zai-coding-plan` signs the plan in, `/models`
 lists GLM-5.3 and its kin, and a turn goes to Z.AI the way oh-my-pi sends it:
 
 - every GLM model omp knows rides the Anthropic Messages endpoint at
@@ -19,7 +19,7 @@ Ported from [oh-my-pi](https://github.com/can1357/oh-my-pi)'s
 ## Sign in
 
 ```
-/zai-coding-plan login
+/zai-coding-plan → Sign in
 ```
 
 answers at once with the address to open. It is ZCode's own sign-in: Z.AI
@@ -28,7 +28,7 @@ so when the browser lands there (or offers to open ZCode), copy that whole
 address, or the code in it, and paste it:
 
 ```
-/zai-coding-plan code zcode://zai-auth/callback?code=...&state=...
+/zai-coding-plan → Paste where the browser landed  like zcode://zai-auth/callback?code=...&state=...
 ```
 
 The sign-in finishes in the background and says how it went as a notice. It
@@ -36,8 +36,8 @@ exchanges the code for a short-lived token, logs in to Z.AI's business API
 with it, finds or creates a key named `nodecode` in the account's default
 project, and keeps `<apiKey>.<secretKey>` in auth.json under
 `oauth_tokens.zai-coding-plan`. That key does not expire, so nothing is
-refreshed. `/zai-coding-plan status` says whether the plan is signed in,
-`/zai-coding-plan logout` forgets the key (it stays live at Z.AI until you
+refreshed. `/zai-coding-plan` says whether the plan is signed in,
+**Sign out** in `/zai-coding-plan` forgets the key (it stays live at Z.AI until you
 delete it there).
 
 Without the sign-in: make a key at <https://z.ai/manage-apikey/apikey-list>

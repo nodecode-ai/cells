@@ -1,0 +1,8 @@
+nodecode-lightning-ai is a rewrite of dinosauria123's dinosauria123/hermes-lightningai-rate-limit:
+  https://github.com/dinosauria123/hermes-lightningai-rate-limit
+  commit dc7911a946f0b209a81cf680c168382177bb13bf
+  MIT, Copyright (c) dinosauria123 (LICENSE)
+
+What was rewritten: the Hermes plugin is a 112-line Python module that registers one `llm_execution` middleware — a wall-clock aligned token bucket of 15 requests a minute that gates only calls whose provider or base_url points at Lightning AI, resyncs its counter from the server's `x-ratelimit-remaining-requests` header, and parks the rest of the window when a 429 comes back. This cell keeps that behaviour in Common Lisp: the same wall-clock window, the same count and limit, the same parking on a 429, and a gate that leaves every other provider alone. It hangs on the same seam — Nodecode has no middleware stack, so the gate wraps the provider transport every streaming lane shares, which is the one place a model request leaves the process. The settings that were constants in the plugin (the limit, the window) are a declared config section instead, and `/lightning-ai` reports what the plugin only kept in memory.
+
+What was left out: the server-counter resync. The plugin read `x-ratelimit-remaining-requests` off each response and adopted the server's count; Nodecode's transport hands a lane its frames and not the response headers, so this cell learns from a 429 alone, which is the case the resync existed for. The Hermes provider-key matching ("lightning", "lightning-ai", "lightningai") became a list of hosts, because a Nodecode provider is an id of the operator's choosing and the endpoint is what identifies the wire.

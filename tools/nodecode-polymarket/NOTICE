@@ -1,0 +1,9 @@
+nodecode-polymarket is a rewrite of HATWHY4041's HATWHY4041/prediction-market-scout:
+
+  https://github.com/HATWHY4041/prediction-market-scout
+  commit c11bf13fb70c94550669efdd7c9e46c1e8a408af
+  MIT, Copyright (c) 2026 HATWHY4041 (LICENSE)
+
+What was rewritten: the whole plugin, in Common Lisp against Nodecode's cell contract. The six polymarket_* tools keep their names, arguments and the data they reach (Gamma's markets, search and one-market endpoints, and CLOB's price history on the same two public hosts), and so do the movers, signals, watchlist and briefing rules, their thresholds and their words. The watchlist lives in a Lisp-readable file under the home, rewritten after every change, instead of the harness's plugin state. /pm became /polymarket, so the command and the manual topic cannot collide with another cell's, and the briefing is one tool, one command and one cron turn instead of two Hermes automation blueprints. Settings became the cell's typed section, so the same declaration renders the setup panel, the refusal and the model's primer; the six tool schemas became boundary contracts. The Python plugin's manifest, its skills folder and its tests are not carried over: the primer is the manual, and the tests are this folder's own, offline against a stubbed wire.
+
+What was left out: nothing the operator could do with it. Its two one-click scheduled tasks were Hermes automation blueprints, which Nodecode has no equivalent of; the briefing is meant to be scheduled from a cron cell turn instead, and the skill's guidance now lives in (help :polymarket).

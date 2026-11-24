@@ -1,0 +1,26 @@
+nodecode-agentpurse is a rewrite of maaz-bin-hassan's maaz-bin-hassan/agentpurse:
+
+  https://github.com/maaz-bin-hassan/agentpurse
+  commit 84a1ed7cc9dbac462a5bde8b65f6d105cc56b20b
+  MIT, Copyright (c) 2026 MaAz Khan Hassan (LICENSE)
+
+Rewritten: plugins/hermes, the Hermes plugin, as one Nodecode cell. Its twelve
+MCP tools are twelve Lisp verbs in the purse: package, called through eval and
+answering the server's own JSON; its /purse command is this cell's, with the
+same budget, receipts, kill switch and resume, plus the pending purchase the
+Hermes prompt used to hold; its JSON-RPC client is reimplemented on dexador with
+the same rules (one session per call, reads retried, purchases never retried,
+redirects refused, https or localhost only); its gate keeps the same blocks
+(kill switch, blocked merchant, a guard block, the allowance, the per-session
+limit, integer cents) and its one-time grants keep the same shape and ten-minute
+ttl, in a JSON file under the home rather than in Hermes plugin state.
+
+Left out: Hermes' own approval prompt and its `post_approval_response` hook,
+which do not exist here. In their place a purchase asks the person watching
+through nlk:ask-operator, and a shell that cannot answer a question (the TUI
+alone) holds the purchase for /purse approve, typed by the person. Also left
+out: the attendance classifier that reads Hermes' session environment variables
+(here, no answering surface and no approval means nothing is sent, which is the
+same fail-closed answer), the bundled skills/shop/SKILL.md as a skill file (its
+rules are the primer and the tool descriptions), the catalog/ and DEMO.md, and
+the Python tests, rewritten as this cell's own offline test.

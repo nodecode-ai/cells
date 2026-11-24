@@ -1,0 +1,22 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell -
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration.
+{
+  "yandex-mail": {
+    "enabled": true,
+    "login": "you@yandex.ru",
+    "app_password_env": "YANDEX_MAIL_APP_PASSWORD",
+    // "app_password": "a value pasted here is kept in a 0600 file",
+    "imap_host": "imap.yandex.ru",
+    "imap_port": 993,
+    "smtp_host": "smtp.yandex.ru",
+    "smtp_port": 465,
+    // "folders": ["INBOX", "Archive"],
+    // "actions": ["read", "write"],   // all but saving and sending, by default
+    // "send_to": ["@example.com"],
+    // "attachment_dir": "~/mail/",
+    // "trash": "Trash",
+    "max_attachment_bytes": 104857600,
+    "timeout": 30
+  }
+}

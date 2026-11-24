@@ -1,0 +1,32 @@
+nodecode-watchline is a rewrite of qordinate-ai's qordinate-ai/watchline-hermes-plugin:
+
+  https://github.com/qordinate-ai/watchline-hermes-plugin
+  commit d3d2424336af16cae94e4bbcb47e6edd07a88062
+  MIT License, Copyright (c) 2026 Watchline (LICENSE)
+
+Rewritten: the plugin registered a Hermes gateway platform that polled a
+Watchline pull channel (`POST /v1/deliveries.pending`), formatted each matched
+event as the inbound message its harness received, and acknowledged the ids
+(`POST /v1/deliveries.ack`) only after the harness took them. All of that is
+here, over the same two routes with the same bearer key and the same request
+shape: a worker polls every `watchline.poll_interval_seconds`, puts each
+delivery into the `watchline` session through the in-process ingress with one
+command id per delivery (so a re-poll admits a duplicate rather than starting a
+second turn), and acknowledges the pass in one call. The message the event
+becomes is the original's `format_delivery` line for line -- the user's intent,
+"use this event as fresh context", the event as JSON, or for a watch that needs
+the operator, the action and its connection links -- under the platform hint
+the original carried, that the event is not a message from a person. Its
+`preview-delivery` command survives as `/watchline preview`, its `status` as
+`/watchline status`, and the config it wrote into the harness (platform entry
+plus MCP server, `configure` and `install-mcp`) became the cell's `watchline`
+section, which `/settings` writes. One tool is new: `watchline_pending`, the
+pass read without acknowledging anything, because a model that can see what is
+waiting is worth more than one that only learns of it after the fact.
+
+Left out: the MCP server entry the original installed into Hermes config
+(Watchline's hosted MCP tools are the harness's own business, and a Nodecode
+agent reaches HTTP APIs directly), the Hermes `config.yaml` writing and its
+`configure`/`install-mcp` commands (a cell's config is its declared section),
+and the plugin manifest's `WATCHLINE_*` variables other than the key and
+channel, which are section members here.

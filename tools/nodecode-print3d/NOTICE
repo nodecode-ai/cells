@@ -1,0 +1,26 @@
+nodecode-print3d is a rewrite of mfranzon's mfranzon/print3d:
+
+  https://github.com/mfranzon/print3d
+  commit ff98a8c07253a90f5e4afefa42c2ffd893797eec
+  MIT License, Copyright (c) 2026 mfranzon (LICENSE)
+
+The rewrite keeps the plugin's working loop without its Python server. What it
+keeps: the job folder and its spec, where every dimension carries where it
+came from (the user, a shop listing, or assumed with a reason); the cheap
+printability checks on a triangle mesh before anything is sliced -- size
+against the X2D bed, volume, manifold, whether the part sits on the bed, each
+note with the fix to apply, which is what the plugin's dfm.py and
+printability.py said in the model's own words; the model.py-is-the-model
+convention, run headless through the user's own Blender and exported to a
+path handed to the script after `--`; and the slice through the user's own
+Bambu Studio with --ensure-on-bed, as the plugin's studio.py built it.
+
+What is left out is everything that needed Python imaging and a browser: the
+photo measuring (scale from a reference card, rectified faces, point picking
+on a grid crop, tolerances per view), the likeness overlay against an
+outlined photo, the HTML viewer with the model in three.js, the handoff print
+sheet, the fit coupon, the pinned slicer profiles and the parts-and-fits
+guide. The cell also does not read back the sliced .3mf's estimated time and
+filament use, which the plugin parsed out of the plate gcode; the .3mf is
+handed over as a file. The job spec is a Lisp-readable file rather than
+JSON, because nothing but this cell reads it.

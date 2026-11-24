@@ -1,0 +1,31 @@
+{
+  // The bubblewrap cell's section of ~/.nodecode/config.jsonc. Nothing here is
+  // a secret: the box is made by bwrap and prlimit, both on this machine.
+  "bubblewrap": {
+    // The one directory a command may write. Point it at a project or a
+    // scratch directory, never at your home directory.
+    "root": "~/work/scratch",
+
+    // restricted: read-only, no network. workspace: writable, no network.
+    // network: writable, the host network.
+    "profile": "network",
+
+    // Per-command rlimits. 0 disables one.
+    "memory_mb": 2048,
+    "cpu_seconds": 60,
+    "max_procs": 256,
+    "timeout_seconds": 120,
+
+    // dot: hide the home directory's dot entries off the allowlist.
+    // all: hide every entry off it.
+    "home_default_deny": "dot",
+
+    // More of the home directory shown read-only, and more paths hidden.
+    "home_allow": [".config/nvim"],
+    "hide": ["~/Documents/keys"],
+
+    // More host paths, mounted at their own paths.
+    "binds": ["/srv/models"],
+    "bind_rw": []
+  }
+}

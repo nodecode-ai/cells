@@ -1,0 +1,33 @@
+nodecode-browserless is a rewrite of browserless's browserless/browserless-mcp:
+
+  https://github.com/browserless/browserless-mcp
+  commit 600a5d689fa3f5bdcb5676ffc063b56d18e9bd7c
+  MIT License, Copyright (c) 2026 Browserless (LICENSE)
+
+The plugin is a Hermes browser provider: for one browser task it launches a
+Browserless cloud browser over CDP and starts a local multiplexer in front of
+it, so Hermes' own browser tools drive that browser. This cell reaches the
+same service a different way, because Nodecode's browser tools belong to
+other cells: Browserless' REST endpoints, one call per page, registered as
+three model tools. The launch options are the plugin's own and keep their
+meaning — the stealth route (stealth on by default), the residential proxy
+with its country and sticky IP, ad blocking, captcha solving, the session
+timeout and the region endpoint — sent as the query string Browserless'
+REST API reads them off, with the page's own waits in the JSON body. The
+token is read where the plugin reads it (an environment variable, or a file
+the operator owns), rides the query as the API takes it, and is taken back
+out of anything the cell says. The plugin's HTTP status explanations, its
+plan-timeout handling and its account page link are kept: a rejected token,
+a concurrency limit and a refused render each say which of them it was.
+
+Left out: the CDP multiplexer and the reconnect/session-API upstreams, which
+exist so several CDP clients share one browser — a REST call is one page,
+one connection, so there is nothing to multiplex, and Browserless closes the
+browser itself; the `browserless-hermes-plugin/<version>` User-Agent tag,
+because this cell is a different client of the same account; the "fall back
+to local Chrome when a session cannot start" rule, which is Hermes' browser
+selection and not a cell's, so a failed call answers why instead; the
+`hermes plugins install` script and the plugin's manual smoke test; and the
+click, type and navigate loop itself — the plugin supplies a browser to
+Hermes' tools, while here each tool call is one whole page, so what the
+model drives is the page's text, a screenshot or a PDF.

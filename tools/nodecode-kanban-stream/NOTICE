@@ -1,0 +1,29 @@
+nodecode-kanban-stream is a rewrite of mbgulden's mbgulden/hermes-kanban-stream:
+https://github.com/mbgulden/hermes-kanban-stream
+commit d6c3e802eefb6ec1e09ad002a1bf7d45b13104a8
+MIT, Copyright (c) 2026 Michael Gulden (LICENSE)
+
+The original was a plugin for another agent harness: it registered six hooks
+around a kanban worker (a tool call, its result, a model round, a request's
+usage, a task's completion and its blocking), held one message per task in
+Telegram, rewrote it on a throttle with the tool calls, the elapsed time and
+the tokens a second, and ended with one rewrite that it pinned. It also
+shipped a companion daemon that long-polled Telegram for `/steer` and posted
+the instruction as a task comment.
+
+This rewrite keeps that whole shape on Nodecode's seams: the turn of a
+session replaces the kanban task, and one :FRAME hook reading the durable
+facts (turn.tool_call_started, turn.usage, turn.completed / turn.failed /
+turn.cancelled) replaces the six callbacks. A message is still opened by the
+first tool call, still rewritten on a throttle into the same message, still
+finished once and pinned; the token, chat and allowlist come from the cell's
+own config section rather than from environment variables and a secret
+scope.
+
+Left out: the `/steer` companion daemon and the `[steer]` comment watch —
+Nodecode's own `steer_turn` submits a prompt into a running session, so a
+second long-poll that wrote comments would duplicate the harness; steering
+from a chat is what the telegram channel cell already does. Also left out:
+the `[no-stream]` body marker (the `sessions` list says which sessions
+stream), the SQLite reads of the original's board (Nodecode's session store
+is the harness's, not a cell's), and the Hermes secret-scope integration.

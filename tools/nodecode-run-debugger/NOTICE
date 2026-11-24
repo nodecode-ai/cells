@@ -1,0 +1,36 @@
+nodecode-run-debugger is a rewrite of Sahil-SS9's Sahil-SS9/agent-run-debugger:
+
+  https://github.com/Sahil-SS9/agent-run-debugger
+  commit f4eefefb47372afedee56618c89c6fbc5024ca2a
+  Apache-2.0 (LICENSE); its copyright line is the stock placeholder
+  "Copyright [yyyy] [name of copyright owner]", and the repository's NOTICE
+  names the holder only by name, so the holder is taken as the author's
+  GitHub handle, Sahil-SS9.
+
+The original is a Python plugin for another harness: a strict Trace v1 contract, a
+bounded JSONL reader with guards against archives and raw databases, a redaction
+pass, an SQLite store with a retention window, a topological timeline, a
+diagnosis of twelve rules, an inert replay, markdown/JSON/HTML reports and an
+operator CLI, plus importers for two foreign transcript shapes. What was
+rewritten here is the same lane in Common Lisp and nothing else: the guarded
+reader, the strict reading of the event vocabulary, the digest of the bytes read,
+the store (one JSON file a run under the home, pruned by the section's retention),
+the partial-order timeline with its gaps and its concurrent pairs, the ranked
+hypotheses with their alternatives and falsifiers, the reported cost, and the
+inert replay. The five tools keep the original's names, and /rundebug covers the
+subcommands the original's CLI took, with the report kept to the operator's own
+command and written under the home.
+
+What was left out, and why: the two foreign-transcript importers (a Claude Code
+JSONL session and a session export of the other harness) are not ported, so this
+cell reads the debugger's own trace format only; the SQLite store became one JSON
+file a run (the same retention, no database to keep in step); the HTML and JSON
+report formats are gone in favour of the one markdown report; the reserved lanes
+the original declares and refuses (capture, live session read, model narration,
+sandboxed experiments) stay unimplemented here, and `rundebug_status` says so; the
+`import_max_depth` nesting bound and the envelope's `covered_kinds`,
+`unsupported_kinds` and `private_digests` members are not carried, since this
+reader bounds bytes, lines and records instead; unknown fields in a record are
+ignored rather than refused, because the format is this cell's own and the source
+is a person's file rather than another program's contract; and the operator CLI
+with its subcommand parser is a slash command and five tools instead.

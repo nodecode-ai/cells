@@ -1,0 +1,28 @@
+nodecode-deepcanary is a rewrite of Oscar-Williams's Oscar-Williams/dsh-deepcanary:
+
+  https://github.com/Oscar-Williams/dsh-deepcanary
+  commit 07a56658e8e6130644da68c68b57067dbe3c09c4
+  MIT License, Copyright (c) 2026 Oscar Williams (LICENSE)
+
+Rewritten: the four attention levels and what each one means, taken from the
+original's own table and architecture notes (C3 a question or approval that
+blocks the work, C2 an observed failure or abnormal state, C1 an informational
+update, C0 healthy work that needs nothing); the reason table with its
+fourteen reason codes; the rule that evidence authority bounds a level, so a
+heuristic guess never makes a blocking one; the local inbox with its receipt
+of what was raised, its bundled duplicates, and acknowledge, snooze, mute and
+feedback; the delivery gate with quiet hours that may span midnight, an hourly
+interrupt budget from which a blocking item is exempt, a deduplication window
+and a retention cap; the privacy-safe summary; and the idea that the inbox is
+read by the model as well as by the operator.
+
+Left out, because each belongs to the host's own surfaces rather than to a
+file and a verb: the dockable window, the Pending/Snoozed/Activity views and
+their keyboard and layout handling; the browser and Windows-toast sinks, the
+native session navigation, and the host-health and persistent-supervisor
+probes that turned DSH session events into signals; the redacted outcome
+receipts and the dogfood, benchmark and release-gate machinery that read them;
+the Chinese documentation and the settings migration from an older DSH
+profile. What produced the signals there is a set of DSH adapters; here the
+model raises an item with its reason and its evidence authority, and the
+policy, the gate and the inbox are the same judgement as before.

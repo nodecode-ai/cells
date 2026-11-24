@@ -1,0 +1,37 @@
+nodecode-freshdesk is a rewrite of aedelgod's aedelgod/hermes-plugin-freshdesk:
+
+  https://github.com/aedelgod/hermes-plugin-freshdesk
+  commit 86d2f5312c1a1184516bef649ecb16f3fccc9011
+  MIT License, Copyright (c) GFORGOV® (LICENSE)
+
+Rewritten: the plugin's eleven model-facing Freshdesk v2 tools with their
+names, argument schemas and answer shapes -- bounded ticket pagination with
+the truncated flag, the filtered ticket search that builds and URL-encodes its
+own query, one-ticket and one-contact reads, the bounded conversation list,
+the attachment download that resolves its URL from the ticket, and the five
+writes (private note, create, reply, time entry, update) with their plain-text
+HTML escaping, their canonical H:MM durations, and the readback that compares
+every field before success. Also kept: the account-origin rules (a native
+https://<account>.freshdesk.com, never a custom CNAME), the Basic-auth header
+that never appears in a URL or an answer, the attachment-origin tiers and the
+dot-segment check that decide whether the key travels with a download, the
+4 MiB answer and 25 MiB attachment ceilings, Freshdesk's own words in a
+refusal, and the write_may_have_succeeded state with retry_safe false for a
+write that could not be verified. The Python (urllib, base64, html.escape,
+re) is Common Lisp here: nlk:http for the wire, one section declaration for
+the settings, and eleven nlk:define-contract declarations for the tools'
+arguments, so the schema the model is shown and the body that runs are one
+shape.
+
+Left out: the plugin's pre_tool_call hook, which escalates its five write
+tools to Hermes' human-approval gate with a per-argument hashed rule key and
+an approval reason naming the pending change. That gate is a Hermes runtime
+surface with no cell counterpart, so in this rewrite the writes run when the
+model calls them and the readback is the only check. Also replaced rather
+than ported: Hermes' profile-scoped secret reader becomes the
+api_key_env/api_key_file settings, and the Hermes-home cache becomes the
+download_dir setting. Not carried over either: the plugin's own redirect
+rejection (the image's HTTP layer follows a redirect, whichever way it goes,
+and the attachment origin is checked before the fetch, not after) and its
+NOFOLLOW directory walk (the attachment is created exclusively under the
+operator's own download directory, mode 0600 where the system keeps modes).

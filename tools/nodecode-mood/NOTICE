@@ -1,0 +1,29 @@
+nodecode-mood is a rewrite of huy-sec's huy-sec/hermes-mood:
+https://github.com/huy-sec/hermes-mood
+commit 11313ab0a961a1353aa2c7e4fba3c1123f494226
+MIT, Copyright (c) 2026 huy-sec (LICENSE)
+
+The original is a Hermes Agent plugin in Python: a PRE_LLM_CALL hook scores
+each user message against eight keyword rules, moves a mood (upset to happy,
+calm to lively), a rapport level and three slow traits (warmth, playfulness,
+directness) within the original's caps, drifts the mood back toward baseline
+by half its distance every six hours, and appends one line of about thirty
+tokens to that message; /mood, /mood reset, /mood off and /mood on show and
+steer it, and the state is a JSON file per Hermes profile. This rewrite keeps
+the same rules, the same numbers (baseline 0.1 and 0.5, a 0.35 cap on one
+message's shift, traits between 0.1 and 0.9 moving 0.02 a signal, a six-hour
+half-life, rapport that only creeps up by 0.003 a turn), the same words the
+line is built from, the same mention of a break of an hour or more on the
+first turn after it, and the same three commands behind /mood. The seams are
+Nodecode's: the line is recorded into the request about to be built at the
+:ROUND point rather than appended to a user message, the state is a JSON file
+under the nodecode home (one per profile, written atomically), and the verbs
+are callable from eval as (mood:show), (mood:reset) and (mood:set-enabled t).
+
+Left out, because the harness differs: the hook's multimodal branch (a Hermes
+message can arrive as parts; a Nodecode turn's words are one string), and the
+one-time migration of a state file a version 1.0 kept beside the module (a
+Nodecode cell never kept state there). Added: the reading half of the line can
+drop the original's "don't mention it unless asked" (the `quiet` setting), the
+file can be moved with `state_file`, and the half-life is a setting instead of
+a constant.

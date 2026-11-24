@@ -1,0 +1,27 @@
+nodecode-steward is a rewrite of Sahil-SS9's Sahil-SS9/hermes-project-stewardship:
+
+  https://github.com/Sahil-SS9/hermes-project-stewardship
+  commit cc54a15ccb841c69b4e898ce91c98e6f5ee23444
+  Apache License 2.0, Copyright (c) 2026 Sahil Saghir (LICENSE)
+
+What was rewritten: the plugin's core workflow, natively in Common Lisp. A
+project is a record with an autonomy level on the same six-rung ladder
+(assistant, investigator, planner, builder, maintainer, steward) whose
+capabilities only ever widen; its health is measured by running the
+project's own declared checks, through an executable allowlist with no shell,
+in the project's own directory, and graded by the same rule (healthy, watch,
+degraded, unknown when nothing could be measured); an initiative may be
+proposed only at planner or above and only on a health that is neither
+unknown nor critical, and a person approves or rejects it; and the
+pre_llm_call hook that gave a bound bot its project's memory is a :ROUND
+hook that puts a bound session's project line in the request. The registry
+is one JSON file under the Nodecode home instead of SQLite.
+
+What was left out, and why: the plugin's Python package, its SQLite schema
+and migrations, its localhost dashboard and desktop panel, its Kanban board
+bridge (which reads another application's private modules), its notification
+and gateway stack, the objective/goal/milestone ladder and its GitHub `gh`
+evidence, and its CLI (`stewardctl`). None of them has a native counterpart
+in a cell, and the workflow above is what a session actually uses. The
+per-project memory is kept as one briefing text a person writes, rather than
+the original's rules/decisions/facts tables.

@@ -1,0 +1,38 @@
+nodecode-pushover is a rewrite of lightx's lightx/pushover-hermes-plugin:
+
+  https://github.com/lightx/pushover-hermes-plugin
+  commit 967fe2d476b384d51773529a7b34ab52e3fdebf1
+  MIT License, Copyright (c) 2026 Benoit Beauchamp (LICENSE)
+
+Rewritten: the push itself — Pushover's messages endpoint with a pair of
+credentials (an application token and the user's own key), the 1024-character
+message ceiling, the title, the per-device filter, the priority and the
+sound, and the request id the API answers — as one tool the model calls, one
+/pushover command that says what a push would use and sends a test one, and a
+manual topic (help :pushover) instead of a gateway platform prompt. The
+lifecycle alerts are kept and now read off the organism's own frames: a turn
+that finished, a turn that failed, and a question that is waiting for an
+answer, each gated on the same kind of event list the original's
+PUSHOVER_NOTIFY_STATES was, and each off until the section names it, as the
+original's PUSHOVER_NOTIFY_ENABLED defaulted off. The question-verbosity
+switch (full, summary, minimal) survives as the message the cell builds.
+The Python is Common Lisp here: nlk:http for the one HTTPS exchange in
+place of aiohttp, one section declaration for the settings in place of the
+three environment variables and the .env wizard, and nlk:define-contract for
+the tool's arguments, so the schema the model is shown and the body that runs
+are one shape. The interactive setup wizard, its prompt_toolkit dialogs and
+the settings file it persisted are gone with it: the section is the settings,
+read and refused by the loader.
+
+Left out: the Hermes gateway platform half — an adapter that registers
+Pushover as a chat platform, seeds a home channel, answers send(), send_image()
+and send_clarify(), and lets cron deliver into it. Pushover is outbound-only
+and has no inbound message stream, so a chat lane through it would be a room
+nobody could answer in; the three tools of the platform (send, image, clarify)
+are what the one pushover_notify tool carries here. Also left out: the
+notify-send desktop notification the original could raise beside the push
+(Nodecode's own `notify` section already pops a desktop notice at a turn's
+end), the approval-request and post-approval hooks (a Hermes permission
+vocabulary, which here arrives as the questions frame the cell already reads),
+the sudo-password prompt, the kanban-block alert and the per-tool-call timing
+log, all of which belong to surfaces this harness does not share.

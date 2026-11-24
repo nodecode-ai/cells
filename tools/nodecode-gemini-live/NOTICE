@@ -1,0 +1,24 @@
+nodecode-gemini-live is a rewrite of skappafrost's skappafrost/hermes-gemini-live:
+
+  https://github.com/skappafrost/hermes-gemini-live
+  commit cf549e7f8af858568936ccb434c7e1104eb200e9
+  MIT, Copyright (c) 2026 Ha Trung (LICENSE)
+
+What was rewritten: the Gemini Live wire (the setup frame with its model, voice,
+spoken-brevity system instruction and function declarations; 16 kHz PCM up, 24 kHz
+PCM down; the transcription and tool-call frames), the three delegate verbs
+hermes_task, hermes_tasks and hermes_task_update with their WORK_STARTED receipt,
+the task board they read, the five-voice whitelist, the spoken-brevity and
+result-shaping prompts, and the rule that the model may deny, steer or stop a task
+but never approve one. The plugin's browser relay, its key-redacting error path and
+its "the key never reaches the renderer" split became a single in-process turn with
+every error string redacted, since a Lisp cell has no renderer to protect.
+
+What was left out, and why: the always-on duplex call (microphone capture, mute,
+speaker echo cancellation and the composer control) needs a browser, which a cell
+does not have, so a call here is one turn at a time, from text or a recorded WAV.
+The approval button went with it: a delegated task is answered with the
+WORK_STARTED receipt and named back to the calling agent, which runs it, instead
+of being run inside the call and read aloud when it lands. The websocket relay
+threads that let several tasks run while the user keeps talking are therefore
+unnecessary and absent.

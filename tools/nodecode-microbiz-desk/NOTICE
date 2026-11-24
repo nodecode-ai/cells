@@ -1,0 +1,19 @@
+nodecode-microbiz-desk is a rewrite of Danzilla0's Danzilla0/microbiz-desk:
+
+  https://github.com/Danzilla0/microbiz-desk
+  commit c737d9e4d73a5eeb6995408a0e10fb50a60ce7aa
+  MIT License, Copyright (c) 2026 Daniel Wisdom (LICENSE)
+
+Rewritten in Common Lisp against Nodecode's cell contract: the five tools
+keep their names, arguments and JSON answers, the money kept in whole
+minor units so totals never drift, the customer lookup that accepts a partial
+name only when exactly one customer matches, the refusal of an overpayment and
+of a payment from someone who owes nothing, and the words of the debt list,
+the statement and the weekly report. The original's SQLite database is one
+JSON file in a folder the section names, guarded by that folder's lock; its
+`hermes microbiz ...` CLI subcommand and its `/microbiz` command are one
+`/microbiz-desk` slash command, since a cell's command is its own. Left out:
+nothing of what a user does -- every tool, every command and every figure is
+here. The envelope is different: the original read HERMES_HOME and could be
+pointed at another database with MICROBIZ_DB, where this names its folder in
+the cell's section.

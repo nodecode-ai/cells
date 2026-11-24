@@ -1,0 +1,31 @@
+{
+  // Chatwork: a bot account answering in the rooms it is a member of.
+  "channels": {
+    "chatwork": {
+      // One of token_env / token_file, never both, never the token itself.
+      "token_env": "CHATWORK_API_TOKEN",
+      // "token_file": "~/.nodecode/secrets/chatwork-token",
+
+      // Room ids the bot serves (the number after "rid" in the room's URL).
+      // Empty: every room the account is in.
+      "allowed_rooms": ["123456789"],
+
+      // Account ids allowed to drive the bot; empty admits everyone in a
+      // served room. "owner" is the account whose word is standing policy.
+      "allowed_users": ["987654"],
+      "owner": ["987654"],
+
+      // Rooms where every message is answered, To tag or not.
+      "free_response_rooms": [],
+
+      // In a group room, answer only [To:the bot] or a reply to the bot.
+      "require_mention": true,
+
+      // Seconds between checks. Chatwork allows 300 calls per five minutes.
+      "poll_seconds": 5,
+
+      // Asks said while the bot was away are answered when at most this old.
+      "catch_up_minutes": 1440
+    }
+  }
+}

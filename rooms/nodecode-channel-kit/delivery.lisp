@@ -116,13 +116,21 @@
 ;;; sighting (DIGEST-SEEN-MS — the same stamp the stall notice reads), beats
 ;;; keep going while the turn keeps producing, and stop once it has shown
 ;;; nothing for the cap — a wedged turn cannot type forever, and a long
-;;; working one never loses its bubble mid-turn.
+;;; working one never loses its bubble mid-turn. A call still in flight is
+;;; the turn working however long it shows nothing (a CI wait, a build),
+;;; so it counts as seen until +TYPING-CALL-CAP-MS+ past its start
+;;; (DIGEST-TYPING-SEEN-MS): a hung tool cannot type forever either.
 
 (defparameter +typing-refresh-ms+ 8000)
 (defparameter +typing-cap-ms+ 300000
   "How long a surface's turn may show nothing before its typing beat stops:
 a silence cap, not an age cap — a turn that keeps producing keeps its beat
 however long it runs.")
+(defparameter +typing-call-cap-ms+ 3600000
+  "How long one call in flight keeps its surface's beat on by itself: the
+turn counts as seen while its open call is younger than this, and the
+silence cap runs from the call's start once it is older: a hung tool stops
+typing, a long build or CI wait keeps its bubble.")
 
 (nlk:define-record (typing-state (:copier nil) (:export :constructor))
   (active-p nil :type boolean)
@@ -221,7 +229,12 @@ past the last send (a fresh start, last-sent 0, is immediately due)."
   (agent nil :type (or null string))
   ;; The newest ask's own words (ASK-SAID): what its turn's card is named
   ;; from. Appended last, for the reason WHERE is.
-  (said "" :type string))
+  (said "" :type string)
+  ;; The ids of the lane's newest turns that ended, newest first, at most
+  ;; +ENDED-TURNS-KEPT+: a part one of them leaves after its end never takes
+  ;; the digest (LANE-TURN-DIGEST). Guarded by the lane lock. Appended last,
+  ;; for the reason WHERE is.
+  (ended-turn-ids '() :type list))
 
 (nlk:access (lane channel-lane))
 
@@ -333,23 +346,96 @@ holds."
   ;; the lane.
   (if (lane-origin lane) nil message-id))
 
-;;; Bots a person names together talk in their thread: a peer's line that
-;;; steers this bot's running turn (team.lisp HEAR-IN-RUNNING-TURN) is what
-;;; the answer of the turn it started builds on, so that answer goes up as a
-;;; reply to it. The line is in the thread by construction, so the reference
-;;; resolves where the lane's own ask would not.
+;;; A line typed in a lane's thread, or a peer's line in a team's thread
+;;; (team.lisp HEAR-IN-RUNNING-TURN), is what the answer of the turn it
+;;; starts builds on, so that answer goes up as a reply to it. The line is in
+;;; the thread by construction, so the reference resolves where the lane's own
+;;; ask would not. A line that reaches a settled lane is noted here, for the
+;;; turn the gate admits; one that steers a running turn is noted with its
+;;; steer (LANE-STEERED-LINES).
 (nlk:define-side-table lane-heard-line (:test #'eq :synchronized t)
-  "Lane -> (MESSAGE-ID . TURN-ID): the newest peer line that steered the
-lane's running turn TURN-ID.")
+  "Lane -> (MESSAGE-ID . TURN-ID): the line the lane's next answer replies
+to, from any turn but TURN-ID -- the one that was running when it came, if
+any.")
 
 (defun heard-reply (lane turn-id)
-  "The message LANE's answer from TURN-ID replies to, taken: the peer line a
-turn before it heard, the one TURN-ID was started to weigh. NIL for the turn
-the line cut short, and for a lane that heard none."
+  "The message LANE's answer from TURN-ID replies to, taken: the line a turn
+before it heard, the one TURN-ID was started to weigh. NIL for the turn the
+line cut short, and for a lane that heard none."
   (let ((entry (lane-heard-line lane)))
     (when (and entry turn-id (not (equal (cdr entry) turn-id)))
       (setf (lane-heard-line lane) nil)
       (car entry))))
+
+(defun take-heard-line (lane turn-id)
+  "LANE's heard line, taken when it was noted while TURN-ID ran -- NIL: while
+the lane was settled -- else NIL."
+  (let ((entry (lane-heard-line lane)))
+    (when (and entry (equal (cdr entry) turn-id))
+      (setf (lane-heard-line lane) nil)
+      (car entry))))
+
+;;; Lines that steer one running turn each run a turn of their own, in the
+;;; order they were said (NLK::DEQUEUE-NEXT-TURN), and each of those turns
+;;; answers its own line. A steer is known by the command id the kit submits
+;;; it under, which the engine keeps as the prompt id of the input that starts
+;;; its turn, so a turn finds its line however many steers wait behind it. One
+;;; slot per lane, overwritten by each steer, let the first line's answer
+;;; reply to the line said after it, and the second line's to none.
+(nlk:define-side-table lane-steered-lines (:test #'eq :synchronized t)
+  "Lane -> the lines that steered its running turn and have not started their
+own, oldest first: each a plist (:COMMAND ID :ASK MESSAGE-ID :REPLY
+MESSAGE-ID :TURN TURN-ID), the turn set once the steer's input opens it.")
+
+(defvar *steered-lines-lock* (bt2:make-lock :name "steered lines")
+  "Guards each read and write of LANE-STEERED-LINES: the transport thread
+notes a steer, the publishing thread binds and takes it.")
+
+(defun note-steered-line (lane command-id ask-id reply-id)
+  "Note that LANE's running turn is steered under COMMAND-ID: the turn the
+steer opens answers ASK-ID, as a reply to REPLY-ID; either may be NIL."
+  (bt2:with-lock-held (*steered-lines-lock*)
+    (setf (lane-steered-lines lane)
+          (append (remove command-id (lane-steered-lines lane)
+                          :key (lambda (line) (getf line :command)) :test #'equal)
+                  (list (list :command command-id :ask ask-id :reply reply-id :turn nil)))))
+  command-id)
+
+(defun forget-steered-line (lane command-id)
+  "Drop LANE's steer COMMAND-ID, which opens no turn: the engine refused it,
+or the turn it was to cut had ended and the ask went through the gate."
+  (bt2:with-lock-held (*steered-lines-lock*)
+    (setf (lane-steered-lines lane)
+          (remove command-id (lane-steered-lines lane)
+                  :key (lambda (line) (getf line :command)) :test #'equal)))
+  nil)
+
+(defun bind-steered-line (lane prompt-id turn-id)
+  "TURN-ID starts from LANE's input PROMPT-ID: when that input is a steer of
+the kit's, the turn is the one that answers its line."
+  (when (and prompt-id turn-id)
+    (bt2:with-lock-held (*steered-lines-lock*)
+      (setf (lane-steered-lines lane)
+            (mapcar (lambda (line)
+                      (if (equal prompt-id (getf line :command))
+                          (list* :turn turn-id line)
+                          line))
+                    (lane-steered-lines lane))))))
+
+(defun take-steered-line (lane turn-id)
+  "=> the plist of the line that steered LANE into TURN-ID, taken, or NIL
+for a turn no steer of the kit's opened."
+  (when turn-id
+    (bt2:with-lock-held (*steered-lines-lock*)
+      (let ((line (find turn-id (lane-steered-lines lane)
+                        :key (lambda (line) (getf line :turn)) :test #'equal)))
+        (when line
+          (setf (lane-steered-lines lane) (remove line (lane-steered-lines lane))))
+        line))))
+
+(nlk:define-side-table digest-heard-line (:weakness :key :synchronized t)
+  "Turn digest -> the line its turn was steered in by, which its answer
+replies to (TAKE-STEERED-LINE).")
 
 (defun forget-thread-origin (lane)
   "The answer landed in the ask's room: the lane owes nothing more."
@@ -503,22 +589,46 @@ a directory, a missing path, or anything unreadable."
       (when (sb-posix:s-isreg (sb-posix:stat-mode stat))
         (sb-posix:stat-size stat)))))
 
-(defun collect-answer-files (lane turn-id &aux (files '()))
+(defun riding-answer-files (paths &aux (files '()) (refusals '()))
+  "(values FILES REFUSALS) for PATHS handed to one answer, in the order
+handed: FILES the ones its message carries, and a (PATH KIND WHY) in REFUSALS
+for each one it does not -- KIND :GONE, :SIZE or :COUNT."
+  ;; The one judge of what rides: ANSWER-FILE asks it before it takes a file,
+  ;; so its receipt never names a file the delivery then drops, and the
+  ;; delivery asks it again for a file that changed in between. Existing
+  ;; regular files only, never more than one message's practical cap; a file
+  ;; handed twice rides once.
+  (dolist (path paths)
+    (let* ((probe (ignore-errors (probe-file path)))
+           (size (and probe (attachable-file-size probe))))
+      (cond ((null size)
+             (push (list path :gone "is gone or names no file") refusals))
+            ((> size +answer-file-byte-cap+)
+             (push (list path :size (format nil "is ~:d bytes, over the ~:d one answer attaches"
+                                            size +answer-file-byte-cap+))
+                   refusals))
+            ((member probe files :test #'equal) nil)
+            ((>= (length files) +answer-file-count-cap+)
+             (push (list path :count (format nil "would be one past the ~d files one answer carries"
+                                             +answer-file-count-cap+))
+                   refusals))
+            (t (setf files (append files (list probe)))))))
+  (values files (nreverse refusals)))
+
+(defun handed-answer-files (lane turn-id &aux (entry (gethash lane.session-id *answer-files*)))
+  "The files LANE's TURN-ID handed to its answer so far, left in place —
+what TAKE-ANSWER-FILES would take."
+  (and entry (equal turn-id (getf entry :turn-id)) (getf entry :files)))
+
+(defun collect-answer-files (lane turn-id)
   "The files one answer carries: what the turn handed with ANSWER-FILE —
 the model's explicit choice, in the order handed."
-  ;; TAKEN, so an answer carries its files once; existing regular files only,
-  ;; never more than one message's practical cap.
-  (dolist (path (take-answer-files lane turn-id))
-    (when (< (length files) +answer-file-count-cap+)
-      (let* ((probe (ignore-errors (probe-file path)))
-             (size (and probe (attachable-file-size probe))))
-        (cond ((null size) (warn "~a answer file ~a is gone or names no file" lane.session-id path))
-              ((> size +answer-file-byte-cap+)
-               (warn "~a answer file ~a is ~:d bytes, over the attach cap"
-                     lane.session-id probe size))
-              ((member probe files :test #'equal) nil)
-              (t (setf files (append files (list probe))))))))
-  files)
+  ;; TAKEN, so an answer carries its files once. ANSWER-FILE refused at the
+  ;; hand-over what would not ride; a file that changed since is warned of.
+  (multiple-value-bind (files refusals) (riding-answer-files (take-answer-files lane turn-id))
+    (loop for (path nil why) in refusals
+          do (warn "~a answer file ~a ~a" lane.session-id path why))
+    files))
 
 ;;; A lane is a fork frozen at its room's head, so a head move on the room — a
 ;;; /new, an /undo, a rewind from a shell — leaves it composing a record the
@@ -529,6 +639,10 @@ the model's explicit choice, in the order handed."
 (nlk:define-side-table lane-retired (:test #'eq :synchronized t)
   "Lane -> T once its room's head moved under it.")
 
+(nlk:define-side-table lane-woken (:test #'eq :synchronized t)
+  "Lane -> T while it runs on a turn that took it back after the reaper let it
+go (ADOPT-LANE), until an ask comes to it again (LANE-WOKEN-NOTE).")
+
 (defun remove-lane (lanes session-id)
   "Drop the lane and every address that routed to it."
   (bt2:with-lock-held ((lane-table-lock lanes))
@@ -537,6 +651,7 @@ the model's explicit choice, in the order handed."
         ;; The lane is being reaped: forget its thread origin entirely.
         (forget-lane-origin lane)
         (forget-lane-retired lane)
+        (forget-lane-woken lane)
         (remhash lane.session-id *answer-files*)
         (remhash lane.session-id *answer-choices*))
       (remhash session-id lanes.table)

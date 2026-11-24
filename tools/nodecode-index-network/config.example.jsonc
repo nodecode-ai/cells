@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for the Index Network cell --
+// documentation, not config: the declaration in cell.lisp is the authority,
+// and a secret pasted in /settings is kept in a 0600 file under the home.
+// "enabled": false vetoes the whole cell, its tools with it. Without a key the
+// cell still installs and every verb says what to set.
+{
+  "index-network": {
+    "api_key": "",                                    // or name INDEX_API_KEY in the environment
+    "api_url": "https://protocol.index.network",       // the protocol endpoint the original plugin uses
+    "app_url": "https://index.network",               // where deep links in an answer point
+    "limit": 20,                                       // rows one read answers when its call names none
+    "timeout": 20                                      // seconds one call to the API may take
+  }
+}

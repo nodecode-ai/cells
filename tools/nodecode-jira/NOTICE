@@ -1,0 +1,33 @@
+nodecode-jira is a rewrite of LikelyLucid's LikelyLucid/hermes-jira-browser:
+
+  https://github.com/LikelyLucid/hermes-jira-browser
+  commit 03ba860d7241af620860968fa747b109d4664cc2
+  MIT License, Copyright (c) 2026 Hermes Jira Browser contributors (LICENSE)
+
+The plugin was a Hermes Desktop board over a Python service: a Board/List
+route, saved JQL views, a ticket drawer, project and worktree mapping, session
+links, pull-request and CI context, and four read-only agent tools over all of
+it. This rewrite keeps the four tools -- jira_assigned_issues,
+jira_search_issues, jira_issue_detail and jira_issue_transitions -- and the
+rules that made them safe: JQL and page sizes bounded, the issue key
+validated before it becomes a URL, every answer labelled untrusted reference
+data, paging through next_page_token, and credentials that go only to the
+configured https origin over Basic auth. They speak Jira Cloud's REST API (v3)
+directly through nlk:http, with the Atlassian Document Format flattened to
+text so a model can read descriptions and comments. Two settings that the
+Desktop UI existed to compute are kept as data: the story points custom field
+(auto-detected, or named) and the untrusted warning itself.
+
+What was left out: the Desktop surface, which a Nodecode cell has no part in
+(board, list, drawer, saved views, keyboard shortcuts, toasts); the worktree,
+project-mapping, session-link and pull-request/CI context, which are Hermes's
+own projects and sessions and have no meaning here; the comment and transition choice
+writes, with their idempotency receipts, because the original exposed them to
+the model as read-only anyway; attachment thumbnail fetching (names and sizes
+are answered, not bytes); comment pagination beyond the first 100; and the
+owner-only 0600 credential file, since a cell takes its credential from the
+section, the environment, a token file the operator names, or the Jira CLI's
+config, all read-only. Redirects are followed by the shared HTTP layer rather
+than refused as the original did, so `base_url` is checked to be the site's
+own https origin with no path. Nothing of the original is vendored: there was
+no code to reuse, only the wire it spoke and the rules it enforced.

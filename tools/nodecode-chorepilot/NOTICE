@@ -1,0 +1,26 @@
+nodecode-chorepilot is a rewrite of WestWaters's WestWaters/ChorePilot:
+https://github.com/WestWaters/ChorePilot
+commit 9b1843ac0a0c467c7ccc0fb3ae355f1bb5f70434
+Apache-2.0, Copyright (c) WestWaters (the LICENSE file is the unmodified
+Apache License 2.0 and names no year or holder, so the GitHub handle stands
+in) (LICENSE)
+
+What was rewritten: the plugin's Python MCP client and its seven tools
+(chorepilot_status, chorepilot_chores, chorepilot_who_has, chorepilot_done,
+chorepilot_whoami, chorepilot_tools, chorepilot_call) as Common Lisp tools
+of one Nodecode cell, on the same JSON-RPC over streamable HTTP to
+ChorePilot's own server: initialize, tools/list, tools/call, an
+Mcp-Session-Id kept until the server forgets it, and the confirmation and
+approval sentences added to a result. The plugin's refusal of plain http to
+anything but this machine or a private network became a check at the cell's
+start; its skill's household rules became (help :chorepilot); its
+registration-time look at the house's tool list, which fills the call
+tool's description, is kept, bounded by two seconds and optional
+(preload_tools). A /chorepilot command was added for the operator.
+
+What was left out: the Hermes plugin manifest and its environment-variable
+wiring (CHOREPILOT_URL, CHOREPILOT_TOKEN, CHOREPILOT_TIMEOUT), replaced by
+the cell's config section; the per-profile secret lookup, since a Nodecode
+section reads an environment variable, a file, or a secret the settings
+sheet files away; and the toolset/check_fn hiding of the tools while no
+token is set, because the section itself refuses at start instead.

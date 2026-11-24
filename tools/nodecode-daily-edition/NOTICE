@@ -1,0 +1,26 @@
+nodecode-daily-edition is a rewrite of ousiaresearch's ousiaresearch/daily-edition:
+
+  https://github.com/ousiaresearch/daily-edition
+  commit b53569f93157708fd7019e499a86fdf9a9117d3a
+  MIT License, Copyright (c) 2026 Johann Ross (LICENSE)
+
+What was rewritten: the plugin compiles a personal newspaper -- interest phrases, not
+subscriptions -- in a Hermes Desktop page, and carries the same composition on the agent side.
+This cell is that agent side in Common Lisp: an interest phrase is expanded into the provider's
+query feed, the results are clustered into stories (canonical link, then headline evidence --
+shared wording, a shared phrase with a compatible verb, one headline inside the other, with a
+different year or a contradictory verb keeping two filings apart), cross-posted stories are
+merged with every publisher credited, consensus wins the lead, recency breaks the tie,
+watchwords star a story, muted interests are left out, and what the newest edition from an
+earlier day printed is withheld. Seven back issues are kept in a file under the Nodecode home,
+so the paper accumulates. It is offered as the daily_edition tool, the /daily-edition command
+and the (help :daily-edition) primer, and answers a plain-text front page.
+
+What was left out, and why: the desktop page itself, with its in-place reading, its unread
+and saved state, its back-issue shelf and its Advanced panel for plain feeds and OPML import,
+is a window, and a cell contributes verbs. The editorial voice -- headlines restyled by a model
+the reader names -- is a page action rather than a tool action, and the port keeps the
+edition deterministic and model-free. The broadsheet print (a headless browser rendering a
+one-page PDF and submitting it to a local CUPS queue) needs a browser and a printer this cell
+does not install; the front page it answers is text. Source discovery from a web page's feed
+links and plain-feed subscriptions were the page's Advanced escape hatch and are not carried.

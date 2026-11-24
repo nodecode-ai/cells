@@ -1,0 +1,19 @@
+nodecode-rtk is a rewrite of kerrz2020's kerrz2020/hermes-rtk-rewrite:
+https://github.com/kerrz2020/hermes-rtk-rewrite
+commit 4c5f8a5abdfd7980cba5ef02df86b8efe52c00d6
+Apache-2.0, Copyright 2024 rtk-ai and rtk-ai Labs (LICENSE)
+
+Rewritten: the Hermes plugin's one contribution -- the pre_tool_call hook that hands the
+command of a terminal call to `rtk rewrite` and, when RTK answers an accepted rewrite (exit 0
+or 3), lets the call run the rewritten command, failing open on a missing binary, a timeout,
+an exit outside the protocol or any error (__init__.py). That hook is here as one :TOOL hook
+over Nodecode's tool dispatch, which is where an eval snippet's (sh "...") forms and a shell
+tool's `command` argument can still be changed; the exit-code protocol, the 2-second bound,
+the once-per-start availability probe and the warning when the binary is missing are
+translated from the original, and /rtk reports what the hook rewrote.
+
+Left out: the optional desktop pane and status-bar chip (desktop/plugin.js), which belong to
+the Hermes desktop app; scripts/update.sh, which downloads and installs a pinned RTK release
+binary plus the plugin, since a cell installs nothing into the user's machine and the RTK
+binary is the user's own; scripts/sync-upstream.sh, a maintainer's tool; and the manifest and
+CI scaffolding that a Nodecode cell replaces with its own .asd.

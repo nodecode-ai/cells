@@ -66,8 +66,8 @@ it in `~/.nodecode/auth.json` the way `/connect` keeps a provider key:
 {"api_keys": {"typesafe": {"provider": "typesafe", "key": "..."}}}
 ```
 
-The saved key wins over the variable. `/typesafe status` says where the key
-comes from (asking no one); `/typesafe check` asks TypeSafe's model listing
+The saved key wins over the variable. `/typesafe` says where the key
+comes from (asking no one); its **Check the key** asks TypeSafe's model listing
 with it, as omp validates a key, and says how it answered.
 
 ## Install
@@ -94,7 +94,7 @@ A `base_url` of your own speaks the same `POST /v1/systemone`: a local
 [DJev](https://github.com/mmastrac/djev-spark) server, say, at
 `http://127.0.0.1:8011` with `"model": "dgemma"`. Such a base takes no key:
 with none saved or set, the request goes without `Authorization`, and
-`/typesafe status` says `no key, none sent`. A key that is set still goes,
+`/typesafe` says `no key, none sent`. A key that is set still goes,
 for a server started with one (DJev's `API_KEY`).
 
 ## Test

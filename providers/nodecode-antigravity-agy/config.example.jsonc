@@ -1,0 +1,20 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret (the
+// login is the agy CLI's own). A present section is enabled;
+// "enabled": false vetoes it. Every member is optional.
+{
+  "antigravity-agy": {
+    "enabled": true,
+
+    // The Antigravity CLI: a name on PATH, a path, or a command line whose
+    // first word is the program.
+    "command": "agy",
+
+    // What /models lists under antigravity-agy/, exactly as `agy models`
+    // spells them. Effort is baked into the slug: pick the variant.
+    "models": ["gemini-3.8-flash-low", "gemini-3.8-flash-high", "gemini-3.1-pro-high", "claude-sonnet-4-6"],
+
+    // How long one round may take: agy's boot and its answer together.
+    "timeout_seconds": 300
+  }
+}

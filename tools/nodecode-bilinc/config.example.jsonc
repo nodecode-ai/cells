@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "bilinc": {
+    "api_key_env": "BILINC_API_KEY",  // the variable holding the key, or "api_key" inline
+    "base_url": "https://bilinc.space", // https, or http only to localhost
+    "auto_recall": true,               // recall the turn's input into each request
+    "recall_limit": 6,                 // memories one automatic recall injects
+    "capture_turns": false,            // store each finished turn as a short-lived record
+    "capture_ttl_days": 30,
+    "timeout_seconds": 10
+  }
+}

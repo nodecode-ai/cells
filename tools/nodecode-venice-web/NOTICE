@@ -1,0 +1,26 @@
+nodecode-venice-web is a rewrite of MnrGreg's MnrGreg/hermes-venice-web:
+
+  https://github.com/MnrGreg/hermes-venice-web
+  commit dcc286fc40544f4489831ff246de8030fd0417fa
+  MIT, Copyright (c) 2026 Greg May (LICENSE)
+
+The rewritten plugin is the whole repository at that commit: a Hermes web
+backend that serves the standard web_search and web_extract tools from
+Venice AI's /augment endpoints. Its wire is carried over unchanged: POST
+/api/v1/augment/search with a bearer VENICE_API_KEY, a trimmed query, a
+limit clamped to 1..20 and a search_provider of brave or google; POST
+/api/v1/augment/scrape once per URL with the page wrapped under "data" in
+some answers; the result fields title, url and content-or-snippet; the
+failure shapes (an HTTP status or an unreadable body reported, not raised);
+and the key resolution that reads VENICE_API_KEY from the environment, here
+with the plugin.yaml manifest's env requirement turned into the cell's
+section. LICENSE is the repository's LICENSE, unchanged.
+
+What was left out, and why: the Hermes provider interface itself
+(agent.web_search_provider.WebSearchProvider and its registration), because
+Nodecode's websearch cell keeps its engines in a fixed list a cell cannot
+add one to, so the two endpoints are two tools of the cell's own,
+venice_search and venice_extract, with /venice and (help :venice) beside
+them; Python's httpx, replaced by the image's own nlk:http; and the plugin
+manifest's version and badge fields, which the cell's section and the cells
+list carry instead.

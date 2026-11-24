@@ -211,7 +211,8 @@ its own callback, and a control press the same path acknowledges."
    ;; A control press is answered by deferring the interaction update: the
    ;; spinner on the pressed button stops and the message stays as it is.
    :plan-control-ack #'interaction-ack-plans
-   :plan-autocomplete #'interaction-autocomplete-plans
+   ;; A row that asks for its text asks in a modal, the press's own answer.
+   :plan-ask #'interaction-modal-plan
    ;; A Discord thread IS a channel with a parent, so the kit's room topology
    ;; already reads one: a public thread hung off the ask's own message, or
    ;; standing on its own in the channel; the bot that opened one may remove
@@ -229,12 +230,11 @@ its own callback, and a control press the same path acknowledges."
   "Every gateway dispatch PAYLOAD the configured intents deliver, on the
 connection lap thread: MESSAGE_CREATE routes to the room, a MESSAGE_UPDATE
 whose edit involves the bot routes as the ask it just became, a slash
-INTERACTION_CREATE routes as the command line it spells, and a press on a
-choice as the line the choice says; any other component INTERACTION_CREATE
-— a press on a button a lane posted — is relayed to the kit, which answers
-it and acts; an autocomplete INTERACTION_CREATE —
-a slash option completed while it is typed — is answered from the
-catalog; a MESSAGE_REACTION_ADD or MESSAGE_REACTION_REMOVE on a message
+INTERACTION_CREATE routes as the command its name spells, a press on a
+choice as the line the choice says, and the submit of a modal a row that
+asks for its text opened as that row's line with the text after it; any
+other component INTERACTION_CREATE — a press on a button a lane posted —
+is relayed to the kit, which answers it and acts; a MESSAGE_REACTION_ADD or MESSAGE_REACTION_REMOVE on a message
 one of our lanes posted is a notice, never a turn; everything else
 falls through."
   ;; Exported as the seam a layer advises — (hook 'ncd:discord-handle-dispatch
@@ -395,7 +395,6 @@ that route read, or NIL."
           (route (route-discord-control payload)
                  (lambda (host press)
                    (or (board-pressed press) (control-pressed host press))))
-          (route (route-discord-autocomplete payload) #'completion-requested)
           (route (route-discord-reaction payload :bot-user-id bot) #'reaction-noticed)))))
 
 ;;; --- a thread's link, given back -----------------------------------------------------
@@ -527,6 +526,12 @@ a restart keeps, where NOW-MS counts from the image's own start."
 (defun snowflake-ms (id)
   "The Unix milliseconds the snowflake ID was minted at."
   (+ (ash (parse-integer id) -22) +discord-epoch-ms+))
+
+(defun snowflake-seconds (id)
+  "The Unix seconds the snowflake ID was minted at -- when its message was
+sent -- or NIL for an ID that is no snowflake."
+  (and (stringp id) (plusp (length id)) (every #'digit-char-p id)
+       (floor (snowflake-ms id) 1000)))
 
 (defun ms-snowflake (ms)
   "The smallest snowflake minted at Unix milliseconds MS."
@@ -930,8 +935,8 @@ list is the gate."
                                 (nlk:when-let (host (ignore-errors (quri:uri-host (quri:uri api-base))))
                                   (list host)))
                         :test #'string-equal))
-    (let ((executor (or executor (make-discord-executor
-                                  :api-base api-base :token token))))
+    (let ((executor (hold-refused-uploads (or executor (make-discord-executor
+                                                        :api-base api-base :token token)))))
       ;; The bot's own user id, read over REST when the config does not pin
       ;; one: mention policy, a reply to the bot, and the bot's own seat in
       ;; voice all know it by it. A failed read is a loud warning: every

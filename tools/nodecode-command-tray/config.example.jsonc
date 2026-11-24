@@ -1,0 +1,10 @@
+{
+  // Command tray: every shell command this agent ran, with its verdict.
+  // Nothing here is required -- the tray fills itself. An explicit
+  // "command-tray": { "enabled": false } turns it off.
+  "command-tray": {
+    "max_items": 40,       // rows kept; the same command again updates its row
+    "preview_chars": 160,  // characters of an output line a row keeps (0 for none)
+    "redact": true         // mask token-shaped strings before anything is written
+  }
+}

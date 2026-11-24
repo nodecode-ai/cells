@@ -1,0 +1,23 @@
+nodecode-axioma is a rewrite of percyhendrux123-prog's percyhendrux123-prog/hermes-axioma:
+
+  https://github.com/percyhendrux123-prog/hermes-axioma
+  commit fdd1fee06a2e63ffa3eb74f8e894c626c9b0651e
+  MIT, Copyright (c) 2026 Deploy Axiom (LICENSE)
+
+Rewritten: the markup and its levels (axioma/signal.py), the renderer and its
+per-surface output for a terminal and for a markdown chat, the rarity budget,
+the "green only from a call the host reported successful" rule, the card text
+and the card code (axioma/card.py, axioma/seal.py) with the keyed digests and
+the staged/shown/answered check behind /signals verify, and the advisory
+scoring of a send/spend/spin/scrub call (axioma/policy.py, axioma/checks.py)
+in a smaller form: this cell notices a configured risky call that carried no
+card, and never blocks it.
+
+Left out: the surface detection and the KaTeX output for Hermes Desktop, and
+the staging of a card inside Hermes's own approval prompt with a fresh rule key
+per card -- a Nodecode cell cannot open that prompt, so the card is the tool's
+answer and the log, and the operator verifies a code rather than an approval.
+Also left out: Hermes secrets through agent.secret_scope (the presence
+preflights for provider conflicts), the owner-only SQLite audit file (this cell
+writes one JSON line per fact), and the session-to-session persistence of a
+card, which here lasts as long as the process.

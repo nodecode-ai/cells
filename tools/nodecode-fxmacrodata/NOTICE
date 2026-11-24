@@ -1,0 +1,31 @@
+nodecode-fxmacrodata is a rewrite of fxmacrodata's fxmacrodata/hermes-fxmacrodata:
+https://github.com/fxmacrodata/hermes-fxmacrodata
+commit 9d07f0f9ba5303488b11cffd8133b5342f7e05c4
+MIT, Copyright (c) 2026 Robert Tidball (LICENSE)
+
+What was rewritten: the plugin's two wires and its hundred tools, in Common
+Lisp. The REST client (fixed origin, path members substituted, declared query
+members, X-API-Key in a header, the JSON body of the one read-only POST), the
+MCP client (initialize, the initialized notification, tools/call, the session
+header and the event-stream capture), the envelope every tool answers with
+(operation, data, an additive records projection, source_url, citations,
+provider_url and the free-tier notices), the JSON-aware credential redaction,
+the argument pre-flight (currency shape, date shape and order, no credential
+in an argument), the two composed tools (the USD macro brief and the
+version-pinned indicator-history snapshot), the /fxmacrodata command, the
+manual topic and the tool inventory itself, carried as data read from the
+plugin's own packaged operation list.
+
+What was left out, and why: the Hermes plugin host (register_tool,
+register_skill, register_system_prompt_section and the agent.secret_scope
+secret API) is replaced by the cell declaration -- the section, one manual
+topic and NLE:REGISTER-TOOL -- so the skill text and the system-prompt
+section live in the one manual topic. jsonschema validation of every call is
+replaced by the host's own pre-flight for the members a schema marks
+required, plus this cell's shape checks. MCP tool discovery (tools/list) and
+the bounded SSE stream reader are not carried: the 57 hosted tools are
+registered from the plugin's packaged list, and a stream call reads one
+bounded capture instead of an open stream. Redirects are not refused, because
+the host's one HTTP verb follows them. The plugin's post-call session DELETE
+is dropped: every call opens and finishes its own session, and nothing is
+kept between calls.

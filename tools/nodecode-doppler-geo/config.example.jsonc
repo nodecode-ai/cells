@@ -1,0 +1,20 @@
+{
+  // Where flyover tones are looked for, Hz. Prop and rotor tones sit in
+  // 60-400; a jet pass is broadband and usually invisible here.
+  "fmin": 60,
+  "fmax": 400,
+
+  // Flyovers reported per recording.
+  "max_events": 3,
+
+  // One ground cell's tolerance in Hz: larger flattens the posterior and
+  // widens the 68/95 % areas.
+  "sigma_hz": 2,
+
+  // Metres per second: 331.3 + 0.6 per degree C.
+  "sound_speed": 343,
+
+  // ADS-B tracks doppler_locate scores against, icao,time_s,lat,lon,alt_ft,
+  // with time_s in the recording's own clock. Relative paths are the home's.
+  "tracks": "~/adsb/last-scan.csv"
+}

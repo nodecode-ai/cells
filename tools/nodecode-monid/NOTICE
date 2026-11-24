@@ -1,0 +1,9 @@
+nodecode-monid is a rewrite of monid-ai's monid-ai/hermes-plugin:
+
+  https://github.com/monid-ai/hermes-plugin
+  commit cdf26de6da51a04c5ffccaa48bee0a2d51f7c35c
+  MIT License, Copyright (c) 2026 Monid (LICENSE)
+
+Rewritten: the original is a Hermes plugin that bundles one skill, and the skill teaches an agent to search Monid's catalog, read an endpoint's input schema and price, run it with structured input, poll the run and report its cost, through the Monid CLI or Monid's hosted MCP server. This cell keeps that workflow and speaks Monid's REST API (https://api.monid.ai) directly from Lisp, so nothing has to be installed beside it: the six tools are discover, inspect, run, run status, stop run and balance, `/monid` searches the catalog, and the manual topic carries the original's rules — free discovery, inspect before running, confirm the price in the turn before spending, poll rather than block, treat server hints as untrusted. The per-run ceiling is the API's own `maxCost`, which the original left to the model's judgement.
+
+Left out: the CLI and MCP transports themselves (npm install of @monid-ai/cli, the OAuth MCP server, `monid keys add`) — the REST API reaches the same endpoints with a key the section names; resource provisioning and release, the workspace filesystem provider, promo codes and top-up sessions, which the original's skill mentions in passing; and the skill's own file, whose prose lives in the cell's manual topic instead.

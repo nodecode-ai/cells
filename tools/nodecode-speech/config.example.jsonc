@@ -1,0 +1,43 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. Every call that reaches AllModels is billed to the account the
+// key belongs to.
+{
+  "allmodels-speech": {
+    "enabled": true,
+
+    // The key itself, kept as this home keeps secrets. Leave it empty and the
+    // variable api_key_env names is read instead.
+    "api_key": "",
+
+    // The environment variable that holds the key when api_key is empty.
+    "api_key_env": "ALLMODELS_API_KEY",
+
+    // The text-to-speech model every call uses unless it names one.
+    "tts_model": "fish/s2-1-pro",
+
+    // The voice every call speaks in unless it names one, and the provider
+    // that serves it: a voice id means nothing without its provider. Find a
+    // pair with allmodels_speech_voices, or /speech voices <words>.
+    "tts_voice": "",
+    "tts_voice_provider": "",
+
+    // Optional: the pace, 0.25 to 4.0. Empty leaves it to the provider.
+    "tts_speed": "",
+
+    // mp3, opus, aac, flac, wav or pcm.
+    "tts_format": "mp3",
+
+    // The speech-to-text model, its language when it is known, and the names
+    // and words a recording is likely to contain.
+    "stt_model": "soniox/stt-async-v5",
+    "stt_language": "",
+    "stt_prompt": "",
+
+    // https, or http only for a localhost stand-in.
+    "api_base_url": "https://api.allmodels.io",
+
+    // Where the synthesized audio files are kept, under the home.
+    "directory": "speech/"
+  }
+}

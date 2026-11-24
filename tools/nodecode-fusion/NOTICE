@@ -1,0 +1,24 @@
+nodecode-fusion is a rewrite of BoredSexyJordan's BoredSexyJordan/hermes-fusion:
+
+  https://github.com/BoredSexyJordan/hermes-fusion
+  commit edab6a6d17838d4d9a1525a2a7d3500c62694e17
+  MIT License, Copyright (c) 2026 Jordan Rosenberg (LICENSE)
+
+Rewritten: the detection modules (harnesses.py, classify.py, roster.py,
+paths.py) and the packet validator (scripts/validate_fusion_packet.py) as one
+Common Lisp cell. It reads the same four harness configs, tiers every
+(provider, model) with the original's frontier/cheap name heuristics, builds
+the same five rosters from what it finds, and validates v3/v4 packets rule for
+rule — the frontier/cheap hint lists and the roster shapes are carried over
+literally. Detection reads the files itself rather than through a YAML or TOML
+library, so it understands the shapes Hermes and Codex write rather than every
+document those formats allow.
+
+Left out: the `run` executor with its adapters (clean session, kanban handoff,
+delegate task), which spawn the Hermes binary once per team member and so need
+Hermes itself; the model index sync, which reads Hermes' provider table into a
+JSON index; the feedback report and the run registry; the MCP server; and the
+subagent prompts and the `/fusion <task>` slash command that made an agent
+orchestrate a run. What is left is the half that answers offline: what this
+machine can call, how the original would tier and compose it, and whether a
+plan packet is well formed.

@@ -1,0 +1,26 @@
+// The fabric cell's section, as ~/.nodecode/config.jsonc would carry it.
+// One setting is required: the name this home's entries carry.
+{
+  "fabric": {
+    // Required. The name this session's entries carry, and the name a
+    // handoff is addressed to ("assigned_to": "<agent>").
+    "agent": "nodecode",
+
+    // The shared folder. ~/fabric by default, or $FABRIC_DIR when unset.
+    // Point another agent's cell here to share one memory.
+    "dir": "~/fabric",
+
+    // The project id stamped on each entry; the working directory's name
+    // by default.
+    "project": "",
+
+    // How many entries one recall returns, and the character budget of one
+    // recall (four characters to a token).
+    "max_results": 5,
+    "max_tokens": 2000,
+
+    // Recall what each turn's own prompt matches before the request is
+    // built. Off leaves the tools and /fabric.
+    "auto": true
+  }
+}

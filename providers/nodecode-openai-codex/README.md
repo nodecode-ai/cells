@@ -1,7 +1,7 @@
 # nodecode-openai-codex
 
 A Nodecode cell for a ChatGPT Plus or Pro subscription (the Codex
-subscription). Sign in once with `/openai-codex login`, and `/models` lists
+subscription). Sign in once from `/openai-codex`, and `/models` lists
 the Codex models under `openai-codex/`. A turn on one of them goes to the
 ChatGPT backend, `https://chatgpt.com/backend-api/codex/responses`, the way
 the Codex CLI sends it:
@@ -25,7 +25,7 @@ provider and sign-in. See [NOTICE](NOTICE).
 ## Sign in
 
 ```
-/openai-codex login
+/openai-codex → Sign in
 ```
 
 The command answers with an address on `auth.openai.com`. Open it in a
@@ -40,7 +40,7 @@ If the browser runs on another machine, the redirect lands on a page that
 does not load. Copy that page's address and send it:
 
 ```
-/openai-codex code http://localhost:1455/auth/callback?code=...&state=...
+/openai-codex → Paste where the browser landed  like http://localhost:1455/auth/callback?code=...&state=...
 ```
 
 On a machine with no browser at all, use the `nodecode-openai-codex-device`
@@ -59,8 +59,8 @@ The token is kept in Nodecode's shared `auth.json` under
 `expires_at` is in epoch seconds. A token that expires within a minute is
 refreshed before a round sends it, and the refreshed entry is written back.
 Every other field of `auth.json` is kept, and the file stays mode 0600.
-`/openai-codex status` says who is signed in and how long the token has left,
-and `/openai-codex logout` takes the entry out.
+`/openai-codex` says who is signed in and how long the token has left,
+and **Sign out** in `/openai-codex` takes the entry out.
 
 When nothing is saved, a token in `OPENAI_CODEX_OAUTH_TOKEN` is sent instead.
 That is the variable omp reads, and it is never refreshed.

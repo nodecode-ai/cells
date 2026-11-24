@@ -1,0 +1,19 @@
+nodecode-twenty-crm is a rewrite of TREE-Ind's TREE-Ind/hermes-twenty-crm:
+
+  https://github.com/TREE-Ind/hermes-twenty-crm
+  commit 3d87c1634e4b159738b35954ac4efc15c876d46d
+  MIT, Copyright (c) 2026 TREE Industries (LICENSE)
+
+Rewritten in Common Lisp against Nodecode's cell contract: the four tools and
+their argument schemas (describe the workspace, call a REST endpoint, run a
+GraphQL document, introspect the schema), the rules each one enforces (a REST
+path begins with /rest/; the GraphQL endpoint is chosen by api=core or
+api=metadata; GraphQL errors are failures), the bearer-key authentication,
+the introspection query and the shapes the tools answer with. Left out, and
+why: the Docker-managed self-hosting (it bootstrapped a Compose project,
+started it from a session hook and offered /twenty start|stop|logs) - the cell
+connects to a Twenty that already runs, so the stack is the operator's and no
+container is started behind their back; the OAuth client-credentials flow and
+its token cache - the API key is the one credential the cell reads; and the
+bundled skill, whose guidance is now the manual (help :twenty-crm) and the
+tools' own descriptions.

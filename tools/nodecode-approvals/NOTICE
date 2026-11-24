@@ -1,0 +1,25 @@
+nodecode-approvals is a rewrite of anpicasso's anpicasso/hermes-jev-approvals:
+
+  https://github.com/anpicasso/hermes-jev-approvals
+  commit 28be98a19539b29768398fb400f4c62f41337c26
+  MIT, Copyright (c) 2026 anpicasso (LICENSE)
+
+The plugin registers TypeSafe's Jev decision model as the reviewer behind a
+harness's smart-approval gate: one POST of a state and a fixed question set,
+typed answers back, and a rule chain (jev_policy.py) that turns those answers
+into APPROVE, DENY or ESCALATE. This rewrite keeps that: the six questions and
+their rubric wording, the request and the answer check field for field, the
+redaction passes, the endpoint and credential routes (TypeSafe direct, the
+openrouter.ai route, or a base of the operator's own), the retries on 429, 529
+and 5xx, the rule chain and its thresholds, and the local JSONL decision log.
+It is Common Lisp against Nodecode's cell contract instead of a Python provider
+plugin, so the caller is a Nodecode verb (`approvals:review`) rather than a
+harness's auxiliary-model dispatch.
+
+Left out: the harness's provider plumbing itself — the ProviderProfile, the
+chat-completion duck type, the `auxiliary.approval` task routing and the
+`plugins.entries` settings path — since a Nodecode cell is reached through eval
+and keeps its settings in its own config section. Also left out: the
+provider-side model listing and the benchmark harnesses. The audit log is
+smaller: it records one row per decision, not the plugin's full 27-field
+schema with policy and question fingerprints, and it is not rotated.

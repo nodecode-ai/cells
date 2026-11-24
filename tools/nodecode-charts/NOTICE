@@ -1,0 +1,43 @@
+nodecode-charts is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-charts:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-charts
+  commit 8eff93d1ea09a71975fa749116de633f1c952e88
+  MIT License, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+What was rewritten: the plugin's chart toolset - spec.py, data_io.py,
+numfmt.py, render.py and verify.py - is rewritten in Common Lisp. The three
+tools keep their names and their arguments (chart_render, chart_validate,
+chart_types): data given as row objects, columns and rows, pasted CSV/TSV or a
+Markdown table, JSON text, or an absolute .csv/.tsv/.txt/.json path; a
+chart_spec with a chart type, a title, a unit, a source and encodings; the
+four types bar, line, stacked_bar and share_bar, with the same aliases and the
+same answer to a pie chart; sorting largest first for bars and dates in time
+order for lines; top_n with its "top N of M" note, the marks a statistics
+table uses for no value, and the note a truncated value axis earns. The
+numbers are read and written as the original reads and writes them: thousands
+separators, full-width digits, 万/億/兆, a triangle for a negative, and
+compact 万/億 or K/M labels. The promise kept is the original's read-back:
+every bar's drawn length and every printed number are compared with the table
+before a file is answered, and a chart that does not match is deleted rather
+than returned. The path reader keeps the original's fence: four extensions,
+no hidden file, nothing inside the agent's own home folder, 10 MB at most.
+
+What was left out, and why: matplotlib, and with it the font stack. The
+rewrite draws on a canvas of its own and writes the PNG itself (an 8-bit RGB
+image deflated through salza2, which the serving image already loads), so the
+cell installs nothing; the face is a five-by-seven dot face, so a label in
+Japanese sets as dots-sized capitals where the face has no glyph, and the
+caption the tool answers (alt_text) carries the same words the picture cannot
+set. The original's four hooks - a nudge before the call, a unit remembered
+across a session, a mismatch blocked before it drew, and a chart attached to a
+chat reply the model forgot to attach - have no counterpart in a tool that
+answers a Markdown image line in the reply itself; the tool description and
+(help :charts) carry what the nudge said instead. The MEDIA: line is a
+Markdown image line here, which is how a Nodecode answer carries a picture.
+The original's bundled IPAexGothic font is not shipped; a chapter of the
+original's renderer - rotated labels, the drop of a number that has no room
+in a bar, and its per-part footnote - is simplified to a caption line.
+
+What the rewrite adds: the charts section (the default preset, the locale, and
+the directory a chart is written to), /charts and (help :charts), and a
+png-path of its own for the file it draws.

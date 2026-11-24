@@ -1,0 +1,24 @@
+nodecode-commandcode is a rewrite of NanamiMio's NanamiMio/hermes-commandcode-oauth:
+https://github.com/NanamiMio/hermes-commandcode-oauth
+commit e51eb61613604aefbcf3203c8fcce531706232ee
+MIT, Copyright (c) 2026 NanamiMio (LICENSE)
+
+Rewritten: the provider itself, as one Nodecode cell. transport.py became
+wire.lisp -- the /alpha/generate request body (the workspace config block, the
+turn's messages as typed parts, one system string, tools as input_schema
+declarations), the CLI's client headers, the NDJSON event reader with the
+in-stream error and the fail-closed end of a stream, and the usage split into
+prompt, cached prompt and output. auth.py's CLI credential read became
+PROVIDER.LISP's CLI-KEY (read only, the CLI's own file is never written) and
+__init__.py's credential ladder became the :CREDENTIAL hook. model_metadata.py
+became models.json, and the catalog row and the account's model listing
+(/provider/v1/models?view=client) became the catalog and listing hooks.
+
+Left out: the Hermes-only halves of the original, because Nodecode has its own
+for each. The browser loopback sign-in to the studio (a 5959 listener, the
+state check, the credential pool) is replaced by the core's /connect and by
+importing the CLI's key; credential pooling, refresh, plan-lock filtering of
+the catalog, the account-usage snapshot for a usage view, the failover
+classifier and the fallback_models property bridge have no Nodecode seam to
+port to, and the core's own model catalog, retry policy and picker stand in
+for them. The plugin's smoke script and its test suite are not carried over.

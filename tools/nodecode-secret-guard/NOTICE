@@ -1,0 +1,30 @@
+nodecode-secret-guard is a rewrite of ChasClogston's ChasClogston/hermes-secret-guard:
+
+  https://github.com/ChasClogston/hermes-secret-guard
+  commit b823a9ebeca0847a6c7a5bd73f0678d6b4657924
+  MIT, Copyright (c) 2026 Charles Clogston (LICENSE)
+
+Rewritten: the store's three layers, in Common Lisp against the Nodecode cell
+contract. A key is held under the name a tool reads it by and answers a
+fingerprint and a length, never its value (store.lisp). The gate on a call
+that reads a credential store -- a secret-shaped file, a keychain or
+password-manager print, the whole environment dumped -- became an advice on
+Nodecode's :TOOL point, reading every string a call carries instead of the
+argument names the original keyed on (guard.lisp). The scrub of every tool
+result, longest value first, with the original's `[secret:NAME redacted]`
+marker and its own ordering, is the same advice's other half. The model-facing
+tool that asks for a key without taking one, the registry listing and the
+CLI's add/list/verify/remove became three tools and /secret.
+
+Left out, and why: the macOS keychain itself, because Nodecode runs on Linux,
+macOS and Windows and no one keychain API spans them -- the value lives in one
+file under the Nodecode home, mode 600, replaced atomically, and the registry
+the original kept beside its keychain is the same file's other members. The
+hidden-input dialog became an operator command (/secret add NAME SOURCE), since
+a Nodecode tool answers text and only a command can carry a panel; the value
+still never passes through the model. The per-secret scope (all / default-only
+for messaging-bot tokens) is dropped, because a store belongs to one home and
+every lane of that home is the same person. The check on the operator's own
+message for a pasted key has no seam here, so the model is given secret_check
+to read its drafts with instead. The `import` helper-script reader and the
+read-only `doctor` are left out: the store is one JSON file a person can read.

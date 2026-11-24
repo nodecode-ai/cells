@@ -1,0 +1,35 @@
+nodecode-recall is a rewrite of memeshee's memeshee/hermes-recall:
+
+  https://github.com/memeshee/hermes-recall
+  commit 99c9a6a4a290af705d42c7336cd7fb57ca3eb9d6
+  MIT License, Copyright (c) 2026 memeshee (LICENSE)
+
+Rewritten: the whole behaviour of the plugin, in Common Lisp. The five tools
+(recall_index, recall_search, recall_open, recall_stats, recall_forget), the
+/recall command, the read policy (Nodecode's own home, virtual filesystems
+and the credential-store denylist, judged on the resolved path so a symlink
+cannot launder a secret), the default of ~/Documents alone with ~/Downloads
+and ~/Desktop opt-in, the incremental walk with its file, time and size
+budgets, the chunker, the synthetic name chunk that keeps a scanned PDF
+findable, BM25 ranking with the original's deterministic boosts (a query word
+in the path, in the file name, a phrase in order, a gentle recency favour),
+the bracketed snippet, the ambient hint before the model answers, the
+background refresh once an index exists, and the JSON shapes the tools
+answer with.
+
+Left out, and why:
+
+  - SQLite FTS5. The rewrite keeps its index in one JSON file under the
+    organism's home and rebuilds the term postings in memory, so a cell loads
+    with no database binding and the file stays readable. The ranking is BM25
+    computed here rather than by FTS5, and the stemmed/prefix behaviour of
+    the unicode61 tokenizer is only the prefix half.
+  - The @recall: context reference and its autocomplete. Nodecode has no
+    context-reference seam; the same index is one tool call away, and the
+    ambient hint covers the case it existed for.
+  - The registered skill file. Its guidance is the (help :recall) topic, which
+    rides every request as one line and is read in full on demand.
+  - Python's zlib and zipfile extraction. A PDF is read through pdftotext and
+    an Office file through unzip when the operator has them; the standard
+    library gave the original both, which a cell does not get for free.
+    Without them the file is still indexed by the words in its name.

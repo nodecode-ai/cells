@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key itself lives in auth.json (/connect) or SCW_SECRET_KEY.
+{
+  "scaleway": {
+    "enabled": true,
+
+    // Where the API is served. The chat lane appends /chat/completions.
+    // SCALEWAY_BASE_URL in the environment sets this default.
+    "base_url": "https://api.scaleway.ai/v1"
+  }
+}

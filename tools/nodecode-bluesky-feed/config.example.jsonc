@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell — documentation,
+// not config: the folder gets pushed and holds no secret. The declaration in
+// cell.lisp is the authority; this is an illustration of it. A present section
+// is enabled; "enabled": false vetoes it.
+{
+  "bluesky-feed": {
+    "enabled": true,
+    // pages one watch check reads, 1 to 3
+    "watch_pages": 3,
+    // rows one feed answer shows
+    "max_posts": 10,
+    // one request's ceiling, in seconds
+    "timeout_seconds": 20,
+    // the longest answer one call gives
+    "max_chars": 6000,
+    // where the watch is saved; empty keeps it under the Nodecode home
+    "state_file": ""
+  }
+}

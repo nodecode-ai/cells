@@ -1,0 +1,16 @@
+// The nodecode-glorya section: a token, and the defaults around it.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "glorya": {
+    // "endpoint": "https://platform.glorya.ai/mcp",  // Glorya's MCP server
+    "token_env": "GLORYA_TOKEN",                       // the variable holding the token
+    // "token_file": "~/.nodecode/secrets/glorya-token", // or a file holding it
+    // "timeout_seconds": 60,     // one request's ceiling
+    // "poll_seconds": 20,         // how often a running job is looked at
+    // "follow_minutes": 90,       // how long a job is followed
+    // "attach_max_mb": 45,        // the largest finished file downloaded here
+    // "max_files": 4,             // how many files one job downloads
+    // "download_dir": "~/.nodecode/glorya/"  // where they are saved
+    "enabled": true
+  }
+}

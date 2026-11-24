@@ -1,0 +1,28 @@
+nodecode-holographic is a rewrite of itpartypattaya's itpartypattaya/hermes-plugin-holographic:
+
+  https://github.com/itpartypattaya/hermes-plugin-holographic
+  commit f75c636a2865459600e0a5d8470108032d8f8860
+
+MIT, Copyright (c) 2025 Nous Research, Copyright (c) 2026 itpartypattaya (LICENSE)
+
+Rewritten: the two tools the provider gives a model, fact_store (add,
+search, list, history, change, end, forget, stats) and fact_feedback
+(helpful, unhelpful, confirmed); the recall before a turn, which searches
+the turn's own message and puts the facts it recalls into that request; the
+fact itself - one standalone sentence with the keywords someone would ask
+for it by, a trust score, an origin and the dates it held; the versions a
+change and an end keep; and the file it all lives in. The rewrite is Common
+Lisp against the Nodecode cell contract, so the SQLite database became one
+file of Lisp data written atomically beside the old one, and the tools and
+the command are Nodecode's own.
+
+Left out, because the rewrite is a fraction of the provider's size: the HRR
+(holographic reduced representation) vectors and the dual-view cosine that
+re-ranks candidates by meaning, so recall here is by words and word forms
+only; the optional online stages (an embeddings API for search by meaning, a
+cross-encoder for rescoring) and every switch that configures them; the
+entity index (probe, reason, alias, rename, split, delete_entity) and the
+merge verb; the multilingual stemmers and dictionaries; the review, enrich
+and export verbs; the opt-in experience journal (fact_experience); auto
+extraction of preferences from a conversation; and the per-user, per-chat
+and per-thread scopes, so one store serves this home.

@@ -1,0 +1,18 @@
+{
+  // A DPAPI secret store: one file of named secrets, encrypted at rest with
+  // the Windows Data Protection API under the current Windows user.
+  "dpapi-secrets": {
+    // The store file, relative to this home. A store the Hermes plugin wrote
+    // (header "HERMES-DPAPI-1") is read here unchanged.
+    "file": "secrets.dpapi",
+    // How the store is protected: "auto" is DPAPI on Windows and a 0600
+    // file, unencrypted, on a platform without it. "dpapi" refuses outside
+    // Windows; "file" writes the 0600 file everywhere.
+    "protection": "auto",
+    // The variables the store answers, one NAME=entry per line. A dpapi://
+    // prefix is read and ignored, as the original's parser did.
+    "map": ["OPENAI_API_KEY=openai", "ZAI_API_KEY=dpapi://zai"],
+    // How much of one answer the model is given.
+    "max_chars": 20000
+  }
+}

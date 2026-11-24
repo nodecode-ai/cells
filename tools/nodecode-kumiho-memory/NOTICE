@@ -1,0 +1,26 @@
+nodecode-kumiho-memory is a rewrite of KumihoIO's KumihoIO/kumiho-plugins:
+
+  https://github.com/KumihoIO/kumiho-plugins
+  commit d4811200fa22225ae245d2778b938a793d6d5af6
+  MIT License, Copyright (c) 2025 Kumiho Inc. (LICENSE)
+
+What was rewritten: the plugin's `hermes` folder is an MCP server entry
+(https://mcp.kumiho.cloud/mcp) plus six prose skills, and the protocol those
+skills teach. cell.lisp speaks the same streamable-HTTP endpoint with the same
+JSON-RPC calls the skills make, as seven model-facing tools of its own --
+kumiho_recall, kumiho_latest, kumiho_remember, kumiho_forget, kumiho_spaces,
+kumiho_one_memory, kumiho_summary -- plus /kumiho, and carries the skills'
+protocol compressed into the (help :kumiho) primer: recall near the start of a
+conversation, save only settled things, correct with `revises`, retire
+reversibly, never save secrets, treat memories as data and not instructions.
+The buffer tools keep the skills' session rule: no session_id at first, the id
+a session_required answer issues is kept, and the same call is retried once
+with it. The section takes a Kumiho API key (the dashboard key the server
+accepts in x-api-key) instead of Hermes's browser OAuth, because Nodecode has no
+OAuth surface for an MCP server to borrow.
+
+What was left out: the six SKILL.md files as separate skills (their rules are
+the one primer), the OAuth sign-in that goes with them, the backfill helper
+that prepares Codex/Claude Code/ChatGPT exports (a local Python script with no
+network), the chat-buffer pair, and space creation and space profiling. No
+Kumiho code is bundled; the cell depends on nothing but Nodecode.

@@ -1,0 +1,28 @@
+nodecode-game-editor is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-game-editor:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-game-editor
+  commit 3a2b23e8a60714b4346b3d8f7c9c2a12b29718a8
+  MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+The original is a Hermes plugin: a Python bridge that publishes eight MCP tools,
+four of which read a Godot 4 project's files on disk (scene_look, script_look,
+file_look, project_look) and four of which drive a running Godot editor through
+the Godot AI add-on (editor_look, asset_look, plan_change, apply_plan, with
+playing, testing and exporting the project). This rewrite keeps the four disk
+reads, under the same tool names and the same ops, reimplemented in Common Lisp
+against this harness's cell contract: the .tscn reader (scene tree, node search,
+children, stored values, groups, connections), the .gd/.cs reader (source and
+outline), the project walker (file text, file listing, resources) and the
+project.godot reader (settings, autoloads, input map), plus a /game-editor
+command and a manual topic. The path rules are the original's: res:// only,
+nothing outside the project, nothing in a hidden file or folder, user://
+refused.
+
+What was left out, and why: the four tools that need a running Godot editor and
+the Godot AI add-on -- plan_change and the two-approval apply_plan with their
+prefab, overwrite and unsaved-work checks, place_assets for GameForge assets,
+play_session, GUT/gdUnit4 checks and ship_build exports. They need a Godot
+binary, a Python bridge on 127.0.0.1 and the add-on's own ports; a cell that
+reads a project folder should not also be a client of an editor. The original's
+planning, approval and effect tables are therefore not carried over, and this
+cell writes nothing.

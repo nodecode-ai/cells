@@ -1,0 +1,27 @@
+nodecode-adextract is a rewrite of ad-vertly's ad-vertly/adextract-mcp-server:
+
+  https://github.com/ad-vertly/adextract-mcp-server
+  commit 02c08407abe21b4af76b6f066e5edf9490fb231e
+  MIT, Copyright (c) 2026 Adextract (LICENSE)
+
+The plugin was a declarative package: a plugin.json with a per-tool cost
+table, an mcp.json entry pointing at the hosted MCP server
+https://mcp.adextract.co/mcp with a bearer ADEXTRACT_API_KEY, and five skills
+(one overview, one per ad library). The server it pointed at advertises
+thirteen read-only tools -- four library searches, three advertiser searches,
+two advertiser lookups, three single-ad lookups and ad_reader -- and the
+plugin held no code at all. This rewrite keeps every one of those tools
+reachable, the same endpoint, and the same one-credit-per-call price, and
+speaks MCP's streamable HTTP to that endpoint itself through nlk:http (one
+initialize, then the tool), so no MCP transport, no Hermes runtime and no
+manifest are needed. Because the server serves its own schema at runtime and
+the pinned commit carries no copy of it, the tools are grouped by what a
+caller wants rather than mirrored one for one: adextract_search,
+adextract_advertisers, adextract_advertiser_info, adextract_ad and
+adextract_read_creative, each routing on the platform the call names, each
+carrying an "extra" member that passes any argument of the library's own tool
+through unchanged. The five skills' guidance -- search first, analyze second,
+read the top creatives, synthesize format, emotion and funnel role, and the
+per-platform gotchas -- is the cell's manual topic, (help :adextract). The
+declarative "trust: untrusted" mark is left out: a cell's tools are its own,
+and all thirteen were read-only anyway. Nothing of the original is vendored.

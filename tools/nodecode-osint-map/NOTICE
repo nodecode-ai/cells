@@ -1,0 +1,29 @@
+nodecode-osint-map is a rewrite of Adolanium's Adolanium/hermes-osint-map:
+
+  https://github.com/Adolanium/hermes-osint-map
+  commit 8254b9e872c2718e5ea228168db3f75fb77955de
+  MIT, Copyright (c) 2026 Adolanium (LICENSE)
+
+What was rewritten: the five tools keep their names, descriptions and parameters
+(osint_situation, osint_events, osint_country, osint_recon, osint_news), and
+they answer from the same public, keyless sources — USGS earthquakes, NASA
+EONET, GDACS disaster alerts, US National Weather Service alerts, adsb.lol
+military aircraft, NOAA SWPC's planetary K index, BBC/Al Jazeera/DW/The
+Guardian/France 24 RSS plus GDELT's article search, the World Bank, CoinGecko
+and an optional Twelve Data key. The recon lookups keep their kinds (dns,
+rdap, subdomains, cve with CISA KEV, ip, github, mac), their targets' checks
+and the same endpoints (Google Public DNS, rdap.org, crt.sh, CIRCL, the CISA
+KEV feed, ipwho.is, api.github.com, MacVendors). The item shape, the severity
+scale of each layer, the per-source cache and the "a source that fails says so
+in its own line" behaviour are carried over, as is the optional Twelve Data
+key, which this cell reads from the environment variable the section names.
+
+What was left out, and why: the Desktop page (a three.js globe with SGP4
+satellite propagation, the traffic-camera stills by operator id, maritime
+chokepoints and per-layer map widgets) is a UI no agent tool answered from, so
+it is not here; the incidents layer is gone because it read GDELT's zipped
+export, and the events tool answers from the five layers the original's own
+tools listed; the tls and headers recon kinds are gone because they open a TLS
+or HTTP socket by hand, and this cell reaches every source through one HTTP
+seam; and SWPC's R/S/G scales and alert feed are trimmed to the Kp index the
+situation brief quotes. LICENSE is the original repository's LICENSE, unchanged.

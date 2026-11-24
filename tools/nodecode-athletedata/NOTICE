@@ -1,0 +1,27 @@
+nodecode-athletedata is a rewrite of athletedata-health's athletedata-health/mcp:
+
+  https://github.com/athletedata-health/mcp
+  commit 1ca2fa8d129c6b7c80a8af516a6653b7aa250679
+  MIT, Copyright (c) 2026 HealthspanOS AG (LICENSE)
+
+Rewritten: what the package is -- a front end to one hosted MCP server at
+https://mcp.athletedata.health/mcp, reached with an API key, holding one
+athlete's own training and health data from the apps they connected. The
+manifest's facts became the cell's section (the endpoint, the key's
+environment variable, the timeout) and the two verbs the server's own tool
+set needs: one that lists it and one that calls into it, both speaking the
+server's protocol (MCP over Streamable HTTP) with the core's own HTTP seam.
+The skill's guidance -- start broad, drill into one provider, quote the
+numbers, writes change the athlete's own accounts -- is the manual topic and
+the tool descriptions, and the server's "untrusted, ask before a write"
+posture became the confirm member: a tool the server does not mark read-only
+refuses to run without it.
+
+Left out, and why: the other manifests (server.json, gemini-extension.json,
+.cursor-plugin/plugin.json, glama.json, clawhub/) name the same one endpoint
+for other clients, and a cell needs one; build/build.mjs regenerates those
+files from constants, which is the repository's own housekeeping and runs
+nothing here. The skill is prose guidance in the manual rather than a
+define-skill, so nothing is written into the operator's layer; and the
+server's ~100 tool descriptions are not copied here, since the server serves
+them at run time and a copy would go stale.

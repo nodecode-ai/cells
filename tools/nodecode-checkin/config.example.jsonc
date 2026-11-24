@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; /checkin writes these
+// members for you, and /settings shows them.
+{
+  "checkin": {
+    "enabled": true,
+    "//": "/checkin on in a chat sets session to that chat",
+    "session": "",
+    "base_minutes": 120,
+    "active_start": 8,
+    "active_end": 22,
+    "utc_offset_minutes": 0,
+    "paused": false,
+    "morning_brief": false,
+    "voice": "texting",
+    "tick_seconds": 60
+  }
+}

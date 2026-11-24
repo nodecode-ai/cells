@@ -54,6 +54,16 @@
   (:documentation "The transport is unusable: EOF, a dead child, a refused
 socket, an oversize frame. The registry drops the connection."))
 
+(nlk:define-error awaits-sign-in (error) (url redirect (request-id :initform nil) (method :initform nil))
+  (:report "its command asked for a sign-in in a browser; once the server is added, (mcp:login NAME) answers the address")
+  ;; The connection is kept: its process is the one the browser answers.
+  (:documentation "A process printed an OAuth authorization address on its
+stderr while a request waited, and has not answered since: its command
+(mcp-remote and its kind) signs in to a remote server on its own and holds
+every request until a browser comes back to its loopback listener. URL is
+the address to open, REDIRECT where the browser lands, REQUEST-ID and METHOD
+the request it holds."))
+
 ;;; --- deadlines ------------------------------------------------------------
 
 (defun now-seconds ()
@@ -119,7 +129,12 @@ seconds."))
 (defun rpc-await-reply (client id method deadline)
   "Read until ID answers; its result. METHOD names the wait in a timeout."
   (loop
-    (let ((message (transport-receive client.transport deadline)))
+    (let ((message (handler-case (transport-receive client.transport deadline)
+                     ;; The request held is named, so a handshake can be taken up again.
+                     (awaits-sign-in (condition)
+                       (error 'awaits-sign-in :url (awaits-sign-in-url condition)
+                                              :redirect (awaits-sign-in-redirect condition)
+                                              :request-id id :method method)))))
       (case message
         (:closed (error 'transport-closed :detail "connection closed"))
         (:timeout (error 'rpc-timeout
@@ -162,18 +177,20 @@ seconds."))
 
 ;;; --- the MCP lifecycle ----------------------------------------------------
 
-(defun handshake (client deadline)
-  "initialize, then notifications/initialized."
+(defun handshake (client deadline &optional result)
+  "initialize, then notifications/initialized. RESULT is initialize's answer
+when a wait for it was taken up again (a sign-in held it)."
   ;; Returns the initialize result; the server's info and protocol version are
   ;; kept on the client.
-  (let ((result (rpc-request
-                 client "initialize"
-                 (nlk:json-object
-                  "protocolVersion" +protocol-version+
-                  "capabilities" (nlk:make-json-object)
-                  "clientInfo" (nlk:json-object "name" "nodecode"
-                                                "version" "0.1.0"))
-                 deadline)))
+  (let ((result (or result
+                    (rpc-request
+                     client "initialize"
+                     (nlk:json-object
+                      "protocolVersion" +protocol-version+
+                      "capabilities" (nlk:make-json-object)
+                      "clientInfo" (nlk:json-object "name" "nodecode"
+                                                    "version" "0.1.0"))
+                     deadline))))
     (setf client.server-info (nlk:json-value result :object "serverInfo")
           client.protocol-version
           (nlk:json-value result :string "protocolVersion"))
@@ -181,6 +198,16 @@ seconds."))
                                           "params" (nlk:make-json-object))
                   deadline)
     result))
+
+(defun tool-plist (object)
+  "One tools/list entry as (:name :description :schema), or NIL for one
+without a name."
+  (nlk:when-let (name (nlk:json-value object :text "name"))
+    (list :name name
+          :description (or (nlk:json-value object :string "description") "")
+          :schema (or (nlk:json-value object :object "inputSchema")
+                      (nlk:json-value object :object "input_schema")
+                      (nlk:make-json-object)))))
 
 (defun list-tools (client deadline)
   "The server's catalog as a list of tool plists, following nextCursor up
@@ -193,13 +220,8 @@ to +MAX-LIST-PAGES+ pages and keeping +MAX-TOOLS-PER-SERVER+ entries."
                 for next = (nlk:json-value result :text "nextCursor")
                 ;; Each entry as (:name :description :schema); one without a name is skipped.
                 append (loop for object across (nlk:json-array result "tools")
-                             for name = (nlk:json-value object :text "name")
-                             for description = (or (nlk:json-value object :string "description") "")
-                             for schema = (or (nlk:json-value object :object "inputSchema")
-                                              (nlk:json-value object :object "input_schema"))
-                             when name
-                               collect (list :name name :description description
-                                             :schema (or schema (nlk:make-json-object))))
+                             for tool = (tool-plist object)
+                             when tool collect tool)
                 until (or (null next) (>= pages +max-list-pages+)))))
     (when (> (length tools) +max-tools-per-server+)
       (warn "mcp: keeping ~d of ~d tools (the cap)"

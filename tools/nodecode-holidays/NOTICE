@@ -1,0 +1,34 @@
+nodecode-holidays is a rewrite of Akloenx123's Akloenx123/hermes-public-holidays:
+
+  https://github.com/Akloenx123/hermes-public-holidays
+  commit d73f177b13c368c5c2445f6595f4008ed6c79a78
+  MIT, Copyright (c) 2026 Alexander Konieczny (Akloenx123) (LICENSE)
+
+The rewritten plugin is a Hermes Python plugin whose whole code is
+plugin.yaml, __init__.py, schemas.py and core.py: four tools -- holidays_list,
+workday_check, workdays_count, workdays_add -- that read Nager.Date's
+/api/v3/PublicHolidays/{year}/{country} and compute the rest locally. Its
+behaviour is carried over: the same four tools under the same names and
+arguments; the same one endpoint, GET with an Accept: application/json header,
+no key; the same in-process cache of one country's year; the same country,
+subdivision, year, date, weekend and holiday-type parsing, with the
+original's shorthand (a bare NI completing to DE-NI) and its refusals
+(the type list, the 1900-2200 year band, the ten-year span, the +-2000
+workday cap, a weekend that cannot be all seven days, and a today-inside
+range); the same rule that without a subdivision only nationwide holidays are
+days off, with the regional ones named beside the answer; the same weekend
+arithmetic with Saturday and Sunday as the default and a weekday list
+overridable per call; and the same refusal, not an empty calendar, for a
+country Nager.Date does not cover (HTTP 204) or a year it does not serve (400,
+404). LICENSE is the repository's LICENSE, unchanged.
+
+What was left out, and why: the tool results are the lines a model reads
+rather than the JSON objects the plugin returned, because a Nodecode tool
+answers text and a formatted line costs the model fewer tokens than a nested
+object it has to re-read; Python's urllib, replaced by the image's own
+nlk:http, so the 1 MB body cap is checked on the text rather than by reading
+one octet past it; and the plugin manifest's fields (name, version, tags,
+emoji), which the cell's .asd, its section and the cells list carry instead.
+Added, because a Nodecode section carries it: base_url (the API root), the
+region every call takes when it names none, the weekend, the call timeout and
+the longest span one count walks, all of them optional.

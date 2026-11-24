@@ -1,0 +1,17 @@
+nodecode-agentplaybooks is a rewrite of matebenyovszky's matebenyovszky/agentplaybooks:
+
+  https://github.com/matebenyovszky/agentplaybooks
+  commit f31e9c3af6520cebda1c0712447b4b487ffc12a7
+  MIT, Copyright (c) 2026 AgentPlaybooks (LICENSE)
+
+The original is one Hermes Agent plugin folder -- plugin.json, a README and the
+skills/agentplaybooks-tools/SKILL.md prose skill -- holding no code of its own.
+This rewrite keeps that skill's guidance as its (help :agentplaybooks) topic and
+turns the commands the skill asks a host agent to type by hand into four tools
+(apb_doctor, apb_setup, apb_connect, apb_project) and a /apb command, so the
+cell builds the argv, keeps the profile selection on every call, defaults to a
+preview and writes nothing without apply. It shells out to the same
+AgentPlaybooks CLI, which the user installs themselves; the JSON manifest, the
+README and the skill's frontmatter are prose with nothing to run, so they are
+not carried. The CLI's own behaviour -- the writes into a harness profile and
+the hosted calls -- stays in the CLI, exactly as in the original.

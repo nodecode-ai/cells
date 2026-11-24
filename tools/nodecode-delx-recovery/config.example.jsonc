@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "delx": {
+    "enabled": true,
+    "endpoint": "https://api.delx.ai/v1/mcp/protocol?src=plugin",
+    "agent_id": "the id /delx register returned",
+    "agent_token": "its identity_auth.token, shown once",
+    "session_id": "the session it opened",
+    "language": "en",
+    "timeout_seconds": 30
+  }
+}

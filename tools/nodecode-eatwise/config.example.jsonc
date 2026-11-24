@@ -1,0 +1,15 @@
+// The eatwise section. Every member is optional; the defaults are what an
+// unconfigured cell runs on. Written with comments here, because a folder's
+// example config is documentation and never a secret.
+{
+  "eatwise": {
+    // Where the profile and the meal history live. Empty: eatwise/store.json
+    // under the Nodecode home. A relative path is read under that home too.
+    "history_file": "",
+    // The share of the day's targets one meal is compared with when a meal
+    // type is not named. 33 percent, as the original engine defaults.
+    "meal_share_percent": 33,
+    // How long a recorded meal is kept, in days. The original's default.
+    "retention_days": 180
+  }
+}

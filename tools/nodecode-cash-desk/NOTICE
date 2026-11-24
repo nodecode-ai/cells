@@ -1,0 +1,18 @@
+nodecode-cash-desk is a rewrite of FutureInvoked's FutureInvoked/cash-desk:
+
+  https://github.com/FutureInvoked/cash-desk
+  commit 26d5fabe5f50f250e5dc72c0751adbdb3625f732
+  MIT License, Copyright (c) 2026 FutureInvoked (LICENSE)
+
+The Python plugin is rewritten in Common Lisp against Nodecode's cell
+contract: its ledger, CSV importers, matching rule, reminder ladder, Figure
+Lock and team-approval flow are reimplemented, with money as whole cents and
+dates as day numbers rather than Python Decimals and dates. The ten tools,
+the section's meaning (sender, language, currency, IBAN, date order, small
+balances, import folders, outbox) and the "nothing is sent without a person
+approving exactly this text" rule are kept.
+
+Left out: IMAP sync (the bank statement is a CSV the person exports), SMTP
+sending (approved letters are written as .eml files for the mail client),
+the Hermes desktop page, the Czech keyword reply classifier (the model passes
+the reply kind) and the optional reply guard over the agent's own messages.

@@ -1,0 +1,16 @@
+nodecode-aistupidlevel is a rewrite of StudioPlatforms's StudioPlatforms/aistupidlevel-sdk:
+https://github.com/StudioPlatforms/aistupidlevel-sdk
+commit ba908770f2e97b0a85cc1f5a83240cbe94c8dfa9
+MIT, Copyright (c) 2026 Studio Platforms (AI Stupid Level) (LICENSE)
+
+Rewritten for Nodecode: the provider profile its Hermes plugin registers --
+the id and display name, the base URL https://aistupidlevel.info/v1 and its
+OpenAI chat wire, the router key variable ASL_ROUTER_KEY, the signup page,
+the routing modes it lists as fallback models, and the fast near-top mode it
+names for titles and compression. They are a catalog row here rather than an
+in-process provider object, so the model picker and the listing read them the
+way they read any provider's. Left out: the profile fields that mean nothing
+outside the Hermes registry (its aliases, its api_mode, supports_vision, and
+the base-URL environment variable, which is the section's base_url here), and
+the original's defensive drop of profile fields an older Hermes build lacks,
+since a Nodecode catalog row carries no such version skew.

@@ -1,0 +1,34 @@
+nodecode-channel-onebot is a rewrite of mario841859784's mario841859784/hermes-plugin-onebot:
+
+  https://github.com/mario841859784/hermes-plugin-onebot
+  commit 086dd7e5c13004e41301f5cea1f352c46b0f3c50
+  MIT, Copyright (c) 2026 mario841859784 (LICENSE)
+
+What was rewritten: the lane as a whole -- talking to a OneBot 11 bridge's
+HTTP API for the groups an account is in and the newest messages of each,
+deciding which of them were addressed to the bot (an at of its own QQ
+number, or a reply to one of its own messages, in a group; anything in a
+private chat; free-response groups and a mention switch for the rest),
+answering through (send_group_msg) and (send_private_msg), reading both
+shapes a OneBot message comes in (the segment array and the CQ code string,
+with its &amp; &#91; &#93; escapes), defusing a CQ code the model wrote so an
+answer cannot ping a group, and keeping a read position per chat so a
+restart does not answer the same message twice. All of it was reimplemented
+in Common Lisp against Nodecode's channel cell contract, so the chats,
+lanes, gate, cards and delivery are the channel kit's rather than the
+plugin's own gateway plumbing.
+
+What was left out and why: the Hermes gateway adapter class and its config
+plumbing are the harness's own and became a channels.onebot section. The
+plugin's WebSocket transport -- the reverse-WS server it hosts inside the
+gateway, and the forward-WS client -- is replaced by the bridge's HTTP API,
+which every bridge above serves on the same port as its WebSocket and which
+needs no long-lived socket of ours; the read position therefore lives in
+the running process rather than in a data file, and a restart answers
+nothing that was said while it was down instead of catching it up. The qq_*
+tools (send image, voice, video, file, forward; the raw NapCat API call;
+group history) are not carried as tools: the lane answers what the host
+hands it, and a model reaches the bridge directly for anything else. Inbound
+pictures are not downloaded or downscaled for a vision tool, the text-to-image
+renderer (fonttools and CJK fonts) is not carried, and the cron home channel
+is the host cell's delivery, not this folder's.

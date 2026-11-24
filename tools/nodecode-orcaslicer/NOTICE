@@ -1,0 +1,33 @@
+nodecode-orcaslicer is a rewrite of mazzanfar's mazzanfar/hermes-orcaslicer:
+
+  https://github.com/mazzanfar/hermes-orcaslicer
+  commit 8fc3a5a40ef4e0c639b76cefd90ad9a48a1a51ec
+
+MIT, Copyright (c) 2026 mazzanfar (LICENSE)
+
+What was rewritten: the plugin's stock-CLI contract with OrcaSlicer (the
+--datadir, --slice, --outputdir, --export-3mf, --load-settings and
+--load-filaments flags, discovered from a configured path, PATH or a desktop
+install), its preset catalog (every machine, process and filament preset
+under the install's own roots, with `inherits` resolved the way OrcaSlicer
+resolves it), its whitelist of changeable process settings and their bounds,
+its job folder (a copy of the input, the resolved presets, slice.log, the
+artifacts with their sha256, and the G-code comment report), its export that
+never overwrites a file, and the Moonraker, OctoPrint and PrusaLink status
+reads and upload bodies, with the rule that a printer credential is named by
+an ORCA_ or HERMES_ORCA_ environment variable and never written anywhere.
+Seven tools instead of twenty: orca_diagnose, orca_presets, orca_slice,
+orca_job, orca_export, orca_printer_status and orca_upload, plus a /orca
+command.
+
+What was left out, and why: the original's asynchronous slicing thread (a
+cell slices in the call that asked for it, so a job's state is never
+"orphaned worker" and needs no second process to poll), its 3MF zip
+rewriting for per-object process settings and per-instance
+move/rotate/scale (Common Lisp has no zip writer here, and the original's
+per-object edits were a large surface of their own), its Bambu LAN protocol
+(MQTT plus implicit FTPS, which needs a dependency that does not ride with
+Nodecode), its Duet and Flashforge adapters, its camera snapshot and its
+SVG layer preview, and the native "open in OrcaSlicer" review copy. A Bambu
+printer is reached today by exporting the artifact and using OrcaSlicer's own
+upload.

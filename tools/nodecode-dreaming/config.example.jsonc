@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. The declaration in cell.lisp is the authority.
+{
+  "dreaming": {
+    "enabled": true,
+    "state_dir": "",
+    "min_days": 2,
+    "forget_days": 60,
+    "budget_chars": 12000,
+    "hour": 3
+  }
+}

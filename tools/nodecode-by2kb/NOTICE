@@ -1,0 +1,32 @@
+nodecode-by2kb is a rewrite of Charlesmpc's Charlesmpc/by2kb:
+
+  https://github.com/Charlesmpc/by2kb
+  commit 5983ca8a479feb87321f5c37f59cf8ae28818451
+  MIT License, Copyright (c) 2026 Charles (LICENSE)
+
+The rewrite is by2kb/integrations/hermes, the plugin's Hermes gateway
+integration, as a Nodecode cell. What it keeps: the verbs the plugin ran
+through `by2kb` -- `search discover`, `search latest`, `search select` with
+the external-agent enricher, `ingest`, and the staged `enrichment next` /
+`enrichment submit` pair -- with the same argv, the same JSON read the same
+way, the same allowed exit codes (0 and 1 for a search, 0 and 4 for an
+ingest, 0..4 for a selection), the same three artifacts reported by the same
+names (raw_md, abstract_md, updated_md), the abstract shown without its
+front matter, and the same staging rule: a job whose summaries are pending
+says which job to carry on with. The scope the plugin derived from platform,
+chat and user is derived here from the session, so a conversation's
+recommendation list answers its own numbers and no other conversation's.
+The plugin's standing guidance became the cell's help topic and one
+paragraph in the harness sections every request carries.
+
+What is left out: the gateway hook. In Hermes a message that held a video
+URL, a `by2kb TOPIC` prefix or a bare number was intercepted before the
+model saw it; Nodecode has no such seam, so the model calls the tools and
+`/by2kb` gives the operator the same three routes. The plugin's Chinese
+chat replies, its 512-operation enrichment loop over a host model, and its
+Hermes skill files are gone with it: the staged operations are answered by
+the session's own model through by2kb_next and by2kb_submit, one operation
+at a time, as the plugin's own manual-enrichment path described.
+
+Nothing of the original's Python is bundled. The cell runs the same by2kb
+program the plugin ran, on PATH, and its own code is Common Lisp.

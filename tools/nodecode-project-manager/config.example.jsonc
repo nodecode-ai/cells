@@ -1,0 +1,24 @@
+// The section ~/.nodecode/config.jsonc may carry for the project manager cell
+// -- documentation, not config. A present section is enabled; "enabled": false
+// vetoes it; watch_paths is required.
+{
+  "project-manager": {
+    // The directories your git repositories live in, ~ for your home directory.
+    // A folder is a project when it holds a .git -- the folder a clone has, or
+    // the file a worktree keeps.
+    "watch_paths": ["~/src"],
+    // How many levels below each watch path a repository may sit: 0 reads only
+    // the watch path itself.
+    "depth": 2,
+    // The most repositories one scan reads, so a wide watch path stays quick.
+    "max_projects": 50,
+    // How many commits get_recent_commits lists when the caller does not say.
+    "commits": 10,
+    // The most branches one answer lists, newest commit first.
+    "branches": 25,
+    // The most changed files a project's detail lists.
+    "changed_files": 20,
+    // How long one scan answers from memory; 0 walks the disks on every call.
+    "cache_seconds": 15
+  }
+}

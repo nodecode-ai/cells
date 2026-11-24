@@ -1,0 +1,36 @@
+nodecode-opencode-shepherd is a rewrite of okazakee's okazakee/opencode-shepherd:
+
+  https://github.com/okazakee/opencode-shepherd
+  commit 207a1443a5daa20e20824d13776794c0057cd539
+  MIT, Copyright (c) 2026 okazakee (LICENSE)
+
+What was rewritten: the Python CLI and its opencode v2 client became Common
+Lisp in one Nodecode cell -- the same HTTP surface (`/session`,
+`/session/active`, `/session/<id>/message|form|permission|prompt|interrupt`,
+`/shell/<id>`), the same read-only snapshot of a server's sessions on which
+the alert decision rests (active flag, updated and idle times, pending
+questions and permissions, the last message and its outcome, and the
+background shells that will resume a turn), and the same conservatism about
+what counts as waiting: a turn waiting on a background shell is not reported,
+and a sub-session never reports a finished turn because its parent does. The
+CLI's subcommands became seven model-facing tools -- opencode_sessions,
+opencode_waiting, opencode_tail, opencode_send, opencode_permission,
+opencode_form, opencode_interrupt -- plus the /opencode command, with
+sessions resolved by id or by a fragment of an id or title exactly as
+`resolve` did, and with the same deduplication of what was already said: by
+form and permission id, and by idle timestamp and outcome, over a first poll
+that seeds the existing turns and a fresh-grace window that keeps a turn
+which resumes by itself from being news.
+
+What was left out, and why: the parts that existed to reach a person who was
+not at the machine -- the pipx install of the CLI from a pinned git commit,
+the cron and systemd wiring, the snapshot piped over SSH, the Telegram bot
+and the notify-command sink, and the CLI's own config file of
+enabled/quiet-hours/reminder settings. Here the watch is a worker in the
+agent's own process (`poll_seconds` in the section), and what it finds stands
+as one notice the model reads in its prompt and the person sees as a toast,
+so the reminder clock and the re-enable recap have nothing left to do. The
+event-driven mode (`--events`, an SSE connection to the server's bus) is not
+reproduced either: the poll it falls back to is the default here. Nor does
+the cell make or delete sessions (`new`, `close`): a session is the person's,
+and the cell only reads it and answers it.

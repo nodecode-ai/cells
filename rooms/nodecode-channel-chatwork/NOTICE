@@ -1,0 +1,35 @@
+nodecode-channel-chatwork is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-chatwork:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-chatwork
+  commit 8dbdff609b3c99768420a19a7ca646b6daad3dbe
+  MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+What was rewritten: the lane as a whole -- polling Chatwork's REST API v2 for
+the rooms an account is in and the newest messages of each, deciding which of
+them were addressed to the bot (a [To:the bot] tag, or a reply to one of its
+own messages, in a group room; anything in My Chat and in a direct chat;
+free-response rooms and a mention switch for the rest), answering as
+Chatwork's own Reply button does, with the [rp aid=.. to=room-message] line
+that notifies the asker, reading Chatwork's notation in ([code], [qt],
+[title], [info], [download:N], [url]) and writing it out ([code] for a fence,
+【...】 for a heading, no **bold**, and notification tags defused so a
+prompt-injected [toall] cannot ping a company room), the durable read
+position that keeps a restart from answering a message twice, and the
+rate-limit discipline that keeps a poll inside 300 calls per five minutes.
+All of it was reimplemented in Common Lisp against Nodecode's channel cell
+contract, so the rooms, lanes, gate, cards and delivery are the channel
+kit's rather than the plugin's own gateway plumbing.
+
+What was left out and why: the Hermes gateway adapter class and its config
+plumbing (PlatformConfig, SendResult, MessageEvent, the token lease, the
+plugin-data folder) are the harness's own and became a channels.chatwork
+section and a state file under the Nodecode home. The plugin's own
+guest-command rule -- while CHATWORK_ALLOWED_USERS is unset, only the
+token's account may run Hermes commands or answer an approval -- is the
+channel kit's operator rule now (declare owner), because the commands and
+approvals it guards are Nodecode's, not Hermes's. reply_to_text quoting of
+the replied-to message is not carried: the lane's session already holds the
+conversation it is answering in. Private notices (notice_delivery: private)
+and the /sethome delivery room are the host cell's delivery, not this
+folder's; and a card is never deleted, only answered under, because Chatwork
+cannot delete a message.

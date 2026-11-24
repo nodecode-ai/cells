@@ -1,0 +1,14 @@
+// The pass-secrets section of ~/.nodecode/config.jsonc — documentation, not
+// config: the folder gets pushed and holds no secret. A present section is
+// enabled; "enabled": false vetoes it. The store and its GPG key are the
+// operator's, reached through the pass binary on PATH.
+{
+  "pass-secrets": {
+    "enabled": true,
+    "binary": "pass",                    // the executable, searched on PATH
+    "store": "~/.password-store",        // the directory pass init made
+    "subdirs": ["shared"],               // keep it narrow: pass_env reads every entry under them
+    "timeout": 30,                       // seconds one pass call may take, gpg-agent included
+    "max_chars": 20000                   // how much of one answer the model is given
+  }
+}

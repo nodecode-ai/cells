@@ -1,0 +1,24 @@
+nodecode-recall-vault is a rewrite of tydavid5's tydavid5/recall-vault:
+
+  https://github.com/tydavid5/recall-vault
+  commit e564eb53143840540d1987b48906e1602050c73f
+  MIT, Copyright (c) 2026 Taiwo John (tydavid5) (LICENSE)
+
+Rewritten: the policy engine (per-transaction cap, daily cap, confirm
+threshold, allowlist, the ALLOWED / BLOCKED / NEEDS_CONFIRMATION decision and
+its order), the two JSON files under the plugin data directory, the five
+tools and their JSON answers, the audit ledger and its 200-entry cap, the
+spent-today reset, the remembered rules, and the /recall-vault command.
+
+Left out, and why: the Hermes hook names. The original hooked pre_tool_call,
+post_tool_call and pre_llm_call; this image has one around-chain over every
+tool dispatch, so the payment gate and the audit booking are one function on
+the :TOOL point, and there is no post_tool_call to keep in step — the
+approval answer and the call's own result are read where the call runs.
+The per-turn reminder rides a standing harness section rather than a
+pre_llm_call hook, so it survives a folded or compacted conversation without
+detecting one. The Hermes approval prompt became this image's operator
+question (Allow once / Deny), which is the same gate with the surface's own
+card. The plugin's own tool names, argument names, JSON members and
+/recall-vault subcommands are unchanged, so anything written against the
+original reads the same here.

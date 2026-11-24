@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "openltm": {
+    "user_id": "you",          // required: whose memories these are, one id across sessions
+    "capture": true,           // each finished turn adds what the rule table says is worth keeping
+    "session_max": 5,          // facts one session's turns may add by themselves
+    "importance_default": 3,   // the importance a memory written without one takes
+    "decay_days": 30,          // a memory's pull for recall halves after this many days, unless its importance is 5
+    "recall_limit": 10         // how many memories one recall answers unless the call says otherwise
+  }
+}

@@ -1,0 +1,15 @@
+// The memlock section: what /settings writes, shown with its usual answers.
+{
+  "memlock": {
+    // the JSON file the pins are kept in; memlock/pins.json under the home is
+    // the usual answer. The pin tool and /pins refuse until it is set.
+    "pins_file": "memlock/pins.json",
+
+    // how many standing instructions may be pinned at once
+    "max_pins": 16,
+
+    // the most the reminder block may carry, in characters; the highest
+    // priorities fit first
+    "reminder_chars": 600
+  }
+}

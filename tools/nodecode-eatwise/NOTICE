@@ -1,0 +1,30 @@
+nodecode-eatwise is a rewrite of harrylabsj's harrylabsj/hermes-plugin-eatwise:
+
+  https://github.com/harrylabsj/hermes-plugin-eatwise
+  commit d482a1230703e3714abf187754608fd0704000d5
+  MIT License, Copyright (c) 2026 HaiDong Jiang (harrylabsj) (LICENSE)
+
+Rewritten: the engine the plugin only launched. The plugin's one real job was
+to start eatwise-mcp, a zero-dependency Node server, over stdio and expose its
+nine MCP tools; the arithmetic that server holds is here in Common Lisp --
+Mifflin-St Jeor BMR and TDEE, the goal-adjusted calorie target with its floors,
+the protein/fat/carbohydrate/fibre/sodium/water targets, the meal-share
+comparison, the upper-limit and target classifications, the safety gate for
+minors, pregnancy, breastfeeding, kidney risk and the acute, eating-disorder and
+medication phrases, the 180-day retention, and the consent switches. The four
+tools are that surface regrouped: eatwise_foods, eatwise_targets,
+eatwise_review_meal and eatwise_history, plus /eatwise and (help :eatwise).
+The food table kept its ids, names, aliases, default servings, serving grams,
+per-100 g numbers, parse notes, confidence tags and source labels.
+
+Left out: the Node runtime and the MCP protocol itself. A cell calls its tools
+in-process, so nothing is spawned and `npx` is never asked for a git package.
+The bundled database is cut from 2900 entries to 467 -- every derived
+cooked-dish recipe plus every entry the database's own common vocabulary names
+or aliases -- which is the takeout food a meal is likely to name; the remaining
+raw TFND and FNDDS rows are not carried. Also left out: the free-text parser's
+full vocabulary clarifier (the cell answers the segments it could not match
+instead of suggesting substitutions from the vocabulary), per-day completeness
+bookkeeping beyond the confirmed day_complete flag, the JSON export file (the
+history tool's list and day answer the same data as text), meal revision by
+mealId, and the SQLite file (one JSON file under the home stands in).

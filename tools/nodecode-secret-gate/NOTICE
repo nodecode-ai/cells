@@ -1,0 +1,7 @@
+nodecode-secret-gate is a rewrite of MSAbhishek22's MSAbhishek22/hermes-secret-gate:
+
+https://github.com/MSAbhishek22/hermes-secret-gate
+commit 03b99206c02e0c92dccff69976121850773e5b46
+MIT, Copyright (c) 2026 M S Abhishek (LICENSE)
+
+The plugin is a deterministic secret scanner for a Hermes agent: nine provider formats, an entropy heuristic, credential paths, three tools that scan, gate and receipt a decision, and a post-tool-call hook that audits every tool result without changing it. This rewrite keeps all of it and drops the Python: the same rules as cl-ppcre expressions, the same CLEAR/REVIEW/LEAKED verdicts and ALLOW/WARN/BLOCK gates, the same masked-preview-only evidence, the same three tool names, and the audit as advice on Nodecode's :tool point, which hands the result back unaltered exactly as the hook did. The slash command and the tool descriptions are the original's. What was left out: the bundled skill, which the plugin shipped as a file it never registered, so its guidance is the cell's manual topic (help :secret-gate); and the host-state mirror of the receipts, since the cell's ring lives in memory for the life of the process and the event log already holds every tool result the audit read.

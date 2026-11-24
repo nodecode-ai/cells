@@ -199,3 +199,17 @@ flow would have slept."
     (is (search "signed out" (cell-entry "nodecode-muse-code" "muse-code" "logout")))
     (is (null (nlk:json-value (nle::read-auth-file nle::*auth-file-path*) :object "oauth_tokens" "muse-code")))
     (is (equal "k" (nlk:json-value (nle::read-auth-file nle::*auth-file-path*) :string "api_keys" "other" "key")))))
+
+;;; --- /muse-code typed alone --------------------------------------------------------------
+
+(deftest MUSE-CODE-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((muse-code-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-muse-code" "muse-code" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/muse-code login" "/muse-code logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
+          (is (equal 'NIL
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-muse-code" "muse-code" "frobnicate"))))))

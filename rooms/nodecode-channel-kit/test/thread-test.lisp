@@ -408,6 +408,137 @@ origin noted — ORIGIN the keys past the three that place it."
       (is (= 1 (started)) "the ask ran once")
       (is (= 1 (length (plans-matching (recorded-plans executor) :content "the answer"))) "and was answered once"))))
 
+(deftest channel-thread-a-wake-on-a-reaped-lane-is-told-where-it-is ()
+  ;; 2026-11-16: a cron job's report woke a thread lane the reaper had let go
+  ;; hours before, and the woken turn ran with its where section withdrawn:
+  ;; ADOPT-LANE took the lane back from its id alone, and the surface every
+  ;; turn of the lane was told went with the reaped lane. A second lane, opened
+  ;; meanwhile by a press on the first one's answer, was shipping the same
+  ;; work, and the woken lane knew nothing of it. The woken turn is told where
+  ;; it is, as every turn of the lane before it was, that the thread went on
+  ;; without it, and which lane runs there now.
+  (let ((seen '()))
+    (nle:hook 'nle::read-live-sections "wake-where" (nck::live-section-advice))
+    (with-provider-stub (context
+                         (push (shasht:write-json (nle::compiled-turn-context-messages context) nil)
+                               seen)
+                         (wire-message "assistant" :content "the answer"))
+      (with-ask-host (host thread-ask-host :responses (list (reply 200 "id" "42"))
+                      :name "wake-where")
+        (nlk:with-cleanup ((nle:unhook 'nle::read-live-sections "wake-where"))
+        (flet ((lane () (nck:find-lane (nck:host-lanes host) "chat-100-t42-m5")))
+          (thread-ask host "<@999> watch the gate")
+          (is (await (:timeout 10) (and (lane) (not (nck::lane-live-p (lane))))))
+          (is-carrying (asked (or (first seen) ""))
+            "Where you are: test room 42"
+            (:absent "woke this lane"))
+          ;; The reaper lets the lane go; the job's report wakes it.
+          (nck:remove-lane (nck:host-lanes host) "chat-100-t42-m5")
+          ;; Another lane of the bot's runs in the thread, opened on m9. It has
+          ;; no session to take the wake (WAKE-ADVICE), so the wake runs here.
+          (setf (nck::lane-active-turn-id
+                 (nck:intern-lane (nck:host-lanes host) "chat-100-t42-m9"
+                                  :target '(:channel-id "100" :thread-id "42")
+                                  :trigger-message-id "9"))
+                "t9")
+          (setf seen '())
+          (nle:submit "chat-100-t42-m5" "[cron \"gate-watch\" fired]: GATE CHANGED" :source "cron")
+          (is (await (:timeout 15) (and (lane) seen (not (nck::lane-live-p (lane))))) "the wake ran")
+          ;; Told from its first request, never that it is nowhere.
+          (is-carrying (woke (or (first (last seen)) ""))
+            "Where you are: test room 42"
+            "This turn woke this lane after it had gone idle"
+            "is not in your history"
+            "Another lane of yours is running in it now, on the ask m9."
+            "Read the thread's newest messages before you act"
+            (:absent "(withdrawn)"))))))))
+
+(defun wake-test-thread-lane (host superseded)
+  "HOST's lane in thread 42 other than SUPERSEDED's, or NIL."
+  (let ((found nil))
+    (nck::map-lanes (nck:host-lanes host)
+                    (lambda (lane)
+                      (when (and (equal "42" (getf (nck:lane-target lane) :thread-id))
+                                 (not (equal superseded (nck:lane-session-id lane))))
+                        (setf found lane))))
+    found))
+
+(defmacro with-superseded-thread-lane ((host current &key hold) &body body)
+  "Run BODY over HOST, whose ask m5 opened thread 42 and was answered, its lane
+then let go by the reaper, and CURRENT, the lane a later line in the thread
+opened -- its first round held until BODY signals HOLD, when HOLD names a
+semaphore."
+  (let ((held-once (gensym "HELD")))
+    `(let ((,held-once nil))
+       (with-provider-stub (context
+                            (let ((said (shasht:write-json
+                                         (nle::compiled-turn-context-messages context) nil)))
+                              (when (and ,hold (not ,held-once) (search "ship the fix" said))
+                                (setf ,held-once t)
+                                (bt2:wait-on-semaphore ,hold :timeout 20))
+                              (wire-message "assistant"
+                                            :content (if (search "GATE CHANGED" said)
+                                                         "the wake's answer"
+                                                         "an answer"))))
+         (with-ask-host (,host thread-ask-host :responses (replies "42") :threads t
+                         :name "wake-current-lane")
+           (setf (nck:host-policy ,host)
+                 (channel-policy :allowed-channels '("100") :channel-match :discord
+                                 :require-mention t :mention-target "999"
+                                 :mention-test #'nck:discord-mention-p))
+           (thread-ask ,host "<@999> watch the gate")
+           (is (await (:timeout 10)
+                 (let ((lane (nck:find-lane (nck:host-lanes ,host) "chat-100-t42-m5")))
+                   (and lane (not (nck::lane-live-p lane))))) "the ask was answered")
+           ;; The reaper lets the lane go; a line in the thread forks another.
+           (nck:remove-lane (nck:host-lanes ,host) "chat-100-t42-m5")
+           (is (eq :answer (nck:handle-candidate
+                            ,host (nck:mark-joined-thread
+                                   ,host (test-candidate :thread "42" :parent "100" :message "9"
+                                                         :text "<@999> ship the fix")))) "a line in the thread is answered")
+           (is-present (,current (await (:timeout 10) (wake-test-thread-lane ,host "chat-100-t42-m5"))) "and opened the lane that works in the thread now"
+             ,@body))))))
+
+(defun wake-turn-inputs (session-id)
+  "The inputs of SESSION-ID's turns, oldest first."
+  (mapcar #'nlk:turn-started-input (nlk::events :session-id session-id :kind "turn.started")))
+
+(deftest channel-thread-a-wake-for-a-superseded-lane-steers-the-lane-running-there ()
+  ;; 2026-11-17: a cron report woke a thread lane the reaper had let go while
+  ;; the lane a later line opened ran the same work in the thread. Both wrote
+  ;; the same report, and it went up twice, 27 s apart: the woken lane was
+  ;; told the other ran, looked twice, and was writing when it posted. A
+  ;; thread is one conversation, and the wake reaches the lane working in it,
+  ;; as a line typed there would: it steers that lane's running turn.
+  (let ((hold (bt2:make-semaphore :name "held-round")))
+    (with-superseded-thread-lane (host current :hold hold)
+      (is (await (:timeout 10) (nck:lane-active-turn-id current)) "its turn runs, held in its round")
+      (let ((admission (nle:submit "chat-100-t42-m5" "[cron \"gate-watch\" fired]: GATE CHANGED"
+                                   :source "cron" :source-id "gate-watch")))
+        (is (eq :steered (nlk::active-input-admission-disposition admission)) "the wake steers the turn running in the thread"))
+      (bt2:signal-semaphore hold)
+      (let ((id (nck:lane-session-id current)))
+        (is (await (:timeout 20) (= 2 (count-session-events id "turn.started"))) "and runs as that lane's next turn")
+        (is-carrying (woke (or (second (wake-turn-inputs id)) ""))
+          "[A cron wake sent to an earlier lane of yours in this thread, the one on the ask m5,"
+          "reached you instead"
+          "GATE CHANGED"))
+      (is (await-plan executor :path "/rooms/42/messages" :content "the wake's answer" :timeout 20) "its answer goes up in the thread")
+      (is (= 1 (count-session-events "chat-100-t42-m5" "turn.started")) "the lane the reaper let go ran nothing"))))
+
+(deftest channel-thread-a-wake-for-a-superseded-lane-is-the-idle-current-lanes-next-turn ()
+  ;; The lane working in the thread is idle: the wake is its next turn.
+  (with-superseded-thread-lane (host current)
+    (is (await (:timeout 10) (not (nck::lane-live-p current))) "the line was answered")
+    (let ((admission (nle:submit "chat-100-t42-m5" "[cron \"gate-watch\" fired]: GATE CHANGED"
+                                 :source "cron" :source-id "gate-watch")))
+      (is (eq :started (nlk::active-input-admission-disposition admission)) "the wake starts a turn"))
+    (let ((id (nck:lane-session-id current)))
+      (is (await (:timeout 20) (= 2 (count-session-events id "turn.started"))) "on the lane working in the thread")
+      (is (search "reached you instead" (or (second (wake-turn-inputs id)) ""))))
+    (is (await-plan executor :path "/rooms/42/messages" :content "the wake's answer" :timeout 20) "its answer goes up in the thread")
+    (is (= 1 (count-session-events "chat-100-t42-m5" "turn.started")) "the lane the reaper let go ran nothing")))
+
 (deftest channel-a-line-holds-its-turn-without-its-first-frame ()
   ;; A line learned its turn only from TURN.STARTED's frame, and one the fold
   ;; missed was left running with no turn, which nothing ends. It holds the
@@ -497,11 +628,52 @@ origin noted — ORIGIN the keys past the three that place it."
               (nck:lane-active-turn-id lane) "t3")
         (nck::continue-lane host lane (nck:make-ask :room "chat-100-t42" :lane "chat-100-t42-m5" :message-id "m8"
                                                     :target '(:channel-id "100" :thread-id "42") :prompt "and this"))
-        (is (equal '("m8" . "t3") (nck::lane-heard-line lane)) "a running one too, once the turn it cut has answered")
-        (setf (nck::lane-heard-line lane) nil)
+        (is (null (nck::lane-heard-line lane)) "a running one keeps no line for whichever answer comes next")
+        (is (equal "m8" (getf (first (nck::lane-steered-lines lane)) :reply)) "but notes it with its steer, for the turn that steer opens")
+        (setf (nck::lane-steered-lines lane) nil)
         (nck::continue-lane host lane (nck:make-ask :room "chat-100" :lane "chat-100-t42-m5" :message-id "m9"
                                                     :target '(:channel-id "100") :prompt "from the channel"))
         (is (null (nck::lane-heard-line lane)) "a line from the parent channel takes no reference")))))
+
+(deftest channel-thread-each-line-that-steers-a-turn-is-the-one-its-answer-replies-to ()
+  ;; Two lines typed in the thread while the lane's turn runs both steer it,
+  ;; and each runs a turn of its own, in the order they were said. Each of
+  ;; those turns answers the line that started it: the first line's answer
+  ;; goes up as a reply to the first line, not to the line said after it, and
+  ;; the second line's answer as a reply to the second.
+  (let ((held (bt2:make-semaphore :name "held-round"))
+        (calls 0))
+    (with-provider-stub (nil (when (= 1 (incf calls))
+                               (bt2:wait-on-semaphore held :timeout 20))
+                             (wire-message "assistant" :content (format nil "answer ~d" calls)))
+      (with-ask-host (host thread-ask-host :responses (replies "42") :threads t
+                      :name "thread-steer-anchors")
+        (setf (nck:host-policy host)
+              (channel-policy :allowed-channels '("100") :channel-match :discord
+                              :require-mention t :mention-target "999"
+                              :mention-test #'nck:discord-mention-p))
+        (thread-ask host "<@999> capital of australia?")
+        (is-present (lane (await-lane host "chat-100-t42-m5")) "the ask opened its lane"
+          (is (await (:timeout 10) (nck:lane-active-turn-id lane)) "and its turn runs, held in its round")
+          (flet ((line (message text)
+                   (nck:handle-candidate
+                    host (nck:mark-joined-thread
+                          host (test-candidate :thread "42" :parent "100" :message message
+                                               :text text)))))
+            (is (eq :answer (line "6" "and new zealand?")) "the first line steers the running turn")
+            (is (eq :answer (line "7" "and fiji?")) "and so does the line said after it"))
+          (bt2:signal-semaphore held)
+          (is (await (:timeout 20) (= 3 (count-session-events "chat-100-t42-m5" "turn.started"))) "each line ran a turn")
+          (let ((inputs (mapcar #'nlk:turn-started-input
+                                (nlk::events :session-id "chat-100-t42-m5" :kind "turn.started"))))
+            (is (search "and new zealand?" (or (second inputs) "")) "the first line's turn ran first")
+            (is (search "and fiji?" (or (third inputs) "")) "and the second line's after it"))
+          (flet ((answered (said)
+                   (plan-matching (recorded-plans executor) :path "/rooms/42/messages" :content said)))
+            (is (await (:timeout 10) (and (answered "answer 2") (answered "answer 3"))) "both turns answer in the thread")
+            (loop for (said reply) in '(("answer 1" nil) ("answer 2" "6") ("answer 3" "7"))
+                  do (is-present (posted (answered said)) "each turn's answer is posted"
+                       (is (equal reply (plan-field posted "reply_to")) "as a reply to the line that started its turn, the ask's to none")))))))))
 
 (deftest channel-thread-an-answer-built-on-a-peers-line-replies-to-it ()
   ;; Bots a person names together talk in their thread: the answer of the turn
@@ -766,6 +938,54 @@ origin noted — ORIGIN the keys past the three that place it."
     (is (await (:timeout 15) (= 2 (count-session-events "chat-100-t42-m5" "turn.started"))))
     (is (null (plan-matching (recorded-plans executor) :path "/rooms/100/messages")))))
 
+(deftest channel-thread-a-line-that-meets-a-turn-just-started-steers-it ()
+  ;; 2026-11-16, a team thread: a peer's line reached the lane between one
+  ;; turn's end and the start of the turn a parked steer opened. The kit read
+  ;; the lane idle and submitted the line as a fresh turn, the engine parked it
+  ;; behind the new turn as a follow-up, and every later steer passed it over:
+  ;; it ran eight turns and 83 minutes later, after its talk had closed. A line
+  ;; that meets a turn the kit has not seen start steers that turn, in its
+  ;; place among the lines after it.
+  (let ((held (bt2:make-semaphore :name "held-round"))
+        (calls 0))
+    (with-provider-stub (nil (when (= 1 (incf calls))
+                               (bt2:wait-on-semaphore held :timeout 20))
+                             (wire-message "assistant" :content (format nil "answer ~d" calls)))
+      (with-ask-host (host thread-ask-host :responses (replies "42") :threads t
+                      :name "thread-steer-race")
+        (setf (nck:host-policy host)
+              (channel-policy :allowed-channels '("100") :channel-match :discord
+                              :require-mention t :mention-target "999"
+                              :mention-test #'nck:discord-mention-p))
+        (thread-ask host "<@999> capital of australia?")
+        (is-present (lane (await-lane host "chat-100-t42-m5")) "the ask opened its lane"
+          (is (await (:timeout 10) (nck:lane-active-turn-id lane)) "and its turn runs, held in its round")
+          (flet ((line (message text)
+                   (nck:handle-candidate
+                    host (nck:mark-joined-thread
+                          host (test-candidate :thread "42" :parent "100" :message message
+                                               :text text)))))
+            (let ((running (nck:lane-active-turn-id lane)))
+              ;; The kit's read of the lane is a moment old: the turn's start
+              ;; has not folded yet.
+              (setf (nck:lane-active-turn-id lane) nil)
+              (is (eq :answer (line "6" "and new zealand?")) "the line that meets it is an ask")
+              (setf (nck:lane-active-turn-id lane) running)
+              (is (eq :answer (line "7" "and fiji?")) "and so is the line after it, which steers the turn")))
+          (bt2:signal-semaphore held)
+          (is (await (:timeout 20) (= 3 (count-session-events "chat-100-t42-m5" "turn.started"))) "each line ran a turn")
+          (let ((inputs (mapcar #'nlk:turn-started-input
+                                (nlk::events :session-id "chat-100-t42-m5" :kind "turn.started"))))
+            (is (search "and new zealand?" (or (second inputs) "")) "the line that met the turn runs next, ahead of the line said after it")
+            (is (search "and fiji?" (or (third inputs) "")) "and the line after it runs after it"))
+          (flet ((answered (said)
+                   (plan-matching (recorded-plans executor) :path "/rooms/42/messages" :content said)))
+            (is (await (:timeout 10) (and (answered "answer 2") (answered "answer 3"))) "the turns the two lines ran answer in the thread")
+            (loop for (said reply) in '(("answer 1" nil) ("answer 2" "6") ("answer 3" "7"))
+                  do (is-present (posted (answered said)) "each turn's answer is posted"
+                       (is (equal reply (plan-field posted "reply_to")) "as a reply to the line that started its turn, the ask's to none"))))
+          (is (await (:timeout 10) (zerop (nck::room-book-running-total (nck::host-book host)))) "and every slot is back once the lane settles"))))))
+
 (deftest channel-thread-new-in-the-thread-starts-the-next-line-fresh ()
   ;; End to end: /new typed in a thread clears the thread's room, and the next
   ;; line opens a lane of its own over the cleared record — not the next turn of
@@ -848,7 +1068,7 @@ origin noted — ORIGIN the keys past the three that place it."
   ;; its own name already, and costs no call.
   (let ((asked '()))
     (with-saved-globals ((nle::*session-naming* :inline))
-      (with-stubbed-fdefinition (nle:complete (system user &key session-id max-tokens fallback-p)
+      (with-stubbed-fdefinition (nle:complete (system user &key session-id max-tokens fallback-p purpose)
                                   (push user asked)
                                   "Title: \"Capital of Australia vs Sydney.\"")
         (with-ask-host (host thread-ask-host :answers ("Canberra") :responses (replies "42" "p1")

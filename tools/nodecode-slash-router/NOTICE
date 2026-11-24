@@ -1,0 +1,30 @@
+nodecode-slash-router is a rewrite of raitoxlol's raitoxlol/hermes-slash-router:
+
+  https://github.com/raitoxlol/hermes-slash-router
+  commit 2088919f4c59927aa2d47f21bb12e639453c1a2a
+  MIT, Copyright (c) 2026 raitoxlol (LICENSE)
+
+What was rewritten: the routing itself, as Lisp verbs instead of a desktop
+plugin. The original watched the Hermes Desktop composer, took a slash token
+that was not an exact command, and asked TypeSafe's Jev -- one choice question
+over the live command catalog -- to name the command it meant, acting only at
+a confidence of 0.85 or more and re-deciding every use. This cell keeps that
+core: the same POST <base>/v1/systemone, the same question and rubric, the
+same catalog normalization (names lowercased and de-duplicated, descriptions
+cut at 1000, at most 1000 commands), the same abstention, the same
+profile-and-catalog-scoped corrections kept as advice and never as answers,
+and the same exact-name-or-alias pass-through that costs no lookup. The key
+comes from the same place the original's backend read it from,
+TYPESAFE_API_KEY, and also from auth.json's api_keys.typesafe, as a Nodecode
+provider key is kept; base URL and model are the cell's section.
+
+What was left out, and why: everything that was the Desktop's, not the
+router's. There is no composer middleware to intercept -- in Nodecode the
+model calls (slash-router:route "/modles") when a user's /command did not
+run -- so the draft rewriting, the "What did you mean?" field and the status
+bar indicator are gone, replaced by one /slash-router command that says where
+routing stands and can check the key. Reminders live in one JSON file under
+the Nodecode home instead of Desktop plugin storage, and the routing-history
+export and the installer are not carried over. The catalog is Nodecode's own
+live slash catalog (the commands a headless caller can run) rather than a
+Desktop catalog, and a caller may pass a catalog of its own.

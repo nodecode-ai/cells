@@ -1,0 +1,31 @@
+nodecode-kiwi is a rewrite of harrylabsj's harrylabsj/hermes-plugin-kiwi:
+
+  https://github.com/harrylabsj/hermes-plugin-kiwi
+  commit e6edb130d04d4fdfdb7144305bdb2f3829bf8fae
+
+Apache-2.0, Copyright (c) harrylabsj (LICENSE)
+
+What was rewritten: this cell starts the same pinned buyer runtime the original
+registered. The original is an Agent Plugins v1 package with no code of its
+own: a manifest that adds one MCP server (`npx -y @harrylabsj/kiwi@0.12.24 mcp
+serve`) to every session, and a sourcing skill beside it. Here the cell speaks
+MCP's stdio transport to that same runtime itself -- an initialize handshake,
+then one tools/call or tools/list per child process -- so it needs no MCP
+server list, no config edit and no other cell. The 13 tools the runtime
+exposes are registered for the model under their own names with the arguments
+their descriptions name, and a 14th, kiwi_tools, asks the installed runtime
+what it answers; /kiwi does the same from the operator's side. The config
+keys carry over as the section: the launcher, the pinned package, a timeout
+and the runtime's store path. The skill's rules -- the search, RFQ, negotiate,
+agreement, handoff loop, the approval gates on accept and handoff, the
+dual-source search with its labels, the price kinds, and what a CommerceIntent
+may carry -- are the cell's primer, so (help :kiwi) teaches what SKILL.md
+taught. Nothing is fetched but the pinned npm package, and the runtime's own
+catalog and merchant traffic is the same the plugin made.
+
+What was left out: the prose skill as a separate file (its rules live in the
+primer and in the tool descriptions), the Chinese translation of that skill,
+and the long-lived MCP session (each call is its own child process, which the
+runtime's SQLite store makes free). The plugin's README notes an optional
+Ed25519 signing key directory for identity-gated reads; here it is read from
+the environment the launcher inherits, not from the section.

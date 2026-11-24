@@ -149,7 +149,7 @@ what a setup panel offers for allowed_users."
   ("owner" :list :doc "the operator's user id, whose word is standing policy in the chat"
            :choices #'probe-user-choices)
   ("pairing" :boolean :default t
-             :doc "a private chat from someone not allowed is answered with a pairing code, and the operator is told; /channels pair CODE lets them in")
+             :doc "a private chat from someone not allowed is answered with a pairing code, and the operator is told; /channels lets them in with it")
   ("allowed_roles" :list
                    :doc "a group member's standing that lets them drive the bot as a listed user does: administrator (every admin, the creator too) or creator; read off the group's admin list every five minutes, and nothing in a private chat")
   ("allowed_threads" :list :doc "forum topic ids; empty admits every topic")

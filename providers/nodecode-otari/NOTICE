@@ -1,0 +1,19 @@
+nodecode-otari is a rewrite of mozilla-ai's mozilla-ai/hermes-provider-otari:
+https://github.com/mozilla-ai/hermes-provider-otari
+commit 9d9ba9a55ddb713195d77d1931a4970769de7ae1
+Apache-2.0, Copyright (c) 2026 Mozilla.ai (LICENSE)
+
+Rewritten: the plugin's whole surface, which is one provider registration
+(otari/__init__.py) — the gateway's base address, the OTARI_API_KEY key, the
+OpenAI-compatible chat wire it speaks, and its reasoning-effort spelling
+(otari/__init__.py:19-29: max sent as xhigh, a rung the gateway does not
+accept left out). In their place the cell adds Otari's row to Nodecode's
+models catalog, answers the credential from the same variable, and spells the
+effort in the round's body; the models come from the gateway's own
+GET /api/v1/models, which is where Nodecode's listing looks anyway.
+
+Left out: Hermes's plugin manifest and registration API (plugin.yaml,
+register_provider), which Nodecode cells replace with a declared section and
+hooks; and the plugin's OTARI_BASE_URL environment variable, whose job the
+section's base_url does. Nothing else of the original exists to leave out: it
+ships no tools, hooks, commands, dependencies or bundled models.

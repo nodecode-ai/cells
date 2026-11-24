@@ -21,7 +21,7 @@ open port and no Meta business account.
   people send, and sends them back as WhatsApp media. A spoken reply arrives
   as a real voice message, waveform included (`voice_replies`).
 - **Strangers:** a direct message from a number not allowed is answered with
-  a pairing code and you are told; `/channels pair CODE` lets them in.
+  a pairing code and you are told; `/channels` lets them in by that code.
 - **Group roles:** `allowed_roles` lets a group's admins (or only its
   creator) drive the bot as listed users do.
 - **Restarts:** after the device was away, asks WhatsApp kept from the last

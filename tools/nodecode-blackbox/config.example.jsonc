@@ -1,0 +1,19 @@
+// The blackbox cell's section, as ~/.nodecode/config.jsonc would carry it.
+// Nothing here has to be set: the built-in rules are the whole setup.
+{
+  "blackbox": {
+    // audit reports a finding; block says the call would have been refused.
+    "mode": "audit",
+
+    // The floor the verdict line measures a finding against.
+    "min_severity": "high",
+
+    // Paths an agent rarely has a reason to read. `~` reads a home folder,
+    // or any folder: `~/.ssh/*` also matches a full path ending in
+    // `.ssh/id_ed25519`.
+    "protected_paths": ["~/.ssh/*", ".env", ".env.*", "*.pem", "*.key", "*.p12", "~/.aws/credentials"],
+
+    // A file of injection patterns of your own, one regular expression a line.
+    "threat_list": ""
+  }
+}

@@ -13,6 +13,7 @@ const SHAPES = {
   clock: '<circle cx="7.5" cy="7.5" r="5.5"/><path d="M7.5 4.5v3l2 1.3"/>',
   globe: '<circle cx="7.5" cy="7.5" r="5.5"/><path d="M2 7.5h11M7.5 2c1.8 1.8 1.8 9.2 0 11M7.5 2c-1.8 1.8-1.8 9.2 0 11"/>',
   grid: '<rect x="2.5" y="2.5" width="4" height="4" rx="1"/><rect x="8.5" y="2.5" width="4" height="4" rx="1"/><rect x="2.5" y="8.5" width="4" height="4" rx="1"/><rect x="8.5" y="8.5" width="4" height="4" rx="1"/>',
+  keyboard: '<rect x="1.5" y="3.5" width="12" height="8" rx="1.5"/><path d="M4 6h.01M6.5 6h.01M9 6h.01M11 6h.01M5 9h5"/>',
   lines: '<path d="M2.5 4h10M2.5 7.5h10M2.5 11h6"/>',
   person: '<circle cx="7.5" cy="5" r="2.5"/><path d="M2.5 13c.8-2.4 2.7-3.5 5-3.5s4.2 1.1 5 3.5"/>',
   plug: '<path d="M5.5 1.5v3M9.5 1.5v3M4 4.5h7v2a3.5 3.5 0 0 1-7 0zM7.5 10v3.5"/>',

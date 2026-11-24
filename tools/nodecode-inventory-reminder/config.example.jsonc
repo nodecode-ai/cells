@@ -1,0 +1,12 @@
+// The nodecode-inventory-reminder cell's section. Copy it into
+// ~/.nodecode/config.jsonc, or set it in /settings.
+{
+  "inventory-reminder": {
+    // The digest file to read: a JSON object of repos, skills, tools, apps,
+    // models and services. Left out, $INVENTORY_JSON is read, then
+    // ~/.hermes/inventory.json.
+    "inventory_json": "~/.hermes/inventory.json",
+    // How many hits one report carries before it says how many were left out.
+    "max_hits": 40
+  }
+}

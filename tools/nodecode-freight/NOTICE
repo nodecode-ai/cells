@@ -1,0 +1,37 @@
+nodecode-freight is a rewrite of harrylabsj's harrylabsj/hermes-plugin-freight-reconciliation:
+
+  https://github.com/harrylabsj/hermes-plugin-freight-reconciliation
+  commit 160ed80ddf6333e48f176f299322aaf9ed2414b0
+  MIT License, Copyright (c) 2026 Haina (harrylabsj) (LICENSE)
+
+Rewritten: the payer-side reconciliation itself, in Common Lisp instead of the
+original's Python engine. A case is one carrier, one currency, one billing
+period; the five inputs (bill lines, trips, rate rules, waiting evidence, toll
+receipts) are imported from CSV and frozen in the case file with the digest of
+the file they came from; matching is the original's P1 rule (the carrier's own
+trip_ref names a trip of the ledger, a ref to another carrier's trip is a
+conflict); the rate in force is selected from the confirmed rules by carrier,
+route, vehicle class, charge code and the trip's departure, with the same
+RATE_NOT_FOUND / RATE_AMBIGUOUS refusal; the three formulas are the original's
+(per trip, waiting blocks with the free seconds taken off first and the rest
+rounded up, actual receipt with an optional cap); amounts are integer minor
+units parsed from decimal strings, and a charge with no comparable rate keeps
+`unknown` rather than zero; the issue codes, the duplicate and reversal checks,
+the three partitions that add up to the bill total, the not-billed trips, and
+the per-group evidence references are the original's. The original's habit of
+never approving a payment is kept: the cell drafts a difference list and an
+export, and a person decides.
+
+Left out, because each belongs to the Hermes host or to the original's bigger
+engine: the 14 MCP tools are five tools here (open, import, run, differences,
+export), and the local admin page a person used to confirm on has no
+counterpart — a Nodecode cell answers in the session, so the confirmation is
+the person reading the export; the SQLite schema with its job queue, the
+crash-recovery pass that marks interrupted runs, and the paged evidence views
+are replaced by one JSON case file and a direct call; the alias matching (P2)
+and the fuzzy candidate list (P3) are left to a person, who can re-import a
+corrected trip_ref; the rate-rule brief versions, the confirmed-object workflow
+and the xlsx export are not carried (the export is CSV); the Chinese interface
+and the bilingual skills are not carried (the manual is the English primer on
+(help :freight)); and the original's six-file limit and row caps are a single
+`max_rows` setting.

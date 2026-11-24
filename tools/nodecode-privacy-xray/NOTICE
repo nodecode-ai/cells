@@ -1,0 +1,25 @@
+nodecode-privacy-xray is a rewrite of MadeByBrain's MadeByBrain/hermes-extensions:
+
+https://github.com/MadeByBrain/hermes-extensions
+commit aa2bf92140016d7cf2ce855d0fff98f46badbc94
+MIT, Copyright (c) 2026 MadeByBrain (LICENSE)
+
+Rewritten: the whole tool on Nodecode's own seams. The two observer hooks
+(pre_api_request, pre_auxiliary_call) became one hook on the round point and one
+on the credential point; the ledger is one tab-separated metadata line per
+request in this home's data folder, and the CREDENTIAL hook is what names the
+host a request went to. The config audit reads ~/.nodecode/config.jsonc instead
+of Hermes's config and prints Nodecode's own `(config-set ...)` form as the fix;
+`/xray fix <id> yes` writes through the same code the config panel uses. The
+canary, the read-only store search with masked snippets and the self-contained
+HTML leak map are the original's, over this home's files.
+
+Left out, and why: the German translation (Nodecode speaks one language here);
+the optional guard middleware that masked canary and watch values in outgoing
+text, which needs an intercepted request body this harness does not hand a cell;
+the dashboard tab (its own web page); the SQLite queries into Hermes's state.db
+(replaced by a byte search over this home's files, so no schema is assumed); the
+ledger rotation keeps one older file rather than parsing JSONL; and the
+`--deep` pass and the access report of the subject finder, which were queries
+against Hermes's stores only. Nothing in the original was a network call, and
+nothing in this rewrite is one either.

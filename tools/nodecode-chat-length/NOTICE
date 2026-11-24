@@ -1,0 +1,27 @@
+nodecode-chat-length is a rewrite of MadeByBrain's MadeByBrain/hermes-chat-length:
+https://github.com/MadeByBrain/hermes-chat-length
+commit 1759b26a66c7b4d54703186cc867a5869baa4f12
+MIT, Copyright (c) 2026 MadeByBrain (LICENSE)
+
+The original is a Hermes Agent plugin in Python: POST_API_REQUEST stores the
+numbers the provider billed for the last call and the model's context length in
+a JSON store of its own, and PRE_LLM_CALL computes the fill one turn later and
+hands the model a one-turn instruction to append a notice with an opener for a
+fresh chat, which the new chat then fills in from Hermes's session_search. This
+rewrite keeps the same two notices at the same defaults, the same once-per-chat
+rule and the same re-arming after the fill drops, and the same template (EN and
+DE, or the conversation's language). The seams are Nodecode's: the fill is read
+from the session's own turn.usage facts in the log instead of being kept beside
+them, the notice rides the :ROUND point rather than a user message, and the
+window is kept per session under the cell's own state key because a new turn
+opens without a measurement. On demand the numbers are a /chat-length command
+and a chat_length tool, which the original had no equivalent of.
+
+Left out, because the harness differs: the compaction basis (Hermes measures
+against the point where it compacts; Nodecode evicts turn by turn, so the
+bound is the model's window), the platform switch that silences background
+jobs (a Nodecode cron or subagent session is a session like any other), and the
+JSON store with its file lock and 30-day retention (the log and the session
+state already outlive a restart, and one process owns the home). The opener
+names `nodecode resume SESSION-ID` where the original named session_search,
+since that is how a Nodecode session is read back.

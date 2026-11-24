@@ -1,0 +1,36 @@
+nodecode-network-xray is a rewrite of rusty4444's rusty4444/hermes-network-xray:
+
+  https://github.com/rusty4444/hermes-network-xray
+  commit 4c28b7be6116e150b41ce2e62571c63bfc0968ae
+  MIT, Copyright (c) 2026 Sam Russell (LICENSE)
+
+Rewritten: the plugin's evidence model and its four model-facing tools. A
+probe is still one direct connection -- no proxy, no redirect followed, no
+body, no credential -- walking DNS, TCP, verified TLS and one HTTP HEAD, with
+each stage's answer kept on the record; the bundle's fields are the
+original's (schema_version, kind, id, captured_at, vantage, target, policy,
+capture, stages, integrity), so a bundle the original's portable collector
+wrote imports here and a record taken here reads the same way. The tools keep
+their names (network_xray_probe, network_xray_import, network_xray_compare,
+network_xray_history), their arguments (url, label, connect_ip, bundle_json,
+left_id, right_id) and their answers (ok and result, or ok false and one
+line saying what to check), and the comparison keeps the original's verdicts
+(both_healthy, both_failed, diverged, inconclusive), its stage-by-stage
+findings, its hypotheses, its one manual follow-up with
+requires_confirmation, and its limitations. The Python became Common Lisp:
+sockets are usocket's, the verified handshake is cl+ssl's with the peer's
+protocol and issuer read through OpenSSL, the JSON is the kernel's, the
+content digest is ironclad's SHA-256 over canonical bytes, and the records
+are one JSON file per probe in the cell's own directory. Left out: the
+Desktop workbench page and its React bundle, the standalone HTML report
+export, the CLI's own subcommands and the portable collector's stdin/stdout
+protocol -- a Nodecode cell is called from a turn or from /network-xray, and
+a peer's evidence arrives as the bundle JSON it wrote. The TLS stage records
+the negotiated protocol and the issuer instead of a certificate fingerprint,
+because the image's TLS library exposes no portable accessor for one; and the
+comparison of a certificate therefore reads that protocol, which is what
+first_divergence needed either way. Added, because a cell lives in one
+profile rather than in a plugin folder: the `network-xray` section (a
+required vantage label, the stage timeout, the history limit and the records
+directory), a /network-xray command that prints the same ladder as lines,
+and (help :network-xray).

@@ -1,0 +1,8 @@
+// nodecode-parrotnotes: what this cell's section of ~/.nodecode/config.jsonc
+// can say. Nothing is required; the endpoint is the plugin's own, and there
+// is no key to keep, since ParrotNotes signs in with OAuth.
+"parrotnotes": {
+  "server": "parrotnotes",                          // the mcp.servers name the tools come under
+  "url": "https://mcp.parrotnotes.app/mcp",         // the hosted ParrotNotes MCP endpoint
+  "limit": 20                                        // how many notes a listing shows
+}

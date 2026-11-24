@@ -1,0 +1,24 @@
+nodecode-distro-reader is a rewrite of Distro-Media's Distro-Media/hermes-plugin-distro-reader:
+
+  https://github.com/Distro-Media/hermes-plugin-distro-reader
+  commit 57bfa385e6dd9e1dc1d5230d0907c1c07d248ae7
+  MIT, Copyright (c) 2026 Distro Media (LICENSE)
+
+The plugin was a portable Agent Plugins v1 package: a plugin.json declaring Distro's
+hosted reader an untrusted MCP server, an mcp.json naming its Streamable HTTP endpoint,
+and three skills (reader, news digest, archive research) with two reference notes. Its
+server advertised eight tools. This rewrite keeps all eight -- their names, their
+argument names, and their descriptions, read from the server's own tools/list -- and
+posts the same JSON-RPC to the same endpoint itself through nlk:http, so no MCP client,
+no Node and no local server are needed; the endpoint is stateless, so one request is
+one call. The three skills' guidance (discover, then read only what the request needs;
+keep every canonical link and its date; deduplicate and date-filter a digest; frame
+archive research as hypotheses with counter-evidence; never pay or tip without approval
+of the exact amount, asset and network, and never claim settlement without evidence) is
+the cell's manual topic, (help :distro-reader), and each tool's argument list is its
+declared schema. What was left out: the MCP session handshake and the untrusted-server
+approval gate (the endpoint needs no session), the skills as files (they are prose, and
+they are the manual), and the visual reader's payload in full -- the cell asks for link
+delivery by default and clips a long page, though htmlDelivery "inline" still answers
+the whole page. Nothing of the original is vendored, and no credential, key or account
+is involved on either side.

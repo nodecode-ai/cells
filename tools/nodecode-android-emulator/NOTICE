@@ -1,0 +1,31 @@
+nodecode-android-emulator is a rewrite of PIR8-Software's PIR8-Software/hermes-android-emulator:
+
+  https://github.com/PIR8-Software/hermes-android-emulator
+  commit 3b5cb61e8bd6c4600f797a44c44234a6371bd59a
+  MIT License, Copyright (c) 2026 Roy Crabtree (LICENSE)
+
+Rewritten: the plugin's eighteen model-facing tools — emu_status, emu_shell,
+emu_install, emu_uninstall, emu_screenshot, emu_tap, emu_swipe, emu_type,
+emu_key, emu_launch, emu_packages, emu_push, emu_pull, emu_logcat, emu_gps,
+emu_battery, emu_network and emu_deeplink — with their argument names and
+their answer shapes; the serial guard that pins every call to an emulator and
+refuses a non-emulator serial without a deliberate opt-in; the input checks
+(package, activity, keycode, URL, remote path, logcat filter) and the escaping
+of typed text and shell words; the host-write confinement to the home, the cwd
+and the temp dir with no silent overwrite; and the resource bounds on timeouts,
+line counts and output size. The Python (subprocess, shlex, pathlib) is Common
+Lisp here: nlk:run-bounded starts adb, one section declaration states the
+settings, and eighteen nlk:define-contract declarations state the tools'
+arguments, so the schema the model is shown and the body that runs are one
+shape. The one seam, NODECODE-ANDROID-EMULATOR::*RUN*, is what a test stubs.
+
+Left out: everything of the plugin that is not a model-facing tool — the
+Hermes dashboard API (start/stop, AVD create/list/wipe/delete, sdkmanager
+system-image installs, screen recording, touch record-and-replay, the
+instrumented-test runner, push notifications), the desktop sidebar with its
+live screen and keyboard shortcuts, and the emu start/stop/status CLI wrapper.
+Those are surfaces of the Hermes gateway and desktop, and a cell's equivalent
+would be a chat lane or a page rather than the tools this rewrite keeps. The
+host-write check is also said differently: the original resolved symlinks and
+compared real paths, while the cell refuses a ".." segment and compares the
+written path against the allowed roots.

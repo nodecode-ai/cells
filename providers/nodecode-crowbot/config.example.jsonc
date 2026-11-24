@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key itself lives in auth.json (/connect) or CROWBOT_API_KEY.
+{
+  "crowbot": {
+    "enabled": true,
+
+    // Where Crowbot is served. The chat lane appends /chat/completions.
+    "base_url": "https://api.crowbot.sh/v1",
+
+    // The window /models reports for a model: the relay's list names none.
+    "context_tokens": 262144,
+
+    // What a round is sent when no effort is picked. A rung, or "endpoint"
+    // to leave it to the relay (whose default is its ceiling).
+    "default_effort": "medium"
+  }
+}

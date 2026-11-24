@@ -1,0 +1,24 @@
+nodecode-token-safety is a rewrite of rezearcher's rezearcher/greyridge-token-safety-skill:
+
+  https://github.com/rezearcher/greyridge-token-safety-skill
+  commit 3a7848edcac2163a4e02c7b9a084c8c8476384f3
+  MIT License, Copyright (c) 2026 Grey Ridge Signals Group LLC (LICENSE)
+
+The original is a SKILL.md for an agent harness: prose that tells the agent to
+run curl against the Grey Ridge x402 API, one line per endpoint, and a paragraph
+on how to read the verdict. This cell keeps what that gave a user — the same two
+free preview calls, the same fields, the same SAFE / CAUTION / AVOID reading —
+and moves them out of a shell and into the image: the token_safety and swap_gate
+tools, the /token-safety command and the manual topic all make the same GETs
+through NLK:HTTP and answer the report as JSON, with the API's camelCase keys
+relabelled to snake_case and the upgrade object's paid URL lifted into one
+paid_route line. The address guard the skill's TypeScript example carried is
+reimplemented as a refusal before any request goes out.
+
+Left out: the paid route itself. The skill tells the agent it may call the paid
+URL with an x402 client that pays 0.01 USDC a call from a wallet; that needs a
+wallet and a payment client, which this image has no part of, so an answer names
+the paid URL and the price and leaves the payment to whoever has one. Also left
+out: the suggested `npm i x402-fetch viem` and the unpinned `pip install` helper
+the skill named for unattended use, since a cell vendors no Node or Python, and
+the skill's own example snippets for other agent frameworks.

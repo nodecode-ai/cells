@@ -1,0 +1,35 @@
+nodecode-arcade is a rewrite of leoresendedop-sys's leoresendedop-sys/hermes-arcade:
+
+  https://github.com/leoresendedop-sys/hermes-arcade
+  commit 2daa7bed248a916ed2058f4574d31283a506b571
+  MIT License, Copyright (c) 2026 Leo (LICENSE)
+
+What was rewritten: the original is three surfaces of one plugin - a dashboard
+tab (dashboard/dist/index.js and style.css, three HTML5 canvas games with glow,
+particles, a WebAudio chiptune synth and an attract mode), a dashboard backend
+(dashboard/plugin_api.py, FastAPI routes that persist plays and scores), and an
+agent plugin (plugin.yaml, __init__.py, schemas.py, tools.py) whose three tools
+answer from the same score store. Here the games themselves are Common Lisp:
+Snake is a grid run that ends at a wall or its own body, Breakout a wall, three
+lives and a level, Pong a match to seven, each advanced a move at a time and
+answering its whole frame as text (games.lisp). The score store keeps the
+original's shape and rules - the three games, a play counted when a run starts,
+the top ten a game, initials uppercased and cut to three with ??? for none,
+best first, filed under the Nodecode home instead of the harness's plugin-data
+directory (store.lisp). The three tool answers are the original's, on the same
+data: the games with how to play them, the boards with their play counts, and
+totals with each game's champion and one player's entries (cell.lisp). The
+slash command is the original's /arcade, saying where the cabinet is and
+letting the operator play it.
+
+What was left out, and why: the dashboard tab has no counterpart - Nodecode has
+no plugin tab to draw a canvas in - so its rendering (glow, scanlines, particle
+bursts, screen shake), its chiptune sound, its attract mode with three
+autopilots, its arcade-style initials entry dialog, its leaderboard UI and the
+Google Fonts import that tab made are all gone; a frame is text and the model
+or the operator reads it. The FastAPI backend's HTTP routes go with the tab,
+since nothing browses them any more. The attract mode's rule that demo runs
+touch no board is not needed here: every run is a run. What the rewrite adds:
+arcade_play and /arcade (the seam the tab used to be), the arcade section that
+sets initials, the board's length, the grid and the answer's length, and
+(help :arcade).

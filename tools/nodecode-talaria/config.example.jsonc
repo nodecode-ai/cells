@@ -1,0 +1,12 @@
+{
+  // The talaria-webui plugin extends a Hermes Agent API server with
+  // /talaria/v1 routes. The cell is a client of that server.
+  "talaria": {
+    // The server's base URL, scheme included.
+    "url": "http://127.0.0.1:8080",
+    // The environment variable holding the server's API key.
+    "key_env": "HERMES_API_KEY",
+    // How long one request may take, in seconds.
+    "timeout": 15
+  }
+}

@@ -1,0 +1,15 @@
+// The recovery peer's section of ~/.nodecode/config.jsonc. `peer' is the
+// only thing the cell needs: without it the section refuses and /cells says
+// so. Everything else has a default worth keeping.
+{
+  "recovery-peer": {
+    "peer": "some-lane/some-model",   // provider/model of a model you also have, not the one you run on
+    "enabled": true,                 // watch tool results and ask on a stall
+    "repeat_threshold": 3,           // identical results in a row before one review
+    "no_progress_tools": ["eval"],    // tools whose identical success is no progress
+    "max_tokens": 220,               // the review's own ceiling
+    "clip": 350,                     // how much of a failure the peer reads
+    "cooldown_seconds": 120,         // how long a session waits between reviews
+    "other_provider_only": true      // ask only when the peer is on another provider
+  }
+}

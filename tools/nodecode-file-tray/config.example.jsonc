@@ -1,0 +1,11 @@
+// The section ~/.nodecode/config.jsonc may carry for the file tray --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it, and an absent one runs on the defaults below.
+{
+  "file-tray": {
+    // The most paths one session's tray keeps, the original plugin's 40 by
+    // default. Touching a path again updates it in place; past this many the
+    // oldest leave the list.
+    "max_items": 40
+  }
+}

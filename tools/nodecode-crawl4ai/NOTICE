@@ -1,0 +1,30 @@
+nodecode-crawl4ai is a rewrite of mblauser's mblauser/hermes-plugin-crawl4ai:
+
+  https://github.com/mblauser/hermes-plugin-crawl4ai
+  commit 6eb0842a39e2d89fb02ca85512945700dbebdc86
+  MIT, Copyright (c) mblauser (README)
+
+The plugin registers a `crawl4ai` web-extract backend with Hermes: it POSTs a
+page URL to the `/md` route of a self-hosted Crawl4AI server, with the
+server's JWT as a bearer token, and hands the answer back as a document whose
+title is the page's first top-level heading. It reads the markdown both ways
+Crawl4AI answers it — a string, or an object carrying `raw_markdown` — and it
+refuses a page URL that resolves into a private or loopback network
+(`is_safe_url`) before the request goes out.
+
+The rewrite keeps that behaviour over `nlk:http`: one `crawl4ai_extract` tool
+that takes one or more page URLs, a `/crawl` command for a single page, the
+same `/md` request shape and bearer header, the same two answer shapes, the
+same title rule, and the same private-address refusal, answered per page the
+way the original answered it per URL. The original's availability rule (both
+`CRAWL4AI_URL` and `CRAWL4AI_API_TOKEN` had to be set) is the `crawl4ai`
+section here, with the token optional for a server started with auth off, and
+a URL that is not an http address refused at start rather than on first use.
+
+Left out, because Nodecode does it elsewhere: the environment variables and
+the `.env` file (the section carries `url` and `api_token`), the
+`plugins.enabled` and `web.extract_backend` config keys, the per-profile
+symlink and gateway-restart steps, and the dependency on Hermes's
+plugin-provider load-order fix. The `format` argument the provider accepted
+was never sent to the server, so nothing was lost with it.
+

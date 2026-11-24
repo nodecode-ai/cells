@@ -1,0 +1,15 @@
+nodecode-ntfy-approval is a rewrite of AhmetArif0's AhmetArif0/hermes-ntfy-approval:
+
+  https://github.com/AhmetArif0/hermes-ntfy-approval
+  commit 95d3a4b838073d6908c578ca1a9f04154349a2cf
+  MIT, Copyright (c) 2026 AhmetArif0 (LICENSE)
+
+cell.lisp rewrites the original ntfy-approval transport as one Nodecode cell: the ntfy
+publish-with-buttons and reply-topic round trip, one random code per button, redirects not
+followed, the token kept out of the notification, the topic-length floor without a token, the
+withdrawal of a notification once the wait is over, and the fail-closed rule that no answer, an
+unreachable server or an unset topic denies the call. The suspicious-command judgement, which
+Hermes' own gate did, is this rewrite's: a rule table read against the commands an eval call
+runs. The test system's fake ntfy server stands in for the wire, since the tests run offline.
+Written as a Nodecode cell against the cell contract; no Python, and none of the original's
+files run here.

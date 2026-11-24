@@ -1,0 +1,26 @@
+{
+  // Proof Run: record a demonstrated run, then gate its reuse.
+  // Nothing here is required; an absent section runs in `enforce'.
+  "proof-run": {
+    // enforce  a covered call runs only with a demonstrated call's exact
+    //          arguments and its reads made fresh again; off records nothing
+    "mode": "enforce",
+
+    // seconds a read stays fresh: a guarded call needs its reads made
+    // again since, and a read is spent by the next mutation
+    "max_age": 60,
+
+    // tool names whose calls are observations, not gated steps
+    "reads": ["proof_status", "web_search", "web_extract", "look", "help"],
+
+    // the first verb of an eval form that makes it an observation
+    "read_forms": ["help", "look", "config-get", "cells", "index", "search"],
+
+    // compare a replayed call's answer with the demonstrated one; false
+    // gates on arguments and reads alone
+    "check_evidence": true
+
+    // where contracts are kept, relative to the Nodecode home
+    // "directory": "proof-run/"
+  }
+}

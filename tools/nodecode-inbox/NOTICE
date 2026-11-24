@@ -1,0 +1,35 @@
+nodecode-inbox is a rewrite of NousResearch's NousResearch/hermes-labs-plugins:
+
+  https://github.com/NousResearch/hermes-labs-plugins
+  commit 4987918a068fcf4b3efbb584db5dd05e5f57c669
+  MIT License, Copyright (c) 2026 Nous Research (LICENSE)
+
+Rewritten: the plugin's `hermes inbox` command -- `report.py`'s snapshot and
+its text view, and the read-only collectors in `collectors.py` -- as one
+Nodecode cell. The five sections are the same five and print in the same
+order with the same glyphs: Needs attention (what a cell last said under a
+standing-notice key, a session whose answer waits on the person, a cron job
+whose last run failed or that was paused), In progress (the evaluations
+still running, each with the id the model's own (eval-status N) takes),
+Finished, result not yet delivered (a cron answer the session that scheduled
+it has not been sent yet), Scheduled (the active jobs and how far away each
+next fire is) and Open surfaces (the sessions seen most recently, with how
+long ago). The row limit of the section is the one thing the command did not
+have. Nothing is written, no source is required, and a source that could
+not be read is named in the `Not read` footer and in the snapshot's
+:sources instead of failing the read -- the plugin's own posture, on this
+harness's stores.
+
+Left out, and why: the stores, because they are Hermes's. `processes.json`
+and its psutil liveness re-check, the `async_delegations` table, the
+`runtime/active_sessions.json` leases and the shared kanban board have no
+counterpart here, so the cell reads this home's own four sources instead --
+the standing-notice board, the session directory, the cron cell's registry
+row and the image's evaluation registry -- through their public readers.
+Also left out: `--json`, since the snapshot is already a plist
+(`(NODECODE-INBOX:SNAPSHOT)`) and the text is what a person and a model
+read; the `hermes -p PROFILE` flag, which here is another home; and the
+`sandboxed` process state, which went with the process registry. Pending
+approvals are still not shown, as they were not there -- they live in the
+memory of the process that asked; what this cell does report is the other
+half a person cares about, a session whose newest answer now waits on them.

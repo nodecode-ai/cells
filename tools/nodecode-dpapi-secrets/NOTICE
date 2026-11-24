@@ -1,0 +1,41 @@
+nodecode-dpapi-secrets is a rewrite of Yicheng-Mark's Yicheng-Mark/hermes-windows-plugins:
+
+  https://github.com/Yicheng-Mark/hermes-windows-plugins
+  commit 5bad3fb2baf04ce6befecfefce6d14f4c9c98934
+  MIT, Copyright (c) 2026 Yicheng-Mark (LICENSE)
+
+The original is one Python plugin folder for Hermes Agent (`dpapi-secrets/`). It
+registered a secret source named `dpapi`: at startup `fetch()` read one file,
+`HERMES-DPAPI-1` and a DPAPI blob, decrypted it with `CryptProtectData`'s
+counterpart through ctypes, parsed the JSON `{name: value}` inside and answered
+the variables the `secrets.dpapi.map` config named -- warnings for the ones the
+store could not answer, an error and nothing injected when none could. Its own
+part was the file format and its header, the ctypes prototypes, the user-scope
+flag, the config parser and its warnings, the error kinds (NOT_CONFIGURED,
+BINARY_MISSING, AUTH_FAILED, EMPTY_VALUE) and the words each one gets, and a
+provisioning CLI (`set`, `unset`, `list`, `path`) that wrote the store
+atomically and never put a value on a command line or in the clear.
+
+This rewrite keeps the store, the format and the protections as a cell:
+`dpapi_list` is the same store read for names, `dpapi_show` one entry's value,
+`dpapi_env` the mapping the original injected, `dpapi_status` the protection
+and the count, `dpapi_set` and `dpapi_unset` the CLI's two writes, and
+`/dpapi-secrets` them in one command. The `HERMES-DPAPI-1` header and its
+`{name: value}` payload are the original's, so a store the plugin wrote is read
+here unchanged; the DPAPI calls are SBCL alien calls with every argument typed,
+as the original typed every ctypes argument; the user-scope flag, the UI-forbidden
+flag, the fail-closed reads, the atomic write and the config warnings are its
+rules reimplemented in Common Lisp. `(secret NAME)` reads one entry for a form
+instead of an environment variable, and `(resolve)` answers the whole mapping.
+
+Left out, and why: Hermes' secret-source seam itself, which Nodecode does not
+have -- so a value is read when a tool asks for it rather than injected at
+startup, nothing is written into the process environment, and the original's
+precedence rules have nothing to act on. The bundled CLI's hidden-prompt and
+stdin forms are the shell's job here: `/dpapi-secrets set` asks through a
+dialog. Nothing outside Windows can run DPAPI, so on another platform the cell
+writes the same map under a header of its own, a 0600 file, and says so
+everywhere it is asked -- the original simply refused to resolve anything
+there. The original's `timeout_seconds` has no work to bound and is not
+carried. DPAPI and the Data Protection API are Microsoft's; the license above
+covers the plugin, not the platform.

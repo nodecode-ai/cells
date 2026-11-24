@@ -1,0 +1,34 @@
+nodecode-found is a rewrite of Utkarshkapil's Utkarshkapil/found-hermes-plugin:
+
+  https://github.com/Utkarshkapil/found-hermes-plugin
+  commit 525b2bbfd02f5703253b260d2e1ac3af9c370e00
+  MIT, Copyright (c) 2026 Utkarsh Kapil (FOUND) (LICENSE)
+
+The rewritten plugin is the Agent Plugins package at that commit: plugin.json,
+mcp.json and skills/found-outreach/SKILL.md. It declares no code, so what was
+rewritten is its configuration and its skill. mcp.json names FOUND's hosted
+server (https://app.foundtofind.com/mcp) and runs mcp-remote@0.1.49 through
+npx to keep a browser-signed-in session; this cell speaks the same MCP
+streamable-HTTP wire in Lisp (initialize, notifications/initialized,
+tools/call, a session kept by Mcp-Session-Id, a JSON or event-stream answer
+read either way) and needs no Node. The remote tool names are kept
+(connect_status, find_leads, pipeline_stats, pipeline_breakdown,
+campaign_report, compare_campaigns, prioritise_accounts, research_account,
+draft_message, find_new_leads, find_contact_at_company, get_new_leads,
+enrich_lead), gathered into six tools a model can pick between. The skill's
+guidance is kept whole as (help :found): which tool answers which question,
+found_status once near the start, the ids it answers, the signal behind each
+lead, campaigns that start paused, the quote-then-confirm spend, and every
+third_party and their_words field being someone else's words.
+
+What was left out, and why: the browser sign-in, because mcp-remote is the
+Node program this cell exists to replace -- the section carries the API key
+the original README documents for servers and headless machines instead; the
+npx launch and its token store under ~/.mcp-auth, which belong to that
+program; and the five remote tools that write to the account (get_campaign,
+create_campaign, update_sequence, add_to_list, add_to_campaign), which the
+help topic names so the model points the user at FOUND's own app, but which
+this cell does not wrap. The tool
+set is served by FOUND at run time and is not covered by the pinned commit,
+so a tool FOUND renames is reached here by the name it had at that commit.
+LICENSE is the repository's LICENSE, unchanged.

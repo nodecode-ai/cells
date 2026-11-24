@@ -1,0 +1,20 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "kinocut": {
+    "enabled": true,
+    "ffmpeg": "ffmpeg",
+    "ffprobe": "ffprobe",
+    "output_dir": "~/Videos/cuts/",
+    "crf": 20,
+    "preset": "medium",
+    "font_name": "DejaVu Sans",
+    "font_size": 20,
+    "caption_margin": 40,
+    "max_black_percent": 50,
+    "pass_score": 80,
+    "timeout_seconds": 900
+  }
+}

@@ -1,0 +1,29 @@
+nodecode-git-review is a rewrite of mister-ideas's mister-ideas/git-review:
+
+  https://github.com/mister-ideas/git-review
+  commit a1944377c3f8d5699668b67379be9bf63ca0cee7
+  MIT License, Copyright (c) 2026 mister-ideas (LICENSE)
+
+Rewritten: the read side of the review pane as two model-facing tools and a
+command. The same five scopes the pane computes (unstaged, staged, uncommitted,
+branch, commits) are computed here with the same git plumbing -- rev-parse,
+status, diff, merge-base, log, show, ls-files -- with explicit repository
+context, literal pathspecs, bounded context lines and one timeout per command.
+The unified patch the pane paints is answered as text, with a per-file churn
+summary read out of the patch itself, and new untracked files rendered as their
+own new-file hunks. The write path is the pane's commit box: stage (all or
+named paths), commit with the repository's hooks off, push (publishing a branch
+that has no upstream), and create a pull or merge request with gh or glab. The
+pane's read_only setting, its base ref, its ignore-whitespace flag and its
+display ceilings are the cell's section. The repository's LICENSE is unchanged
+beside this file.
+
+Left out: everything that is drawing rather than computing -- the split layout,
+syntax colours, folding and expanding unchanged runs, the file tree and its
+search, drag-to-cite into the composer, the status bar, the keyboard shortcut
+and the persisted display state. Also left out: the "Last agent turn" scope and
+its snapshot machinery (an index and object database of the plugin's own,
+written at every message), the AI-drafted commit message that rides the host's
+one-shot template, the staged/unstaged per-file discard, the dashboard and its
+HTTP routes, and the pull-request lookup that runs gh or glab on every refresh
+(here a request is created on ask, and an existing one is not looked up).

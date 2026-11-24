@@ -1,0 +1,35 @@
+nodecode-whoop is a rewrite of davidmosiah's davidmosiah/whoop-mcp:
+
+  https://github.com/davidmosiah/whoop-mcp
+  commit d15516fa2671e9749d43531fe0f1f447d5632686
+  MIT License, Copyright (c) 2026 David Mosiah (LICENSE)
+
+Rewritten: the connector's read path against WHOOP's developer API v2 — the
+recovery, sleep, cycle and workout collections (`/v2/recovery`,
+`/v2/activity/sleep`, `/v2/cycle`, `/v2/activity/workout`) and the profile and
+body measurements (`/v2/user/profile/basic`, `/v2/user/measurement/body`); the
+scored-record reads (`score_state` "SCORED", the fields under `score`, the
+sleep stage summary in milliseconds); the per-metric trend statistic
+(average, min, max, a least-squares slope over the chronologically ordered
+scored records, and the rising/falling/stable/insufficient_data direction with
+the original's per-metric epsilon); the freshness rule that refreshed an
+access token within 120 seconds of expiry; and the not-medical-advice posture.
+Five of the connector's tools are here under their original wire names:
+whoop_daily_summary, whoop_recovery_trend, whoop_sleep_trend, whoop_list_workouts
+and whoop_get_profile. The Node and TypeScript — the MCP server over stdio, the
+fetch and cache layers — is Common Lisp here: nlk:http for WHOOP's API and its
+OAuth token endpoint, one section declaration for the settings, and
+nlk:define-contract declarations for the tools' arguments, so the schema the
+model is shown and the body that runs are one shape.
+
+Left out: everything that was the MCP server rather than the data — JSON-RPC
+over stdio, the local HTTP transport, the SQLite response cache, the audit and
+privacy tools, the synthetic demo data, the wellness profile shared with the
+author's other connectors under `~/.delx-wellness/`, and the connection-status
+tool that read ~/.hermes/config.yaml. Also left out: the setup, auth and doctor
+CLI commands (a cell cannot open a browser consent page for you; the README
+says which command to run once), the whoop_list_* collection tools other than
+workouts, and the whoop_get_cycle/get_sleep/get_workout by-id tools. The daily
+summary keeps the scored values and the window averages; the original's
+defensive baseline, readiness fill, diagnostics and action candidates are not
+computed here.

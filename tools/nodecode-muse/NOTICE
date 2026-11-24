@@ -1,0 +1,34 @@
+nodecode-muse is a rewrite of xiaohei-info's xiaohei-info/hermes-muse:
+
+  https://github.com/xiaohei-info/hermes-muse
+  commit 0dade28130b6901dfa2dd81a067856441948d33c
+  MIT License, Copyright (c) 2026 xiaohei-info (LICENSE)
+
+The original is a Hermes assembly: one `muse_manage` tool over forty actions,
+six Cron jobs (`memory-upkeep`, `nightly-review`, `feed-pulse` and their
+reviews), a Skill with fourteen references, a Dashboard and a Desktop page,
+holding goals, expiring interests, ideas, Feed articles, reminder candidates,
+research runs and operation findings in one SQLite-and-files store, with
+revisions and request ids on every write. What this rewrite keeps is the part
+a person asks for by name: the same tool name and the original's action names
+for goals, interests, ideas, the Feed, reminders, the Feed brief and
+forgetting, the arguments still inside one `data` object, and the fields the
+original's Skill documents for each (title, description, completion criteria,
+deadline, status active/done/cancelled, a note on completion, expiring
+interests, Feed sources and why, due reminders resolved as done, dismissed,
+stopped or snoozed). Objects carry the integer revision the original's
+`expected_revision` compares, and a Feed article's key still makes one
+article out of one event. The one page a user reads -- goals, the Feed and
+reminders -- is `/muse` and the panel it opens, and (help :muse) is the
+procedure text the Skill carried. State is one JSON file under the home
+instead of SQLite plus a content tree, so a person can read it.
+
+Left out, and why: the six Cron jobs (this rewrite runs nothing while a
+session idles -- a due reminder is handed to the next model request instead),
+background research and delegation to subagents, the memory-upkeep and
+self-review procedures with their operation audit and findings, calendar and
+source-check windows, content paging with cursors, the read-only Dashboard
+/FastAPI router and the Desktop page, and the multi-profile management. They
+are each a large surface of their own, and all of them rest on Hermes Cron,
+Hermes delegation and Hermes' Dashboard that a Nodecode cell does not have.
+Nothing of the original is vendored: no Python, no Node, no Hermes imports.

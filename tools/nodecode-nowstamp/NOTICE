@@ -1,0 +1,28 @@
+nodecode-nowstamp is a rewrite of zakiyys's zakiyys/hermes-nowstamp:
+
+  https://github.com/zakiyys/hermes-nowstamp
+  commit 26148cca897f0798ca2cfc035e9eb2e00349bcf8
+  MIT License, Copyright (c) 2026 Zakiyys (LICENSE)
+
+Rewritten: the whole reading -- the timezone-aware clock with its weekday, its
+UTC offset and the strftime format setting, English and Bahasa Indonesia
+weekday names, the gap since the conversation last moved and the words it is
+said in ("5 min ago", "yesterday 19:37", a calendar comparison rather than a
+count of hours), the same reading on demand through the now tool and /now, and
+the opt-in tool-result stamp with its interval, which here rides the :TOOL
+point rather than a first-string-wins transform hook. The grace under failure
+is the plugin's: a reading that cannot be built falls back to this machine's
+own zone, and a stamp that fails leaves the tool result untouched.
+
+Left out: the hook placement. The plugin appended its line to the user message
+of every request through a Hermes-only pre_llm_call hook, recorded reply times
+through post_llm_call, and kept its table of last instants in the host's plugin
+state; a cell has one standing context seam -- the harness section the engine
+reads at a turn's first request and freezes for that turn's rounds -- so the
+reading is per turn here, and the table of last instants is a small file of
+this home (nowstamp/state.tsv, capped at the plugin's 200 sessions) so a gap
+still survives a restart. Also left out: hermes_time, the Hermes runtime
+module the plugin imported for its timezone resolver, replaced by this machine's
+own tz database; and the plugin's YAML settings file, replaced by the cell's
+config section. The now tool, /now and the (help :nowstamp) topic are
+additions, not part of the original.

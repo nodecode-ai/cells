@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "loci": {
+    "enabled": true,
+    "endpoint": "http://127.0.0.1:5624/mcp",
+    // Usually both empty: the app writes its token to its own discovery
+    // file, which the cell reads. Name a file, or the token itself, only
+    // when the app's own file is elsewhere.
+    "token": "",
+    "token_file": "",
+    "request_timeout": 120
+  }
+}

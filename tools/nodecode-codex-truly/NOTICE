@@ -1,0 +1,33 @@
+nodecode-codex-truly is a rewrite of kyssta-exe's kyssta-exe/hermes-codex-truly:
+
+  https://github.com/kyssta-exe/hermes-codex-truly
+  commit 1913d2a0a4b2dd3e4283af5c78241de4d3a2995e
+  MIT License, Copyright (c) 2026 kyssta (Ammar) (LICENSE)
+
+Rewritten: the measurement and the fix. The account-scoped catalog read
+(chatgpt.com/backend-api/codex/models, asked with the sign-in's own headers),
+the per-model table of advertised window against published ceiling against
+what a probe accepted, the bisection probe that reads a late SSE error frame
+for context_length_exceeded, the 900,000 default and the 918,000 clamp, and
+the 2026-10-14 measurement of gpt-6.1-sol (919,956 accepted, 930,151
+refused) are the original's, kept as numbers with the date on them. The write
+moved from Hermes' model_overrides to the lever Nodecode documents,
+providers.<id>.models[].context_window, through the shared config's own atomic
+writer, and revert takes back exactly the values apply wrote and no others.
+The sign-in is read the way the original read it through its host: the cell
+never handles a refresh, only the access token the store already holds, and
+an environment variable can stand in for it. The Python is Common Lisp here:
+nlk:http in place of the Hermes credentialed-request helper, one section
+declaration in place of the plugin's config schema, nlk:define-contract for
+the tool's arguments, and one manual topic in place of the bundled skill.
+
+Left out: image generation through the subscription. The original drove
+core's own Codex-backed image provider - it selected it and proved the route,
+never reimplemented the request - and Nodecode has its own image_gen choice
+and image cells, so selecting a provider from here would fight them. Also left
+out: the CLI subcommand tree (hermes codex-truly status/models/apply/revert/
+probe/image) and its argparse surface, which the /codex-truly command and the
+tool carry here; the bundled SKILL.md, which is the manual topic; the
+`apply_to_base_slugs` opt-in and the `-900k` picker variants, which are
+Hermes' own naming of a widened model and have no counterpart in Nodecode's
+config; and the pytest suite, replaced by this folder's offline test system.

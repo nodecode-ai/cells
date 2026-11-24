@@ -1,0 +1,33 @@
+nodecode-calling-mom is a rewrite of SlyBase's SlyBase/calling-mom:
+
+  https://github.com/SlyBase/calling-mom
+  commit e0daf7f1b293cdf41b685f856b02120f82c144d9
+  MIT, Copyright (c) 2026 SlyBase (LICENSE)
+
+Rewritten: the two tiers and their instruction texts (__init__.py's
+_PROMPTS and the ESCALATE gate), the risk lists and their two levels
+(rules.py, reordered and trimmed to the patterns that survive a reading),
+the stuck signals and the result fingerprint that makes them measurable
+(signals.py), the egress redaction including the password-in-a-URL case
+(_core.redact_for_egress plus the plugin's own _URL_CREDS), the NO_ACTION
+silence, and the second_opinion tool (handle_second_opinion and
+_SECOND_OPINION). All of it now speaks through one model seam,
+NLE:COMPLETE, so the cell carries no HTTP client, no credentials and no key
+of its own.
+
+Left out, and why: the Kanban board itself. The original's budgets live in
+task comments, its advice is a comment on a card, and its strongest
+behaviours - pinning a [crit] card to a model, handing a [review] card to a
+reviewer, gating kanban_complete on a verify: line, sweeping parked cards
+from cron, the completion check against a card's summary, the Pushgateway
+metrics - all read or write that board. A Nodecode session has no card, so
+a budget is counted in calls, advice is a line appended to the tool result
+that provoked it, and the sweep, the completion check, the [crit] and
+[review] markers and the metrics have no counterpart. The signals the
+original derived from a worker run became two the one :TOOL point can
+measure: the identical call three times within ten (loop), and the
+identical result three times in a row (same_result, the original's
+same_error), whose fingerprint normalizes paths, hex and numbers away.
+The setup, status and doctor subcommands became one /calling-mom command, and
+Advanced Delegation's model routes are not read: mom and olymp are named as
+provider/model in the section.

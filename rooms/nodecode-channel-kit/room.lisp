@@ -423,7 +423,10 @@ to reach the platform."
   ;; whole prompt at that point, so every lane would pay the standing section
   ;; uncached.
   (format nil "This session is one lane of a shared ~a ~a. Every user ~
-line reads \"<speaker> [m<message id> u<user id>]: <text>\"; a line that ~
+line reads \"<speaker> [m<message id> u<user id> <day date time>]: <text>\", ~
+the time when the message was sent on this machine's clock (~a), so the ~
+time between lines is real: a line hours after the one before it is a new ~
+moment, not a continuation. A line that ~
 answers a message carries the answered id too, as r<message id> — the ~
 message the ask's \"this\" means. The speaker label and the bracket are ~
 set by the adapter, not typed by the speaker. A message's further lines are ~
@@ -464,7 +467,7 @@ that has no link (a private conversation, a local file) is named as such.~%~
 ~a~%~
 ~%~
 ~a~%~a~@[~%~%~a~]"
-          name noun
+          name noun (line-clock-zone)
           (if owners
               (format nil "A label ending in \"~a\" marks the ~a's operator ~
 (~a~p ~{~a~^, ~}); no other label carries that mark."
@@ -558,6 +561,11 @@ once it holds more than BUDGET; NIL or 0 bounds nothing."
                                                :keep (floor budget 2)
                                                :reason "room_budget")))
 
+(defparameter +unasked-prompt+
+  "[no new message: this answer follows on from the exchange above]"
+  "The user half a room records for an answer whose turn began on no words:
+an exit wake's, or one a bare mention opened.")
+
 (defun write-back (lane answer &key prompt (room lane.parent-session-id) budget)
   "Fold LANE's settled exchange into ROOM — the lane's own room, unless the
 caller names another room the same answer surfaced in — as one turn, and
@@ -579,8 +587,17 @@ hold every room it lands in to BUDGET (BOUND-ROOM)."
   ;; completion order — the room reads as the channel read. The lane cannot
   ;; see its own exchange come back either: its fork anchor was frozen below
   ;; it.
+  ;;
+  ;; A turn that began on no words still answered, so its answer settles
+  ;; like any other, but its user half says so instead of standing empty: the
+  ;; room is the history of every lane forked off it, and a strict chat
+  ;; endpoint refuses a request carrying an empty user message (Moonshot: 400
+  ;; `must not be empty'), so one such answer failed every new thread of the
+  ;; room.
   (let ((prompt (or prompt lane.prompt))
         (own lane.parent-session-id))
+    (when (and (stringp prompt) (zerop (length (nlk:trimmed prompt))))
+      (setf prompt +unasked-prompt+))
     (when (and room (stringp prompt) (stringp answer)
                (plusp (length (nlk:trimmed answer))))
       (nlk:with-handlers ((error (condition)
@@ -733,15 +750,16 @@ indicator is posted to."
   (with-room-book (book host)
     (car (alexandria:ensure-gethash key book.typing (cons (make-typing-state) target)))))
 
-(defun lane-live-p (lane)
+(defun lane-live-p (lane &optional (now (now-ms)))
   "Whether LANE's turn has not settled; the second value is the newest moment
-that turn was seen producing (DIGEST-SEEN-MS), 0 when nothing is live."
+that turn counts as seen at NOW (DIGEST-TYPING-SEEN-MS: NOW while a call is
+in flight), 0 when nothing is live."
   ;; The beat's cap measures the turn's silence from it.
   (bt2:with-lock-held ((lane-lock lane))
     (let ((digest lane.digest))
       (if (and digest
                (member digest.phase '(:queued :running)))
-          (values t (digest-seen-ms digest))
+          (values t (digest-typing-seen-ms digest now))
           (values nil 0)))))
 
 (defun typing-surfaces (lanes &aux (live (make-hash-table :test #'equal)))

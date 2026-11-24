@@ -1,0 +1,26 @@
+nodecode-aihubmix is a rewrite of AIhubmix's AIhubmix/hermes-provider-aihubmix:
+
+  https://github.com/AIhubmix/hermes-provider-aihubmix
+  commit b55e916362ebd0528c5d8981d12f3b8f7268b847
+  MIT, Copyright (c) 2026 AIHubMix (LICENSE)
+
+Rewritten: the provider profile — the AIHubMix id, its OpenAI-compatible base,
+its AIHUBMIX_API_KEY, its chat_completions wire, its vision support — and the
+part that gives the plugin its point: the picker is filled from AIHubMix's
+capability-annotated catalog (`/api/v1/models?types=llm`), keeping only rows
+that advertise `tools` or `function_calling`, with the plugin's curated
+`fallback_models` answering when that catalog is unreachable. In Nodecode the
+profile is a row in the models.dev catalog table, one hook, and a worker that
+fetches the catalog once at start.
+
+Left out: the Hermes-side plumbing, which has no Nodecode counterpart and no
+bearing on what a user gets — the provider registry call, the introspection
+that filters profile fields and `fetch_models` arguments to the installed
+build (`dataclasses.fields`, `inspect.signature`), the private
+`hermes_cli.urllib_security` opener with its urllib fallback, the
+`hermes plugins install`/discovery advice in after-install.md, and the
+repository's own scripts and tests (`scripts/check_sensitive.py`,
+`scripts/update_catalog.py`, the unittest suite). Nodecode resolves the
+credential, the lane and the endpoint from the catalog row, so none of that
+has to be restated. The plugin's `default_aux_model` is not carried either:
+Nodecode picks its own auxiliary model.

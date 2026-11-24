@@ -1,0 +1,32 @@
+nodecode-phone-autopilot is a rewrite of jupist's jupist/phone-autopilot:
+
+  https://github.com/jupist/phone-autopilot
+  commit 416067aa70a0f5f9e675b61c65c99a1589d4f7e0
+  MIT, Copyright (c) 2026 Aman Jayesh (LICENSE)
+
+The rewrite keeps what the plugin gave a user: one `routine` tool with the same
+six actions, a routine stored as routine.json and routine.py with every saved
+version beside them, the operator's approval bound to the sha256 of the exact
+bytes (so an edit on disk revokes it and a new save asks again), the defaults a
+routine keeps and the values one run lays over them, the app guard and the
+prelude prepended to the script, the script fed to `python -m phone_harness.run`
+on stdin, the `@@AUTOPILOT` events read back as checkpoint / step / guard / done,
+a run recorded under runs/ with the checkpoint that missed, the screen it saw
+and the path of the screenshot it left, the newest 50 runs kept, and the slash
+command that lists, shows, runs, deletes and moves the app allowlist. The engine
+is rewritten in Lisp; the runner is not bundled and not installed - the cell
+runs the phone-harness copy the operator already has, as the plugin ran the
+copy its host installed.
+
+Left out: the live phone pane and the `::routine` card (Hermes's desktop
+plugin UI, which Nodecode does not have; the tool's JSON and the run records
+are what the pane showed), image refs for canvas apps (cropping a screenshot
+with Pillow and matching it on the phone - a routine here can still take a
+screenshot with phone-harness and compare it by hand), the time-spent ranking
+the prelude's cost event fed (the events are kept; the ranking is not
+computed), the daily automation blueprint with its cron prompt (Nodecode's
+cron cell takes the prompt), the Ask-about-an-app card the pane answered (the
+guard stops the run and names the app; `/phone-autopilot allow` answers),
+Hermes's approval rule keys, plugin data folders and toolset selection, and the
+model-facing skill, whose working method the tool's own description and the
+help topic carry instead.

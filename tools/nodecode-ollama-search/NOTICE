@@ -1,0 +1,19 @@
+nodecode-ollama-search is a rewrite of rriggs's rriggs/hermes-plugin-ollama-cloud-search:
+https://github.com/rriggs/hermes-plugin-ollama-cloud-search
+commit 9c739a9ea5985e0ba86c20d7160af06382c2198e
+MIT, Copyright (c) 2026 Rob Riggs (LICENSE)
+
+What was rewritten: the two capabilities the original's provider advertises —
+a web search through Ollama's `POST /api/web_search`, with the query and a
+result count capped at ten, and a page extraction through
+`POST /api/web_fetch`, one url per call — together with the bearer auth on
+`OLLAMA_API_KEY`, the key resolution order (a key written in the config,
+else the variable the config names, else `OLLAMA_API_KEY`), the optional base
+url, the per-request timeout, and the way a failed status is answered as
+text rather than an exception. What was left out: the original's
+`WebSearchProvider` subclassing and its setup-panel schema, which are its
+harness's registration and onboarding surfaces and have no meaning here — the
+cell's section, its two tools and its help topic take their place — and its
+interrupt-flag check between calls, because a Nodecode turn is cancelled by a
+condition that already passes through. The endpoints, their bodies and the
+`OLLAMA_BASE_URL` override are otherwise the original's own.

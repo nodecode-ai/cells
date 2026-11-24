@@ -149,7 +149,7 @@ message no round of this lane made), and its result."
         (is (signals-error nle::credential-error
               (nle::resolve-provider-credential "google-gemini-cli" :auth-path auth :endpoint "https://example.invalid"))))
       (is (search "invalid_grant" (or (second (cell-notice "nodecode-google-gemini-cli")) "")))
-      (is (search "/google-gemini-cli login" (or (second (cell-notice "nodecode-google-gemini-cli")) ""))))))
+      (is (search "/google-gemini-cli" (or (second (cell-notice "nodecode-google-gemini-cli")) ""))))))
 
 (deftest google-gemini-cli-cell-refreshes-a-sign-in-that-is-due ()
   (with-cell-stop ((google-gemini-cli-start))
@@ -435,7 +435,7 @@ POSTS and GETS collect (URL HEADERS CONTENT); the loopback callback is dialled f
         (with-stubbed-fdefinition (dex:post (url &rest args) (setf posted t) (values (make-truncated-sse-stream) 200))
           (let ((refusal (signals-error nle::provider-config-error (gcli-lane-round (user-context)))))
             (when (typep refusal 'nle::provider-error)
-              (is (search "/google-gemini-cli login" (nle::provider-error-detail refusal))))))
+              (is (search "/google-gemini-cli" (nle::provider-error-detail refusal))))))
         (is (null posted) "nothing is sent")))))
 
 (deftest google-gemini-cli-cell-leaves-the-gemini-api-alone ()
@@ -471,4 +471,18 @@ POSTS and GETS collect (URL HEADERS CONTENT); the loopback callback is dialled f
                                 (dex:post (url &rest args) (error "no key check may dial: ~a" url)))
       (multiple-value-bind (rows reason) (nle::list-provider-models "google-gemini-cli" :key "AIza-pasted")
         (is (plusp (length rows)) "the rows still")
-        (is (search "/google-gemini-cli login" (or reason "")))))))
+        (is (search "/google-gemini-cli" (or reason "")))))))
+
+;;; --- /google-gemini-cli typed alone --------------------------------------------------------------
+
+(deftest GOOGLE-GEMINI-CLI-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((google-gemini-cli-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-google-gemini-cli" "google-gemini-cli" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/google-gemini-cli login" "/google-gemini-cli logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
+          (is (equal '("/google-gemini-cli code")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-google-gemini-cli" "google-gemini-cli" "frobnicate"))))))

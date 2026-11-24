@@ -1,0 +1,11 @@
+{
+  // screenRIG's control API. The token is an API token for the project's
+  // screens, made in the screenRIG dashboard (or by the CLI's
+  // `service-client create`); it is sent as a bearer token to api_url and
+  // nowhere else.
+  "screenrig": {
+    "api_url": "https://api.screenrig.ai",
+    "token": "",
+    "timeout_seconds": 30
+  }
+}

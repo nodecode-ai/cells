@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed, and holds no secret.
+{
+  "mpp": {
+    "enabled": true,
+    "payer_command": "~/.nodecode/mpp-pay",
+    "allowed_origins": ["https://mpp.dev"],
+    "max_amount": 1000,
+    "timeout_seconds": 60,
+    "max_body_chars": 50000
+  }
+}

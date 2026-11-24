@@ -1,0 +1,8 @@
+// The stacktree section of ~/.nodecode/config.jsonc, as /settings writes it.
+// A key comes from app.stacktr.ee/api-keys.
+{
+  "stacktree": {
+    "api_key": "stk_live_...",       // or leave it out and export STACKTREE_API_KEY
+    "timeout_seconds": 30            // one API request's ceiling, in seconds
+  }
+}

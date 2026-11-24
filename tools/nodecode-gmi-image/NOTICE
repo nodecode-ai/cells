@@ -1,0 +1,33 @@
+nodecode-gmi-image is a rewrite of zkasuran's zkasuran/hermes-gmi-media:
+https://github.com/zkasuran/hermes-gmi-media
+commit 6760b29d6f9f93f47cef08702bda876fb10af652
+
+Apache-2.0, Copyright (c) zkasuran (LICENSE names no holder)
+
+What was rewritten: the plugin's one image backend (__init__.py, gmi_media.py)
+became a Nodecode cell in Common Lisp. Kept from it: the requestqueue base URL
+and its three routes (models, models/<id>, requests and requests/<id>), the
+bearer key read from the environment and scrubbed out of every error text, the
+model schema read whole - parameters with their options, bounds and defaults,
+input and output modalities, qworkers, visibility and pricing - the payload
+mapped onto the parameters a model declares (prompt to prompt or text, the
+named aspect to aspect_ratio, else the nearest offered size under the plugin's
+2048x2048 ceiling), the one-hour schema cache, the preference order
+seedream-5.0-lite, gemini-2.5-flash-image, gpt-image-2-generate, the rule that
+a model needing a source picture is only picked for an edit, image inputs as
+public http(s) URLs only and at most three, the submit-then-poll job with its
+growing delay and its deadline, the outcome's media URL order including the
+thumbnail fallback, the 429 handling that tells a daily model limit from a
+burst, the price text, and the picture fetched at once because GMI's link may
+expire.
+
+What was left out, and why: plugin.yaml, the Hermes provider registration and
+the ImageGenProvider class, the picker and setup-schema methods, and the
+per-request environment lookup, none of which exist outside that runtime - here
+the cell declares one section, one tool (gmi_image) and one command
+(/gmi-image), and reads the key once at start. The full catalog read - every
+model's schema at once, for a picker - is left out with the picker: a call
+reads only the schema of the model it will use, in the order the plugin's own
+cold-start probe used. The audio download helper and the video and audio
+concepts in the payload mapper are left out because this cell draws images
+only.

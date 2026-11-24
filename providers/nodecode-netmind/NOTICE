@@ -1,0 +1,20 @@
+nodecode-netmind is a rewrite of NetMind-AI's NetMind-AI/netmind-hermes-provider:
+https://github.com/NetMind-AI/netmind-hermes-provider
+commit 00ab432e251fc04b983382a7b339f54d96e4b29d
+MIT, Copyright (c) 2026 NetMind AI (LICENSE)
+
+The plugin was one ProviderProfile for Hermes' own provider registry: an
+OpenAI-compatible base, a key variable, a roster in fallback_models, an
+output cap per model in OUTPUT_LIMITS and a capability per model in
+model_capabilities. All of that data was rewritten as a Nodecode provider
+cell: one catalog row under the provider id netmind, the chat lane's package
+and the section's base, the key read from NETMIND_API_KEY, and the same 31
+models with the window, the answer cap, vision, reasoning and tool calls the
+plugin declares. A `/netmind` command was added to print the roster, since a
+provider cell's roster is otherwise only visible in the model picker. What was
+left out is Hermes-side, not data: the profile's alias netmind-ai, its
+default_aux_model, and its supports_health_check and supports_model_listing
+flags have no counterpart here - Nodecode names a lane through the catalog
+row, and a key is saved with /connect and checked by the core's own listing
+call. The plugin's Python tests were not carried over; the cell's own tests
+stand where they did.

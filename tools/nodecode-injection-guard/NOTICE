@@ -1,0 +1,26 @@
+nodecode-injection-guard is a rewrite of moneya's moneya/hermes-injection-guard:
+
+  https://github.com/moneya/hermes-injection-guard
+  commit 33a44c7331cde46f34aae0b3d44a6d5fd0f0feb3
+  MIT, Copyright (c) 2026 McDonald Aladi (plugin.yaml, as the repository carries no LICENSE file)
+
+Rewritten: the plugin's whole decision path, in Common Lisp. The eight weighted
+signal families and their cl-ppcre patterns, the threshold and its scoring
+(including the caps on hidden Unicode and encoded blobs), the EXEMPT-families
+rule for local file reads, the span redaction, the neutralisation of hidden
+characters, instruction-carrying HTML comments, hidden CSS text and oversized
+base64 blobs, the untrusted-data envelope with its SECURITY NOTICE and the
+defusing of markers inside the payload, the prefix-matched protected tool list,
+the enforce/report/off modes, and the rule that a failure answers the original
+text untouched. The report of what was blocked (counts by tool and by signal,
+the newest entries, never the payload) keeps its shape as the
+injection_guard_stats tool and the /injection-guard command.
+
+Left out, and why: the plugin's JSONL audit file on disk and its
+INJECTION_GUARD_MODE environment override, because the session ring of the last
+50 blocks and the section's mode answer the same questions without writing
+files; the Hermes tool_execution middleware itself, which is one :TOOL hook
+here, Nodecode having exactly that point; and the plugin's own copy of the
+Hermes runtime, its test harness and its demo. Added: injection_guard_scan, a
+verb for the paste path the plugin's README names as "the obvious next step",
+and a /injection-guard command that takes text as well as reporting.

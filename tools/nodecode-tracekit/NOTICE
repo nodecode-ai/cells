@@ -1,0 +1,30 @@
+nodecode-tracekit is a rewrite of Cygnux-Labs's Cygnux-Labs/Tracekit:
+
+  https://github.com/Cygnux-Labs/Tracekit
+  commit d41c68e335a0986100b8747729659798bcf9d949
+  MIT License, Copyright (c) 2026 Cygnux Labs (LICENSE)
+
+The original is the Hermes Agent plugin in integrations/hermes (two hooks,
+pre_tool_call and post_tool_call, over the tracekit-ai package's
+tracekit.integrations.hermes) and the signer it talks to. What is rewritten
+here is the plugin's behaviour in one Common Lisp cell: the same two hooks,
+on Nodecode's :TOOL point, and the signer's wire spoken directly from Lisp —
+one canonical-JSON frame per request over HTTP (POST /v2/rpc), the decision
+(allow|deny|ask) consumed before a call runs, an ask waited out and its
+approval withdrawn when nobody answers, and the outcome completed against the
+decision with the result or its digest. The canonical JSON (RFC 8785) and the
+sha256: event hash the signer binds are implemented in the cell, so no part
+of the Python package is carried. The /tracekit command is the cell's own:
+the original had no command, because `tracekit last` and `tracekit approvals`
+are the CLI's.
+
+What is left out, and why: the Python package tracekit-ai and its dependency
+handling (the cell speaks the RPC itself); the autospawn of a same-user dev
+signer on the first call (the cell expects a signer at the address the
+section names, which keeps the signer the operator's own process); the Unix
+socket and tcp:// transports (HTTP is the one a client off the signer's host
+can use, and the signer serves loopback HTTP); one run per Hermes session
+(Nodecode's :TOOL point hands a hook no session id, so one Nodecode process
+is one run); Hermes's own hook timeout and tool deadline arithmetic
+(ask_seconds is the cell's one bound); and Hermes's argument-type repair
+(a call's arguments are decided as Nodecode parsed them).

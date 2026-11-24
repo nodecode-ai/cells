@@ -1,0 +1,43 @@
+nodecode-model-router is a rewrite of Pinutss's Pinutss/jev-model-router:
+
+  https://github.com/Pinutss/jev-model-router
+  commit b977dc3ef07738aab005c433d08c1da3fa949e8d
+  MIT License, Copyright (c) 2026 Pinuts (LICENSE)
+
+The rewritten part is the routing itself: the multi-vendor catalog of the
+original's catalog.py (OpenRouter, OpenAI, Groq, Together, Fireworks,
+Mistral, Ollama, the same model ids and the same quality, cost and latency
+numbers, with each vendor's address and the name of the environment
+variable that holds its key), and the decision of router.py - the stopword
+tokenizer and the lexical relevance score, the four strategies, the hard
+filters in their original order (scope, disabled, already_failed,
+provider, pin, capabilities, quality, cost, latency, context, key), the
+deterministic ordering with its tie on the id, the select / fallback /
+abstain decisions with the original's reason codes, the one-hop fallback
+that honours a row's own fallback_id, the duplicate_input and
+max_candidates rejections, and the per-row reasons the answer carries.
+The original's MCP tool model_route is the cell's tool of the same name,
+with the same arguments, and its answer is the same JSON shape the
+original's to_dict wrote. Keys stay in the environment: a row names the
+variable and the answer says whether it is set, never what it holds.
+
+The optional judge is the original's provider=jev half, narrowed: one
+decision endpoint (judge_url) posted {task, models} and answered
+{scores:[{id, score}]}, blended at a configurable weight, with the
+original's redaction.py patterns applied to the task first, and a judge
+that is down losing its opinion rather than the call - where the original
+raised the provider error out of the whole request. The original queried a
+JEV API and an OpenAI-compatible gateway both, at 0.4 each; the cell has
+one endpoint and one weight, and which vendor the caller then calls is the
+row the decision names.
+
+What was left out is the packaging it was written for: the MCP stdio
+server, its framing and its four methods (a Nodecode cell registers its
+tool and the organism serves it), the HTTP server with /v1/route,
+/healthz and /v1/llms, the jev-model command line with demo, benchmark,
+serve and llms, the JSON-file and JEV_LLM_<NAME>_* environment overlays
+(the cell's catalog_file and its own per-vendor key variable cover both),
+the demo models registry in scope=demo, and the HTML demo page. The
+four-strategy ranking, the constraints and the abstention are the same;
+the benchmark's annotated corpus is not carried over, and a row's
+numbers are still declarations rather than measurements.

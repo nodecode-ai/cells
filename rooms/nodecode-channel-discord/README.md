@@ -25,8 +25,9 @@ create an application and copy its bot token (Bot page, Reset Token), then
 run `nodecode gateway setup discord` and paste it. It opens the shell straight
 on a setup sheet that switches on Message Content, gives the invite link (`c`
 copies it), waits for the bot to join a server, and has you pick channels,
-people and roles from a checklist. In a shell already open, `/gateway setup
-discord` or `/settings` > Channels > Discord > Set up opens the same sheet.
+people and roles from a checklist. In a shell already open, `/gateway` >
+Set up Discord, or `/settings` > Channels > Discord > Set up, opens the same
+sheet.
 The steps below do the same by hand.
 
 1. In the [developer portal](https://discord.com/developers/applications),

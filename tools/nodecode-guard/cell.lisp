@@ -32,6 +32,13 @@
 ;;;;
 ;;;; Config, a sibling top-level key next to `channels':
 ;;;;   "cells": ["nodecode-guard"],
+;;;; ASK. With `ask' on, a matched call is not refused outright: the person
+;;;; at a surface that answers questions (the web page, the desktop app) is
+;;;; asked Allow once or Deny, and the call runs only on Allow once. Nobody
+;;;; there to ask (a channel lane, a TUI alone), Deny, or no answer within
+;;;; `ask_seconds' is the refusal as before, saying which it was. The turn
+;;;; waits on the question like on any tool call, and Esc ends both.
+;;;;
 ;;;;   "guard": {"enabled": true,
 ;;;;             "deny":  [{"id": "...", "pattern": "...", "reason": "...",
 ;;;;                        "gated": false}],
@@ -294,14 +301,57 @@ NEXT never runs."
                       (nlk:text-rules-refusal (setting :anywhere)
                                               (whole-call-text text strings)))))
     (if refusal
-        ;; The command is theirs to run.
-        (nle:failure (format nil "ERROR: refused by nodecode-guard: ~a; the call did not run -- give the operator the command to run themselves" refusal))
+        (multiple-value-bind (answer why) (ask-before-run refusal text strings)
+          (if (equal answer +allow-once+)
+              (funcall next op)
+              (nle:failure (refusal-text refusal answer why))))
         (funcall next op))))
+
+(defparameter +allow-once+ "Allow once")
+(defparameter +deny+ "Deny")
+
+(defun ask-operator-function ()
+  "The core's ASK-OPERATOR, or NIL in a core that has none."
+  ;; Read by name: this cell also loads in a core released before the
+  ;; question board, where `ask' then asks no one.
+  (let ((symbol (find-symbol "ASK-OPERATOR" '#:nodecode.evolved)))
+    (and symbol (fboundp symbol) (symbol-function symbol))))
+
+(defun call-shown (form-text strings)
+  "What the question shows of a call: the commands it runs, else the call."
+  (let ((text (or (call-commands form-text strings) (whole-call-text form-text strings))))
+    (if (> (length text) 1500) (concatenate 'string (subseq text 0 1500) " ...") text)))
+
+(defun ask-before-run (refusal form-text strings)
+  "With `ask' on, ask whether the call REFUSAL matched may run once.
+=> the answer, or NIL and why: :OFF, :NOBODY, :TIMEOUT."
+  (let ((ask (and (setting :ask) (ask-operator-function))))
+    (if (null ask)
+        (values nil :off)
+        ;; The rule and its reason; the command itself is the detail beneath.
+        (funcall ask (format nil "The guard stopped a call: ~a"
+                             (subseq refusal 0 (search " matched \"" refusal)))
+                 :detail (call-shown form-text strings)
+                 :choices (list +allow-once+ +deny+)
+                 :seconds (max 5 (or (setting :ask-seconds) 120))))))
+
+(defun refusal-text (refusal answer why)
+  "The model's words for a call that did not run."
+  (cond ((equal answer +deny+)
+         (format nil "ERROR: refused by nodecode-guard: ~a; the operator was asked and chose Deny; the call did not run -- do not retry it or work around it: ask them what they want instead" refusal))
+        ((eq why :timeout)
+         (format nil "ERROR: refused by nodecode-guard: ~a; the operator was asked and did not answer in time; the call did not run -- give the operator the command to run themselves" refusal))
+        (t
+         ;; The command is theirs to run.
+         (format nil "ERROR: refused by nodecode-guard: ~a; the call did not run -- give the operator the command to run themselves" refusal))))
 
 (nle:define-cell guard
   (:section ("guard")
     (:guide "deny adds {id, pattern, reason, gated} rules; gated reads the commands a call runs, ungated the whole call; allow exempts the region it matches")
-    ("allow" :list :doc "patterns whose matching region is exempt from every rule"))
+    ("allow" :list :doc "patterns whose matching region is exempt from every rule")
+    ("ask" :boolean :default nil
+     :doc "ask Allow once or Deny in the web page or desktop app before refusing; refuse as before when nobody is there")
+    ("ask_seconds" :integer :default 120 :doc "how long a question waits for an answer"))
   ;; The compiled engines are settings: one compile per start, and the hook
   ;; reads them off the running cell rather than closing over them.
   (:settings (lambda (values table) (append (compile-rules values table) values)))

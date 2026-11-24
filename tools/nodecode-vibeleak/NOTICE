@@ -1,0 +1,36 @@
+nodecode-vibeleak is a rewrite of abundantbeing's abundantbeing/vibeleak-atlas:
+
+  https://github.com/abundantbeing/vibeleak-atlas
+  commit 898323b75fa926c9b4a1a7675091ed647def3617
+  MIT License, Copyright (c) 2026 VibeLeak contributors (LICENSE)
+
+Rewritten: the two things the plugin did for a user, as a cell with no
+desktop page in it. The local review: the same bounded, read-only walk over
+source and configuration files, the same skip list for dependency folders
+and for sensitive names (.env, credentials, private keys) whose contents
+are never read, the same PHP rules (request input reaching eval(),
+unserialize() or a command function; the session serializer and upload
+progress advisories; display_errors), the same provider-key shape in
+readable source, the same .env ignore-policy hint, the same coverage
+bookkeeping that counts every entry not read under a reason, and the same
+finding shape with the file and line and no source quoted back. The
+offline PHP advisory assessment, with its fixed branches and its refusal of
+a packaged version, and the report comparison (persisting, newly observed,
+not observed again) are here too. The website assessment: one POST to the
+fixed VibeLeak origin for an approved host under one scan unit, the saved
+scan read back by id, the saved markdown report, and the comparison of two
+saved scans -- the same endpoints, the same bounded reads, the owner key in
+the Authorization header and nowhere else. The Python is Common Lisp here:
+NLK:DEFINE-CONTRACT carries the tool arguments, the walk is UIOP and
+CL-PPCRE, and the one network call is NLK:HTTP.
+
+Left out: the Hermes Desktop page and everything that was only a surface
+on it -- the dithered globe, the ASCII and list views, the dialogs, the
+clipboard and chat handoff, the folder picker, the three.js bundle and the
+DB-IP country database with its Cloudflare DNS lookup. Also left out: the
+plugin host's FastAPI routes, its sqlite receipt ledger and its
+installation-bound HMAC so that a saved scan is tied to one installation;
+this cell keeps no state of its own, and a call it makes is the approval
+the page used to ask for. The remote-asset preparation scripts, the
+packaging script and the vendored maxminddb reader have no counterpart,
+because a cell reads no country database.

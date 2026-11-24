@@ -1,0 +1,27 @@
+nodecode-skill-retrieval is a rewrite of moonlight-lupin's moonlight-lupin/agent-skills:
+
+  https://github.com/moonlight-lupin/agent-skills
+  commit 79801c69e797f5f8efd619f8f451ca89d18c7240
+  MIT, Copyright (c) 2025-2026 moonlight-lupin (LICENSE)
+
+Rewritten: the plugin's skill retrieval, in Lisp against Nodecode's cell contract.
+The corpus is a library of SKILL.md files under the section's roots - name and
+description from frontmatter, triggers and tags indexed beside them, the folder
+below its root as the id - ranked by the plugin's own BM25 (Okapi term
+saturation, k1 1.5, b 0.75, and Lucene's always-positive IDF), rebuilt only when
+a file's mtime or size moves. What the plugin did with a pre-LLM-call hook, this
+cell does with the round hook: the turn's own input is ranked and the best k
+skills are added to that very request, once per turn, under the same
+`- **name** (id): description` lines. The same ranking is a tool,
+`skill_search`, and the `/skill-search` command, so the model can ask on
+demand.
+
+Left out, and why: the plugin's prompt compaction and its optional Jev
+reranking. Compaction rewrote Hermes' own `<available_skills>` block, which
+Nodecode builds from its kept definitions - a different corpus this cell does
+not own - and its per-session capability snapshots with it. The Jev stage POSTed
+the query and short descriptions to a third-party service on every turn, which a
+cell that promises to keep everything local should not do by default; BM25 alone
+ranks here. The plugin's YAML reader (pyyaml) and its Hermes profile discovery
+are gone too: Python is not bundled, the frontmatter members this cell indexes
+are read by a few lines of Lisp, and the roots are the section's own.

@@ -1,0 +1,22 @@
+nodecode-opper is a rewrite of opper-ai's opper-ai/hermes-opper:
+
+https://github.com/opper-ai/hermes-opper
+commit 2e15f465b4c2a107fd0230611ebc1e5a7586a196
+
+MIT, Copyright (c) 2026 Opper AI AB (LICENSE)
+
+What was rewritten: the plugin's one provider profile -- the gateway base
+https://api.opper.ai/v3/compat, the OPPER_API_KEY variable with its
+OPPER_BASE_URL base override, the queue of bare pool names it offers when the
+live catalogue cannot be read, and the auxiliary model it names -- as a
+Nodecode provider cell that adds Opper's row to the models catalog, reads the
+key from OPPER_API_KEY alone, and refuses a keyless round in words. The
+gateway's own catalogue at <base>/models is left to Nodecode's listing, which
+asks exactly that address; the vendor prefix that pins one route rides a round
+unchanged, so no request body is rewritten.
+
+What was left out, and why: the profile's aliases (opper-ai, opperai,
+opper.ai) have no counterpart, because a Nodecode provider is named by one id;
+its signup_url and pricing prose are README material, not a seam; and its
+default_aux_model is only documentation here, since Nodecode picks its own
+auxiliary model. Nothing of the plugin's Python is bundled.

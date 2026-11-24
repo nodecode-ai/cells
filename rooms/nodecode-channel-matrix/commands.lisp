@@ -49,30 +49,13 @@ SHA-256 of the command followed by the user id, MSC4391's own."
   "TEXT as the extensible text container MSC4391 describes things in."
   (nlk:json-object "m.text" (vector (nlk:json-object "body" text))))
 
-(defun command-tail (entry)
-  "What ENTRY's usage says follows its command, or NIL when nothing does."
-  (let ((usage (nlk:trimmed (or (getf entry :usage) "")))
-        (head (format nil "/~a" (getf entry :name))))
-    (when (uiop:string-prefix-p head usage)
-      (setf usage (nlk:trimmed (subseq usage (length head)))))
-    (cond ((plusp (length usage)) usage)
-          ((getf entry :autocomplete) "arguments")
-          (t nil))))
-
 (defun command-content (entry)
   "ENTRY, one line of the kit's menu, as its command_description content: the
-command, what it does, and -- when it takes any -- one optional free-text
-tail its usage describes, so a client asks for nothing it would not pass."
-  (let ((tail (command-tail entry)))
-    (nlk:json-object
-     "command" (getf entry :name)
-     "description" (text-container (or (getf entry :description) (getf entry :name)))
-     :when tail "parameters" (vector (nlk:json-object
-                                      "key" "args"
-                                      "schema" (nlk:json-object "schema_type" "primitive" "type" "string")
-                                      "optional" t
-                                      "description" (text-container tail)))
-     :when tail "fi.mau.tail_parameter" "args")))
+command and what it does. A command is its name: it takes no parameter, and
+sent alone it answers what it offers."
+  (nlk:json-object
+   "command" (getf entry :name)
+   "description" (text-container (or (getf entry :description) (getf entry :name)))))
 
 (defun menu-commands (entries bot-user-id)
   "ENTRIES, the kit's menu, as (STATE-KEY . CONTENT) per command."

@@ -1,0 +1,38 @@
+nodecode-evalroute is a rewrite of keppy's keppy/hermes-plugin-evalroute:
+
+  https://github.com/keppy/hermes-plugin-evalroute
+  commit 12fc0397e47ae60bcf45eba4c1529971b3e032a9
+  MIT, Copyright (c) 2026 James Dominguez (LICENSE)
+
+The rewritten plugin is the whole repository at that commit: a thin Hermes
+adapter over the author's own `evalroute` library, which registers one
+model-facing tool, the `/route` and `/rate` commands, a first-turn advice hook,
+three flywheel hooks, a CLI subcommand and a bundled routing skill. What a user
+gets from it is kept here: a task in the user's words is classified into a lane
+by keywords on this machine -- no model call, no tokens, nothing sent anywhere --
+and the answer is a route card naming the lane's arm, which is a model *and* a
+reasoning effort together, the evidence that decided it, the route id, and what
+that lane has measured so far. `/rate pass|fail|skip` labels the newest unrated
+route, a `--lane` correction files it under the lane the user says it belonged
+to, and the lane's books are what the card's payoff line reads. The route table
+is data a layer may rebind, and the card's `next:` line is the original skill's
+four-step workflow: route, check the lane, set the arm, rate it.
+
+What was rewritten, and how: the classifier, the card and the ledger are Common
+Lisp against the Nodecode cell contract instead of Python in a separate library.
+The lane table is one DEFPARAMETER instead of a YAML file shipped inside a
+package; the ledger is one JSON-lines file in the folder the section names,
+written atomically under the cell's lock, instead of the library's profile-wide
+store; the arm's model for each lane comes from the section's `models` member,
+because Nodecode names its own models, and the effort it names is one rung of
+Nodecode's own ladder, which `/think` sets.
+
+What was left out, and why: the first-turn sniff that injects an advisory line
+into a Hermes turn -- a Nodecode turn's context is composed by the core, and the
+card is one command away; `dispatch`, which spawned a `hermes chat` worker on the
+routed arm, because a Nodecode session's own agent is the worker; `install-routes`,
+which wrote per-model effort overrides into Hermes' `agent.reasoning_overrides`,
+because Nodecode's effort pick is per session and `/think` is its one owner; and
+`sync` and `contribute`, which moved the route table through a Hugging Face
+dataset, because this table is the file's own data and needs no marketplace to be
+shared. The result is a card and a ledger that never leave the machine.

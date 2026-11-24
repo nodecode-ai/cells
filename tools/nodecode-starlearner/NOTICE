@@ -1,0 +1,23 @@
+nodecode-starlearner is a rewrite of BigBossRabbit's BigBossRabbit/starlearner-nexus-hermes-skill:
+https://github.com/BigBossRabbit/starlearner-nexus-hermes-skill
+commit 6f47e1b5101fa65ce1f65fe3f5391dd8559615c4
+MIT, Copyright (c) 2026 BigBossRabbit (LICENSE)
+
+Rewritten: the three verbs (starlearner_sync, starlearner_status,
+starlearner_review) and the command surface; the fetch of the starred
+repositories over one endpoint with a read-only token; the persistent
+seen-ledger that makes a run incremental; the twelve domains with their
+keyword lists, weighting and tie-break (references/categories.json,
+scripts/categorize_repos.py); the two-track assessment (scripts/assess_repos.py);
+and the SKILL.md written per new starred repository (references/skill_templates).
+The Python engine became Common Lisp in this folder: the ledger and the notes
+are files under a data directory the section names, the section of config.jsonc
+is the configuration, and nlk:http is the one dial.
+
+Left out: the optional LLM enrichment of the map, categorize and assess stages
+through the host model (ctx.llm in the original; the rules engine here always);
+registration of the generated skills with the host (a note is a file this cell
+names in its answers); the bundled automation blueprint, since Nodecode's
+scheduled prompts are a cell of their own; and the standalone shell pipeline
+(scripts/*.sh, the Makefile, the gh/curl fetcher) that made the same tree work
+outside a harness.

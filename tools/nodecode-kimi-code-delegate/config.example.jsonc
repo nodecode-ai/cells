@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell -
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration.
+// There is no key here: the Kimi Code CLI is signed in once, in a terminal,
+// with `kimi login', and the cell lets it use that login and nothing else.
+{
+  "kimi-code-delegate": {
+    "enabled": true,
+    // a name on PATH, or a path to the executable; the CLI's own
+    // ~/.kimi-code/bin/kimi is tried for the default
+    "command": "kimi",
+    // the folder a delegated call runs in; empty uses Nodecode's own
+    "working_directory": "",
+    "model": "k3",
+    "thinking": "auto",
+    "timeout_seconds": 300,
+    "startup_timeout_seconds": 10
+  }
+}

@@ -1,0 +1,36 @@
+nodecode-duty is a rewrite of xiaoyaner0201's xiaoyaner0201/hermes-duty-board:
+
+  https://github.com/xiaoyaner0201/hermes-duty-board
+  commit 405dbae3ff3314fa7b8f1de3f56f27a9ee313563
+  Apache-2.0, Copyright 2026 The hermes-duty-board Authors (LICENSE)
+
+Rewritten: the plugin's model-free summary -- the `duty' collectors in
+dashboard/board.py and the text they render in dashboard/summary_text.py, the
+way /duty in chat and `hermes duty` in the terminal both answered it -- as one
+Nodecode cell. The same five things a person wants on coming back are the
+board's five sections, in the same order: Waiting on you (a conversation whose
+newest answer asked them something), Running (a turn in flight, with its
+running time and the 10-minute quiet flag), Started, no answer (a turn that
+began and left no reply -- the plugin's `you wrote, but no reply arrived'),
+Cron trouble (a job whose last run failed, one paused, and a result nobody was
+sent), and Standing goals. The one-line count the plugin printed in a busy
+chat is `/duty counts', the two entry points are the same two -- the `duty'
+tool for the model and /duty for the operator -- and, as there, reading
+writes nothing and every source may be absent. The reading is this harness's
+own: the session directory (title, source, newest turn, and the question the
+harness recorded on the answer), the cron cell's registry row, and the goal
+facts, through their public readers.
+
+Left out, and why: the dashboard tab, because it is Hermes's web UI -- here
+the board is a tool and a command, and `/duty' answers in the shell the same
+way it answered in a Hermes DM. The 17 i18n catalogs and the right-to-left
+layout went with the tab; so did the per-platform `owner' setting and the
+one-to-one-DM rules, because this cell reads one home and every session in it
+is the person's own, and the Discord jump links and the Seen
+dismissals, which belonged to the cards of a page that no longer exists. The
+plugin's question detection (its 40-line regular expression over the last
+reply's tail, in several languages) is not reimplemented: the harness here
+records what an answer waits on as a fact on the session, so the cell reads
+that instead of guessing from prose. Its `background results' row also
+survives only in the form this harness has -- a cron answer still owed --
+because Hermes's async-delegation table has no counterpart here.

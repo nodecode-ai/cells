@@ -1,0 +1,21 @@
+// The cell's section of ~/.nodecode/config.jsonc. A present section is an
+// enabled one; "enabled": false vetoes the cell and installs nothing.
+"telegramstickers": {
+  // The bot token is named, never written here: an environment variable
+  // (token_env) or a file only you can read (token_file). Set exactly one.
+  "token_env": "TELEGRAM_BOT_TOKEN",
+  // "token_file": "~/.config/telegram-token",
+
+  // Sticker sets by short name (the part after t.me/addstickers/) or link,
+  // favourite first. Empty, four packs made by Telegram are used.
+  // "packs": ["MyFavouritePack", "AnotherPack"],
+
+  // The chat the tools send to when a call names none.
+  // "default_chat_id": "1234",
+
+  // The least seconds between two stickers in one chat; 0 turns pacing off.
+  "cooldown_seconds": 20,
+
+  // How long one Bot API call may take, in seconds.
+  "timeout": 15
+}

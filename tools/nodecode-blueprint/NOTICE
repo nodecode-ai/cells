@@ -1,0 +1,9 @@
+nodecode-blueprint is a rewrite of winchxyz's winchxyz/hermes-blueprint:
+
+  https://github.com/winchxyz/hermes-blueprint
+  commit ee0a8d5bf19cf3341832b36b178b813f40be8d12
+  MIT, Copyright (c) 2026 winchxyz (LICENSE)
+
+The original is a Hermes Agent plugin: six phases of a planning method in a bundled skill, with the quality rules enforced by Python tools over the host's SQLite database, its web tools, its kanban and its subagents. This cell keeps the method and the rules, and rewrites them in Common Lisp against Nodecode's cell contract: the six phases and their gates; the quote check that folds case, whitespace and typographic quotes and counts independent sites by domain and page digest; the claim types and their minimum sources; the research tiers; the reference-class table with its rates and the plan's unit classes, multipliers and known waits; the verdict that is stored before it is shown and revised only with evidence recorded after it; and the plan checks S1-S7 with the effort and calendar computed in code. The agent units, the builder profile, the velocity ledger and the re-check are the same idea over a plain state file under the home instead of the plugin database.
+
+Left out: the `/idea handoff` project folder and the kanban cards (Nodecode has no kanban to hand off to), the Hermes subagents (verifier, planner, red team: this cell judges what the chat model submits instead of running a second model in a fresh context), the web search and fetch of the host (a claim quotes a page this cell reads itself, one page per source), the weekly automation blueprint (Nodecode's cron cell is the scheduler here), and the per-phase "the user replied" gate (this cell checks the artifacts, the conversation carries the rest).

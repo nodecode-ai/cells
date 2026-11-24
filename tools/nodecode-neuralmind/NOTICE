@@ -1,0 +1,35 @@
+nodecode-neuralmind is a rewrite of dfrostar's dfrostar/neuralmind:
+
+  https://github.com/dfrostar/neuralmind
+  commit e66f5010e3a2f5fcf9e18663e353a6cbf87a966d
+  MIT, Copyright (c) 2024 NeuralMind Contributors (LICENSE)
+
+The rewritten plugin is neuralmind/hermes_plugin of that commit: a
+stdlib-only shim that ran `neuralmind _hook <action>` with the JSON payload
+Claude Code's hooks send, on two host events. What was rewritten is the same
+two events against the same program and the same wire: the turn's request is
+built and the session's recap (`session-start`) and what the turn's own
+prompt recalls (`prompt-submit`) are added to it; a file the turn wrote is
+recorded (`edit-activity`). The payloads are the plugin's -- `cwd`,
+`session_id`, `prompt`, `source`, `tool_input.file_path` -- and the answer is
+read from the same `hookSpecificOutput.additionalContext`, so the program
+sees what it saw in Hermes. Which project is served is the plugin's rule too:
+`NEURALMIND_PROJECT` becomes the section's `project`, then the session's own
+folder, and only one where `neuralmind build` has run: `.neuralmind/
+build_status.json` is present. The recap is given once a session, a later
+round of a turn adds nothing, a cron run recalls nothing, and every call fails
+open on the plugin's eight-second bound.
+
+What was left out, and why: the plugin's `read_file` recording, because
+Nodecode has no read tool -- a model reads a file through `sh` or `eval`, and
+guessing which paths a shell command touched would record reads the model never
+made; the `new_string` code an edit sends for reuse feedback, because
+Nodecode's writes are Lisp forms inside the `eval` tool and their text is not
+the file's content in a shape the program can compare; the per-process warning
+lines, which the plugin wrote to Hermes's log, where a cell says the same
+thing once through its start refusal and `/neuralmind`; and the subagent and
+cron bookkeeping, since the :ROUND and :TOOL points already name the session
+and its source. The plugin's own installer and its `config.json` (a pinned
+interpreter and project) have no counterpart: the cell's config section and
+the user's PATH are that. LICENSE is the repository's LICENSE, unchanged; the
+plugin folder itself carries no separate one.

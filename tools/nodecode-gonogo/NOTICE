@@ -1,0 +1,26 @@
+nodecode-gonogo is a rewrite of keppy's keppy/hermes-plugin-gonogo:
+https://github.com/keppy/hermes-plugin-gonogo
+commit faf3e6a5f905522359e2fc7ab3468c814d00db01
+
+MIT, Copyright (c) 2026 James Dominguez (LICENSE)
+
+What was rewritten: the plugin's three tools (gonogo_decide, gonogo_report,
+gonogo_compare) as the eval-callable verbs gonogo:decide, gonogo:report and
+gonogo:compare, and the reading of a results file (JSONL rows, or a saved
+report JSON) into trials -- error cases, abstentions, expected actions,
+groups, per-case confidence. The Python dependency gonogo-eval is gone: its
+statistics are reimplemented here in Common Lisp -- the Wilson score interval
+and the z values behind it, the sample size a rate would need, the
+risk-coverage curve and the threshold whose precision lower bound clears the
+target, expected calibration error, McNemar's exact test with the
+simultaneous-Wilson interval on the difference, and the five verdicts with
+their wording and ordering.
+
+What was left out: the bundled skill (skills/gonogo-verdict/SKILL.md) is
+documentation for the model, so its wording lives in the cell's manual and
+README rather than as a separate skill file; the HTML report is a plain page
+around the markdown instead of the library's styled one; the actions table is
+reduced to its two counts (acted when it should have held back, held back when
+it should have acted) rather than the full expected-by-taken matrix; and the
+gonogo Python API itself (Case, Prediction, evaluate, the CLI) is not
+exposed, since the verdict is the whole of what the plugin gave a session.

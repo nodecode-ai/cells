@@ -1,0 +1,24 @@
+// The ldap-auth section, written out. Put it in ~/.nodecode/config.jsonc, or
+// set it in /settings (the page's Settings tab writes the same keys). Two bind
+// modes, exactly one of them: direct bind, or search-then-bind.
+{
+  "ldap-auth": {
+    "server_url": "ldaps://ldap.example.com",
+    "user_dn_template": "uid={username},ou=people,dc=example,dc=com",
+    // "user_search_base": "ou=people,dc=example,dc=com",
+    // "user_search_filter": "(sAMAccountName={username})",
+    // "bind_dn": "cn=svc-nodecode,ou=services,dc=example,dc=com",
+    // "bind_password": "the service account's password",
+    // "require_group": "cn=nodecode-users,ou=groups,dc=example,dc=com",
+    "start_tls": false,
+    "allow_insecure": false,
+    // "ca_certs_file": "/etc/ssl/certs/corp-ca.pem",
+    "email_attribute": "mail",
+    "display_name_attribute": "cn",
+    "secret": "<32 random bytes, base64: openssl rand -base64 32>",
+    "session_ttl_seconds": 43200,
+    "refresh_ttl_seconds": 2592000,
+    "timeout_seconds": 5,
+    "verify_user_on_refresh": true
+  }
+}

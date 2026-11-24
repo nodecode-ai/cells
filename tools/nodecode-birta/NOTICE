@@ -1,0 +1,19 @@
+nodecode-birta is a rewrite of birtadev's birtadev/plugins:
+
+  https://github.com/birtadev/plugins
+  commit fd2485de51401db9dd9b25f0bc495bd36e9752c8
+  MIT License, Copyright (c) 2026 SP Krou Tech (LICENSE)
+
+The original's hermes/ folder was a portable plugin manifest that named one
+streamable-HTTP MCP server (mcp.json) and carried sixteen skills of
+page-making guidance. The rewrite speaks that MCP protocol in Common Lisp --
+initialize, notifications/initialized, tools/list, tools/call, with the
+server's session id carried across requests -- and exposes the server's whole
+tool surface through two Nodecode tools, birta_tools and birta_call, so a tool
+the server adds needs no change here. The sixteen skills became one manual
+topic, (help :birta), condensed.
+
+Left out: the client-side OAuth sign-in step (Nodecode has no MCP browser
+sign-in, so the section carries the token instead), the sixteen separate
+skill files (one topic now), and the plugin manifest itself, which only a
+plugin host reads.

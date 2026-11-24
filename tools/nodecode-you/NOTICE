@@ -1,0 +1,26 @@
+nodecode-you is a rewrite of youdotcom-oss's youdotcom-oss/agent-skills:
+
+  https://github.com/youdotcom-oss/agent-skills
+  commit 08f3d80e7ca9518ccc64b38b365a78cc4a762691
+  MIT, Copyright (c) 2025 You.com (LICENSE)
+
+The plugin was three MCP server entries (a keyed server, an unauthenticated
+free profile, and one each for research and finance) plus five skills:
+skills/you-web, you-free, you-research, you-finance and you-discover. This
+rewrite keeps the servers' four tools and their argument names -- you-search,
+you-contents, you-research, you-finance -- and speaks to the same endpoints
+(api.you.com/mcp, its ?profile=free variant, /mcp/research and
+/mcp/finance) over MCP's streamable HTTP from the image, through one seam the
+tests stub. The skills' routing and evidence rules are the cell's manual
+topic, (help :you), and each tool's declared schema is its argument
+reference. Nothing of the original is vendored, and no Node, npm or MCP host
+is needed.
+
+Left out, and why: you-discover's AI-catalog (ARD) search and its x402
+direct-client reference are a catalog-browsing path of their own and are not
+among the four tools this cell registers; the MPP/x402 and Coinbase Payments
+composition the skills describe need a payment-aware MCP client, which this
+cell does not embed -- a keyed account, or the keyless free floor, stands in
+its place; OAuth sign-in is left to an API key. You.com and its search,
+contents, research and finance services are You.com's; the license above
+covers the plugin, not the service.

@@ -1,0 +1,25 @@
+nodecode-channel-pidgeon is a rewrite of pidgeon-ai's pidgeon-ai/pidgeon-python:
+
+  https://github.com/pidgeon-ai/pidgeon-python
+  commit d4448663b39ae0280a247bb3ea4cab7ef0a4e080
+  MIT, Copyright (c) 2026 PCN Labs OÜ (LICENSE)
+
+What was rewritten: the lane as a whole -- the REST client for Pidgeon's five
+calls (the event log from a cursor, one message read as the Firewall's clean
+text, a thread's messages, the reply, and the key's own description), the
+gate that decides whether a piece of mail may become a turn (inbound only, the
+answerable addresses, spam, DMARC, the Firewall's verdict), the text the agent
+reads (From, To, Subject, the Firewall's warning, attachment names, then the
+new body), the plain-text cleanup of an answer, and the poll that turns new
+mail into a conversation and a reply into an email in the same thread. Pidgeon
+serves the same API, and the endpoints are the original's.
+
+What was left out and why: the Hermes gateway's own plumbing -- a pending
+message spool on disk with a one-day replay window, the per-key platform lock,
+and the gateway's session, chunking and progress-notice rules -- is the
+channel kit's here, so only the cursor and the newest inbound message per
+thread are kept. An answer to a card or a progress line is a reply in the
+thread rather than an edit, because SMTP has no edit. Attachments are named to
+the agent, never downloaded: the original read their names off the message
+too. `has_more` paging past one page of events is not walked in a single lap;
+the next lap reads on from the newest event the page carried.

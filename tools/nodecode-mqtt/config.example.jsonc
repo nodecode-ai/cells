@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this illustrates it.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "mqtt": {
+    "enabled": true,
+    "url": "tcp://127.0.0.1:1883",            // or mqtts://host:8883 for TLS
+    "username": "nodecode",
+    "password": "",                            // written inline; empty means anonymous
+    "publish_allowed": ["home/sensor"],       // empty denies every publish
+    "subscribe_allowed": ["home/#"],          // empty denies every read
+    "timeout_seconds": 10,
+    "max_payload_bytes": 32768
+  }
+}

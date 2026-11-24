@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "tripo": {
+    "enabled": true,
+    "api_key": "tsk_...",          // or api_key_env: "TRIPO_API_KEY"
+    "base_url": "https://openapi.tripo3d.ai/v3",
+    "session_limit": 100,
+    "download_folder": "",          // empty means <home>/tripo
+    "timeout_seconds": 60
+  }
+}

@@ -1,0 +1,21 @@
+nodecode-windows-updates is a rewrite of Yicheng-Mark's Yicheng-Mark/hermes-windows-plugins:
+
+  https://github.com/Yicheng-Mark/hermes-windows-plugins
+  commit 3e46cc3c57288489b7343b706018cd0a8fdeda83
+  MIT License, Copyright (c) 2026 Yicheng-Mark (LICENSE)
+
+Rewritten: the plugin's `windows-updates` folder, in full. Both PowerShell
+scripts are the original's line for line -- the Windows Update Agent's session
+interface for the history, `Win32_QuickFixEngineering` for the quick-fix list,
+the row count arriving in the environment rather than on the command line --
+and so is everything read out of their answers: the result-code table, the
+masking of a signed HRESULT to its unsigned `0x` spelling, the 200-character
+titles, the 500-entry and 400-row ceilings, and the notes that say what was
+left out and why. What changed is the host: the Python plugin ran the scripts
+through `subprocess`; here they run through Nodecode's own bounded process
+runner, the two tools are boundary contracts, and `/windows-updates` is the
+same read in the operator's words. Tests came with it as offline tests against
+canned PowerShell output.
+
+Left out: nothing. No part of the original's behaviour was dropped, and the
+scripts, being Windows' own interfaces, need no port.

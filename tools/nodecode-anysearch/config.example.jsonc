@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it. No key is required: the anonymous
+// tier answers at a lower quota.
+{
+  "anysearch": {
+    "api_key_env": "ANYSEARCH_API_KEY",          // the variable holding the key, or "api_key" inline
+    "base_url": "https://api.anysearch.com",     // the API root, for a proxy of your own
+    "max_results": 5,                              // results one search asks for, at most 10
+    "max_urls": 5,                                 // URLs one extract fetches, one request each
+    "timeout_seconds": 30,                         // one search's ceiling
+    "extract_timeout_seconds": 60,                 // one page fetch's ceiling
+    "mcp_fallback": true                           // ask /mcp when /v1/extract answers nothing
+  }
+}

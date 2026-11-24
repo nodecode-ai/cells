@@ -1,0 +1,25 @@
+nodecode-autosave is a rewrite of xiaoyaner0201's xiaoyaner0201/hermes-git-autosave:
+
+  https://github.com/xiaoyaner0201/hermes-git-autosave
+  commit 57e902eb71c1945e117fe3132018d22a000db75e
+  Apache-2.0, Copyright 2026 The hermes-git-autosave Authors (LICENSE)
+
+Rewritten: the plugin's one `pre_tool_call` observer, in Common Lisp. The
+read of a tool call (the paths a write form names, and whether a shell
+command mutates anything), the decision to save a whole work tree or one
+file, the private-index snapshot commit on a shadow ref with a reflog, the
+name-only exclusion of credential stores and dependency directories, and the
+per-file copies with a retention depth, are all reimplemented here against
+Nodecode's cell contract: one `:TOOL` hook, `/autosave`, and the functions in
+the `autosave` package. Copies are named by the SHA-256 of the path and
+settled by universal time rather than by the original's date-and-hash tree,
+and a version is listed by asking git for the ref's reflog rather than from a
+ledger.
+
+Left out: the `sweep` command, which read Hermes's session database to find
+untouched files worth saving -- Nodecode's own tool log is the hook's input
+instead; the interactive `--to` restore target and the `prune --dry-run`
+report; the separate child interpreter with its deadline (a cell's hook runs
+in the image, and a git call here is bounded by the git binary itself); and
+the Hermes CLI subcommand surface, which is `/autosave` and the
+`autosave:` functions here.

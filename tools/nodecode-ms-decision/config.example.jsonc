@@ -1,0 +1,34 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key lives in auth.json (api_keys.ms-decision) or
+// AZURE_FOUNDRY_API_KEY, never here.
+{
+  "ms-decision": {
+    "enabled": true,
+
+    // The resource host. Empty reads AZURE_FOUNDRY_BASE_URL. Only an https
+    // <resource>.openai.azure.com host is accepted; nothing is sent without one.
+    "base_url": "https://example.openai.azure.com",
+
+    // The deployment name. Empty reads MS_DECISION_MODEL, else ms-decision-1.
+    "model": "",
+
+    // One decision's ceiling, in seconds.
+    "timeout_seconds": 20,
+
+    // Watch risky tool calls (eval, write_file, patch, and `watch`) and ask
+    // the operator before they run.
+    "gate": false,
+
+    // approve asks the operator; block denies a call the endpoint scores below
+    // block_threshold, or cannot score at all.
+    "gate_mode": "approve",
+    "block_threshold": "0.5",
+
+    // More tool names for the gate to watch.
+    "watch": [],
+
+    // How long a gate question waits for an answer.
+    "ask_seconds": 120
+  }
+}

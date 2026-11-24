@@ -1,0 +1,39 @@
+nodecode-octoprint is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-print-job-watch:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-print-job-watch
+  commit 61cf86ed8c1a348c2d9956368e1abf7f51bb40fa
+  MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+Rewritten in Common Lisp against Nodecode's cell contract. What the original
+reaches is the same and it is reached the same way: one configured OctoPrint
+origin, its /api/connection, /api/job and /api/printer readings, the
+temperature block, the job file name, completion, file position and the
+printTimeLeft estimate OctoPrint sends, POST /api/job with the same three
+bodies (pause with action pause, pause with action resume, cancel), and one
+optional webcam still that must sit on the printer's own host, JPEG or PNG,
+under a byte cap, pruned to the newest 20. The watch diff is the original's:
+printer_disconnected and error when the printer goes down, complete and
+cancelled from the states the original names, paused only when a print was
+running, and stalled when the file position, completion and file name all
+stand still for stall_minutes; the per-print generation resets the reported
+set, so an event is said once. A printer that cannot be reached is reported
+once per cause, once a day after that, and once when it answers again, as the
+original did. A state string is never taken as proof the printer moved; only
+a later read is.
+
+Left out, and why: Hermes's pre_tool_call approval hook, because Nodecode has
+no approval prompt between the model and a tool -- the same guarantee is kept
+inside the call instead, as a preview that sends nothing and a `confirm: true`
+second call that reads the state, sends the move and reads it again. The cron
+job, its generated script, the `schedule`/`unschedule` CLI verbs and the
+delivery targets are replaced by a worker on `octoprint.watch_minutes` that
+raises the same events as a standing notice while the cell runs; a notice is
+not a chat message, so no delivery target is needed. The original's refusal to
+follow a redirect that carries the API key is not re-implemented: the cell
+sends the key to the configured origin only, and `snapshot_url` must be on the
+printer's host, so a redirect away from it is the operator's own URL choice.
+The plugin's skill is the manual topic `(help :octoprint)`, which every
+request already carries a line of. The stills and the watch state live in
+this cell's own folder under the Nodecode home, not in a plugin data
+directory.
+

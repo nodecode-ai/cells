@@ -1,0 +1,30 @@
+nodecode-constraint-vault is a rewrite of jusst01's jusst01/constraint-vault:
+
+  https://github.com/jusst01/constraint-vault
+  commit e7949720041458c6b23821fc4091343c7b3fd0d9
+  MIT License, Copyright (c) 2026 jusst (LICENSE)
+
+What was rewritten: the plugin's promise, kept in the same words -- a small set
+of exact values (a number, an address, a deadline, a hard rule) is pinned in
+one JSON file under the home as the operator's own text, and it is put in
+front of the model verbatim at every request, so summarising memory and
+context compression cannot paraphrase, round or drop it. The three tools keep
+their jobs (pin one, list them with ids, drop one by id) and keep the same
+caps of fifty constraints and two thousand characters; /vault becomes
+/constraints and answers list, add and drop. The store keeps each
+constraint's SHA-256, and every delivery appends one line to a log beside the
+store with the SHA-256 of the whole injected block, as the original did: the
+delivered bytes hash to the stored ones.
+
+What was left out, and why: the original hooked the host's pre_llm_call for
+its per-turn injection and its post_compaction for a second, mid-turn
+re-injection through the next tool result, with the pending session tracked in
+memory. This image rebuilds its standing harness sections at every request and
+re-pins them when an eviction moves the window's head, so the block rides a
+standing section of its own: nothing has to detect a compaction, there is no
+pending-session set, and the text is in front of the model every turn
+including the first after a fold. Also left out: the VAULT_DISABLE
+environment variable (a setting, inject, turns delivery off without dropping
+the constraints, and "enabled": false vetoes the section), and the JSON tool
+envelopes (the tools answer in sentences the model reads). A per-session log
+field is kept, but sessions are named by this image, not by the plugin.

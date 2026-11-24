@@ -1,0 +1,29 @@
+nodecode-minimax-video is a rewrite of rriggs's rriggs/hermes-plugin-minimax-video:
+
+  https://github.com/rriggs/hermes-plugin-minimax-video
+  commit 759bec0f124c50e868facc8da5e6cf054403d761
+  MIT License, Copyright (c) 2026 Colorado Rob (LICENSE)
+
+Rewritten: the plugin's whole video surface, as one Nodecode cell. The three
+modes and how a call is routed to one (an image is a first frame, reference
+images are a subject, neither is a prompt alone), the models and their
+per-mode resolution defaults (768P on the Hailuo models, 720P on the older
+ones), the 6-or-10-second clamp, the asynchronous task flow (submit to
+/v1/video_generation, poll /v1/query/video_generation, retrieve the file from
+/v1/files/retrieve, then download it), the local-image-to-base64-data-URI
+path with its 10 MB cap, the answer's fields (file, bytes, model, mode,
+duration, resolution, task id, file id) and the error text with the setting
+that fixes it. Two things are added because a tool call outlives no render:
+video_status takes a task id a call answered with, and /video is the same
+call from the operator's side with flags.
+
+Left out: the Hermes video_gen provider interface itself (list_models with
+its four display rows, capabilities, get_setup_schema and the is_available
+probe), because a Nodecode cell is not a provider lane and its settings panel
+is its own section declaration; the plugin's own polling constants, now the
+section's wait_seconds and poll_seconds; and the 720p default the tool layer
+always passed, which the cell reads as "the call said nothing" and so lets
+the model's own default stand. The requested aspect ratio, which MiniMax
+ignores on the wire and which the original only echoed back in its answer, is
+not carried. The Python requests library is not here either: nlk:http speaks
+the three endpoints directly.

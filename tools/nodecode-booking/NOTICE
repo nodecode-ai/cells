@@ -1,0 +1,31 @@
+nodecode-booking is a rewrite of kyle-bartlett's kyle-bartlett/booking-bridge:
+
+  https://github.com/kyle-bartlett/booking-bridge
+  commit 8d013fcd7500f5b9e3b98588a6c32826f25c8252
+  MIT License, Copyright (c) 2026 Kyle Bartlett / Bartlett Labs (LICENSE)
+
+Rewritten: the whole of what the plugin gives a user — its five tools
+(list_availability, list_upcoming, book_event, reschedule_event,
+cancel_event) with their arguments and their answers, the FreeBusy check
+before every write, the conflict refusal, the bookingBridgeKey idempotency
+mark, the sendUpdates=all invitations, the window capped at 14 days and the
+60-slot answer — as a Nodecode cell. Where the plugin called Hermes'
+credentialed_provider_request for a Google token Hermes held, this cell holds
+its own: a refresh grant at oauth2.googleapis.com becomes an access token in
+memory, a 401 renews it once and retries, and the token never touches disk.
+The plugin's /booking status command is /booking here, and its consult-booking
+skill's steps (never guess slots, read the time back, confirm, then book) are
+the manual behind (help :booking) and the words of the write tools' own
+descriptions, since a cell's guidance reaches the model that way.
+
+Left out: the pre_tool_call approval hook and its platform allowlist. Hermes
+could ask a person to approve a write at the tool boundary; a cell has no such
+boundary, so the rewrite keeps the plugin's second layer alone — confirm: true,
+which the model sets only after the operator agreed — and says so in each write
+tool's description and in the manual. Also left out: the IANA timezone
+database. Times are read and written at a fixed UTC offset (the call's, the
+section's, or this machine's zone at that instant), so a booking that crosses
+a daylight-saving change carries the offset it was given rather than a zone
+name; the plugin's default_timezone, default_calendar and
+default_duration_minutes became the section's utc_offset, calendar and
+duration_minutes.

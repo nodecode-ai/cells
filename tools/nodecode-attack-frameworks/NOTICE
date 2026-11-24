@@ -1,0 +1,25 @@
+nodecode-attack-frameworks
+===========================
+
+The facts in this cell --- that these five frameworks exist, what each one is,
+how each one fails to ask before acting, the hunt defaults, the revocation note
+and the detection advice --- are one post by DFIR Radar (@DFIR_Radar) on X,
+status 2121287724430774519, published 13 November 2026:
+
+  https://x.com/DFIR_Radar/status/2121287724430774519
+
+The star counts, licences, languages and last-push dates are each repository's
+own GitHub metadata, read on 14 November 2026:
+
+  PentAGI      https://github.com/vxcontrol/pentagi          MIT
+  HexStrike    https://github.com/0x4m4/hexstrike-ai         MIT
+  CyberStrike AI  https://github.com/AIPentest/CyberStrikeAI Apache-2.0
+  Cairn        https://github.com/oritera/Cairn              AGPL-3.0
+  ARTEX        https://github.com/jiwoochris/artex-global    AGPL-3.0
+
+No code from any of the five is copied, translated or redistributed here: the
+cell is a table about them, with links a person opens themselves. That matters
+for the two AGPL-3.0 projects in particular.
+
+The ELisp, and everything else in this folder, is Nodecode's, under the MIT
+licence in LICENSE.

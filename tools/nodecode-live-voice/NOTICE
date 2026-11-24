@@ -1,0 +1,36 @@
+nodecode-live-voice is a rewrite of Synero's Synero/hermes-live-voice:
+
+  https://github.com/Synero/hermes-live-voice
+  commit 0578e0cc35022a9dcb469cb9fbfc4d8afc93fc65
+  MIT License, Copyright (c) 2026 Synero (LICENSE)
+
+Rewritten: the voice round-trip itself, in the idiom of an image. An
+utterance in -- the microphone opened for a bounded length, the recording
+sniffed as the container it is, uploaded as one multipart POST to an
+OpenAI-compatible /audio/transcriptions with a model, a response format
+and an optional language hint -- becomes words the agent reads, and an
+answer out -- a POST to /audio/speech with the model, the voice, the
+format and the instructions, the returned bytes checked against that
+format, saved under a name that is never reused, and played here -- becomes
+something the operator hears. The plugin's per-profile settings survive as
+the cell's section: the key (inline or from a variable), the API root, the
+transcription and speech models, the voice, the audio format, the longest
+recording, the folder, and the recorder and player commands, which may be
+given outright with %f and %s or left to detection among ffmpeg, sox, arecord,
+afplay, mpv, ffplay, play, paplay and aplay. The live transcript's place is
+taken by a JSON lines transcript beside the audio, which /voice and the
+voice_listen and voice_speak tools read back, and the one delegation policy
+the plugin enforced in a prompt became the tool descriptions' rule: listen
+when the operator speaks, speak when asked or when the operator is clearly
+hands-free, never after every turn.
+
+Left out: the full-duplex WebRTC call, the composer mic button, the
+iMessage-style live transcript popover and the settings and usage panels --
+they are the Hermes Desktop app's own surfaces, drawn by its plugin SDK in a
+WebView, and an image has neither a WebView nor a browser's microphone.
+Left out with them: the Codex app-server lane that minted the voice session
+on a ChatGPT subscription (the rewrite signs in with an OpenAI API key and
+says so), the client/server delegation split and its queue, the persona and
+language injection from the bot's SOUL.md, and the voice-minute and plan
+usage panels. The turn-based shape is the reason: one recording and one
+spoken answer per tool call, rather than one open call with interruption.

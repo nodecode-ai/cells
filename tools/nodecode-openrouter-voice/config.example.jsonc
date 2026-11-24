@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "openrouter-voice": {
+    "api_key_env": "OPENROUTER_API_KEY",   // the variable holding the key, or "api_key" inline
+    "base_url": "https://openrouter.ai/api/v1",
+    "stt_model": "openai/whisper-large-v3",
+    "tts_model": "deepgram/aura-2",
+    "voice": "aura-2-thalia-en",           // voices are model-specific
+    "speed": "1.0",                        // 0.25 to 4.0
+    "output_dir": "",                      // unset: the temporary directory
+    "timeout_seconds": 120                 // one request's ceiling
+  }
+}

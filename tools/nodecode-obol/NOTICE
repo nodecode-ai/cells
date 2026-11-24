@@ -1,0 +1,27 @@
+nodecode-obol is a rewrite of UEddy's UEddy/Obol:
+
+  https://github.com/UEddy/Obol
+  commit 87015c996b608b93e81f8123011c5bf3d2d53f71
+  MIT, Copyright (c) 2026 UEddy (LICENSE)
+
+What was rewritten: the plugin was a Hermes plugin for invoicing from a chat. It
+made invoice calls against Stripe's REST API with the user's own key over httpx,
+pinned the API version, looked a customer up by email, created the invoice and its
+items, finalized and sent it, kept a local SQLite cache and a hash-chained activity
+ledger, and ran deterministic risk checks (duplicate, unusual amount, lookalike
+domain, changed payout details) in its approval hook. This cell keeps that shape in
+Common Lisp: the same seven invoice operations as tools, the same Stripe endpoints
+and form encoding, the same customer-by-email reuse, the same draft-then-send split,
+the same refusal of a live key unless live mode is allowed, the same duplicate and
+unusual-amount checks, and a ledger of what was billed in a JSON file under the
+Nodecode home. The approval prompt that Hermes showed on every write is expressed
+here in the tools' own descriptions and in the draft default, because Nodecode has
+no per-call approval seam to hook.
+
+What was left out and why: the draft_from_message tool, which called Hermes's
+configured model through ctx.llm (a cell has no such call, so the model extracts the
+fields itself); the pre_tool_call approval hook (no Nodecode counterpart); the
+dashboard tab and its polling backend (the ledger reads through the command and the
+list tool); SQLite and the hash-chained logs (one JSON ledger is enough for the same
+answers); the lookalike-domain and Stripe radar/dispute checks, so two of the four
+risk checks survive; and the bank-transfer PDF invoices, which needed a PDF writer.

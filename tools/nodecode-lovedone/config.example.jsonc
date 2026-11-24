@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "lovedone": {
+    "enabled": true,
+    // A LovedOne Family MCP key from inbox.lovedone.app; paste it here, or
+    // leave it out and name the variable holding it in api_key_env.
+    "api_key": "",
+    "api_key_env": "LOVEDONE_API_KEY",
+    "url": "https://api.lovedone.app/mcp/v1",
+    "timeout_seconds": 30
+  }
+}

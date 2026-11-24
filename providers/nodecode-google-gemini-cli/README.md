@@ -37,16 +37,16 @@ Ported from [oh-my-pi](https://github.com/can1357/oh-my-pi)'s
 ## Sign-in
 
 ```
-/google-gemini-cli login                 open Google's consent page
-/google-gemini-cli code ADDRESS          the address the browser landed on
-/google-gemini-cli status
-/google-gemini-cli logout
+/google-gemini-cli → Sign in                         open Google's consent page
+/google-gemini-cli → Paste where the browser landed  the address the browser landed on
+/google-gemini-cli                                   where the sign-in stands, over its rows
+/google-gemini-cli → Sign out
 ```
 
 `login` answers at once with Google's consent page, and listens at
 `http://127.0.0.1:8085/oauth2callback` (another free port when that one is
 taken) for the browser to come back. When the browser runs on another machine
-than Nodecode, paste the address it lands on with `/google-gemini-cli code`.
+than Nodecode, paste the address it lands on under **Paste where the browser landed** in `/google-gemini-cli`.
 Nodecode exchanges the code, finds the account's Cloud Code Assist project
 (the one it has, else the free tier provisioned; a paid tier names its project
 with `GOOGLE_CLOUD_PROJECT` or `GOOGLE_CLOUD_PROJECT_ID`) and says once how it
@@ -62,7 +62,7 @@ The sign-in is kept in `~/.nodecode/auth.json` under
 
 `expires_at` is Google's expiry less five minutes, as omp keeps it. A round
 whose token expires within a minute refreshes it first and writes it back; a
-refresh Google refuses stands as a notice naming `/google-gemini-cli login`.
+refresh Google refuses stands as a notice naming `/google-gemini-cli`.
 No other provider's key (`GOOGLE_API_KEY` among them) is ever sent to Cloud
 Code Assist.
 

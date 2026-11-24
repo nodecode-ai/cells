@@ -1,0 +1,21 @@
+nodecode-gemini-live-bridge is a rewrite of cruzlxyz's cruzlxyz/gemini-live-bridge:
+
+  https://github.com/cruzlxyz/gemini-live-bridge
+  commit a0016e33244ff2f74fd33bae1869e4a8c06f5034
+  MIT, Copyright (c) 2026 cruzlxyz (github.com/cruzlxyz) (LICENSE)
+
+Rewritten: the backend of the original's dashboard/plugin_api.py as a Nodecode
+cell — the ListModels filter and its fixed catalog order, the ephemeral-token
+dial, the setup message, the serverContent frames reduced to a transcript and
+the usageMetadata token count, and the single redial from the session-
+resumption handle. The tool descriptions, the section and the slash command are
+new, written against Nodecode's cell contract.
+
+Left out: the desktop half. The original's status-bar minibar and popover
+(desktop/plugin.js) and its WebAudio capture and playback are a renderer
+surface Nodecode has no equivalent of, and a terminal carries neither a
+microphone nor PCM playback. So the session answers text instead of audio
+(`responseModalities: ["TEXT"]`) and the duplex audio, the barge-in, the
+interrupt-button wiring and the diagnostics log are gone; the transcript and
+the token meter remain. The original's `.resume.json` on disk is now one
+handle held in memory, so nothing is written to the cell's folder.

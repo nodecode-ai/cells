@@ -1,0 +1,33 @@
+nodecode-scratchpad is a rewrite of Zek-Takai's Zek-Takai/hermes-devkit:
+
+  https://github.com/Zek-Takai/hermes-devkit
+  commit dbfa6b26ac64c65ec3e58a937890a912de3d628d
+  MIT, Copyright (c) 2026 Zek-Takai (LICENSE)
+
+The rewritten plugin is the `plugin` folder of that commit: its scratchpad
+library, its one tool and its per-turn placement rule. What stays the same is
+the behaviour a user gets: a named-buffer scratchpad per session under the
+plugin's own data root, one plain file per buffer whose extension is its
+highlighting, written once and then patched in place, with a 2 MB ceiling and
+a patch that matches twice refused rather than guessed; read, list and delete;
+a promote that writes the buffer to a real file through the harness's own file
+tool, refusing to replace one already there unless asked; a short rule carried
+into every request that makes the scratchpad the default home for drafts and
+names the buffers the session already has; and cleanup that removes a
+session's folder and never anything outside its own root.
+
+The harness seams are Nodecode's: the config section is the cell's section,
+the tool is one clause of the cell's declaration, the original's
+`pre_llm_call` hook is a `:ROUND` hook prompt, and its command is
+`/scratchpad`. The verbs are also exported so the operator can call them
+from eval, which the original's harness had no equivalent of.
+
+Left out: the original's Desktop half — its Scratchpad tab beside Files, the
+code viewer, and the row of chats grouped by date — because a Nodecode cell
+contributes to the shell's own surfaces rather than drawing a tab of its own;
+`action=open` goes with it, since the preview it asked for is a Desktop
+bridge. The original's hourly reconcile thread is left out in favour of the same
+check made at most once an hour, from a write. Its deletion
+of a folder whose chat is gone from the harness database is left out as well:
+this rewrite cleans up only by its own idle stamp (`idle_days`, default 90),
+so it never reads the harness's session store.

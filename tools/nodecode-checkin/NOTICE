@@ -1,0 +1,34 @@
+nodecode-checkin is a rewrite of capthvnsen's capthvnsen/alans-way-agents:
+
+  https://github.com/capthvnsen/alans-way-agents
+  commit 0f65549ac1353f6b74b8ac6a22d58f3eb6dea0a3
+  MIT License, Copyright (c) 2026 Alan's Way contributors (LICENSE)
+
+What was rewritten: the plugin's proactivity engine and its one tool. The
+idle rule is the original's -- a base wait that doubles for each check-in
+left unanswered, capped at a week, firing only inside the operator's waking
+hours and moved to the next active hour when the wait runs out overnight --
+with the same morning brief at the head of the day, the same state it keeps
+(the last exchange, the last check-in, the unanswered count, the last brief),
+the same three moves a due check-in offers the model, the same "[SILENT] when
+nothing is worth their attention", the same safety line, and a state file a
+restart resumes from. The tool is the original's too, quieter-only: a change
+that would make check-ins reach further is refused with the exact command to
+tell the operator to send. The operator's own command carries the same
+verbs, and its reading of the clock is the same, with one deliberate
+difference: a cell cannot ask a host for a named IANA zone, so the section
+carries the operator's UTC offset in minutes instead of a zone name.
+
+What was left out, and why: the texting voice rides each chat turn as a
+context note (the original's note, shortened) and a `/checkin voice` switch
+turns it off; the original's per-reply polish -- stripping a leading
+"Certainly!" at send time -- is not carried over, because a Nodecode cell sees
+the answer before it is posted through no one seam the rewrite could take
+without owning the channel. The four workspace skills are prose for a
+separate companion desktop app and its browser bridge, which the rewrite does
+not bundle. Cross-bot proactivity, the second bot's shared digest directory
+and its cross_bot_ask tool, and the profile and CLI surfaces of a Python host
+are not carried over: a Nodecode home is one organism, and the cell binds the
+one session the operator names. The check-in's own delivery is the session's:
+the cell puts a prompt in and the answer reaches wherever that session's chats
+go.

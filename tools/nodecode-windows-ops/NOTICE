@@ -1,0 +1,26 @@
+nodecode-windows-ops is a rewrite of Yicheng-Mark's Yicheng-Mark/hermes-windows-plugins:
+
+  https://github.com/Yicheng-Mark/hermes-windows-plugins
+  commit 5bad3fb2baf04ce6befecfefce6d14f4c9c98934
+  MIT License, Copyright (c) 2026 Yicheng-Mark (LICENSE)
+
+Rewritten: the packaging and the harness's own names. The original is a Hermes
+Agent plugin -- a plugin.json manifest plus one SKILL.md that harness indexes
+at import -- and this folder is a Nodecode knowledge cell, whose .asd declares
+:properties ((:knowledge . t)) and no component, so the folder is recorded and
+never loaded and the index reads windows-ops.lisp in place as a prose skill,
+listed by its sentence and read whole with (help 'windows-ops). Its prose is
+the original's, changed only where it named the other harness: the process
+family is Nodecode's own (sbcl, and the python, uv and node children a tool
+spawns), the home is ~/.nodecode with %USERPROFILE%\.nodecode\config.jsonc on
+Windows, a first run that meets a BOM or a UTF-16 file fails at
+`config.jsonc is not valid JSONC (byte N)` rather than at a model list, and the
+surfaces are eval, /shell, the TUI, the gateway and a channel. Every failure
+mode, every pitfall, every check and both "Destructive, ask first" commands are
+the original's, and references/diagnostic-commands.md travels beside the skill
+at the path it names, with the same four sections adapted the same way.
+
+Left out: plugin.json, tests/test_skill_package.py and the import-time
+registration, none of which has a Nodecode equivalent to write -- a knowledge
+cell is read on demand, not registered -- and no prose, command or trap the
+skill carries is dropped.

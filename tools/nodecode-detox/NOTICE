@@ -1,0 +1,36 @@
+nodecode-detox is a rewrite of kellycryptos's kellycryptos/hermes-detox:
+
+https://github.com/kellycryptos/hermes-detox
+commit 6efe12bea00546d0e200c67c7afec5e1ac056ce7
+MIT, Copyright (c) 2026 kellycryptos (LICENSE)
+
+Rewritten: the whole plugin, in Common Lisp against the Nodecode cell contract. The
+hook that turns an oversized tool result into a compact report is one hook on the
+`:tool` point, which wraps a single tool dispatch where the original wrapped
+Hermes's `transform_tool_result` and `transform_terminal_output`. The three
+retrieval tools keep their names and their meanings (`detox_inspect`,
+`detox_search`, `detox_status`), and `/detox status|inspect|search|purge` keeps its
+four subcommands. The report keeps the original's shape: a header naming the tool
+and the size kept, the extractor summary, the first and last few lines carrying
+the original's own line numbers, every error and warning line with its number, and
+how to ask for more. The line-number contract is the same, so a number read in a
+report is a number the retrieval tools take. The settings are the original's,
+with one change of units: `max_report_percent` is an integer where the original's
+`max_ratio` was a float, because a section field is an integer or a string here.
+
+Left out, and why: the SQLite evidence store became one text file and one
+metadata file per record under the home - no native library, no WAL, and a record
+the operator can read or delete with the tools they already have; concurrent
+writers are served by a lock instead of a busy timeout. The original's six
+content extractors (pytest/unittest/jest/cargo/go, gcc/clang/rustc/TypeScript,
+terminal, JSON, file listings, plain text) became one light classifier naming the
+shape (tests, build, listing, json, text) with a summary of a line or two each,
+so a report says less about an unusual log than the original's did; the full text
+is kept, so nothing is lost, only summarised less deeply. Hermes's own redaction
+helpers became this cell's pattern list, with the same honest limit: a pattern
+cannot catch every secret. The `post_compaction` relink of records between
+session ids, the retention throttle and the six-hourly prune timer are gone: this
+cell prunes at start and on `/detox purge`, and scopes a search to the running
+session through its metadata instead of relinking anything. The Hermes slash
+command's dialog, the benchmark runner, the demo, and the stage reports are not
+carried over.

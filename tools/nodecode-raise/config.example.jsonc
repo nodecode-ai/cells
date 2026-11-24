@@ -1,0 +1,13 @@
+// The optional section for this cell, raise/pipeline.json holds the data.
+// Every member has a default; nothing here is a secret. The declaration in
+// cell.lisp is the authority, this is an illustration of it.
+{
+  "raise": {
+    "focus_size": 10,
+    "hold_workdays": 3,
+    "cap_per_channel": 3,
+    "cap_window_days": 180,
+    "email_mode": "none",
+    "draft_style": ["voice"]
+  }
+}

@@ -1,0 +1,27 @@
+nodecode-impossibl is a rewrite of impossiblco's impossiblco/hermes-impossibl:
+https://github.com/impossiblco/hermes-impossibl
+commit 146805e4eabab33687fa2e34bbe959f0057f9497
+MIT, Copyright (c) 2026 Impossibl (LICENSE)
+
+What was rewritten: the provider profile (its base, its key variable, the
+catalog row it becomes), the reading of Impossibl's `/v1/models` answer that
+keeps only the models serving `/v1/chat/completions` which do not declare
+`supports_tools: false`, the fallback to the core's own listing when that read
+fails or names none, the cache that keeps one answered catalog for the
+process, the fallback model roster, and the deferral to the generic listing
+when the base is not Impossibl's own. The profile became a config section
+(`base_url`, `chat_only`, `timeout_seconds`) plus three hooks: the catalog
+row, the credential and the model listing. The Hermes plumbing the plugin
+relied on rather than wrote -- the model picker, `/model`, `hermes doctor`,
+`--provider`, the credentialed-URL opener, the credential resolution -- is the
+core's here and was not rewritten. The provider id is `impossibl`, which is
+what makes the core's own `<ID>_API_KEY` ladder read `IMPOSSIBL_API_KEY`.
+
+What was left out: the profile fields Nodecode has no use for (`api_mode`,
+`auth_type`, `hostname`, `signup_url` as profile data, and
+`default_aux_model`, which Nodecode pins per session in its own config); the
+`impossibl.com` and `impossibl-ai` aliases, since `/connect` and `/models`
+name the provider by its id; `IMPOSSIBL_BASE_URL`, whose place the section's
+`base_url` takes; and context windows, which the plugin left to models.dev
+rather than read from the catalog -- a row carries one only when the catalog
+itself states it.

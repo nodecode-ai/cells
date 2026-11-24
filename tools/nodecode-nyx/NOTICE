@@ -1,0 +1,30 @@
+nodecode-nyx is a rewrite of sixgodgit's sixgodgit/nyx:
+
+  https://github.com/sixgodgit/nyx
+  commit 101a64d308281f75ba200e28c1c73c4d6e1887ce
+  MIT, Copyright (c) 2026 NexSandglass
+  Copyright (c) 2026 sixgodgit (LICENSE)
+
+The rewritten plugin is hermes-plugin of that commit, the entry point to the
+nyx-memory package: its four promises are kept -- a journal written verbatim
+with no model on the write path, secrets replaced before anything is stored,
+source and date on every entry, and a forgetting that is two stages deep. Its
+journal line (`STAMP | SOURCE | TEXT`) and the labels its secret filter
+writes are the original's, so a folder its command line already writes can be
+read here. Its tool set is carried over as nyx_remember, nyx_recall,
+nyx_forget and nyx_restore, and the section's data_dir, recall budget,
+quarantine window and secret switch are the original's settings under the
+names a Nodecode section wears. One detail is not carried: the original
+keeps a secret's last four characters in its placeholder as a hint, and this
+cell writes the label alone.
+
+What was left out, and why: semantic retrieval, which the original reaches
+through an embedding model or an external embedding API -- a cell here does
+no model call on either path, so recall is by the words of the query; the
+bi-temporal fact store, the knowledge graph and the L3 profile built on top
+of the journal, which need the Python package's own pipeline; the optional
+encrypted vault and its companion reveal plugin, whose keystore and approval
+seam are the host's, not a tool cell's; and the MCP server, the
+`hermes memory setup` commands and the Chinese localisation, whose answers
+the section, /settings and /nyx give. LICENSE is that repository's LICENSE,
+unchanged.

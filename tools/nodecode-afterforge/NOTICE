@@ -1,0 +1,30 @@
+nodecode-afterforge is a rewrite of ussyverse's ussyverse/afterforge:
+
+  https://github.com/ussyverse/afterforge
+  commit 067a739e5ab64097140c5200bde2cc5d52662ea5
+  MIT License, Copyright (c) 2026 Agent Fix Lab contributors (LICENSE)
+
+The rewrite is the plugin's loop, in Common Lisp against the Nodecode cell
+contract: a failure or a correction recorded as a candidate case, a person's
+approval, a drafted check, and a run of that check whose output is kept as
+evidence. What it keeps: the shape of the eight tools as six (a case
+recorded, the shelf listed, a decision taken, a check drafted, the check run,
+the evidence reported), the digest a check is approved by, the status a case
+moves through -- candidate, reviewed, rejected, verified, regressed -- and the
+rule that a check runs only after it has been approved and that its history
+is bounded. The pytest recipe of the original is generalised to any shell
+command run through `sh`, the project folder it runs in, and the exit code
+that means the check passed.
+
+What is left out, and why: the scan of Hermes' own state.db for corrections
+and the post_tool_call / on_session_end capture hooks, because they are
+Hermes' history and its hook points, and a Nodecode cell has its own; the
+local web page and the `uv`-managed Python runtime with its three git
+dependencies, because the shelf is now a folder of JSON files and the check
+runs with the shell the user already has; the pytest-specific recipe builder,
+because the command is now given rather than generated; and the pre_verify
+reminder the plugin could add to a turn, because this cell does not hook the
+turn.
+
+Nothing of the original's Python is bundled. The cell's own code is Common
+Lisp, and it runs no program except the checks the operator approved.

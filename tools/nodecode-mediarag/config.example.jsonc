@@ -1,0 +1,16 @@
+// nodecode-mediarag --- one local index over your own documents, notes, images
+// and audio. Copy this section into ~/.nodecode/config.jsonc, under `mediarag`.
+{
+  "mediarag": {
+    // The folder the corpus lives in. Required: the section refuses at start
+    // until it is named. corpus.sexp inside it is the index, and cache/ holds
+    // whatever a URL source downloaded.
+    "corpus_root": "~/documents/corpus",
+
+    // Longest indexed row, in characters. The original's chunk size.
+    "max_chunk_chars": 1500,
+
+    // Rows one search answers when the call names no k.
+    "default_results": 5
+  }
+}

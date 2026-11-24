@@ -1,0 +1,28 @@
+nodecode-muster is a rewrite of jollyroger1480's jollyroger1480/muster:
+
+  https://github.com/jollyroger1480/muster
+  commit d02a2d4775ff6cee77b686101f0778d8e13e15eb
+  MIT, Copyright (c) 2026 Muster authors (LICENSE)
+
+The original is a Hermes Agent plugin: a dashboard pane, a status-bar chip, a
+desktop front end, two automation blueprints, a kanban bridge and eleven hook
+points over Hermes' subagent lifecycle, with flights, requeues and a boot
+marker in SQLite behind a writer thread, plus muster_fanout to start
+supervised children of its own. The rewrite keeps what a person reads and
+acts on: one durable row per flight, the four derived states (working,
+stuck, failing on repeat, gone), a stop and a message per flight, the
+foreman's report, and the two model-facing tools. The rows are filled from
+the one live fact Nodecode already publishes about subagents - the fork
+progress frame of a running (fork "task" ...) call - instead of Hermes'
+subagent hooks, so nothing has to be started through the cell; the sweep
+that marks a silent row stuck and re-runs a job that ended badly is a worker
+thread over the same rows.
+
+Left out, and why: the dashboard pane, the desktop chip, the web front end
+and the two blueprint prompts belong to Hermes' own surfaces, which a
+Nodecode cell does not draw; muster_fanout is not needed where the model
+already starts forks itself; the kanban bridge has no Nodecode kanban to
+read; and token and cost accounting is left out because the fork progress
+frame carries no token counts, so a price column would be invented rather
+than read. SQLite became one JSON document under the Nodecode home, since a
+cell has no database driver and no second process.

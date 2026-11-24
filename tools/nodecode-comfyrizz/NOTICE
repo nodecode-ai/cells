@@ -1,0 +1,44 @@
+nodecode-comfyrizz is a rewrite of mojomast's mojomast/comfyrizz-hermes:
+
+  https://github.com/mojomast/comfyrizz-hermes
+  commit 756feefcca4bee415b3bc950ad7fb40eff60c60d
+  MIT, Copyright (c) 2026 Kyle Durepos (LICENSE)
+
+The rewritten plugin is the Comfyrizz film plugin at that commit: one Hermes
+skill (skills/comfyrizz-film/SKILL.md) and one stdio MCP server
+(mcp/src/{index,server,tools,engine-client}.mjs) over the user's own loopback
+Comfyrizz engine. Its twelve tool names, their arguments and the routes they
+reach are carried over unchanged: GET /api/health; POST /api/productions with
+one commandId as the idempotency key, kind production.create and
+expected.productionRevision 0; POST /api/brief with a prompt and an optional
+title; GET /api/packages with a limit; POST /api/productions/<id>/easy-plan
+with level, compute and optional onlyShotIds; GET /api/productions/<id>;
+GET /api/productions/<id>/events?after=0 with the last plan.proposed event's
+data taken as the plan; GET /api/productions/<id>/spend-cap, whose ceiling
+is read; POST /api/productions/<id>/actions/<actionId> with kind
+action.dispatch and the payload's planId, planRevision, actionId and
+approvalId; GET /api/run/<jobId>; GET /api/package/<id>/clips and
+/api/package/<id>/clips/<clipId>/takes; POST /api/compile with doc,
+packageId and revision; POST /api/export with packageId and optional
+variants; POST /api/package/<id>/clips/<clipId>/regenerate with change and
+optional backendId, budgetUnits and expected.productionRevision. The
+engine-client's rules come with them: a URL that is not http(s), carries
+credentials or names a host other than 127.0.0.1, localhost or ::1 is
+refused; the token rides both x-comfyrizz-token and Authorization: Bearer;
+a 404 the engine did not explain reads as "route not wired"; an engine never
+reached, or a status the engine refused, is reported rather than raised; and
+the two approval refusals, APPROVAL_REQUIRED and APPROVAL_TARGET_INCOMPLETE,
+happen with no engine call at all. The skill's rules are (help :comfyrizz),
+short of the original's prose, and LICENSE is the repository's LICENSE,
+unchanged.
+
+What was left out, and why: the MCP wire itself (the JSON-RPC stdio server
+and the optional Streamable HTTP transport that binds 127.0.0.1 with no
+authentication), because Nodecode's tools are registered in the image and
+the model calls them directly; the plugin manifest's version, keywords and
+display-name fields, which the cell's section carries instead; the
+OPENCODE_API_KEY, OPENCODE_GO_API_KEY and OPENROUTER_API_KEY variables the
+manifest forwards to the server, because no code in the plugin reads them --
+the engine, not the server, holds those keys; and the skill's full prose,
+which here is the help topic's brief, with the twelve tools' own descriptions
+carrying the rest.

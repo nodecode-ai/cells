@@ -1,0 +1,19 @@
+nodecode-minimizer is a rewrite of nosliwhtes's nosliwhtes/hermes-minimizer:
+https://github.com/nosliwhtes/hermes-minimizer
+commit d209ed0824e2787cd6454bd4b060dbf0381b7b79
+MIT, Copyright (c) 2026 Seth Wilson (LICENSE)
+
+The original is one static section of Hermes's system prompt, registered at
+plugin load and never changed: a Python file that read a bundled policy.md and
+handed its text to the runtime. Nothing of that shape survives here, because
+Nodecode has no section a folder may append to the system prompt. What was
+rewritten is the carrier and the surface: the same policy.md text, whole and
+unchanged, rides the :ROUND point so it lands in the first request of every
+turn; a /minimizer command and a (help :minimizer) topic read it back, with a
+max_chars cap and a brief mode that carries the rung ladder alone, neither of
+which the original offered. What was left out is Hermes's own manifest, its
+register() call and its doctor gate, which have no meaning in an image that
+loads a folder by its presence; no tool, hook or dependency of the original
+was dropped, since it had none. Nothing is enforced here either, exactly as
+before: the policy advises, and says in its own first line that system, user
+and repository instructions outrank it.

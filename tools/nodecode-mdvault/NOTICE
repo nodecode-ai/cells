@@ -1,0 +1,36 @@
+nodecode-mdvault is a rewrite of kailashrajh's kailashrajh/hermes-mdvault:
+
+  https://github.com/kailashrajh/hermes-mdvault
+  commit 46de6b47ab0772a7a6566f362304c41e1768fa6b
+
+MIT, Copyright (c) 2026 Kailash Rajh (LICENSE)
+
+What was rewritten: the whole memory provider, in Common Lisp against the Nodecode
+cell contract. The vault engine came across as it reads in the original: the same
+frontmatter reader (title, tags, the inline #tag scan), the same heading-split
+sections, the same tokenizer shape (Latin words split on punctuation, CJK runs
+indexed as character bigrams, stopwords dropped), the same bm25 ranking with
+k1=1.2 and b=0.75, the same field weights (title 2.2, tag 1.6, heading 0.7 of
+idf), a whole-query phrase bonus and the same light recency factor, then path
+order. The same four verbs answer: mdvault_search, mdvault_note, mdvault_recent
+and mdvault_remember, with the same folder and tag filters, the same default
+limits and the same note-writing rules -- a slugged file name, a numeric suffix
+instead of an overwrite, frontmatter only when the body has none, and a folder
+refused when it would leave the vault or land in an excluded one. The per-turn
+recall moved to the seam Nodecode has: where the original's prefetch hook
+returned a block for the host to append, this cell writes a `vault-memory'
+harness section on the turn's own input event, so the notes ride the next
+request; the block keeps the original's <vault_memory> wrapper, its budget and
+its truncation.
+
+What was left out and why: the mirror of the harness's own memory writes
+(on_memory_write), because Nodecode keeps its durable memory elsewhere and has
+no single write event this cell could fold into one note -- /mdvault remember and
+mdvault_remember write notes directly instead. The bundled vault-notes skill
+became the (help :mdvault) topic and the tool descriptions, which is where a
+Nodecode model reads its guidance. The dashboard config panel and the
+`hermes mdvault status|reindex` CLI are the section's setup panel and the
+`/mdvault` command. Dropped from the tokenizer: NFKC normalisation and
+diacritic folding (no unicode normalisation is bundled here), and the
+four-character prefix credit, which only widened a search beyond the words it
+was given. Kana folding survives.

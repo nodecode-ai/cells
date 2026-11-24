@@ -1,0 +1,35 @@
+nodecode-fatetell is a rewrite of RussGuo's RussGuo/fatetell-mcp:
+
+  https://github.com/RussGuo/fatetell-mcp
+  commit 5d81776071ddf897abaf3a65ed9f203ca87372a5
+  MIT, Copyright (c) 2026 FateTell (LICENSE)
+
+The original is a package of manifests with no code of its own: it points a
+host at FateTell's remote MCP server at https://mcp.fatetell.com/mcp and adds
+the fatetell-bazi skill on reading the results. The rewrite reaches the same
+server over the same wire -- MCP Streamable HTTP, an initialize handshake and
+its initialized notification, then tools/call, with the answer read out of
+result.content[] and the "data:" stream framing the endpoint replies with --
+and carries the server's tools as tools of its own, with the same argument
+names, the same defaults and the same required members the server's own tool
+schemas declare: cast_bazi_chart, get_almanac, list_saved_charts and
+get_saved_chart (together in fatetell_saved), get_bazi_judgment,
+get_daily_fortune, get_chart_calendar and create_saved_chart. The fatetell-bazi skill becomes (help :fatetell),
+condensed: the tool choice, the reading rules and the presentation rules are
+carried over, its notes and terminology tables are not, because the tool
+answers already carry those fields. LICENSE is the repository's LICENSE,
+unchanged.
+
+get_fatetell_account is the one server tool with no parameters, and a
+contract types at least one member, so it is not a tool here: /fatetell
+account asks it for the operator.
+
+What was left out, and why: the host integrations themselves (the Claude,
+Cursor and Hermes manifests and the MCP registry entry), because a cell is
+loaded by Nodecode and needs no manifest; the OAuth sign-in flow, because the
+original let its host run the browser dance and a cell has no flow of its own,
+so the token FateTell issues is a section member here and a call that needs it
+says so; the interactive chart card (the MCP Apps resource and the skill's
+chart-card.html), because Nodecode draws no MCP Apps and the text answer is
+the whole chart; and the skill's own prose in full, of which the reading and
+presentation rules survive and the tables do not.

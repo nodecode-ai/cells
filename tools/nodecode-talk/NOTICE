@@ -1,0 +1,32 @@
+nodecode-talk is a rewrite of TheSmokeDev's TheSmokeDev/hermes-talk:
+
+  https://github.com/TheSmokeDev/hermes-talk
+  commit 790f6d283d4720302eda21f9086d4fc01be3ec0a
+  MIT License, Copyright (c) 2026 SmokeDev (LICENSE)
+
+Rewritten: the plugin's two OpenAI audio lanes, which it carries as host
+speech providers beside its realtime call -- POST /v1/audio/speech with
+gpt-4o-mini-tts, and POST /v1/audio/transcriptions with
+gpt-4o-mini-transcribe -- as three tools a model here can call: speak a text
+and play it, transcribe an audio file, and record the microphone then
+transcribe it. The request shapes, both default models, the response-format
+list, the ten OpenAI voices and the default voice (cedar) are the plugin's
+own -- including the optional speed the original sent with a speech request
+and its fail-closed check on a voice outside the list -- and a refused status
+is an answer the model reads, as its provider's envelope was. The original's
+talk_status tool is talk_status here too: what speaks, what transcribes, the
+variable the key comes from and which audio CLIs were found, read-only. A
+section replaces its environment-variable settings, and the player and the
+recorder are CLIs this machine already has, where the original kept audio in
+its own realtime session.
+
+Left out: the realtime half -- the duplex Whisper-free Realtime session over
+WebSocket or WebRTC, barge-in, turn detection, the live tool calls and the
+delegated background work -- and every surface built on it: the terminal
+`talk` command, the Discord voice channel, the dashboard tab and the desktop
+composer. Each is a long-lived audio runtime rather than a tool a session
+calls, so a cell that registered a tool for it would be a different program.
+Also left out: the ChatGPT-subscription lanes (Hermes-signed requests, the
+Codex CLI child) and the xAI, Gemini and ElevenLabs providers; this cell
+speaks to the OpenAI API with an API key, which is the one lane every
+provider-independent surface of the original shares.

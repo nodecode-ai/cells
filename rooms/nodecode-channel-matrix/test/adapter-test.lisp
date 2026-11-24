@@ -55,7 +55,7 @@ The sync token is kept in a scratch folder."
         (is (null (nlk:json-value answer :string "m.relates_to" "rel_type")) "and opens no thread"))
       (is-lane-carrying "matrix" "matrix-!dm:fake" "matrix-!dm:fake-m$ask1" "matrix-channel"
                         "(Matrix user id @kim:fake)" "(ncm:request")
-      (is (wire-row "kim (operator) [m$ask1 u@kim:fake]: hi bot" (first messages-seen) "content"))
+      (is (untimed-row "kim (operator) [m$ask1 u@kim:fake]: hi bot" (first messages-seen) "content"))
       (is (await (:timeout 15) (plusp (count-session-events "matrix-!dm:fake-m$ask1" "turn.completed"))))
       (is (= 1 (length (matrix-answers fake "matrix reply"))) "what was said before the first sync opened nothing")
       (is (not (nlk:session-exists-p "matrix-!dm:fake-m$old")))
@@ -78,7 +78,7 @@ The sync token is kept in a scratch folder."
           (is (equal "$root" (nlk:json-value answer :string "m.relates_to" "event_id")) "in the ask's thread"))
         (is (await (:timeout 15) (plusp (count-session-events lane "turn.completed"))))
         (is (some (lambda (row) (search "[m$root u@kim:fake]: what is up"
-                                        (or (ignore-errors (nlk:json-value row :string "content")) "")))
+                                        (untimed (or (ignore-errors (nlk:json-value row :string "content")) ""))))
                   (coerce (first messages-seen) 'list)) "the model reads the ask, not the mention that routed it")
         ;; A room line that mentions nobody is context, not an ask.
         (fake-matrix-push fake "!room:fake" (matrix-text "@kim:fake" "just chatting" :id "$chat"))

@@ -1,0 +1,22 @@
+nodecode-beads is a rewrite of jacobhausler's jacobhausler/hermes-beads:
+https://github.com/jacobhausler/hermes-beads
+commit 975263183c65b1ef94160344024187b64379dc32
+MIT, Copyright (c) 2026 Jacob Hausler (LICENSE)
+
+Rewritten: the plugin's six model-facing tools (beads_smoke, beads_frontier,
+beads_show, beads_claim, beads_update, beads_comment) and the boundary under
+them -- the fixed argv list per bd invocation, the explicit store directory
+and actor, the flag gate that refuses a caller value bd could read as a flag
+before anything is spawned, the exit-code map (13 is a stale guard and
+nothing written, 2 is a breached row bound and not an empty list), the
+mandatory read-back after a claim and after a guarded write, and the
+allowlisted field group. The Python handlers and their JSON envelopes are
+Common Lisp here, and the tools answer the model text rather than JSON.
+
+Left out: the Hermes Desktop pane (desktop/, a task tree with blocker cards)
+-- it is an Electron surface behind a plugin entry point Hermes Desktop
+registers, and no such surface exists in this image; the unguarded
+description/title replacement verbs, which the plugin itself shipped disabled
+behind an explicit opt-in; and the read verbs the plugin did not expose as
+tools (list, children, blocked, history, query), which plain `bd` still
+answers.

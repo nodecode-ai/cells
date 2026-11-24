@@ -1,0 +1,31 @@
+nodecode-omnivoice is a rewrite of ThaungThanHan's ThaungThanHan/hermes-omnivoice:
+
+  https://github.com/ThaungThanHan/hermes-omnivoice
+  commit 21d2900c392247dc52d706fee956f08dbfc3c5ea
+  Apache-2.0, declared in pyproject.toml, Copyright (c) Hermes OmniVoice contributors (LICENSE)
+
+Rewritten: the provider's whole call path as one Nodecode tool and one command
+-- the voice value and every mode it stands for (auto, default and random;
+instruct:<a described voice>; ref:<a clip>; a bare path that exists, cloned;
+any other text as a design instruction), resolved exactly as provider.py:90
+resolved it; the settings the plugin read from ~/.hermes/config.yaml -- model,
+device, dtype, voice, instruct, ref_audio, ref_text, language, speed,
+num_step and guidance_scale -- now the cell's section, handed to the runtime
+as the OMNIVOICE_* variables the plugin documents; the text-to-speech call
+itself, through the command that same install provides
+(omnivoice-hermes-tts: --text-file, --output, --model, --voice, --speed,
+--format), since a Lisp image cannot load torch; the text written as UTF-8 so
+any language OmniVoice knows survives the hand-over; the requested container
+honoured and the WAV the plugin falls back to when ffmpeg is missing found
+after the fact (provider.py:341); the playing time read from the WAV header;
+the 5000-character ceiling the plugin advertised; and playback through the
+first player on the PATH, unwaited, as a chat surface would speak.
+
+Left out: the Python package itself (torch, torchaudio and the k2-fsa/
+OmniVoice model) and Hermes' TTS provider registry -- a cell contributes a
+tool and a command, not a provider slot, so the model calls omnivoice_say
+instead of Hermes' text_to_speech flow. Also left out: the command-provider
+fallback configuration block (the cell runs that same wrapper) and the ASR
+step's own settings beyond load_asr's default behaviour, which the runtime
+still applies when a clip arrives without its transcript. The plugin's
+~/.hermes/config.yaml section became this cell's omnivoice section.

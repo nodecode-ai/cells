@@ -1,0 +1,10 @@
+// nodecode-mcp-serve: this Nodecode as an MCP server for other agents.
+// Paste under the top-level object of ~/.nodecode/config.jsonc.
+{
+  "mcp-serve": {
+    "path": "/mcp-serve",   // the route on the gateway's own port
+    "public": true,          // a local client needs no operator token
+    "read_only": false,      // true: messages_send refuses
+    "max_messages": 50       // the most messages one read answers
+  }
+}

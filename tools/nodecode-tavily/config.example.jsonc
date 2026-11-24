@@ -1,0 +1,31 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "tavily": {
+    "enabled": true,
+
+    // The key from app.tavily.com. A pasted key is kept in a 0600 file under
+    // ~/.nodecode/secrets/ and this section is pointed at that file instead.
+    "api_key": "tvly-...",
+
+    // Or the name of the environment variable holding it. TAVILY_API_KEY is
+    // read either way, so an exported key needs no section at all.
+    "api_key_env": "TAVILY_API_KEY",
+
+    // Only for a proxy or a gateway of your own.
+    // "base_url": "https://api.tavily.com",
+
+    // One search, extract, map or crawl request's ceiling, in seconds.
+    "timeout_seconds": 60,
+
+    // One research report's ceiling: a pro report can take minutes.
+    "research_timeout_seconds": 600,
+
+    // How many sources a search answers with unless the call names its own count.
+    "max_results": 5,
+
+    // How much of one page's text a tool result carries.
+    "max_chars": 4000
+  }
+}

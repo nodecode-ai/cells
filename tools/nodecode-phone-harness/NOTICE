@@ -1,0 +1,23 @@
+nodecode-phone-harness is a rewrite of phone-harness's phone-harness/phone-harness:
+
+  https://github.com/phone-harness/phone-harness
+  commit 549d300e317a76ec8f493600cb04c69ba4f9d97d
+  MIT, Copyright (c) 2026 shawn pana (LICENSE)
+
+The rewrite keeps what the plugin gave a user: one tool the model calls with a
+Python script, the helpers of the phone-harness package pre-imported for it, one
+script at a time on the phone, a bound that kills the script and everything it
+started, and a result that is what the script printed plus how it ended - the
+same two output caps, the same 5 to 1800 second bound, the same
+*_API_KEY / *_TOKEN / *_SECRET scrub of the child's environment, and the same
+rule for which image path in the output counts as the screenshot. The Python
+package is not rewritten and not bundled: the cell runs the copy the operator
+installed, as the plugin ran the copy its host installed. Left out: the
+plugin's classifier, which could skip the approval question for a script a
+heuristic judged phone-only (bypassable, and the question is the point); the
+attachment of the screenshot to the tool result, which needs host vision
+internals - the path is named in the result and shown with the look verb; the
+registration of the package's SKILL.md as an agent skill, whose helper list the
+cell's help topic and description carry instead; and Hermes's own surfaces -
+plugin data folders, approval rule keys, toolset selection - which Nodecode
+does not have.

@@ -1,0 +1,21 @@
+// channels.pidgeon --- the Pidgeon lane. Secrets are references, never values.
+{
+  "channels": {
+    "pidgeon": {
+      "base_url": "https://pidgeon.ai",
+      // one of the two, holding an API key that reads and sends
+      "api_key_file": "~/.nodecode/secrets/pidgeon-key",
+      // "api_key_env": "PIDGEON_API_KEY",
+      // fail-closed: at least one of these must name who may talk
+      "allowed_users": ["you@example.com"],
+      "owner": ["you@example.com"],
+      // empty means every address the key reaches; list them to narrow it
+      "addresses": [],
+      // hold keeps Firewall-flagged mail from the agent; deliver passes it with a warning
+      "suspicious": "hold",
+      // a From is forgeable, so mail without a DMARC pass is held
+      "allow_unauthenticated": false,
+      "poll_seconds": 5
+    }
+  }
+}

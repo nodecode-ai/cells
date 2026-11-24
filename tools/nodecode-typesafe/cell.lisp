@@ -90,20 +90,36 @@ which need not list models, one judgment asked of it."
               (format nil "typesafe: asking ~a one judgment" (base-url))
               "typesafe: checking the key against /v1/models")))))
 
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
+(defun panel (summary)
+  "The dialog bare /typesafe answers: SUMMARY, where the key comes from, over
+the check it runs on asking."
+  (nle:list-dialog
+   :title "TypeSafe" :summary summary
+   :rows (list (panel-run "Check the key" "/typesafe check" :detail "ask TypeSafe whether it answers to it"))))
+
 (defun run-slash (args session-id)
-  "/typesafe status | check"
+  "/typesafe typed alone: where the key comes from, and its panel; a row runs
+one of its lines (status, check)."
   (declare (ignore session-id))
   (let ((verb (string-downcase (nlk:trimmed (or args "")))))
-    (cond ((member verb '("" "status") :test #'equal) (status))
+    (cond ((equal verb "") (let ((text (status))) (values text (panel text))))
+          ((equal verb "status") (status))
           ((equal verb "check") (check))
-          (t "usage: /typesafe status | check"))))
-
-(defun complete-slash (text session-id)
-  "The verbs /typesafe takes, those that start with TEXT."
-  (declare (ignore session-id))
-  (loop for verb in '("status" "check")
-        when (uiop:string-prefix-p (string-downcase (nlk:trimmed (or text ""))) verb)
-          collect (list :name verb :value verb)))
+          (t (values (format nil "typesafe: ~a is not one of its choices" verb) (panel (status)))))))
 
 (nle:define-cell typesafe
   (:section ("typesafe")
@@ -115,6 +131,4 @@ which need not list models, one judgment asked of it."
   (:help :typesafe "typesafe:judge answers typed questions (choice, bool, score) about a state; typesafe:models lists the judges" +manual+)
   (:command "typesafe" 'run-slash
    :description "TypeSafe judgments: where the key comes from; check it"
-   :argument-hint "status | check"
-   :session nil
-   :complete 'complete-slash))
+   :session nil))

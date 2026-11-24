@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell -- documentation,
+// not config: the folder gets pushed and holds no secret. The declaration in
+// cell.lisp is the authority; this is an illustration of it.
+{
+  "quegly": {
+    "enabled": true,
+    // the Quegly API key: Settings, API on quegly.com; it starts with qgl_
+    // and the account needs an active subscription. QUEGLY_API_KEY is read too.
+    "api_key": "qgl_...",
+    // the workspace every call acts on; a key bound to one workspace needs none
+    "workspace_id": "b3f1c2d4-5e6a-7b8c-9d0e-1f2a3b4c5d6e",
+    // one request's ceiling, in seconds; a video uploaded from a url can be slow
+    "timeout_seconds": 20
+  }
+}

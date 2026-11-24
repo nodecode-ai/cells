@@ -1,0 +1,16 @@
+// The job-search cell's section, as ~/.nodecode/config.jsonc would carry it.
+// Only `command` has to be answered, and only when agent-data is not on PATH.
+{
+  "job-search": {
+    // The agent-data CLI: its name on PATH, or the path to it.
+    // Install it with: npm install -g agent-data
+    "command": "agent-data",
+
+    // The marketplace listing the job routes live under. It rarely changes;
+    // the default is the one the plugin used.
+    "listing": "f9a6ec16-0bfd-44d8-b3ee-073776745ee7",
+
+    // The longest posting text one read hands the model, in characters.
+    "max_chars": 6000
+  }
+}

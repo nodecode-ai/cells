@@ -1,0 +1,27 @@
+nodecode-camel-guard is a rewrite of nativ3ai's nativ3ai/hermes-camel-guard-plugin:
+
+  https://github.com/nativ3ai/hermes-camel-guard-plugin
+  commit 4cbfca3a5f1d46f5d152280cccc496d0df14d097
+  MIT, Copyright (c) 2025 Nous Research (LICENSE)
+
+Rewritten: the policy itself — the capability vocabulary, the rule that only the
+operator's own message grants a capability once a turn has taken tool output in
+as data, the classification of a call into capabilities, the classifier's
+instruction and its answer contract, the fail-closed fallback when the classifier
+answers nothing usable, the monitor and enforce modes, the read-only exemption
+and the exact per-tool capability override, and the /camel status|off|monitor|
+enforce command. The rewrite is Common Lisp against Nodecode's cell contract:
+where the original registered three hooks on Hermes (pre_llm_call, pre_tool_call,
+post_tool_call) and wrote its state through the host's plugin context, this cell
+is one hook on the core's :TOOL point, reads the turn's trusted message from the
+session log, and keeps its turn state in the cell.
+
+Left out, and why: Hermes' five separate hook points (one seam here), its
+`classifier_timeout_seconds` setting (the host's side call carries its own
+timeouts), its `trace_enabled`/`trace_max_events` durable per-profile trace
+(replaced by a bounded in-memory decision ring that /camel trace shows, and that
+holds no message or result text), its `skill_mutation` capability (Nodecode has
+no separate skill store to mutate), its per-tool tables for Feishu, Discord,
+kanban, computer-use and browser tool names (Nodecode's tools are EVAL and the
+cells' own, read off the form for EVAL and off the name for the rest), and its
+structured-response classifier (a JSON object in text, parsed strictly here).

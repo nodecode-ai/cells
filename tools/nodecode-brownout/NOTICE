@@ -1,0 +1,33 @@
+nodecode-brownout is a rewrite of Osiyomeoh's Osiyomeoh/brownout:
+
+  https://github.com/Osiyomeoh/brownout
+  commit 6d983d5da32c6cdd6a3551426de87d44a78dbfea
+  MIT, Copyright (c) 2026 Samuel Aleonomoh (LICENSE)
+
+Rewritten: the whole of core/policy.py and core/forecast.py -- the four
+states, the tick that decides what a reading means, the keep that cancels an
+automatic park, and the runway measured tick to tick from the percent drops
+rather than fitted to a flat plateau; core/power.py -- the pmset, sysfs and
+NUT/upsc readers, parsed as text and answering no reading rather than a
+guess; the watcher thread and the file lock of __init__.py, here one
+nodecode worker; the pre_tool_call guard that holds tool calls while parked;
+and /brownout's status, park, keep, resume, test-alert and replay verbs.
+
+Left out, and why: the Hermes-specific surfaces have no Nodecode
+counterpart. `hermes send --to <target>' (a message through the gateway's
+chat credentials) became a standing notice under the cell's key: every
+shell shows it and the agent reads it in the notices block of its next
+request, so the same fact reaches the same two readers with no credential
+and no network of its own. Pausing scheduled cron jobs became the tool-call
+hold alone, because a cron job here is another cell's business and a park
+that reached into it would be a dependency; a cron turn is held at its first
+tool call instead. The per-home file lock, the atomically replaced
+state.json and the commands.jsonl relay existed so several Hermes processes
+on one home agree on one watcher; a Nodecode cell starts once in the one
+process that serves the home, so the worker and its state are that
+process's. The outbox that retried an undelivered message for an hour is
+gone with the network: a notice cannot fail. events.jsonl became the last
+five things said, which /brownout status shows. The section gains
+allow_when_parked (tools that still run while parked) and the reading
+trace replay reads a neutral JSONL of {t, on_ac, pct} instead of raw pmset
+output, so a trace recorded on one platform replays on another.

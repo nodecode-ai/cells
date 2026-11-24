@@ -16,51 +16,68 @@
 
 (in-package #:nodecode-mcp)
 
-(defparameter +usage+
-  "/mcp [status | on NAME | off NAME | restart NAME | tools NAME | login NAME [ADDRESS] | logout NAME]")
 
 ;;; --- subcommands: each answers its text -----------------------------------
 
 (defun do-status (&aux (snapshots (mapcar #'server-snapshot (registry-servers *registry*))))
   (if (null snapshots)
       "MCP: no servers configured (mcp.servers in ~/.nodecode/config.jsonc)"
-      (let* ((states (mapcar (lambda (snapshot) (getf snapshot :state)) snapshots))
-             (ready (count :ready states))
-             (errors (count-if (lambda (state) (member state '(:error :refused))) states)))
-        ;; What the operator can do next leads, and names only the verbs the
-        ;; states call for: five imported servers pushed `/mcp on NAME' past
-        ;; 120 columns.
-        (format nil "MCP: ~@[/mcp ~{~a NAME~^ | ~} -- ~]~{~a~^; ~}"
-                        (remove nil (list (and (member :disabled states) "on")
-                                          (and (some (lambda (snapshot)
-                                                       (search "/mcp login" (or (getf snapshot :error) "")))
-                                                     snapshots)
-                                               "login")
-                                          (and (intersection '(:error :connecting :disconnected) states)
-                                               "restart")
-                                          (and (plusp ready) "tools")))
-                        ;; `files ready 12 tools', `docs error (exit 1, see ...)', `pg off'.
-                        (mapcar (lambda (snapshot &aux (state (getf snapshot :state)))
-                                  (format nil "~a ~(~a~)~@[ ~d tool~:p~]~@[ (~a)~]"
-                                          (getf snapshot :name) (if (eq state :disabled) "off" state)
-                                          (and (eq state :ready) (getf snapshot :tool-count))
-                                          (and (member state '(:error :refused))
-                                               (getf snapshot :error)
-                                               (nlk:one-line (getf snapshot :error) :cap 160))))
-                                snapshots)))))
+      ;; What the operator can do next is the panel's rows, so the line
+      ;; names only how each server stands: `files ready 12 tools',
+      ;; `docs error (exit 1, see ...)', `pg off'.
+      (format nil "MCP: ~{~a~^; ~}" (mapcar #'server-line (registry-servers *registry*)))))
 
 (defun do-tools (name)
   (destructuring-bind (&key state tools error &allow-other-keys) (server-snapshot (find-server name))
-    (if (eq state :ready)
+    (if (member state '(:ready :idle))
         (nlk:one-line
          (format nil "MCP: ~a (~d tool~:p)~@[: ~{~a~^, ~}~]"
                  name (length tools)
                  (mapcar (lambda (tool) (getf tool :name)) tools))
          :cap 200)
         (if (eq state :disabled)
-            (format nil "MCP: ~a is off -- /mcp on ~a starts it" name name)
+            (format nil "MCP: ~a is off -- /mcp turns ~a on" name name)
             (format nil "MCP: ~a is ~(~a~)~@[ (~a)~]"
                     name state (and error (nlk:one-line error :cap 120)))))))
+
+(defun server-line (server)
+  "SERVER as /mcp's status says it: its name, its state, its tools or why not."
+  (destructuring-bind (&key name state tool-count error &allow-other-keys) (server-snapshot server)
+    (format nil "~a ~(~a~)~@[ ~d tool~:p~]~@[ (~a)~]"
+            name (if (eq state :disabled) "off" state)
+            (and (member state '(:ready :idle)) tool-count)
+            (and (member state '(:error :refused)) error (nlk:one-line error :cap 160)))))
+
+(defun servers-panel ()
+  "The dialog bare /mcp answers: a row per configured server, how it stands
+beside it, its Enter that server's own panel."
+  (let ((servers (registry-servers *registry*)))
+    (nle:list-dialog
+     :title "MCP" :summary (format nil "~d server~:p configured" (length servers))
+     :rows (mapcar (lambda (server &aux (snapshot (server-snapshot server)))
+                     (nle:run-row (getf snapshot :name) (format nil "/mcp ~a" (getf snapshot :name))
+                                  :detail (server-line server)
+                                  :mark (if (eq (getf snapshot :state) :ready) "●" "") :mark-tone :success))
+                   servers)
+     :empty-label "No servers configured: mcp.servers in config.jsonc")))
+
+(defun server-panel (name &aux (snapshot (server-snapshot (find-server name))))
+  "The dialog /mcp answers for the server NAME: switch it, restart it, list
+its tools, sign it in -- in the browser, or by pasting where the browser
+landed -- or out."
+  (flet ((line (verb) (format nil "/mcp ~a ~a" verb name)))
+    (nle:list-dialog
+     :title (format nil "MCP · ~a" name) :summary (server-line (find-server name))
+     :rows (list (if (eq (getf snapshot :state) :disabled)
+                     (nle:run-row "Turn it on" (line "on") :detail "start it, and at every launch")
+                     (nle:run-row "Turn it off" (line "off") :detail "stop it, and at every launch"))
+                 (nle:run-row "Restart it" (line "restart") :detail "stop it and start it again")
+                 (nle:run-row "Its tools" (line "tools") :detail "what it offers the model")
+                 (nle:run-row "Sign in" (line "login") :detail "in the browser, for a server that asks")
+                 (nle:ask-row "Paste where the browser landed" "Address" (line "login")
+                              :placeholder "the address the browser landed on" :verb "sign in"
+                              :detail "when the browser cannot reach this machine")
+                 (nle:run-row "Sign out" (line "logout") :detail "forget its kept sign-in")))))
 
 (defun register-mcp-command ()
   (nle:register-command
@@ -71,11 +88,14 @@
      (declare (ignore session-id))
      (cond
        ((null *registry*) "MCP: cell is not running")
-       ((member head '("" "status") :test #'string=) (do-status))
+       ((string= head "") (values (do-status) (servers-panel)))
+       ((string= head "status") (do-status))
+       ((member head (registry-server-names) :test #'string=)
+        (values (server-line (find-server head)) (server-panel head)))
        ((not (member head '("on" "off" "restart" "tools" "login" "logout") :test #'string=))
-        (format nil "MCP: unknown subcommand ~a; usage ~a" head +usage+))
+        (values (format nil "MCP: ~a is not one of its choices" head) (servers-panel)))
        ((zerop (length rest))
-        (format nil "MCP: usage ~a" +usage+))
+        (values (format nil "MCP: ~a needs a server; pick one in the panel" head) (servers-panel)))
        (t
         ;; Both name a server: an unknown one answers with the configured names.
         (nlk:with-handlers ((mcp-unknown-server ()
@@ -85,17 +105,17 @@
                               (format nil "MCP: ~a" condition)))
           (cond ((string= head "restart")
                  (restart rest)
-                 (format nil "MCP: restarting ~a; /mcp status to follow" rest))
+                 (format nil "MCP: restarting ~a; /mcp follows it" rest))
                 ;; login NAME [ADDRESS]: the address pasted back is one word.
                 ((string= head "login")
-                 (format nil "MCP: ~a" (login (second tokens) (third tokens))))
+                 (values (format nil "MCP: ~a" (login (second tokens) (third tokens)))
+                         (server-panel (second tokens))))
                 ((string= head "logout")
                  (format nil "MCP: ~a" (logout (second tokens))))
                 ((string= head "tools") (do-tools rest))
                 (t (format nil "MCP: ~a" (switch-server rest (string= head "on")))))))))
    :label "MCP"
-   :description "MCP servers: status, on NAME, off NAME, restart NAME, tools NAME, login NAME, logout NAME"
-   :argument-hint "status | on NAME | off NAME | restart NAME | tools NAME | login NAME [ADDRESS] | logout NAME"))
+   :description "MCP servers: each one's state, turning it on or off, restarting it, its tools, its sign-in"))
 
 ;;; --- the page ---------------------------------------------------------------
 ;;; The web page's Control pane reads and moves the servers through this
@@ -111,16 +131,28 @@
 (defparameter +route+ "/api/mcp")
 (defparameter +catalog-route+ "/api/mcp/catalog")
 
+(defun tool-about (description)
+  "What a tool does as the page's ledger shows it under the hand: the first
+paragraph of its DESCRIPTION on one line, at most 240 characters. A test
+answers the whole description."
+  (let* ((text (or description ""))
+         (gap (search (format nil "~%~%") text)))
+    (nlk:one-line (if gap (subseq text 0 gap) text) :cap 240 :ellipsis "…")))
+
 (defun server-json (snapshot)
-  "A server's SNAPSHOT as the page lists it: its state, its tools, how it is
-reached (a header count, never a value), how long its last connect took, its
-last error and its log."
+  "A server's SNAPSHOT as the page lists it: its state, its tools with what
+each does, how it is reached (a header count, never a value), how long its
+last connect took, its last error and its log."
   (destructuring-bind (&key name state error tool-count tools transport log-path timing &allow-other-keys)
       snapshot
     (nlk:json-object "name" name
                      "state" (string-downcase state)
                      "tools" tool-count
                      "tool_names" (map 'vector (lambda (tool) (getf tool :name)) tools)
+                     "tool_list" (map 'vector (lambda (tool)
+                                                (nlk:json-object "name" (getf tool :name)
+                                                                 "about" (tool-about (getf tool :description))))
+                                      tools)
                      "transport" transport
                      :opt "connect_ms" (first timing)
                      :opt "list_ms" (second timing)
@@ -147,6 +179,30 @@ what the server said."
                                                tools))
                      :opt "error" (and error (nlk:one-line error :cap 600))
                      :opt "said" said)))
+
+(defun log-tail (path &key (lines 60) (bytes 16384))
+  "The last LINES lines of the log at PATH, read from at most its last BYTES:
+a line cut by that start is left out. NIL when there is no file."
+  (when (and path (probe-file path))
+    (with-open-file (in path :element-type '(unsigned-byte 8))
+      (let* ((size (file-length in))
+             (start (max 0 (- size bytes)))
+             (octets (make-array (- size start) :element-type '(unsigned-byte 8))))
+        (file-position in start)
+        (read-sequence octets in)
+        (let* ((text (string-right-trim '(#\Newline #\Return)
+                                        (sb-ext:octets-to-string octets :external-format '(:utf-8 :replacement #\?))))
+               (all (uiop:split-string text :separator '(#\Newline)))
+               (whole (if (and (plusp start) (rest all)) (rest all) all)))
+          (format nil "~{~a~^~%~}" (last whole lines)))))))
+
+(defun tail-json (name &aux (server (find-server name)))
+  "The end of the stderr log of the running server NAME, for the page's Log:
+where the log is and its last lines, empty when it has none yet."
+  (let ((path (getf (server-snapshot server) :log-path)))
+    (nlk:json-object "name" name
+                     :opt "path" path
+                     "text" (or (log-tail path) ""))))
 
 (defun configured-server (name)
   "The mcp.servers entry NAME as config.jsonc says it now, or NIL."
@@ -195,7 +251,7 @@ came of it."
     (fail "no server named ~a under mcp.servers" name))
   (nle:config-set (list "mcp" "servers" name "enabled") (if on t :false))
   (nlk:spawn "mcp-switch" (restart-folder))
-  (format nil "~a ~:[off~;on; it connects now, /mcp status to follow~]" name on))
+  (format nil "~a ~:[off~;on; it connects now, /mcp follows it~]" name on))
 
 (defun remove-server (name)
   "Take the server NAME out of mcp.servers and start this folder again."
@@ -212,7 +268,8 @@ command, args?, env?} or {op: add, name, url, headers?} adds one, {op:
 remove, name} and {op: restart, name} move one, and each answers {text,
 enabled, servers}; {op: test, name} tests the configured server NAME, and
 {op: test, name, command|url ...} the entry the Add form holds, unsaved,
-answering {test, enabled, servers}."
+answering {test, enabled, servers}; {op: log, name} answers {tail, enabled,
+servers}, the end of that server's stderr log (TAIL-JSON)."
   (let* ((request (if (eq (getf env :request-method) :post)
                       (nle::gateway-request-json env)
                       (nlk:make-json-object)))
@@ -223,14 +280,16 @@ answering {test, enabled, servers}."
                     (test-json name (if unsaved
                                         (probe (checked-spec name (request-entry request)))
                                         (test-server (find-server name))))))
-         (text (cond ((or (null op) test) nil)
+         (tail (and (equal op "log") (tail-json name)))
+         (text (cond ((or (null op) test tail) nil)
                      ((string= op "add") (add-server name (request-entry request)))
                      ((string= op "remove") (remove-server name))
                      ((string= op "restart") (restart name))
-                     (t (fail "no op ~s; add, remove, restart or test" op))))
+                     (t (fail "no op ~s; add, remove, restart, test or log" op))))
          (section (nlk:json-value (nle:read-shared-config) :object "mcp")))
     (nlk:json-object :opt "text" text
                      :opt "test" test
+                     :opt "tail" tail
                      "enabled" (or (null section) (nlk:config-boolean section "enabled" t))
                      "servers" (map 'vector (lambda (server) (server-json (server-snapshot server)))
                                     (and *registry* (registry-servers *registry*))))))
@@ -301,9 +360,12 @@ register /mcp; the stop thunk takes it all down."
     (let ((registry (make-registry-from-section section)))
       (when registry.servers
         (setf *registry* registry)
+        ;; A kept catalog stands its server :IDLE until a call needs it;
+        ;; any other connects now, on its own thread.
+        (dolist (server registry.servers)
+          (unless (publish-idle server)
+            (spawn-connect server)))
         ;; (help :mcp), and its line on every request
         (refresh-primer)
-        (register-mcp-command)
-        (dolist (server registry.servers)
-          (spawn-connect server)))))
+        (register-mcp-command))))
   (lambda () (stop-cell)))

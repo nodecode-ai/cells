@@ -1,0 +1,30 @@
+nodecode-modular is a rewrite of tommyjtl's tommyjtl/hermes-modular-provider:
+https://github.com/tommyjtl/hermes-modular-provider
+commit bfd4510df3cb2218300f3a059414ecbf8e479366
+Apache-2.0 (LICENSE): the file is the stock Apache License 2.0 text and its
+copyright line is left as the template it ships with, "Copyright [yyyy] [name of
+copyright owner]"; the plugin's manifest declares the author as "Modular
+(tommyjtl)"
+
+Rewritten: the provider profile itself (its default base of
+https://api.modular.com/v1, its MODULAR_API_KEY variable, its four-model
+fallback list and its OpenAI-compatible chat wire) as a Nodecode catalog row
+and one request-body hook; the model table, which sends each model the
+window, modalities and reasoning ladder the original measured --
+MiniMaxAI/MiniMax-M3.1-Flash with five levels, deepseek/deepseek-v4.1-flash-1017
+with three, minimax/minimax-m3 and google/gemma-4-31b-it with a toggle and
+none; and the clamp that lowers a pick the model does not take to the nearest
+weaker one, never raises it, and turns thinking off with the model's own switch
+or, where nothing stops it, with its lightest level.
+
+Added, because Nodecode's catalog is where a picker reads its list: the row
+itself, since models.dev publishes no provider at Modular's address, so
+without it the provider could be neither chosen nor dialled.
+
+Left out, and why: the Hermes private seams the original imported
+(providers.base, ProviderProfile, register_provider) have no place here, so the
+profile is a catalog row and its two methods (fetch_models,
+build_api_kwargs_extras) are the row's model table and one request-body hook;
+its `GET /v1/models` read is not repeated, since the four models are the whole
+list it kept; and its default auxiliary model has no per-provider equivalent
+in Nodecode.

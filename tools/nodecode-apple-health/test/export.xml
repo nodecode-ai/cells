@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE HealthData [
+<!ELEMENT HealthData (ExportDate,Me,(Record|Correlation|Workout|ActivitySummary)*)>
+<!ATTLIST HealthData locale CDATA #REQUIRED>
+]>
+<HealthData locale="en_GB">
+ <ExportDate value="2026-01-04 09:00:00 +0000"/>
+ <Me HKCharacteristicTypeIdentifierDateOfBirth="1990-01-01" HKCharacteristicTypeIdentifierBiologicalSex="HKBiologicalSexNotSet" HKCharacteristicTypeIdentifierBloodType="HKBloodTypeNotSet" HKCharacteristicTypeIdentifierFitzpatrickSkinType="HKFitzpatrickSkinTypeNotSet"/>
+ <Record type="HKQuantityTypeIdentifierStepCount" sourceName="iPhone" sourceVersion="18.0" device="&lt;&lt;HKDevice: 0x1&gt;&gt;" unit="count" creationDate="2026-01-01 09:00:00 +0000" startDate="2026-01-01 09:00:00 +0000" endDate="2026-01-01 10:00:00 +0000" value="1000"/>
+ <Record type="HKQuantityTypeIdentifierStepCount" sourceName="Watch" sourceVersion="11.0" unit="count" creationDate="2026-01-01 11:05:00 +0000" startDate="2026-01-01 11:00:00 +0000" endDate="2026-01-01 12:00:00 +0000" value="2000"/>
+ <Record type="HKQuantityTypeIdentifierHeartRate" sourceName="Watch" unit="count/min" creationDate="2026-01-01 09:30:00 +0000" startDate="2026-01-01 09:30:00 +0000" endDate="2026-01-01 09:30:00 +0000" value="60">
+  <MetadataEntry key="HKMetadataKeyHeartRateMotionContext" value="1"/>
+ </Record>
+ <Record type="HKQuantityTypeIdentifierHeartRate" sourceName="Watch" unit="count/min" creationDate="2026-01-01 12:30:00 +0000" startDate="2026-01-01 12:30:00 +0000" endDate="2026-01-01 12:30:00 +0000" value="80"/>
+ <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Watch" creationDate="2026-01-01 08:00:00 +0000" startDate="2026-01-01 00:00:00 +0000" endDate="2026-01-01 08:00:00 +0000" value="HKCategoryValueSleepAnalysisAsleepCore"/>
+ <Record type="HKQuantityTypeIdentifierDistanceWalkingRunning" sourceName="iPhone" unit="km" creationDate="2026-01-01 12:00:00 +0000" startDate="2026-01-01 09:00:00 +0000" endDate="2026-01-01 12:00:00 +0000" value="2.5"/>
+ <Record type="HKQuantityTypeIdentifierActiveEnergyBurned" sourceName="Watch" unit="kcal" creationDate="2026-01-01 12:00:00 +0000" startDate="2026-01-01 09:00:00 +0000" endDate="2026-01-01 12:00:00 +0000" value="250"/>
+ <Record type="HKQuantityTypeIdentifierStepCount" sourceName="iPhone" unit="count" creationDate="2026-01-02 21:00:00 +0000" startDate="2026-01-02 08:00:00 +0000" endDate="2026-01-02 21:00:00 +0000" value="3000"/>
+ <Record type="HKQuantityTypeIdentifierHeartRate" sourceName="Watch" unit="count/min" creationDate="2026-01-02 10:00:00 +0000" startDate="2026-01-02 10:00:00 +0000" endDate="2026-01-02 10:00:00 +0000" value="70"/>
+ <Record type="HKQuantityTypeIdentifierRestingHeartRate" sourceName="Watch" unit="count/min" creationDate="2026-01-02 07:00:00 +0000" startDate="2026-01-02 07:00:00 +0000" endDate="2026-01-02 07:00:00 +0000" value="52"/>
+ <Record type="HKQuantityTypeIdentifierHeartRateVariabilitySDNN" sourceName="Watch" unit="ms" creationDate="2026-01-02 07:00:00 +0000" startDate="2026-01-02 07:00:00 +0000" endDate="2026-01-02 07:01:00 +0000" value="45"/>
+ <Record type="HKQuantityTypeIdentifierStepCount" sourceName="iPhone" unit="count" creationDate="2026-01-03 22:00:00 +0000" startDate="2026-01-03 08:00:00 +0000" endDate="2026-01-03 22:00:00 +0000" value="4000"/>
+ <Workout workoutActivityType="HKWorkoutActivityTypeRunning" duration="30" durationUnit="min" totalDistance="5" totalDistanceUnit="km" totalEnergyBurned="300" totalEnergyBurnedUnit="kcal" sourceName="Watch" sourceVersion="11.0" creationDate="2026-01-01 18:00:00 +0000" startDate="2026-01-01 17:30:00 +0000" endDate="2026-01-01 18:00:00 +0000">
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2026-01-01 17:45:00 +0000" duration="1.5" durationUnit="min"/>
+ </Workout>
+ <ActivitySummary dateComponents="2026-01-01" activeEnergyBurned="250" activeEnergyBurnedGoal="500" appleExerciseTime="20" appleExerciseTimeGoal="30" appleStandHours="8" appleStandHoursGoal="12"/>
+</HealthData>

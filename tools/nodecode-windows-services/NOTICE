@@ -1,0 +1,23 @@
+nodecode-windows-services is a rewrite of Yicheng-Mark's Yicheng-Mark/hermes-windows-plugins:
+
+  https://github.com/Yicheng-Mark/hermes-windows-plugins
+  commit 1d1027f864aa3c1388eac08e6eee84fb862fbe91
+  MIT, Copyright (c) 2026 Yicheng-Mark (LICENSE)
+
+The plugin was a Hermes plugin in Python: a plugin.yaml declaring two tools, `win_service_table`
+and `win_service_detail`, one PowerShell `Get-CimInstance Win32_Service` call whose JSON the
+plugin parsed, a `winreg` half that read the dependency edges, the delayed-start flag and the
+`FailureActions` blob out of HKLM, a second PowerShell call for the Service Control Manager's
+event log, and two tables of words -- Win32 exit codes and SCM event ids -- kept in
+exitcodes.py. This rewrite keeps the same two tools by the same names, reaching the same two
+sources and reporting the same facts: the plugin ran the registry half through Python's winreg,
+the cell reads those values in the same PowerShell process as the listing (so one child process
+answers for the whole machine instead of one per service), and decodes the 32-bit
+`SERVICE_FAILURE_ACTIONS` blob in Lisp out of the byte array PowerShell hands over, with the
+exit-code and event-id tables carried over word for word. The filters, the 400-row ceiling and
+the distinction between a failed exit code and 1077 (never tried since the last boot) are the
+plugin's, as is the note that the output reveals what is installed and how it runs. What was
+left out is what belonged to the runtime rather than to the tools: plugin.yaml, the pyproject
+packaging, the pip dependency list (it was empty) and the pytest suites that need a live
+Windows box, replaced by the cell's section declaration, its own `.asd`, and an offline suite
+that stubs the one child process. Nothing of the original is vendored.

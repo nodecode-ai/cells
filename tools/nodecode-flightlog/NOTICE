@@ -1,0 +1,30 @@
+nodecode-flightlog is a rewrite of piyushpradhan's piyushpradhan/flightlog:
+
+  https://github.com/piyushpradhan/flightlog
+  commit c201d602219f6890c380954c1229692e6bfc3f44
+  MIT, Copyright (c) 2026 Piyush Pradhan (LICENSE)
+
+What was rewritten: the recorder and the judgement on top of it. Every turn
+is recorded as it happens -- each tool call with its arguments and duration,
+each model round with its tokens, the answer, and how the turn ended -- and
+each finished turn is judged by the original's rules, in the original's
+words: a claim no check proved, a failure the answer swallowed, a call
+repeated in a loop, a job that cost far more than its baseline, one that did
+far less work, and one that answered without touching a tool. A job is
+compared with its own last healthy runs, the operator reads the verdict in
+/flightlog and in the flightlog_runs tool, a flagged run is raised as a
+notice, and an acknowledgement silences a rule for that job. The store is one
+JSON document under the home instead of a SQLite database.
+
+What was left out, and why: the original hooked ten Hermes callbacks; a
+Nodecode turn publishes durable facts on one :frame point, so one hook
+records the same ten things and the mapping is in cell.lisp. The subagent
+rule is gone, because a spawned turn's success is not a fact the recorder is
+handed and inventing one would be worse than missing it. The opt-in tripwire
+(a pre-call approval for a looping tool) is gone: Nodecode's approval gate is
+another cell's, and the loop is reported here after the fact instead. The
+model-written incident report is now the built-in template -- the finding's
+sentence and why it matters -- so nothing is dialled; the original's
+`hermes flightlog ...` subcommands are /flightlog verbs, and its desktop
+page and web dashboard are the command, the tool and the store file.
+LICENSE is the original repository's LICENSE, unchanged.

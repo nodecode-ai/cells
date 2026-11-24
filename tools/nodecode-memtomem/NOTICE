@@ -1,0 +1,39 @@
+nodecode-memtomem is a rewrite of memtomem's memtomem/memtomem:
+
+  https://github.com/memtomem/memtomem
+  commit b440f108ad42e349a1518c0dcf67bb23f0240936
+  Apache-2.0, Copyright 2025-2026 DAPADA Inc. and memtomem contributors (LICENSE)
+
+The rewritten plugin is packages/memtomem-hermes-plugin of that commit. Its
+plugin.json, mcp.json and six skill files describe one local memory store that
+several coding agents share; the six skills' five verbs keep their names and
+their parameters (mem_search, mem_recall, mem_add, mem_index, mem_status), and
+so does the shape of the data they reach: a store at ~/.memtomem, notes under
+its memories/ directory, one markdown file per day, one "## " section per
+entry, a "> created:" and "> tags:" blockquote header under each heading.
+What this cell writes is the block the original's tools/memory_writer.py writes,
+so a store it appends to keeps being read, by this cell and by the other
+agents that share it, and what they write is read here. Search is BM25 over
+the note sections, the original's default ranker, and the workflows the six
+skills spell out are carried in the tools' descriptions and in (help :memtomem).
+
+The original runs a Python MCP server (uvx --from memtomem[onnx]==0.7.4) that
+indexes the notes into SQLite. What was rewritten is that server's five tools
+as Lisp over the notes themselves; what was left out, and why:
+
+  * The SQLite index, the embedding and reranker models, and every other
+    provider the server can be configured with. A cell bundles no Python, so
+    the store is read directly, with the ranker the original uses when no
+    embeddings are configured (BM25); dense retrieval is not carried.
+  * The rest of the server's tool surface: mem_do's context-gateway actions,
+    ingest, export and import, the project tiers, and the file watcher that
+    re-indexes changed files while the server runs. Nothing needs indexing here
+    (a search reads the notes it needs), and the six skills call none of those
+    actions.
+  * The redaction guard the original applies to an added entry before it is
+    written, and the idempotency key and the consolidation of similar entries.
+    mem_add here appends the block and names a similar entry when it finds one.
+  * The Hermes runtime itself: uvx, the MCP transport and the plugin manifest
+    are the harness's, not the data's.
+
+LICENSE is memtomem's repository LICENSE, unchanged.

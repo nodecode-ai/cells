@@ -1,0 +1,36 @@
+nodecode-openltm is a rewrite of RohiRIK's RohiRIK/OpenLtm:
+
+  https://github.com/RohiRIK/OpenLtm
+  commit 8ee2a8e4f9de60fcf16b37e0ea9c02c4d389ba35
+  MIT, Copyright (c) 2026 RohiRIK (LICENSE)
+
+The rewritten plugin is hermes/openltm_hermes of that commit. Its eight tools
+(openltm_recall, openltm_learn, openltm_forget, openltm_context,
+openltm_relate, openltm_graph, openltm_brain_stats, openltm_stale) keep their
+names, descriptions and parameters; the six categories (preference,
+architecture, gotcha, pattern, workflow, constraint), the five origins, the six
+relation types (supports, contradicts, refines, depends_on, related_to,
+supersedes), the five statuses, importance 1-5 with 5 never decaying, and the
+dedup key that makes the same fact twice a confirmation rather than a second
+memory are carried over; so is the capture machinery -- the ordered rule table
+(USER_RULES then ASSISTANT_RULES), the guards that keep ops noise and read-only
+brain requests out of it, the sentence-level distillation with the speech
+markers stripped and negations kept, the 500-character ceiling, the minimum
+message lengths and the five-facts-a-session cap -- and the framing that a
+memory records where a claim came from and never grants permission to act.
+
+What was left out, and why: SQLite, FTS5 and the optional sqlite-vec and
+llama.cpp vector backends are C libraries and a local model server, and a Lisp
+cell bundles neither, so the store is one JSON-lines pair of files under the
+home with recall scored in Lisp (whole-token and prefix matches, weighted by
+importance and by age with a half-life) instead of an FTS5 MATCH and a cosine
+of embeddings -- there is no embedding provider setting, so no memory text ever
+leaves the machine; the per-turn prefetch that asked the embedder for what a
+new message matched before answering is the model's openltm_recall call here,
+because the Nodecode seam that reads standing sections once per turn carries no
+per-message query; the reverse-turn and session-end extraction passes and the
+endpoint/origin-config plumbing (_providers.py, _project_memory.py's subprocess
+read of the git remote) have no counterpart, project scope being a parameter of
+openltm_learn and openltm_context; and hermes's own memory-setup and status
+commands become the section, /settings and /openltm. LICENSE is OpenLtm's
+repository LICENSE, unchanged.

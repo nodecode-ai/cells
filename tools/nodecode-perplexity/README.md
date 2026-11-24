@@ -3,7 +3,7 @@
 A Nodecode cell for [Perplexity](https://www.perplexity.ai) search. It gives
 the model one verb, `(perplexity:search "query" ...)`, which asks Perplexity
 to search the web live and answers with Perplexity's answer, the sources it
-read and related questions. `/perplexity login` signs you in to your Pro or
+read and related questions. `/perplexity` signs you in to your Pro or
 Max account, so the search runs on your account's models.
 
 Ported from [oh-my-pi](https://github.com/can1357/oh-my-pi)'s `perplexity`
@@ -29,15 +29,15 @@ So this cell is what omp's engine is: a search the model calls, through
 ## Sign in
 
 ```
-/perplexity login you@example.com
-/perplexity code 123456
+/perplexity → Sign in with an email               you@example.com
+/perplexity → Enter the code from the email       123456
 ```
 
 omp's login is a custom one with three ways in, tried in order:
 
 1. **The desktop app.** On macOS, the legacy `ai.perplexity.mac` app keeps
    its session token in its defaults, and the login borrows it
-   (`defaults read ai.perplexity.mac authToken`). So does `/perplexity login`
+   (`defaults read ai.perplexity.mac authToken`). So does **Sign in** in `/perplexity`
    here, unless the section says `"borrow_app_session": false` (omp's
    `PI_AUTH_NO_BORROW`). Newer Mac apps keep theirs in a restricted Keychain,
    out of reach.
@@ -45,10 +45,10 @@ omp's login is a custom one with three ways in, tried in order:
    the session cookie once you sign in. Nodecode has no such window; see
    Gaps.
 3. **An email code.** Perplexity mails a code to your address. The command
-   fetches a CSRF token, asks Perplexity to send the code, and answers. Type
-   the code with `/perplexity code CODE`. If your account has an
+   fetches a CSRF token, asks Perplexity to send the code, and answers. Enter
+   the code under **Enter the code from the email**. If your account has an
    authenticator, Perplexity then asks for its code too, and the command
-   says so: type that one with `/perplexity code CODE` as well. The cookies
+   says so: enter that one the same way. The cookies
    Perplexity sets along the way ride in one jar, as omp's do, and when the
    authenticator's answer carries no token the session is read from them.
 
@@ -69,7 +69,7 @@ session tokens usually carry no `exp`, and never expire from here. When one
 does carry an `exp`, `expires_at` is that less five minutes, as omp keeps it,
 and after it the session is not sent. There is no refresh; sign in again.
 Every other field of `auth.json` is kept, and the file stays mode 0600.
-`/perplexity status` says who is signed in, and `/perplexity logout` takes
+`/perplexity` says who is signed in, and its **Sign out** takes
 the entry out.
 
 ## Other credentials
@@ -127,7 +127,7 @@ Optional. The section is on unless it says `"enabled": false`:
     "model": "experimental",
     // the API model a key search asks for
     "api_model": "sonar-pro",
-    // on macOS, whether /perplexity login takes the legacy app's session first
+    // on macOS, whether signing in takes the legacy app's session first
     "borrow_app_session": true
   }
 }

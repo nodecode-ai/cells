@@ -1,0 +1,37 @@
+nodecode-fmsg is a rewrite of markmnl's markmnl/hermes-fmsg:
+
+  https://github.com/markmnl/hermes-fmsg
+  commit 562f45a48a6b10504c8d6ff5c677f1ec990e6b7b
+  MIT, Copyright (c) 2026 Mark Mennell (LICENSE)
+
+What was rewritten: the original is a Hermes platform adapter, so every
+inbound fmsg message became a Hermes session. Here the same fmsg Web API is
+reached from a Nodecode session instead: three tools (fmsg_send, fmsg_inbox,
+fmsg_thread), four verbs called through eval (fmsg:send-message, fmsg:inbox,
+fmsg:message, fmsg:thread) and a /fmsg command. The parts of the original
+that carry over are its token exchange (an fmsgk_ API key traded at
+POST /fmsg/token for a short-lived JWT, cached and re-exchanged five minutes
+before expiry, with one forced re-exchange on any 401), its two-step write (a
+draft at POST /fmsg, then POST /fmsg/<id>/send), its reply-all default (a
+reply addresses every participant of the parent message but itself), its
+topic-only-on-a-root rule, its body read (short_text when it is the whole
+body, else GET /fmsg/<id>/data), its walk up the pid chain to a thread root,
+and its ancestry formatting, which is what fmsg_thread answers and what the
+original used as a forked branch's context. The FMSG_* environment variables
+are the fmsg section, with FMSG_API_KEY and FMSG_DEFAULT_TOPIC still read;
+the address the original read from the JWT's sub claim is the section's
+address, and still read from the claim when the section leaves it empty.
+
+What was left out, and why: the Hermes platform life cycle itself -- the
+WebSocket at /fmsg/ws and the inbox catch-up after a restart -- because a
+Nodecode cell answers a session rather than standing in for one, so reading is
+on demand (fmsg_inbox, fmsg_thread). Attachments (POST /fmsg/<id>/attach,
+GET /fmsg/<id>/attach/<name>) and mark-read are not wired: fmsg_inbox reads
+them and flags unread, but nothing downloads or acks a file. The
+thread-to-session branch bookkeeping (branch keys, fork detection, per-chat
+state written to disk) is not carried: there are no sessions to route into,
+so fmsg_thread walks the ancestry each time it is asked. The allowlist
+(FMSG_ALLOWED_USERS, FMSG_ALLOW_ALL_USERS) and the home channel are not
+carried, because whoever reaches this cell is the operator. The quiet
+display.platforms write into the host's config on first load is the section
+here. LICENSE is the original repository's LICENSE, unchanged.

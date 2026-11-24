@@ -1,0 +1,27 @@
+nodecode-mqtt is a rewrite of JasonSwindle's JasonSwindle/hermes-mqtt:
+https://github.com/JasonSwindle/hermes-mqtt
+commit 103ec28e9e2f68b080fd8e8074d0e5a98750e06e
+MIT, Copyright (c) 2026 Jason Swindle (LICENSE)
+
+What was rewritten: the pair of operations the plugin was built on — publish
+one event to a broker topic, and read what arrives on a topic — as the tools
+mqtt_publish and mqtt_read, the Lisp verbs mqtt:publish and mqtt:read-topics
+behind them, and a /mqtt command that reports the section and probes the
+broker. Rewritten with them: the config surface (broker url, user, password,
+both topic allowlists, timeout, payload cap), the gates the original kept (a
+literal publish topic, deny-by-default allowlists that a read cannot widen, a
+payload scanned for credential shapes, a size cap), and the thin JSON
+envelope (schema, kind, timestamp, a per-process nonce, the data). The
+protocol is spoken directly over the image's socket support — MQTT 3.1.1
+CONNECT/CONNACK, SUBSCRIBE/SUBACK, PUBLISH/PUBACK at QoS 1, with TLS for an
+mqtts:// url — so the rewrite carries no client library and no CLI.
+
+What was left out: the platform adapter, and with it everything that needed
+a resident gateway process: the one long-lived subscription, the per-topic
+routing to a delivered chat line, an agent turn or a cron job, burst
+coalescing, the reconnect supervisor, the de-duplication cache, the MQTT 5.0
+packet surface (properties, reason codes, broker limits, the protocol ladder)
+and the own-topic guard on replies. A cell is a verb in a session rather than
+a process of its own: it opens a connection, does one thing and leaves, so a
+watcher of a bus is a loop the operator runs against the same broker, and the
+config is the section rather than a platform's extra map.

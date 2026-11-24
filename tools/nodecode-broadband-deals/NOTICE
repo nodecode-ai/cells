@@ -1,0 +1,22 @@
+nodecode-broadband-deals is a rewrite of FindBroadband's FindBroadband/mcp:
+
+  https://github.com/FindBroadband/mcp
+  commit 452358616b1b8d79d730693c927b1b398203496a
+  MIT, Copyright (c) 2026 Find Platforms Ltd (trading as FindBroadband) (LICENSE)
+
+The original plugin was six files of manifest: plugin.json, mcp.json,
+.mcp.json and .claude-plugin/plugin.json named one hosted Streamable HTTP MCP
+server, and skills/uk-broadband-deals/SKILL.md told the host's model how to
+use it. Nothing ran locally. This cell speaks that protocol itself in Common
+Lisp: it initialises the server once a start, then sends one tools/call per
+verb, with the four tools' input schemas declared as Nodecode contracts --
+search_addresses, find_broadband_deals, check_if_overpaying and
+get_deal_details, under the cell's own tool names -- and answers with the
+server's text, unchanged. What was left out is what Nodecode does for itself:
+the four harness manifests, whose only content was the endpoint URL and a
+trust flag, now the section's endpoint setting; and the skill file's
+step-by-step prose, carried instead as the four tools' descriptions and as
+the manual's primer for (help :broadband-deals). The server, its data and its
+terms are FindBroadband's: the cell bundles none of them, computes none of
+the figures, and dials the same endpoint the plugin named, so a failure or a
+change there is FindBroadband's too.

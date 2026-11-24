@@ -1,0 +1,16 @@
+nodecode-membase is a rewrite of unibaseio's unibaseio/membase:
+
+  https://github.com/unibaseio/membase
+  commit 8733b537da62192aa088e65ed127340969e0f680
+  MIT, Copyright (c) 2026 Unibase (LICENSE)
+
+What was rewritten: the Hermes memory provider at `integrations/hermes` — its
+three tools (`membase_search`, `membase_save`, `membase_profile`), the
+time-boxed, fail-open search before each turn, the opt-in capture of the
+operator's own words, and the sentences it explains a refusal with — as Common
+Lisp against Membase's HTTP API, the same three endpoints the plugin reaches
+through its SDK (`/v1/search`, `/v1/memories/add`, `/v1/profile-facts`). What
+was left out: Hermes's own provider registration and per-profile JSON settings
+file (the cell declares one config section instead), the `memory.user_store`
+hand-over of USER.md facts to the Membase profile, and the SDK's Memory listing
+and document upload, which the plugin never exposes to the model either.

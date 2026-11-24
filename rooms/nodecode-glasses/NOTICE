@@ -1,0 +1,28 @@
+nodecode-glasses is a rewrite of 100yenadmin's 100yenadmin/glasses-platform:
+
+  https://github.com/100yenadmin/glasses-platform
+  commit dbc797b6cc4063261c5be298288e599322913b98
+  MIT, Copyright (c) 2026 Electric Sheep (LICENSE)
+
+Rewritten: the whole channel, in Common Lisp against the Nodecode cell
+contract. A device still authenticates with its own token, one per wearer;
+a query still becomes one turn in that wearer's own session; answers still
+come back as short lens lines, split at a length and stripped of markdown;
+a visual question still takes a fresh photo first, with the original's
+keyword and deictic rules kept word for word; the camera is still a tool the
+model may call, and a capture request still waits for the device to answer;
+frames said while a device was away are still held in a queue with a
+ceiling, as the original's in-memory outbox was; and the routes, the
+reminder push and the session reset of the original's protocol are kept as
+verbs a client can call.
+
+Left out: the WebSocket transport. The original served ws:// on a port of
+its own, with two protocol versions, streamed deltas, status frames and a
+per-turn reply state machine inside the Hermes gateway. A cell does not own
+a port beside the gateway, so the rewrite is HTTPS-on-the-gateway-port with
+a poll: /hello, /say, /poll and /photo answer the same facts as frames, and
+streaming was dropped in favour of the finished answer, because a lens shows
+one line at a time anyway. A companion app written against the original's
+WebSocket frames needs a small adapter, not a rewrite. Also left out:
+Hermes' own cron wrapper unwrapping and its approval-prompt fan-out, which
+are the harness's business, not a cell's.

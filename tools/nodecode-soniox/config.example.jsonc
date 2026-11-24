@@ -1,0 +1,25 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "soniox": {
+    "enabled": true,
+    // the key itself, or the name of the variable holding it
+    "api_key": "",
+    "api_key_env": "SONIOX_API_KEY",
+    // speech
+    "model": "tts-rt-v2",
+    "voice": "Adrian",
+    "language": "en",
+    "audio_format": "mp3",
+    // transcription
+    "stt_model": "stt-async-v6",
+    // "stt_language": "en",   // omit to let Soniox detect the language
+    "poll_timeout_seconds": 300,
+    // the two roots, and where spoken files are kept
+    "api_base_url": "https://api.soniox.com/v1",
+    "tts_url": "https://tts-rt.soniox.com/tts",
+    "directory": "soniox/"
+  }
+}

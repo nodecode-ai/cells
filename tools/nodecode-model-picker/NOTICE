@@ -1,0 +1,28 @@
+nodecode-model-picker is a rewrite of aean0x's aean0x/hermes-model-picker:
+
+  https://github.com/aean0x/hermes-model-picker
+  commit 8ba20ad970f68d6adecc958da8992034e89f3481
+
+MIT, Copyright (c) 2026 aean0x (LICENSE)
+
+What was rewritten: the plugin's routing is carried as a Nodecode cell — the
+same three named tiers with the same best_for policy lists, the same generated
+classifier prompt, the same bias to keep the previous tier, the same fail-open
+to the low tier, the same /low, /default and /high pins (as /model-picker's
+arguments, with /model-picker auto for the original's /auto), and the same
+escalate_model tool capped at the top tier. Rather than a request middleware
+that rewrites an outgoing model id, the cell writes the one durable session
+selection nodecode's turn already reads, and it classifies on NLE:SUBMIT, the
+harness's one in-process ingress, instead of on Hermes's pre_llm_call hook; the
+failed-tool-call count comes from the :TOOL point.
+
+What was left out, and why: the optional handoff engine, a subclass of
+Hermes's private ContextCompressor, because Nodecode's transcript is the
+model's own to edit and a cell cannot compact it; the adjacent config.json,
+MODEL_PICKER_CONFIG and the MODEL_PICKER_* environment variables, because a
+cell's settings belong in its declared section where /settings and the setup
+panel read them; and the fallback to the host's primary model for an unnamed
+tier, because a tier the operator never named is better refused than silently
+routed to the session's own model. The plugin's local routing log is not
+carried: a routing decision is visible in the session's own model and in
+/model-picker's answer.

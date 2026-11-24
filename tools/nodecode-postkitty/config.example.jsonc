@@ -1,0 +1,8 @@
+{
+  // where job folders are written; empty means ./postkitty beside the working directory
+  "output_dir": "",
+  // platforms to make when the caller names none; empty means every target that fits
+  "default_platforms": [],
+  // the integrated loudness target, in LUFS, of a rendered video's audio
+  "loudness_lufs": -14
+}

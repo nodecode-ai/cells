@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it. A key is required: every tools/call
+// on the hosted server is answered only with one.
+{
+  "flipletters": {
+    "api_key_env": "FLIPLETTERS_API_KEY",          // the variable holding the flk_ key, or "api_key" inline
+    "url": "https://app.flipletters.com/mcp/v1",   // the hosted Streamable HTTP endpoint
+    "timeout_seconds": 60                            // one exchange's ceiling
+  }
+}

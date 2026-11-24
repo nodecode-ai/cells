@@ -1,0 +1,8 @@
+{
+  // The section is on unless it says "enabled": false.
+  "lightning-ai": {
+    // where the OpenAI-compatible gateway is served; a relay's address goes
+    // here. LIGHTNING_BASE_URL, when set, stands in for this value.
+    "base_url": "https://platform.lightning.ai/api/v1"
+  }
+}

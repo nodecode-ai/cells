@@ -1,0 +1,36 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the cell gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "elevenlabs-music": {
+    "enabled": true,
+
+    // Your ElevenLabs API key (Profile -> API keys; the Music API needs a
+    // paid plan, and a restricted key needs the Music permission). Empty
+    // means ELEVENLABS_API_KEY from the environment.
+    "api_key": "",
+
+    // music_v2_5, music_v2 or music_v1. Composition plans, edits and audio
+    // references need v2 or v2.5.
+    "music_model": "music_v2_5",
+
+    // mp3_44100_128, mp3_44100_192, mp3_48000_192, mp3_48000_320,
+    // opus_48000_128 or opus_48000_192. The Music API has no WAV container.
+    "output_format": "mp3_44100_128",
+
+    // Ask ElevenLabs to keep each song so a later request can edit it.
+    "store_for_editing": true,
+
+    // How long a tool waits for a generation before it answers with a job id.
+    "wait_seconds": 240,
+
+    // Where tracks are written; empty means the organism's
+    // cache/generated/audio/.
+    "output_dir": "",
+
+    // Change only for an ElevenLabs data-residency endpoint, e.g.
+    // https://api.eu.residency.elevenlabs.io
+    "api_base_url": "https://api.elevenlabs.io"
+  }
+}

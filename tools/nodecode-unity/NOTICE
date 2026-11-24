@@ -1,0 +1,35 @@
+nodecode-unity is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-csharp-game-editor:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-csharp-game-editor
+  commit 87f7217f4baae369dbf1df405418c0f7ad711336
+  MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+The plugin was a portable manifest (plugin.json), one mcp.json entry, a skill and a
+5400-line Python bridge between Hermes and MCP for Unity (CoplayDev/unity-mcp 10.3.0).
+The bridge started that server itself, wrapped its ~409 operations into nineteen unity_*
+tools, and made every change a plan: plan_batch measured the editor, apply_plan ran the
+steps in order after one approval, a second question covered deletes, editor code and
+unsaved work, every file the plan did not name was put back, and a separate measurement
+decided whether play mode, a compile or a test run had really succeeded.
+
+This rewrite keeps the four things a model needs to reach that same editor from a
+Nodecode session -- the tool list, one call, a plan and its apply -- and speaks MCP over
+HTTP to MCP for Unity's own endpoint in Lisp through nlk:http, so no Python, no uvx, no
+stdio child and no bridge process sit between them. The plan keeps the original's
+shape: every step and its arguments are shown before anything runs, a plan carries an
+id, runs once, only the newest plan runs, and it expires; the first failing step stops
+the plan and names the step. The path checks the original made before planning are kept,
+as far as an argument's own text can be judged without the project: no .., no hidden
+file, no key or credential file, no absolute path, no deleting Assets, Packages or
+ProjectSettings, and no File/Quit. The skill's guidance is the cell's manual topic,
+(help :unity), and each tool's argument list is its declared schema.
+
+What was left out: the editor-transport preference read from EditorPrefs, the uvx
+stdio child and every warm-up it did (the cell uses the endpoint the section names);
+the editor-state fingerprint a plan was made against; the before-and-after walk of the
+project that put back files a plan did not name, and the second question for risky
+plans, because this cell has no chat surface of its own to ask in; the per-op side
+effect table the original extracted from MCP for Unity's C# source; the done-measurement
+of play mode, compiles, test rows and build output (the cell reports each step's own
+answer and stops on the first refusal, and says so); and the resources read. Nothing of
+the original is vendored.

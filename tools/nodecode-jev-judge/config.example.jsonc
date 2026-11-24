@@ -1,0 +1,15 @@
+{
+  "jev-judge": {
+    "mode": "shadow",            // "shadow" only logs; "enforce" asks Allow once / Deny
+    "tools": ["eval"],          // the tool names the gate reads
+    "backend": "auto",           // "auto" | "typesafe" | "openrouter"
+    "timeout_seconds": 3,       // one judgment's ceiling, clamped to 10 in code
+    "cache_seconds": 300,       // an identical call is judged once per window
+    "typesafe_base_url": "",    // empty: TYPESAFE_BASE_URL, else https://api.typesafe.ai
+    "typesafe_model": "",       // empty: TYPESAFE_DEFAULT_MODEL, else jev-latest
+    "openrouter_model": "~typesafe/jev-latest",
+    "ask": true,                // in enforce mode, ask before refusing
+    "ask_seconds": 120,
+    "log_path": ""              // empty: logs/jev-judge.log under the Nodecode home
+  }
+}

@@ -1,0 +1,8 @@
+// The flow section of ~/.nodecode/config.jsonc. Nothing is required.
+{
+  "flow": {
+    "max_sessions": 20,   // sessions a /flow listing shows
+    "max_calls": 12,      // tool rows shown under one agent
+    "baseline": ""        // trusted-paths JSON /flow compare uses when it names none
+  }
+}

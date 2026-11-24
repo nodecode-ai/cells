@@ -90,7 +90,7 @@ placeholder."
 
 (nle:define-cell muse-code
   (:section ("muse-code")
-    (:guide "sign in with /muse-code login (a Muse subscription's Meta account; open the address, enter the code); base_url is where Meta's Model API is served")
+    (:guide "sign in from /muse-code (a Muse subscription's Meta account; open the address, enter the code); base_url is where Meta's Model API is served")
     ("base_url" :string :default +base+
      :doc "the Meta Model API base the Responses lane appends /responses to"))
   (:start #'start)
@@ -101,6 +101,4 @@ placeholder."
   (:hook 'nle::walk-provider-stream #'walk)
   (:command "muse-code" 'run-command
             :description "Sign in to Muse Code with a device code"
-            :argument-hint "login | logout | status"
-            :session nil
-            :complete 'complete-command))
+            :session nil))

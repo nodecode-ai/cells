@@ -1,0 +1,26 @@
+nodecode-stalkchain is a rewrite of StalkC's StalkC/stalkchain-plugin:
+
+  https://github.com/StalkC/stalkchain-plugin
+  commit a4db6100f1d031e5f07cd134e93600bfc70c5f78
+
+MIT License, Copyright (c) 2026 StalkChain (LICENSE)
+
+What was rewritten: the original declares one MCP server (mcp.json) and
+eighteen markdown skills that teach a model how to research a coin, a trader,
+a wallet or a launch. The cell speaks to that same server over MCP's
+streamable HTTP transport, with the operator's own StalkChain key, and keeps
+the tools the skills lean on behind six typed tools -- token check, trader
+report, smart money, wallet, alerts, and one escape hatch to the whole
+catalogue -- plus a /stalkchain command and a (help :stalkchain) topic that
+carries the skills' doctrine. The original's tool names, arguments and
+answers are what the cell sends and answers; nothing of the server is copied.
+
+What was left out: the eighteen skills and three agents are not carried as
+files, because a cell contributes tools and prose, not a plugin's folder
+layout: their doctrine is in the primer and the tool descriptions. The
+Claude and ChatGPT interactive cards have no counterpart in a terminal, so an
+answer is text. Sign-in is by API key rather than the original's browser
+OAuth flow, since a cell cannot open a browser; the key comes from the same
+account and spends the same credits. The rest of its marketplaces -- Cursor,
+the .claude-plugin and .cursor-plugin manifests -- are install plumbing with
+nothing behind them here.

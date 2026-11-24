@@ -62,6 +62,12 @@ unwind."
   (loop for payload in (goal-facts-of session "turn.assistant_message_completed")
         collect (nlk:fact-message-content payload)))
 
+(defun goal-parked (session)
+  "The prompt ids waiting in SESSION's queue that its goals admitted, oldest first."
+  (loop for prompt in (coerce (nlk::queue-prompts session) 'list)
+        for id = (gethash "prompt_id" prompt)
+        when (and (stringp id) (eql 0 (search "goal:" id))) collect id))
+
 (defun goal-turns (session)
   "How many turns SESSION was ever admitted, a recorded note included."
   (nlk:events :session-id session :kind "turn.started" :as :count))

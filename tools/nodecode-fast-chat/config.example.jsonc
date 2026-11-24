@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for the fast-chat cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it, and then /fast-chat is not registered. The model is the one
+// answer the folder refuses to start without: /fast-chat still takes a model
+// on its own line, and this is what a bare /fast-chat opens on.
+{
+  "fast-chat": {
+    // A model id as /models lists it, behind PROVIDER/ for another provider
+    // and before :EFFORT for a rung. Required.
+    "model": "gpt-6.1-sol",
+    // Who serves it; empty follows the gateway's default provider.
+    "provider": "openai-codex",
+    // The reasoning rung a bare /fast-chat opens on: off, minimal, low,
+    // medium, high, xhigh or max. A model that offers no ladder ignores it.
+    "effort": "low"
+  }
+}

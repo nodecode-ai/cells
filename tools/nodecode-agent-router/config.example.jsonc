@@ -1,0 +1,19 @@
+// The agent-router section of ~/.nodecode/config.jsonc. Every member is
+// optional: an empty section ranks the five example agents and needs no key.
+{
+  "agent-router": {
+    // A percent. Under it the answer is abstain instead of a choice; a call
+    // may raise this floor, never lower it.
+    "min_confidence": 15,
+
+    // How many runners-up one answer lists after the choice.
+    "max_alternatives": 3,
+
+    // Your own agents: a JSON array holding one object per agent, the same
+    // objects the agent_route tool takes (id, name, description,
+    // capabilities, tags, tools, permissions, cost, latency, reliability,
+    // enabled, fallback_id, max_actions, scope). An object with an "agents"
+    // array works too. Leave it out to rank the example registry.
+    // "registry": "~/agents.json"
+  }
+}

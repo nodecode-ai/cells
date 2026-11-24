@@ -21,9 +21,10 @@ same channel kit.
 - **Buttons and menus:** offered answers come as buttons; `/nodecode models`,
   `/nodecode context`, `/nodecode think` and the other dialogs come as cards
   with menus and buttons. A pick runs its line and the card updates in
-  place.
-- **Commands:** `/nodecode help`, `/nodecode models`, `/nodecode stop`, and
-  so on, run a Nodecode command. Slack doesn't allow slash commands inside
+  place; a pick that needs words (a name, a code) opens a form that asks for
+  them.
+- **Commands:** `/nodecode` alone lists every Nodecode command, a button
+  each; `/nodecode models`, `/nodecode stop` and so on open one by its name. Slack doesn't allow slash commands inside
   threads; mention the bot with the command instead (`@nodecode /stop`).
 - **Files:** Nodecode reads images and recordings people post, and posts
   pictures, files and voice replies back (needs `files:write`).

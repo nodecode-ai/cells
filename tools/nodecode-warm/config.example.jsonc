@@ -1,0 +1,18 @@
+// The warm section of ~/.nodecode/config.jsonc: documentation, not config.
+// The declaration in cell.lisp is the authority; this is an illustration.
+// A present section is enabled; "enabled": false vetoes it. Every field
+// except base_url and models has a default.
+{
+  "warm": {
+    "enabled": true,
+    "base_url": "https://api.example.com/v1",
+    "models": ["some-model"],
+    "api_key_env": "MY_PROVIDER_KEY",
+    "interval_seconds": 240,
+    "idle_window_seconds": 1800,
+    "max_requests": 7,
+    "timeout_seconds": 15,
+    "max_sessions": 4,
+    "max_payload_bytes": 524288
+  }
+}

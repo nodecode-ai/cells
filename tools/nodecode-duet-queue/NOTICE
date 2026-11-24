@@ -1,0 +1,26 @@
+nodecode-duet-queue is a rewrite of benfirad's benfirad/hermes-plugin-antigravity-duet:
+
+  https://github.com/benfirad/hermes-plugin-antigravity-duet
+  commit b68fe4bacf0145f7ab30b9a6b08597b442922278
+
+MIT, Copyright (c) 2026 benfirad (LICENSE)
+
+The rewrite keeps what the plugin gives a user: a durable queue of background
+tasks in one JSON file instead of a SQLite database; the human-in-the-loop gate
+(the same five states, and a model's task lands in awaiting_approval); the same
+refusal when a model tries to approve its own work; the /duet and /duffy
+commands with list, add, show, approve, reject and retry; the duet_queue and
+duet_swarm tools and their argument names; the worker that runs one task at a time through the user's own CLI, with the task's prompt as its last argument,
+under a timeout; the marker a task ends with when it needs one more decision,
+which puts it back in the queue for the operator; and the per-task workspace
+under the plugin's own data directory.
+
+Left out, and why: the local HTTP dashboard and its launch token (Nodecode's
+operator surface is the shell, /duet and the notice board, so a second web
+server would be a second place to watch); the macOS menu-bar companion, which
+is Swift source the plugin never builds; the dashboard's agent chat, which
+spoke only to that page; and the Ruflo swarm's spawn, stop and start verbs,
+because their arguments belong to that CLI's own vocabulary -- duet_swarm reads
+status and the agent list and leaves the rest to it. The plugin's multi-model
+fallback (agy's own model cascade) is the CLI's, not the queue's: this cell
+runs whatever command the operator names.

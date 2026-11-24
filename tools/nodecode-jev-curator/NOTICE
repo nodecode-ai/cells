@@ -1,0 +1,22 @@
+nodecode-jev-curator is a rewrite of anpicasso's anpicasso/hermes-jev-curator:
+
+  https://github.com/anpicasso/hermes-jev-curator
+  commit 4e8626c7d394a9cbef8594993ec4b208ffb3395f
+  MIT License, Copyright (c) 2026 Angello Picasso (LICENSE)
+
+Rewritten: the SKILL.md inventory and its sha256 digests, the deterministic
+lexical candidate pairs with their signals and baseline, the versioned
+skill-relations question contract asked of TypeSafe's System One, the
+evidence policy (confidence, coverage, conflict, preservation) folded into a
+typed graph, and the star-shaped, content-hash-bound merge plans with their
+digests re-checked at apply time. Apply archives a folder instead of
+deleting it, since Nodecode has no curator backup of its own.
+
+Left out, because Nodecode has no counterpart to lean on: Hermes's skill
+lifecycle hook and its debounced background refresh, the pre-tool-call guard
+that blocks unbound skill writes, Hermes's write-approval and provenance
+seams, and the chunked request planner for a pair too large for one request
+(a pair past one request's budget is refused here, not truncated). The
+per-skill use counts that rank a canonical skill are absent, so the ranking
+is by name, and the OpenRouter route is not carried: one TypeSafe endpoint,
+or a base_url of the operator's own.

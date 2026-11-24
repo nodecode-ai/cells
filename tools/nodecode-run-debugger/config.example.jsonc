@@ -1,0 +1,11 @@
+{
+  // Every member is optional: these are the original plugin's defaults.
+  "run-debugger": {
+    "enabled": true,
+    "max_bytes": 67108864,       // bytes read from one selected trace
+    "max_line_bytes": 8388608,   // bytes in one JSONL line
+    "max_events": 200000,        // records accepted from one trace
+    "allow_partial": false,      // keep a truncated final line's valid prefix, marked PARTIAL
+    "retention_days": 90         // how long a run is kept under the home
+  }
+}

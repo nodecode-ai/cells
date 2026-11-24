@@ -1,0 +1,15 @@
+{
+  // Point base_url at your own Memobase server, /api/v1 suffix included.
+  // Paste its bearer token into api_key, or leave that out and name the
+  // variable holding it in api_key_env.
+  "memobase": {
+    "base_url": "http://memobase.local:8019/api/v1",
+    "api_key": "",
+    "api_key_env": "MEMOBASE_API_KEY",
+    "user_name": "user",
+    "max_tokens": 2000,
+    "time_range_days": 180,
+    "fill_window_events": true,
+    "timeout_seconds": 8
+  }
+}

@@ -1,0 +1,9 @@
+{
+  // Hardlight UI: nothing here is required.
+  "hardlight": {
+    // the frontend project hardlight_inspect reads when a call names none
+    "root": "",
+    // how many files one inspection reads before it stops (1..500)
+    "max_files": 120
+  }
+}

@@ -1,0 +1,16 @@
+{
+  // The project whose openspec/ folder the tools read and write.
+  // Give a workdir, a projects list, or both:
+  "openspec": {
+    "workdir": "~/code/myproject",
+
+    // More projects, to resolve by name: "name=path".
+    "projects": ["api=~/code/api"],
+
+    // The openspec command, when it is not on PATH. Only openspec_cli runs it.
+    "cli": "openspec",
+
+    // The longest text one answer carries, before it is cut.
+    "max_chars": 50000
+  }
+}

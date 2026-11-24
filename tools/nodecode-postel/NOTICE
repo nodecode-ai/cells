@@ -1,0 +1,21 @@
+nodecode-postel is a rewrite of robinfaraj's robinfaraj/postel-mcp:
+
+https://github.com/robinfaraj/postel-mcp
+commit adaa9363ffbaf6b74a5a11e15f88acb0392d6406
+MIT, Copyright (c) 2026 JRS Content Solutions UG (haftungsbeschränkt) (LICENSE)
+
+The original was a portable manifest - plugin.json, mcp.json and one Markdown
+skill - that pointed the harness at Postel's hosted MCP server and taught the
+model the order of work. The rewrite keeps what a user gets: research on what
+went viral, drafts in the user's own voice, threads and media, a LinkedIn first
+comment, listing and reading the workspace's posts, scheduling and publishing,
+and the account's plan and connected networks. Those became eight tools in
+Common Lisp that call Postel's own REST API (documented in the same repository)
+with an API key from the cell's section, and the skill's writing advice became
+the manual topic `:postel` plus each tool's description. Left out: the MCP
+transport and its OAuth sign-in, because the keyed REST API reaches the same
+operations and a cell can hold a key; the marketing and per-client install
+sections of the README, which are about other harnesses; and the tools the REST
+API does not name (updating and deleting a draft, attaching media to an existing
+draft, the brand and voice-profile listings), so the rewrite speaks only for the
+endpoints the original repository documents.

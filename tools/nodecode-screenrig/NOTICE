@@ -1,0 +1,30 @@
+nodecode-screenrig is a rewrite of screenrig's screenrig/plugin:
+
+  https://github.com/screenrig/plugin
+  commit 37de9fcb22bd1e7e13f881643ac2328b325cb75b
+
+Apache-2.0, Copyright 2026 ScreenRig (LICENSE)
+
+The original is a portable agent plugin: a plugin manifest, the screenrig
+skill and its references, a second skill for hosted views, an MCP server
+declaration for https://api.screenrig.ai/mcp, and screenRIG's bundled Node
+CLI (cli/dist, a command surface of well over a hundred commands). This
+rewrite keeps the part of that a model reaches without Node: the control API
+the CLI is a client of, at https://api.screenrig.ai/api — the screen list and
+one screen, the playlist list, the media list, and the one write that puts a
+playlist on a screen (PATCH /api/screens/{id}). The section, the bearer
+token, the cursor-paged list reads with next_cursor and the API's problem
+document are the CLI's own; the code is Common Lisp, through nlk:http.
+
+Left out, and why: the CLI's upload and pairing commands, playlist authoring,
+sources, applications and advertising all stay in the CLI and the dashboard —
+each is a large workflow with local files, ffmpeg and multipart uploads, and
+none of them is needed to answer what the screens are and what they play;
+the hosted MCP views need an MCP Apps host to render cards, which a tool
+answer is not; and the skill's freshness bootstrap, the plugin install step
+and the `docs` commands exist only for the plugin's own distribution. The
+screenrig skill's rules that still hold (an id from the list first, names are
+data, a pending review waits, a write changes a screen in the world) are this
+cell's (help :screenrig) primer.
+
+Nothing of the original runs here: no Node, no CLI, no bundled file.

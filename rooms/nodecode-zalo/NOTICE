@@ -1,0 +1,27 @@
+nodecode-zalo is a rewrite of moken627-hub's moken627-hub/hermes-plugin-zalo:
+
+  https://github.com/moken627-hub/hermes-plugin-zalo
+  commit 5a989368d0877c930e76fcc75ea125e7af7ea872
+  MIT, Copyright (c) 2026 Moken (LICENSE)
+
+The rewritten plugin is the repository root of that commit (plugin.yaml,
+__init__.py, zalo/adapter.py). What was carried over: the Bot API wire
+(https://bot-api.zaloplatforms.com/bot<token>/<method>, `getUpdates` in long
+poll, `sendMessage`, `getMe`, `kickGroupMember`, `pinGroupMessage`,
+`createPoll`), the response shape (`ok` / `result`, with one update object or
+an array), the admission rule this cell keeps with `allowed_users` and
+`allow_all`, the six slash commands it answers itself in Vietnamese, the
+2000-character chunking, and the markdown stripping that turns an answer into
+the plain text Zalo shows. The token is scrubbed from any error the cell
+reports, as the original scrubs it from its httpx errors.
+
+What was left out, and why: webhook mode, because a cell reaches the API by
+long polling and needs no listener of its own; the anti-spam rate limiter, the
+warn/report bookkeeping, the welcome messages and the name triggers, which are
+in-memory maps and JSON files of the original's runtime rather than anything
+Zalo asked for; the per-group settings, chat-history and CRM stores under the
+Hermes home, of which a session per chat is the Nodecode form; and the
+`hermes gateway setup` wizard and `hermes pairing approve` flow, whose answers
+the section, /settings and /zalo give here. LICENSE is the repository's
+LICENSE, unchanged; it carries a third-party MIT section for the Hermes Agent
+UI strings the original mirrors.

@@ -1,0 +1,23 @@
+nodecode-quegly is a rewrite of quegly's quegly/agent:
+https://github.com/quegly/agent
+commit 6a16be804680eeeef98043675d708f591b27a001
+MIT, Copyright (c) 2026 Quegly (LICENSE)
+
+What was rewritten: the plugin's one skill, and the tools its hosted MCP server
+served. The skill's working logic -- workspaces, then accounts, then act; one
+post for every account; media first; per-platform settings; a confirmation
+before anything public or irreversible; captions and comments treated as data
+-- is the cell's manual topic, (help :quegly). The MCP tools are the endpoints
+of Quegly's public REST API v1, the same API the MCP server calls, so eight of
+them are registered here as Nodecode tools over that API: workspaces, accounts,
+an upload from a public url, create, list, get, an action (publish now, retry,
+delete), and analytics. The plugin's connection settings became the cell's
+config section: the API key, an optional workspace id, the base url and a
+timeout.
+
+What was left out, and why: the MCP transport itself (the cell speaks the REST
+API directly, so it needs no MCP client), multipart upload of a local file (an
+agent reaches media by public url; the plugin's own skill tells it to), video
+thumbnails and Pinterest board creation (the rest of the seventeen tools, which
+a session does on quegly.com or a later version can add), and the plugin's
+all-in-one remote instruction file, whose content the manual topic carries.

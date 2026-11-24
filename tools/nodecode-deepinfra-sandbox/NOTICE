@@ -1,0 +1,25 @@
+nodecode-deepinfra-sandbox is a rewrite of deepinfra's deepinfra/deepinfra-hermes-sandbox:
+
+  https://github.com/deepinfra/deepinfra-hermes-sandbox
+  commit 259a477548f1862071c9e2462fda6a7bb9de68c8
+  MIT, Copyright (c) 2026 DeepInfra (LICENSE)
+
+The original registered a hermes-agent `terminal.backend` provider: with it enabled,
+every shell and file call of the harness ran in a DeepInfra cloud sandbox (deep_sands)
+instead of the local machine, driven through the official `deepinfra` Python SDK. What was
+rewritten: the client. wire.lisp speaks the same REST API the SDK wrapped -- create, get,
+start, stop, delete, exec, and the file read and write under /workspace -- over nlk:http
+with the account key as a bearer, so no Python and nothing new has to be installed;
+tools.lisp gives the model four verbs on it (run a command, read a file, write a file, and
+the sandbox's own lifecycle) because a Nodecode cell cannot take the core's shell away;
+cell.lisp is the section, the /deepinfra command and the primer, which carries the
+original's own rules (only /workspace survives a stop, delete only when asked, a stopped
+sandbox keeps its files and costs nothing). The sandbox is remembered by id in a small
+file beside the config, which is what the original's per-task tag lookup did for the
+idle-reap case. What was left out: the provider interface itself (Hermes's
+`TerminalEnvironmentProvider` ABI and its spawn-per-call process handles), since a cell
+registers tools rather than replacing a backend; the FileSyncManager push of the
+harness's credentials, skills and cache into /workspace/.hermes, because this cell has no
+harness state to mirror; per-turn teardown and the resume-by-tag lookup, replaced by the
+one remembered id; and interrupt-by-stopping-the-sandbox. Nothing of the original is
+vendored.

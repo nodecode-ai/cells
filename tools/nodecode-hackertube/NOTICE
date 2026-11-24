@@ -1,0 +1,35 @@
+nodecode-hackertube is a rewrite of rcmiller01's rcmiller01/hackertube:
+
+  https://github.com/rcmiller01/hackertube
+  commit 3e65af3b424bb932de944731340d99122f0a67ed
+  MIT License, Copyright (c) 2026 Robert Miller (LICENSE)
+
+Rewritten: the plugin's search core, as two tools and one command. The
+adapters for Hacker News (evidence only, never a media record of its own),
+Apple's iTunes Search (shows, episodes, audiobooks), Open Library (books),
+LibriVox (audiobooks) and the optional YouTube Data API keep their endpoints,
+their bounded per-source request, and their field mapping — including the
+details that matter: an Apple show's `trackTimeMillis` is not an episode
+duration, a LibriVox 404 is no results and not a source that is down, an Open
+Library doc whose key is not a work page is dropped, and a work's identity is
+its own id with the source's prefix. The record fields, the format/section
+split, the interest gate on title and contributor, the variety-aware ranking
+(a community signal far above the whole variety range, so it reorders but
+never hides) and the rule that one failed source is named and never hides the
+others are the original's, reimplemented in Common Lisp against the cell
+contract. The privacy posture is kept: each source's secrets are read only
+when that source is enabled, Open Library's contact rides one request's user
+agent, and nothing is downloaded but JSON.
+
+Left out: the Hermes dashboard (its page, its catalogue view and its
+client-side script), which is that harness's own surface — here the same
+search is a tool the model calls and a slash command, and the library is one
+JSON file under the home instead of a profile database. Left out with it: the
+supervised Python/Hermes CLI worker and its job handles (a search here runs in
+the calling process under one timeout per source), the hand-verified
+"Recommended in Hacker News" endorsement tier (a story that links a record
+counts as a mention, and the block says "linked by", never "recommended"), the
+Podcast Index source (it needs request signing, and stays out until it earns
+its keep), the 30-day metadata retention sweep and the privacy-policy consent
+screen, the stored interests, and the save/dismiss/complete/open state per
+item — the library keeps what is saved, and forgets what is forgotten.

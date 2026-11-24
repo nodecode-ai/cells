@@ -278,12 +278,12 @@ export function makeProfiles({ c, api, act, toast, redraw, download }) {
       root.append(line);
       return root;
     }
-    const [infoMark, words] = about(c, "profiles",
+    const infoMark = about("profiles",
       t("A profile is a home of its own: its config, keys, store, layer and gateway, so each one runs as an organism of its own. This page belongs to the gateway of {name} and stays there; another profile's page opens from a terminal with the command in its panel.", { name: l.this }),
       t("Make default writes the profile a bare nodecode runs from the next launch on; nothing running moves. Export saves a home as an archive without its store, secrets and credentials, which nodecode profile import brings back. Named profiles live in {folder}.", { folder: l.folder }));
     const head = headline(t("Profiles"), plural(l.profiles.length, t("{n} profile."), t("{n} profiles.")), t("This page belongs to {name}.", { name: l.this }));
     (head.querySelector(".micro") || head).append(" ", infoMark);
-    root.append(head, words);
+    root.append(head);
 
     const find = el("input", "control ctl-prof-find");
     Object.assign(find, { type: "search", placeholder: t("Search"), value: p.find });

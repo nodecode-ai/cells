@@ -1,0 +1,20 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The declaration in cell.lisp is the authority.
+{
+  "watchline": {
+    "enabled": true,
+    // The Watchline pull channel this workspace reads, from the dashboard.
+    "channel_id": "ch_...",
+    // Either name the variable holding the project API key ...
+    "api_key_env": "WATCHLINE_API_KEY",
+    // ... or paste the key here (it is kept in a 0600 file under the home).
+    "api_key": "wl_...",
+    "user_id": "me",
+    "api_base_url": "https://api.watch.qordinate.ai",
+    // Minimum 5: every poll is one POST to the Watchline API.
+    "poll_interval_seconds": 15,
+    // The Nodecode session a matched event starts a turn in.
+    "session": "watchline"
+  }
+}

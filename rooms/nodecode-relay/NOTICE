@@ -1,0 +1,16 @@
+nodecode-relay is a rewrite of sorsama's sorsama/deepseek-harness-relay:
+https://github.com/sorsama/deepseek-harness-relay
+commit 62d7315bce02cb42c3c326effc8c39f5cfd29666
+MIT, Copyright (c) 2026 dsh-relay contributors (LICENSE)
+
+Rewritten in Common Lisp against Nodecode's cell contract: the gate (a salted
+iterated SHA-256 password, five-minute single-use pairing codes kept only as
+digests, a token per device with its id and name, session cookies signed by a
+key that signing out everywhere replaces, and the per-address lock after five
+wrong guesses), and the listener itself, which binds the configured address,
+answers /relay/health, /relay/login, /relay/pair, /relay/devices,
+/relay/revoke and /relay/signout, and replays everything else against the page
+on loopback, dropping the browser's cookies on the way in. Left out: TLS
+termination with a self-signed certificate and its pin, mDNS advertisement of
+the relay, the multi-computer linking page, the harness's own web-UI panels,
+and WebSocket streams (an answer is copied back whole, not streamed).

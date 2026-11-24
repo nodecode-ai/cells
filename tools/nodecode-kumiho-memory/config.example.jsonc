@@ -1,0 +1,10 @@
+// The kumiho cell: a Kumiho Cloud workspace and the API key that reaches it.
+// Make an API key in the Kumiho dashboard (API keys), then either write it
+// here or name the environment variable that holds it. Never paste the key
+// itself into a file you share.
+"kumiho": {
+  // "api_key": "...",             // the key, written inline
+  "api_key_env": "KUMIHO_API_KEY", // or the variable that holds it
+  "mcp_url": "https://mcp.kumiho.cloud/mcp",
+  "timeout_seconds": 30
+}

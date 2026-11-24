@@ -1,0 +1,27 @@
+{
+  // One entry per role. `description` is the line the agent reads to pick
+  // one; `instructions` is the paragraph the run works under; `provider` and
+  // `model` are optional -- without them a teammate runs on whatever this
+  // session runs on.
+  "teammates": {
+    "teammates": {
+      "reviewer": {
+        "description": "Slow and careful: reads a diff before anyone merges it.",
+        "instructions": "You review changes. For each problem give the file and the line, then say whether it blocks the merge.",
+        "provider": "anthropic",
+        "model": "claude-opus-5",
+        "reasoning_effort": "high"
+      },
+      "scout": {
+        "description": "Cheap and quick: lookups, summaries, finding the caller of a function.",
+        "instructions": "You answer one lookup at a time and name where the answer came from."
+      }
+    },
+    // How long one teammate turn may run before it is stopped.
+    "seconds": 900,
+    // How long teammate_wait blocks by default.
+    "wait_seconds": 60,
+    // How many teammate runs one session may have in flight.
+    "max_live_runs": 4
+  }
+}

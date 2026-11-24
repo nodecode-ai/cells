@@ -14,9 +14,11 @@
 
 (nlk:access (adapter nct::telegram-adapter))
 
-(defun telegram-scripted-updates ()
+(defun telegram-scripted-updates (date)
+  "One update: kim's \"hi bot\", sent at DATE, unix seconds."
   (cell-json (format nil "{\"ok\": true, \"result\": [{\"update_id\": 7, \"message\": ~a}]}"
-                      (tg-json 1 "\"text\": \"hi bot\"" :user-name "kim"))))
+                      (tg-json 1 (format nil "\"date\": ~d, \"text\": \"hi bot\"" date)
+                               :user-name "kim"))))
 
 (defun test-telegram-adapter (&key executor (lanes "tg-test-lanes")
                                    bot-username bot-user-id allowed-updates)
@@ -35,6 +37,8 @@ threads: the request, platform and seam tests drive it directly."
    :bindings ((lock (bt2:make-lock :name "tg-e2e"))
               (recorded '())
               (polls 0)
+              ;; when kim said it: just now, younger than a catch-up's minute
+              (date (- (get-universal-time) nlk:+unix-epoch+ 5))
               (executor
                 (nck:make-plan-executor
                  :run (lambda (plan)
@@ -47,7 +51,7 @@ threads: the request, platform and seam tests drive it directly."
                                         (cell-json "{\"ok\": true,
                                        \"result\": {\"message_id\": 90}}"))
                                        ;; The same update twice: a poll retry redelivery.
-                                       ((<= polls 2) (telegram-scripted-updates))
+                                       ((<= polls 2) (telegram-scripted-updates date))
                                        (t (cell-json "{\"ok\": true}")))))))))
    :section (nlk:json-object
              "enabled" t
@@ -61,20 +65,23 @@ threads: the request, platform and seam tests drive it directly."
              "soul_file" soul-path)
    :plans (bt2:with-lock-held (lock) (reverse recorded))
    :after ((is (adapter-threads-stopped-p "channel-telegram"))))
-(is (await (:timeout 15) (plan-matching (plans) :label "send_rich_message")))
-(let ((all (plans)))
-  (is-typing-before-reply all "send_rich_message")
-  (is-present (send (plan-matching all :label "send_rich_message")) "send plan recorded"
-    (is-plan send (:string "rich_message" "markdown") "tg reply"
-             "chat_id" "555" "disable_notification" nil (:any "reply_parameters" "message_id") 1)))
-(is-lane-carrying "telegram" "telegram-555" "telegram-555-m1" "telegram-chat"
-                  "(Telegram user id 42)" "(nct:request \"POST\" PATH")
-(is (wire-row "kim (operator) [m1 u42]: hi bot" (first messages-seen) "content"))
-(is-exchange-written-back-once
- "telegram-555" "telegram-555-m1"
- "the redelivered update admitted no second turn")
-(is (await (:timeout 10) (find 8 (plans-matching (plans) :label "get_updates")
-                               :key (lambda (plan) (plan-field plan "offset"))))))
+  (is (await (:timeout 15) (plan-matching (plans) :label "send_rich_message")))
+  (let ((all (plans)))
+    (is-typing-before-reply all "send_rich_message")
+    (is-present (send (plan-matching all :label "send_rich_message")) "send plan recorded"
+      (is-plan send (:string "rich_message" "markdown") "tg reply"
+               "chat_id" "555" "disable_notification" nil (:any "reply_parameters" "message_id") 1)))
+  (is-lane-carrying "telegram" "telegram-555" "telegram-555-m1" "telegram-chat"
+                    "(Telegram user id 42)" "(nct:request \"POST\" PATH")
+  ;; the line's time is Telegram's date for the message, not when it was read
+  (is (wire-row (format nil "kim (operator) [m1 u42 ~a]: hi bot"
+                        (nck:line-time (+ nlk:+unix-epoch+ date)))
+                (first messages-seen) "content"))
+  (is-exchange-written-back-once
+   "telegram-555" "telegram-555-m1"
+   "the redelivered update admitted no second turn")
+  (is (await (:timeout 10) (find 8 (plans-matching (plans) :label "get_updates")
+                                 :key (lambda (plan) (plan-field plan "offset"))))))
 
 (deftest channel-telegram-conflict-is-loud-and-slow (with-temp-gateway (port))
   (is (integerp port))
@@ -179,7 +186,7 @@ threads: the request, platform and seam tests drive it directly."
                               "(thread). The bot is @orgbot, user id 777.")
                  (nck:ask-where ask)))
       "(Telegram user id 42)"
-      ("[m<message id> u<user id>]" "and explains the handle bracket")
+      ("[m<message id> u<user id> <day date time>]" "and explains the handle bracket")
       ("(nct:request \"POST\" PATH" "and teaches the one door to the Bot API")
       (is (search nct::+telegram-api-primer+ contract))
       "do not send it again yourself"
@@ -265,6 +272,46 @@ threads: the request, platform and seam tests drive it directly."
         (is (null (nct:press-response-plan press "refused" :private t)))
         (is (null (nct:press-response-plan (tg-message "{\"message_id\": 12, \"chat\": {\"id\": 555}, \"text\": \"/cron\"}")
                                            nil)) "a command typed is answered in the chat")))))
+
+(deftest channel-telegram-a-row-that-asks-asks-with-a-force-reply ()
+  ;; A press on a row that asks for its text (NLE:ASK-ROW) asks for it with
+  ;; a message under the card pressed, naming the presser, and Telegram's
+  ;; force reply: their app opens a reply to it at once, the ask's
+  ;; placeholder in the field, and in a group it opens for them alone. The
+  ;; reply is a message like any other, a reply to the one that asked, which
+  ;; the kit reads as the row's text (ASKED-REPLY). It is the platform's
+  ;; PLAN-ASK, a message rather than a form.
+  (with-temp-store ()
+    (let* ((ask (nlk:json-object "label" "Name" "line" "/rename" "placeholder" "The new name"))
+           (data (nck:press-token "/rename" :back "/rename" :ask ask))
+           (seen '())
+           (adapter (test-telegram-adapter :lanes "ask-test")))
+      (with-stubbed-fdefinition (nck:handle-candidate (host candidate) (push candidate seen))
+        (nct:telegram-handle-update
+         adapter
+         (nlk:json-object
+          "update_id" 7
+          "callback_query"
+          (nlk:json-object "id" "cb1" "data" data
+                           "from" (nlk:json-object "id" 42 "username" "kim")
+                           "message" (nlk:json-object "message_id" 90 "text" "## Name"
+                                                      "chat" (nlk:json-object "id" -555 "type" "group"))))))
+      (is-present (press (first seen)) "the press is the presser saying the row's line"
+        (is-source press :text "/rename" "press_data" data "reply_to_message_id" "90")
+        (multiple-value-bind (plan form-p) (nct:ask-reply-plan press ask :prompt "**Name**: reply to this message with it")
+          (is (null form-p) "a message, which a reply answers")
+          (is-plan plan :path "/sendRichMessage" :label "send_ask" :retry nil "chat_id" "-555")
+          (is (search "[kim](tg://user?id=42) **Name**: reply to this message with it"
+                      (nlk:json-value (plan-field plan "rich_message") :string "markdown")))
+          (is-shape (plan-field plan "reply_markup") ((:boolean "force_reply") t) ((:boolean "selective") t)
+            ((:string "input_field_placeholder") "The new name"))
+          (is (eql 90 (nlk:json-value (plan-field plan "reply_parameters") :any "message_id")) "under the card")))
+      (is (eq (fdefinition 'nct:ask-reply-plan)
+              (nck:platform-plan-ask (nct:telegram-platform :bot-username "orgbot")))))
+    (is-source (tg-message "{\"message_id\": 92, \"chat\": {\"id\": -555, \"type\": \"group\"},
+                             \"from\": {\"id\": 42, \"username\": \"kim\"}, \"text\": \"Release notes\",
+                             \"reply_to_message\": {\"message_id\": 91, \"from\": {\"id\": 777, \"is_bot\": true}}}")
+               :text "Release notes" "reply_to_message_id" "91" "user_id" "42")))
 
 (deftest channel-telegram-platform-carries-files ()
   ;; The kit's file seam over Telegram's own plan: the platform answers a

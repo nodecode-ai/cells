@@ -1,0 +1,15 @@
+// config.example.jsonc --- the windows-devices section, every member optional.
+//
+// Nothing here is required on Windows: CIM is read through the PowerShell the
+// machine already has, unelevated. Off Windows the tools answer "not Windows"
+// instead of spawning anything, unless a PowerShell that reaches a Windows host
+// is named here.
+{
+  "windows-devices": {
+    // the PowerShell to run a CIM query with; empty uses powershell.exe on
+    // Windows and pwsh elsewhere
+    "powershell": "",
+    // seconds one CIM query may take before its whole process tree is killed
+    "timeout": 120
+  }
+}

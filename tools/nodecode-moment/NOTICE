@@ -1,0 +1,33 @@
+nodecode-moment is a rewrite of noprijbi99-dotcom's noprijbi99-dotcom/moment:
+
+  https://github.com/noprijbi99-dotcom/moment
+  commit 1af58dda54a9ad9310acb4cad928a6db63f8403b
+  MIT License, Copyright (c) 2026 noprijbi99-dotcom (LICENSE)
+
+What was rewritten: the plugin's core promise, kept in the same words — the
+files a session is built on are fingerprinted at its first turn, re-checked on
+every turn after, and when one changed the model is handed a receipt naming the
+file, its path, the baseline and detection times, the changed lines, and the
+current text, so it answers from the present and says plainly that its memory
+drifted. The three-file set follows this harness's house files: SOUL.md, the
+soul a channel reads before every message; AGENTS.md, the rules every request
+reads; and SYSTEM.md, the prompt a turn opens under. Its moment_check tool
+keeps its name and its one optional argument; the pre_llm_call hook becomes
+this harness's :round point,
+which records the receipt into the request about to be built through
+nlk:record-turn-context-prompt, so a running turn hears it without stopping.
+The report-once rule, the advancing baseline, the session-start baseline the
+report measures against, the caps on stored text and quoted lines, and the
+state-file pruning (50 sessions, 30 days) are the original's, reimplemented in
+Common Lisp with no dependency. /moment and /moment reset are additions of the
+rewrite, the tool being the only way in there.
+
+What was left out, and why: the original watched memories/MEMORY.md and
+memories/USER.md, one file each. A memory here is a definition, one file per
+memory in a knowledge cell, so there is no single MEMORY.md to fingerprint;
+moment.watch takes a folder of definitions instead, and the default set stays
+the three house files every session reads. Left out too: the original's
+difflib-based unified diff (this rewrite cuts the shared head and tail and
+quotes what is left), its per-file 20,000-character diff store (max_chars,
+2000, covers the receipt and the store alike), and its silent ordering of
+receipts (files are reported in path order).

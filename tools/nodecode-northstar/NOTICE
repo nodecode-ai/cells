@@ -1,0 +1,30 @@
+nodecode-northstar is a rewrite of mrcoxis-2002's mrcoxis-2002/hermes-northstar:
+
+  https://github.com/mrcoxis-2002/hermes-northstar
+  commit 9e4976cb416c65c702698e8da67e24a023a2fc14
+
+MIT, Copyright (c) 2026 Ryan Cox (LICENSE)
+
+Rewritten: the plugin's idea -- a read-only readiness check that reads the
+files a session is told to obey and reports where they disagree -- as a
+Nodecode cell over this harness's own instruction sources: the home's
+AGENTS.md (the operator's rules), SYSTEM.md and SOUL.md, the project's
+AGENTS.md, CLAUDE.md, .cursorrules and README.md in the session's folder and
+the folders above it, config.jsonc, and any SKILL.md under the home's
+skills/. The three checks are the original's: near-duplicate directives, with
+frontmatter and metadata lines left out; contradictions between an allow and
+a deny phrase, downgraded to a warning when the two sides name different
+scopes; and paths that resolve nowhere, the URL, markdown-link, inline-code,
+fenced-code and example contexts skipped. The plugin's two tools became the
+northstar_audit tool and the /northstar command, and its text and JSON
+reports are the same two formats.
+
+Left out: northstar_status, which answered a static placeholder rather than
+what the plugin was enforcing, so the same facts are (northstar:status)
+instead; the pre_llm_call hook, which injected the last audit's first three
+errors into the first turn of a session from a cache the plugin kept in
+memory -- the audit here runs when it is asked, and its report is one command
+away rather than riding every session's prompt; and the plugin's own
+directories (a Hermes home beside a Python package, its demos and fixtures),
+because Nodecode's home and its sessions' folders are where the files
+actually are.

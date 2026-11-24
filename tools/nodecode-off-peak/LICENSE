@@ -1,0 +1,32 @@
+MIT License
+
+Copyright (c) 2026 Hakan Kılıçaslan (onkanat) — offpeak-bekci
+
+Türev / upstream kaynak (atıf korunur):
+  Bu eklentinin masaüstü rozet fikri ve pencere-takvimi kalıbı, türev alındığı makinede kurulu olan
+  `deepseek-whale` (https://github.com/bmtrnavsky/deepseek-whale, MIT,
+  Copyright (c) 2026 Brad Trnavsky) eklentisinden TÜRETİLMİŞTİR; o projenin
+  lisans koşulları bu repodaki türev parçalar için de geçerlidir.
+  Katalog ölçümü (16.10.2026): MIT — hermes-agent/plugin-catalog/deepseek-whale.yaml,
+  pin 9b284b47a1db1f2cc05e71b0d0b2b58f9d773f1b.
+  Not: o projenin DeepSeek API takvimi (PEAK_WINDOWS = [[1,4],[6,10]]) bu repoda
+  KULLANILMAZ; offpeak-bekci'nin pencere tanımı Ollama Cloud'undur
+  (kaynak: https://ollama.com/pricing — bkz. bekci_core.py üst bloğu).
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

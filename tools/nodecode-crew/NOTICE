@@ -1,0 +1,27 @@
+nodecode-crew is a rewrite of macd2's macd2/Crew:
+
+  https://github.com/macd2/Crew
+  commit ffb0e0c1d11a5fb3d36c3e34671bbd4c2cc02b6f
+  Apache License 2.0 (LICENSE). The repository's LICENSE carries the standard
+  Apache text with no copyright line filled in; its author, and the holder of
+  this credit, is macd2.
+
+cell.lisp rewrites, in Common Lisp, what the plugin's card, card script and
+safety module do in Python (its __init__.py and scripts/crew_card.py,
+scripts/crew_safety.py and scripts/crew_coordinator.py): a card is a plist in
+one readable file under the home, opened only on a complete contract of goal,
+artifact, done-when and proof command; the proof runs through a real shell,
+bounded in the image, in the session's folder; every run is a line in the
+card's verdict log and only a run that exits 0 passes the card; units of work
+are marked with evidence; and the hardline floor (a root wipe, a mkfs, a
+/dev write, a fork bomb) refuses a proof before it can run unattended. The five
+tools keep the plugin's names and division: crew_plan, crew_verdict,
+crew_progress, crew_diagnose, crew_proof_check.
+
+Left out: the coordinator and verifier role profiles, the detached loop and the
+twelve hooks that drove them, the Hermes kanban database, the per-card token
+budget as a hard stop between turns (here the budget is a field, and a spent
+one refuses the next proof), the systemd dashboard and the tailnet publish,
+the Hermes Desktop surface and the transcript excerpts. Each of them is Hermes
+plumbing rather than the thing a user asks for, and none of them survives a
+move to a harness without Hermes profiles.

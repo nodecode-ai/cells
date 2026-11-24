@@ -1,0 +1,26 @@
+nodecode-liquid is a rewrite of architect-xyz's architect-xyz/hermes-liquid-inference:
+
+  https://github.com/architect-xyz/hermes-liquid-inference
+  commit acd120f007367c1f422d3cd6ffe643f916f0b5f7
+  MIT, Copyright (c) 2026 Architect Financial Technologies Inc. (LICENSE)
+
+What was rewritten: a Hermes Agent model provider, one Python file that
+registered the provider `liquid` with base https://router.inference.ai.exchange/v1,
+the key variable LIQUID_API_KEY, a default header set (X-Title, and a
+x-liquid-cap-usd charge cap of 1.00 USD), the model `liquid.auto` as its
+auxiliary and fallback model, and one rule for reasoning (a top-level
+`reasoning_effort` only for a level the operator selects). This rewrite is
+that provider as a Nodecode cell in Common Lisp: the catalog row, the
+credential, and the per-request headers, with the cap editable in the cell's
+own section. No Python, Node or original code is bundled.
+
+What was left out and why: Hermes's own plumbing has no Nodecode counterpart,
+so it is not restated — its model-list fetch (Nodecode's catalog is models.dev,
+which already publishes this exchange under the id `liquid`, with the model
+`liquid.auto`), its auxiliary-model default (Nodecode names that in
+`general.auxiliary_model`; pick `liquid.auto` there), and its LIQUID_BASE_URL
+variable (the cell's `liquid.base_url` says the same, in the config). The
+reasoning rule needs no code here, because Nodecode's chat lane already sends
+a top-level `reasoning_effort` only when a level is chosen and omits it for
+none. The X-Title header names Nodecode rather than the original's harness,
+the way the original named its own.

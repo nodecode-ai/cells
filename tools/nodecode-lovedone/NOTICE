@@ -1,0 +1,32 @@
+nodecode-lovedone is a rewrite of Terahertz-Inc's Terahertz-Inc/lovedone-mcp:
+
+https://github.com/Terahertz-Inc/lovedone-mcp
+commit a1d55a218bf6e817cc950d423f19535f9a2760cf
+
+MIT, Copyright (c) 2026 Terahertz, Inc. (LICENSE)
+
+What was rewritten: the plugin folder (a plugin.json manifest, an mcp.json naming
+one Streamable HTTP endpoint, and a skill) is here a cell with no manifest and no
+MCP runtime. The same JSON-RPC 2.0 goes to the same endpoint,
+https://api.lovedone.app/mcp/v1, with the same family MCP key in the same
+Authorization bearer header; the client half -- initialize, the Mcp-Session-Id
+header, notifications/initialized, tools/call, and the event-stream framing the
+transport allows -- is written against the image's own HTTP call. The ten tools
+its README documents keep their server-side names and arguments and answer the
+server's own text; each is one model tool here, prefixed lovedone_, with
+lovedone_call as the escape hatch for any tool a later server adds. The skill's
+guidance -- senior tech support, not healthcare; confirm before a write; never
+paste the key into chat -- is the cell's primer and its tool descriptions. The
+key moves from LOVEDONE_API_KEY only into the cell's lovedone section, which
+still reads that variable when nothing is pasted there.
+
+What was left out: the trust declaration and the OAuth flow. Hermes was told the
+server is untrusted and asked before each write-capable tool call; here the cell
+says so in its tool descriptions (WRITES) and its primer asks for confirmation,
+but nothing enforces the pause before a tool runs. The original also let the
+server complete OAuth 2.1 with PKCE; this cell authenticates with the MCP key
+only, which the plugin's own manifest header used. The tool schemas are the
+documented set rather than a tools/list fetched at run time, so a tool the
+server adds or renames after the reviewed commit is reached through lovedone_call,
+and the cell never dials to learn a schema. Nothing else of the plugin is
+missing: it had no commands, hooks or prompts of its own beyond the skill.

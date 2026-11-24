@@ -1,0 +1,18 @@
+{
+  // nodecode-calling-mom: a cheap advisor answers when the work is stuck or
+  // about to do something irreversible; a rare ESCALATE reaches the
+  // expensive one. This is documentation, not config: keys or references
+  // only, never a secret. The cell is turned on in /cells.
+  "cells": ["nodecode-calling-mom"],
+  "calling-mom": {
+    "assist": true,                        // watch tool calls; off = only the tools answer
+    "mom": "openrouter/deepseek/deepseek-v4.1-flash",
+    "olymp": "anthropic/claude-opus-5",    // empty: no expensive tier at all
+    "mom_calls_per_day": 20,
+    "olymp_calls_per_day": 6,
+    "cooldown_seconds": 60,                // one unsolicited question per minute, at most
+    "context_chars": 4000,
+    "max_tokens": 400,
+    "commands_extra": ["\\bdeploy\\b"]     // regexes of your own, critical tier
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "bulkpublish": {
+    // The server's MCP URL; a proxy of your own may stand in front of it.
+    "endpoint": "https://mcp.bulkpublish.com/mcp/full",
+
+    // The key: name the environment variable that holds it...
+    "api_key_env": "BULKPUBLISH_API_KEY"
+
+    // ...or paste it here and it is kept in a 0600 file under the home.
+    // "api_key": "bp_...",
+
+    // true: a publishing, replying or deleting call answers what it would
+    // send until the same call carries "confirm": true.
+    // "approve_writes": true,
+
+    // "timeout": 60
+  }
+}

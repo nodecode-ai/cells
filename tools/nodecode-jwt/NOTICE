@@ -1,0 +1,39 @@
+nodecode-jwt is a rewrite of olric3015's olric3015/hermes-plugins:
+
+  https://github.com/olric3015/hermes-plugins
+  commit 9c842d6da34cce6bce21a43af097629217828634
+  MIT License, Copyright (c) 2026 olric3015 (LICENSE)
+
+What was rewritten: the plugin's decoder (tokens.py: the reading of a compact
+JWS or JWE, base64url with the padding put back, the header and the claims
+read as JSON with a name that appears twice noted, the description of a
+token's fields and what their names mean, the algorithm spelled out, the
+NumericDates as UTC dates and against the clock, the expired / valid /
+not-yet-valid status, and the notes) is rewritten in Common Lisp as decode.lisp,
+and its one seam - a @jwt: context reference Hermes expands as a message goes
+out - becomes the jwt_decode tool the model calls, /jwt for the operator, and
+(help :jwt). The behaviour kept is the original's: 2, 3 and 5 dotted parts;
+a header that is not base64url, not JSON or not an object refused with the
+part named; a payload that is not a JSON object shown as text with its byte
+count; a JWE's header shown and its claims left alone; the status lines with
+the same wording (EXPIRED ... ago, valid for ... more, NOT VALID YET, the
+lifetime of exp - iat, a NumericDate that looks like milliseconds); and the
+same notes (only 2 parts, no alg, alg none, an empty signature, a key set URL
+the token points at itself, crit, a claim name twice). Nothing is verified: no
+signature, no key, no network, exactly as in the original. The bounds are
+the original's: 16,384 characters in, 60 claims listed, 200 characters of one
+value.
+
+What was left out, and why: the TUI and desktop suggestion preview (tokens.py's
+preview, "@jwt:..." as it is typed) is a seam of that harness's composer and
+has no counterpart in Nodecode's - the model calls the tool or the operator
+types /jwt. The original pinned the clock-difference that is not worth a
+warning at 60 seconds; here that is a setting. Its error strings are reworded
+in Lisp, saying the same things.
+
+What the rewrite adds: the jwt section (the four bounds, which the original
+hard-coded), /jwt, (help :jwt), a Bearer prefix and one pair of surrounding
+quotes stripped from what is handed over, a tool description that teaches the
+model when a token is worth decoding, and its own JSON reader, which keeps a
+name's order - so a claim written twice is reported rather than silently
+overwritten.

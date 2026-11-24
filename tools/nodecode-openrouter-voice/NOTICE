@@ -1,0 +1,21 @@
+nodecode-openrouter-voice is a rewrite of esketids's esketids/hermes-openrouter-voice:
+
+https://github.com/esketids/hermes-openrouter-voice
+commit 3f2478ab6e795da54547e7a4b162dd207d73079a
+MIT, Copyright (c) 2026 esketids (LICENSE)
+
+What was rewritten is the whole of it, from Python to Common Lisp against
+Nodecode's cell contract. The two OpenRouter endpoints, the multipart
+transcription request with `response_format` json, the mp3 speech request,
+the vendor-prefixed slug fallback, the 16 kHz mono WAV normaliser (downmix
+and linear resample, written by hand as the original does), the rate split
+between what a model honours itself and an `ffmpeg atempo` chain, the shipped
+model catalogs and the rule that a model publishing no voices is sent
+without one: all carried over. The original's plugin scaffolding, its
+`stt.providers` / `tts.providers` command shims and the desktop GUI patch it
+documents are left out, since Nodecode has no voice-provider seam for them to
+fill: the same two directions arrive as the tools `transcribe_audio` and
+`speak_text` and the command `/voice`. Also left out: its `~/.hermes/.env`
+lookup (the key comes from the environment or the section), its profile
+config discovery, and the `models.py` catalog CLI, whose data now lives in
+the cell and whose live diff would be one more network path to keep.

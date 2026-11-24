@@ -1,0 +1,34 @@
+nodecode-pass-secrets is a rewrite of dyiapanis's dyiapanis/pass-secrets:
+
+  https://github.com/dyiapanis/pass-secrets
+  commit 485f105150e09dad28461b26b9eca9ffc511b15d
+  MIT, Copyright (c) 2026 D Yiapanis (LICENSE)
+
+The original is one Python plugin folder for Hermes Agent: `__init__.py`
+registered a `SecretSource` that walked the local pass store (a `*.gpg` file
+per entry under each configured subdirectory), ran `pass show -- PATH` for
+each one with a per-entry timeout, enforced UPPER_SNAKE_CASE on the leaf name
+and returned the merged mapping to the orchestrator, which wrote it into the
+environment; a second registration added a static note to the session prompt.
+Its own part was the walk, the argv, the name rule, the error kinds
+(BINARY_MISSING, NOT_CONFIGURED) and the words each one gets.
+
+This rewrite keeps the store, the walk and the reads as a cell: `pass_list`
+is the walk without a value, `pass_show` one entry's value, `pass_env` the
+whole mapping the original injected, `pass_status` the prerequisite and the
+counts, and `/pass` the original's own binary for anything else. The
+UPPER_SNAKE_CASE name rule, `--` before every entry, the 30-second bound and
+the install hints are the original's, reimplemented in Common Lisp around
+`nlk:run-bounded`; `(help :pass-secrets)` is the original's README, in the
+cell's voice, and `(secret NAME)` is the one-value read a form can use
+instead of the environment.
+
+Left out, and why: Hermes' secret-source seam itself, which Nodecode does not
+have — so a value is read when a tool asks for it rather than injected at
+startup, nothing is written into the environment, and the original's
+`override_existing` precedence has nothing to act on; the system-prompt note,
+because the cell's manual topic and tool descriptions say the same thing to
+the same model; the fallback stub classes the original carried for imports
+outside Hermes, because there is only one runtime here. `pass` and
+password-store are the upstream project's; the license above covers the
+plugin, not the tool.

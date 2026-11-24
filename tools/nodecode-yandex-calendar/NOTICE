@@ -1,0 +1,19 @@
+nodecode-yandex-calendar is a rewrite of akinfold's akinfold/hermes-yandex-calendar:
+https://github.com/akinfold/hermes-yandex-calendar
+commit cad2a6b8e1cad82753b9f57d4f388645210702a0
+MIT, Copyright (c) 2026 Roman Akinfeev (LICENSE)
+
+The Python plugin registered seven tools with the Hermes agent; this rewrite
+registers the same seven names with a Nodecode cell, and reimplements the CalDAV
+client, the iCalendar reading and writing, and the XML reading in Common Lisp on
+the cell's own HTTP seam, so no Python and no package of the original is
+bundled. The tool arguments moved from hand-written JSON Schemas to contract
+declarations, which derive both the schema the model reads and the record the
+body reads. The settings became the cell's `yandex_calendar` section instead of
+environment variables, and `actions` is decided at start by registering only the
+allowed tools, as the plugin decided it at registration time. Left out: the
+original's time-zone resolution through Python's zoneinfo, which needs a
+time-zone database — a `TZID` time is read as that local time here and written
+back verbatim while it is unchanged; the original's Expat version floor, which
+only mattered to pyexpat; and its `YANDEX_CALENDAR_CALENDARS` environment
+variable, whose ordered allow-list is the section's `calendars` member.

@@ -1,0 +1,29 @@
+nodecode-debug-desk is a rewrite of aydnOktay's aydnOktay/hermes-debug-desk:
+
+  https://github.com/aydnOktay/hermes-debug-desk
+  commit 57cbd4d23eba978dc9a53ab6387a84c336992b74
+  MIT License, Copyright (c) 2026 debug-desk contributors (LICENSE)
+
+The rewrite is the Hermes plugin's Python, as a Nodecode cell. What it keeps:
+the two tools with their names and their descriptions (debug_daily_report,
+debug_last_failure); the digest's shape and its rules — git log since local
+midnight, the branch, the conventional-commit type counts with "other" and
+"wip" folded in as the plugin folded them, the distinct touched files to 40,
+the subjects to 15, no model call; the observer that runs after a tool call
+and keeps a failure — a nonzero exit or traceback-like output, the last eight
+lines clipped to 240 characters, common tokens and keys redacted before
+anything is written, the same signature inside 120 seconds counted as one
+failure rather than a new one; the optional written summary, on the user's own
+model, with the plugin's three-sentence instruction; /debug-desk today | last
+[summarize]; and the state kept outside the install tree.
+
+What is left out, and why: the desktop pane, the `desk` status chip and the
+dashboard's /board and /summarize routes are Hermes UI, and a Nodecode cell
+owns no pane — the same data answers as text instead. The plugin's range
+(expiring a failure, the 15-minute "fresh" chip) survives only as the
+"(fresh)" mark in the answer. Watching Hermes's `terminal` and `process` tools
+is watching the shell tool calls this engine makes; there is no other
+process to watch.
+
+Nothing of the original's Python is bundled. The cell is Common Lisp, it runs
+the `git` the user already has, and it answers to its own state file.

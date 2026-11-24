@@ -29,10 +29,10 @@ OAuth for local applications. This cell ports it as a command, because the
 flow is a browser sign-in, not a secret to paste:
 
 ```
-/snowflake login myorg-myaccount    the address to open; the account may be its URL
-/snowflake code ADDRESS             the address the browser ended on, when it runs elsewhere
-/snowflake status                   which account, and how long the token has left
-/snowflake logout                   forgets the sign-in
+/snowflake → Sign in to another account      asks for it, like myorg-myaccount; the address to open; the account may be its URL
+/snowflake → Paste where the browser landed  the address the browser ended on, when it runs elsewhere
+/snowflake                                   which account, and how long the token has left
+/snowflake → Sign out                        forgets the sign-in
 ```
 
 `login` without an account signs in to the section's `account`, else

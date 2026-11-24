@@ -1,0 +1,42 @@
+nodecode-pulldown is a rewrite of anthony-maio's anthony-maio/pulldown:
+
+  https://github.com/anthony-maio/pulldown
+  commit ca16dc479714e59f8b361e8dd1c3714110b9da75
+  MIT, Copyright (c) 2026 Anthony Maio (LICENSE)
+
+The rewrite is the plugin's one tool as a Nodecode cell. What it keeps: the
+same program, the same job and the same reading of its answer. The user
+installs Pulldown's Python runtime themselves and the cell runs that CLI,
+"pulldown get --json-output --meta --detail ... URL", whose JSON carries the
+fields the plugin's worker answered -- url, status_code, title, content,
+elapsed_ms, from_cache, ok, error, and the routing record under meta.routing:
+page_type, source, quality_grade and render_recommended, which the cell prints
+so a page that wants a browser says so. It keeps the plugin's four arguments
+with the plugin's bounds: detail minimal, readable, structured or full
+(readable by default); render false unless asked; max_chars bounded in
+characters, here 1000 to 40000 with 20000 the default, clipped with the cut said out
+loud and how much of the page is left; a timeout_seconds from 5 through 120,
+with the program killed rather than leaked when it passes; the 2 MiB page
+ceiling passed to the program as --max-bytes; and the external runtime as the
+user's own installation, found on PATH or named by an absolute program path,
+never installed by the cell and never updated by it. The runtime's own
+protections are the plugin's and are unchanged: private and loopback
+addresses refused, no credentials offered to a page, no custom headers, no
+proxies and no telemetry. The plugin cached pages in the plugin data
+directory; the cell caches them in cache_dir or its own folder under the
+Nodecode home, for the same hour.
+
+What is left out, and why: the Hermes worker module and the plugin's
+settings indirection. The plugin spawned "<python> -I -m
+pulldown.hermes_worker" with a JSON request on standard input because it
+needed a boundary between the harness and a runtime it did not control; a cell
+may call the same program's CLI, so the JSON goes over stdout instead of
+stdin and python_path becomes the path of the program itself. The plugin's
+"pulldown hermes install" wrote a runtime.json beside the plugin; here the one
+setting that matters, the program, is named in the cell's section. The
+plugin's code mapping an error to a code (render_unavailable,
+render_redirect, url_blocked, response_too_large, http_error, fetch_failed)
+is not carried over as codes: the cell answers the program's own message,
+with the HTTP status when there was one, which is what a person reads anyway.
+Nothing of the plugin's Python is bundled; the cell runs the same Pulldown
+program the plugin ran, and its own code is Common Lisp.

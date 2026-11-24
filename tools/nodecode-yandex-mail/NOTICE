@@ -1,0 +1,32 @@
+nodecode-yandex-mail is a rewrite of akinfold's akinfold/hermes-yandex-mail:
+
+  https://github.com/akinfold/hermes-yandex-mail
+  commit f44cf3aff9393d4dc3d420879469d1ebe4735c66
+
+  MIT, Copyright (c) 2026 Roman Akinfeev (LICENSE)
+
+What was rewritten: the eight model-facing tools and their arguments (listing
+folders with unread counts, searching, reading a message's text in pages with
+its attachment list, saving one attachment to a file, marking read and
+flagged, moving, deleting, and sending), the two fences the original carries
+(the folder allow-list and the action allow-list, with sending and saving
+attachments opt-in so an upgrade never widens what a running agent may do),
+the recipient fence, moves that copy before they remove, reading that does
+not set the Seen flag, and the whole IMAP and SMTP conversation with verified
+TLS. All of it is Common Lisp now: the mail wire, the MIME parser, the
+transfer decoders and the address handling are this cell's own, and the
+cell talks to the same Yandex IMAP and SMTP servers the plugin did.
+
+What was left out, and why: Hermes' own document cache is not this
+organism's, so a saved attachment goes to a directory the settings name
+(mail/ under the Nodecode home by default) instead of the harness's cache,
+and the saved file's SHA-256 is not reported. The original numbered MIME
+parts from the server's BODYSTRUCTURE and fetched one part at a time; this
+cell fetches the message once (bounded by the server's own size) and numbers
+the parts from its own parse, so a part_id is only meaningful to this cell.
+Where a server has no UIDPLUS, an expunge is the folder's, not the
+requested UIDs'. A sent message is not filed in the Sent folder, since the
+SMTP path and the IMAP path are separate connections here; Yandex files its
+own copies. Character sets beyond UTF-8, Windows-1251 and Latin-1 are read as
+UTF-8. The Hermes plugin's own packaging (pyproject, plugin.yaml, its test
+suite) has no meaning here and is not carried over.

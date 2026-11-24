@@ -1,0 +1,42 @@
+nodecode-jot is a rewrite of Totoro-qaq's Totoro-qaq/hermes-jot:
+
+  https://github.com/Totoro-qaq/hermes-jot
+  commit b65b550108c8e742cc5737055213da947dc54e0f
+  MIT, Copyright (c) 2026 Totoro and dsh-jot contributors (LICENSE)
+
+The rewritten plugin is the whole repository at that commit. Its six tools
+keep their names and JSON answers (jot_list, jot_read, jot_create,
+jot_update, jot_set_task, jot_delete), and their descriptions carry the
+original's words, including its warning that notes are user data; its
+behaviour is carried over: a revision on every note that an edit must quote, and a stale one is
+refused rather than applied; edits are the exact visible text inside one
+block, and apply all together or not at all; checklist items are numbered
+from one with only the named marker changing, an appended checklist joining
+a checklist that ends the note, a note that leaves the list into Trash rather
+than being destroyed, a switch the user turns on and off that the model
+cannot change and that every tool consults, and the rule that replacing a
+whole note with text is refused when it would lose formatting the text cannot
+carry. What the answer says about a note is what it said: a note's summary
+carries an excerpt, its id and its revision, and jot_read warns that notes
+are the user's data and not instructions.
+
+What was rewritten, and how: the store is Common Lisp against the Nodecode
+cell contract instead of TypeScript against the Hermes plugin API. A library
+is one JSON file in the folder the section names, written atomically under
+the folder's lock, instead of the original's state file in a Hermes profile
+folder; the six tools are NLE:DEFINE-CELL registrations instead of a tool
+registry, and the original's `/jot` CLI command is a Nodecode slash command
+under the same name.
+
+What was left out, and why: Hermes Desktop's editor — the page, the side
+panel, the toolbar, capture of selected text, the keyboard shortcuts and the
+nine interface languages — because a Nodecode cell has no window of its own
+and this rewrite is the model's side of Jot. A note is its Markdown text
+rather than a rich document, because the rich document existed to be
+rendered by that editor and a Markdown note is what both a person and a model
+write here; the formatting-loss guard therefore names the placeholders and
+marks that Markdown cannot hold rather than round-tripping a rich tree. The
+import and export of Word, PDF and ZIP, attachments, pinning, search
+highlights and marking a note "AI edited" with an undo of the last round are
+left out for the same reason: each is an editor feature. LICENSE is the
+repository's LICENSE, unchanged.

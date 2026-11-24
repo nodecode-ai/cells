@@ -1,0 +1,31 @@
+nodecode-home-assistant is a rewrite of NousResearch's NousResearch/hermes-official-plugins:
+
+  https://github.com/NousResearch/hermes-official-plugins
+  commit e7a218f26db88426ab3e7376f0e000b6e356f5e7
+  MIT License, Copyright (c) 2026 Nous Research (LICENSE)
+
+Rewritten: the plugin's four/model-facing smart-home tools — ha_list_entities,
+ha_get_state, ha_list_services and ha_call_service — with their argument
+schemas and answer shapes, the filters each one takes (domain, area, name, an
+exact entity list, a per-call cap and the operator cap, with the truncated
+note), the operator entity allow/deny lists and every refusal they make on a
+read or on a service call, the blocklist of code-running service domains, the
+name and entity-id patterns that keep a service call out of other REST
+endpoints, the retry that asks Home Assistant for a response when a service
+requires one, and the read-back that explains a service call which changed
+nothing. The Python (aiohttp, asyncio) is Common Lisp here: nlk:http for the
+instance's REST API, one section declaration for the settings, and four
+nlk:define-contract declarations for the tools' arguments, so the schema the
+model is shown and the body that runs are one shape.
+
+Left out: the plugin's other half — the Hermes gateway platform that
+subscribes to Home Assistant's WebSocket event bus, forwards state_changed
+events with per-entity cooldowns, delivers the agent's replies as persistent
+notifications, and serves cron's deliver=homeassistant through a notify
+service. Those are surfaces of the Hermes gateway, and a cell's equivalent
+would be a whole chat lane rather than the tools this rewrite keeps. Also left
+out, for the same reason of scope: the WebSocket area/device registry lookup
+(so the area filter matches a friendly name, the area attribute or the entity
+id instead of the area registry), and the instance-timezone local twins of
+ha_get_state's timestamps, which need a time zone database read the cell does
+not carry — the answer keeps Home Assistant's own UTC values.

@@ -2,7 +2,7 @@
 
 A Nodecode cell for [Devin](https://devin.ai): Codeium's Cascade backend,
 the models a Devin account is entitled to (SWE-1.6 and SWE-1.7, Claude, GPT,
-Gemini, GLM and the rest of the account's roster). With it, `/devin login`
+Gemini, GLM and the rest of the account's roster). With it, a sign-in from `/devin`
 signs in with the browser, `/models` lists the account's roster, and a turn on
 `devin/<model>` goes to `https://server.codeium.com` the way the Devin CLI
 sends it.
@@ -36,11 +36,11 @@ provider. See [NOTICE](NOTICE).
 ## Sign-in
 
 ```
-/devin login        answers the address to open; Nodecode listens at
-                    http://127.0.0.1:59653/callback for Devin's answer
-/devin code ADDRESS the address the browser landed on, when it runs elsewhere
-/devin status
-/devin logout
+/devin → Sign in                         answers the address to open; Nodecode listens at
+                                         http://127.0.0.1:59653/callback for Devin's answer
+/devin → Paste where the browser landed  the address the browser landed on, when it runs elsewhere
+/devin                                   where the sign-in stands, over its rows
+/devin → Sign out
 ```
 
 The sign-in is Devin's CLI grant (authorization code with PKCE) at
@@ -55,7 +55,7 @@ under `oauth_tokens.devin`:
 
 `expires_at` is the token's own `exp` less five minutes, or a year from the
 sign-in when it names none. omp has no refresh for Devin, and neither does
-the cell: an expired sign-in is set aside, a round asks for `/devin login`
+the cell: an expired sign-in is set aside, a round asks for a sign-in from `/devin`
 (a standing notice says so) and `DEVIN_API_KEY` answers in its place when it
 is set.
 

@@ -1,0 +1,37 @@
+nodecode-myeline is a rewrite of Sandbox-Group-LLC's Sandbox-Group-LLC/myeline-hermes:
+
+  https://github.com/Sandbox-Group-LLC/myeline-hermes
+  commit df6b3c81fb74261c6e7693f905ad9a5d1e73270f
+  MIT, Copyright (c) 2026 Sandbox Group LLC (LICENSE)
+
+The rewritten plugin is the whole repository at that commit: two manifests
+and a skill. Its ritual is carried over word for word in the place the model
+reads it — every memory is a single fact with its source attached; an AI can
+only propose, and nothing goes live until a person approves it; search
+approved memory before answering questions about the user's own or their
+team's history, and say so when nothing approved matches rather than guess;
+offer to remember once, only on a yes, one atomic sentence that stands alone
+tomorrow; file the day's card at sign-off as facts learned, decisions made
+and open loops; retiring a fact for good takes a written reason that stays in
+the audit log; and passwords, API keys, and card and bank numbers are
+refused at every setting. The four tools keep their names (cortex_query,
+cortex_remember, cortex_daily_card, cortex_retract) and their argument
+shapes, and approval stays a human act the model cannot perform.
+
+What was rewritten, and how: the original is a remote MCP server — a cortex
+at one host that Hermes reaches over OAuth, so one person's memory is shared
+by every assistant connected to it. Here the store is one JSON file in the
+folder the section names, written atomically under the folder's lock, and the
+four tools are NLE:DEFINE-CELL registrations instead of an MCP server's tool
+list. The review queue, the audit log and the receipts are the same idea on
+this computer, and the person's side, which in the original is a web
+workspace, is the /myeline command.
+
+What was left out, and why: the remote cortex and its OAuth sign-in, because
+a Nodecode cell talks to the machine it runs on and a local file needs no
+account, no token and no network; one retraction applying to every connected
+assistant at once, which follows from the shared server and is not a fact a
+single machine can promise; team brains shared between accounts; the free
+plan's 200-fact cap and billing — the ceiling is a setting here; and the
+workspace page's swipe interface, which /myeline review, approve and reject
+replace in the conversation. LICENSE is the repository's LICENSE, unchanged.

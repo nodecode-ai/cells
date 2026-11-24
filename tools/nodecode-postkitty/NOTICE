@@ -1,0 +1,23 @@
+nodecode-postkitty is a rewrite of mertkayacs's mertkayacs/postkitty:
+
+  https://github.com/mertkayacs/postkitty
+  commit 490d8f992387b610c3b6f32cd87d800dc58c8010
+  MIT, Copyright (c) 2026 Mert Kaya (LICENSE)
+
+Rewritten: the five tools (postkitty_scan, postkitty_copy, postkitty_make,
+postkitty_redo, postkitty_check) and their answers; the platform and target
+table, with the limits and their enforcement the original carried in
+data/platforms.yaml; the copy counting rules (X weighted characters after
+twitter-text, graphemes, UTF-16 units, UTF-8 bytes, hashtag and mention
+caps) and the numbered thread split; the job folder layout, with
+text-units, copy files per platform, ready/<platform>/ for passing files and
+manifest bookkeeping. Left out, because they needed OpenCV, NumPy, Pillow or
+Python's regex engine, or belonged to the Hermes desktop: YuNet face
+detection and speaker tracking, so the split, speaker and seam layouts and
+the person:N focus are gone and framing is crop or pad; the ONNX model
+download and its cache; per-platform repair of a failing file (a failing
+render is reported, not rewritten); the contact sheet and the
+preview_directive line; and the X weighted count's bare-domain rule, which
+now counts only http, https and www links as 23. Rendering is ffmpeg and
+probing is the file's own header plus ffprobe, so no Python package is
+needed. The skill became (help :postkitty) and the /postkitty command.

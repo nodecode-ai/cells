@@ -1,0 +1,34 @@
+nodecode-chronos is a rewrite of DevTarlow's DevTarlow/hermes-chronos:
+
+  https://github.com/DevTarlow/hermes-chronos
+  commit 1abeae16c61d9e3939c1f29c74e81fb92299ba3f
+  MIT, Copyright (c) 2026 Hermes Contender (LICENSE)
+
+Rewritten: the whole of what the plugin does for a user. The shadow
+repository inside the workspace is the same design -- a private git
+repository under <workspace>/.nodecode-chronos/repo, driven with --git-dir
+and --work-tree, a scrubbed environment, the operator's own git config kept
+out of it, a .gitignore of "*" so the project's own git status stays clean,
+and a checkpoint as one commit whose message carries the metadata. The four
+model tools keep their names and their answers (chronos_checkpoint,
+chronos_list_checkpoints, chronos_diff, chronos_rollback, in JSON with
+status, created, id, hash, diff, stat, restored and safety), the rollback
+takes a safety checkpoint first and then writes the tree back with `git
+read-tree --reset -u`, and /chronos with no argument lists, /chronos diff ID
+shows one change and /chronos rollback ID [--no-clean] restores one. The
+section's settings are the original's: automatic checkpoints before a
+modifying call, the ignored patterns, how many checkpoints are listed, and
+whether a restore deletes files created since the checkpoint.
+
+Left out: the Hermes host plumbing. The original's hooks are Hermes's
+pre_tool_call, post_tool_call and transform_tool_result and its approval
+directive for a model-initiated rollback; here one hook on Nodecode's :tool
+point runs around each tool call -- it decides by tool name whether to
+checkpoint, and it appends the same recovery hint to a result that reads as
+a failure, without the approve/deny round trip, because a restore here always
+takes its safety checkpoint first and can be undone. The dashboard backend
+(FastAPI routes mounted for the Desktop pane) and the Desktop timeline
+(React) have no Nodecode equivalent and are not carried: the operator's own
+surface is /chronos, which lists, diffs and restores in text. Compaction of
+the shadow repository past a checkpoint count is left to git (gc.auto=0 in
+the cell's own runs, so no git command of the operator's is slowed by it).

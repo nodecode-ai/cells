@@ -1,0 +1,11 @@
+// The minimizer cell's section, as ~/.nodecode/config.jsonc takes it. Neither
+// member is required; both have the defaults shown.
+{
+  "minimizer": {
+    // "full" carries the whole policy, "brief" the opening and the five
+    // rungs alone.
+    "mode": "full",
+    // The longest the guidance one request carries, marked when it is cut.
+    "max_chars": 3000
+  }
+}

@@ -1,0 +1,24 @@
+nodecode-followups is a rewrite of xiaok's xiaok/hermes-autonomous:
+
+  https://github.com/xiaok/hermes-autonomous
+  commit 431c5fa31eceb5341504ef71db5b4bdb8d493036
+  MIT License, Copyright (c) 2026 xiaok (LICENSE)
+
+Rewritten: the board of follow-ups and the four origins a follow-up comes
+from (care, utility, risk, curiosity); the gate that decides whether one may
+go out now, with the same 23:00-08:00 quiet window, 90-minute cooldown,
+muted categories, at most three items and at most six lines; the same
+"looked at it" backoff and the same outcomes, with three ignored or one
+annoyed muting a category for a while; the update-by-key rule; and the
+review prompt's habits, kept as the manual on (help :followups) and the
+primer the four tools are described by.
+
+Left out, because Nodecode has no DM relay and no cron of its own here: the
+Python helper's SQLite store and its `send` subcommand (the board is one
+JSON file under the home, and the reminder reaches the model at its next
+request instead of being pushed to a chat); the `/followups doctor` cron
+repair pass; the wake gate that woke a scheduled agent only when something
+was due; and the offline scene runner (`decide.py`) with its scenario
+fixtures. Each of those belongs to the host's scheduler or its messaging
+lane; the judgement they carried -- what is worth coming back to, and when --
+is in the prompt and in the gate, and both are here.

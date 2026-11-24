@@ -1,0 +1,35 @@
+nodecode-caldav is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-event-read:
+
+https://github.com/TakeshiTGAL/hermes-plugin-event-read
+commit 00e8aed782ad3d81e1fbc30abb202e3caf9a4dc0
+
+MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+What was rewritten: the plugin's two tools, list_events and read_event, are
+here two tools of the same names with the same arguments, and the same calls
+as Lisp verbs, caldav:list-events and caldav:read-event. They send the same
+calendar-query REPORT the Python did -- the same filter body, Depth 1, the
+credential as HTTP Basic, no redirect followed, a 2 MB ceiling on the answer
+and a timeout on the request -- and read the multistatus the same way: the
+root must be a multistatus and every inner status 200; a 200 is a failure
+even when a calendar is in it. The iCalendar reading is the original's too:
+unfolded lines, VEVENT counted at a BEGIN line, UID, SUMMARY, DTSTART,
+DTEND, RECURRENCE-ID, RRULE and RDATE, a TZID kept as written and dropped for
+a value ending in Z, one row per uid with a changed occurrence grouped under
+its master and repeats said, up to 50 rows before the answer is cut. The
+three environment variables became the cell's `caldav` section, which still
+reads CALDAV_PASSWORD when no password is pasted there, and a section naming
+none of them refuses the start where the plugin registered no tool.
+
+What was left out: the cron watch. The plugin could be run by a Hermes cron
+job that compared the window's uids with a saved set in plugin-data and
+announced a uid that had moved into the window; that needed Hermes's own
+execution identity, its write guard and two JSON state files, none of which a
+Nodecode cell has to invent, because Nodecode's cron cell already runs a
+prompt on a schedule -- so the two reads are here, without files, and a
+schedule is the operator's to make. The plugin's skill (one line in the
+skills index telling the model to look the tools up) is the cell's primer and
+the two tool descriptions instead. The JSON envelope the Python answered --
+ok, error, notify, truncated, next_step -- is the message itself here: a
+failure signals with the status or the reason named, and a success answers
+the events as lines, which is what a model reads.

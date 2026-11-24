@@ -1,0 +1,21 @@
+nodecode-handflow is a rewrite of DECRUX9812's DECRUX9812/hermes-handflow:
+
+  https://github.com/DECRUX9812/hermes-handflow
+  commit 6526ef75ffeb133d66472bc1899c87f34dcf9556
+  MIT, Copyright (c) 2026 Ritesh Patel (LICENSE)
+
+Rewritten: the plan store, the `handflow` tool with its twelve actions, the
+plan rendering and the step vocabulary (not_started, in_progress, completed,
+blocked, with a note on each step), the auto-complete of the open step when
+another begins, the plan closing itself when its last step completes, and
+reopening on an added or reopened step. The Python plugin kept one JSON file
+per plan under the Hermes home; this cell keeps the same shape, one JSON file
+per plan plus a pointer to the active one, written atomically, and the pane
+and the tool read the same files.
+
+Left out: the dockable desktop pane and its backend routes, which are Hermes
+web UI with no Nodecode counterpart. What the pane gave the person, /handflow
+now gives, and what it gave the model, a harness section carrying the active
+plan in every request, now gives. The pane's one-click step toggles are
+likewise read-only here: a step is moved by the tool or by the operator's
+command, not by a click.

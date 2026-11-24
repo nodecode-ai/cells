@@ -1,0 +1,27 @@
+nodecode-crosodo is a rewrite of Terahertz-Inc's Terahertz-Inc/crosodo-mcp:
+
+https://github.com/Terahertz-Inc/crosodo-mcp
+commit 0acc98a34c1d58251ff1047c67b74ed2bc1b905b
+
+MIT, Copyright (c) 2026 Terahertz, Inc. (LICENSE)
+
+What was rewritten: the plugin was a portable manifest pointing an MCP client at
+one streamable-HTTP endpoint (https://crosodo.com/api/mcp), with a skill telling
+the model to cite the state and county, never to invent statute text, to call
+this legal information and not legal advice, and to start a checkout only when
+the user clearly asks to buy. This cell is that MCP client in Lisp: the same
+endpoint, JSON-RPC over one POST a message (initialize, the initialized
+notification, tools/call), the same five unauthenticated tools under the same
+names and the same argument members the endpoint declares (state; state and
+county; product, state, county, email and idempotencyKey; certId), each also a
+verb in the crosodo package, plus /crosodo and a manual topic. The skill's
+rules are the cell's primer, and the tool list, which the original read from
+the live server every session, is here five tools plus crosodo_call, which
+forwards any tool the endpoint grows. What was left out: the two dashboard
+tools the endpoint now also lists (get_my_dashboard, log_sale) need an OAuth
+sign-in the original never offered, so they are reachable through crosodo_call
+but not given a schema of their own; the npm stdio proxy the repository also
+publishes (crosodo-mcp) is a second transport to the same server and is not
+needed by a cell that speaks the remote one; and no MCP client library is
+bundled -- the transport is the image's own HTTP call, so nothing is installed
+or fetched at run time.

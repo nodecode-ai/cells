@@ -1,0 +1,31 @@
+nodecode-marketing is a rewrite of indranilbanerjee's indranilbanerjee/neels-plugins:
+
+  https://github.com/indranilbanerjee/neels-plugins
+  commit 76fe70cf73f57c27031913e493dabe6aeb7eb3c0
+  MIT License, Copyright (c) 2026 Indranil Banerjee (LICENSE)
+
+Rewritten: the plugin's whole product, its 207 skills — 164 in strategy, 22 in
+content and 21 in social — as a library the model searches and reads instead of
+a list of names in every prompt. The skill names are the ones each SKILL.md's
+frontmatter gives; the prose of every skill, and of the markdown guides that sit
+beside it inside its own folder, is carried unchanged under skills/. The Hermes
+adapter (__init__.py walking three folders and calling ctx.register_skill once
+per skill) is two nlk:define-contract declarations and two tools; the scan that
+used to happen at startup happens once, on the first call, and is kept until the
+cell stops.
+
+Left out: the Python. 161 scripts under the three groups' scripts/ folders, the
+optional dependencies they pin, the commands/, agents/, references/ and
+templates/ folders at each group's top level, and the group-level
+skills-index.json. The skills that name a script say so, and the cell's manual
+says the prose is what it carries, so a step that needs a script is either done
+by hand from the formula the skill gives or run from a copy of the original
+plugin the person already has. Also left out: the Hermes manifest plugin.yaml
+and BUNDLE-MANIFEST.json, which describe the bundle to Hermes rather than the
+product to a person.
+
+Each group folder of the original carries its own LICENSE as well: MIT,
+Copyright (c) 2026 Digital Marketing Pro (strategy), (c) 2026 ContentForge
+(content), (c) 2026 SocialForge (social). ContentForge's NOTICE.md records one
+file it ships under CC BY-SA 4.0, config/humanization-patterns.json; that file
+is a script's data, and this rewrite does not carry it.

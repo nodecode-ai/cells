@@ -54,8 +54,10 @@ once its socket is open; the provider answers `slack reply'."
         (is (null (gethash "thread_ts" answer)) "a DM answers in the DM"))
       (is-lane-carrying "slack" "slack-D1" (format nil "slack-D1-m~a" ts) "slack-channel"
                         "(Slack user id U1)" "(ncs:request")
-      (is (wire-row (format nil "kim (operator) [m~a uU1]: hi bot" ts) (first messages-seen)
-                    "content") "the line names its speaker by the name Slack gives")
+      ;; the line's time is the message's ts, Slack's clock
+      (is (wire-row (format nil "kim (operator) [m~a uU1 ~a]: hi bot" ts
+                            (nck:line-time (+ nlk:+unix-epoch+ 1700000001)))
+                    (first messages-seen) "content") "the line names its speaker by the name Slack gives")
       ;; Slack sends an unacknowledged envelope again; the ask is one turn.
       (fake-slack-push fake (slack-event-envelope "e1" (slack-message "D1" ts "hi bot"
                                                                       :channel-type "im")))
@@ -131,6 +133,72 @@ once its socket is open; the provider answers `slack reply'."
         (is (eq t (gethash "replace_original" response)) "the answer becomes the message pressed")
         (is (plusp (length (slack-block-text response))) "the help says something"))
       (is (null (slack-calls fake "chat.postMessage")) "a command is no turn"))))
+
+(deftest channel-slack-a-row-that-asks-asks-in-a-modal ()
+  ;; A press on a row that asks for its text (NLE:ASK-ROW) opens a modal with
+  ;; the press's own trigger -- named after the ask, one line of text under
+  ;; its label, its placeholder the ask's, submitted with its verb -- and
+  ;; posts nothing. The modal's submit is the presser saying the row's line
+  ;; with what they typed after it: it runs, and its answer becomes the card
+  ;; pressed, through the response_url the press came with.
+  (with-slack-lane (fake "allowed_users" (vector "U1") "owner" (vector "U1"))
+    (let ((ran '()))
+      (with-saved-globals (nle::*registered-commands*)
+        (nle:register-command "ask-test" "name"
+                              (lambda (args session-id)
+                                (declare (ignore session-id))
+                                (push args ran)
+                                (format nil "named ~a" args))
+                              :session nil)
+        (let* ((ask (nlk:json-object "label" "Name" "line" "/name" "placeholder" "The new name"
+                                     "verb" "rename"))
+               (data (nck:press-token "/name" :ask ask))
+               (url (format nil "http://127.0.0.1:~d/response/p1" (fake-slack-port fake))))
+          (fake-slack-push
+           fake (slack-envelope
+                 "p1" "interactive"
+                 (nlk:json-object
+                  "type" "block_actions" "trigger_id" "tr1" "response_url" url
+                  "team" (nlk:json-object "id" "T1")
+                  "user" (nlk:json-object "id" "U1" "username" "kim")
+                  "container" (nlk:json-object "type" "message" "message_ts" "1700000005.000100"
+                                               "channel_id" "D1" "is_ephemeral" nil)
+                  "message" (nlk:json-object "ts" "1700000005.000100" "text" "Name")
+                  "actions" (vector (nlk:json-object "type" "button" "action_id" "nodecode-1"
+                                                     "value" data "action_ts" "1700000005.000200")))))
+          (is-present (opened (await (:timeout 15) (first (slack-calls fake "views.open"))))
+            "the press opened a modal"
+            (let ((view (gethash "view" opened)))
+              (is (equal "tr1" (gethash "trigger_id" opened)) "with the press's own trigger")
+              (is-shape view ((:string "type") "modal") ((:string "callback_id") "nck-ask")
+                ((:string "title" "text") "Name") ((:string "submit" "text") "Rename"))
+              (is (equal "The new name"
+                         (nlk:json-value (aref (gethash "blocks" view) 0) :string "element" "placeholder" "text")))
+              (is (null ran) "nothing ran yet")
+              (is (null (slack-calls fake "chat.postMessage")) "nothing was posted")
+              (fake-slack-push
+               fake (slack-envelope
+                     "v1" "interactive"
+                     (nlk:json-object
+                      "type" "view_submission"
+                      "team" (nlk:json-object "id" "T1")
+                      "user" (nlk:json-object "id" "U1" "username" "kim")
+                      "view" (nlk:json-object
+                              "type" "modal" "callback_id" "nck-ask"
+                              "private_metadata" (gethash "private_metadata" view)
+                              "state" (nlk:json-object
+                                       "values" (nlk:json-object
+                                                 "ask" (nlk:json-object
+                                                        "text" (nlk:json-object "type" "plain_text_input"
+                                                                                "value" "Ada Lovelace"))))))))))
+          (is (await (:timeout 15) (fake-slack-acked-p fake "v1")) "the submit is acknowledged, which closes the modal")
+          (is (await (:timeout 15) ran))
+          (is (equal '("Ada Lovelace") ran) "the row's line ran with what was typed")
+          (is-present (response (await (:timeout 15) (first (slack-calls fake "response"))))
+            "answered through the press's response_url"
+            (is (eq t (gethash "replace_original" response)) "the answer becomes the card pressed")
+            (is (search "named Ada Lovelace" (slack-block-text response))))
+          (is (null (slack-calls fake "chat.postMessage")) "a command is no turn"))))))
 
 (defun slack-edit (channel ts text &key (user "U1") bot-id)
   "A message_changed event: the message TS in CHANNEL now says TEXT."

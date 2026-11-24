@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "gogogoogle": {
+    "enabled": true,
+    "worker_model": "gemini-3.8-flash-high",
+    "verifier_models": ["claude-sonnet-5-5-low", "gemini-4-argon-high"],
+    "blocked_roots": ["/work/clients"],
+    "browser_mode": "headless",
+    "agy": "agy"
+  }
+}

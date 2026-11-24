@@ -256,6 +256,69 @@
     (is (equal "stopped" (goal-ending "e")))
     (is-carrying (text (nodecode-goal::run-slash "" "e")) ("ended stopped"))))
 
+(deftest goal-cell-a-stop-takes-back-the-turn-its-goal-queued ()
+  (with-goal ("q")
+    (with-provider-stub (nil (wire-message "assistant" :content "working"))
+      (let ((checking (goal-marker "q" "checking")) (go (goal-marker "q" "go")) (first (goal-turn "q")))
+        (nodecode-goal::begin "q" "something" "touch checking; until [ -e go ]; do sleep 0.05; done; exit 1" 5)
+        (nlk:complete-turn first nil)
+        (await (:timeout 10) (nodecode-goal::poke) (probe-file checking))
+        ;; the room's next message starts a turn while the check still runs
+        (let ((second (goal-turn "q")))
+          (with-open-file (out go :direction :output :if-exists :supersede))
+          (await (:timeout 10) (goal-parked "q"))
+          (is (equal '(1) (mapcar #'nodecode-goal::check-number (goal-facts-of "q" "goal.checked"))) "turn 1 not met, so turn 2 was asked for")
+          (is (= 1 (length (goal-parked "q"))) "and waits behind the running turn")
+          (is-carrying (text (on-goal "q" (goal:stop "the operator said stop"))) ("goal stopped: something"))
+          (is (null (goal-parked "q")) "the stop took it back")
+          (nlk:complete-turn second nil))
+        (is (null (nle::start-queued-turn "q")) "nothing is left to start when the turn ends")
+        (is (= 2 (goal-turns "q")) "no goal turn after the stop")))))
+
+(deftest goal-cell-a-newer-check-replaces-the-turn-still-waiting ()
+  (with-goal ("r")
+    (let ((turn (goal-turn "r")))
+      (nodecode-goal::begin "r" "something" "exit 1" 5)
+      (nodecode-goal::work (nodecode-goal::goal-of "r") 2)
+      (nodecode-goal::work (nodecode-goal::goal-of "r") 3)
+      (let ((parked (goal-parked "r")))
+        (is (= 1 (length parked)) "one goal turn waits, never two")
+        (is-carrying (text (first parked)) (":3")))
+      (nodecode-goal::work (nodecode-goal::goal-of "r") 3)
+      (is (= 1 (length (goal-parked "r"))) "asked twice, still one")
+      (on-goal "r" (goal:stop "done here"))
+      (nlk:complete-turn turn nil))))
+
+(deftest goal-cell-nothing-queues-behind-the-goal-s-own-turn ()
+  (with-goal ("s")
+    (with-provider-stub (nil (sleep 1) (wire-message "assistant" :content "working"))
+      (let ((turn (goal-turn "s")))
+        (nodecode-goal::begin "s" "something" "exit 1" 5)
+        (nodecode-goal::work (nodecode-goal::goal-of "s") 2)
+        (nlk:complete-turn turn nil))
+      ;; the queue's promotion, as when a turn ends: goal turn 2 runs
+      (nle::start-queued-turn "s")
+      (await (:timeout 5) (nlk:active-turn-p "s"))
+      ;; a check that concluded meanwhile asks for turn 3
+      (nodecode-goal::work (nodecode-goal::goal-of "s") 3)
+      (is (null (goal-parked "s")) "its end is checked, and the next turn admitted then")
+      (on-goal "s" (goal:stop "done here"))
+      (await (:timeout 10) (not (nlk:active-turn-p "s")))
+      (is (= 2 (goal-turns "s")) "no turn ran behind it"))))
+
+(deftest goal-cell-an-ended-goal-s-leftover-turn-is-taken-back ()
+  (with-goal ("u")
+    (let ((turn (goal-turn "u")))
+      (nodecode-goal::begin "u" "something" "exit 1" 5)
+      (let ((goal (nodecode-goal::goal-of "u")))
+        (nodecode-goal::work goal 2)
+        ;; ended as a build before this one, or a crash, left it: the input still queued
+        (nodecode-goal::record "u" nodecode-goal::+kind-ended+ (getf goal :id) :reason "stopped" :by "agent" :detail "stop"))
+      (is (= 1 (length (goal-parked "u"))))
+      (await (:timeout 10) (nodecode-goal::poke) (null (goal-parked "u")))
+      (is (null (goal-parked "u")) "the worker took it back")
+      (nlk:complete-turn turn nil))))
+
 (deftest goal-cell-a-new-goal-replaces-the-running-one ()
   (with-goal ("f")
     (let ((turn (goal-turn "f")))
@@ -282,6 +345,44 @@
       (with-cell-stop ((goal-start))
         (is (equal "spent" (goal-await-end "g")) "the start checked the turn it missed, and went on")))
     (is (equal '(1 2) (mapcar #'nodecode-goal::check-number (goal-facts-of "g" "goal.checked"))))))
+
+;;; --- typed alone -------------------------------------------------------------------
+
+(defun goal-rows (dialog key)
+  "DIALOG's rows' lines: KEY :run what Enter runs, :ask what an ask runs its
+text after."
+  (remove nil (mapcar (lambda (row) (if (eq key :run)
+                                        (getf (getf row :run) :enter)
+                                        (getf (getf row :ask) :line)))
+                      (getf dialog :rows))))
+
+(deftest goal-cell-typed-alone-answers-its-panel ()
+  (with-goal ("p")
+    (multiple-value-bind (text panel) (nodecode-goal::run-slash "" "p")
+      (is-carrying (text text) ("no goal on this session"))
+      (is (null (goal-rows panel :run)) "no goal, nothing to stop")
+      (is (equal '("/goal" "/goal --check" "/goal --options") (goal-rows panel :ask))))
+    (is (search "say what must hold" (nodecode-goal::run-slash "--options" "p")))
+    ;; The options panel: every row's line parses back to the goal it shows.
+    (multiple-value-bind (text panel) (nodecode-goal::run-slash "--options the tests pass" "p")
+      (is-carrying (text text) ("goal: the tests pass"))
+      (is (equal '("/goal the tests pass"
+                   "/goal --options the tests pass" "/goal --options --k 2 the tests pass"
+                   "/goal --options --k 3 the tests pass" "/goal --options --k 4 the tests pass")
+                 (goal-rows panel :run)))
+      (is (equal '("/goal --options the tests pass --k" "/goal --options the tests pass --turns"
+                   "/goal --options the tests pass --check")
+                 (goal-rows panel :ask))))
+    (let ((panel (nth-value 1 (nodecode-goal::run-slash
+                               (format nil "~a" (subseq (nle:ask-line "/goal --options --k 3 the tests pass --check" "just test") 6))
+                               "p"))))
+      (is (equal "/goal --k 3 the tests pass --check just test" (first (goal-rows panel :run))))
+      (is (equal "/goal --options --k 3 the tests pass" (car (last (goal-rows panel :run)))))
+      (is (equal "/goal --options the tests pass --check just test --k" (first (goal-rows panel :ask))))
+      (multiple-value-bind (condition check turns k)
+          (nodecode-goal::parse-request (subseq (nle:ask-line (second (goal-rows panel :ask)) "7") 6))
+        (is (equal '(("--options" "the" "tests" "pass") "just test" 7 3) (list (nlk:split-words condition) check turns k)))))
+    (is (zerop (goal-turns "p")) "no panel starts a goal")))
 
 ;;; --- refusals ----------------------------------------------------------------------
 

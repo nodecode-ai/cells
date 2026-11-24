@@ -1,0 +1,10 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; nothing here is required.
+{
+  "aave": {
+    "enabled": true,
+    "endpoint": "https://mcp.aave.com",
+    "timeout_seconds": 30
+  }
+}

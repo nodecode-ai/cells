@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell - documentation,
+// not config: the folder gets pushed and holds no secret. The declaration in
+// cell.lisp is the authority; this is an illustration of it.
+{
+  "advisor": {
+    "enabled": true,
+    // Review every completed turn. Off by default: each review is one model call.
+    "auto": true,
+    // Empty means the auxiliary model (/models picks it); set both to send the
+    // review to a second model of its own.
+    "model": "",
+    "provider": "",
+    // Characters kept per tool call or result in the transcript sent for review.
+    "clip": 500,
+    "max_note_chars": 1200,
+    // A file of project review guidance, appended to the reviewer's instruction.
+    "watchdog": ""
+  }
+}

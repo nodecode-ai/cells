@@ -1,0 +1,22 @@
+nodecode-secret-drop is a rewrite of Goitonthefloor's Goitonthefloor/hermes-secret-drop:
+
+  https://github.com/Goitonthefloor/hermes-secret-drop
+  commit 505bd3b47937ae453d4a54a2ee2455a4d274bf42
+  MIT, Copyright (c) 2026 secret-drop contributors (LICENSE)
+
+What was rewritten: the command that takes a secret without it entering the
+conversation, the store the value lands in, the environment the agent's shell
+commands inherit it from, the exact-match redaction of a credential-shaped
+value on the way to the model, and the guidance that tells the model to ask for
+a drop instead of a paste. The original is Python and a Hermes plugin; this is
+Common Lisp and a Nodecode cell, and it makes no network call.
+
+What was left out, and why: the Hermes desktop key button beside the composer
+and the dashboard route behind it, because Nodecode's drop is the slash command
+and the two tools rather than a second UI; the profile `.env` and
+`terminal.env_passthrough` write, because there is no such file to keep in
+step here, so the store is the cell's own file and the environment is the one
+the image's shell commands already inherit; the per-profile scope of a write,
+because a Nodecode process is one profile; and the private Hermes helpers the
+original imported to validate a name and to find provider credentials, which
+this rewrite writes out itself.

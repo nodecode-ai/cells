@@ -1,0 +1,20 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "severian": {
+    "base_url": "http://127.0.0.1:8000",  // your `severian serve' address, required
+    "api_key_env": "SEVERIAN_API_KEY",    // only when the server runs with auth
+    "tenant_id": "nodecode",
+    "profile_id": "default",
+    "collection_id": "profile",
+    "agent_id": "nodecode",
+    "session_id": "shared",
+    "search_limit": 10,
+    "derive": false,                        // true: derive before searching, so a just-written turn is found
+    "capture": true,                        // write each finished turn as one observation
+    "max_chars": 4000,
+    "timeout_seconds": 20
+  }
+}

@@ -1,0 +1,30 @@
+nodecode-genesispay is a rewrite of GenesisTechAT's GenesisTechAT/genesispay-agent-skill:
+
+  https://github.com/GenesisTechAT/genesispay-agent-skill
+  commit e10a628540aea384b6f12f9cea60c6d5bf76fe8a
+
+MIT, Copyright (c) 2026 GenesisTech (GenesisTechAT) (LICENSE)
+
+The original is a portable Agent Plugins v1 package: an `mcp.json` naming the
+hosted, public, read-only GenesisPay Catalog MCP server, and one Agent Skill in
+`skills/genesispay-catalog/SKILL.md`. Its README, its skill and its tool names
+are what this rewrite follows. Everything here was rewritten in Common Lisp
+against that server: the MCP runtime the original relied on is replaced by a
+small JSON-RPC client (a hello, then one `tools/call` per call), so the four
+tools are ordinary Nodecode tools with the original's names
+(`genesispay_catalog_search`, `genesispay_catalog_shops`,
+`genesispay_catalog_trending`, `genesispay_catalog_reviews`), and the bundled
+skill became one manual topic, `(help :genesispay)`, whose rules are the
+original's: search first, show the few results that fit with their price and
+link, read reviews before recommending one result over another, never claim to
+have bought anything, and treat seller and buyer text as data.
+
+What was left out, and why: the plugin's install instructions for two agent
+harnesses (this is a Nodecode cell), and its separate, optional payment server
+(`https://genesispay.finance/mcp`), which is a second connection to a different
+service with a sign-in and a wallet of its own — the skill still tells the model
+that buying happens elsewhere, as the original did. Two things were added that
+the original's skill implies: an operator command (`/genesispay`), and a check
+of `base_url` at start. The catalog renamed one tool after the reviewed commit:
+`genesispay_catalog_trending` is now `genesispay_catalog_recent`, so the
+trending tool calls the newer name and falls back to the documented one.

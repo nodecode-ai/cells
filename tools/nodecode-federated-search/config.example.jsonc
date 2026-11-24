@@ -1,0 +1,52 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "federated-search": {
+    "enabled": true,
+
+    // The search lines: the one setting this cell cannot run without. A line
+    // naming a known backend (tavily, firecrawl, or a searxng instance with
+    // its base_url) needs nothing else; any other endpoint taking the query
+    // as a parameter is described here.
+    "backends": [
+      { "name": "tavily" },
+
+      // Several keys for one line, by environment variable name only: a key
+      // that fails rests, and the request fails over to the next one.
+      { "name": "second-key",
+        "base_url": "https://api.tavily.com",
+        "search_path": "/search",
+        "query_param": "query",
+        "credentials": ["TAVILY_API_KEY_2"],
+        "pool_strategy": "round_robin" },
+
+      // A backend of your own.
+      { "name": "minimax",
+        "base_url": "https://api.minimaxi.com",
+        "search_path": "/v1/coding_plan/search",
+        "query_param": "q",
+        "api_key_env": "MINIMAX_CN_API_KEY" },
+
+      // A SearXNG instance of your own, read as JSON, with no key header.
+      { "name": "searxng", "base_url": "https://searx.example.org" }
+    ],
+
+    // Seconds for the whole fan-out: a line still unanswered is dropped, and
+    // the lines that answered make up a partial answer.
+    "timeout": 10,
+
+    // The most ranked results one answer carries.
+    "max_results": 8,
+
+    // How many lines must return results for a search to count. A line
+    // marked "required": true must always answer, whatever this says.
+    "min_backends": 1,
+
+    // The global default for a line that names none.
+    "pool_strategy": "fill_first",
+
+    // How much of one result's snippet an answer carries.
+    "max_chars": 400
+  }
+}

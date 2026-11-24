@@ -400,7 +400,7 @@ first token poll pending, the second granting TOKEN; POSTS and GETS collect
              (dex:post (url &rest args) (setf posted t) (values (copilot-stream "openai-completions") 200)))
           (let ((refusal (signals-error nle::provider-config-error (copilot-round (user-context)))))
             (when (typep refusal 'nle::provider-error)
-              (is (search "/github-copilot login" (nle::provider-error-detail refusal)))))
+              (is (search "/github-copilot" (nle::provider-error-detail refusal)))))
           (is (null posted) "nothing is sent"))))))
 
 (deftest github-copilot-cell-leaves-other-providers-alone ()
@@ -436,3 +436,17 @@ first token poll pending, the second granting TOKEN; POSTS and GETS collect
       (with-stubbed-fdefinition (nle::credential-env (name) nil)
         (let ((nle::*auth-file-path* auth) (nle::*api-key* nil))
           (is (search "not signed in" (nth-value 1 (nle::list-provider-models "github-copilot")))))))))
+
+;;; --- /github-copilot typed alone --------------------------------------------------------------
+
+(deftest GITHUB-COPILOT-cell-answers-its-choices-typed-alone ()
+  (with-cell-stop ((github-copilot-start))
+    (with-saved-globals ((nle::*auth-file-path* (merge-pathnames "no-such-auth.json" (uiop:temporary-directory))))
+      (multiple-value-bind (text dialog) (cell-entry "nodecode-github-copilot" "github-copilot" "")
+        (is (plusp (length text)) "the sign-in as it stands, in words")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "the panel rides the answer"
+          (is (equal '("/github-copilot login" "/github-copilot logout")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows))))
+          (is (equal '("/github-copilot login")
+                     (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
+      (is (search "not one of its choices" (cell-entry "nodecode-github-copilot" "github-copilot" "frobnicate"))))))

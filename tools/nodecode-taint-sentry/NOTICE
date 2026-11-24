@@ -1,0 +1,26 @@
+nodecode-taint-sentry is a rewrite of YAN-XBT's YAN-XBT/hermes-sentry:
+
+  https://github.com/YAN-XBT/hermes-sentry
+  commit 5f74fe9c923f228a2b6e6aa95d362b71b94bfc20
+  MIT, Copyright (c) 2026 YAN-XBT (LICENSE)
+
+Rewritten: the provenance classification (which tools and which calls produce
+third-party content), the text hygiene (invisible characters removed, the
+instruction signatures named), the per-session taint marks with a TTL and file
+artifacts, the ten rules of the policy with their taint/always switch and their
+allow_hosts and allow_paths escapes, the untrusted envelope with its notes, and
+the two read-only tools. The four Hermes hooks became one Nodecode hook:
+transform_tool_result and pre_tool_call are the before and after halves of the
+:TOOL point, and subagent_start is the same session's marks read by the
+subagent's calls.
+
+Left out, and why: the SQLite receipts ledger, the `hermes taint-sentry` CLI
+with its dry-run tester and its clear-request marker file, the desktop pane and
+the dashboard's plugin API and rule-editing route, and the debug trace rows.
+None of them is a decision -- they are where the decisions are read back; the
+cell answers the same questions from a ring of the session's newest receipts,
+a slash command, and (help :taint-sentry). The pre_llm_call banner is carried
+by the envelope and the manual instead of a standing prompt block, because
+Nodecode has no prompt-construction point a cell may hook. The decoding of
+obfuscated payloads (`powershell -enc <base64>`) that the original re-judges as
+its own call is not carried: the pattern rules read the command as written.

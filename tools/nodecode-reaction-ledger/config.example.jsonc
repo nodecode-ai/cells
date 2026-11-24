@@ -1,0 +1,9 @@
+// nodecode-reaction-ledger: nothing here is required. Nothing needs a key.
+{
+  "reaction-ledger": {
+    // How many reaction changes the ledger keeps, newest first; the oldest
+    // rows go past this. The ledger is reaction-ledger/reactions.jsonl under
+    // the home.
+    "rows": 5000
+  }
+}

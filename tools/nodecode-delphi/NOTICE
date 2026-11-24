@@ -1,0 +1,48 @@
+nodecode-delphi is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-gensyn-plugins:
+
+https://github.com/TakeshiTGAL/hermes-gensyn-plugins
+commit 9325a7b15d815ca05983885ddd6615eae5f2b7a6
+
+MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+What was rewritten: the original's seven read-only tools are seven read-only
+tools here, answered by Lisp instead of a Node subprocess running Gensyn's SDK.
+The four API reads (delphi_list_markets, delphi_get_market,
+delphi_get_positions, delphi_compute_edge) use the SDK's own REST routes on the
+same hosts (delphi-api.gensyn.ai for testnet and competition-testnet,
+api.delphi.fyi for mainnet), with the read key as X-API-Key from the
+environment variable the section names, and the competition's own data
+selected by the X-Delphi-Mode header as the SDK selected it. What a model reads
+is the original's material: the question, the outcomes, the status, the
+category, the settle time, the trading fee as a percent (10^18 is 100%), the
+market's own page, positions as raw shares beside their decimal reading, and
+the opening line saying that the creator wrote the question and the outcomes
+and that they are not instructions. The edge is exact decimal arithmetic as the
+original's was: your probability minus the implied one, plain decimal text,
+never a float, with the same rule for what a probability may be.
+
+delphi_query_subgraph posts the SDK's own GraphQL queries to the network's
+Goldsky subgraph: the indexer's position in the chain, a market's buys and
+sells, and its settlement (settled, failed, and resolution requests), with the
+original's modes, defaults and the rule that settlement has no offset.
+
+delphi_quote_buy and delphi_quote_sell make the same eth_call reads the SDK
+made, over JSON-RPC instead of a signer: keccak-256 selectors and ABI words
+written out in Lisp, marketProxiesExist on the modern and legacy factories to
+find the gateway that owns a market, then quoteBuyExactOut or quoteSellExactIn
+on that gateway, then decimals() on the collateral token. One share is 10^18
+raw units; the quote is reported raw, as collateral, and per share, with the
+original's rule that a buy rounds a cut ratio up and a sell rounds it down.
+Nothing is signed, nothing is sent, and no key is needed.
+
+What was left out: Hermes itself -- the per-tool enable switches, the
+30-requests-a-minute reservation counter, the Node subprocess with its
+allowlisted environment and deadline, the doctor command, the secret scoping
+and the JSON envelopes the original authored for its host. A Nodecode cell
+answers text a model reads and leaves pacing to the operator. The live form of
+delphi_compute_edge asks the gateway that owns the market for its spot implied
+probabilities, as the original did, though without the original's refusal of an
+LMSR market: whatever the gateway answers is the number used. The original's
+proof-receipt reading of a market's settlement proof is carried as the API
+sends it, without the separate ree_validate_receipt hand-off, and a market's
+gateway is resolved once per read rather than cached for the client's lifetime.

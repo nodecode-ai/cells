@@ -1,0 +1,27 @@
+nodecode-index-search is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-index-search:
+https://github.com/TakeshiTGAL/hermes-plugin-index-search
+commit a8d522160c78ad13f3c887905c67f40f3cb984a1
+MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+The rewrite keeps what the plugin gives a user: the three tools index_search,
+index_health and index_watch with the same arguments and the same page size of
+20, the search endpoint POST /indexes/<uid>/search with a bearer token and a
+body of {"q", "limit": 20}, the keyless GET /health, one saved watch whose id
+field and optional title field are named by the caller, a first check that
+saves a baseline instead of reporting news, seen ids capped at 500, and the same
+insistence that a page that is not exactly a search result is named and not
+half-read. It is Common Lisp against the Nodecode cell contract instead of
+Python against Hermes, so the model answers plain sentences rather than a JSON
+envelope, and the key is scrubbed from them as the original scrubbed it.
+
+Left out, and why: Hermes's cron. The original proves whether a run came from
+cron and only then advances seen ids, and prints a `hermes cron create` line for
+the operator to run; a cell has no such proof to read and Nodecode schedules
+prompts in a separate cell, so `check` advances on every call and the answer
+names the way to run it on a schedule. The failure clock (one notice a day
+while a cause repeats), the approval gate, the plugin-data directory with the
+host's write guard, and the skill that told Hermes's model to reach for
+tool_search first are gone with the runtime that needed them; the doctrine that
+skill carried is in the cell's `(help :index-search)` primer. The HTTP client
+no longer refuses redirects itself -- Nodecode's own HTTP layer follows up to
+five -- so a redirect is reported when one comes back, not prevented.

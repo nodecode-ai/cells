@@ -1,0 +1,26 @@
+nodecode-scaleway is a rewrite of scaleway's scaleway/hermes-scaleway-provider:
+
+  https://github.com/scaleway/hermes-scaleway-provider
+  commit 685726e5d544f84384d619e979b7a93359bdec55
+  MIT, Copyright (c) 2026 Reda Maizate (LICENSE)
+
+What was rewritten: the plugin's one payload, `scaleway-provider/__init__.py`,
+which registers a Hermes model provider named `scaleway` on base
+https://api.scaleway.ai/v1 with the ambient SCW_SECRET_KEY, the
+SCALEWAY_BASE_URL override, a curated `fallback_models` list led by
+deepseek-v4.1-flash-1017, `models_dev_id: scaleway` for context windows and
+pricing, vision support, and the auxiliary model
+mistral-small-3.2-24b-instruct-2506. In Common Lisp that is a catalog row
+(the curated ids, with the numbers from the models.dev `scaleway` row the
+plugin's own test fixture records, in models.json), a credential hook that
+reads SCW_SECRET_KEY and then SCALEWAY_API_KEY, and a section carrying the
+base. `plugin.yaml`, `README.md` and the test suite around the payload were
+read for what the profile means, not copied.
+
+What was left out, and why: the `scw` alias, `ambient_credentials` and
+`default_aux_model` have no per-provider counterpart in Nodecode — a
+provider is named once, a model is picked once, and the auxiliary model is
+the core's `general.auxiliary_model`, which the README says to set. The
+plugin's live `/v1/models` catalog probe is Nodecode's own listing, asked
+with the key from this cell's credential hook; the curated list is what the
+picker offers, as in the original.

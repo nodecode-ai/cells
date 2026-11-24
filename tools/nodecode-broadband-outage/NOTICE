@@ -1,0 +1,29 @@
+nodecode-broadband-outage is a rewrite of FindBroadband's FindBroadband/mcp:
+
+  https://github.com/FindBroadband/mcp
+  commit 452358616b1b8d79d730693c927b1b398203496a
+  MIT, Copyright (c) 2026 Find Platforms Ltd (trading as FindBroadband) (LICENSE)
+
+The original plugin was six files of manifest and prose: plugin.json, mcp.json,
+.mcp.json, .claude-plugin/plugin.json and openclaw.plugin.json named one hosted
+Streamable HTTP MCP server, and
+skills/uk-broadband-outage-check/SKILL.md told the host's model how to use it.
+Nothing ran locally. This cell speaks that protocol itself in Common Lisp: it
+initialises the server once a start, then sends one tools/call per verb, with
+three of the server's tools declared as Nodecode contracts -- the overview,
+which takes no argument, written by hand as the server's own schema is an empty
+object, and get_provider_outage_status and get_outage_history with their
+arguments typed -- under the cell's own tool names, and answers with the
+server's text, unchanged. The day range (1 to 30) and the date shape
+(YYYY-MM-DD) the server documents are held before a request goes out, so a
+typo costs a refusal instead of a round trip. What was left out is what
+Nodecode does for itself: the five harness manifests, whose only content was
+the endpoint URL and a trust flag, now the section's endpoint setting; and the
+skill file's step-by-step prose and its instruction to run an MCP client's
+`mcp add`, carried instead as the tools' descriptions and as the manual's
+primer for (help :broadband-outage), which keeps the skill's reporting rules --
+public reports are unconfirmed, quote the provider's own words, no data for one
+address, 30 days only. The server, its data and its terms are FindBroadband's:
+the cell bundles none of them, interprets none of the statuses, and dials the
+same endpoint the plugin named, so a failure or a change there is
+FindBroadband's too.

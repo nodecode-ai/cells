@@ -1,0 +1,10 @@
+nodecode-pep is a rewrite of EloquentBrush0x's EloquentBrush0x/hermes-context-refs:
+
+  https://github.com/EloquentBrush0x/hermes-context-refs
+  commit 20c7a0e1f56d6fea9761077f6994ab7b3d174b99
+
+MIT, Copyright (c) 2026 EloquentBrush0x (LICENSE)
+
+Rewritten: the plugin's one contribution, the `@pep:<number>` context reference — its target parsing (`572`, `0572`, `PEP-572`, `number#section`), the PEPs API index and its in-memory hour of caching, reading `#pep-content` out of the published page as text with headings, fenced code, list items and table rows, picking a section by heading or by the id in the page's link, the block it rendered (facts line, authors, Replaces/Requires, the not-in-effect notes, "Section: A > B", the word-boundary cut at max_chars, the closing source line), and the autocomplete's search by number prefix or by words of the title. All of it is Common Lisp over `nlk:http`, the page reader included; nothing of the Python original is bundled.
+
+Left out, and why: the `@pep:` trigger and the composer autocomplete are Hermes UI, so the same data arrives as a tool (`pep_reference`), a command (`/pep`) and three Lisp verbs instead. The three-second autocomplete timeout is gone with the autocomplete. Redirects are followed by the shared HTTP client (up to five, as every NodeCode request does) rather than pinned to the same host; the four-mebibyte answer cap and the two-host check the plugin wrote by hand become the same cap checked on the body. The plugin's fuzzy "did you mean" used a diff library; the rewrite names the first heading that starts with, else contains, what was typed.

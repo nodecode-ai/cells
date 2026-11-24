@@ -1,0 +1,24 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key itself lives in auth.json (/connect) or HOSTYOURAI_API_KEY.
+{
+  "hostyourai": {
+    "enabled": true,
+
+    // Where HostYourAI is served. The chat lane appends /chat/completions.
+    "base_url": "https://hostyourai.com/api/v1",
+
+    // What kind of work hyai/auto should expect: a task, "auto" (a small
+    // model picks one for each message), or "router" (it decides alone).
+    "task": "router",
+
+    // What hyai/auto optimizes for, or "router" to let it choose.
+    "policy": "router",
+
+    // Where the hint rides: an "hyai" object in the body, or X-HYAI-* headers.
+    "transport": "body",
+
+    // Say the balance is low below this many euros; 0 never says it.
+    "usage_warn_eur": 5
+  }
+}

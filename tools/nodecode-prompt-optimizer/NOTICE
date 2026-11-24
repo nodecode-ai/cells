@@ -1,0 +1,25 @@
+nodecode-prompt-optimizer is a rewrite of Sahil-SS9's Sahil-SS9/hermes-multichannel-prompt-optimizer:
+
+  https://github.com/Sahil-SS9/hermes-multichannel-prompt-optimizer
+  commit e83eba9a8e102ed255a5bfd20cc88ea50e3af28f
+
+MIT, Copyright (c) 2026 Sahil Saghir (LICENSE)
+
+What was rewritten: the idea, the five-dimension scorer (clarity, specificity,
+structure, actionability, plus a token estimate), the family-and-capability
+tailoring of the rewrite instruction, and the operator-facing page of before and
+after numbers. The Python engine, its tests and its Hermes hooks were read and
+reimplemented in Common Lisp against Nodecode's cell contract: the rewrite is
+one side call on the auxiliary model, the history is a JSONL file under the
+home, and the surfaces are a slash command, a tool and a manual topic.
+
+What was left out, and why: the pre-message hook that rewrote every prompt of
+five words or more before the agent saw it, with its interactive approval
+overlay, because Nodecode's cell contract asks for a rewrite the operator or the
+model chooses rather than one that silently edits the conversation; the SQLite
+metrics database, daily pruning and HTML reports, because one JSONL line a
+rewrite answers what /prompt-stats needs without a schema; langid language
+detection and the Unicode-range fallback, because the rewriting instruction
+keeps the prompt's language without a dependency; and the twenty-one vendor
+families of model-profiles.yaml, of which five are kept, for the tactics a
+Nodecode user is likely to reach for.

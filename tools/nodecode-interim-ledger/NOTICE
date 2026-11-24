@@ -1,0 +1,36 @@
+nodecode-interim-ledger is a rewrite of olric3015's olric3015/hermes-plugins:
+
+  https://github.com/olric3015/hermes-plugins
+  commit ed94f43f5573b4b55f355bb97f37c225e36d6f19
+
+MIT License, Copyright (c) 2026 olric3015 (LICENSE)
+
+What was rewritten: the plugin's one job - keep a row for every message a model
+writes in the middle of a turn, beside a tool call, and answer /interim-log with
+which models write them, in how many turns, how many a turn gets, their median
+length and when the last one was - as a Nodecode cell. Its row shape (the
+timestamp, a 12-digit SHA-256 of the session and of the turn, the model, the
+provider, the step of the turn, the length of the message; never the text and
+never the ids), its JSON-lines file under the home, its trim to the newest rows
+past the section's bound, its options (/interim-log session | all | Nh | Nd |
+providers | days | recent [N] | clear, its one-line refusal of an option it
+does not know, and its rule that a window word titles the report) and its two
+reports carry over. Where the plugin subscribed to Hermes's on_interim_message
+hook, the cell advises NLK:RECORD-ASSISTANT-MESSAGE -- the one function every
+completed provider round of every turn passes through -- and records a row when
+the message carried text beside at least one tool call, which is the same
+message Hermes fired its hook for. A final answer with no calls leaves no row,
+as it did there. It still only watches: an error in the observer is swallowed,
+so a round records itself exactly as it would without the cell. The three
+reports are on the manual as interim-ledger:summary, interim-ledger:recent and
+interim-ledger:clear for a report taken through eval.
+
+What was left out, and why: Hermes's surface column (telegram, discord, cli)
+and its streamed flag are gone, because Nodecode records no per-turn surface
+and no per-message "already streamed" fact: a turn reaches the cell as a turn,
+whatever room or shell asked for it. The column Hermes spent on the surface is
+the number of tool calls the message rode instead, which the wire message
+carries and which says something a reader can use. The setting is a row count
+rather than the plugin's 2 MB byte bound, since one row's size no longer varies
+with a room's name. The plugin's own card image, its pytest suite and its
+end-to-end harness are not part of the cell.

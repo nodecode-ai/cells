@@ -1,0 +1,27 @@
+nodecode-showreel is a rewrite of Duffey234's Duffey234/hermes-showreel:
+
+  https://github.com/Duffey234/hermes-showreel
+  commit a8f404a0481408af8f56b514e47905dfd3565fa7
+  MIT, Copyright (c) 2026 Tim Duffey (Duffey234) (LICENSE)
+
+Rewritten: the storyboard (a deterministic function of the session's own
+history -- the ask, the tool calls and their results, the answer, the spend
+-- with a failing step kept beside the step that fixed it, fitted to a hard
+89 s and to the requested length), the two-pass secret scrub, the caption and
+subtitle text, the aspect and resolution choices, the render folder, the
+/showreel verbs and the model-facing render tool. The original recorded a
+session through six observer hooks into a SQLite table of its own; Nodecode
+already keeps that history as facts in its event log, so the rewrite reads it
+there and writes nothing of its own but the video, its .srt and its poster.
+The original drew frames with Pillow; the rewrite hands ffmpeg one drawtext
+per beat over a colour source, so the only dependency is the ffmpeg the user
+already has.
+
+Left out: narration (the offline espeak-ng and piper voices, Hermes
+text_to_speech, and the paid ElevenLabs path with its key, its per-beat
+requests and its character plan) -- a cut here is captions only, so nothing
+is synthesized and nothing leaves the machine. Also left out: the desktop
+half (the Showreel page, the moment editor that drops beats and rewrites
+captions, the inline player and the REC chip), the Hermes CLI subcommands,
+the theme and font settings, image beats that read the pictures a tool
+named, and the original's own SQLite store with its keep_sessions pruning.

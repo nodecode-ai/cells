@@ -1,0 +1,28 @@
+nodecode-process-table is a rewrite of Yicheng-Mark's Yicheng-Mark/hermes-windows-plugins:
+
+  https://github.com/Yicheng-Mark/hermes-windows-plugins
+  commit 5bad3fb2baf04ce6befecfefce6d14f4c9c98934 (plugin folder windows-process)
+  MIT License, Copyright (c) 2026 Yicheng-Mark (LICENSE)
+
+What was rewritten: the one tool, win_process_table, as the tool
+process_table; its filters (pid, pids, process, parent, orphans_only,
+with_ancestry, include_system, limit); its output shape (each entry's pid,
+parent_pid, process, path, started, age_seconds, threads, parent_process,
+parent_state, system and the context rows of an ancestry request, over the
+counts and the notes); and the parent judgement the plugin exists for --
+a parent PID that is gone, or whose number a newer process has taken over.
+
+What changed in the rewrite: the plugin read the Windows process table
+through kernel32 via ctypes, and only on Windows. The rewrite keeps the
+same judgement and the same answer and reads it on Linux (/proc), macOS and
+the BSDs (ps) and Windows (Win32_Process through powershell), so a Nodecode
+image on any of the three answers. The 500-row ceiling, the oldest-first
+order, the 220-character path cut and the JSON keys are the plugin's.
+
+What was left out: nothing of the plugin's own behaviour. The thread count
+is Windows' and Linux's to report, so on macOS and the BSDs it is null;
+processes this account cannot open still come back without a path or a
+start time, as they did on Windows; and the note that named Windows'
+session processes (csrss, wininit, winlogon, services, explorer) is now
+worded for the system's own images on any of the three, since only Windows
+has those particular names.

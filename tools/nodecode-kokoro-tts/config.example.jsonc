@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "kokoro": {
+    "url": "http://127.0.0.1:8770",   // the Kokoro server's root, on loopback
+    "voice": "af_heart",              // the default voice
+    "voices": ["pt=pf_dora"],         // one voice per language, LANGUAGE=VOICE
+    "speed": "1.0",                    // 0.25 to 4.0
+    "english_words": [],              // English words a non-English voice says in English
+    "english_accent": "a",             // a American, b British
+    "output_dir": "~/voices",          // where recordings go; unset, the cache
+    "timeout_seconds": 120             // one request's ceiling
+  }
+}

@@ -1,0 +1,10 @@
+// Field Notes: pitfalls, local patches and observations in one folder of
+// Markdown notes. store_dir is the one required member; core_root is the code
+// tree a patch note's checks read, and may stay empty.
+{
+  "field-notes": {
+    "store_dir": "~/.nodecode/field-notes/",
+    "core_root": "",
+    "ai": true
+  }
+}

@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "agentpurse": {
+    "enabled": true,
+    // the name of the variable holding the agent key, or api_key inline
+    "api_key_env": "AGENTPURSE_API_KEY",
+    "base_url": "https://agentpurse.vercel.app",
+    // integer cents this session may capture; 0 refuses every purchase
+    "spend_limit_cents": 5000,
+    // how long a purchase waits for a person's answer; 0 asks and does not wait
+    "approval_timeout_seconds": 120
+  }
+}

@@ -1,0 +1,26 @@
+nodecode-local-mcp is a rewrite of colibird-ai's colibird-ai/local-mcp-hermes-plugin:
+
+  https://github.com/colibird-ai/local-mcp-hermes-plugin
+  commit 6d6da7722af2243aa6f92fc363405c629e162cf6
+  MIT License, Copyright (c) 2026 Colibird (LICENSE)
+
+The original is a launcher and a skill: a root plugin.json and mcp.json that
+start the MCP server bundled inside the separately installed LMCP app with
+LMCP_DISABLE_TELEMETRY=1, a fourteen-line shell launcher that looks in
+~/Applications and /Applications for either bundle name and downloads
+nothing, and skills/local-mcp/SKILL.md, which teaches scoping tools for
+unattended jobs, the confirm flow for calls that send or cannot be undone,
+and treating app content as untrusted data. The rewrite carries all three:
+client.lisp is the launcher and the MCP client the original left to Hermes
+(same two app directories and bundle names, same --auto argument, same
+telemetry variable), and the skill's rules are the manual topic, its scoping
+turned into the section's include and exclude lists.
+
+What was left out: the original registers every tool the server lists, one
+per tool, because Hermes's MCP client does. A cell is alone in its folder
+and reaches Nodecode's tool catalog directly, so the catalog stays data that
+local_mcp_tools answers and local_mcp_call runs; registering two hundred
+schemas would put all of them in every prompt, which is what the include
+list exists to prevent. Nothing else of the original is omitted, and no code
+is shared: this is a Common Lisp reimplementation against the MCP wire
+(JSON-RPC over the server's stdio), not a copy of the plugin.

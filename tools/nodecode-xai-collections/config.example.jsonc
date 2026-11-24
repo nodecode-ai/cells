@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "xai-collections": {
+    "api_key_env": "XAI_API_KEY",   // the variable holding the key, or "api_key" inline
+    "default_collection_ids": [],   // collection_<uuid> ids; empty searches every collection
+    "default_limit": 5,              // passages per search unless the call says otherwise
+    "timeout_seconds": 30
+  }
+}

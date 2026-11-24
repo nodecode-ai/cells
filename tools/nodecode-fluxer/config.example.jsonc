@@ -1,0 +1,12 @@
+// nodecode-fluxer's section of ~/.nodecode/config.jsonc. Documentation,
+// not config: a cell gets pushed and holds no secret.
+{
+  "fluxer": {
+    "bot_token": "the Fluxer bot token, <application id>.<secret>",
+    "base_url": "https://api.fluxer.app/v1",
+    "home_channel": "the channel id /fluxer send and reports go to",
+    "allow_mentions": false,
+    "read_limit": 20,
+    "timeout": 20
+  }
+}

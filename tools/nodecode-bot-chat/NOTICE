@@ -1,0 +1,28 @@
+nodecode-bot-chat is a rewrite of Tormen28's Tormen28/hermes-bot-chat-agent:
+
+  https://github.com/Tormen28/hermes-bot-chat-agent
+  commit 2bc1ba3a6543255c7cdda2cb03eee040f917649d
+  MIT License, Copyright (c) 2026 Tormen28 (LICENSE)
+
+The plugin is unchanged in what it gives a user: a short style contract that
+makes a session with a bot behave like a focused assistant, and a guard that
+only ever blocks a call touching secrets, deleting files or data, running
+destructive git, pushing to a protected branch, sending something outside, or
+naming an expensive model, with presets strict, default and relaxed. Every
+rule's patterns, the messages a refused call answers in English and Spanish,
+and the style text itself are carried over. Rewritten in Common Lisp against
+Nodecode's cell contract, so all of it is new code: one :TOOL hook that reads
+an EVAL call's form and refuses the calls a rule matches (the Hermes plugin's
+pre_tool_call, over the tools this organism actually has), the style as a
+standing harness section instead of an injected turn note, the one-question
+limit as advice on the core's question board, and /bot-chat as the
+operator's switch.
+
+Left out, and why: the Desktop status bar with reasoning collapsed by default
+is Hermes Desktop's own UI, which Nodecode draws itself; the session-title
+lookup that scoped the plugin (a read-only query of Hermes's state.db) becomes
+an explicit switch, /bot-chat on in the session, or scope all, because
+Nodecode has no session titles and the cell reads no other app's store; and
+the subagent titles and compaction chains the original walked are not a notion
+this harness has. Its "one question per turn" is kept, as advice on the
+question board rather than a tool-name rule.

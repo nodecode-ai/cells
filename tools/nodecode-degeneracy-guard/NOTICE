@@ -1,0 +1,28 @@
+nodecode-degeneracy-guard is a rewrite of simin-yuan's simin-yuan/hermes-degeneracy-guard:
+
+  https://github.com/simin-yuan/hermes-degeneracy-guard
+  commit ffc28d0ab9ac6b6c0cbb118ed5fb0c06909a3dc1
+  Apache-2.0, Copyright 2026 Simin (Simon) Yuan (LICENSE, NOTICE)
+
+Rewritten: the whole detector (loop_detector.py) -- the three criteria, the
+data-shape recognisers, the prose test and the tool-argument rule with its
+thresholds, in detector.lisp -- and the parts of __init__.py,
+tool_arg_guard.py, session_length_guard.py and paths.py a cell can carry: the
+local incident record under the home, the ask-the-person gate with Allow once
+and Deny, the exemption by tool name, and the long-session notice with its
+de-bounce. The frozen thresholds keep their original numbers.
+
+Left out, and why: the hooks Hermes has and Nodecode does not.
+on_stream_delta scored the text stream chunk by chunk and could not abort
+generation; transform_llm_output swapped a flagged turn's output for a notice;
+Nodecode has no point on the stream, so the stream detector survives as
+check-text, answered by the degeneracy_check tool with kind "output" and by
+/degeneracy check, and the replacement notice is gone with the capability
+that was missing anyway. post_llm_call's bookkeeping is unnecessary because
+the :TOOL hook is the one that asks. The Hermes human-approval return value
+({"action": "approve", "rule_key": ...}, a per-tool "always") became the
+core's own ASK-OPERATOR question, which offers Allow once or Deny and nothing
+sticky, so an "always" for a tool is the section's allow_tools instead. The
+session-length guard counted conversation messages; a cell reads the model
+requests a session has made at the :ROUND point, which is the same growth
+seen from where a cell can see it, and it reports that number.

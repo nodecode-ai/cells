@@ -1,0 +1,22 @@
+nodecode-coreweave is a rewrite of coreweave's coreweave/serverless-inference-for-hermes:
+https://github.com/coreweave/serverless-inference-for-hermes
+commit 799027698ca0171c8912df076649a67a25266c20
+MIT, Copyright (c) 2026 CoreWeave, Inc. (LICENSE)
+
+Rewritten for Nodecode: the provider profile (id, display name, description,
+base URL, key variable, signup page, the chat-completions wire) is the cell's
+catalog row, which is what makes /connect offer CoreWeave, /models list its
+models and a turn resolve its lane and address; the key is read from
+COREWEAVE_API_KEY as the original reads it, and model discovery, which Hermes
+does for any provider, becomes the /coreweave command, which reads
+GET <base>/models with the key and puts the answer in /models on demand
+rather than at load. The endpoint is the section's base_url, so it can be
+moved without editing the cell. Left out: Hermes' provider-registry mechanics
+(the ProviderProfile object, register_provider, plugin.yaml and the
+`hermes plugins` install path, which Nodecode's folder loader does not have),
+the original's optional project-attribution example, which is a separate
+custom-provider entry there and a providers.coreweave.models entry here, and
+its development tooling (scripts/, tests/, the CI workflow), which checks the
+Hermes plugin rather than this cell. Nothing is fetched at load, no fallback
+model list is invented, and no capability is claimed for a model CoreWeave did
+not list.

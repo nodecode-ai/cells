@@ -1,0 +1,32 @@
+nodecode-phone-call is a rewrite of winchxyz's winchxyz/hermes-phone:
+
+  https://github.com/winchxyz/hermes-phone
+  commit 0ef88344b16a19db160df84e6857eb329c2dd7f4
+  MIT, Copyright (c) 2026 winchxyz (LICENSE)
+
+The plugin was four Hermes tools (phone_prepare, phone_call, phone_status,
+phone_transcript), a /phone slash command with seven verbs, a skill, three
+hooks, and a FastAPI bridge that carried a live call: Twilio Media Streams
+piped mu-law audio to and from an OpenAI Realtime session, the bridge
+transcribed both legs, gated what the voice model could see behind a per-call
+consent model, and posted a question card to the operator's chat when the
+callee asked something the brief did not cover. This rewrite keeps, in Common
+Lisp, the part a person relies on: the brief and its approval card, the AI
+disclosure as the first sentence of every call, the one-use fifteen-minute
+approval checked before every dial, the hard blocklist of emergency and
+premium numbers, the fail-closed allowlist the operator sets in the section,
+the opt-in quiet hours, one live call and the daily and per-number limits, the
+sensitive-field consent model with its never-shared cvv, password and
+one-time code, the drafting of the opening line, the cost estimate, and the
+four tool names and jobs. The bridge became TwiML: the call speaks the
+disclosure and the approved message, records the answer when the operator
+asked for it, and the transcript is what the cell said plus Twilio's recording
+link. What was left out, and why: the realtime voice session and its media
+bridge, the live transcription of both legs, the mid-call question card and
+the polite hold (a cell has no public URL to hand Twilio and no audio device),
+the web-phone mode that let a browser play the callee, the plain-reply hooks
+that answered "call" in chat, the SQLite store shared by two processes (one
+process serves this rewrite, so a call is a plist in memory), and the
+post-call result message the bridge posted by itself. Nothing of the original
+is vendored; the Twilio REST calls, the TwiML document, the base64 and
+form encoding and the state machine are written here.

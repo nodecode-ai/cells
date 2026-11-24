@@ -1,0 +1,19 @@
+nodecode-jp-corporate is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-jp-corporate:
+https://github.com/TakeshiTGAL/hermes-plugin-jp-corporate
+commit fc0e16c2924d00774957c516f5eb14016228b91d
+MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+The rewrite keeps what the plugin gave a user: the two tools jp_corp_search and jp_corp_profile
+with their names, arguments, sections and answer fields; the gBizINFO REST API v2 they call, its
+one header and its one host; the check digit and the folded names and addresses that decide what
+is sent; the ordering of a name search (exact match first, registered before closed); the
+attribution line the terms of use ask for; and the conservative manners (a ten-minute in-memory
+cache, one request every half second, no retries, no pagination of its own). What changed is the
+language and the runtime: Python with the Hermes tool contract became Common Lisp with
+NLK:DEFINE-CONTRACT and NLE:DEFINE-CELL, the section of a Hermes profile's .env became the cell's
+section in ~/.nodecode/config.jsonc (with GBIZINFO_API_TOKEN still read from the environment), and
+the JSON answers the plugin returned became laid-out text with the same members. Left out: the
+plugin's tests and its after-install checklist, which belonged to Hermes; the exact reproducing
+of JSON member order (the text is sorted by member name); and the redirect refusal the Python
+client wrote by hand, since the shared HTTP seam follows a redirect itself — the token still goes
+to one host, api.info.gbiz.go.jp.

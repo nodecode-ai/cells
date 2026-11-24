@@ -31,7 +31,7 @@
 
 (define-condition chrome-offline (chrome-error) ()
   (:default-initargs
-   :detail "The Chrome bridge is not running in this image (cell not started). Ask the user to run /chrome doctor.")
+   :detail "The Chrome bridge is not running in this image (cell not started). Ask the user to run the doctor in /chrome.")
   (:documentation "No bridge to send through."))
 
 (define-condition chrome-timeout (chrome-error) ()

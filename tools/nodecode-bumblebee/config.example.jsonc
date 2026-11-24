@@ -1,0 +1,12 @@
+// The bumblebee section: every member has a default, so the cell runs
+// without one. Folders a scan names are what it walks; nothing else is read.
+{
+  "bumblebee": {
+    "roots": ["~/projects"],
+    "max_depth": 6,
+    "max_packages": 20000,
+    "osv_enabled": true,
+    "osv_max_packages": 50,
+    "timeout_seconds": 20
+  }
+}

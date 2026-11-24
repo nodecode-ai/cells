@@ -1,0 +1,11 @@
+{
+  // The ichor folder: corrections kept as preference pairs. Nothing is required.
+  "ichor": {
+    "capture": true,            // watch completed turns for a correction
+    "dir": "",                  // where pairs.jsonl and the exports live; empty keeps them under the Nodecode home
+    "scrub": true,              // redact secrets, emails, IPs, phones and home paths before a pair is stored
+    "hf_repo": "ichor-pairs",   // the Hugging Face dataset /ichor share writes to
+    "hf_private": true,         // create that dataset private
+    "hf_token_env": "HF_TOKEN"  // the environment variable holding the Hugging Face write token
+  }
+}

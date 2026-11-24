@@ -1,0 +1,24 @@
+nodecode-cloudflare-web-search is a rewrite of Adolanium's Adolanium/hermes-cloudflare-web-search:
+
+  https://github.com/Adolanium/hermes-cloudflare-web-search
+  commit 259783bf335cfffbfe16e2ef16efa301beb6db14
+  MIT, Copyright (c) 2026 Adolanium (LICENSE)
+
+The plugin registered one web-search backend with Hermes Agent: provider.py
+POSTed the query, provider, limit, options.gateway.id and an optional
+byokAlias to Cloudflare's /client/v4/accounts/<account>/ai/websearch/
+endpoint with a bearer CLOUDFLARE_WEB_SEARCH_API_TOKEN, read the top-level
+items array back as title, url, description and position, and answered the
+harness' search envelope. This rewrite keeps the endpoint, the request
+object, the token's header, the account/gateway/provider/byok_alias settings
+and the same bounds (1 to 10 results, 1 to 1024 characters a query), and
+posts to Cloudflare itself through nlk:http, so no Python, no harness and no
+dependency of its own are needed. The setup schema and the data-handling
+notes of the original are the cell's manual topic,
+(help :cloudflare-web-search), and the same call is the cloudflare_search
+tool and the /cloudflare-web-search command. What was left out: the harness'
+search cache and its keyless-rescue switch (a cell's tool has no harness
+cache, so the cache-key limitation the original documented cannot arise),
+the plugin's settings panel (the section's members are the same settings),
+and the harness' fallback ladder, which a cell's own tool does not have.
+Nothing of the original is vendored.

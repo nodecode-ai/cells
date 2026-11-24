@@ -1,0 +1,34 @@
+nodecode-opencode-free is a rewrite of cryptobredda's cryptobredda/hermes-opencode-free-acp:
+
+  https://github.com/cryptobredda/hermes-opencode-free-acp
+  commit edc25305e325754b450e41daf41c6ba5c028324f
+  MIT, Copyright (c) 2026 cryptobredda (LICENSE)
+
+The original is a Hermes model provider that starts the separately installed
+OpenCode CLI with `opencode acp' and treats it as a model: the conversation,
+the tool schemas and the tool results go in as one prompt, the answer comes
+back as text, and the tool calls the model asks for in that text are parsed
+out of it and executed by the harness. This rewrite keeps that shape in
+Common Lisp: the ACP exchange over stdio (initialize, a session, the agent
+mode and model selections confirmed before a prompt, the prompt itself, the
+streamed text chunks), the remote tool contract and the envelope parser, the
+curated free-model list, the refusal of native tool events and permission
+asks, and the rule that a model outside the list is never selected. The
+search for the CLI falls back from PATH to a configured path, as the
+original's environment override does, through the section's `command'.
+
+Left out: the original's bundled `workspace/opencode.json' policy file. The
+plugin runs the CLI in a folder of its own where that file denies every
+provider and every native tool; this cell runs the CLI in the session's own
+folder and relies on the protocol's refusals alone (no file, terminal or
+permission capability, and a native tool event aborts the round), so a user
+whose OpenCode configuration re-enables native tools is less constrained
+than under the original. Also left out: the original's `list_models'
+discovery call at model-list time (the cell offers the curated list
+without starting a process), its `HERMES_OPENCODE_ACP_COMMAND' environment
+override (the section's `command' does that job), and its token usage,
+which the CLI does not report there and this cell does not invent.
+
+Not affiliated with OpenCode. The CLI is a separate, separately installed
+program, and the CLI's own login, network calls, terms and free-model
+availability apply.

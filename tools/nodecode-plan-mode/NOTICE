@@ -1,0 +1,27 @@
+nodecode-plan-mode is a rewrite of 100yenadmin's 100yenadmin/hermes-plan-mode:
+
+  https://github.com/100yenadmin/hermes-plan-mode
+  commit ee4a245fbc2b2d874f3a5021963bef6c358d17fb (2026-10-17)
+  MIT License, Copyright (c) 2026 100yenadmin (LICENSE)
+
+The plugin is unchanged in what it gives a user: an enforced plan mode in
+which the agent explores with read-only work, writes a plan file, shows it,
+and changes nothing else until the operator approves it, after which it
+implements the plan in the same turn. Rewritten in Common Lisp against
+Nodecode's cell contract, so all of it is new code: one :TOOL hook that
+reads an EVAL call's form and refuses the ones that write or run something
+(the Hermes plugin's pre_tool_call allowlist, over the tools this organism
+actually has), one plan_mode tool, one /plan command, and the standing
+prompt note as a harness section instead of an injected turn note. The plan
+is still a Markdown file under the working directory's plan folder, and
+approval is still the operator's own act.
+
+Left out, and why: Hermes's four approval surfaces (native buttons, a
+clarify card, the classic panel, reactions) become Nodecode's one question
+card plus the typed /plan approve, because Nodecode has one question board;
+"approve and review each file edit" is not offered, since Nodecode's edits
+are EVAL forms rather than a write_file/patch pair to interrupt; todo_list
+progress mirroring, the per-channel footers, the profile and lever switches
+(plan_once, codex_compact, skill policy) and the bug-report skill are
+Hermes surfaces or taste knobs rather than the mode; the plans live under
+.nodecode/plans instead of .hermes/plans.

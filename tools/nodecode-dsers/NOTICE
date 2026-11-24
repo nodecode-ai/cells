@@ -1,0 +1,25 @@
+nodecode-dsers is a rewrite of dsers's dsers/dsers-agent-plugin:
+
+  https://github.com/dsers/dsers-agent-plugin
+  commit 58174bb9d9fdd8941eda76a9b898424852c6407e
+  MIT License, Copyright (c) 2026 DSers (LICENSE)
+
+What was rewritten: the original is a portable Agent Plugin package — a
+plugin.json that marks the remote server untrusted, an mcp.json naming the
+DSers MCP endpoint (https://ai.dsers.com/mcp), and eight Markdown skills
+describing DSers's daily work (account and stores, product sourcing,
+listing editing, product publishing, profit and pricing, supplier mapping,
+order fulfillment, package tracking). The connection is now two Common Lisp
+verbs, DSERS-TOOLS and DSERS-CALL, speaking the same protocol to the same
+endpoint with the account's own access token; the eight skills are
+condensed into the /dsers manual topic and one short standing note, which
+carry their ground rules — read before writing, show what will change, wait
+for a yes, never invent an id or a price, and what each DSers error code
+means.
+
+What was left out and why: the OAuth browser sign-in (the token is supplied
+in the config section, as the cell does not run a web flow), the Agent
+Plugin packaging and its untrusted-server call policy (Nodecode's own tool
+approval covers that), and the eight skills' long reference files (order
+blockers, pricing rules and legal references) — the manual topic keeps the
+workflow and the guardrails, not the full prose.

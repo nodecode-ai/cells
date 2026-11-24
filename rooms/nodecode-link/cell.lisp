@@ -83,14 +83,14 @@ no line yet), :FAILING (turned on, and the dials keep failing) or :OFF."
 (defun failure-text ()
   "Why there is no line, and when it is tried again, or NIL."
   (nlk:when-let (why *failure*)
-    (format nil "no line: ~a; trying again in ~d s, /link retry tries now" why (seconds-to-dial))))
+    (format nil "no line: ~a; trying again in ~d s, /link tries now" why (seconds-to-dial))))
 
 (defun ask-text (ask)
   "The browser asking, as a status line says it."
-  (format nil "a browser is asking: ~a (~a~@[ in ~a~], ~d s left) — /link allow ~a"
+  (format nil "a browser is asking: ~a (~a~@[ in ~a~], ~d s left) — allow it in /link"
           (code-text (getf ask :code)) (getf ask :agent)
           (and (plusp (length (getf ask :place))) (getf ask :place))
-          (max 0 (- (getf ask :expires) (now))) (getf ask :code)))
+          (max 0 (- (getf ask :expires) (now)))))
 
 (defun status ()
   "Whether the link is on, where, who may use it, why it has no line, and the
@@ -102,7 +102,7 @@ browser asking now."
 
 (defun retry ()
   "Dial the relay now rather than when the wait is out."
-  (cond ((not (kept "on")) "link: off · /link on turns it on")
+  (cond ((not (kept "on")) "link: off · /link turns it on")
         ((linked-p) (format nil "link: on · ~a" (address)))
         (t (retry-now)
            (if (await-line 3)
@@ -116,7 +116,7 @@ browser asking now."
   (let ((ask (answer-ask :allowed code)))
     (cond (ask (format nil "link: allowed ~a~@[ in ~a~]" (getf ask :agent)
                        (and (plusp (length (getf ask :place))) (getf ask :place))))
-          ((zerop (length code)) "link: allow takes the code the browser shows: /link allow 482 913")
+          ((zerop (length code)) "link: allow takes the code the browser shows, like 482 913")
           ((live-ask) (format nil "link: a browser is asking, but not with ~a — check the code on its screen"
                               (if (= 6 (length code)) (code-text code) code)))
           (t "link: no browser is asking"))))
@@ -140,7 +140,10 @@ browser asking now."
                               :detail (format nil "~@[~a · ~]asking, ~d s left"
                                               (and (plusp (length (getf ask :place))) (getf ask :place))
                                               (- (getf ask :expires) (get-universal-time)))
-                              :value (format nil "/link allow ~a" (getf ask :code)))))
+                              :run (list :enter (format nil "/link allow ~a" (getf ask :code))))
+                        (nle:run-row "Deny it" "/link deny" :detail "the browser asking is turned away")
+                        (nle:ask-row "Allow by the code its screen shows" "Code" "/link allow"
+                                     :placeholder "the six digits, like 482 913" :verb "allow")))
                 (mapcar (lambda (browser)
                           (nlk:with-json ((id :string "id") (agent :string "agent")
                                           (place :string "place") (allowed :string "allowed"))
@@ -150,8 +153,16 @@ browser asking now."
                                   :detail (format nil "~@[~a · ~]allowed ~a · ~a"
                                                   (and (plusp (length place)) place)
                                                   (or (ago allowed) "") id)
-                                  :value (format nil "/link remove ~a" id))))
-                        (browsers)))))
+                                  :run (list :enter (format nil "/link remove ~a" id)))))
+                        (browsers))
+                (let ((on (kept "on")))
+                  (append
+                   (list (nle:run-row "On" "/link on" :detail "this machine's page within reach of the relay"
+                                      :mark (if on "●" "") :mark-tone :accent)
+                         (nle:run-row "Off" "/link off" :detail "no line, no browser reaches it"
+                                      :mark (if on "" "●") :mark-tone :accent))
+                   (when (and on (not (linked-p)))
+                     (list (nle:run-row "Dial the relay now" "/link retry" :detail "not when the wait is out"))))))))
     (nle:list-dialog
      :title "Link"
      :context (ecase (state)
@@ -165,11 +176,9 @@ browser asking now."
      :empty-label (cond ((eq (state) :on)
                          "No browser allowed yet · scan the code with a phone, ask there, allow it here")
                         ((kept "on") "No browser allowed yet · open the address and allow it here")
-                        (t "Off · /link on turns it on"))
-     :hint "esc close  enter allow or remove  /link on or /link off switches it")))
+                        (t "Off"))
+     :hint "esc close  enter allows, removes or switches  ↑↓ navigate")))
 
-(defparameter +usage+
-  "/link [status | on | off | retry | allow CODE | deny | remove ID]")
 
 (defun run-slash (args session-id)
   "(values TEXT DIALOG) for one /link."
@@ -186,7 +195,7 @@ browser asking now."
         ((string= head "allow") (allow (format nil "~{~a~}" (rest words))))
         ((string= head "deny") (deny))
         ((string= head "remove") (remove-one (second words)))
-        (t (format nil "link: unknown subcommand ~a; usage ~a" head +usage+))))))
+        (t (shown (format nil "link: ~a is not one of its choices" head)))))))
 
 ;;; --- the page's route -----------------------------------------------------------
 
@@ -249,12 +258,11 @@ LINK-JSON with the verb's line as its text."
 
 (nle:define-cell link
   (:section ("link")
-    (:guide "relay is where this machine's line goes; /link on turns it on")
+    (:guide "relay is where this machine's line goes; /link turns it on")
     ("relay" :string :default "wss://uplink.nodecode.ai/line"
              :doc "the relay this machine dials to put its page within reach"))
   (:start #'install)
   (:route "/api/link" #'link-route)
   (:command "link" 'run-slash
-            :description "This machine's page from anywhere: /link shows it and the browsers you allowed; on, off, allow, deny, remove"
-            :argument-hint "on | off | allow CODE | deny | remove ID | retry"
+            :description "This machine's page from anywhere: where it stands, the browsers you allowed, on or off"
             :session nil))

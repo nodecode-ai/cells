@@ -1,0 +1,36 @@
+nodecode-protonpass is a rewrite of lucas-nicolas's lucas-nicolas/hermes-protonpass:
+
+  https://github.com/lucas-nicolas/hermes-protonpass
+  commit b17cc05a92494aa1d6481c3f1b6ff14a241f7375
+  MIT License, Copyright (c) 2026 Lucas Nicolas (LICENSE)
+
+The plugin was one `register(ctx)` call that installed two Hermes secret
+sources — `protonpass`, which resolved an `ENV_VAR → pass://vault/item/field`
+map with `pass-cli item view`, and `protonpass_vault`, which took every item
+of one vault whose title is an environment-variable name, Bitwarden-project
+style — plus a `hermes protonpass` command with setup, status, token, set,
+remove, sync and disable. Its own part was the argv (always `--` before a
+reference, stdin closed, an allowlisted child environment, telemetry off), the
+token login into a session directory of its own, a plaintext value cache, a
+memory and disk cache with a TTL, and the words a failure gets.
+
+This rewrite keeps those reads and that vocabulary as a cell: `protonpass_get`
+is the mapped source, `protonpass_vault` the bulk one, `protonpass_list` the
+titles without a value, `protonpass_status` what the command's `status` said.
+The three-segment reference, `--` before it, `PROTON_PASS_AGENT_REASON` on
+every read, `PROTON_PASS_DISABLE_TELEMETRY=1`, the cell's own
+`PROTON_PASS_SESSION_DIR` for a token login, the one re-login after an
+authentication failure, and the `cache_ttl_seconds` cache are the original's,
+reimplemented in Common Lisp around `nlk:run-bounded`. `(help :protonpass)` is
+the original's README, in the cell's voice. Nothing of the original is
+vendored, and no Python, Node or npx run is needed.
+
+Left out, and why: Hermes' secret-source seam itself, which Nodecode does not
+have — so the values are read when a tool asks rather than injected at
+startup, and `mappings` is reported by `/protonpass env` instead of exported;
+the on-disk value cache and the cross-process file lock, because the cache is
+now this image's memory only and a dead session is renewed on the read that
+fails for it; and the narrowed child environment, because the runner lays a
+cell's variables over the process's rather than replacing them. Proton, Proton
+Pass and `pass-cli` are Proton AG's; the license above covers the plugin, not
+the service.

@@ -1,0 +1,24 @@
+nodecode-frihet is a rewrite of Frihet-io's hermes-frihet:
+
+  https://github.com/Frihet-io/hermes-frihet
+  commit 72493236b16c5e1e2b6a5ada3674781a6da180a1
+  MIT License, Copyright (c) 2026 Frihet-io (LICENSE)
+
+Rewritten: the module that registered the plugin with the host
+(frihet.py, __init__.py) is now one cell. /frihet status, setup, doctor and
+operations, the unauthenticated initialize probe, the redaction of a key in a
+failure's text, the read / draft-write / irreversible / unknown classifier and
+the pre-call gate that escalates the last two are all here, in Common Lisp,
+against Nodecode's cell contract instead of a Hermes PluginContext. The one
+tool the plugin needed the host for (a call into an MCP operation) is made by
+the cell itself: JSON-RPC over HTTPS -- initialize, notifications/
+initialized, tools/list, tools/call -- with the same endpoint, the same
+tri-state report and the same fail-closed default.
+
+Left out: the vendor/frihet-mcp-onboarding.json table of operations with
+external side effects, which the cell folds into the operation-name patterns
+it already had as a fallback; the host's own MCP client (Hermes's OAuth
+cache, breaker and reconnect), so a call here carries the section's API key
+rather than a host session; the ~/.hermes/config.yaml check, which has no
+subject in Nodecode (the config is read by the section declaration); and the
+bundled skill file, whose operating contract is the (help :frihet) topic.

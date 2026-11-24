@@ -1,0 +1,13 @@
+// The nodecode-ntfy-approval cell's section of ~/.nodecode/config.jsonc.
+// A secret is named, never written: token_env is a variable, not a token.
+{
+  "ntfy-approval": {
+    "topic": "nodecode-a-long-random-name",
+    "server": "https://ntfy.sh",
+    "token_env": "NTFY_APPROVAL_TOKEN",
+    "priority": "high",
+    "send_command": true,
+    "timeout_seconds": 120,
+    "patterns": ["\\bmake\\s+deploy\\b"]
+  }
+}

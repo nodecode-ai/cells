@@ -1,0 +1,22 @@
+// The ja-writing-guard section of ~/.nodecode/config.jsonc, written out.
+// Nothing here is required: an empty section scores every Japanese answer
+// on its own and adds one italic line under it.
+{
+  "ja-writing-guard": {
+    // "report" = one line under the answer, the text unchanged; "off" = nothing.
+    "mode": "report",
+    // Where the answers go: chat, business_email, external, sns or tech_doc.
+    // It scales the rules, sets the threshold, and asks for です・ます on the
+    // outside-facing surfaces.
+    "surface": "chat",
+    // 0-100; 0 = the surface's own (chat 40, business_email 35, external 40,
+    // sns 35, tech_doc 45).
+    "threshold": 0,
+    // Answers shorter than this are not checked under the stream.
+    "min_chars": 40,
+    // Whether the line goes under the answer at all.
+    "footer": true,
+    // Cap on the findings ja_writing_check returns.
+    "max_findings": 30
+  }
+}

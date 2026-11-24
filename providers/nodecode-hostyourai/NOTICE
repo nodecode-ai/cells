@@ -1,0 +1,17 @@
+nodecode-hostyourai is a rewrite of cogitor's cogitor/hermes-hostyourai:
+
+  https://github.com/cogitor/hermes-hostyourai
+  commit e86d5bf242166cb53dd0362cf960d91e7741194a
+  MIT License, Copyright (c) 2026 Emil Varga (LICENSE)
+
+The provider row and its alias, the `hyai/auto` model, the task and policy
+vocabulary, the `hyai` object in the body and the X-HYAI-Task / X-HYAI-Policy
+headers, the System One question that `task auto` classifies a message with,
+the balance reading and the /hyai grammar are the plugin's, rewritten in
+Common Lisp against Nodecode's cell contract. Left out: the plugin's own
+config plumbing (its ctx and CONFIG_KEY, which the cell's section declaration
+replaces); the private-chat gate on the balance, which a Nodecode slash
+command does not need; its redirect-refusing opener, since a cell asks through
+Nodecode's own HTTP seam; and the bundled hyai-decide skill with
+decision_client.py, whose typed-decision calls the nodecode-typesafe cell
+already gives Nodecode users.

@@ -1,7 +1,7 @@
 # nodecode-kimi-code
 
 A Nodecode cell for [Kimi Code](https://www.kimi.com/code), Moonshot's
-coding subscription. With it, `/kimi-code login` signs in with a device
+coding subscription. With it, `/kimi-code` signs in with a device
 code, `/models` lists the Kimi Code models (K3, K2.8 Preview as
 `kimi-for-coding`, K2.7 Code Highspeed, K2.5, K2), and a turn on
 `kimi-code/<model>` goes to `https://api.kimi.com/coding/v1/messages` the
@@ -31,9 +31,9 @@ provider. See [NOTICE](NOTICE).
 ## Sign-in
 
 ```
-/kimi-code login     answers at once with the address to open and the code to enter
-/kimi-code status    signed in, as whom, and when the token expires
-/kimi-code logout    forgets the sign-in
+/kimi-code → Sign in   answers at once with the address to open and the code to enter
+/kimi-code             signed in, as whom, and when the token expires
+/kimi-code → Sign out  forgets the sign-in
 ```
 
 The login polls Kimi's token endpoint on a background thread and says the

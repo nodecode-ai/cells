@@ -104,7 +104,7 @@ in the order they arrived."
                   for colon = (position #\: line)
                   when colon
                     collect (cons (subseq line 0 colon)
-                                  (string-trim " \t" (subseq line (1+ colon))))))))
+                                  (string-trim '(#\Space #\Tab) (subseq line (1+ colon))))))))
 
 (defun header (headers name)
   "The value of header NAME in HEADERS, any case."

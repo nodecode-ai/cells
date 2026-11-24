@@ -1,0 +1,25 @@
+{
+  // SerpApi: eight tools over Google's results, on your own SerpApi account.
+  // A key is made at https://serpapi.com/manage-api-key
+  "serpapi": {
+    // The key itself, or the name of the variable that holds it. SERPAPI_API_KEY
+    // is read either way.
+    "api_key_env": "SERPAPI_API_KEY",
+    // "api_key": "...",
+
+    // https://serpapi.com/search unless you go through a proxy of your own.
+    // "base_url": "https://serpapi.com/search",
+
+    // One search request's ceiling, in seconds.
+    "timeout_seconds": 15,
+
+    // One extract request's ceiling: a crawl reads many pages.
+    "extract_timeout_seconds": 60,
+
+    // How many results a search keeps unless the call names its own count.
+    "max_results": 5,
+
+    // How much of one crawled page's text a crawl carries.
+    "max_chars": 4000
+  }
+}

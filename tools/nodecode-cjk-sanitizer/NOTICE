@@ -1,0 +1,28 @@
+nodecode-cjk-sanitizer is a rewrite of evanyudis's evanyudis/cjk_sanitizer:
+
+  https://github.com/evanyudis/cjk_sanitizer
+  commit 47d2a95c89e827fef6ea0bacbff433c6dc980351
+  MIT License, Copyright (c) 2026 Evan Yudistira (LICENSE)
+
+What was rewritten: the plugin's one file (__init__.py) is a regular
+expression over four CJK ranges and the Cyrillic block, and a register()
+that hooked the harness's transform_llm_output. The rewrite keeps the same
+ranges and the same two whitespace collapses, written as a character scan
+and a text walk instead of a regex, and puts the filter on the seam the
+stream actually crosses: an advice on the function every provider lane
+makes its stream parts through, so a fragment is cleaned where it is made
+rather than after an answer is whole. The range table, the "only Chinese
+and Cyrillic, Korean and Japanese kept" scope, and the no-op-when-nothing-
+changed posture are the original's.
+
+What was left out, and why: the plugin's declaration also claimed the
+callback skipped stripping when the user's own prompt used those scripts
+("language learning"), while its README said the callback always runs and
+prompt-based detection is future work; the rewrite does what the code did,
+not what the prose promised, and says so in (help :cjk). Nothing else from
+the original is missing: it had no settings, no command, no tool, no
+network, no dependency.
+
+What the rewrite adds: the settings the original hard-coded (which scripts,
+whether punctuation, how many blank lines), /cjk to report, pause, resume
+and clear its counters, and the cjk_strip tool for text handed to it.

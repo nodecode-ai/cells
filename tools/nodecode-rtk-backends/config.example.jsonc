@@ -1,0 +1,15 @@
+// The rtk-backends cell's section. Every member is optional; these are the
+// defaults, written out. There is no key and no secret: the cell runs the
+// rtk program the user already installed.
+{
+  "rtk-backends": {
+    "binary": "rtk",
+    "timeout_seconds": 2,
+    "rewrite_eval": true,
+    "extra_tools": [],
+    // Commands whose own program runs in a container or another host are
+    // rewritten only when their backend is named here -- rtk must exist in
+    // that backend too. Add "docker", "podman", "kubectl", "ssh" or "all".
+    "backends": ["local"]
+  }
+}

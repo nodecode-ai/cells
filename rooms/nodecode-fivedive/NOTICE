@@ -1,0 +1,35 @@
+nodecode-fivedive is a rewrite of 5dive-ai's 5dive-ai/5dive-plugins:
+
+  https://github.com/5dive-ai/5dive-plugins
+  commit d9e8ad1ad0f6e109d54a213e743d25284389f875
+  Apache-2.0, Copyright 2026 Anthropic, PBC (LICENSE), the repository's own
+  NOTICE naming 5dive as the holder of the plugins (NOTICE)
+
+The rewritten plugin is the folder plugins/dashboard/hermes of that commit
+(plugin.yaml, __init__.py, adapter.py, README.md). What was carried over: the
+spool protocol in both directions, one JSON file per message in inbox/ and one
+per reply in outbox/<chat>/, with the temp-name-then-rename write on both
+sides; the message shape (text, route.source of dashboard, route.chat_id,
+route.voice, image_path, received_at); the rule that an inbox file is removed
+before its message is handed on and a file that is not a valid message is
+dropped rather than left to trip every lap; the admission setting, the
+5dive-app sender the bridge writes as and the single-owner trust argument that
+comes with the folder; the 16000-character message cap; the reply word cap,
+with the same count outside fenced code, the same refusal, the same two
+rewrites and the same fall-through to the long answer as written; the voice
+note answered by voice, marked on the next reply; the upload path named in a
+message; the standalone sender the original registers for out-of-process use,
+here the fivedive_send tool and /fivedive; and the platform hint the original
+gives the model in words, shaped to the prompt this cell submits.
+
+What was left out, and why: the Hermes gateway plumbing itself - the platform
+registration, the adapter class, the asyncio poll loop, connect/disconnect
+and the SendResult shapes - because a cell submits through NLE:SUBMIT and the
+session's own answer instead; the profile-scoped secret reader, since a cell's
+section is already per-home; FIVEDIVE_HOME_CHANNEL and cron delivery, since a
+scheduled turn can reach the chat through fivedive_send; and the 5dive bridge
+(plugins/dashboard/server.ts) and everything on the 5dive side of the spool,
+which this cell does not replace and does not need to know about. An upload is
+named in the prompt rather than attached as an image, because the spool hands
+over a path on this box and the agent can read it with its own tools.
+LICENSE is the repository's LICENSE, unchanged.

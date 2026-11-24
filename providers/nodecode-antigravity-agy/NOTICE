@@ -1,0 +1,18 @@
+nodecode-antigravity-agy is a rewrite of Realtyxxx's Realtyxxx/hermes-plugin-antigravity-agy:
+
+  https://github.com/Realtyxxx/hermes-plugin-antigravity-agy
+  commit f85003d3ce0de3844e2d5c23174d630ff3586e5d
+  MIT, Copyright (c) 2026 Realtyxxx (LICENSE)
+
+Rewritten in Common Lisp as a Nodecode provider cell. What it keeps: one agy
+print-mode run per round in a private scratch workspace, under a custom agent
+that strips every built-in component so agy is only the model; the history
+flattened into one prompt; the system prompt plus a tool protocol and the
+tools' schemas; the request handed to the operator's own signed-in `agy`; a
+refusal when agy falls back to its default agent. What it changes: Nodecode's
+chat lane builds the round and its own fold reads the answer, so the cell
+publishes a catalog row and serves a loopback endpoint instead of writing an
+OpenAI stream by hand, and tool calls come back through a text protocol
+rather than an MCP server that never answers. What it leaves out: the pre-warm
+pool of idle agy processes, the cleanup of agy's own conversation records,
+and the quota and model probes of setup.

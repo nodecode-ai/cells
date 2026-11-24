@@ -1,0 +1,27 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "rocketchat": {
+    "enabled": true,
+    "url": "https://chat.example.com",
+    // a personal access token (Profile, Personal Access Tokens), named here:
+    "token_env": "ROCKETCHAT_TOKEN",
+    // ... or a file only you can read:
+    // "token_file": "~/.config/rocketchat-token",
+    // the bot user's own _id, shown on the page where the token was created:
+    "user_id": "the-bot-users-id",
+    // plain http:// is refused unless you say so:
+    "allow_insecure_http": false,
+    // the tools that change things stay off until you say otherwise:
+    "write_tools": false,
+    // ... and a local file upload needs this too, with the directories it may read:
+    "file_uploads": false,
+    "upload_roots": ["/srv/reports"],
+    "max_file_bytes": 104857600,
+    // empty: every room the token can reach
+    "allowed_rooms": [],
+    "timeout": 30
+  }
+}

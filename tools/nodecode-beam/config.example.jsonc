@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell — documentation,
+// not config: the folder gets pushed and holds no secret. The declaration in
+// cell.lisp is the authority; this is an illustration of it. A present section
+// is enabled; "enabled": false vetoes it.
+{
+  "beam": {
+    "enabled": true,
+    // the environment variable holding the Beam API key (b1m_...)
+    "api_key_env": "BEAM_API_KEY",
+    "api_url": "https://beamcore.b1m.ai",
+    "console_url": "https://console.b1m.ai",
+    // the route a cancel posts to, ~a being the transfer id
+    "cancel_path": "/transfers/~a/cancel",
+    // the beam CLI the Room actions run; empty means beam on PATH
+    "beam_cli": "",
+    "timeout_seconds": 20,
+    "cli_timeout_seconds": 120
+  }
+}

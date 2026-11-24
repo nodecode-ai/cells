@@ -95,8 +95,8 @@ names; forget the thread after."
           (steered '()))
       ;; A room that takes a mention, as #general does for most bots.
       (setf (nck::inbound-policy-require-mention (nck:host-policy host)) t)
-      (with-stubbed-fdefinition (nck::continue-lane (host lane ask)
-                                  (push (list lane ask) steered))
+      (with-stubbed-fdefinition (nck::continue-lane (host lane ask &key heard)
+                                  (push (list lane ask heard) steered))
         (is (eq :observe (nck:handle-candidate host (said-in-thread host "**CLAIM** s2 · bisect the config loader"))))
         (is-present (heard (first steered)) "a peer's post steered the running turn"
           (is (eq lane (first heard)))
@@ -107,13 +107,13 @@ names; forget the thread after."
                                                    :user "u1" :bot nil :message "10" :name "alice"))
         (is (= 2 (length steered)) "a person's line said to someone else steered it too")
         (is (search "to someone else" (nck::ask-prompt (second (first steered)))))
-        (is (null (nck::lane-heard-line lane)) "a board post or a person's line is nothing to reply to")
+        (is (notany #'third steered) "a board post or a person's line is nothing to reply to")
         (nck:handle-candidate host (said-in-thread host "**ADOPT** s2 · score 1/2 · reran it" :message "12"))
         (is (= 2 (length steered)) "an ADOPT waits for the next ask")
         (nck:handle-candidate host (said-in-thread host "my whole answer" :message "13"))
         (is (= 3 (length steered)) "a peer's untagged line steers it: the turn builds on it")
         (is (search "Your answer goes up as a reply to it" (nck::ask-prompt (second (first steered)))))
-        (is (equal '("13" . "turn-1") (nck::lane-heard-line lane)) "the line the next answer replies to")
+        (is (equal "13" (third (first steered))) "the line the answer of the turn it steers in replies to")
         (setf (nck:lane-active-turn-id lane) nil)
         (nck:handle-candidate host (said-in-thread host "done here" :message "11"))
         (is (= 3 (length steered)) "a settled lane is not steered")
@@ -128,8 +128,8 @@ names; forget the thread after."
     (let ((lane (running-thread-lane host))
           (steered '()))
       (setf (nck::inbound-policy-require-mention (nck:host-policy host)) t)
-      (with-stubbed-fdefinition (nck::continue-lane (host lane ask)
-                                  (push (list lane ask) steered))
+      (with-stubbed-fdefinition (nck::continue-lane (host lane ask &key heard)
+                                  (push (list lane ask heard) steered))
         (is (eq :observe (nck:handle-candidate
                           host (said-in-thread host (format nil "<@u1> **Final answer**~%the cache it is")
                                                :message "20"))))
@@ -162,11 +162,16 @@ names; forget the thread after."
   (is (= -12.5d0 (nck::score-value "-12.5")))
   (is (null (nck::score-value "fast")))
   (is (equal "7/9" (nck::scorer-score (format nil "running~%score: 7/9~%ok 3 4"))) "a score line wins")
-  (is (equal "12" (nck::scorer-score (format nil "a 3~%took 12~%~%"))) "else the last number")
+  (is (equal "12" (nck::scorer-score (format nil "a 3~%12~%~%"))) "else the last line, wholly a number")
+  (is (equal "7/9" (nck::scorer-score (format nil "ok~% 7/9 ~c~%" #\Return))) "blanks around it are no part of it")
+  (is (null (nck::scorer-score (format nil "a 3~%took 12~%"))) "a last line that is not wholly a score is none")
+  (is (null (nck::scorer-score (format nil "10/10~%cat: /proc/2714128/environ: No such file or directory~%"))) "a pid on the last line is no score")
+  (is (null (nck::scorer-score (format nil "ok~%0/0~%"))) "N/0 has no value, so it is none")
   (is (equal "14/14" (nck::scorer-score (format nil "wrote /data/scratch/score-141/7.log~%14/14"))) "a path that holds score- is no score line")
   (is (equal "4/5" (nck::scorer-score (format nil "Score=4/5~%done"))) "score= counts, in any case")
-  (is (equal "5" (nck::scorer-score (format nil "highscore: 9 then 5"))) "score must start a word")
-  (is (nck::scorer-cut-p 124) "timeout's own exit is a cut")
+  (is (equal "5" (nck::scorer-score (format nil "highscore: 9~%5"))) "score must start a word")
+  (is (nck::scorer-cut-p :timeout) "the bound's own cut is a cut")
+  (is (nck::scorer-cut-p 124) "a timeout inside the command is a cut")
   (is (nck::scorer-cut-p 143) "a signal's exit is a cut")
   (is (not (nck::scorer-cut-p 1)) "a failing scorer still scores")
   (is (not (nck::scorer-cut-p 0)))
@@ -177,6 +182,48 @@ names; forget the thread after."
       (is (null (nck::note-board-post host again)) "the same message is kept once")
       (is (null (nck::note-board-post host impostor)) "a post in another bot's slot is not kept"))
     (is (= 1 (length (nck::board-posts host "42"))))))
+
+(deftest channel-team-a-scorer-ends-with-its-bound-and-with-its-evaluation ()
+  ;; The scorer leads a process group of its own: the bound takes its whole
+  ;; tree, and a caller that unwinds -- (eval-interrupt), a stopped turn --
+  ;; takes it down. Under `timeout' a scorer's background work held the
+  ;; pipe open past the cut, and an interrupted verify left the scorer
+  ;; running on, holding the box lock it had taken, with nobody to read it.
+  (let ((started (get-internal-real-time)))
+    (multiple-value-bind (output code) (nck::run-scorer "sleep 20 & echo begun; sleep 20" nil 0.5)
+      (is (eq :timeout code) "the bound fell")
+      (is (nck::scorer-cut-p code) "so the run is a cut")
+      (is (search "begun" output) "what it printed before the cut is kept")
+      (is (< (- (get-internal-real-time) started) (* 5 internal-time-units-per-second)) "its background sleep went with the cut")))
+  #-win32
+  (let* ((pids (uiop:tmpize-pathname (merge-pathnames "scorer-pids" (uiop:temporary-directory))))
+         (caller (bt2:make-thread
+                  (lambda ()
+                    (catch 'unwound
+                      (nck::run-scorer (format nil "sleep 30 & echo $! > '~a'; echo $$ >> '~a'; sleep 30"
+                                               (namestring pids) (namestring pids))
+                                       nil 60)))
+                  :name "board-verify caller"))
+         (ids (loop repeat 200
+                    for ids = (ignore-errors (mapcar #'parse-integer (uiop:read-file-lines pids)))
+                    until (= 2 (length ids))
+                    do (sleep 0.05)
+                    finally (return ids))))
+    (flet ((running-p (pid)
+             ;; a zombie waiting on init to reap it has ended
+             (and (nlk:pid-live-p pid)
+                  (not (search ") Z " (or (ignore-errors
+                                           (uiop:read-file-string (format nil "/proc/~d/stat" pid)))
+                                          ""))))))
+      (is (= 2 (length ids)) "the scorer and its background sleep both started")
+      (bt2:interrupt-thread caller (lambda () (throw 'unwound :unwound)))
+      ;; Bounded: under UIOP the throw never landed until the scorer ended by itself.
+      (is (eq :unwound (sb-thread:join-thread (bt2:thread-native-thread caller) :timeout 5 :default :still-running)) "the verify unwound out of the scorer at once")
+      (is (loop repeat 60 thereis (notany #'running-p ids) do (sleep 0.05))
+          (format nil "the scorer's tree ended with the verify: ~a" (remove-if-not #'running-p ids)))
+      (dolist (id ids)
+        (when (running-p id) (ignore-errors (sb-posix:kill id sb-posix:sigkill))))
+      (ignore-errors (delete-file pids)))))
 
 (deftest channel-team-the-best-measured-result-writes-the-one-answer ()
   ;; A bot a peer outscored answers silently; the leader answers; equals go
@@ -411,6 +458,47 @@ its board posted."
                            (nlk:short-digest "echo 4/4" 6))
                    (getf post :line))))
       (is (equal "4/4" (getf (first (nck::board-posts host "42")) :score)) "and the board keeps it"))))
+
+(deftest channel-team-a-post-needs-no-turn-in-its-thread (with-temp-store ())
+  ;; 2026-11-18: a cron job told to post a SCORER on a thread's board ran in
+  ;; its own session after the reaper had let the thread's lane go, and the
+  ;; post failed `no lane answers': the bot held its slot and the thread was
+  ;; open. A post goes to the thread itself -- through a lane of the bot's
+  ;; there, running or idle, else the thread's room -- from any turn, or none.
+  (with-team-thread (host "42" :peers '(("777" . "elektra")))
+    (let ((nck::*hosts* (list host))
+          (executor (nck::host-executor host)))
+      (nlk:create-session :id "chat-100-t42")
+      (is-present (post (nck:board-post "42" :claim "bisect the config loader" :platform "test")) "a post with no lane in the thread"
+        (is (getf post :posted))
+        (is (equal "**CLAIM** s1 · bisect the config loader" (getf post :line))))
+      (is (equal "/rooms/42/messages" (nck:request-plan-path (first (last (recorded-plans executor))))) "posted in the thread")
+      (is (equal "**CLAIM** s1 · the parser" (getf (nck:board-post "42" :claim "s1 · the parser" :platform "test") :line)) "a slot the words name already is named once")
+      ;; A later image knows the slots only from the room's state.
+      (nck::save-thread-slots host "42" "chat-100-t42")
+      (remhash (cons "test" "42") nck::*thread-slots*)
+      (is (getf (nck:board-post "42" :fail "the cache" :platform "test") :posted) "the slot the room keeps")
+      (let ((lane (running-thread-lane host)))
+        (setf (nck:lane-active-turn-id lane) nil)
+        (is (getf (nck:board-post "42" :fail "the loader" :platform "test") :posted) "a lane there with no turn running"))
+      (is (signals-error error (nck:board-post "43" :claim "elsewhere" :platform "test")) "a thread with no board of this bot's"))))
+
+(deftest channel-team-verify-reads-the-score-from-stdout-alone ()
+  ;; A scorer's stderr comes after its last line: an EXIT trap's complaint
+  ;; naming a pid scored that pid once, and higher is better, so the bogus
+  ;; best outranked every real run after it.
+  (with-team-thread (host "42" :peers '(("777" . "elektra")))
+    (let* ((nck::*hosts* (list host))
+           (lane (running-thread-lane host))
+           (trapped "trap 'echo \"score.sh: line 28: /proc/2714128/environ: No such file or directory\" >&2' EXIT; echo 10/10"))
+      (is-present (run (nck:board-verify "42" :command trapped :platform "test")) "the scorer ran"
+        (is (equal "10/10" (getf run :score)) "the score is stdout's last line, not stderr's pid")
+        (is (getf run :solved))
+        (is (search "/proc/2714128/environ" (getf run :output)) "its stderr still shows"))
+      (is (search "score 10/10" (nck::board-card-line (nck:lane-session-id lane))) "the card shows the score")
+      (is (equal "10/10" (getf (nck:board-verify "42" :command trapped :platform "test") :best)) "the best stays a score")
+      (is (signals-error error (nck:board-verify "42" :command "echo 10/10; echo wrote /tmp/run-2714128.log" :platform "test")) "a last line that is not a score scores nothing")
+      (is (equal '("10/10" "10/10") (mapcar (lambda (e) (getf e :score)) (nck::board-scores host "42"))) "and nothing else was kept"))))
 
 (deftest channel-team-promote-moves-the-best-branch-by-compare-and-swap ()
   ;; The best commit moves only for a better verified score.

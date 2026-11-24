@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "healthdata": {
+    "enabled": true,
+    "oura_token_env": "OURA_TOKEN",
+    // or a file holding the token, which the file's own permissions guard:
+    // "oura_token_file": "~/.config/oura-token",
+    "data_dir": "~/.nodecode/health-data",
+    "days": 30,
+    "timeout": 30
+  }
+}

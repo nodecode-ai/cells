@@ -1,0 +1,28 @@
+nodecode-webly is a rewrite of Webly-AI's Webly-AI/webly-plugin:
+
+  https://github.com/Webly-AI/webly-plugin
+  commit e952ff954b23a2ea564e784e9807cc274fa9ba8b
+  Apache License 2.0, Copyright (c) Webly (LICENSE)
+
+That repository's LICENSE is here unchanged; its appendix keeps Apache's
+placeholder for the copyright line, and the holder named above is the author
+its plugin.json gives.
+
+Rewritten: the hermes/ package's publishing helper, skills/webly/scripts/webly.mjs,
+as Common Lisp against Nodecode's own seams -- the anonymous credential (POST
+/public/v1/anonymous/credentials), one site per machine created and then
+updated by site id with expectedHeadVersion, the folder/files limits it applies
+before sending anything, the presigned file sharing (uploads, PUT, finalize),
+the site's status and deadlines, and the claim page. Its rules of conduct are
+the SKILL.md's: publish only what the person asked for, name a site only when
+the folder's name says something, tell them the deadlines, and keep the token
+to Webly's own API.
+
+Left out: the hosted MCP server (this cell calls the same API directly, so
+there is no server to configure and no tools to load), the OAuth sign-in and
+the signed-in editing flows over MCP (frameworks, drafts, publishing,
+domains, forms, analytics), deploy tickets and git mirrors, the Claude Code and
+Codex MCP registration, the package.json build step, and the update check --
+the Hermes copy of the skill has no update check either. The helper wrote a
+.webly/project.json link per folder; this cell keeps one anonymous site per
+machine, which is what an accountless publish is, and needs no link.

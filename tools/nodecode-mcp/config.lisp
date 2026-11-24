@@ -64,6 +64,7 @@
   (oauth '())                         ; :off, or a plist of the oauth settings, http
   (timeout-ms +default-timeout-ms+ :type integer)
   (enabled-p t)
+  (lazy-p t)                          ; started by its first call when a catalog is kept
   (refusal nil))                      ; config-refusal text, or NIL
 
 (nlk:access (spec server-spec))
@@ -223,8 +224,9 @@ settings (:CLIENT-ID :CLIENT-SECRET :SCOPE :CALLBACK-PORT
                    :client-registration (intern (string-upcase registration) :keyword)
                    :auth-server-metadata-url metadata-url))))))
 
-(defun parse-server-entry (name entry)
-  "A SERVER-SPEC for ENTRY, or one carrying the refusal text."
+(defun parse-server-entry (name entry &optional (lazy-default t))
+  "A SERVER-SPEC for ENTRY, or one carrying the refusal text. LAZY-DEFAULT is
+the section's `lazy', what an entry that names none gets."
   (nlk:with-handlers ((nlk:config-refusal (condition)
                         (make-server-spec :name (if (stringp name) name (princ-to-string name))
                                           :enabled-p nil
@@ -275,7 +277,8 @@ settings (:CLIENT-ID :CLIENT-SECRET :SCOPE :CALLBACK-PORT
                            ((minusp value)
                             (nlk:config-error "timeout_ms must be positive, got ~a" value))
                            (t value)))
-       :enabled-p (nlk:config-boolean entry "enabled" t)))))
+       :enabled-p (nlk:config-boolean entry "enabled" t)
+       :lazy-p (nlk:config-boolean entry "lazy" lazy-default)))))
 
 (defun parse-mcp-section (section)
   "(values SPECS ALLOWLIST): the servers of SECTION in name order, each its
@@ -293,7 +296,11 @@ own validation, and the env allowlist."
                   +default-inherit-env+)))
         (values
          (when (hash-table-p servers)
-           (mapcar (lambda (name) (parse-server-entry name (gethash name servers)))
+           (mapcar (let ((lazy (handler-case (nlk:config-boolean section "lazy" t)
+                                 (nlk:config-refusal (condition)
+                                   (warn "mcp: ~a; servers start lazily" condition)
+                                   t))))
+                     (lambda (name) (parse-server-entry name (gethash name servers) lazy)))
                    (sort (loop for name being the hash-keys of servers collect name)
                          #'string<)))
          allowlist))

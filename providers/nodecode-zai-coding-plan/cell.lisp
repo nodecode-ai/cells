@@ -111,7 +111,7 @@ its key as a bearer."
 
 (nle:define-cell zai-coding-plan
   (:section ("zai-coding-plan")
-    (:guide "sign in with /zai-coding-plan login, or make a key at https://z.ai/manage-apikey/apikey-list and save it with /connect or ZAI_API_KEY; base_url is the chat endpoint, anthropic_base_url the Messages one")
+    (:guide "sign in from /zai-coding-plan, or make a key at https://z.ai/manage-apikey/apikey-list and save it with /connect or ZAI_API_KEY; base_url is the chat endpoint, anthropic_base_url the Messages one")
     ("base_url" :string :default +base+
      :doc "Z.AI's chat endpoint, the base the chat lane appends /chat/completions to")
     ("anthropic_base_url" :string :default +anthropic-base+
@@ -125,5 +125,4 @@ its key as a bearer."
   (:hook 'nle::request-body #'body)
   (:hook 'nle::walk-provider-stream #'walk)
   (:command "zai-coding-plan" #'run-command
-            :description "Z.AI GLM Coding Plan: sign in from the browser"
-            :argument-hint "login | code <address or code> | logout | status"))
+            :description "Z.AI GLM Coding Plan: sign in from the browser"))

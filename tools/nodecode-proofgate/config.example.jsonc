@@ -1,0 +1,13 @@
+{
+  // ProofGate: no proof, no "done".
+  // Nothing here is required; an absent section runs the gate in `warn`.
+  "proofgate": {
+    // enforce  a report no successful call backs is the tool call's failure
+    // warn     checks are recorded and reported, the reply is left alone
+    // off      the hook records no evidence at all
+    "mode": "warn",
+
+    // how many tool calls of one session stay in memory for a check
+    "max_evidence": 200
+  }
+}

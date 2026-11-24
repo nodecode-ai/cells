@@ -1,0 +1,33 @@
+nodecode-nvidia-broadcast is a rewrite of NousResearch's NousResearch/hermes-nvidia:
+
+  https://github.com/NousResearch/hermes-nvidia
+  commit de75692b479dc88b95e428a9cb25091d3fb0e327
+  MIT License, Copyright (c) 2026 Nous Research (the licence the plugin declares in its plugin.json; the repository carried no LICENSE file)
+
+Rewritten: the MCP gateway's ten tools - get_broadcast_state, set_effects,
+describe_effects, list_devices, set_active_device, set_camera_resolution,
+submit_file_processing, get_file_processing_jobs, wait_for_processing_update and
+control_file_processing_jobs - with their argument names, argument shapes and
+answer shapes, including the _version 1 every file tool carries, the effect
+params nested under "params", the device ids that must be re-read before every
+switch, the frame rate that is never guessed, and the batchId that groups one
+submit's siblings. Also rewritten: the connection the skill described, as a
+streamable-HTTP MCP client in Common Lisp - one POST per JSON-RPC message, the
+Mcp-Session-Id the initialize answer issues echoed on every later one, the
+answers read from either an application/json body or a server-sent event - and
+the guidance the skill gave the model about reading the gateway's answers
+(requiresUserInput, failed[], skipped[], mixed, the retryable -32603), which is
+this cell's (help :nvidia-broadcast) manual. The Python-free original carried no
+code to port: it was one MCP declaration, one skill and its references, and the
+cell holds the same endpoint and the same tools.
+
+Left out: everything the skill did around the app rather than through the
+gateway. It read the installed build's ProductVersion, launched the app with
+--launch-hidden when it was not running, discovered a port other than 18100 from
+the base64 port record the app writes, carried the WSL networking guidance, and,
+with an explicit yes from the user, downloaded NVIDIA's own installer from
+NVIDIA's update service, verified its length, SHA-512 and Authenticode signer,
+and launched it. Those are the operator's side of the original - it changed the
+machine, not the effects - and a cell leaves them to the person: the app has to
+be installed at 2.3 or newer and running, and the port record reduces to the
+url setting.

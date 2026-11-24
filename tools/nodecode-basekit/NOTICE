@@ -1,0 +1,26 @@
+nodecode-basekit is a rewrite of D0xedDevi0's D0xedDevi0/hermes-basekit:
+
+  https://github.com/D0xedDevi0/hermes-basekit
+  commit 142bd48ea7755bda6a7c2aff707106bdfbf25ee6
+  MIT, Copyright (c) 2026 D0XEDDEV (LICENSE)
+
+The plugin was a Hermes plugin: six agent tools (base_network, base_portfolio,
+base_tx, base_token, base_activity, base_allowances) over a stdlib-only Python
+read engine, plus a pre_llm_call hook, a /basekit slash command, a `hermes
+basekit` CLI command, a desktop pane, and a bundled skill. This rewrite keeps
+the six tools, their names and their arguments, and the /basekit command's
+sub-commands, and reimplements the reads in Common Lisp against the endpoints
+the original named: Base JSON-RPC (keyless public endpoints with the same
+failover list), DefiLlama's keyless price API, Coinbase's spot ETH price, and
+Etherscan V2 only when a Basescan key is set. The engine's verified constants
+are re-used unchanged - the ERC-20 selectors, the Transfer and Approval topic
+hashes, the EIP-1967 storage slots, the EIP-1167 clone prefix, the selector
+probe list, and the curated token set from tokens.json. What was left out: the
+pre_llm_call hook (a cell's round hook does not see the user's message here,
+so the same guidance is the manual topic and the tool descriptions), the JSONL
+ledger, the CLI command and the desktop pane and status chip (Hermes
+surfaces), the automatic halving of a too-wide log window (a rejected window
+is one error line here, and the two log tools state the window they read), the
+TTL caches on RPC reads and prices, and the Multicall3 batching, which one
+JSON-RPC batch replaces with the same round-trip count. Nothing of the original
+is vendored; no Python, Node or binary is bundled.

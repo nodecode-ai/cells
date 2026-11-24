@@ -1,0 +1,26 @@
+nodecode-mem0 is a rewrite of mem0ai's mem0ai/mem0:
+
+  https://github.com/mem0ai/mem0
+  commit 43849c6e9d4d773b83a8144b6373aedc67241a5d
+  Apache-2.0, Copyright (c) 2023 Taranjeet Singh (LICENSE)
+
+The rewritten plugin is integrations/hermes-plugin-mem0 of that commit. Its
+four tools (mem0_search, mem0_add, mem0_update, mem0_delete) keep their
+names, descriptions and parameters; its two backends keep their wire shapes
+(Mem0's cloud: Authorization: Token, /v3/memories/add/ and
+/v3/memories/search/, /v1/memories/<id>/; a self-hosted server: X-API-Key,
+/search and /memories); and its behaviour is carried over: search scoped to
+one user_id, agent_id and metadata.channel on writes, an ownership check
+before an update or a delete, the five-failure circuit breaker with its
+two-minute cooldown, the 450-character sentence-boundary clip on what a turn
+sends, and the block of words the model is given about it.
+
+What was left out, and why: the OSS backend, which builds Mem0 in-process
+from a Python SDK (Qdrant, PGVector, OpenAI, Ollama) that a Lisp cell cannot
+bundle; the automatic recall before a reply, because the Nodecode seam that
+reads standing sections once per turn carries no per-message query, so the
+model calls mem0_search instead (extraction after a turn is kept, on the
+:frame point); and the hermes memory setup / status commands, whose answers
+the cell's config section, /settings and /mem0 give. LICENSE is mem0's
+repository LICENSE, unchanged; the plugin folder's copy adds a third-party
+MIT section for the Nous Research provider its Python was forked from.

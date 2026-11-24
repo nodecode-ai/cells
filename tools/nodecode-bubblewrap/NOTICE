@@ -1,0 +1,34 @@
+nodecode-bubblewrap is a rewrite of NousResearch's NousResearch/hermes-official-plugins:
+
+  https://github.com/NousResearch/hermes-official-plugins
+  commit e7a218f26db88426ab3e7376f0e000b6e356f5e7 (plugin folder bubblewrap)
+  MIT License, Copyright (c) 2026 Nous Research (LICENSE)
+
+cell.lisp is the original's sandbox.py, __init__.py and home.py rewritten as a
+Nodecode cell: the bwrap argv it builds (unshare-all, die-with-parent,
+new-session, a read-only root, one writable directory, a fresh /dev, /proc and
+/tmp, /run/user emptied, the agent sockets removed from the environment), the
+home directory rule that hides the dot entries off an allowlist and the
+credential stores always, the three profiles, the memory and CPU limits in front
+of bwrap and the process limit inside it, and the probe that says whether
+unprivileged user namespaces work. The original's prompt note (where the
+boundary is, and to report it rather than work around it) is the manual topic
+(help :bubblewrap), rewritten for a harness whose file tools run in the same
+image.
+
+Left out, because Nodecode has no terminal-backend seam to plug into:
+
+  - the original ran every terminal and execute_code call of the harness inside
+    the box; this cell offers the box as two tools (sandbox, sandbox_status) and
+    the verb (bubblewrap:sandbox "..."), which a model or an operator calls.
+  - the Hermes home, the scratch directory and its per-session state directory,
+    which are Hermes' own paths.
+  - the CA-bundle bind-back, the per-sandbox scratch directory that survives a
+    sandbox (this cell's /tmp is fresh per command), background jobs, and the
+    file-tool sandboxing, which are the harness' rather than the box's.
+  - extra binds are mounted read-only or read-write at their own path (two
+    lists) instead of the original's {src, dest, readonly} objects, so a bind at
+    a different destination is not carried over.
+
+The tests are Nodecode's: a stubbed host (paths, home listing, process runner),
+so nothing in them starts bwrap or reads a real home directory.

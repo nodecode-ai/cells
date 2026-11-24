@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. Nothing here is required: a scan needs no key and no network.
+{
+  "plugin-guard": {
+    "enabled": true,
+    "min_severity": "high",
+    "exclude": [],
+    "max_findings": 20,
+    "max_files": 500
+  }
+}

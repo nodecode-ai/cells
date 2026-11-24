@@ -1,0 +1,15 @@
+{
+  // Optional: every member has a default, and a present section is enabled.
+  "structured-aux": {
+    "base_url": "https://openrouter.ai", // the decision API root; https only
+    "path": "/api/alpha/decisions",       // the decision route under it
+    "model": "~typesafe/jev-latest",       // moving alias; pin an exact id when it matters
+    "timeout_seconds": 15,                 // one decision's ceiling
+    "max_blocks": 48,                      // how many blocks a digest may ask about
+    "blocks_per_call": 16,                 // KEEP/DROP questions per call
+    "digest_budget_chars": 6000,           // the digest's ceiling
+    "app_referer": "https://nodecode.ai",  // attribution OpenRouter shows
+    "app_title": "nodecode-structured-aux",
+    "redact": true                         // strip credential-shaped text before sending
+  }
+}

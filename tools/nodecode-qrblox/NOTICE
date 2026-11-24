@@ -1,0 +1,26 @@
+nodecode-qrblox is a rewrite of Terahertz-Inc's Terahertz-Inc/qrblox-mcp:
+
+  https://github.com/Terahertz-Inc/qrblox-mcp
+  commit da68c941d725e38e7c6812a67df6648a7ac5169f
+  MIT License, Copyright (c) 2026 Terahertz, Inc. (LICENSE)
+
+The plugin was a portable Agent Plugins v1 package with no code of its own:
+plugin.json, an mcp.json declaring Qrblox's hosted MCP server at
+https://api.qrblox.com/mcp/v1 (streamable HTTP, an Authorization bearer
+sk-qrblox- key), and one skill, skills/qrblox/SKILL.md, that taught a model
+the workflow — ping first, read before writing, confirm a write by reading the
+id back. This rewrite speaks that server's JSON-RPC itself, in Common Lisp
+over nlk:http — initialize, the Mcp-Session-Id, tools/list, one tools/call
+per verb, and an answer that is either a JSON object or a one-event stream —
+and keeps the server's own tool names (qrblox.qr.list, qrblox.qr.create,
+qrblox.audio.create, qrblox.menu.create / .list / .add_item,
+qrblox.analytics.scan_summary) behind purpose-named tools, with qrblox_call
+reaching every other tool the server lists. The skill's rules are the cell's
+manual topic, (help :qrblox), and its one-line summary in every request. What
+was left out: plugin.json and mcp.json as manifests, which the cell contract
+replaces with a section and a declaration; the keyless REST sandbox endpoints
+(POST /api/generate-qr-code, POST /api/bulk-qr-codes), which are not MCP
+tools, so every call here goes through the MCP server the plugin declared; and
+purpose-named tools for qrblox.merchant.get_profile, qrblox.challenge.create
+and the voice-agent directory lookups, which qrblox_call reaches by name.
+Nothing of the original is vendored: there was no code to vendor.

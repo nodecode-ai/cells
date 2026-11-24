@@ -1,0 +1,13 @@
+// The cell's section of ~/.nodecode/config.jsonc. A present section is an
+// enabled one; "enabled": false vetoes the cell and installs nothing.
+"enhance-prompt": {
+  // The stage a fresh draft starts at: "1" clarifies, "2" breaks each
+  // requirement into action, inputs and deliverable, "3" reframes the work
+  // as phases with checkpoints. Running /enhance again on its own brief
+  // deepens it one stage whatever this says.
+  "default_stage": "1",
+
+  // One rewrite's completion ceiling. A brief is longer than the draft it
+  // came from, so this is generous.
+  "max_tokens": 16384
+}

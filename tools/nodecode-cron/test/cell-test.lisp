@@ -9,6 +9,7 @@
 ;;;; record and the board, that SILENT settles quietly, that lateness within
 ;;;; grace fires and beyond it misses, that a fire runs under its job's
 ;;;; timeout as its turn's budget, that a duplicate admission is recorded and not retried, that
+;;;; a job whose fires keep failing pauses itself and tells its origin once, that
 ;;;; a job's own session is refused the scheduling verbs, and that an answer
 ;;;; is sent to the session that scheduled the job as its next request --
 ;;;; one user message, the fire line then the answer -- held on the row
@@ -34,6 +35,7 @@ session ORIGIN when given."
   (:command "cron")
   (:running (is (equal nodecode-cron::+primer+ (nle:help :cron)))
             (is (= 3 (nodecode-cron::setting :timeout-minutes)) "timeout_minutes is read")
+            (is (= 3 (nodecode-cron::setting :pause-after-failures)) "pause_after_failures defaults to 3")
             (is (bt2:thread-alive-p (nlk:worker-thread nodecode-cron::*worker*)) "the ticker runs"))
   (:stopped (is (null nodecode-cron::*worker*) "and the ticker is gone"))
   (:refused ("timeout_minutes" 0))
@@ -175,6 +177,89 @@ session ORIGIN when given."
     (is (equal "cancelled" (getf (nodecode-cron::job-last job) :status)))
     (is (equal "cron fails: cancelled: operator" (cron-board-text "fails")))))
 
+(defun cron-fold-texts (session)
+  "What a turn in SESSION folds from the chain its head can see: each wire
+message as its JSON text."
+  (mapcar (lambda (message) (shasht:write-json message nil))
+          (nle::messages-at-boundary
+           (nle::history-turns-from-events (nle::collect-visible-session-events session)) 0)))
+
+(deftest cron-cell-a-failed-fire-is-taken-back-before-the-next (with-cron-runtime (:store t))
+  ;; A fire that failed left its prompt on the job's chain with no answer, and
+  ;; the next fire's prompt joined it in one user message: a job failing every
+  ;; minute sent every failed prompt again before its own. The submit here is
+  ;; the kernel's admission as NLE:SUBMIT makes it, with no worker: the test
+  ;; ends each turn itself and hands its frame to the observer.
+  (let ((turns '()))
+    (with-stubbed-fdefinitions ((nodecode-cron::submit-prompt (session prompt command-id job-id)
+                                  (let ((admission (nlk:admit-active-turn-input
+                                                    session command-id prompt
+                                                    :invocation (nlk:default-invocation
+                                                                 "turn.start" command-id
+                                                                 :source "cron" :id job-id))))
+                                    (push (nlk::active-input-admission-turn admission) turns)
+                                    (values (nlk:active-input-admission-disposition admission)
+                                            (nlk:active-input-admission-turn-id admission)))))
+      (labels ((id (turn) (nlk:durable-turn-turn-id turn))
+               (frame (type &optional payload)
+                 (cell-publish "nodecode-cron" (cell-frame-op type :session "cron-board"
+                                                                :turn (id (first turns))
+                                                                :payload payload)))
+               (answer (text)
+                 (nlk:record-assistant-message
+                  (first turns) (nlk:make-json-object "role" "assistant" "content" text))
+                 (nlk:complete-turn (first turns) nil)
+                 (frame "turn.assistant_message_completed"
+                        (nlk:json-object "message" (nlk:json-object "role" "assistant" "content" text)))
+                 (frame "turn.completed"))
+               (refuse ()
+                 (nlk:fail-turn (first turns) (make-condition 'simple-error
+                                                              :format-control "the provider refused"))
+                 (frame "turn.failed" (nlk:json-object "detail" "the provider refused")))
+               (visible-p (turn) (gethash (id turn) (nlk:session-visible-turn-set "cron-board"))))
+        (cron-add "every 1h" "Check the board" :name "board")
+        (let ((due (+ +cron-now+ 3600)))
+          (is (= 1 (nodecode-cron::tick due)) "fire 1")
+          (answer "Board clear")
+          (nodecode-cron::tick (+ due 30))
+          (is (= 1 (nodecode-cron::tick (+ due 3600))) "fire 2")
+          (refuse)
+          (nodecode-cron::tick (+ due 3630))
+          (is (equal "failed" (getf (nodecode-cron::job-last (nodecode-cron::find-job "board")) :status)))
+          ;; A fire the cell before this one left failed on top of it: the
+          ;; tip of a session that has been failing a while.
+          (nodecode-cron::submit-prompt "cron-board" "[cron \"board\", backlog fire] Check the board"
+                                        "cron:board:backlog" "board")
+          (refuse)
+          (destructuring-bind (backlog fire-2 fire-1) turns
+            (is (= 1 (nodecode-cron::tick (+ due 7200))) "fire 3")
+            (let ((fire-3 (first turns))
+                  (fold (cron-fold-texts "cron-board")))
+              (is (visible-p fire-1) "the fire that answered stays on the chain")
+              (is (not (visible-p fire-2)) "the failed fire is off it")
+              (is (not (visible-p backlog)) "and so is every failed fire at its tip")
+              (let ((parent (gethash (id fire-3) (nlk:session-composed-parents "cron-board")))
+                    (moved (nlk:events :session-id "cron-board" :kind nlk::+kind-head-moved+
+                                       :order :newest :as :payload)))
+                (is (equal (id fire-1) parent) "fire 3 follows the fire that answered")
+                (is (some (lambda (text) (search "fire 3," text)) fold) "fire 3's request carries its prompt")
+                (is (some (lambda (text) (search "Board clear" text)) fold) "and the answer before it")
+                (is (notany (lambda (text) (or (search "fire 2," text) (search "backlog fire" text))) fold) "and no failed fire's prompt")
+                (is (nlk:events :turn-id (id fire-2) :kind nlk::+kind-input-committed+) "the failed fire stays in the log")
+                (is (equal nlk:+head-move-reason-retract+ (nlk:json-value moved :string "reason")) "taken back as a retract, which offers no redo"))
+              (answer "Board clear again")
+              (nodecode-cron::tick (+ due 7230))
+              ;; A turn the operator typed into the job's session is theirs:
+              ;; it fails, and the next fire leaves it where it is.
+              (push (nlk::active-input-admission-turn
+                     (nlk:admit-active-turn-input "cron-board" "operator-1" "What changed?"))
+                    turns)
+              (refuse)
+              (let ((operator (first turns)))
+                (is (= 1 (nodecode-cron::tick (+ due 10800))) "fire 4")
+                (is (visible-p operator) "the operator's failed turn stays")
+                (is (visible-p fire-3))))))))))
+
 (deftest cron-cell-lateness-within-grace-fires-and-beyond-it-misses ()
   (with-cron-runtime (:submits t :job (job "every 2h" "x" :name "late"))
     ;; Due at 12:00, seen at 12:30: inside the hour of grace.
@@ -255,7 +340,7 @@ session ORIGIN when given."
                (nodecode-cron::summary-text)))
     (dotimes (i 4)
       (cron-add "every 2h" "x" :name (format nil "j~d" i)))
-    (is (search (concatenate 'string (string #\Newline) "+3 more (/cron jobs)")
+    (is (search (concatenate 'string (string #\Newline) "+3 more in /cron")
                 (nodecode-cron::summary-text)))))
 
 (deftest cron-cell-slash-panel-lists-the-jobs-and-a-row-opens-its-record (with-cron-runtime (:store t))
@@ -270,7 +355,8 @@ session ORIGIN when given."
   (cron:pause "health")
   (multiple-value-bind (text panel) (nodecode-cron::run-slash "")
     (is (uiop:string-prefix-p "cron: 2 jobs" text) "the text is the summary")
-    (let ((rows (getf panel :rows)))
+    (let ((rows (butlast (getf panel :rows))))
+      (is (equal "/cron jobs" (getf (getf (car (last (getf panel :rows))) :run) :enter)))
       (is (equal "Cron (2)" (getf panel :title)))
       (is (equal "1 active · 1 paused" (getf panel :context)))
       ;; the ids padded to one width, so the columns after them line up
@@ -297,7 +383,17 @@ session ORIGIN when given."
   (let ((record (format nil "~s" (nth-value 1 (nodecode-cron::run-slash "show health")))))
     (is (search "/cron resume health" record))
     (is (search "\"- (paused)\"" record)))
-  (is (signals-error cron:cron-error (nodecode-cron::run-slash "show nope"))))
+  (is (signals-error cron:cron-error (nodecode-cron::run-slash "show nope")))
+  (multiple-value-bind (text panel) (nodecode-cron::run-slash "pause")
+    (is (search "needs a job" text) "a verb short of its job answers the panel")
+    (is (equal "Cron (2)" (getf panel :title))))
+  (is (search "nope is not one of its choices" (nodecode-cron::run-slash "nope")))
+  ;; Bare /wake answers the wake as it stands over its switch and a wake now.
+  (multiple-value-bind (text panel) (nodecode-cron::wake-slash "")
+    (is (equal text (nodecode-cron::wake :status)) "the text is the status")
+    (is (equal '("/wake on" "/wake off" "/wake now")
+               (mapcar (lambda (row) (getf (getf row :run) :enter)) (getf panel :rows))))
+    (is (equal '("" "●" nil) (mapcar (lambda (row) (getf row :mark)) (getf panel :rows))))))
 
 (deftest cron-cell-a-job-session-cannot-schedule (with-cron-runtime (:submits t))
   (cron-add "30m" "x" :name "loop")
@@ -308,6 +404,106 @@ session ORIGIN when given."
     (is (search "loop" (cron:jobs)) "reading is allowed"))
   (let ((nlk:*scribe-session-id* "s-operator"))
     (is (equal "s-operator" (nodecode-cron::job-origin (cron-add "30m" "fine" :name "other"))))))
+
+(defun cron-fail-fire (session at &optional (detail "the provider refused to answer (finish reason refusal)"))
+  "Tick AT, fail the fire it started in SESSION with DETAIL, and settle it."
+  (nodecode-cron::tick at)
+  (cron-publish "turn.failed" session :payload (nlk:json-object "detail" detail))
+  (nodecode-cron::tick (+ at 5)))
+
+(deftest cron-cell-a-job-whose-fires-keep-failing-pauses-and-tells-its-origin-once ()
+  ;; A prompt the provider refused is refused again when it is sent again
+  ;; unchanged: the third failed fire in a row pauses the job, the board says
+  ;; why, and the session that scheduled it is told once.
+  (with-cron-runtime (:store t :submits t)
+    (nlk:create-session :id "s-origin")
+    (let ((job (cron-add "30m" "Watch the board" :name "fails" :origin "s-origin"))
+          (refusal "the provider refused to answer (finish reason refusal)"))
+      (cron-fail-fire "cron-fails" (+ +cron-now+ 1800))
+      (cron-fail-fire "cron-fails" (+ +cron-now+ 3600))
+      (is (eq :active (nodecode-cron::job-state job)) "two failures in a row: it still fires")
+      (is (= 2 (nodecode-cron::job-failures job)))
+      (is (equal (format nil "cron fails failed: ~a" refusal) (cron-board-text "fails")))
+      (is (null (cron-submits-to "s-origin")) "and the origin is not told yet")
+      (is (search ", 2 failed in a row" (cron:show "fails")))
+      (cron-fail-fire "cron-fails" (+ +cron-now+ 5400))
+      (is (eq :paused (nodecode-cron::job-state job)) "the third pauses it")
+      (is (equal "failed" (getf (nodecode-cron::job-last job) :status)))
+      (is (equal (format nil "cron fails paused after 3 failed fires in a row: ~a; ~
+                              (cron:resume \"fails\") runs it again" refusal)
+                 (cron-board-text "fails")))
+      (is (eq :error (third (cell-notice "cron:fails"))))
+      (let ((requests (cron-submits-to "s-origin")))
+        (is (= 1 (length requests)) "the origin is told once")
+        (is-present (first requests) "the pause reached the origin as its next request"
+          (is (equal "fails" (getf (first requests) :job-id)))
+          (is (equal (format nil "cron:fails:report:~d" (nodecode-cron::unix-from-universal
+                                                        (+ +cron-now+ 5405)))
+                     (getf (first requests) :command-id)))
+          (is (equal (format nil "[cron \"fails\" paused 2026-09-04 11:30 after 3 failed fires in a row, ~
+                                  schedule every 30m; its session is cron-fails]: The last one ~
+                                  failed: ~a. The job fires no more until (cron:resume \"fails\"); ~
+                                  (cron:edit \"fails\" :prompt \"...\") changes what it sends, ~
+                                  (cron:remove \"fails\") drops it, and (cron:runs \"fails\") lists ~
+                                  the failed fires." refusal)
+                     (getf (first requests) :prompt)))))
+      (is (null (nodecode-cron::job-report job)) "sent in the settling tick")
+      ;; Paused, it fires no more and says nothing more.
+      (is (= 0 (nodecode-cron::tick (+ +cron-now+ 7200))))
+      (is (= 0 (nodecode-cron::tick (+ +cron-now+ 36000))))
+      (is (= 3 (length (cron-submits-to "cron-fails"))) "no fire after the pause")
+      (is (= 1 (length (cron-submits-to "s-origin"))) "and no second word to the origin")
+      ;; The run of failures rides the registry row.
+      (setf nodecode-cron::*jobs* '())
+      (nodecode-cron::load-jobs)
+      (let ((back (nodecode-cron::find-job "fails")))
+        (is-present back "the job came back"
+          (is (= 3 (nodecode-cron::job-failures back)))
+          (is (eq :paused (nodecode-cron::job-state back)))))
+      ;; Resumed, it fires again on a fresh count.
+      (with-stubbed-fdefinitions ((get-universal-time () (+ +cron-now+ 36000)))
+        (cron:resume "fails"))
+      (let ((back (nodecode-cron::find-job "fails")))
+        (is (eq :active (nodecode-cron::job-state back)))
+        (is (= 0 (nodecode-cron::job-failures back)) "a resumed job starts a fresh count")
+        (cron-fail-fire "cron-fails" (+ +cron-now+ 37800))
+        (is (eq :active (nodecode-cron::job-state back)) "one failure after the resume does not pause it")
+        (is (= 4 (length (cron-submits-to "cron-fails"))))))))
+
+(deftest cron-cell-a-fire-that-answers-ends-a-run-of-failures ()
+  (with-cron-runtime (:submits t :job (job "30m" "x" :name "flaky"))
+    (cron-fail-fire "cron-flaky" (+ +cron-now+ 1800))
+    (cron-fail-fire "cron-flaky" (+ +cron-now+ 3600))
+    (nodecode-cron::tick (+ +cron-now+ 5400))
+    (cron-finish "cron-flaky" "SILENT")
+    (nodecode-cron::tick (+ +cron-now+ 5405))
+    (is (= 0 (nodecode-cron::job-failures job)) "a silent fire ends the run")
+    (cron-fail-fire "cron-flaky" (+ +cron-now+ 7200))
+    (cron-fail-fire "cron-flaky" (+ +cron-now+ 9000))
+    (is (eq :active (nodecode-cron::job-state job)) "two failures since the good fire: it still fires")
+    (nodecode-cron::tick (+ +cron-now+ 10800))
+    (cron-finish "cron-flaky" "Back to normal.")
+    (nodecode-cron::tick (+ +cron-now+ 10805))
+    (is (= 0 (nodecode-cron::job-failures job)) "so does one that answers")
+    (is (eq :active (nodecode-cron::job-state job)))))
+
+(deftest cron-cell-pause-after-failures-zero-never-pauses ()
+  (with-cron-runtime (:config ("pause_after_failures" 0) :submits t
+                      :job (job "30m" "x" :name "stubborn"))
+    (dotimes (k 5)
+      (cron-fail-fire "cron-stubborn" (+ +cron-now+ (* (1+ k) 1800))))
+    (is (eq :active (nodecode-cron::job-state job)))
+    (is (= 5 (nodecode-cron::job-failures job)))
+    (is (= 5 (length (cron-submits-to "cron-stubborn"))))))
+
+(deftest cron-cell-the-wake-is-never-paused-for-failures ()
+  ;; The wake backs off by itself after a failed wake (WAKE-SETTLED).
+  (with-cron-runtime (:submits t :job (job "30m" "x" :name "woken"))
+    (setf (nodecode-cron::job-wake job) (list :min 900 :max 14400 :gap 900))
+    (setf (nodecode-cron::job-failures job) 5)
+    (is (null (nodecode-cron::pause-on-failures-p job)))
+    (setf (nodecode-cron::job-wake job) nil)
+    (is (nodecode-cron::pause-on-failures-p job) "the same run pauses an ordinary job")))
 
 ;;; --- the report -------------------------------------------------------------------------------
 
@@ -341,7 +537,17 @@ session ORIGIN when given."
         (nodecode-cron::tick (+ due 7205))
         (is (null (nodecode-cron::job-report job)) "a queued request counts as sent")
         (is (search "its session is cron-inbox]: Nothing new."
-                    (getf (first (cron-submits-to "s-origin")) :prompt)))))))
+                    (getf (first (cron-submits-to "s-origin")) :prompt))))
+      ;; A room's kit steers the request into the lane that holds the
+      ;; origin's thread now (the channel kit's WAKE-ADVICE): delivered too.
+      (nodecode-cron::tick (+ due 14400))
+      (cron-finish "cron-inbox" "One new thread.")
+      (with-captured-submits (:disposition :steered)
+        (nodecode-cron::tick (+ due 14405))
+        (is (null (nodecode-cron::job-report job)) "a steered request counts as sent")
+        (is (= 1 (length (cron-submits-to "s-origin"))) "and is not sent again")
+        (nodecode-cron::tick (+ due 14410))
+        (is (= 1 (length (cron-submits-to "s-origin"))) "on the next tick either")))))
 
 (deftest cron-cell-a-report-the-ingress-refuses-waits-on-the-row ()
   (with-cron-runtime (:store t :submits t)

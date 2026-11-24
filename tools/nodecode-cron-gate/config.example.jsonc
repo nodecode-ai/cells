@@ -1,0 +1,12 @@
+{
+  // A gate asks TypeSafe Jev one yes/no question before a scheduled run.
+  // Blank means TYPESAFE_API_KEY (or JEV_API_KEY) and https://api.typesafe.ai.
+  "cron-gate": {
+    // "api_key": "",                       // the key itself, or leave blank and use the variable
+    "api_key_env": "TYPESAFE_API_KEY",
+    // "base_url": "",                      // a TypeSafe of your own, ending before /v1/systemone
+    // "model": "",                         // jev-latest when blank
+    "timeout_seconds": 15,
+    "max_state_chars": 6000
+  }
+}

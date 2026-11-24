@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: nothing here is required and the folder gets
+// pushed, so it holds no secret. The declaration in cell.lisp is the
+// authority; this is an illustration of it. A present section is enabled;
+// "enabled": false vetoes it.
+{
+  "factledger": {
+    "enabled": true,
+    // the ledger file: a TSV file, one row a fact, a closed row kept
+    // "path": "~/notes/facts.tsv",
+    // a TSV file mapping other predicate spellings onto one canonical one
+    // "aliases": "~/notes/aliases.tsv",
+    "stale_days": 30,
+    "budget": 800,
+    "order": "confidence"
+  }
+}

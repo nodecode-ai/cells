@@ -1,0 +1,29 @@
+// The section ~/.nodecode/config.jsonc may carry for the deepcanary cell --
+// documentation, not config. The declaration in cell.lisp is the authority;
+// this is an illustration of it. "level" is the one member with no default:
+// without it the cell refuses to start, because it would not know what is
+// worth telling you. A present section is enabled; "enabled": false vetoes it.
+{
+  "deepcanary": {
+    // The lowest attention that reaches you as a notice: C1 every update,
+    // C2 failures and abnormal states, C3 only what blocks the work.
+    "level": "C2",
+    // Hold C1 and C2 notices inside this window, local time. A C3 goes
+    // through it; equal times mean the whole day.
+    "quiet_hours": false,
+    "quiet_start": "22:00",
+    "quiet_end": "08:00",
+    // How many C1 and C2 notices an hour may go out. A C3 is not counted.
+    "max_interrupts_per_hour": 3,
+    // The same dedupe key inside this window bundles into the item already
+    // there instead of adding a second one.
+    "dedupe_window_minutes": 10,
+    // How many items the inbox keeps; the oldest go first.
+    "max_items": 500,
+    // How long a snooze lasts when no minutes are named.
+    "snooze_minutes": 30,
+    // Replace a summary that names a token, a password, a prompt or a
+    // transcript with the reason's own words.
+    "privacy_safe_summary": true
+  }
+}

@@ -1,0 +1,26 @@
+nodecode-anki is a rewrite of suhas-svg's suhas-svg/hermes_anki:
+
+  https://github.com/suhas-svg/hermes_anki
+  commit bc89df834fb104b8d69c6444f35a5ae6b3764dd7
+
+MIT, Copyright (c) 2026 suhas-svg (LICENSE)
+
+What was rewritten: the whole plugin. The original is a Python Hermes Agent
+plugin: an AnkiConnect client on the standard library, five model tools
+(anki_decks, anki_add_cards, anki_search, anki_due, anki_answer), a /anki
+slash command, a `hermes anki` CLI command and a study skill. This cell is
+Common Lisp: the same five tools and the same /anki command, the same
+AnkiConnect actions with the same arguments and the same search queries,
+the same JSON answers a model reads, and the same HTML-to-plain-text
+rendering of a card's question and answer. The config keys carry over
+(anki_url, default_deck, default_model, request_timeout, max_cards, plus the
+optional API key, read here from api_key or the variable api_key_env names
+instead of only from the environment). Requests go through the image's own
+HTTP call; nothing is fetched at run time and there is no Python.
+
+What was left out: the `hermes anki` CLI subcommand, which a harness shape
+does not carry (the same status, decks and search are the tools, the /anki
+command and the help topic), and the bundled study skill, whose card-writing
+and quiz rules now live in the cell's own primer and help text. The tests
+against a fake AnkiConnect server are replaced by this cell's own test
+system, which stubs HTTP and asserts the same protocol.

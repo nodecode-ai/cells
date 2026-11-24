@@ -1,0 +1,34 @@
+nodecode-arena is a rewrite of J182Razor's J182Razor/hermes-arena-skill:
+
+  https://github.com/J182Razor/hermes-arena-skill
+  commit 0fdb521220f0d4507044e97a56eadee1cea9b65e
+  MIT License, Copyright (c) 2026 Jake Schincariol (LICENSE)
+
+What was rewritten: the plugin was a skill, skills/arena/SKILL.md, plus a
+1,235-line Python state machine, bracket.py, that the model drove with
+python3 bracket.py <command>. The rewrite keeps the tournament whole — the
+same strategy cards, the same rubric, the same five phases, the same
+verdict arithmetic (weighted total, the fatal rule, the tie-break), the same
+sub-agent briefs rendered from the very same templates in SKILL.md, and the
+same output files under the run folder — and moves the state machine into
+the cell, written in Common Lisp: one `arena` tool with the twelve verbs,
+`/arena`, and (help :arena). The briefs are still filled from
+skill/SKILL.md, so the prose a competitor, attacker, defender and judge read
+is the original's, byte for byte. Nothing runs at install; there is no
+Python, no dependency and no network.
+
+What was left out, and why: the exact edge-colouring that deals the cards
+(the original guaranteed that no two agents share a reasoning mode with a
+workflow, or a workflow with a strategy, up to 144 agents) is a seeded
+shuffle over every (reasoning, workflow, strategy) triple instead: no card
+is ever dealt twice and the seed reproduces the deal exactly, but the
+guarantee about pairs is not claimed. The Python command line, its --json
+outputs and its argparse flags became the tool's members and its text; the
+wave size, which Hermes fixed at ten because its tool could run ten calls at
+once, is a setting here. Everything the original wrote to .arena/ it still
+writes, and the same paths are named in the briefs.
+
+What the rewrite adds: the state machine is in the image, so the run reads
+and writes its own JSON without a Python interpreter on the machine; /arena
+and (help :arena) carry the loop the skill file described; and the arena's
+size and wave are settings rather than constants.

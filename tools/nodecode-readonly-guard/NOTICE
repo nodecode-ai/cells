@@ -1,0 +1,26 @@
+nodecode-readonly-guard is a rewrite of mciocchi's mciocchi/hermes-readonly-guard:
+
+  https://github.com/mciocchi/hermes-readonly-guard
+  commit 1f2d12e215fe95c7b2ecf743ef06e12f07a0ff68
+  MIT License, Copyright (c) 2026 Matt Ciocchi (LICENSE)
+
+The plugin is unchanged in what it gives a user: a per-session posture in three
+modes, read-only by default, a plan mode that is read-only plus the plan
+markdown, and a writable mode that is a lease returning to read-only after the
+operator's silence; switched by an operator command, enforced before a call runs,
+never by a tool the agent could use on itself. Rewritten in Common Lisp against
+Nodecode's cell contract, so all of it is new code: one :TOOL hook that reads an
+EVAL call's form and refuses a head that is not a reader (the Hermes plugin's
+pre_tool_call allowlist, over the tools this organism actually has), the probe
+table reimplemented on the form's (sh "...") string, one /readonly command, and
+the mode note as a harness section instead of an injected plan prompt. No network
+call, no subprocess, no dependency: the same posture as the original.
+
+Left out, and why: the state file under the Hermes home is this image's table
+instead (a restart forgets the mode, and new sessions start at the section's
+default); the dashboard HTTP route, the desktop status-bar chip and its three
+keybinds are Hermes UI surfaces with no counterpart in a cell, so the command is
+the switch; Hermes's plan prompt and `plan` skill injection become one standing
+note, because Nodecode composes its own harness sections; and the delegated-
+subagent inheritance rule is the core's business, since a subagent here runs in
+the session that spawned it. .nodecode/plans replaces .hermes/plans.

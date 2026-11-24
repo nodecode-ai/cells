@@ -1,0 +1,24 @@
+// The section ~/.nodecode/config.jsonc may carry for this peripheral —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "aside": {
+    "enabled": true,
+    // required: the executable the Aside app installed, e.g. "~/.local/bin/aside"
+    "bin": "~/.local/bin/aside",
+    // pins; empty means Aside's own
+    "host": "",
+    "account": "",
+    "model": "",
+    "effort": "",
+    "speed": "",
+    // what the CLI may do without asking; a setting of yours, never a tool argument
+    "permission": "ask",
+    // "prefer" lets the model choose; "always" refuses the built-in browser while Aside answers
+    "browser_policy": "prefer",
+    // empty uses ["browser_*", "web_fetch"]; an entry ending in * is a prefix
+    "blocked_tools": [],
+    "timeout_seconds": 300
+  }
+}

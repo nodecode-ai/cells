@@ -1,0 +1,29 @@
+nodecode-makeirl is a rewrite of MelMayssonOwen's MelMayssonOwen/hermes-plugins:
+https://github.com/MelMayssonOwen/hermes-plugins
+commit f203c3f897784d731ef48bc0974104a4d08cf5f8
+MIT, Copyright (c) 2026 Opsibyte (LICENSE)
+
+What was rewritten: the package's hosted MCP server, spoken to directly from
+Common Lisp -- one JSON-RPC POST per exchange to
+https://makeirl.com/api/mcp, the initialize handshake, a
+notifications/initialized, an Mcp-Session-Id kept until the server forgets
+it, tools/list and tools/call, a JSON body or a server-sent frame read the
+same way, and the bearer token in the Authorization header. The package's
+tool list, which comes from the server at run time, became two tools of one
+Nodecode cell, makeirl_tools and makeirl_call, instead of a fixed set; the
+release-gate skill under skills/ became (help :makeirl), in the same order it
+was written (upload, start, poll, findings, fixes, artifacts and payment, a
+drafted board is not a released one), with its warning that a report checks
+rules and does not prove a circuit. A /makeirl command was added for the
+operator. The token comes from the cell's own section: written inline, or
+named by an environment variable, or held by a 0600 file, where the package
+left it to the harness to store the OAuth sign-in.
+
+What was left out: the Agent Plugins v1 manifest (plugin.json, mcp.json)
+with its install command and OAuth sign-in -- a Nodecode section is a cell's
+config, so a token pasted into it, or named by an environment variable or a
+file, replaces the tokens the harness stored; and the package's "untrusted"
+trust setting, which made the harness ask before a write-capable call.
+Nodecode asks nothing of a tool a model calls, so one makeirl_call can start
+a run or create a checkout link, and (help :makeirl) says which call does
+what.

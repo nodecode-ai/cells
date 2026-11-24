@@ -80,9 +80,16 @@ settings and the registry restored on unwind."
       (is (search "background on for this session" (slash-chrome "background on" sid)))
       (is (eq t (chrome::session-background sid)))
       ;; There is no authorization step to take.
-      (is (search "Unknown /chrome subcommand authorize" (slash-chrome "authorize 2h" sid)))
-      (is (search "Unknown /chrome subcommand bogus" (slash-chrome "bogus" sid)))
-      (is (search "/chrome status" (slash-chrome "" sid)) "bare /chrome prints usage")
+      (is (search "authorize is not one of its choices" (slash-chrome "authorize 2h" sid)))
+      (is (search "bogus is not one of its choices" (slash-chrome "bogus" sid)))
+      (multiple-value-bind (text dialog) (slash-chrome "" sid)
+        (is (search "never polled" text) "bare /chrome says where the bridge stands")
+        (is-present (rows (and dialog (nle::json-array dialog "rows"))) "and answers its panel"
+          (is (equal '("/chrome status" "/chrome doctor" "/chrome onboard"
+                       "/chrome background on" "/chrome background off")
+                     (map 'list (lambda (row) (nle::json-value row :text "run" "enter")) rows)) "a row runs each line")
+          (is (equal '("" "" "" "●" "") (map 'list (lambda (row) (nle::json-value row :string "mark")) rows)))))
+      (is (= 3 (length (nle::json-array (nth-value 1 (slash-chrome "" nil)) "rows"))) "no session, no background rows")
       (is (search "No session bound" (slash-chrome "background on" nil)))
       (let ((text (slash-chrome "onboard" sid)))
         (is (search "chrome://extensions" text))

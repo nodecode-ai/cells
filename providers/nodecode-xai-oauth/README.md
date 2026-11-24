@@ -1,7 +1,7 @@
 # nodecode-xai-oauth
 
 A Nodecode cell for xAI Grok on a SuperGrok or X Premium+ subscription.
-With it, `/xai-oauth login` signs in to xAI with a device code, `/models`
+With it, `/xai-oauth` signs in to xAI with a device code, `/models`
 lists the Grok models the subscription serves (Grok Build, Grok 4.3 to 4.7,
 the Grok 4.20 SKUs, Grok Composer 2.5 Fast), and a turn on
 `xai-oauth/<model>` goes to `https://api.x.ai/v1/responses` the way
@@ -25,9 +25,9 @@ See [NOTICE](NOTICE).
 ## Sign-in
 
 ```
-/xai-oauth login     answers at once with the address to open and the code to enter
-/xai-oauth status    signed in, as whom, and when the token expires
-/xai-oauth logout    forgets the sign-in
+/xai-oauth → Sign in   answers at once with the address to open and the code to enter
+/xai-oauth             signed in, as whom, and when the token expires
+/xai-oauth → Sign out  forgets the sign-in
 ```
 
 The device code is asked of `https://auth.x.ai` with the Grok CLI's client

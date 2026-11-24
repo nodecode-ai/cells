@@ -1,0 +1,26 @@
+nodecode-lightning-ai is a rewrite of dinosauria123's dinosauria123/hermes-lightningai-provider:
+
+  https://github.com/dinosauria123/hermes-lightningai-provider
+  commit e4350ca278f8994322fc3b79a55a52e83388b7da
+  MIT (LICENSE); that file is the single line "MIT License" and names no
+  copyright holder
+
+Rewritten: the provider profile — the `lightningai` id, its display name, the
+OpenAI-compatible base, the bearer key, the two key variables
+`LIGHTNING_API_KEY` and `LIGHTNING_AI_API_KEY`, the `LIGHTNING_BASE_URL`
+override, and the live model list from `GET <base>/models` — as a row in
+Nodecode's models.dev catalog table, two hooks, one command and one manual
+topic. The base defaults to `https://platform.lightning.ai/api/v1`, because
+`https://lightning.ai/api/v1` now answers `{"error": "moved"}` and names that
+address; the original's own address is one `base_url` away. Hermes fetched the
+model list with its own client; here the cell reads it on start (only with a
+key) and on `/lightning-ai`, which puts the rows in the picker.
+
+Left out: the Hermes-side plumbing, which has no Nodecode counterpart and no
+bearing on what a user gets — the `providers.register_provider` call, the
+`ProviderProfile` fields with no reader here (`aliases`, `auth_type`,
+`api_mode`, `signup_url`, `requires_hermes`, `requires_env`). The alias
+spellings `lightning` and `lightning-ai` have no counterpart either: Nodecode
+names a provider by one id, and `/connect` lists it as Lightning AI. There is
+no background refresh, as the original had none: Nodecode re-reads the list
+when `/lightning-ai` is typed.

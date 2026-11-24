@@ -1,0 +1,9 @@
+nodecode-bumblebee is a rewrite of kahnanX's kahnanX/bumblebee-guard:
+
+https://github.com/kahnanX/bumblebee-guard
+commit 8cdf7e03493eedbd8fd7abb5a2aed53b230e53c6
+MIT, Copyright (c) 2026 Neo (kahnanX) (LICENSE)
+
+What was rewritten: the user-facing half -- the three tools (scan, status, diff) over a curated catalog of known-compromised releases, the baseline diff, the one-line alert, the slash command and the manual -- in Common Lisp, as one Nodecode cell. The Python wrapper, its `plugin.yaml`, the hook and the bundled skill file are gone.
+
+What was left out and why: the original ran a separately installed scanner bridge's `daily_scan.sh`, which walked the machine's home and read the environment through a shell script this repository does not carry. This rewrite reads package metadata itself, in Lisp, under a folder a call names: npm's `package.json` files and Python's `.dist-info` folders, with no external program and no shell. That means npm and PyPI only -- no Go, RubyGems or Composer, no MCP server configs, no editor or browser extensions. The bridge's full catalog files are replaced by a sample of 23 entries written into `scan.lisp`, and the original's rate-limited context injection is a standing notice a scan sets and a clean scan clears. The OSV.dev advisory layer is kept as one batch call per scan.

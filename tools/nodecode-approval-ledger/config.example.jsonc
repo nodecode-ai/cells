@@ -1,0 +1,21 @@
+// nodecode-approval-ledger: one row for every approval question the organism
+// asked, and /approval-log over them. Nothing here is required: with the file
+// absent the ledger is approval-ledger.jsonl in this home, trimmed to its
+// newest 5,000 rows past 2 MB.
+{
+  "cells": ["nodecode-approval-ledger"],
+  "approval-ledger": {
+    // another ledger file; empty is the home's approval-ledger.jsonl
+    "file": "",
+    // how many of the newest rows a trim keeps
+    "keep_rows": 5000,
+    // the size past which the ledger is trimmed to keep_rows
+    "max_bytes": 2000000,
+    // the window /approval-log reads with no argument
+    "default_hours": 24,
+    // record every question the organism asks its operator
+    "record": true,
+    // what the report calls the surface these questions came from
+    "surface": "operator"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  // The folder of markdown notes this cell reads: an Obsidian vault works as
+  // it is. Required: the cell refuses to start without it.
+  "vault": "/home/you/notes/my-project",
+
+  // The checkout the vault covers. The primer stays silent in a session
+  // outside it, and /lightkeeper checks the notes' claimed paths against it.
+  "repo": "/home/you/code/my-project",
+
+  // How many notes one find answers with.
+  "max_notes": 5
+}

@@ -1,0 +1,23 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "boxcompute": {
+    "enabled": true,
+
+    // The key from the BoxCompute app, under Menu -> API keys. A pasted key
+    // is kept in a 0600 file under ~/.nodecode/secrets/ and this section is
+    // pointed at that file instead.
+    "api_key": "bxc-...",
+
+    // Or the name of the environment variable holding it. BOXCOMPUTE_API_KEY
+    // is read either way, so an exported key needs no section at all.
+    "api_key_env": "BOXCOMPUTE_API_KEY",
+
+    // Only for a gateway of your own.
+    // "url": "https://mcp.boxcompute.ai/mcp",
+
+    // One request's ceiling, in seconds.
+    "timeout_seconds": 60
+  }
+}

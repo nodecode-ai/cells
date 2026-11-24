@@ -1,0 +1,20 @@
+nodecode-time-machine is a rewrite of ddaikodaiko's ddaikodaiko/hermes-time-machine:
+https://github.com/ddaikodaiko/hermes-time-machine
+commit 1ac9c78e539dd518d6c8d8ffd64395b72bab30d4
+MIT, Copyright (c) 2026 ddaikodaiko (LICENSE)
+
+Rewritten in Common Lisp as one Nodecode cell: the five tools (checkpoint,
+rewind, fork, list, effects), the point-of-no-return ledger with a compensation
+command per effect, the automatic restore point before a call that changes
+files, and the /time-machine command's five verbs. The store's shape is kept —
+content-addressed objects, a manifest per checkpoint, a trash of what a rewind
+replaced, and manual checkpoints that pruning never drops — but the code shares
+no line with the original: it reads and writes the home through the cell API and
+has no network, no dependencies and no build step.
+
+Left out: the harness approval prompt the original raises through Hermes's own
+gate, so the cell notes the effect in the result and in the ledger instead of
+blocking the call; the pre_llm_call and post_compaction reminders, carried
+instead by the result of the call that made the effect and by /time-machine
+status; the automatic-checkpoint time budget; and the git-metadata protection
+that .git inclusion gave (excluded by default here).

@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "recall": {
+    "roots": ["~/Documents"],
+    "excludes": ["*.zip", "*-backup"],
+    "ambient": true,
+    "max_hints": 3,
+    "max_file_mb": 8,
+    "chunk_chars": 1200,
+    "max_files": 20000,
+    "budget_s": 90,
+    "refresh_on_start": true,
+    "refresh_budget_s": 25,
+    "refresh_max_files": 5000
+  }
+}

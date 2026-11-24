@@ -1,0 +1,26 @@
+nodecode-disciplined-vibe-coding is a rewrite of bmtrnavsky's bmtrnavsky/disciplined-vibe-coding:
+
+  https://github.com/bmtrnavsky/disciplined-vibe-coding
+  commit ac4de52dc8baf9ece90e3a2bab749152ae93a91b
+  MIT License, Copyright (c) 2026 Brad Trnavsky (LICENSE)
+
+The original is a plugin whose one code path registers eleven SKILL.md files.
+Rewritten here: each of those eleven files is one prose define-skill, its
+frontmatter description the sentence the index lists, its remaining
+frontmatter and its whole body kept as comment lines, so (help 'name) reads
+the procedure as the author wrote it and nothing is evaluated. The markdown the
+skills name -- the economy ladder and the to-spec, writing-plan and wayfinder
+templates -- is carried unchanged in guides/ and is read from there.
+
+Left out: the plugin's opt-in shell hook, which reminded the model once a turn
+that no docs had been logged in 40 minutes, and its update script, which
+replaced the plugin's own files from a source tree. A knowledge cell runs
+nothing, and Nodecode installs a cell at a pinned commit, so neither has a job
+here. Also left out, because the skills never name them: the plugin's own
+README, CATALOG, HOOKS and UPDATE pages, its user templates, and its
+self-check script.
+
+LICENSE is the original's, unchanged, and its closing paragraph names that
+repository's ATTRIBUTIONS.md and SOURCE-LICENSES.md, which this cell does not
+carry: the lineage of each skill rides its own "Lineage:" line in the skill's
+text.

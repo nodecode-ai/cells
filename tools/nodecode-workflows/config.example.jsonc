@@ -1,0 +1,16 @@
+// The `workflows` section of ~/.nodecode/config.jsonc. Every member is
+// optional: the defaults below are what the cell runs on when the section is
+// absent. A member of the wrong shape, or under its minimum, refuses at
+// start, and /cells says so.
+{
+  "workflows": {
+    // how many nodes of one run may be in flight at once
+    "max_parallel": 3,
+    // how often the worker advances the live runs, in seconds
+    "tick_seconds": 2,
+    // how long one node's turn may run before it counts as failed
+    "node_timeout_seconds": 900,
+    // how much of an ancestor's output a node is shown (and show answers)
+    "output_chars": 4000
+  }
+}

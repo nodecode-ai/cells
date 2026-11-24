@@ -1,0 +1,30 @@
+nodecode-hindsight is a rewrite of vectorize-io's vectorize-io/hindsight:
+
+  https://github.com/vectorize-io/hindsight
+  commit f14cc1eb5624b0374cb4d82768eb2e0b9c21ae24
+  MIT License, Copyright (c) 2025 Vectorize AI, Inc. (LICENSE)
+
+The original is hindsight-integrations/hermes, a Hermes Agent memory-provider
+plugin. What was rewritten: the plugin's three model-facing tools
+(hindsight_retain, hindsight_recall, hindsight_reflect) and the automatic
+halves around them (auto-recall of a turn's input, auto-retain of the
+operator's words), in Common Lisp against the same Hindsight HTTP API --
+POST /v1/default/banks/{bank}/memories/recall, /memories and /reflect -- so
+the cell talks to the same service and the same bank. The plugin's
+configuration surface (endpoint, API key, bank, budget, recall token cap,
+timeouts, tags) is the cell's :section, and the reader is /hindsight plus
+(help :hindsight).
+
+What was left out, and why: the Python SDK (hindsight-client and
+hindsight-embed) and the local-embedded daemon manager -- the cell speaks
+HTTP itself and reaches a server either in Hindsight Cloud or one the operator
+runs, without downloading a Python package; Hermes' config.json /
+profile .env layering, its setup wizard, its indicator lines and its
+per-process retain queue with backlog resend; the multi-bank and
+workspace-scoped bank features (mirror_to_own_bank, additional_banks,
+recall_additional_banks, trusted_project_dirs with a repository's
+.hindsight/config.toml); and the fine retain/recall tuning knobs (retain
+strategies and prefixes, observation scopes, minimum scores, per-kind fact
+filters). Automatic retain here stores the operator's own turn once, since
+Nodecode's hook vocabulary has no turn-end point; the assistant's half of an
+exchange is what hindsight_retain is for.

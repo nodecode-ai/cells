@@ -1,0 +1,21 @@
+// The cell's section of ~/.nodecode/config.jsonc. A present section is an
+// enabled one; "enabled": false vetoes the cell and installs nothing.
+"telegram-business": {
+  // The BotFather token's environment variable. The token itself is never
+  // written here.
+  "bot_token_env": "TELEGRAM_BUSINESS_BOT_TOKEN",
+
+  // Optional: the instruction drafts follow. Empty, the shipped secretary
+  // persona is used (short, warm, the customer's own language, never an
+  // assistant introducing itself).
+  // "persona": "You are drafting a short, friendly reply on behalf of the account owner.",
+
+  // Optional: how much of a customer message is kept and quoted.
+  // "max_customer_text_chars": 4000,
+
+  // Optional: how long a draft may wait for the owner before it expires.
+  // "draft_ttl_hours": 24,
+
+  // Optional: how long one Bot API request may take, in seconds.
+  // "timeout": 15
+}

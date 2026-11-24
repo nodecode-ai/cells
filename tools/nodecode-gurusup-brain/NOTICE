@@ -1,0 +1,22 @@
+nodecode-gurusup-brain is a rewrite of gurusup's gurusup/gurusup-brain-plugin:
+
+  https://github.com/gurusup/gurusup-brain-plugin
+  commit 4709ca345cb55a1fab809b6b53523c5c0600be6e
+
+MIT, Copyright (c) 2026 GuruSup (LICENSE)
+
+The original is a package of manifests and one skill: `plugin.json`, `mcp.json`
+and `.mcp.json` and `server.json` and the `.claude-plugin/` entries declare one
+remote MCP server (`https://mcp.brain.gurusup.com/mcp`), and
+`skills/using-brain/SKILL.md` tells the model to call that server's `init` tool
+first, to base answers about the company on the evidence it returns, and to say
+so when there is too little. What was rewritten is the transport and the skill:
+`wire.lisp` speaks MCP's streamable HTTP to the same endpoint over a bearer
+token from the config section, `tools.lisp` gives the model one tool to list
+what the account may call, one to fetch the init contract and one to call any
+of them by name, and `cell.lisp` carries the skill's rules as the
+`(help :gurusup-brain)` topic plus a `/gurusup-brain` command. Left out: the
+OAuth browser sign-in (a cell takes the token the sign-in issues), the manifest
+and marketplace files that only describe the package to other clients, and any
+assumption about the server's own tool names, which are read from its
+`tools/list`. No code from the original runs here; it ships none.

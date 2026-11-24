@@ -293,3 +293,88 @@ length when known: decoded, or SECONDS as the platform declared it."
         (transcribe-locally octets container
                             (config-integer section "max_seconds"
                                             +transcription-max-seconds+)))))
+
+;;; --- the page's voice input -------------------------------------------------------
+;;;
+;;; The web page, and the desktop app that shows it, records the operator's
+;;; voice and sends the recording here, to be read by the engine a channel's
+;;; voice message goes through: one transcription section serves both, and a
+;;; recording from the page never goes anywhere a channel's would not.
+
+(defun transcriber-readiness (&aux (section *transcription*))
+  "(values READY ENGINE WHY): whether a recording sent now would be read, by
+which engine — \"hosted\" for transcription.base_url, \"local\" for the local
+one — and, when it would not, why, in words the page can show."
+  (cond ((not (config-boolean section "enabled" t))
+         (values nil nil "transcription is off here (transcription.enabled is false)"))
+        ((config-string section "base_url") (values t "hosted" nil))
+        ((ignore-errors (local-transcriber)) (values t "local" nil))
+        (t (values nil "local"
+                   "no transcriber here yet: name a hosted one under transcription in config.jsonc (base_url, model and its key), or ask the agent to install the local one (about 510 MB, needs ffmpeg)"))))
+
+(defun json-answer (status object &aux (body (nlk:encode-json-octets object)))
+  "OBJECT as a response with STATUS."
+  (list status (list :content-type "application/json" :content-length (length body)) body))
+
+(defun recording-refused (status code message)
+  "A refusal the page reads as its error: {error: {code, message}}."
+  (json-answer status (nlk:json-object "error" (nlk:json-object "code" code "message" message))))
+
+(defun request-octets (env limit &aux (body (getf env :raw-body))
+                                      (declared (getf env :content-length)))
+  "ENV's body as octets, or NIL when it declares or runs past LIMIT bytes. The
+body is read to its end either way, so the connection is left clean."
+  ;; An answer sent before its request's body is read leaves that body on a
+  ;; connection the browser keeps open, read as the start of the next request.
+  (let ((buffer (make-array 65536 :element-type '(unsigned-byte 8)))
+        (kept (make-array 0 :element-type '(unsigned-byte 8) :adjustable t :fill-pointer 0))
+        (over (and declared (> declared limit))))
+    (when body
+      (loop with left = (or declared most-positive-fixnum)
+            while (plusp left)
+            do (let ((got (read-sequence buffer body :end (min left (length buffer)))))
+                 (when (zerop got) (return))
+                 (decf left got)
+                 (unless over
+                   (if (> (+ (fill-pointer kept) got) limit)
+                       (setf over t)
+                       (loop for index below got
+                             do (vector-push-extend (aref buffer index) kept (length buffer))))))))
+    (and (not over) (coerce kept '(simple-array (unsigned-byte 8) (*))))))
+
+(defun transcribe-route (env &aux (query (quri:url-decode-params (or (getf env :query-string) ""))))
+  "/api/transcribe, the page's voice input: GET answers {ready, engine, why,
+max_seconds}, whether a recording sent now would be read; POST, a recording
+as the body and ?seconds=N its length when the page knows it, answers
+{text, seconds}: the words it says, \"\" for none."
+  (let ((max-seconds (config-integer *transcription* "max_seconds" +transcription-max-seconds+)))
+    (case (getf env :request-method)
+      ((:get :head)
+       (multiple-value-bind (ready engine why) (transcriber-readiness)
+         (nlk:json-object "ready" (and ready t) "engine" (or engine :null) "why" (or why :null)
+                          "max_seconds" max-seconds)))
+      (:post
+       (let* ((declared (cdr (assoc "seconds" query :test #'string=)))
+              (seconds (and declared (ignore-errors (parse-integer declared))))
+              (octets (request-octets env +audio-max-bytes+)))
+         (multiple-value-bind (ready engine why) (transcriber-readiness)
+           (declare (ignore engine))
+           (cond ((not octets)
+                  (recording-refused 413 "too_large"
+                                     (format nil "over the ~:d-byte ceiling one recording may take" +audio-max-bytes+)))
+                 ((zerop (length octets))
+                  (recording-refused 400 "empty" "the recording is empty"))
+                 ((not ready) (recording-refused 503 "no_transcriber" why))
+                 ((not (audio-container octets))
+                  (recording-refused 415 "not_audio" "not a recording this can read (ogg, webm, wav, flac, mp3, aac or mp4)"))
+                 ((transcription-refusal seconds)
+                  (recording-refused 413 "too_long" (transcription-refusal seconds)))
+                 (t
+                  (handler-case
+                      (multiple-value-bind (text heard) (transcribe-audio octets (audio-container octets)
+                                                                          :seconds seconds)
+                        (nlk:json-object "text" (string-trim '(#\Space #\Tab #\Newline #\Return) (or text ""))
+                                         "seconds" (or heard seconds :null)))
+                    (error (condition)
+                      (recording-refused 502 "transcription_failed" (princ-to-string condition)))))))))
+      (t (recording-refused 405 "method" "GET asks whether voice is read here; POST sends a recording")))))

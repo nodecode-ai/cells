@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "charts": {
+    "enabled": true,
+    "preset": "mobile",   // mobile 1080x1350, square 1080x1080, wide 1600x900
+    "locale": "auto",     // auto follows the data: ja or en
+    "directory": ""       // empty: a charts folder under the agent's home
+  }
+}

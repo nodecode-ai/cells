@@ -598,6 +598,37 @@ message of ours."
                      #'string<)))
     (is (null (nck:lane-reactions lane)))))
 
+(deftest channel-host-a-late-fact-of-an-ended-turn-leaves-the-running-card-its-own ()
+  ;; A turn's background eval can land after a steer ended that turn, while
+  ;; the next turn runs: its result names the ended turn. It must not take the
+  ;; lane's digest from the running turn, whose card would then never be
+  ;; settled or retired -- a working line with live Stop and Details for good.
+  (with-digest-host (host lane :responses (replies "s1" "d1" "s2" "d2" "s3" "e3" "a3"))
+    (earn-line "t1")
+    (is (await (:timeout 10) (= 1 (length (labelled "send_message")))) "the first turn's card posts")
+    (fact "turn.completed" (nlk:json-object "steered" t) "t1")
+    (is (await (:timeout 10) (= 1 (length (labelled "delete_message")))) "the steered turn's card is retired")
+    (earn-line "t2")
+    (is (await (:timeout 10) (= 2 (length (labelled "send_message")))) "the second turn's card posts")
+    (fact "turn.tool_result" (nlk:json-object "call-id" "c-bg" "tool-name" "eval" "result" "exited") "t1")
+    (is (equal "t2" (nck:turn-digest-turn-id (nck:lane-digest lane))) "the late result leaves the running turn's digest")
+    (is (equal "s2" (nck::turn-digest-status-id (nck:lane-digest lane))) "and the card it posted")
+    (fact "turn.completed" (nlk:json-object "steered" t) "t2")
+    (is (await (:timeout 10) (= 2 (length (labelled "delete_message")))) "the running turn's card is retired too")
+    (is-plan (second (labelled "delete_message")) :path "/rooms/123/messages/s2")
+    ;; One more turn, cut by nothing: a late result of the ended one lands
+    ;; mid-turn, and the answer still settles this turn's own card.
+    (earn-line "t3")
+    (is (await (:timeout 10) (= 3 (length (labelled "send_message")))) "the third turn's card posts")
+    (fact "turn.tool_result" (nlk:json-object "call-id" "c-bg2" "tool-name" "eval" "result" "exited") "t2")
+    (said "done" "t3")
+    (fact "turn.completed" (nlk:json-object) "t3")
+    (flet ((own-card-settled ()
+             (find-if (lambda (plan) (search "/messages/s3" (nck:request-plan-path plan)))
+                      (append (labelled "edit_message") (labelled "delete_message")))))
+      (is (await (:timeout 10) (own-card-settled)) "the answered turn's own card settles"))
+    (is (equal "t3" (nck:turn-digest-turn-id (nck:lane-digest lane))) "on the answered turn's digest")))
+
 (deftest channel-host-failure-settles-into-the-chrome ()
   ;; A failed turn is the one case where the line IS the message: nothing is
   ;; posted beside it — and its ask stays in the room's record with the notice.
@@ -1011,6 +1042,29 @@ holds, and one lane of it in room 123, torn down after BODY."
     (sleep 0.35)
     (is (= 2 (typing-beats host executor)) "silence past the cap ends the beat")))
 
+(deftest channel-host-typing-holds-while-a-call-is-in-flight ()
+  ;; A call still running is the turn working, though it shows nothing until
+  ;; it lands (a CI wait, a long build): its surface keeps the beat past the
+  ;; silence cap. Once it lands, silence counts again; and a call older than
+  ;; +TYPING-CALL-CAP-MS+ holds it no longer, so a hung tool cannot type forever.
+  (nlk:bind ((executor (nck:make-recording-executor))
+             (host (test-host :executor executor :name "typing-call"))
+             (nck::+typing-cap-ms+ 300) (nck::+typing-call-cap-ms+ 1200)
+             (digest (queued-lane-digest host "chat-1-m1")))
+    (is (= 1 (typing-beats host executor)) "a live surface gets its first beat")
+    (nck:digest-note-call-start digest "call-1" "bash" "{\"command\":\"sleep 600\"}" (nck:now-ms))
+    (sleep 0.45)
+    (is (= 2 (typing-beats host executor)) "a call in flight past the silence cap keeps its beat")
+    (sleep 0.2)
+    (is (= 3 (typing-beats host executor)) "and keeps it on the platform's refresh")
+    (nck:digest-note-call-result digest "call-1" (nck:now-ms) :output "done")
+    (sleep 0.35)
+    (is (= 3 (typing-beats host executor)) "once the call landed, silence past the cap ends the beat")
+    (nck:digest-note-call-start digest "call-2" "bash" "{\"command\":\"sleep 600\"}" (nck:now-ms))
+    (is (= 4 (typing-beats host executor)) "the next call brings it back")
+    (sleep 1.3)
+    (is (= 4 (typing-beats host executor)) "a call past the call cap holds the beat no longer")))
+
 ;;; --- commands ---------------------------------------------------------------
 
 (deftest channel-host-slash-line-is-a-command-answered-in-the-room (with-temp-store ())
@@ -1041,9 +1095,9 @@ holds, and one lane of it in room 123, torn down after BODY."
 
 (deftest channel-host-models-aux-in-a-room-answers-the-auxiliary-model (with-temp-store ())
   ;; /models aux in a room is the organism's, as on a shell: it answers the
-  ;; auxiliary model with how to change it — never the room's own pick nor
-  ;; the session summary the bare /models line prints — and `default' takes
-  ;; the organism's auxiliary model out, not the room's pick.
+  ;; auxiliary model — never the room's own pick, the session summary the bare
+  ;; /models line prints, nor a line to spell — and `default' takes the
+  ;; organism's auxiliary model out, not the room's pick.
   (with-saved-globals (nle::*auxiliary-model*)
     (setf nle::*auxiliary-model* '(:provider "zeta" :model "z-model" :effort "low"))
     (with-digest-host (host nil :name "aux-command" :host-keys (:owners '("mike")))
@@ -1052,23 +1106,22 @@ holds, and one lane of it in room 123, torn down after BODY."
       (is (posted 1) "the command answers once")
       (is-carrying (content (plan-content (first (plans))))
         (is (uiop:string-prefix-p "auxiliary model: zeta/z-model (low)" content))
-        "/models aux <provider> <model> changes it" (:absent "provider: "))
+        (:absent "/models aux <") (:absent "provider: "))
       (say "/models aux default" "mike" "m2")
       (is (posted 2) "the clear answers too")
       (is (uiop:string-prefix-p "auxiliary model: same as main"
                                 (plan-content (second (plans)))))
       (is (null nle::*auxiliary-model*)))))
 
-(deftest channel-host-completion-follows-the-commands-own-rule ()
-  ;; Completion is the commands' own rule: with operators declared, only an
-  ;; operator sees a command's argument choices — /help is everyone's, as
-  ;; every command but /help is the operator's.
-  (let ((host (test-host :name "completions")))
-    (is (nck::completion-allowed-p host "models" "mike"))
-    (is (not (nck::completion-allowed-p host "models" "sam")))
-    (is (nck::completion-allowed-p host "help" "sam")))
-  (is (nck::completion-allowed-p
-       (test-host :name "completions-open" :owners '())
+(deftest channel-host-a-command-is-an-operators ()
+  ;; With operators declared, every command but /help is theirs; with none,
+  ;; every command is everyone's.
+  (let ((host (test-host :name "commands")))
+    (is (nck::command-allowed-p host "models" "mike"))
+    (is (not (nck::command-allowed-p host "models" "sam")))
+    (is (nck::command-allowed-p host "help" "sam")))
+  (is (nck::command-allowed-p
+       (test-host :name "commands-open" :owners '())
        "models" "sam")))
 
 (deftest channel-host-publishes-the-menu-once-per-catalog-shape ()
@@ -1434,6 +1487,28 @@ LANE, as the one running channel."
     ("no turn is running" "123")
     ("no lane answers" "999")))
 
+(deftest channel-answer-file-refuses-a-file-the-answer-would-not-carry (with-file-host (host "answer-file-refused"))
+  ;; A receipt names only a file the answer carries. One over the attach cap,
+  ;; gone, or past the count cap is refused at the hand-over, why named, and
+  ;; nothing is handed -- never a receipt naming a file the delivery then drops.
+  (setf (nck:lane-active-turn-id lane) "t9")
+  (let ((nck::+answer-file-byte-cap+ 32))
+    (let ((refusal (refusal-text error (nck:answer-file *pea-path* :platform "test" :channel "123"))))
+      (is (search "is 64 bytes, over the 32 one answer attaches" refusal) "an oversize file is refused, its size named")
+      (is (search "nck:post-file" refusal) "and the call that posts it as its own message")))
+  (let ((gone (refusal-text error (nck:answer-file #p"/nonexistent/pea.png" :platform "test" :channel "123"))))
+    (is (search "is gone or names no file" gone) "a missing file is refused"))
+  (is (null (nck::take-answer-files lane "t9")) "a refused file is never handed")
+  (let ((nck::+answer-file-count-cap+ 1)
+        (bean (merge-pathnames "bean.png" *pea-path*)))
+    (alexandria:write-byte-vector-into-file (test-png-octets) bean :if-exists :supersede)
+    (nck:answer-file *pea-path* :platform "test" :channel "123")
+    (let ((past (refusal-text error (nck:answer-file bean :platform "test" :channel "123")))
+          (again (getf (nck:answer-file *pea-path* :platform "test" :channel "123") :files)))
+      (is (search "one past the 1 files one answer carries" past) "a file past the count cap is refused")
+      (is (equal (list *pea-path* *pea-path*) again) "a file handed again rides once, so it is no new file"))
+    (is (equal (list (truename *pea-path*)) (nck::collect-answer-files lane "t9")) "and the delivery carries what the receipt named")))
+
 (deftest channel-answer-carries-its-files ()
   ;; The answer's own message carries the picture: the plan the terminal
   ;; delivery posts names the file the turn handed over, on its first chunk.
@@ -1758,6 +1833,124 @@ LANE, as the one running channel."
                     (is (search (format nil "did remove draft~%~%## Jobs (2)") text))))))
             (is (equal '("jobs: 2" nil nil)
                        (multiple-value-list (nck::run-command plain channel "/jobs"))) "no choices, no card")))))))
+
+(defmacro with-name-command ((ran) &body body)
+  "BODY with /name registered: bare, a dialog of one row that asks for the
+name under `Name', then runs /name with it; with words, `named WORDS'. RAN
+is bound to the words every run was given, newest first."
+  `(let ((,ran '()))
+     (with-saved-globals (nle::*registered-commands*)
+       (nle:register-command
+        "ask-test" "name"
+        (lambda (args session-id)
+          (declare (ignore session-id))
+          (push args ,ran)
+          (if (plusp (length args))
+              (format nil "named ~a" args)
+              (values "no name"
+                      (nle:list-dialog :title "Name"
+                                       :rows (list (nle:ask-row "Type a new name" "Name" "/name"
+                                                                :placeholder "The new name"
+                                                                :verb "rename"))))))
+        :session nil)
+       ,@body)))
+
+(defun asking-press (host user)
+  "USER's press on the one row of bare /name's card in HOST's room 123, the
+card message c1, and the press's data."
+  (let* ((controls (nth-value 1 (nck::run-command host (test-candidate :channel "123") "/name")))
+         (data (second (fifth (first controls))))
+         (press (test-press (nck:said-line data) "c1" :user user)))
+    (setf (gethash "press_data" (gethash "source" press)) data)
+    (values press data)))
+
+(deftest channel-a-row-that-asks-asks-the-presser-by-a-reply ()
+  ;; A dialog's row may ask for one line of text before its line runs
+  ;; (NLE:ASK-ROW). Its card's button says so with its verb and an ellipsis,
+  ;; and its press carries the ask. Where the platform has no form of its own
+  ;; the press is answered, the card left standing, and a message asks the
+  ;; presser for the text as a reply to the card: their reply to it runs the
+  ;; row's line with the text after it, once. Someone else's reply, and a
+  ;; slash line, are no answer to it.
+  (with-temp-store ()
+    (with-name-command (ran)
+      (with-digest-host (host nil :name "ask-reply" :responses (replies "d1" "q1")
+                                  :host-keys (:platform (test-platform :choices t)))
+        (setf (nck:host-policy host) (channel-policy))
+        (destructuring-bind (text controls &rest _)
+            (multiple-value-list (nck::run-command host (test-candidate :channel "123") "/name"))
+          (declare (ignore _))
+          (is (search "## Name" text))
+          (is (equal '((:row nil "Type a new name" nil ("Rename…" "/name" :secondary nil))
+                       (("Refresh" "/name" :secondary nil)))
+                     (press-lines controls)) "the row is a button that asks"))
+        (multiple-value-bind (press data) (asking-press host "mike")
+          (is (equal '("Name" "/name" "The new name")
+                     (let ((ask (nlk:json-value (nck:press-action data) :object "ask")))
+                       (mapcar (lambda (key) (nlk:json-value ask :text key)) '("label" "line" "placeholder")))))
+          (setf ran '())
+          (nck:handle-candidate host press)
+          (is (posted 2))
+          (is-plan (first (labelled "interaction_defer")) "pressed" t)
+          (is-present (asking (first (labelled "send_message"))) "the message that asks"
+            (is (equal (format nil "**Name**: reply to this message with it~%_The new name_")
+                       (plan-content asking)))
+            (is (equal "c1" (plan-field asking "reply_to")) "under the card pressed"))
+          (is (null ran) "nothing ran yet")
+          (flet ((reply (text user)
+                   (test-candidate :channel "123" :message "m7" :text text :user user :reply-to "q1"
+                                   :addressed t)))
+            (is (null (nck::asked-reply host (reply "Bob" "sam") "Bob")) "someone else's reply")
+            (is (null (nck::asked-reply host (reply "/help" "mike") "/help")) "a slash line runs as itself")
+            (nck:handle-candidate host (reply "Ada Lovelace" "mike"))
+            (is (await (:timeout 10) ran))
+            (is (equal '("Ada Lovelace") ran) "the reply ran the row's line with it")
+            (is (await (:timeout 10) (some (lambda (plan) (search "named Ada Lovelace" (plan-content plan)))
+                                           (labelled "send_message"))) "answered as a reply to the reply")
+            (is (null (nck::asked-reply host (reply "Again" "mike") "Again")) "an ask is answered once")))))))
+
+(deftest channel-a-row-that-asks-asks-in-the-platforms-form ()
+  ;; Where the platform has a form of its own (PLATFORM-PLAN-ASK: Discord's
+  ;; modal), the press opens it and nothing is posted; its submit comes back
+  ;; as the presser saying the row's line with the text after it
+  ;; (ASKED-LINE), answered in place of the card as the press would have
+  ;; been. A form that will not open falls back to a message that asks.
+  (with-temp-store ()
+    (with-name-command (ran)
+      (let ((platform (test-platform :choices t)))
+        (setf (nck:platform-plan-ask platform)
+              (lambda (candidate ask &key prompt timeout-seconds)
+                (declare (ignore prompt))
+                (values (nck:rest-plan "POST" (format nil "/forms/~a" (nck:source-field candidate "interaction_id"))
+                                       "ask_form" nil timeout-seconds
+                                       (nlk:json-object "label" (nlk:json-value ask :text "label")))
+                        t)))
+        (with-digest-host (host nil :name "ask-form" :host-keys (:platform platform)
+                                    :responses (list (reply 200 "ok" t) (reply 200 "ok" t) (reply 200 "ok" t)
+                                                     (reply 400 "message" "expired")))
+          (setf (nck:host-policy host) (channel-policy))
+          (multiple-value-bind (press data) (asking-press host "mike")
+            (setf ran '())
+            (nck:handle-candidate host press)
+            (is (posted 1))
+            (is-plan (first (plans)) :label "ask_form" :path "/forms/i1" "label" "Name")
+            (is (null (labelled "send_message")) "no message asks")
+            (is (null (nck:asked-line data "  ")) "an empty submit runs nothing")
+            (is (null (nck:asked-line "nck:p:0123456789ab" "Ada")) "no press asks")
+            (let ((submit (test-press (nck:asked-line data "Ada") "c1" :user "mike")))
+              (setf (gethash "press_data" (gethash "source" submit)) data
+                    (gethash "asked" (gethash "source" submit)) t)
+              (nck:handle-candidate host submit)
+              (is (await (:timeout 10) ran))
+              (is (await (:timeout 10) (= 2 (length ran))))
+              (is (equal '("Ada" "") (reverse ran)) "the submit ran the row's line with it, and its card is read again")
+              (is (await (:timeout 10) (labelled "interaction_response")))
+              (is (search "named Ada" (plan-content (first (labelled "interaction_response"))))))
+            ;; The form refused: the press is spent, and a message asks.
+            (nck:handle-candidate host press)
+            (is (await (:timeout 10) (labelled "send_message")))
+            (is (= 1 (length (labelled "interaction_defer"))) "the spent press is not answered again")
+            (is (search "reply to this message with it" (plan-content (first (labelled "send_message")))))))))))
 
 (deftest channel-a-dialog-card-is-a-panel-of-lines ()
   ;; A dialog of few rows is a panel (variant C of /context's room card):

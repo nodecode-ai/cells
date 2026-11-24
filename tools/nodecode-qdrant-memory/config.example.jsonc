@@ -1,0 +1,24 @@
+{
+  // The qdrant-memory cell: a Qdrant of your own, and the embeddings
+  // endpoint that gives a memory its vector. Both are yours; nothing else is
+  // contacted. Set them in /settings or on the Settings tab; a secret pasted
+  // here is kept in a 0600 file under ~/.nodecode/secrets/.
+  "qdrant_memory": {
+    "url": "http://127.0.0.1:6333",
+    // Qdrant Cloud, or a server with an API key: name the environment
+    // variable holding it, rather than writing the key here.
+    // "api_key_env": "QDRANT_API_KEY",
+    "collection": "nodecode_memory",
+    "distance": "Cosine",
+    // Ollama's /api/embed, or any OpenAI-compatible /v1/embeddings.
+    "embedding_url": "http://127.0.0.1:11434/api/embed",
+    "embedding_model": "nomic-embed-text",
+    "namespace": "default",
+    "recall": true,
+    "recall_limit": 5,
+    "capture": true,
+    "max_chars": 400,
+    "retry_seconds": 60,
+    "timeout": 20
+  }
+}

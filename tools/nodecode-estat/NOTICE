@@ -1,0 +1,14 @@
+nodecode-estat is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-estat:
+https://github.com/TakeshiTGAL/hermes-plugin-estat
+commit 2cf442a83be2ed90b0a07cc4e8707d591f1e9196
+MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+The three read-only e-Stat tools were rewritten in Common Lisp against Nodecode's cell contract: the
+same host (api.e-stat.go.jp), the same three endpoints (getStatsList, getMetaInfo, getStatsData),
+the same application ID, the same name-to-code lookup for areas, periods and categories, and the
+same citation with every figure. What the original answered as JSON strings, this answers as a block
+of lines a model reads. Left out: the original's ranking heuristics and its warning passes over
+base years, preliminary figures and missing items, which were tuned to Python callers; the rewrite
+still flags a preliminary table and says when a selection is wider than the row cap, and keeps the
+metadata cache of the original. The tool descriptions no longer tell the model to avoid web search,
+since a Nodecode cell does not own that choice.

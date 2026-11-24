@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. A key typed into /connect wins over both sources below.
+{
+  "commandcode": {
+    "enabled": true,
+
+    // Where Command Code is served. The lane appends /alpha/generate.
+    "base_url": "https://api.commandcode.ai",
+
+    // The Command Code CLI keeps its key here; the cell imports it when no
+    // key was typed into /connect and COMMANDCODE_CLI_TOKEN is unset.
+    "cli_auth_file": "~/.commandcode/auth.json"
+  }
+}

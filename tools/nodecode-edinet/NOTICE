@@ -1,0 +1,35 @@
+nodecode-edinet is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-edinet:
+
+  https://github.com/TakeshiTGAL/hermes-plugin-edinet
+  commit 06171c84b23ab5e35b0c58203cebcbee33117110
+  MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+The plugin was three tools over the EDINET API v2 — edinet_search_filings,
+edinet_financials and edinet_save_document — a stdlib HTTP client, a disk
+cache of each file date's list, a parser for the type=5 CSV ZIP, and one
+skill that told the model to reach for the tools before a web search. This
+rewrite keeps the three tools, their names, their arguments, the same two
+GETs to api.edinet-fsa.go.jp with the key in the Subscription-Key query
+parameter, the same filters applied locally, the same taxonomy element ids
+per headline figure, the same refusals (a date range over the cap errors
+instead of truncating; a figure with no matching row is reported missing,
+never invented), the same citation line with the filing page and PDL 1.0,
+and the skill, as (help :edinet). It is written against Nodecode's own seams
+(nlk:http, a section, a contract per tool), so no Hermes runtime, no
+manifest and no private Hermes modules are needed, and the CSV ZIP is read
+here: the central directory is parsed directly and CHIPZ inflates the member.
+
+Left out: the plugin's disk cache of list responses (15 minutes for today,
+24 hours for a past date, keyed by a hash of the API key), so a repeated
+search asks EDINET again — the section's pace_seconds still keeps the
+requests a second apart; the plugin's same-host redirect guard, because
+nlk:http follows a redirect itself; its retry of 429 and 5xx (a refusal
+says to wait and call again); the plugin's private agent.file_safety and
+plugins.plugin_storage modules, replaced by the Nodecode home; and the
+tool-level max_calendar_days argument, which the section's own
+max_calendar_days governs here. The corporate-number example in the
+plugin's messages is kept as it was.
+
+EDINET data belongs to the Financial Services Agency of Japan: the terms
+(WZEK0030) ask for the source citation every answer carries, and the
+taxonomy is quoted under PDL 1.0. EDINET, 金融庁: https://disclosure2.edinet-fsa.go.jp/

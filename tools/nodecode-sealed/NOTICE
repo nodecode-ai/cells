@@ -1,0 +1,28 @@
+nodecode-sealed is a rewrite of kailashrajh's kailashrajh/hermes-sealed:
+
+https://github.com/kailashrajh/hermes-sealed
+commit 9ab8bd2e6c81d055905e9558358177fca2cee5e2
+MIT, Copyright (c) 2026 Kailash Rajh (LICENSE)
+
+The plugin handed Hermes one SecretSource: a store file of AES-256-GCM
+ciphertext under a raw 32-byte key file, both written 0600, opened at startup
+and returned to the runtime as whole variables, with a `hermes sealed` command
+to make, fill, list, inspect and rotate it. This rewrite keeps the format byte
+for byte — the `SEALED1` header as the AEAD's associated data, the base64url
+payload of nonce, ciphertext and tag, the dotenv body inside it, the same
+quote-and-escape rules — so an existing store opens here unchanged, and it keeps
+the original's posture: a read creates nothing, `list` answers names and
+lengths and never a value, the key is never overwritten by a second `init`, and
+a rotation keeps the previous key as a `.bak` beside it. What the original did
+through the harness's secret-source seam, the cell does in its start clause: the
+store is read once and its variables are put into Nodecode's own environment,
+and the stop clause puts back exactly what each variable held, which the
+original had no need of because it answered a process that was already
+starting. The cipher is ironclad's AES-256-GCM, already in the image, instead
+of the Python `cryptography` package, and the Python is gone: the four tools,
+`/sealed`, `(help :sealed)` and the `(sealed:…)` verbs are the interface
+instead of the `hermes sealed` command line. What was left out: the original's
+`enabled` switch, which here is the section's own presence; its
+`config_schema`/`remediation` hooks, which are Hermes's contract and not a
+cell's; and the quiet value entry, so a value typed to `/sealed set` or sent to
+`sealed_set` rides the transcript where the original's `getpass` prompt did not.

@@ -1,0 +1,13 @@
+// The fmsg section of ~/.nodecode/config.jsonc, as /settings writes it.
+// A key comes from your fmsg host: an agent sub-account's one-time
+// fmsgk_<key_id>_<secret> key, with its address beside it.
+{
+  "fmsg": {
+    "api_key": "fmsgk_...",        // or leave it out and export FMSG_API_KEY
+    "api_url": "https://api.fmsg.io", // or the Web API of a host you run
+    "address": "@agent@example.com",   // read from the key's token when left out
+    "default_topic": "Nodecode",   // topic a new root thread starts with
+    "inbox_limit": 10,              // messages one fmsg_inbox answer carries
+    "timeout_seconds": 30           // one Web API request's ceiling
+  }
+}

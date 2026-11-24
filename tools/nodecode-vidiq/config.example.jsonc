@@ -1,0 +1,17 @@
+{
+  // vidIQ's hosted MCP: YouTube, Instagram and the available TikTok creator
+  // intelligence. Calls run on the user's vidIQ account and consume credits.
+  "vidiq": {
+    // The OAuth access token a client keeps after you authorize vidIQ, or a
+    // vidIQ API key. VIDIQ_ACCESS_TOKEN is read when this is empty.
+    "access_token": "...",
+
+    // The hosted MCP endpoint every call goes to. Empty means the default
+    // https://mcp.vidiq.com/mcp.
+    "mcp_url": "https://mcp.vidiq.com/mcp",
+
+    // The ceiling on one vidIQ call, in seconds. A media generation job
+    // answers an ID rather than waiting, so this bounds the call, not the job.
+    "timeout_seconds": 180
+  }
+}

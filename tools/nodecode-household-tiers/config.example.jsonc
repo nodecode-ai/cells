@@ -1,0 +1,30 @@
+{
+  // The section, a sibling of "index" and "cron" in ~/.nodecode/config.jsonc.
+  "household-tiers": {
+    // The policy document, under the Nodecode home when the path is relative.
+    "policy_file": "household-tiers.json",
+    // The tier of a conversation the document does not name.
+    "default_tier": "guest",
+    // Off only watches: nothing is refused and nothing is written down.
+    "enforce": true,
+    // One JSON line per decision, in household-tiers-audit.jsonl beside it.
+    "audit": true
+  }
+}
+
+// What the policy document itself looks like. Sessions are what a turn
+// reports -- a chat's room, a lane, a background job -- and an entry ending
+// in `*' is a prefix of them.
+//
+// {
+//   "sessions": {"telegram-100001": "owner", "telegram-200002": "kid",
+//                "discord-*": "guest"},
+//   "default": "guest",
+//   "tiers": {"owner": ["*"],
+//             "user": ["web_search", "web_extract"],
+//             "kid": ["web_search", "web_extract"],
+//             "guest": []},
+//   "hours": {"kid": {"allow": "08:00-21:00"},
+//             "guest": {"allow": "08:00-21:00"}},
+//   "audit": {"enabled": true, "retention_days": 30}
+// }

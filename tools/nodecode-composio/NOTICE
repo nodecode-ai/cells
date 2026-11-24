@@ -1,0 +1,24 @@
+nodecode-composio is a rewrite of luisced's luisced/hermes-composio-connections:
+
+  https://github.com/luisced/hermes-composio-connections
+  commit 4d707f7cfef14db6996bb25ee934193f921a5df5
+  MIT, Copyright (c) 2026 Luis Cedillo Maldonado (LICENSE)
+
+What was rewritten: the plugin's backend, in Common Lisp instead of Python. The
+connection list, the connect link and the removal go through the same `composio`
+CLI, with the original's rules kept -- a second account of a toolkit needs a new
+alias, only a selector that is unique in the list is removable, a link must be on
+connect.composio.dev, and a removal is verified by reading the list again. The
+toolkit catalog is read from the same v3 endpoint (GET /api/v3/toolkits, paged,
+x-user-api-key, cached for five minutes) and served whole or not at all, as the
+original does. The four tools and /composio are the cell's surface; the original
+had no agent tools and only a page.
+
+What was left out, and why: the dashboard page and its desktop plugin (two tabs,
+paging, filters, 17 translations, the disconnect dialog) are a Hermes web UI, and
+the 1,687 service logos it packed as base64 PNGs are page artwork -- neither has a
+meaning in a terminal cell, so the catalog answers names, slugs, categories and
+descriptions instead. The removal no longer inspects the CLI's interactive prompt
+on a pseudo-terminal: it answers the prompt on the child's stdin and then proves
+the removal by re-reading the list, which keeps the guarantee the prompt check
+existed for without depending on the prompt's wording.

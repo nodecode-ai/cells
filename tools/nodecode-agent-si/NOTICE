@@ -1,0 +1,19 @@
+nodecode-agent-si is a rewrite of joelbrilliant's joelbrilliant/hermes-agent-si:
+https://github.com/joelbrilliant/hermes-agent-si
+commit adf7abc1d89b1e1ea686ac2fd29e2b95b454f4fe
+Apache-2.0, Copyright (c) 2026 Joel Brilliant (LICENSE)
+
+What was rewritten: the three tools (brain_search, brain_get, brain_remember)
+and the shapes they answer; the evidence gate that matches a quote against the
+user's own messages and refuses one they never typed; the claim model where a
+second value disputes a fact instead of overwriting it; the per-turn recall
+block; the rule text the model reads; and the session search, over the Claude
+Code, Codex and Grok session files on the same machine, as one ranked list
+fused by score. What was left out: the vendored engine's change packets,
+pending advice and its JSON packet format (the cell keeps claims and notes
+directly, which is the part a user sees); its index of Hermes's own state.db
+(SQLite), because this cell reads session files and opens no other app's
+database; the demo brain, the backup/restore hooks and the background refresh
+thread (the index is built at start and on /agent-si index); and the provider
+hooks Hermes alone has, replaced by one frame hook and one round hook of
+Nodecode's own.

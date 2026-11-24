@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell — documentation,
+// not config: the folder gets pushed and holds no secret. The declaration in
+// cell.lisp is the authority; this is an illustration of it. A present section
+// is enabled; "enabled": false vetoes it.
+{
+  "hass-statistics": {
+    "enabled": true,
+    "url": "http://homeassistant.local:8123",
+    "token_env": "HASS_TOKEN",
+    "entity_allowlist": [],
+    "entity_denylist": [],
+    "max_ids": 100,
+    "max_rows": 10000,
+    "max_bytes": 1048576,
+    "timeout": 30
+  }
+}

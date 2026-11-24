@@ -1,0 +1,14 @@
+{
+  // Nothing is required to start: the edge answers from arguments alone.
+  "delphi": {
+    // The environment variable holding the Delphi read API key (not the key).
+    "api_key_env": "DELPHI_API_ACCESS_KEY",
+    // testnet, competition-testnet or mainnet.
+    "network": "testnet",
+    // The API root; empty uses the network's own host.
+    "api_base": "",
+    // A public wallet address (not a secret) the positions tool reads when a call names none.
+    "wallet_address": "",
+    "timeout_seconds": 20
+  }
+}

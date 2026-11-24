@@ -26,7 +26,9 @@
   ;; that passed). NEXT-AT is the due instant the ticker sleeps toward, NIL
   ;; when there is none. LAST is the newest outcome as a plist (:at :status
   ;; :line :turn-id). TIMEOUT is seconds, NIL for the section's default.
-  ;; ORIGIN is the session that added the job.
+  ;; ORIGIN is the session that added the job. FAILURES is the run of failed
+  ;; fires since the last one that answered: at the section's
+  ;; pause_after_failures the job pauses itself (SETTLE-FIRE).
   (id "" :type string)
   (name "" :type string)
   (schedule nil :type (or null schedule))
@@ -37,13 +39,24 @@
   (next-at nil :type (or null integer))
   (fires 0 :type integer)
   (last nil :type list)
+  (failures 0 :type integer)
   (created-at 0 :type integer)
   (origin nil :type (or null string))
   (timeout nil :type (or null integer))
+  ;; A shell command run before each scheduled fire (CHECK-DUE, ticker.lisp):
+  ;; exit 0 lets the fire go with the command's output as run context, exit 1
+  ;; lets the due instant pass with no turn, anything else is a failed check.
+  ;; NIL fires every time.
+  (check nil :type (or null string))
   ;; A settled answer waiting to be sent to ORIGIN as its next request:
   ;; (:input :answer :at). Kept on the row until the ingress admits it,
   ;; so a restart in between loses nothing.
-  (report nil :type list))
+  (report nil :type list)
+  ;; NIL for an ordinary job; the wake job's own clock and gates as a plist
+  ;; (wake.lisp): :MIN :MAX :GAP seconds, :ALLOWANCE dollars a day or NIL,
+  ;; :CALLS, :CURSOR, :FIRED-AT, :ASKED, :WHY, :CAUSE, :WAKES, :SAID,
+  ;; :SAID-AT, :OFF-BY, :OFF-AT.
+  (wake nil :type list))
 
 ;;; No session.created fact names it, so it never appears in the picker.
 (defparameter +registry-session+ "cron"
@@ -102,14 +115,62 @@ dash, trimmed, at most 32 characters; \"job\" when nothing survives."
                                        "status" (getf last :status)
                                        :opt "line" (getf last :line)
                                        :opt "turn_id" (getf last :turn-id))))
+   :when (plusp job.failures) "failures" job.failures
    "created_at" (unix-from-universal job.created-at)
    :opt "origin" job.origin
    :opt "timeout" job.timeout
+   :opt "check" job.check
    :opt "report" (let ((report job.report))
                    (and report
                         (nlk:json-object "input" (getf report :input)
                                          "answer" (getf report :answer)
-                                         "at" (unix-from-universal (getf report :at)))))))
+                                         "at" (unix-from-universal (getf report :at)))))
+   :opt "wake" (wake-json job.wake)))
+
+;;; The wake plist as JSON and back: instants as unix seconds, the cause as
+;;; a word, every absent key absent.
+(defparameter +wake-integer-keys+ '((:min "min") (:max "max") (:gap "gap") (:calls "calls")
+                                    (:asked "asked") (:wakes "wakes")))
+(defparameter +wake-instant-keys+ '((:cursor "cursor") (:fired-at "fired_at") (:said-at "said_at")
+                                    (:off-at "off_at")))
+(defparameter +wake-string-keys+ '((:why "why") (:said "said") (:off-by "off_by")))
+
+(defun wake-json (wake)
+  (when wake
+    (let ((table (nlk:json-object)))
+      (loop for (key name) in +wake-integer-keys+
+            for value = (getf wake key)
+            when value do (setf (gethash name table) value))
+      (loop for (key name) in +wake-instant-keys+
+            for value = (getf wake key)
+            when value do (setf (gethash name table) (unix-from-universal value)))
+      (loop for (key name) in +wake-string-keys+
+            for value = (getf wake key)
+            when value do (setf (gethash name table) value))
+      (nlk:when-let (allowance (getf wake :allowance))
+        (setf (gethash "allowance" table) allowance))
+      (nlk:when-let (cause (getf wake :cause))
+        (setf (gethash "cause" table) (string-downcase (symbol-name cause))))
+      table)))
+
+(defun wake-from-json (object)
+  (when object
+    (append
+     (loop for (key name) in +wake-integer-keys+
+           for value = (nlk:json-value object :integer name)
+           when value append (list key value))
+     (loop for (key name) in +wake-instant-keys+
+           for value = (nlk:json-value object :integer name)
+           when value append (list key (universal-from-unix value)))
+     (loop for (key name) in +wake-string-keys+
+           for value = (nlk:json-value object :string name)
+           when value append (list key value))
+     (nlk:when-let (allowance (nlk:json-value object :number "allowance"))
+       (list :allowance allowance))
+     (nlk:when-let (cause (nlk:json-value object :string "cause"))
+       (list :cause (cond ((equal cause "asked") :asked)
+                          ((equal cause "now") :now)
+                          (t :timer)))))))
 
 (defun job-from-json (object &aux (state (nlk:json-value object :string "state")))
   (make-job
@@ -142,15 +203,18 @@ dash, trimmed, at most 32 characters; \"job\" when nothing survives."
                       :status (nlk:json-value last :string "status")
                       :line (nlk:json-value last :string "line")
                       :turn-id (nlk:json-value last :string "turn_id"))))
+   :failures (or (nlk:json-value object :integer "failures") 0)
    :created-at (universal-from-unix (or (nlk:json-value object :integer "created_at") 0))
    :origin (nlk:json-value object :string "origin")
    :timeout (nlk:json-value object :integer "timeout")
+   :check (nlk:json-value object :string "check")
    :report (let* ((report (nlk:json-value object :object "report"))
                   (input (nlk:json-value report :string "input"))
                   (answer (nlk:json-value report :string "answer"))
                   (at (nlk:json-value report :integer "at")))
              (and input answer at
-                  (list :input input :answer answer :at (universal-from-unix at))))))
+                  (list :input input :answer answer :at (universal-from-unix at))))
+   :wake (wake-from-json (nlk:json-value object :object "wake"))))
 
 ;;; --- the store row -------------------------------------------------------------
 
@@ -214,12 +278,13 @@ job listing, record and resume answer carries."
 (defun job-text (job)
   "The whole record; what (cron:show id) answers."
   (format nil "job ~a~%  name: ~a~%  state: ~(~a~)~%  schedule: ~a~%  next: ~a~%  ~
-               fires: ~d~%  last: ~a~%  session: ~a~%  cwd: ~a~%  timeout: ~a~%  ~
-               origin: ~a~%  report: ~a~%  prompt: ~a"
+               fires: ~d~%  last: ~a~@[, ~d failed in a row~]~%  session: ~a~%  cwd: ~a~%  ~
+               timeout: ~a~%  check: ~a~%  origin: ~a~%  report: ~a~%  prompt: ~a"
           job.id job.name job.state
           (schedule-display job.schedule) (next-text job) job.fires
-          (last-text job) job.session (or job.cwd "-")
+          (last-text job) (and (> job.failures 1) job.failures) job.session (or job.cwd "-")
           (if job.timeout (duration-text job.timeout) "default")
+          (or job.check "none: every fire runs")
           (or job.origin "-")
           (if job.report
               (format nil "waiting to be sent to ~a (since ~a)"

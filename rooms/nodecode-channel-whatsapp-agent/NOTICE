@@ -1,0 +1,34 @@
+nodecode-channel-whatsapp-agent is a rewrite of ahtishamdilawar's
+ahtishamdilawar/hermes-whatsapp-agent-platform:
+
+  https://github.com/ahtishamdilawar/hermes-whatsapp-agent-platform
+  commit 3a57b1da04499279d1af6c7d979c9c2d8b658ce0
+
+MIT, Copyright (c) 2026 Ahtisham Dilawar (LICENSE)
+
+Rewritten: the whole channel, in Common Lisp, against Nodecode's channel
+kit. The Python platform adapter, its long-poll loop, the update-to-event
+mapping, the send/status/media calls and the config section became a
+Nodecode room cell: the same `GET /agent/v1/updates` long poll, the same
+`POST /agent/v1/messages` text send with a quoted context, the same
+`POST /agent/v1/statuses` read receipt carrying the typing indicator, and
+the same rule that only the agent's creator may drive it, with the same
+fail-closed section instead of Hermes's own config and session plumbing. A
+file is carried the way the original carries it: inbound media is fetched
+through `GET /media/{id}` with the key and handed on as an attachment, and
+an answer's file is uploaded with `POST /media` (form-data) and posted as
+the message of its kind, under the same `media_enabled` switch. The
+words leave as the original leaves them: its formatting.py markdown-to-
+WhatsApp conversion (`**bold**` to *bold*, `*it*` to _it_, `~~s~~` to
+~s~, a heading to a bold line, a link to its words and its address, code
+untouched) and its CHUNK_LIMIT/MAX_TEXT_LENGTH split, counting UTF-16
+units as an emoji is counted, with a caption kept to Meta's 1024 and said
+first when it does not fit or the kind takes none.
+
+Left out: `DELETE /media` (the adapter never deleted a file, and neither
+does this one), the inbound size/sha256 verification and the download
+cache, the media-transcode and re-upload-on-refusal retry, the in-chat
+reaction hooks, the richer error taxonomy and rate windows (the cell
+relies on the kit's retry and the sender's own pacing), and Hermes's own
+JSON state file: the cursor, the lane's first standing and the ids already
+answered are kept in Nodecode's store instead, under the same rules.

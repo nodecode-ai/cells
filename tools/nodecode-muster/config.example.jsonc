@@ -1,0 +1,15 @@
+// muster: the board of subagent flights. Nothing here is required: the board
+// fills itself, and these move what counts as stuck, what a repeat failure is,
+// and how many times a bad job is run again.
+{
+  "muster": {
+    "stall_seconds": 300,        // a worker with no frame this long reads stuck
+    "spin_threshold": 3,         // failures of the same job that read as failing on repeat
+    "spin_window_seconds": 1800, // how far back those failures are counted
+    "show_goals": true,         // false keeps the jobs off a shared screen
+    "board_rows": 40,            // how many of the newest flights the board lists
+    "auto_requeue": true,        // re-run a job that ended badly, in its own session
+    "max_requeues": 2,           // how many times one job may be re-run
+    "dir": "~/notes/muster/"     // where the ledger lives; muster/ under the home unless answered
+  }
+}

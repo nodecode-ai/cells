@@ -1,0 +1,13 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell — documentation,
+// not config: the folder gets pushed and holds no secret. The declaration in
+// cell.lisp is the authority; this is an illustration of it. A present section
+// is enabled; "enabled": false vetoes it.
+{
+  "twenty-crm": {
+    "enabled": true,
+    "base_url": "https://api.twenty.com",   // or a self-hosted stack: "http://127.0.0.1:3000"
+    "api_key_env": "TWENTY_API_KEY",        // or "api_key_file": "~/.twenty-key"
+    "timeout": 30,
+    "max_types": 80
+  }
+}

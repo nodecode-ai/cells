@@ -1,0 +1,45 @@
+nodecode-empiriolabs-media is a rewrite of EmpirioLabs-AI's EmpirioLabs-AI/hermes-empiriolabs:
+
+  https://github.com/EmpirioLabs-AI/hermes-empiriolabs
+  commit 20f049d5913ec850e98bef3d289f6cb43645869e
+  MIT, Copyright (c) 2026 EmpirioLabs.ai LLC (LICENSE)
+
+The rewritten plugin is the `media` folder at that commit: a Hermes backend
+that serves the standard image_generate, video_generate and text_to_speech
+tools from EmpirioLabs AI's API. Its wire is carried over unchanged: POST
+/v1/images/generations with num_images 1 and sync, POST /v1/videos/generations,
+POST /v1/audio/speech, all against https://api.empiriolabs.ai/v1 (or
+EMPIRIOLABS_BASE_URL) with the key as a bearer; the job envelope — a job id
+with no output means poll GET /v1/jobs/{job_id} every 3 seconds for an image
+and 5 for a video, up to the deadline, and a job still running when the wait
+ends is reported by id and URL rather than as a failure; the output read from
+data[].url or data[].b64_json; a signed URL downloaded without the key and
+written into this home; the local source image read once, capped at 20 MB,
+sniffed as PNG, JPEG, WebP or GIF and inlined as a data:image URI; the
+answer's fallbacks (base64 written whole, and the signed URL kept when the
+copy fails); the release defaults flux-2-klein-4b, hunyuan-video-1-5 and
+tts-2-flash; the semantic aspect table (square 1:1, landscape 16:9, portrait
+9:16, the original's first choice with no catalog); the 300- and 900-second
+waits; and the EMPIRIOLABS_API_KEY and EMPIRIOLABS_BASE_URL variables,
+turned into the cell's section with EMPIRIOLABS_API_KEY read either way.
+
+What was left out, and why: the Hermes backend interface itself
+(agent.image_gen_provider, agent.video_gen_provider and agent.tts_provider
+with register_image_gen_provider, register_video_gen_provider and
+register_tts_provider), because Nodecode's core has no media-backend registry
+a cell can add one to, so each endpoint is a tool of the cell's own
+(empiriolabs_image, empiriolabs_video, empiriolabs_speech) with the same
+verbs in Lisp, /empiriolabs-media and (help :empiriolabs-media) beside them;
+the live catalog negotiation — GET /v1/models read to choose the default
+model, to limit aspect_ratio, size, resolution and duration to the values a
+model declares, to list its voices and to cap a speech request — because a
+call here sends only what the caller names plus the section's defaults, and
+(empiriolabs-media:models) still reads that catalog for whoever wants it; the
+text-to-speech sentence split with its ID3-stripped MP3 pieces joined back
+to back, because one request now carries the text and a text longer than the
+model accepts is the API's own refusal; the model-picker rows, the paid
+badge and the manifest's env-var prompts, which the cell's section carries;
+and Python's urllib and threading, replaced by the image's own nlk:http.
+Generated files land under this home's media/empiriolabs/ rather than in
+Hermes's cache directory, and no telemetry was added or removed: the original
+sends none.

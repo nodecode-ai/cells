@@ -1,0 +1,25 @@
+nodecode-bunny-space is a rewrite of jasm001's jasm001/hermes-plugin-bunny-space:
+
+https://github.com/jasm001/hermes-plugin-bunny-space
+commit c28e7985599c03a323ebb06f8ca28ac7cd5b05d6
+
+MIT, Copyright (c) 2026 Bunny Space (LICENSE)
+
+The plugin is a Hermes platform adapter: a Python class that reads a bot key, pulls
+`GET /api/bot/v1/session`, `/rooms/messages`, `/tasks` and `/assistance/tasks`
+from the Bunny Space relay, signs the calls, wraps third-party content in the
+boundary the relay declares, and posts answers back with `/rooms/reply` and
+`/update`. What was rewritten is that wire and those rules, in Common Lisp against
+Nodecode's cell contract: the section and its refusal, one worker lap, the HMAC
+signature, the boundary and its neutralized marks, the 45-second heartbeat and the
+exponential backoff are the original's; the seams are Nodecode's, so a room or a
+task is a session (`bunny-room-<id>`, `bunny-task-<id>`), a turn is `nle:submit`,
+and an answer is the session's own (`nle`/`nlk` rather than a `BasePlatformAdapter`).
+Left out: the private assistance worker (`ISOLATED_ASSISTANCE_V1`), whose gate asks
+for a Hermes-only per-platform toolset list and a call-isolation proof that has no
+counterpart here, so no assistance task is claimed, leased or renewed; the WebSocket
+wake stream and its 25-second keepalive, since the poll lap alone covers the
+cadence; the media download (an image a task carries is announced, not fetched); the
+`BUNNY_SPACE_ALLOW_ALL_USERS` kill switch, whose job the section's `allow_all`
+member does here; and Hermes's own `/sethome` and environment-variable seeding,
+which the `channels.bunny_space` section replaces.

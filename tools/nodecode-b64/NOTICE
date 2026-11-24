@@ -1,0 +1,33 @@
+nodecode-b64 is a rewrite of olric3015's olric3015/hermes-plugins:
+
+  https://github.com/olric3015/hermes-plugins
+  commit 89b15726e6f44bc072bd6af5fc6a1402e50aafa3
+  MIT License, Copyright (c) 2026 olric3015 (LICENSE)
+
+What was rewritten: the plugin's decoder (blobs.py: the reading of a value as
+base64, base64url, hex, percent-encoding or a data: URI; the description of
+what the decoded bytes hold; the notes) is rewritten in Common Lisp as
+decode.lisp, and its one seam - a @b64: context reference Hermes expands as a
+message goes out - becomes the b64_decode tool the model calls, /b64 for the
+operator, and (help :b64). The behaviour kept is the original's: base64 in
+either alphabet, padded or not, with the same two checks (an '=' that is not
+padding, a body one character short of a group); hex in the four ways it gets
+written; percent-encoding to UTF-8 bytes; a data: URI's meta; text shown as
+text with control and invisible characters escaped; JSON pretty-printed; gzip
+and zlib inflated in memory one layer deep and what they held described the
+same way; a binary named by its first bytes with a hex dump of them; and the
+notes for a cut or edited value, padding that is off, a second layer of
+encoding and a JWT. The bounds are the original's: 65,536 characters in, 1
+MiB inflated, 3,000 characters and 60 lines of result, 128 bytes dumped.
+
+What was left out, and why: the TUI and desktop suggestion preview
+(blobs.preview, "@b64:" as it is typed) is a seam of that harness's composer
+and has no counterpart in Nodecode's - the model calls the tool or the
+operator types /b64. Two notes point at a sibling Hermes plugin's @jwt:
+reference; here they name the b64_decode call that decodes a JWT's parts
+instead. The original's error strings are reworded in Lisp, saying the same
+things.
+
+What the rewrite adds: the b64 section (the five bounds, which the original
+hard-coded), /b64, (help :b64), and a tool description that teaches the model
+when a value is worth decoding.

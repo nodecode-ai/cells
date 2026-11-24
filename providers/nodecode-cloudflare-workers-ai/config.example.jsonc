@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The token itself lives in auth.json (/connect) or
+// CLOUDFLARE_WORKERS_AI_API_TOKEN.
+{
+  "cloudflare-workers-ai": {
+    "enabled": true,
+
+    // The Cloudflare account the Workers AI token belongs to, 32 characters.
+    // Empty means CLOUDFLARE_ACCOUNT_ID names it.
+    "account_id": "",
+
+    // The OpenAI-compatible base, when it is not the account's own
+    // https://api.cloudflare.com/client/v4/accounts/<account>/ai/v1.
+    // Empty means CLOUDFLARE_WORKERS_AI_BASE_URL, then the account's own.
+    "base_url": ""
+  }
+}

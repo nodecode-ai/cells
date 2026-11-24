@@ -1,0 +1,33 @@
+nodecode-enchant is a rewrite of noxius-studium's noxius-studium/enchanted-composer:
+
+  https://github.com/noxius-studium/enchanted-composer
+  commit b91e684c78d8a43a5346339a5091a1109424a28c
+  MIT License, Copyright (c) 2026 Composer Enhancements contributors (LICENSE)
+
+Rewritten: the review half of the plugin, in Common Lisp against Nodecode's cell
+contract. Its five enhancers (Clarify, Tighten, Grammar, Expand, Summarize) and
+their instruction texts; the one-shot rewrite, where the enhancer's body is the
+system message, the draft is the user message, and the answer is asked to be the
+rewritten prompt alone; the 12000-character ceilings on the draft and on the
+answer; the review that cuts a rewrite into change groups by a token-level
+longest-common-subsequence diff, each group a character range of the original and
+the text that replaces it, offered whole past 512 tokens a side or past 32
+groups, and composed back into the draft only for the groups the person picks;
+the history that keeps up to 30 revisions of a draft and moves back and forth
+through them without spending another model call, refusing to move when the
+draft no longer stands where the history left it. The desktop buttons, the
+groups ticked in a sheet and the drag reorder are replaced by /enchant and three
+tools; the section names the default enhancer, the history depth and the
+completion ceiling, where the original's settings page held a provider, a model
+and a thinking level per rewrite.
+
+Left out: the live voice half - the WebRTC and WebSocket realtime adapters, the
+Codex subscription lane through a child CLI, the audio device and microphone
+lease, and the voice provider catalogue - because a cell runs no audio pipeline;
+the prompt library of folders, favourites, tags, import and export, which a
+sibling cell already gives users; the draft shelf; and every part that exists
+only because the original draws into the Hermes desktop composer: the composer
+bar, the settings page, the tooltips, the spinners and the responsive layout.
+Nothing of the original's own code is bundled: it is all reimplemented against
+Nodecode's contract, and the rewrite runs on the session's own auxiliary model
+rather than on a model the plugin's settings page picks.

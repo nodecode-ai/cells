@@ -1,0 +1,32 @@
+nodecode-imagegen is a rewrite of duu261's duu261/hermes-imagegen-openai-compatible:
+
+  https://github.com/duu261/hermes-imagegen-openai-compatible
+  commit 65851c2f6985c5e193a5498493ecb2971450de7b
+  MIT License, Copyright (c) 2026 (LICENSE)
+
+Rewritten: the plugin's whole image surface, as one Nodecode tool and one
+command. The model id and quality resolution (a "-high" suffix on a GPT image
+model name becomes the base model plus that quality; a sized model always
+gets a quality; any other id is a gateway-defined model sent verbatim with no
+size and no quality), the three aspect sizes, the request to
+/images/generations and the multipart request to /images/edits, the answer
+saved from b64_json or fetched from a url, the fields the answer carries
+(model, api model, requested size and quality, decoded pixel size, revised
+prompt), the gateway-aware error text and its per-status hints, the base URL
+rules (https, or plain HTTP only on loopback, LAN, CGNAT, IPv6 ULA and
+.local hosts), and the source-image checks (magic bytes, a 50 MB cap, 16
+images). The Python openai SDK and the Hermes provider registration are not
+here: nlk:http speaks the two endpoints directly against one section
+declaration, one nlk:define-contract declaration gives the tool its shape,
+and /image gives an operator the same call with flags.
+
+Left out: the Hermes image-provider interface itself (list_models with its
+three preset display rows, get_setup_schema and the plugin's availability
+probe), because a Nodecode cell is not a provider lane and its settings panel
+is its own section declaration; the profile-scoped secret lookup, since a
+Nodecode section names an environment variable or a file and reads it once;
+and the SDK's omit-empty OpenAI organization and project headers, which a
+direct HTTP call never sends in the first place. The connect-time IP pinning
+of the original's SSRF guard is not reproduced either: a result URL must be
+https (or plain HTTP to a local network) and is fetched with the same client
+as everything else, without resolving the name twice.

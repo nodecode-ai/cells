@@ -122,7 +122,7 @@
   (with-stubbed-collector
     (with-qa (:share :weekly)
       (nodecode-qa::keep-note "eval" "timeout" "the snippet never came back")
-      (is (search "only by /qa push" (refusal-text qa:qa-error (qa:push-notes))))
+      (is (search "only from /qa" (refusal-text qa:qa-error (qa:push-notes))))
       (is (null *qa-posts*))
       (is (search "pushed 1 note to https://collector.test/api/qa/notes" (qa-slash "push")))
       (is (equal "https://collector.test/api/qa/notes" (car (first *qa-posts*))))
@@ -165,7 +165,9 @@
         (is (search "sharing weekly with https://collector.test, next page in " line))
         (is (a-week-away-p line) "the next page is a week away"))
       (is (search "the next page" (qa-slash "show")))
-      (is (search "unknown subcommand bogus" (qa-slash "bogus")))
+      (is (search "bogus is not one of its choices" (qa-slash "bogus")))
+      (is (equal '("/qa show" "/qa send" "/qa notes" "/qa push" "/qa clear")
+                 (mapcar (lambda (row) (getf (getf row :run) :enter)) (getf (nth-value 1 (qa-slash "")) :rows))))
       (is (null *qa-posts*) "show and status send nothing"))))
 
 ;;; --- the post --------------------------------------------------------------

@@ -1,0 +1,27 @@
+nodecode-qdrant-memory is a rewrite of cnkang's cnkang/hermes-plugin-qdrant-memory:
+
+  https://github.com/cnkang/hermes-plugin-qdrant-memory
+  commit 6ddf7215479692e7882f3065885931f01908c0ac
+  MIT License, Copyright (c) 2026 Kang Liu (LICENSE)
+
+Rewritten: the plugin's user-facing memory — four scoped tools with their
+argument schemas (qdrant_memory_search, qdrant_memory_add, qdrant_memory_update,
+qdrant_memory_delete), the canonical-text deduplication of an explicit write,
+the namespace scoping of every read and write, the prefetch of what the store
+holds about the newest ask before the model answers, and the background filing
+of a finished turn. The Python (qdrant-client, an embedded Qdrant, an ONNX
+embedding model) is Common Lisp here: nlk:http speaks Qdrant's REST API and an
+embeddings endpoint, one section declaration types the settings, and four
+nlk:define-contract declarations type the tools' arguments so the schema the
+model is shown and the body that runs are one shape.
+
+Left out: the parts of the original that are a Python runtime rather than a
+memory — its embedded Qdrant and bundled ONNX embedder (this cell speaks to a
+Qdrant and an embeddings endpoint the operator already runs), its SQLite
+admission ledger and crash-replay, the LLM extraction that distilled a turn
+into facts (a cell takes no second model call, so a captured turn is filed as
+the operator's own sentence and an explicit add is written as asked), its Mem0
+migration and quality-metrics commands, its optional authenticated shared
+owner with device grants and an HTTPS MCP bridge, and the standalone CLI and
+stdio MCP server, which are other front ends for the same runtime rather than
+the plugin's Hermes surface.

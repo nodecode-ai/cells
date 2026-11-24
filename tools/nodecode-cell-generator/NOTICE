@@ -1,0 +1,30 @@
+nodecode-cell-generator is a rewrite of iruzen-dono's iruzen-dono/hermes-plugin-gen:
+
+  https://github.com/iruzen-dono/hermes-plugin-gen
+  commit 75899f960d8358731255172add8232344c9084b8
+  MIT License, Copyright (c) 2026 Iruzen (LICENSE)
+
+Rewritten from the Python plugin into one Nodecode cell. The original's
+plugin_scaffold wrote a Hermes plugin folder -- plugin.yaml, __init__.py,
+schemas.py, tools.py -- under ~/.hermes/plugins from a description, and its
+plugin_add_tool patched one it had written; that is cell_scaffold and
+cell_add_tool here, writing a cell folder for THIS organism instead: the
+system and its test system, one cell.lisp carrying the package, a schema and
+a handler a tool and the nle:define-cell declaration, a README and the
+folder's tests. Its requires_env list became the section fields a generated
+cell declares, and its bundled French-language skill became the guide line
+the generated cell's section carries, which the setup panel and the model
+already read.
+
+Left out, and why:
+
+  * plugin_add_skill. A bundled SKILL.md is a Hermes registry entry; Nodecode
+    has none, so the third verb is cell_add_command -- one more slash command
+    spliced into a cell -- and the prose a cell carries rides in its section's
+    GUIDE line, which the setup panel and the model already read.
+  * plugin.yaml, schemas.py and tools.py. A Nodecode cell is an .asd and Lisp
+    files; the nle:define-cell declaration is the manifest, so there is
+    nothing for a separate manifest to keep in step.
+  * The original's name normalization kept dots and slashes, so a name could
+    point outside the plugins folder. A name here is letters, digits and
+    dashes only, and an existing folder is refused rather than overwritten.

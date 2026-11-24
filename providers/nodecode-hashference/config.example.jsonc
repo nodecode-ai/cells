@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config. A present section is enabled; "enabled": false
+// vetoes it. The key itself lives in auth.json (/connect) or HASHFERENCE_API_KEY.
+{
+  "hashference": {
+    "enabled": true,
+
+    // Where Hashference is served. The chat lane appends /chat/completions,
+    // and the model catalog is read from /models of the same base.
+    "base_url": "https://hashference.com/v1"
+  }
+}

@@ -1,0 +1,21 @@
+nodecode-mixer is a rewrite of Sahil-SS9's Sahil-SS9/hermes-agent-mixer:
+
+  https://github.com/Sahil-SS9/hermes-agent-mixer
+  commit f1da4ced08326cac33ba7a9fd0d5c1b6acd19f35
+
+MIT, Copyright (c) 2026 Sahil Saghir (LICENSE)
+
+The four dials, their values and defaults, the stage order (plan, scope,
+deps, lines, ask, the first denial winning), the presets, the /mixer grammar,
+the glob matching, the manifest and install-command readers, the line
+counting and the plan-mode read-only command allowlist are rewritten in Common
+Lisp as one Nodecode cell: a hook on the organism's :tool point, the
+operator's approval card for `ask`, and /mixer as a slash command. What the
+rewrite does not carry: the Claude Code, Codex and Gemini CLI harness adapters
+and their `agent-mixer` installer (this cell runs inside Nodecode, where there
+is one tool and one hook); the desktop, dashboard and local-web consoles (the
+/mixer command, the config section and the setup panel are the surface here);
+the `extra_write_tools` setting (Nodecode has one tool, so no extra write
+tools can be named); and the turn-start rules line that the original injects
+into the model's context, since a Nodecode hook cannot add text to a request -
+the board, the manual topic and every refusal carry the same words instead.

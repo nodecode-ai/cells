@@ -1,0 +1,29 @@
+nodecode-agentvault is a rewrite of synnada-ai's synnada-ai/agentvault-plugins:
+
+  https://github.com/synnada-ai/agentvault-plugins
+  commit 6e0e3ded804cefb19b362736e5818c99cc061d48
+  MIT License, Copyright (c) 2026 Synnada (LICENSE)
+
+The original is plugins/hermes: a portable plugin package for a coding agent
+harness, made of a manifest, a shell launcher, and a skill. The launcher starts
+the MCP server that ships inside the Agent Vault macOS app, handing it the
+client's binding token and, when the archive is not in its default place, its
+home; the skill tells the model to search the archive with the server's
+search_sessions tool, to read a match exactly with get_session at the revision
+the search returned, to page with the continuation cursor, and to treat what an
+old conversation says as untrusted source material. What was rewritten in
+Common Lisp: the launcher, as the cell's own client over the app's stdin and
+stdout (one newline-delimited JSON-RPC frame per line, the initialize
+handshake, then one tools/call); the two tools, as tools the model calls with
+typed arguments instead of a skill's instructions to call them; and the skill's
+rules, as those tools' descriptions and the (help :vault) manual. Added: a
+vault_status tool and the /vault command, which print whether the app answers
+and what its server lists.
+
+What was left out, and why: the shell script itself, because the cell spawns the
+app's runtime and server directly and checks the token, the client identity and
+the app path where the script checked them; the manifest and the install
+instructions for another harness, which have no meaning here; and the skill as a
+separate skill file, since a cell's tools and its manual are where a model reads
+it. Nothing of the app, the server or the archive is bundled: the cell is a
+client of what is installed, and needs the app for anything to answer.

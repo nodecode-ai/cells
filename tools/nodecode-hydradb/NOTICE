@@ -1,0 +1,33 @@
+nodecode-hydradb is a rewrite of hydra-db's hydra-db/hydradb-hermes-plugin:
+
+  https://github.com/hydra-db/hydradb-hermes-plugin
+  commit 056d684f7e7f71b1086d975a9b78c52674a960e5
+  Apache-2.0, Copyright 2025 HydraDB Contributors (LICENSE)
+
+The rewritten plugin is the hydradb_hermes folder of that commit. Its two
+harness methods became the cell's surfaces: prefetch (auto-recall) is
+hydradb_recall and /hydradb, and sync_turn (persist the turn off-thread) is
+the :frame observer and the capture worker. Its client is carried over
+whole: the three public endpoints (POST /query with tenant_id,
+sub_tenant_id, query, kind, mode and max_results; POST /context/ingest as
+multipart app_knowledge; DELETE /context by id), the Bearer key, the
+{"success","data","error"} envelope with its code and message, the
+preference for the server's own llm_prompt, the chunk normalisation that
+unwraps a stored content envelope to its prose while keeping the trailing
+graph enrichment, the note ids ("note-" and random hex), the conversation
+note's "User: ... / Assistant: ..." text, and the env vars that name the
+key, the database, the collection and the base URL (with the older
+HYDRADB_TENANT_ID and HYDRADB_SUB_TENANT_ID accepted as aliases, as
+__init__.py:18-33 does).
+
+What was left out, and why: the MemoryProvider interface itself, which has
+no Hermes to run inside, so its two methods became a tool, a command and a
+:frame hook; the automatic injection of recall into the prompt before every
+turn, because Nodecode's standing-section seam carries no per-message
+query, so the model calls hydradb_recall instead; the hermes memory setup
+and status commands, whose answers the config section, /settings and
+/hydradb give; the plugin.yaml manifest and the entry point, which are the
+.asd's job here; and the MCP server the repository offers as an
+alternative, whose pull-style recall hydradb_recall already gives. The
+plugin never called its own delete method; hydradb_forget exposes it.
+LICENSE is HydraDB's repository LICENSE, unchanged.

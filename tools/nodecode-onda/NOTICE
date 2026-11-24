@@ -1,0 +1,23 @@
+nodecode-onda is a rewrite of getondaru's getondaru/onda:
+https://github.com/getondaru/onda
+commit c9c0b1380cf52a6cef8006e8766335db5ffe3096
+MIT-0, Copyright 2026 Onda (https://getonda.ru) (LICENSE)
+
+The original's plugin folder is a portable manifest and an mcp.json: no code,
+no skills, no scripts. It names one hosted MCP server behind a browser
+sign-in with an emailed code, and that server answers ten tools over the
+Projects, followed accounts, Hits, plan usage, collection runs and Instagram
+transcripts of an Onda account. This cell reaches the same data through the
+REST API the same repository documents for its skills in the `skills/`
+folder: one host, https://app.getonda.ru, authorized with an X-API-Key header
+instead of OAuth. Each of the ten tools keeps the original tool's job, under
+the name onda_<job>, and one /onda command runs the free reads from the
+keyboard.
+
+Left out, and why: the MCP transport and its OAuth sign-in, because a cell
+cannot open a browser for an emailed code, so the credential is an API key
+from the same account; the manifest name `onda` as the system name, because
+Nodecode's cells are named nodecode-<slug> (the package nickname, the
+command and the manual topic are still `onda`); the operation_id a repeat
+call reuses, which the REST run endpoints this cell calls do not take, so a
+second run spends again — the manual says so.

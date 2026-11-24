@@ -1,0 +1,23 @@
+nodecode-devtune is a rewrite of devtunehq's devtunehq/skills:
+
+  https://github.com/devtunehq/skills
+  commit bb38e20a34a7577d359fd9a508caa1cf1ef8b1a7
+
+MIT, Copyright (c) 2026 DevTune (LICENSE)
+
+What was rewritten: the plugin had no code at all -- an MCP server entry and two
+skill prompts -- so the two tables those prompts carry, one read a line, are this
+cell's report table: the same REST paths under https://devtune.ai/api/v2, the same
+project key as a bearer header, the same reads (connection, visibility summary and
+diff, competitive position, top citation domains and pages, visibility responses and
+one response, content gaps and their evidence, traffic summary, platforms, AI
+referrals and 404 demand, actions and one action's brief, audit summary and findings,
+the outcomes ledger, and the nine Agent Picks reads with their setup). The skills'
+guidance -- what a percentage is against a fraction, a citation against a mention,
+not-measured against zero, a pick rate against an install rate, an outcome against a
+cause -- is the manual topic, and the reads are the model's tool. What was left out:
+the MCP server itself, the write and credit-spending calls (prompts, competitors,
+briefs, drafts, test starts) and the agent-driven signup, so a model reading through
+this cell cannot change a project or spend a credit; and the JSON prelude a hosted
+server wrapped its answers in, this cell answering DevTune's own JSON under one line
+naming the read.

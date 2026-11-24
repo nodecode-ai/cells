@@ -1,0 +1,9 @@
+{
+  // FindBroadband's outage MCP server: keyless, read-only, and the one the
+  // original plugin's mcp.json named. A provider name, a day count or a date
+  // go to it; nothing else does.
+  "broadband-outage": {
+    "endpoint": "https://www.findbroadbanddeals.com/api/mcp/outages",
+    "timeout_seconds": 45
+  }
+}

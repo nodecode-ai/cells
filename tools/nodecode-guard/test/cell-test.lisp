@@ -201,3 +201,64 @@ text ...): :ALLOWED, or the refusal string."
         (is (equal '(t nil)
                    (mapcar #'nlk:tool-result-event-failed
                            (session-events "guard-failed" :type 'nlk:tool-result-event))))))))
+
+;;; --- ask: a matched call waits on the operator's Allow once ----------------
+
+(defun call-with-ask-operator (stub thunk)
+  "THUNK with the core's ASK-OPERATOR answered by STUB, put back after."
+  ;; By name, so this reads on a core released before the question board.
+  (let* ((symbol (intern "ASK-OPERATOR" '#:nodecode.evolved))
+         (saved (and (fboundp symbol) (fdefinition symbol))))
+    (setf (fdefinition symbol) stub)
+    (unwind-protect (funcall thunk)
+      (if saved (setf (fdefinition symbol) saved) (fmakunbound symbol)))))
+
+(defun guard-asked (answer why &rest config)
+  "The verdict for `sudo ls' with CONFIG started and ASK-OPERATOR answering
+ANSWER and WHY, and what it was asked: (VERDICT ASKED), ASKED the title,
+:detail, :choices and :seconds the call carried, or NIL when nothing asked."
+  (let ((asked nil))
+    (call-with-ask-operator
+     (lambda (title &rest keys)
+       (setf asked (cons title keys))
+       (values answer why))
+     (lambda ()
+       (with-cell-stop ((apply #'guard-start config))
+         (list (guard-verdict "(sh \"sudo ls /root\")") asked))))))
+
+(deftest guard-cell-asks-only-when-ask-is-on ()
+  (destructuring-bind (verdict asked) (guard-asked "Allow once" :answered)
+    (is (null asked) "ask off (the default): nobody is asked")
+    (is-carrying (text verdict) ("refused by nodecode-guard" "and the call is refused as before")
+      ("operator the command" "handing the operator the command"))))
+
+(deftest guard-cell-runs-a-call-the-operator-allows ()
+  (destructuring-bind (verdict asked) (guard-asked "Allow once" :answered "ask" t "ask_seconds" 30)
+    (is (eq :allowed verdict) "Allow once runs the call")
+    (is-carrying (title (first asked)) ("privilege" "the question names the rule"))
+    (is (equal "sudo ls /root" (getf (rest asked) :detail)) "and shows the command the call runs")
+    (is (equal '("Allow once" "Deny") (getf (rest asked) :choices)) "offering Allow once or Deny")
+    (is (= 30 (getf (rest asked) :seconds)) "for ask_seconds")))
+
+(deftest guard-cell-refuses-what-the-operator-denies-or-leaves ()
+  (destructuring-bind (verdict asked) (guard-asked "Deny" :answered "ask" t)
+    (is asked "the operator was asked")
+    (is-carrying (text verdict) ("refused by nodecode-guard" "Deny refuses")
+      ("chose Deny" "saying the operator chose it")
+      ("do not retry" "and that the model must not work around it")))
+  (destructuring-bind (verdict asked) (guard-asked nil :timeout "ask" t)
+    (declare (ignore asked))
+    (is-carrying (text verdict) ("did not answer in time" "no answer refuses, saying so")))
+  (destructuring-bind (verdict asked) (guard-asked nil :nobody "ask" t)
+    (declare (ignore asked))
+    (is-carrying (text verdict) ("operator the command" "nobody to ask is the refusal as before"))
+    (is (not (search "asked" verdict)) "which claims no question")))
+
+(deftest guard-cell-never-asks-about-an-allowed-call ()
+  (let ((asked nil))
+    (call-with-ask-operator
+     (lambda (&rest args) (setf asked args) (values "Deny" :answered))
+     (lambda ()
+       (with-cell-stop ((guard-start "ask" t))
+         (is (eq :allowed (guard-verdict "(sh \"ls -la\")")) "an ordinary call runs")
+         (is (null asked) "unasked"))))))

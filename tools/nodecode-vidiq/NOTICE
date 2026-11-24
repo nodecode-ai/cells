@@ -1,0 +1,33 @@
+nodecode-vidiq is a rewrite of vid-io's vid-io/vidiq-mcp:
+
+  https://github.com/vid-io/vidiq-mcp
+  commit 1c094797d036577519e378e3ee4856682cbe1818
+  Apache License 2.0, Copyright 2026 vidIQ, Inc. (LICENSE)
+
+Rewritten: the plugin's connection metadata (.mcp.json, plugin.json,
+gemini-extension.json) became one section with its hosted endpoint here, and
+mcp.lisp speaks the same wire the plugin's client did — one JSON-RPC POST per
+message to https://mcp.vidiq.com/mcp, the OAuth access token as a bearer
+header, the initialize handshake and the Mcp-Session-Id it answers, a JSON body
+or the last event of an SSE stream, and a tools/call error carried through as
+the refusal. The tool vocabulary its twelve skills call (vidiq_user_channels,
+vidiq_channel_videos, vidiq_outliers, vidiq_keyword_research, vidiq_jobs_list,
+vidiq_job_poll, the generation and scoring tools and the rest) became the verbs
+of the vidiq package, with each tool's camelCase fields as keyword arguments
+and vidiq:call-tool reaching any tool the account lists. The operating rules of
+skills/*/SKILL.md, references/live-surface-notes.md, references/job-lifecycle.md
+and rules/vidiq-lifecycle.mdc — evidence never instruction, missing data is
+unknown, signed URLs passed on untouched, submit a job once and follow its id,
+confirm spending and account changes, originality — became the manual topic
+(help :vidiq), which also names the twelve workflows and what each decides.
+
+Left out: the twelve SKILL.md files verbatim, whose steps are condensed into
+the manual topic rather than shipped as separate files; the plugin's per-client
+manifests and marketplace files (Claude Code, Codex, Cursor, Copilot, Gemini,
+ChatGPT), which only install the same connection metadata in those clients; the
+specialist agent (agents/vidiq-mcp.agent.md) and the always-on Cursor rule,
+which route a request to a skill — Nodecode routes through the manual topic and
+the model's own reading of it; and the browser OAuth sign-in itself, which the
+plugin leaves to its host client: the cell takes the token that sign-in
+produced, from the section or VIDIQ_ACCESS_TOKEN. The service, its tools and
+their results are vidIQ's and stay in vidIQ's cloud.

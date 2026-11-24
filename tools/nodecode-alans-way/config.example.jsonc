@@ -1,0 +1,14 @@
+{
+  // Alan's Way computer use. The router is the MCP stdio server Alan's Way's
+  // own workspace setup writes: a .mjs script, started by node.
+  "alans-way": {
+    // required: the router script's path, and any arguments it needs after it
+    "router_args": ["~/.local/share/alans-way/workspace/workspace-router.mjs"],
+    // the command that starts it
+    "router_command": "node",
+    // seconds one call may take, start-up included
+    "call_timeout": 60,
+    // where a vision capture writes its PNG (default: under the home's computer/)
+    "screenshot_dir": "~/Pictures/alans-way"
+  }
+}

@@ -1,0 +1,9 @@
+// The identity cell's section: everything here is optional.
+{
+  "identity": {
+    "dir": "identity",       // the folder holding SOUL.md, MEMORY.md, USER.md and AGENT.md
+    "stale_days": 21,        // a line nothing repeated this long is listed stale
+    "track": true,           // stamp a line when the model's words or a tool call repeat it
+    "prompt": true           // the files ride every turn's standing context
+  }
+}

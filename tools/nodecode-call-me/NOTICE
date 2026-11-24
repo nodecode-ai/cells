@@ -1,0 +1,38 @@
+nodecode-call-me is a rewrite of radres's radres/hermes-plugin-call-me:
+
+  https://github.com/radres/hermes-plugin-call-me
+  commit 970952e72d633ebdbed20d8c60c327cc45475140
+  MIT License, Copyright (c) 2026 Serdar Oztetik (LICENSE)
+
+Rewritten: the two verbs the original gave an agent — a text to the
+operator's phone through the /call-me service, and a call that speaks a
+sentence out loud and returns the spoken answer as a transcript — as the
+callme_text and callme_call tools, the /callme command that says what the
+number reaches and sends a text or places a call now, and a manual topic
+(help :call-me) in place of the original's gateway platform prompt. Kept
+with them: the agent session the service mints and the one session file it
+is kept in, so the agent's own number is stable; the allowlist that fences
+both verbs, so a number or name outside CALLME_ALLOWED_USERS is refused
+before any request leaves; the name-or-number recipient, empty when one
+number is allowed; the 2000-character ceiling on what is texted and spoken;
+the 30-to-300-second call wait and the "missed" answer that tells the model
+to send a text instead; and the service's own words for a refusal. The
+Python became Common Lisp — nlk:http for the two request shapes instead of
+aiohttp and httpx, one section declaration for the settings instead of five
+environment variables and the .env wizard, and nlk:define-contract for each
+tool's arguments, so the schema the model is shown and the body that runs
+are one shape. Nothing else is read: the cell touches no file but its own
+session file, and no environment variable at all.
+
+Left out: the inbound half — the original registers itself as a chat
+platform, long-polls the service's event stream, greets each allowed number
+once, gates inbound messages on the service's verified-device mark, dedupes
+them and answers with a chunked reply, and lets cron deliver its output to a
+home number. That is a room, and a room needs the bot plumbing this folder
+does not carry; here the agent texts and rings, and a person's reply arrives
+on their phone in the /call-me thread rather than in the session. Also left
+out: the voicemail transcription event, the single flight of a session held
+in memory across a long-running gateway (a fresh process re-reads the same
+file, which is what matters here), and CALLME_ALLOW_UNVERIFIED, a switch for
+old app builds whose inbound messages carry no verified mark — with no
+inbound path, there is nothing for it to let in.

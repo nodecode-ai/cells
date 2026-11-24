@@ -40,19 +40,15 @@
 (deftest channel-matrix-command-event ()
   (let ((key (ncm:command-state-key "models" "@bot:fake")))
     (is (equal "6LU5sYBdyib4jLFHi/8H4Lw8UCf5DnDXgCzV6hQKCpw=" key) "the state key is mautrix-go's"))
-  (let* ((models (ncm:command-content (list :name "models" :description "Show or change the models"
-                                            :usage "/models [provider] [model]" :autocomplete t)))
-         (help (ncm:command-content (list :name "help" :description "Show commands" :usage "")))
-         (parameter (aref (gethash "parameters" models) 0)))
+  ;; A command is its name: none declares a parameter, whatever an entry
+  ;; written before that still carries beside it, so a client asks for nothing
+  ;; after it, and the command sent alone answers what it offers.
+  (let ((models (ncm:command-content (list :name "models" :description "Show or change the models"
+                                           :usage "/models [provider] [model]" :autocomplete t))))
     (is (equal "models" (gethash "command" models)) "the command is named without its slash")
     (is (equal "Show or change the models" (matrix-text-body (gethash "description" models))) "described in words")
-    (is (equal "args" (gethash "key" parameter)) "a command that takes arguments has one parameter")
-    (is (eq t (gethash "optional" parameter)) "which may be left out")
-    (is (equal "string" (nlk:json-value parameter :string "schema" "type")) "and is free text")
-    (is (equal "[provider] [model]" (matrix-text-body (gethash "description" parameter))) "its usage, after the command")
-    (is (equal "args" (gethash "fi.mau.tail_parameter" models)) "which takes the rest of the line")
-    (is (null (nth-value 1 (gethash "parameters" help))) "a command that takes nothing declares no parameter")
-    (is (null (nth-value 1 (gethash "fi.mau.tail_parameter" help))) "and no tail")))
+    (is (null (nth-value 1 (gethash "parameters" models))) "no parameter")
+    (is (null (nth-value 1 (gethash "fi.mau.tail_parameter" models))) "and no tail")))
 
 (deftest channel-matrix-menu-published-per-room ()
   (with-fake-matrix (fake)

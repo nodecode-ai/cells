@@ -1,0 +1,32 @@
+nodecode-harnmem is a rewrite of ys118's ys118/harnmem:
+
+  https://github.com/ys118/harnmem
+  commit 20c644ef4276284494519ed96305bb371ff05dc3
+  MIT, Copyright (c) 2026 HarnMem contributors (LICENSE)
+
+The rewritten plugin is packages/hermes-harnmem of that commit. Its two halves
+are carried over: the injection (a small, byte-stable snapshot at the head of a
+turn's context, cached so two turns without a write carry the same bytes) and
+the five tools (harnmem_search, harnmem_write, harnmem_read, harnmem_forget,
+harnmem_status), with the original's names, descriptions, parameters and JSON
+answers, and with a write with an existing active title merging into it. The
+engine the plugin drove through a Node child process is rewritten in Lisp: the
+store's layout (memories/user and memories/projects/<project>, one Markdown
+file per memory, the original's YAML frontmatter subset, state/, trash/,
+VERSION), its four memory types and its statuses, the lexical ranker, the
+hot-index score (importance, confidence, recency, use, pinned) and the budgeted
+snapshot layout with its header and footer. A memory written by this cell is
+read by the other HarnMem harnesses, and theirs by this cell.
+
+What was left out, and why: the session-end extraction pass, because it needs
+an OpenAI-compatible endpoint and a model call the original only makes when
+auto_extract is turned on -- the model writes its own memories with
+harnmem_write here, which is the path the original also keeps working with no
+endpoint at all; the JSON search index (index/<shard>.json) and the per-shard
+MEMORY.md, which this cell leaves to the engine's own rebuild while it reads the
+Markdown files directly; the original's skip/merge/supersede dedupe decisions
+and validity windows, replaced by a merge on an existing active title; the
+digests and the consolidation pass; and the `hermes harnmem status|search|read`
+CLI, whose answers the config section, /settings and /harnmem give. The
+plugin's Python provider and its Node bridge are not bundled: a cell carries
+neither. LICENSE is the plugin's repository LICENSE, unchanged.

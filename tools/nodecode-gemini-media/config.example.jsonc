@@ -1,0 +1,13 @@
+// The `gemini-media` section of ~/.nodecode/config.jsonc. Everything here is
+// optional except api_url; a key is read from GEMINI_API_KEY when api_key is empty.
+{
+  "gemini-media": {
+    "api_url": "https://generativelanguage.googleapis.com/v1beta",
+    "api_key_env": "GEMINI_API_KEY",
+    "image_model": "gemini-nano-banana-2.1",
+    "video_model": "gemini-omni-1.1-flash",
+    "output_dir": "~/.nodecode/gemini-media",
+    "image_timeout": 150,
+    "video_timeout": 300
+  }
+}

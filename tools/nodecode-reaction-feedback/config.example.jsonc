@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell — documentation, not
+// config: the folder gets pushed and holds no secret. The declaration in cell.lisp is the
+// authority; this is an illustration of it. A present section is enabled; a value of
+// "enabled": false vetoes it. Nothing here is required.
+{
+  "reaction-feedback": {
+    "enabled": true,
+    "excerpt_chars": 60,
+    "max_anchors": 200,
+    "max_pending": 20,
+    "ttl_hours": 48,
+    "max_chats": 256
+  }
+}

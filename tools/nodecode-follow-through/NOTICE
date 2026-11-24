@@ -1,0 +1,37 @@
+nodecode-follow-through is a rewrite of Agenziamaia's Agenziamaia/follow-through:
+
+  https://github.com/Agenziamaia/follow-through
+  commit 9e4ddc528b62254c944ed25542902b6f99d652a4
+  MIT License, Copyright (c) 2026 Giulio Di Stefano (agenziamaia) (LICENSE)
+
+Rewritten: the plugin's one llm_execution middleware, its regexes
+(__init__.py:30-91) and its follow_through tool, as one Nodecode cell. The
+detector is the plugin's own, alternative for alternative, English and
+Italian, with the same exemptions (a sentence shorter than twelve characters,
+a question, a sentence that hands the next step to the person, a negated
+clause) and the same rule for a quote of at most 300 characters. The tool
+answers the same nudge text, the knob is the `follow_through' section's
+`max_nudges' (the plugin's FOLLOW_THROUGH_MAX_NUDGES), and a tool call in
+follow-through's shape is still offered under the plugin's name; the two
+verbs the plugin had as an environment variable and a kill switch are
+/follow-through status, on and off.
+
+The mechanism had to change, and that is the one difference a user will
+notice. Hermes lets a plugin rewrite the reply that was already written, so
+the agent carries on inside the same turn. A Nodecode cell cannot rewrite a
+finished answer; it reads the message as it is recorded (around
+NLK:RECORD-ASSISTANT-MESSAGE, once per round of a live turn) and puts the
+nudge into the session through NLE:SUBMIT, the one in-process ingress. The
+turn that promised ends and the next one opens on the nudge, so the work
+still really continues, but the nudge stands in the transcript as a tagged
+prompt of its own. The count that capped the plugin at two nudges per user
+turn is kept, now per prompt: a hook around NLE:SUBMIT starts it over at
+every prompt that is not this cell's own, so a chain of promises cannot run
+away and the next thing the person says resets it.
+
+Left out, and why: the Tool Search bridge (`tool_call`), because whether a
+plugin tool is deferred is a Hermes detail; FOLLOW_THROUGH_OFF, because
+/follow-through off is the same switch and it is visible; and the plugin's
+fail-open posture on an error is kept but is no longer something the reader
+has to trust -- the nudge is given in NLE:SUBMIT, outside the promise check,
+and a failure to give one leaves the turn untouched.

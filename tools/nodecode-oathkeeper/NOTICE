@@ -1,0 +1,28 @@
+nodecode-oathkeeper is a rewrite of Whydiriki700's Whydiriki700/oathkeeper:
+
+  https://github.com/Whydiriki700/oathkeeper
+  commit dfff809521c78e98e461ce72d4592ee02eea345c
+  MIT License, Copyright (c) 2026 Riki Wahyudi (LICENSE)
+
+Rewritten: the oath file and its three line kinds (a standing mission, a
+`never <verb>: <pattern>` invariant, an `always require <evidence> before
+<verb>: <pattern>` prerequisite), the path patterns with ** trees, globs and
+prefix subtrees, the parsing and its per-line errors, the action extraction
+from a shell command (rm, mv, cp, dd, truncate, tee, in-place editors,
+redirections, mutating git verbs, over a bounded head), the ledger of blocks
+and evidence, and the fingerprint snapshots with their outside-change diff.
+The plugin's Python is now Lisp: oath.lisp is oath.py, actions.lisp is
+actions.py, cell.lisp is __init__.py.
+
+Left out: Hermes gave the plugin three hooks around a tool call; this
+harness gives one around hook on the :TOOL point, so the pre-call check and
+the post-call bookkeeping are one function and the fingerprint report runs at
+the head of each call instead of at the head of each turn. The plugin's
+pre_llm_call briefed the missions into the first turn's prompt; here they
+stand in the cell's notice, which the model reads at the tail of every
+round. The plugin read a command string from a terminal tool; this harness's
+agent works through one eval form, so the extraction reads the form's spawn
+calls and the file verbs it calls (delete-file, write-file, edit),
+and its `oath_check` tool takes that form rather than a tool name and a JSON
+argument object. Content fingerprints are a 64-bit FNV-1a digest rather than
+SHA-256, to need no system beyond the core's own.

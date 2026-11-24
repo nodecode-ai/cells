@@ -286,3 +286,16 @@ wrote, and PLATFORM's status reads that soul as present."
   (is (equal "Answer in haiku." (nlk:get-harness-section lane nck:+soul-section+)))
   (is (null (nlk:get-harness-section room nck:+soul-section+)))
   (is (search "(present)" (getf (nck:channel-status platform) :soul))))
+
+(defun untimed (text)
+  "TEXT with the sent time each line's bracket closes on set aside: the line
+as a test reads it when it does not hold the clock the kit's ingress stamped
+it on (NCK:HANDLE-TAG)."
+  (ppcre:regex-replace-all " (?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) \\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}\\]"
+                           text "]"))
+
+(defun untimed-row (line rows &rest path)
+  "The first object of ROWS whose string member at PATH reads LINE once its
+sent times are set aside (UNTIMED), or NIL."
+  (find line (coerce rows 'list) :test #'equal
+        :key (lambda (row) (untimed (or (ignore-errors (apply #'nlk:json-value row :string path)) "")))))

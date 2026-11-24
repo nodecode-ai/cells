@@ -1,0 +1,26 @@
+nodecode-skill-router is a rewrite of DECRUX9812's DECRUX9812/typesafe-skill-router:
+https://github.com/DECRUX9812/typesafe-skill-router
+commit e6cdac26f9ed588b4a94b8a2f7f9f026e1b9faf3
+
+MIT, Copyright (c) 2026 Ritesh Patel (LICENSE)
+
+Rewritten: the two-stage TypeSafe (System One) routing decision -- the
+chunked choice over the roster with its three request judgments and gate, the
+shortlist stage with one fit judgment per candidate, both thresholds, the
+`none_of_these` option and the tie-break by name, the one `<skill_relevance>`
+line, and the fail-safe posture (nothing sent without a key, nothing said
+when nothing fits, every failure silent). The Hermes `pre_llm_call` hook
+became Nodecode's `:round` point, which records the line as the reminder of
+the round about to be asked; the roster, read there from `~/.hermes/skills`
+and their `SKILL.md`, is here what the index lists -- the skills and linked
+`SKILL.md` skills this image keeps. The request is the turn's own committed
+text, read from the event log. Python's stdlib client became a hand-written
+JSON writer and `nlk:http`.
+
+Left out: the on-disk answer cache (`cache.json`), the per-turn log file,
+and the `/typesafe-skill-router on|off|status|suggest|check` command family.
+A cell's section is its on/off switch and the answers are cheap enough to
+ask again, so the cache and the log had nothing left to do; the command is
+one `/skill-router` that answers status and routes one request on demand.
+The thread-pool budget around a routing decision is gone too: `nlk:http`
+takes a timeout of its own.

@@ -1,0 +1,36 @@
+nodecode-startup is a rewrite of Yicheng-Mark's Yicheng-Mark/hermes-windows-plugins:
+
+  https://github.com/Yicheng-Mark/hermes-windows-plugins
+  commit a2162423aeaa5f5b1379a9290de810ea48f9d12e
+  MIT, Copyright (c) 2026 Yicheng-Mark (windows-startup/LICENSE)
+
+What was rewritten: the question the plugin answers and the shape of its
+answer. On Windows the same six Run/RunOnce keys are read (HKCU, HKLM and the
+32-bit view), the same Explorer StartupApproved blobs are decoded into an
+enabled/disabled verdict with a FILETIME of when the person last changed it
+(state bytes 2 and 3 on, 6 and 7 off, anything else reported as unknown with
+the raw byte), the same two Startup folders are listed through Explorer's User
+Shell Folders so a redirected folder is found where the person has it, and the
+same leftover approval records are reported separately rather than matched to
+an entry that no longer exists. The command resolution is the original's:
+quoting, arguments and environment variables folded in, the longest whitespace
+prefix that names a real file for an unquoted command, a binary that is gone
+said so, a relative path reported unchecked. The two tools, the filters, the
+notes and the detail's fields keep the original's meaning; the tool names drop
+the win_ prefix.
+
+What was added: the same question on Linux and macOS, since a cell can run on
+any of the three. Linux reads the XDG autostart folders, with a user's file
+shadowing a system one of the same name as the desktop itself does, and counts
+Hidden=true or X-GNOME-Autostart-enabled=false as switched off. macOS reads
+the user's LaunchAgents and the system's LaunchAgents and LaunchDaemons, and
+counts Disabled as switched off.
+
+What was left out, and why: the plugin's Hermes tool registration, its pytest
+suite and its VALIDATION.md, which are the harness's rather than the cell's,
+and Explorer's `StartupApproved\Run32` handling beyond the keys above. The
+registry is read through `reg query` rather than Python's winreg, because the
+image has no registry reader: the parsing is the cell's own and is tested
+against recorded output. A macOS launchd job stored as a binary plist is
+reported by its file name with a note rather than decoded, and systemd user
+units are not read.

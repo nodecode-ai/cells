@@ -1,0 +1,28 @@
+// The section ~/.nodecode/config.jsonc may carry for the duet-queue cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration of
+// it. A present section is enabled; "enabled": false vetoes it.
+{
+  "duet-queue": {
+    "enabled": true,
+    // The CLI that runs one task: your own agent CLI, with the task's prompt
+    // as its last argument. Required: the cell refuses to start without it.
+    "command": "agy",
+    // Flags that CLI takes before the prompt.
+    "args": ["--print", "--no-tools", "--disable-slash-commands"],
+    // What a model adds waits in awaiting_approval until you approve it with
+    // /duet approve ID. Off, a model's task is runnable at once.
+    "approval_required": true,
+    // Run runnable tasks in the background.
+    "auto_run": true,
+    "interval_seconds": 15,
+    // One task's ceiling, and how many tasks the queue keeps.
+    "timeout_seconds": 600,
+    "max_tasks": 100,
+    // Where the queue file and the task workspaces live; leave it out to keep
+    // them under the Nodecode home.
+    "dir": "~/duet-queue/",
+    // The Ruflo CLI duet_swarm reads, when it is installed.
+    "swarm_command": "ruflo"
+  }
+}

@@ -1,0 +1,21 @@
+nodecode-abstract is a rewrite of abstractpbc's abstractpbc/hermes-abstract-provider:
+
+https://github.com/abstractpbc/hermes-abstract-provider
+commit e322e42578586af1c376b7e836dfce437308682a
+MIT, Copyright (c) 2026 Abstract (LICENSE)
+
+Rewritten: the plugin's one provider registration -- the provider id, the
+base URL https://api.abstract.inc/v1, the ABSTRACT_API_KEY variable, the
+output cap of 65,536 tokens, the three model ids (glm-5.3:superfast,
+deepseek-v4-flash:superfast, kimi-k3:superfast) with the prices its README
+publishes, and text-only input. In Nodecode that is a cell registering one
+catalog row on the Responses lane, a credential hook reading the same
+variable, and a round that refuses in words when no key is set.
+
+Left out: Hermes' own ProviderProfile fields (the alias abstract-inc, the
+codex_responses mode name, the auxiliary-model default and the vision flags)
+that name Hermes' runtime rather than the service -- Nodecode's lane,
+credential chain and model picker carry the same facts their own way. The
+plugin publishes no context window and disables live model listing, so the
+roster stays static here and each window is left unknown for Nodecode to
+learn from the provider's own reply. No plugin code is bundled.

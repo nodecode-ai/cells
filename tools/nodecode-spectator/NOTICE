@@ -1,0 +1,27 @@
+nodecode-spectator is a rewrite of Sahil-SS9's Sahil-SS9/spectator-mode:
+
+  https://github.com/Sahil-SS9/spectator-mode
+  commit a1467ded9802559b30061efe861701d8ec14bcae
+  MIT License, Copyright (c) 2026 Sahil Saghir (LICENSE)
+
+Rewritten: the whole plugin, in Common Lisp against Nodecode's own seams. The
+original is a FastAPI dashboard plugin that reads the host's session database
+read-only and re-serves a masked stream on a second loopback port, with its own
+HMAC guest tokens, invite lifecycle, SQLite store and browser page. This cell
+reads the facts the session already records in the event log instead of a host
+database, serves the page on the gateway's own port through the route seam,
+and keeps an invite and a suggestion in memory for the life of the process. The
+mask is carried over: paths, NAME=value assignments and long opaque tokens are
+rewritten before a guest reads a line. An approved suggestion enters the
+session through the one in-process ingress, as the original's host injection
+did.
+
+Left out: the second HTTP server and its loopback/TLS binding rules (the
+gateway's route already answers on loopback, so a tunnel supplies the remote
+half), the HMAC token and its session-generation bookkeeping (a 24-character
+token is the credential and dies with the process), the SQLite store and its
+retention window (nothing durable is written), WebSocket streaming (the page
+polls), the transcript poller with its cursor (the event log is the source),
+commit-pinned branch queries over git, and the multi-harness bridge and
+integrations for other CLIs, which have no meaning inside one organism. The
+guest page is rewritten, smaller: the log, a suggestion box, and the poll.

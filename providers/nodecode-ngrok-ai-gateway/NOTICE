@@ -1,0 +1,29 @@
+nodecode-ngrok-ai-gateway is a rewrite of ngrok's ngrok/hermes-ngrok:
+https://github.com/ngrok/hermes-ngrok
+commit 27baaa0e85e09581f05084fc318a0755774162e1
+MIT, Copyright (c) 2026 ngrok, Inc. (LICENSE)
+
+What was rewritten: model-providers/ngrok/__init__.py and plugin.yaml. The
+provider profile became a Nodecode provider lane -- the same id (`ngrok'),
+display name, access key in NGROK_AI_GATEWAY_KEY, base URL in the section or
+in NGROK_AI_GATEWAY_BASE_URL, and the hosted https://gateway.ngrok.ai/v1
+endpoint -- and the plugin's one registered profile became the cell's
+catalog row plus its credential and request hooks. The module's user agent
+marker is kept, naming Nodecode's release instead of Hermes'. Its
+GATEWAY_ERROR_RULES table is carried over whole, one row per documented
+ERR_NGROK_ code, but states a label from Nodecode's own failure vocabulary
+(`not_found', `forbidden', `billing') instead of Hermes' FailoverReason
+struct, since Nodecode reads a round's failover trigger off the failure's
+class and HTTP status rather than off a provider-supplied verdict.
+
+What was left out, and why: nothing that reaches a user. Hermes' profile
+fields with no Nodecode counterpart are not written out -- `fallback_models'
+(the model list is live in both), `default_aux_model' (in Nodecode a
+background task is a provider and model the operator names), `auth_type' and
+`signup_url' (the cell's section guide carries the key page), and
+`api_mode' (the chat wire is the catalog row's npm package). The
+`aliases' (`ngrok-ai', `ngrok-ai-gateway') are gone because Nodecode
+resolves a provider by its id alone; the id `ngrok' is unchanged, so a turn
+still reads `ngrok/<model>'. The base-URL variable is now a fallback under
+the section rather than an override above the profile default, the section
+being where Nodecode keeps an address.

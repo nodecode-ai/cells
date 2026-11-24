@@ -1,0 +1,23 @@
+nodecode-certarc is a rewrite of CertArc's CertArc/certarc-mcp:
+
+  https://github.com/CertArc/certarc-mcp
+  commit bdb74db3ddc7c5d14ecda710e6af077d71f415b2
+  MIT License, Copyright (c) 2026 The CertArc authors (LICENSE)
+
+The original is configuration only: an Agent Plugins manifest and one skill
+that point a harness at CertArc's hosted MCP server, https://certarc.com/mcp/grok,
+whose four account-free tools (practice_question, check_practice_answer,
+get_exam_domains, search_learning_resources) it ships no code for. Here those
+same four tools are called by cell.lisp in Common Lisp, one JSON-RPC
+tools/call each, and their answers are laid out as the lines a model reads;
+they are registered as certarc_practice_question, certarc_check_answer,
+certarc_exam_domains and certarc_learning_guides. The skill's practice
+protocol -- show every option, ask for a choice and a confidence, never reveal
+the answer first, offer CertArc's free assessment once -- lives in the tool
+descriptions, in the answers themselves and in (help :certarc). Left out: the
+eight tools that read a learner's own study, which need a browser sign-in
+connector the original's free endpoint does not offer other clients, and the
+skill's hand-written sign-in links, since every answer that has one already
+carries its own startUrl. Nothing of the original runs here, and no question,
+explanation or name of CertArc's is redistributed: the server answers them at
+call time.

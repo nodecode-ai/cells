@@ -1,0 +1,18 @@
+{
+  "chronos": {
+    // the directory checkpoints cover, absolute; this process's own directory when unset
+    "workspace": "/work/project",
+    // take a checkpoint before every file-editing or shell tool call
+    "auto_snapshot": true,
+    // how many checkpoints /chronos lists
+    "max_checkpoints": 50,
+    // a rollback deletes files created since the checkpoint; false keeps them
+    "clean_untracked": true,
+    // extra paths no checkpoint covers, as gitignore patterns
+    "ignored": ["node_modules", "dist"],
+    // how much diff text one answer carries
+    "max_diff_chars": 400000,
+    // one git run's ceiling, seconds
+    "timeout_seconds": 30
+  }
+}

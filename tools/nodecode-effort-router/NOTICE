@@ -1,0 +1,33 @@
+nodecode-effort-router is a rewrite of AlphaPerseii3000's AlphaPerseii3000/jev-effort-router:
+
+  https://github.com/AlphaPerseii3000/jev-effort-router
+  commit 6fd9f2ec1c53cb99b5e6c7043c25bbd37938d4a5
+  MIT License, Copyright (c) 2026 AlphaPerseii3000 (LICENSE)
+
+Rewritten: the whole routing idea, in Common Lisp. The one decision call a turn --
+OpenRouter's Decisions API with two Choice questions, the model one keyed by number
+over the grid and the effort one over low/medium/high -- with the grid's six models
+and the task-family text each is offered under; the state the endpoint is sent
+(the newest ask, the recent messages, the provider and surface); the reading of the
+answer (a choice outside the grid, an unknown effort level, a confidence under the
+floor, or an answer missing a question each leave the turn alone); the per-turn memo
+that makes a tool loop cost one decision and not one per round; the master switch,
+the pinned decision model, the timeout and the confidence floor; the audit line per
+decision, with the ask clipped; and the two tools and the command the plugin gave its
+agent -- a status and a route it can ask for without running one. Where the original
+rewrote the model and reasoning_effort fields of a prepared request, this cell advises
+the function Nodecode freezes a turn's provider settings at, so the decision lands
+where the harness reads it and nowhere else. Python's httpx is nlk:http, the
+dataclasses are one declared config section, and the map of effort levels per model
+family is left to the provider lane, which already clamps an effort to what a model
+admits.
+
+Left out: the Hermes-specific plumbing the plugin needed to be a Hermes plugin --
+the plugin manifest and its declared middleware/hooks, the llm_request middleware
+itself (a cell reaches the same turn through advice), the pyproject build and the
+uv lock, the host's ollama_cloud_models_cache.json check that the grid's ids still
+exist upstream, and the on_session_end/post_llm_call hooks that only cleared the
+memo (here the memo is keyed per turn and emptied at start and stop). Also left out:
+the measurement scripts and the changelog narrative that record how the grid's
+wording and the confidence threshold were tuned -- the numbers they settled on are
+here as defaults, the experiments are not.

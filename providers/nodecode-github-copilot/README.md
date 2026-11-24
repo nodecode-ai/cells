@@ -2,7 +2,7 @@
 
 A Nodecode cell for [GitHub Copilot](https://github.com/features/copilot),
 signed in with a GitHub account. With it, `/models` lists Copilot's models,
-`/github-copilot login` signs in, and a turn on `github-copilot/<model>` goes
+`/github-copilot` signs in, and a turn on `github-copilot/<model>` goes
 to Copilot the way the Copilot CLI sends it:
 
 - each model rides the wire Copilot serves it on, all at one address: Claude
@@ -30,10 +30,10 @@ provider. See [NOTICE](NOTICE).
 ## Sign-in
 
 ```
-/github-copilot login                  sign in at github.com
-/github-copilot login acme.ghe.com     sign in at a GitHub Enterprise instance
-/github-copilot status
-/github-copilot logout
+/github-copilot → Sign in                                  sign in at github.com
+/github-copilot → Sign in at a GitHub Enterprise instance  asks for its domain, like acme.ghe.com
+/github-copilot                                            where the sign-in stands, over its rows
+/github-copilot → Sign out
 ```
 
 `login` answers at once with the page to open and the code to type there

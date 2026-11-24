@@ -1,0 +1,27 @@
+nodecode-memoria is a rewrite of matrixorigin's matrixorigin/memoria:
+
+  https://github.com/matrixorigin/memoria
+  commit 3a5c5065b2820d56dd3d8ac8bb259a9424b1476e
+  Apache-2.0, Copyright 2026 Matrix Origin (LICENSE)
+
+Rewritten: the Hermes plugin under plugins/hermes — its REST client and its
+error vocabulary, the six provider-owned tool schemas (memoria_search,
+memoria_store, memoria_update, memoria_forget, memoria_profile,
+memoria_feedback) and their per-argument bounds, the subject/session/branch
+binding every request carries, the profile-home subject hash, the untrusted
+recalled-context wrapper with its angle brackets escaped, the bounded
+per-hit answers, the correction and deletion that read the exact record
+before they touch it, feedback's main-branch rule, and the recall that rides
+a turn's first round. All of it is reimplemented in Common Lisp against the
+same HTTP API; no Python, and none of the original code, is bundled.
+
+Left out, and why: the SQLite outbox, its claim tokens, backoff ladder and
+uncertain-state receipts exist to make background turn *capture* survive a
+crash and a restart, and this rewrite does no background capture at all —
+Nodecode has no opt-in upload of completed turns, so there is nothing to
+queue, deduplicate (`/v1/observe/deduplicated`) or recover. Also left out for
+the same reason of scope: Hermes's `memory.write_approval` gate and its
+gateway-platform exclusion (a Nodecode tool call is already the model's own
+explicit act), the setup CLI and the diagnostics script (the section and
+`/memoria` replace them), and the preview's host-specific tool-budget
+arithmetic, replaced by a fixed per-memory bound.

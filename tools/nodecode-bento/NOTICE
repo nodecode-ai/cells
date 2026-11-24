@@ -1,0 +1,41 @@
+nodecode-bento is a rewrite of shagghiesuperstar's shagghiesuperstar/hermes-plugin-bento:
+
+https://github.com/shagghiesuperstar/hermes-plugin-bento
+commit f490ed02c0e377acc9112bf57192bacedbbcd9b1
+
+MIT, Copyright (c) 2026 shagghiesuperstar (LICENSE)
+
+What was rewritten: the plugin's fifteen tools, bento_subscriber_get through
+bento_stats, are here fifteen tools of the same names, and each is also a Lisp
+verb in the BENTO package (bento:subscriber, bento:tags, bento:upsert,
+bento:send-email, ...). They make the same requests the Python did -- HTTP
+Basic with the publishable key and the secret key, site_uuid on every call, a
+real User-Agent, GET /fetch/subscribers|tags|fields|broadcasts, the four
+/stats/* reads, and the same POST bodies to /batch/subscribers, /fetch/commands,
+/fetch/tags, /fetch/fields, /batch/events, /batch/broadcasts and /batch/emails
+-- against the same app.bentonow.com/api/v1, with the base_url override still
+accepted only for https://*.bentonow.com or loopback. The original's safety
+model survives as code: the tiers T0 to T3, a dry run first for every Tier 2
+and Tier 3 call, a confirm_token bound to the exact encoded request and a
+fifteen-minute expiry, refusal of a changed payload, allowed_senders and the
+schedule lead time and the tag-audience acknowledgement, the same validation
+of emails, tags, field keys, ISO timestamps, integer cents and a real order id,
+the five-minute tag and field cache, the stats cache, keys redacted from error
+text before it is quoted, and Bento's own text labelled as untrusted data. The
+credentials move from BENTO_* variables into the cell's `bento' section, which
+still reads those three variables when no key is pasted there, and the audit
+log moves from the plugin's data directory to bento/audit.jsonl under the home.
+
+What was left out: the Hermes-specific machinery, and the two rules that need
+it. (1) The pre_tool_call hook that made Hermes ask a person to approve a Tier
+2 or Tier 3 call: a cell cannot put a modal in front of a tool call, so the
+dry run and its hash-bound token are what a send must pass, and the ledger of
+sent message fingerprints is not carried over (a repeated email is not refused
+here). (2) The cross-process claim lock and the spent-token store: the token is
+verified from its own keyed digest instead, so two processes can each spend the
+same valid token, which one process cannot. (3) The client-side 60/min and
+30/hour rate budgets, the statistics' ads dimension/revenue-mode enumeration,
+the near-duplicate tag refusal, and the transactional-override reason stored in
+the audit line. (4) The `hermes bento status` and `doctor` CLI commands are one
+/bento status in the shell. Everything else the plugin offered -- fifteen tools,
+the same endpoints and bodies, the tiers and the token -- is here.

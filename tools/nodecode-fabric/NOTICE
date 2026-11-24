@@ -1,0 +1,35 @@
+nodecode-fabric is a rewrite of esaradev's esaradev/icarus-plugin:
+
+  https://github.com/esaradev/icarus-plugin
+  commit e46cba30fb95a0b54b7c4d6c26169a424283d72b
+  MIT License, Copyright (c) 2026 esaradev (LICENSE)
+
+The original is a Hermes Agent plugin: a folder of markdown memory entries
+shared by every agent on the machine, with an entry schema (id, agent, type,
+tier, summary, tags, status, assigned_to, review_of, revises, training_value),
+a ranked retriever over it, and tools to write, recall, search, list pending
+handoffs, curate and briefly report; on top of that it exported training pairs
+and ran Together AI fine-tunes, switching the host's model config to the
+result.
+
+What was rewritten, in Common Lisp against the Nodecode cell contract: the
+entry format and its frontmatter, the retriever's scoring (keyword, summary,
+exact phrase, bigram and trigram overlap, tags, project, agent, recency, tier,
+entry-type words, review and revision boosts) with its deduplication and
+character budget, and the tools fabric_write, fabric_recall, fabric_search,
+fabric_pending, fabric_brief and fabric_curate. The original's pre_llm_call
+recall became a :round hook that records what the turn's own words match onto
+the turn, and its session-start injection became one short standing
+paragraph. The folder default is the same ~/fabric, so the cell can read a
+fabric the original's plugin wrote.
+
+What was left out, and why: the Together AI path (fabric_train,
+fabric_train_status, fabric_models, fabric_eval, fabric_switch_model,
+fabric_rollback_model) uploaded pairs, polled jobs and rewrote the Hermes
+host's .env to point at a fine-tuned model -- host plumbing Nodecode has its
+own model settings for, so only the memory itself is ported; fabric_export,
+which shelled out to a bundled Python script to build JSONL pairs, is not
+ported either, and fabric_curate keeps the training_value it fed. The
+Obsidian formatting, the weekly report and the telemetry file are out. One behaviour
+change: a query that shares no word with an entry now answers nothing, where
+the original's entry-type bonus could rank an unrelated decision above zero.

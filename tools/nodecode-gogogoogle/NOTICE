@@ -1,0 +1,37 @@
+nodecode-gogogoogle is a rewrite of josefacero's josefacero/hermes-gogogoogle:
+
+  https://github.com/josefacero/hermes-gogogoogle
+  commit f293a64fab681b693fa9239c37258bc18b1552ae
+
+MIT, Copyright (c) 2026 Josef Acero (LICENSE)
+
+What was rewritten: the plugin ran the Antigravity `agy` CLI as a worker on the
+user's own Antigravity plan, checked the working tree with git, and had a fresh
+model verify the result. All of that is here in Common Lisp: the same three
+tools under the same names and arguments (antigravity_delegate,
+antigravity_job, antigravity_stats) answering the same JSON fields; the same
+roles and briefs; the same session permission rules for the read-only roles
+(every MCP server except the browser denied, the Playwright tools that run
+code, type or upload files denied, the safe ones explicitly allowed); the same
+workdir guard (a drive root, the home folder, a credential folder and every
+blocked root refused, inside or containing); the same git fingerprint before
+and after, the same READ-ONLY VIOLATION, the same verifier chain with its one
+valid first-line verdict and its quota cooldowns; the same run log; and
+/gogogoogle for the operator to read it. The process the plugin started is the
+same one, with the prompt on its standard input, `--output-format stream-json`
+on its output, `--dangerously-skip-permissions` for a `do` run and
+`--settings` permission rules for the others, and a child environment stripped
+of provider keys.
+
+What was left out, and why: Hermes's `pre_tool_call` approval hook, because
+Nodecode shows the operator the tool call itself before it runs, so the
+plugin's second gate would ask the same question twice; Hermes's
+`contextvars` copy for a background thread, because the cell carries the
+running settings and its two seams into the job thread instead; the
+`GOGOGOOGLE_BROWSER`, `ANTIGRAVITY_MODEL`, `ANTIGRAVITY_VERIFIER_MODELS` and
+`GOGOGOOGLE_BLOCKED_ROOTS` environment fallbacks, because a cell's section is
+the one place its settings live; the Windows `taskkill` tree kill, because the
+bounded wait ends the call either way; and the browser snapshot cleanup is
+reported but not performed, as before. The job thread, the run log and the
+cooldown table now live in the cell's own data folder under the Nodecode home
+rather than in Hermes's plugin data folder.

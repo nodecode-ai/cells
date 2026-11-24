@@ -1,0 +1,25 @@
+nodecode-mask is a rewrite of PerryLink's PerryLink/dsh-mask:
+
+  https://github.com/PerryLink/dsh-mask
+  commit 11402b9b71cda30233934b8f77aaca776dbe185d
+  Apache-2.0 (LICENSE, which carries the stock "Copyright [yyyy] [name of
+  copyright owner]" placeholder; package.json names the author PerryLink)
+
+LICENSE is that repository's LICENSE file, unchanged.
+
+What was rewritten: the whole plugin, in Common Lisp, on the Nodecode cell
+contract. The ten regular expressions, their confidences, the overlap rule
+that keeps the earliest span and the more confident one at the same start, the
+numbered `<TYPE_N>` placeholders that give the same words the same number, and
+the `/mask` and `mask_test` surface are the original's, ported one for one.
+
+What was left out, and why: the plugin hooked dsh's inbound agent step and,
+with its `tools` scope, its tool-result step — Nodecode has one seam for the
+outgoing request, the wire fold, so only user text is masked and tool results
+pass whole. The restore table was a per-session store on disk, and `/mask
+restore` hashed the session id into a file name; here the placeholders live in
+the image for the length of a run and the restore file is named for the
+session the command runs in. The person and address detectors, which the
+original declared but could only fill from an external recognizer, are not
+offered. What a restore writes is one file per session, mode 0600 where the
+implementation can say so.

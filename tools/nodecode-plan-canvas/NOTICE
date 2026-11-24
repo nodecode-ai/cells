@@ -1,0 +1,25 @@
+nodecode-plan-canvas is a rewrite of 0xbyt4's 0xbyt4/hermes-canvas:
+
+  https://github.com/0xbyt4/hermes-canvas
+  commit d6eeff0d6f7ec653262537bdd7bb001cc6d3c7f8
+  MIT, Copyright (c) 2026 0xbyt4 (LICENSE)
+
+Rewritten: the whole document model and its fifteen edit ops (add, remove,
+restore, rename, set_files, set_check, set_after, set_status, answer, move,
+adopt, note, link, unlink, revert), the four model-facing tools with their
+answers, the glob engine that decides which box owns a written path, the check
+command normalization, the ready-box rule and the delegate_task goal text, the
+status-from-real-work rule (a write in a box's files makes it doing, a check's
+exit code makes it done or failed), the drift boxes for files no box planned,
+the refusal of a write into a box the operator removed, and the delivery of the
+operator's edits to the model. All of it is Common Lisp against the Nodecode
+cell contract; no Python, no Node, and none of the original's code.
+
+Left out, and why: the desktop pane (its HTML, CSS and JS, the box layout, the
+hand-drawn rendering and the pixel positions), the dashboard plugin and its HTTP
+API, and the Hermes-web chat card -- Nodecode has no pane to draw, so the
+operator's side is /plan-canvas and the card is a line in the reply. The
+per-subagent box ownership keyed on Hermes task ids is gone too: a Nodecode turn
+reports the files a call wrote, not which subagent wrote them, so a box is owned
+by its globs alone. Everything the tools return, every op, every glob rule and
+every status rule is the original's.

@@ -1,0 +1,25 @@
+nodecode-photofresco is a rewrite of photofresco's photofresco/photofresco-agent:
+
+  https://github.com/photofresco/photofresco-agent
+  commit e2e3239b555742904b4cdd035aefdab717cd91a1
+  MIT, Copyright (c) 2026 PhotoFresco / Josh Wardini (LICENSE)
+
+The original is a Node MCP server that drives https://photofresco.com/app/ in
+a browser of its own through Chrome's DevTools protocol: it adds one binding to
+the editor's tab, the page channel announces itself with a random key, and
+every message after that goes through one fixed page function called with
+data. This rewrite keeps that link and that protocol and writes both in
+Common Lisp: a WebSocket client with no dependency of its own, the CDP calls
+that open a tab, bind and navigate it, and one message loop that carries the
+page channel. The tools it offers are the original's own work: connect and
+pair, read the session, its documents and the live operations catalog, run one
+operation, and carry files in and out with the root grants and the chunked,
+length-checked artifact retrieval the original enforces.
+
+Left out, and why: the original's one-MCP-tool-per-operation catalog (a cell
+registers a few tools for the whole image, and the editor's live catalog
+supplies each operation's parameters, so hundreds of static schemas are not
+carried); its Node CLI and JSON-RPC stdio endpoint (Nodecode's own prompt and
+eval are that surface); its `--read`/`--write` command-line root grants
+(settings here, with the same prefix check); and its paired windows for VS
+Code, Claude and Cursor, which are that host's, not this one's.

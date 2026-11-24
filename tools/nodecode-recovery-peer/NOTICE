@@ -1,0 +1,39 @@
+nodecode-recovery-peer is a rewrite of rezaaibox-ui's rezaaibox-ui/nexus-recovery-peer:
+
+  https://github.com/rezaaibox-ui/nexus-recovery-peer
+  commit 2d3b15dcc513bab7fc2463d29fb581524a94c8fb
+  MIT, Copyright (c) 2026 Nexus (LICENSE)
+
+What was rewritten: the whole plugin, __init__.py, as one Common Lisp cell.
+The plugin's two Hermes hooks -- pre_llm_call, which kept the turn's task, and
+transform_tool_result, which counted identical results -- are one :TOOL hook
+here, because that point sees the call before and the result after. The
+counting is the original's: identical failing results, or identical results
+from a tool whose repeats are no progress, REPEAT_THRESHOLD times in a row;
+the original's 3 is kept. The review is the original's too: the same system
+instruction (at most two different next steps, how to verify each, never
+claim the task solved, never print credentials, no irreversible action
+without approval), the same 220-token ceiling and 0 temperature, the same
+best-effort redaction of PEM blocks, bearer tokens, token-prefix words and the
+word after a credential label, and a suggestion appended to the result rather
+than substituted for it. What the plugin asked through the host's ctx.llm
+facade with a provider and model override, a cell asks through the organism's
+own side call (NLE:COMPLETE) with the auxiliary target pinned to the provider
+and model the user names in `peer'; the original's independence rule
+(`peer_provider` must differ from `origin_provider`) survives as
+`other_provider_only`, checked against the provider the session runs on. The
+once-per-turn budget survives as once per stall plus a cooldown, and the
+reservation before the call, which the plugin made so a batch of identical
+calls asks once, is kept.
+
+What was left out, and why: the `routes` list of {model_contains,
+origin_provider, peer_provider, peer_model}, because a Nodecode cell is
+told one peer in its own config section rather than matching the current
+model id against a table; the delegated-child trigger, because Nodecode has no delegate_task and a
+failed child arrives as a failed tool result, which
+the failure branch already catches; the 18-second timeout argument, because
+the organism's side call takes a token ceiling and not a deadline; and the
+per-turn clock, because a cell sees no turn id at the tool point. The
+plugin's own capability gate (llm.provider_override and llm.model_override,
+denied means no request) has no counterpart: the cell asks only after its
+section names a peer, and the peer's provider is the one it pins.

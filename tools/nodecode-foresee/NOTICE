@@ -1,0 +1,28 @@
+nodecode-foresee is a rewrite of Foresee-Tech's Foresee-Tech/foresee:
+
+  https://github.com/Foresee-Tech/foresee
+  commit 18361bd74ffce667fbceb2a60a57d3eabff11854
+  MIT, Copyright (c) 2026 Foresee (LICENSE)
+
+The plugin was a portable manifest (plugin.json) and one mcp.json entry that
+pointed an agent at Foresee's hosted MCP server,
+https://agents.go-foresee.com/mcp, plus three skills -- quote-insurance,
+compare-carriers and explain-coverage -- that told the model what to gather,
+how to read Foresee's answer and how to present it. The server offered the two
+tools this cell serves: quote_insurance (instant estimates) and
+live_carrier_quotes (Foresee's agents complete the carriers' own quote forms
+and read back the page-printed premium, with the user's explicit consent).
+This rewrite keeps both tool names, their argument names and the same endpoint,
+and speaks MCP's streamable HTTP itself through nlk:http -- one JSON-RPC POST
+per exchange, the Mcp-Session-Id echoed after the initialize, the reply read
+as a JSON body or from its SSE frame -- so no MCP transport library, no Node
+and no local server are needed. The skills' guidance -- the facts a quote
+needs, the legend of the answer's rows, the confidence interval as distinct
+from a declared assumption, "never invent a price", the consent wording before
+a live walk and never an SSN -- is the cell's manual topic, (help :foresee),
+and each tool's arguments are its declared contract. What was left out: the
+remote tools' schema discovery, which the two declarations replace; the three
+skills as three separate entries, which one manual topic carries in the order
+a quote runs; and the marketplace fields of plugin.json (brand colour, icons,
+default prompts), which belong to a chat surface rather than a tool. Nothing
+of the original is vendored.

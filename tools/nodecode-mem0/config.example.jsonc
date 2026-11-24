@@ -1,0 +1,18 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "mem0": {
+    "mode": "platform",              // platform, or self-hosted for your own Mem0 server
+    "base_url": "https://api.mem0.ai",
+    "api_key_env": "MEM0_API_KEY",  // the variable holding the key, or "api_key" inline
+    "user_id": "nodecode-user",      // whose memories these are
+    "agent_id": "nodecode",
+    "rerank": false,
+    "search_limit": 10,
+    "capture": true,
+    "max_chars": 450,
+    "timeout_seconds": 20
+  }
+}

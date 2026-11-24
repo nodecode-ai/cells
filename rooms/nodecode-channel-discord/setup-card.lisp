@@ -153,7 +153,7 @@ said over it. => the words."
                                   :current (getf draft :roles))
                      (list (choice "Save" "/channels setup save" :style :primary)
                            (choice "Cancel" "/channels setup cancel"))))
-    (format nil "Setup: ~{~a: ~a~^; ~}. /channels setup save keeps it."
+    (format nil "Setup: ~{~a: ~a~^; ~}. Save keeps it."
             (loop for (name . value) in (setup-fields draft) append (list name value)))))
 
 (defun setup-closed (title text tone)
@@ -180,7 +180,7 @@ section into HOST's admission live. => what the card says."
                             (getf draft :roles))
                     (section-ids section "allowed_roles"))))
     (cond ((null draft)
-           (setup-closed "This card has expired" "This card has expired: run /channels setup again to pick." :stopped))
+           (setup-closed "This card has expired" "This card has expired: open /channels again to pick." :stopped))
           ((null touched)
            (remhash key *setup-drafts*)
            (setup-closed "Nothing changed" "You picked nothing new." :stopped))
@@ -203,7 +203,7 @@ section into HOST's admission live. => what the card says."
                  (progn
                    (remhash key *setup-drafts*)
                    (setup-closed "Saved"
-                                 (format nil "I answer in ~d channel~:p~@[ (~a)~], and ~a may use me. /channels setup changes it again."
+                                 (format nil "I answer in ~d channel~:p~@[ (~a)~], and ~a may use me. /channels changes it again."
                                          (length channels)
                                          (and (getf draft :all) "all of this server's")
                                          (who-may-use users roles))
@@ -242,7 +242,7 @@ card beside them (OFFER-CARD)."
          (verb (string-downcase (or (first words) "")))
          (ids (remove-if-not (lambda (word) (every #'digit-char-p word)) (rest words))))
     (cond ((not (and (stringp guild) (plusp (length guild))))
-           "Run /channels setup in a channel of the server you want to set up: its pickers list that server's channels and roles.")
+           "Open /channels in a channel of the server you want to set up and pick Set this channel up: its pickers list that server's channels and roles.")
           ((string= verb "")
            (if (setup-open host key guild)
                (setup-view key)
@@ -252,14 +252,14 @@ card beside them (OFFER-CARD)."
            (setup-closed "Nothing changed" "Cancelled: what I answer stays as it was." :stopped))
           ((string= verb "save") (setup-save host key))
           ((null (setup-draft key))
-           (setup-closed "This card has expired" "This card has expired: run /channels setup again to pick." :stopped))
+           (setup-closed "This card has expired" "This card has expired: open /channels again to pick." :stopped))
           ((string= verb "all")
            (setup-pick key :channels (mapcar #'car (getf (setup-draft key) :text)) :all t)
            (setup-view key))
           ((member verb '("channels" "users" "roles") :test #'string=)
            (setup-pick key (intern (string-upcase verb) :keyword) ids)
            (setup-view key))
-          (t "usage: /channels setup [channels IDS | users IDS | roles IDS | all | save | cancel]"))))
+          (t "setup: pick on the card, or open /channels for a new one"))))
 
 ;; The kit's /channels setup draws this card on Discord. Guarded: a kit from
 ;; before the card has no registry, and the lane runs as it did.

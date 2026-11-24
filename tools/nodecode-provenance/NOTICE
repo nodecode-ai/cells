@@ -1,0 +1,24 @@
+nodecode-provenance is a rewrite of simin-yuan's simin-yuan/hermes-provenance-gate:
+https://github.com/simin-yuan/hermes-provenance-gate
+commit d8ded75deef198694639d8653c1834a26f3b0372
+Apache-2.0 (LICENSE); the original's NOTICE reads: Copyright 2026 Simin (Simon) Yuan.
+
+What was rewritten: the claim detector (patterns.lisp, from the original's
+patterns.py), the sentence splitter and the verbatim quote matcher
+(text.lisp, from claims.py and quotes.py), the pass/block decision and its
+reasons (claims.lisp, from claims.py and verdict.py), and the surface the
+user meets (cell.lisp): the two tools, the /provenance command, the manual
+topic and the hook that gates a write. The English and Chinese verb tables,
+the exemptions (questions, conditionals, negations, spec lines, generic
+actors), the quote rules (verbatim match, shared content tokens, a quote
+that drops a negation) and the evidence log were kept.
+
+What was left out, and why: the original's own process hooks cannot exist
+here, so Nodecode's one :tool point is hooked instead, and it reads the
+text of an eval call that keeps a memory or a skill rather than a
+memory/skill_manage tool call. The profile-wide search, the sender/role
+attribution of each captured message, the "carried quote" rule for an edit
+that keeps an existing quote, and the CLI's separate log/check/purge
+subcommands were left out: the first needs a store the cell does not keep,
+and the rest are a command's single sub-command here (report, check, purge).
+The escape hatch is the same: observe mode records, block mode refuses.

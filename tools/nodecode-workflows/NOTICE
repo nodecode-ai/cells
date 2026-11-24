@@ -1,0 +1,23 @@
+nodecode-workflows is a rewrite of jacobhausler's jacobhausler/hermes-workflows:
+
+  https://github.com/jacobhausler/hermes-workflows
+  commit 464b4aa304960c89522e709d6b109d0fd08fe06e
+
+MIT, Copyright (c) 2026 Jacob Hausler (LICENSE)
+
+Rewritten: the whole authoring surface -- one `workflow` tool whose graph is
+JSON data, nodes that are agent turns, echoes or gates, after-edges that
+order nodes and hand each child its ancestors' committed output, dotted-path
+`inputs`, `fanout` over an explicit list or an ancestor's array, a `from`
+node that consolidates a whole fan-out, a `schema` written into a node's
+prompt, per-node time budgets, run `status`/`list`/`show`/`stop`, gate
+answers, and the property the original was built around: every node's output
+is on disk, so a run resumed after a restart skips what already committed.
+Left out: the Python runner's process model (each node here is a turn in a
+child session of the organism, not a detached `hermes` child), the desktop
+DAG view and transcript cards, the graph library and saved recipes, model
+routing and pins per node, quorum races, the typed `params` contract,
+`lane_key` de-duplication, the amend/diff/partial-harvest machinery, and the
+optional bridges (approval and subagent accounting, the outbound webhook,
+the cron shim) -- all of them integrations with the Hermes host, which
+Nodecode answers with its own hooks and its own sessions.

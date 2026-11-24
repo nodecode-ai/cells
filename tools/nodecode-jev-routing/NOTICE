@@ -1,0 +1,28 @@
+nodecode-jev-routing is a rewrite of apoapostolov's apoapostolov/hermes-agent-awesome-plugins:
+https://github.com/apoapostolov/hermes-agent-awesome-plugins
+commit 06a53646587c33174a0fbfbb3713eca90bbb8586
+MIT, Copyright (c) 2026 Apostol Apostolov, Copyright (c) Adolanium (original hermes-rss, https://github.com/Adolanium/hermes-rss) (LICENSE)
+
+What was rewritten: the routing engine of public/hermes-jev-routing (jev.py,
+decide.py, config.py, ledger.py, pricing.py, skip.py, notice.py, turn.py),
+rewritten in Common Lisp. The four typed questions (task_kind, complexity,
+capability_deserved, needs_deep_reasoning) and their instructions, the state
+they read, the demand score, the kind floor, the confidence fallback, the
+xpremium tier, the budget policy, the chain order (kind chain, the tier, its
+neighbours, the free pool) and the first row that names a model are the
+original's, line for line where Lisp allows. The spend ledger beside the
+routing table keeps the original's shape, its rate card and its token
+accounting. The one line the original prints under the composer became the
+verb's :line.
+
+What was left out, and why: the turn itself. A Hermes plugin reads the
+prompt before the model starts and rewrites the provider request, or moves
+the session through the app's own model switch; Nodecode hands a cell no
+per-turn model hook, so this cell is the decision engine the turn would have
+used, called through eval, and it advises instead of rewriting. Also left
+out: the Hermes host's provider catalogue, quota windows and cache hold, the
+approve strip and its confirm clicks, session pinning and stickiness, the
+desktop half (desktop/plugin.js), `/jev-routing suggest` and the ranking and
+generated-layer half of ranking.py, and the Postgres/pricing reads the
+personal edition makes. A cell reads no catalogue, so every configured row
+is eligible, exactly as the plugin's own catalog edition says of itself.

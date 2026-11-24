@@ -1,0 +1,25 @@
+nodecode-scar is a rewrite of TakeshiTGAL's TakeshiTGAL/hermes-plugin-scar:
+https://github.com/TakeshiTGAL/hermes-plugin-scar
+commit fd87a37f895dd557d9d9efc8ce6fc5e4d8ce3735
+MIT, Copyright (c) 2026 TakeshiTGAL (LICENSE)
+
+What was rewritten: the whole plugin, in Common Lisp against the cell
+contract. The command reader is the original's: a command is cut into the
+simple commands it runs, wrapper words are stepped over, env's options and
+assignments are read, a shell -c body and find -exec are followed, and only
+the three rm danger tokens (rm, recursive, force) are kept, never the path.
+The ledger, the redacted preview, the receipt clock, the tools scar_check,
+scar_list and scar_forget and the rule that only a person's Deny removes a
+scar are the original's too.
+
+What was left out and why: Hermes' approval card has no equivalent here, so
+the deny is read from the one seam Nodecode's gates ask their questions
+through (ASK-OPERATOR) instead of from a post_approval_response hook, and the
+original's process gates (cron, webhook, plugin-host, single-query markers
+read from the environment) go with it: Nodecode asks its operator through
+that seam or not at all. The per-tool, per-argument-key scoping is dropped
+because Nodecode reaches a shell through one tool, so a scar reads the
+commands a call runs, whatever argument they ride in. The pinned local-model
+demo scene and the packaged skill file are documentation for Hermes screens
+that Nodecode does not have; the same guidance is the cell's manual, (help
+:scar).

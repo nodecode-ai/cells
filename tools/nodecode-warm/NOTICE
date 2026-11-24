@@ -1,0 +1,31 @@
+nodecode-warm is a rewrite of mojomast's mojomast/hermes-session-warmer:
+
+  https://github.com/mojomast/hermes-session-warmer
+  commit eba7be111c44e4ac6b702cdcb341c8d71da1c57e
+  MIT License, Copyright (c) 2026 mojomast (LICENSE)
+
+Rewritten: the whole plugin, as one cell. The Hermes llm_request middleware
+became the cell's :FRAME hook plus the kernel's own kept request bodies: when a
+turn ends, the exact bytes that turn's last round sent are taken from the
+store and kept for the session, and the worker sends them again - with a single
+completion token, tools, tool_choice, stream and sampling counts removed - once
+the session has been idle for interval_seconds, up to max_requests times per
+idle_window_seconds. Kept from the plugin: the endpoint/model allowlist, the
+payload and session caps, the one-request timeout, the circuit that stops
+retrying a session that failed, the numeric-only usage accounting (prompt,
+completion and cached tokens), and the /warming verb, which here is /warm with
+the same status and stop. The settings carry over one for one: base_url,
+models, api_key_env, interval_seconds, idle_window_seconds, max_requests,
+timeout_seconds and max_sessions, plus max_payload_bytes.
+
+Left out: the Python transport itself. The plugin's urllib request with its
+no-redirect opener, its loopback-only plain-HTTP rule and its proxy refusal is
+now NLK:HTTP with the same HTTPS-or-loopback check on the section's base_url;
+the middleware's re-derivation of the request body from a captured payload is
+replaced by the kernel's kept bytes, which is the same text without a second
+parser; the contextvars profile scope has no counterpart, because the cell's
+settings are materialized once at start and a restart re-reads the config; and
+the plugin's own unit and HTTP integration tests are replaced by this cell's
+offline slice. The assistant reply the plugin spliced into the re-sent history
+is not spliced here: the body the session sent is sent back as it stands, which
+is the prefix the cache keys on.

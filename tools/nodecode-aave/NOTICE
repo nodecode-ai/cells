@@ -1,0 +1,6 @@
+nodecode-aave is a rewrite of aave's aave/skills:
+  https://github.com/aave/skills
+  commit 7132f6e952f9100f16577c33774a1e63948f7fab
+  MIT, Copyright (c) 2026 Aave Labs (LICENSE)
+
+What was rewritten in Common Lisp against the cell contract: the connection the package declares — MCP over streamable HTTP at https://mcp.aave.com (initialize, tools/list, tools/call, JSON or server-sent-event answers, the Mcp-Session-Id the server issues) — the tools its agent guide and five skills name, and the workflow those skills teach (discover, inspect, simulate, build, hand over unsigned), which lives on as the cell's primer, its tool descriptions and the /aave command. What was left out, because it is another host's packaging and not something a user sees: plugin.json and the .claude-plugin/, .cursor-plugin/, openclaw.plugin.json, mcp.json and .mcp.json manifests, and AGENTS.md, whose rules are all in the primer; the two images under assets/ were not carried over into a text folder. The tool surface is not frozen: the server serves its own tool set at run time, so the cell names the everyday surface with each tool's arguments, `aave_call` reaches every tool the server serves, and `/aave tools` reports the drift between the two.

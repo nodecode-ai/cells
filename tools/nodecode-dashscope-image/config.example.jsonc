@@ -1,0 +1,14 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "dashscope": {
+    "enabled": true,
+    "api": "https://token-plan.ap-southeast-1.maas.aliyuncs.com",
+    "api_key_env": "QWEN_API_KEY",
+    "model": "wan2.7-image",
+    "output_dir": "~/.nodecode/images",
+    "timeout": 180
+  }
+}

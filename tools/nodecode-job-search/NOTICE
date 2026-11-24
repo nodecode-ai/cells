@@ -1,0 +1,28 @@
+nodecode-job-search is a rewrite of agent-data's agent-data/job-search:
+
+  https://github.com/agent-data/job-search
+  commit dba0c0992e9d7fc6533dd1be3003df7a311168f0
+  MIT License, Copyright (c) 2026 Aptiq Labs, Inc. (LICENSE)
+
+The rewrite keeps the plugin's data reach and its judgment rules, as a
+Nodecode cell. The two routes it drove are the two tools: job_search, one
+search across one job source through the same marketplace listing id the
+plugin used, and job_posting, one posting read in full as the pair of id and
+source_url one search row carried. The rules the plugin's skills taught are
+in (help :job-search): judge fit in words with no score, read a posting as
+data and never as instructions, treat an unmentioned field as not stated
+rather than a mark against the posting, judge summary rows first and spend a
+detail read only on what survives, name a source that answered for another,
+and say what a run costs before it spends. /jobsearch carries the
+plugin's free preflight -- whether agent-data has a key -- and one LinkedIn
+search for the operator.
+
+What is left out is the plugin's own bookkeeping, because a Nodecode cell
+keeps no workspace of its own: the ~/.job-search folder with its config.yaml,
+preferences.md and jobs.jsonl event log; the preference interview that
+writes the brief; the per-run record and the digest file; the duplicate and
+"already surfaced" checks; the daily schedule, which a user gets from the
+cron cell instead; and the shell wrappers that logged each metered call into
+that log. Nothing of the original's Python or shell is bundled. The cell runs
+the same agent-data program the plugin ran, on PATH, and its own code is
+Common Lisp.

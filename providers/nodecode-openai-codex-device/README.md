@@ -14,7 +14,7 @@ to. See [NOTICE](NOTICE).
 ## Sign in
 
 ```
-/openai-codex-device login
+/openai-codex-device → Sign in
 ```
 
 The command answers with `https://auth.openai.com/codex/device` and a code.
@@ -39,8 +39,8 @@ shared `auth.json` under `oauth_tokens.openai-codex`:
 `expires_at` is in epoch seconds. A token that expires within a minute is
 refreshed before a round sends it, and the refreshed entry is written back.
 Every other field of `auth.json` is kept, and the file stays mode 0600.
-`/openai-codex-device status` says who is signed in, and
-`/openai-codex-device logout` takes the entry out.
+`/openai-codex-device` says who is signed in, and
+**Sign out** in `/openai-codex-device` takes the entry out.
 
 This cell also serves the `openai-codex` provider itself: the catalog row,
 the Codex lane, the credential with its refresh, and the request shape. So it

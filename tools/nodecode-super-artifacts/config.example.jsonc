@@ -1,0 +1,16 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder is pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "super-artifacts": {
+    "enabled": true,
+    "base_url": "https://superartifacts.app/mcp",
+    // a key from the dashboard's API keys page, by variable or by file;
+    // leave both out and /super-artifacts signin keeps a token instead
+    "key_env": "SUPER_ARTIFACTS_KEY",
+    // "key_file": "~/.nodecode/super-artifacts/key",
+    // "state_dir": "~/.nodecode/super-artifacts/",
+    "timeout_seconds": 60
+  }
+}

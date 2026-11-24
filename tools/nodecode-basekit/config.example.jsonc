@@ -1,0 +1,27 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// A present section is enabled; "enabled": false vetoes it.
+{
+  "basekit": {
+    "enabled": true,
+
+    // Empty means the keyless public endpoint. Point this at your own node or
+    // provider for wider eth_getLogs windows and higher rate limits.
+    // "rpc_url": "https://base-rpc.publicnode.com",
+
+    // Optional: the wallet /basekit wallet reads when no address is typed.
+    // "watch_address": "0x...",
+
+    // One RPC or price request's ceiling, in seconds.
+    "timeout_seconds": 20,
+
+    // The default block window the transfer and approval reads scan.
+    // Base is about 2 seconds a block; public endpoints cap a query near
+    // 50000 blocks, and the tools state the window they actually read.
+    "log_window": 20000,
+
+    // Optional: only base_token's source-code check uses it. Without one it
+    // reports "not_configured" rather than guessing.
+    // "basescan_api_key": "..."
+  }
+}

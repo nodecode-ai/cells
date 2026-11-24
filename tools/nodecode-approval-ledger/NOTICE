@@ -1,0 +1,28 @@
+nodecode-approval-ledger is a rewrite of olric3015's olric3015/hermes-plugins:
+https://github.com/olric3015/hermes-plugins
+commit 4a2ef866a51f1c99ed1d77e423136450340d901b
+MIT, Copyright (c) 2026 olric3015 (LICENSE)
+
+The original is a Hermes Agent plugin named approval-ledger. It subscribes to
+Hermes's two approval hooks (pre_approval_request, post_approval_response),
+keeps one JSON line per approval decision in a ledger file, trims that file to
+its newest rows, and answers /approval-log grouped by rule, by surface or by
+day, for a window, for the latest session or for everything, plus a newest-N
+list and a clear. This rewrite keeps that: the same row (rule, surface, answer,
+outcome, wait and session id, never the command), the same file in the
+organism's home with the same trim, and the same /approval-log with its
+windows, groupings, recent count and clear.
+
+What changed is the seam and therefore the vocabulary: Hermes hands a plugin
+two payloads per prompt, while Nodecode asks its operator through one function
+(ASK-OPERATOR), so the rewrite advises that function and reads the rule from
+the question's title, the answer from its label, and the wait by timing the
+call. What the original calls a surface (cli, gateway, smart, mcp consent) is
+one seam here, so the rewrite names it with the section's `surface` value
+("operator" unless you rename it) rather than deriving it; smart-mode verdicts,
+coalesced waits, the decided_by column and the per-profile plugin-data folder
+have no counterpart and are left out. The report's own wording is the
+original's. The Hermes plugin's Python, its hooks and its /approval-log
+spelling are not bundled: the cell is Common Lisp against the Nodecode cell
+contract, and it adds the eval verbs (report, recent, record, rows, clear) a
+Nodecode cell offers in place of a command alone.

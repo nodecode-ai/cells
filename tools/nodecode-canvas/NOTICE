@@ -1,0 +1,23 @@
+nodecode-canvas is a rewrite of skk2010's skk2010/hermes-board-plugin:
+
+  https://github.com/skk2010/hermes-board-plugin
+  commit feb66592881bf76198cd8d790fd1dae25e5057f6
+  MIT, Copyright (c) 2026 Konstantin Sukhov (LICENSE)
+
+What was rewritten: the board itself. A board is still one JSON document on
+disk, and the agent still draws on it with the same seven tools
+(board_list, board_get, board_new, board_delete, board_apply, board_render)
+and the same op vocabulary it had — nodes, edges, free lines, groups, notes,
+captions, a title, a grid, and the layered `layout` placement — reimplemented
+in Common Lisp. The renderer is new: the original's bundled Python library
+drove a headless Chrome, this cell writes the same drawing as a standalone
+SVG, wrapped in one HTML page that opens in any browser.
+
+What was left out, and why: the desktop pane and the edit-watch loop
+(board_watch, the wake of a session from the pane) are Hermes desktop UI, and
+two processes sharing one open editor is not something a cell can own. PNG
+output is gone with the browser it shelled out to — the SVG and the HTML page
+carry the same picture, and nothing has to be installed to see them. From the
+op vocabulary, `bus` (shared-trunk connections), `graph` (ranks derived from
+the edges) and the table/split-compartment node kinds are not rewritten;
+`layout` is, and notes, captions, groups and lines are.

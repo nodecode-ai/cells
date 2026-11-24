@@ -89,7 +89,7 @@
       (is (search "UNAVAILABLE" (nodecode-cyber-security:scan-report :since "2026-10-20T00:00:00Z" :entries '())) "the report the agent reads says the decider did not answer"))))
 
 (deftest cyber-security-the-decider-is-nodecode-decide-v1 ()
-  (is (equal '(:provider "nodecode" :model "foresight-decide-v1") nodecode-cyber-security:*decider*))
+  (is (equal '(:provider "nodecode" :model "nodecode-decide-v1") nodecode-cyber-security:*decider*))
   (let* ((req (shasht:read-json (nodecode-cyber-security::decision-request "item" '(("acme" . "Acme")))))
          (qs (gethash "questions" req)))
     (is (equal "item" (gethash "state" req)))
@@ -133,3 +133,67 @@
         (with-stubbed-fdefinition (nlk:http (method url &key headers content timeout)
                                     (values *sp-deepseek-answer* 200))
           (is (equal '("https://a.example/breach") (mapcar (lambda (x) (getf x :url)) (nodecode-cyber-security::deepseek-search "q" "2026-10-20T00:00:00Z"))) "a result dated before the window is dropped"))))))
+
+(defun sp-provider-key (engine)
+  "A stand-in for the websearch cell's reader: a search key for deepseek alone."
+  (and (equal engine "deepseek") "search-key"))
+
+(deftest cyber-security-search-key-is-read-through-the-websearch-cells-seam ()
+  (with-saved-globals (nodecode-cyber-security::*search-key-seam*)
+    (setf nodecode-cyber-security::*search-key-seam* '("NO-SUCH-PACKAGE" . "PROVIDER-KEY"))
+    (is (null (nodecode-cyber-security::search-key "deepseek")) "no websearch cell here: no search key")
+    (setf nodecode-cyber-security::*search-key-seam* (cons (package-name (symbol-package 'sp-provider-key)) "NO-SUCH-READER"))
+    (is (null (nodecode-cyber-security::search-key "deepseek")) "a cell without the reader: no search key")
+    (setf nodecode-cyber-security::*search-key-seam* (cons (package-name (symbol-package 'sp-provider-key)) "SP-PROVIDER-KEY"))
+    (is (equal "search-key" (nodecode-cyber-security::search-key "deepseek")) "the key that cell holds for the engine")
+    (is (null (nodecode-cyber-security::search-key "brave")) "an engine it holds no key for answers NIL")))
+
+(deftest cyber-security-deepseek-search-runs-on-the-search-key-first ()
+  (with-stubbed-fdefinition (nle::resolve-provider-credential (name) (list :key "model-key"))
+    (with-saved-globals (nodecode-cyber-security::*search-key-seam*)
+      (setf nodecode-cyber-security::*search-key-seam* (cons (package-name (symbol-package 'sp-provider-key)) "SP-PROVIDER-KEY"))
+      (is (equal "search-key" (nodecode-cyber-security::deepseek-key)) "a configured search key is the one DeepSeek's search runs on")
+      (with-stubbed-security
+        (with-saved-globals (nodecode-cyber-security::*deepseek-search-url*)
+          (let ((sent nil))
+            (with-stubbed-fdefinition (nlk:http (method url &key headers content timeout)
+                                        (setf sent (cdr (assoc "x-api-key" headers :test #'string=)))
+                                        (values *sp-deepseek-answer* 200))
+              (nodecode-cyber-security::deepseek-search "q" "2026-10-20T00:00:00Z")
+              (is (equal "search-key" sent) "and it is the key the search request carries")))))
+      (setf nodecode-cyber-security::*search-key-seam* '("NO-SUCH-PACKAGE" . "PROVIDER-KEY"))
+      (is (equal "model-key" (nodecode-cyber-security::deepseek-key)) "with no search key, the image's DeepSeek API key"))))
+
+(deftest cyber-security-claude-search-is-the-same-messages-turn-on-anthropic ()
+  (with-stubbed-security
+    (let ((asked nil))
+      (with-stubbed-fdefinition (nodecode-cyber-security::claude-key () "sk-ant-api03-k")
+        (with-stubbed-fdefinition (nlk:http (method url &key headers content timeout)
+                                    (setf asked (list url (cdr (assoc "x-api-key" headers :test #'string=))
+                                                      (search "claude-haiku" content) (search "web_search_20250305" content)))
+                                    (values *sp-deepseek-answer* 200))
+          (is (equal '("https://a.example/breach") (mapcar (lambda (x) (getf x :url)) (nodecode-cyber-security::claude-search "q" "2026-10-20T00:00:00Z"))))
+          (is (equal "https://api.anthropic.com/v1/messages" (first asked)) "Claude's search goes to Anthropic")
+          (is (equal "sk-ant-api03-k" (second asked)) "on the anthropic API key")
+          (is (and (third asked) (fourth asked)) "on Claude Haiku with the native web_search tool"))))))
+
+(deftest cyber-security-claude-key-is-an-api-key-only ()
+  (flet ((key-for (k) (with-stubbed-fdefinition (nle::resolve-provider-credential (name) (list :key k))
+                        (nodecode-cyber-security::claude-key))))
+    (is (equal "sk-ant-api03-x" (key-for "sk-ant-api03-x")))
+    (is (null (key-for "sk-ant-oat01-x")) "a Claude Code subscription token is not an API key")
+    (is (null (key-for nil)))))
+
+(deftest cyber-security-a-failed-news-search-hands-over-to-the-next ()
+  (with-saved-globals (nodecode-cyber-security::*news-search* nodecode-cyber-security::*news-engine*)
+    (setf nodecode-cyber-security::*news-search*
+          (lambda () (values (lambda (q s) (declare (ignore q s)) (error "Claude search answered 529")) "claude"
+                             (list (cons (lambda (q s) (declare (ignore q s)) (list (list :url "https://n.example/x" :title "X" :date "2026-10-21" :text "t")))
+                                         "deepseek")))))
+    (let ((items (nodecode-cyber-security::news-items "2026-10-20T00:00:00Z")))
+      (is (= 1 (length items)) "the next search answers")
+      (is (search "deepseek" nodecode-cyber-security::*news-engine*))
+      (is (search "claude" nodecode-cyber-security::*news-engine*) "the report names the search that failed first"))
+    (setf nodecode-cyber-security::*news-search*
+          (lambda () (values (lambda (q s) (declare (ignore q s)) (error "down")) "claude" nil)))
+    (is (search "every news query failed" (handler-case (progn (nodecode-cyber-security::news-items "2026-10-20T00:00:00Z") "") (error (e) (princ-to-string e)))) "every search failing signals, and the scan reports news FAILED")))

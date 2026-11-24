@@ -1,0 +1,15 @@
+// The little-canary section of ~/.nodecode/config.jsonc. Nothing here is
+// required: without it the cell talks to the Ollama on this machine, with
+// the defaults below. A present section is an enabled one; "enabled": false
+// turns the cell off without removing the folder.
+{
+  "little-canary": {
+    "base_url": "http://localhost:11434",
+    "model": "qwen2.5:1.5b",
+    "timeout_seconds": 10,
+    "risk_threshold": 60,
+    "gate_tools": true,
+    "block_seconds": 900,
+    "max_chars": 4000
+  }
+}

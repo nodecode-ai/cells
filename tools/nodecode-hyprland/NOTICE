@@ -1,0 +1,33 @@
+nodecode-hyprland is a rewrite of mddragon18's mddragon18/hyprland-computer-use:
+
+  https://github.com/mddragon18/hyprland-computer-use
+  commit eef766e18200338b772b14c20dbf03d603c84982
+  MIT, Copyright (c) 2026 mddragon18 (LICENSE)
+
+Rewritten: the plugin's `hyprland` folder -- its Hermes computer-use backend,
+which answered capture, click, drag, scroll, type, key, focus_app, list_apps
+and list_windows. Hermes's own computer_use tool is gone here, so the same
+nine actions are one contract on one `hyprland` tool, and the same nine are
+Lisp verbs in the HYPRLAND package for eval. The coordinate contract is the
+original's, field for field in spirit: a capture records its origin and its
+scale, every coordinate the model sends is read in that frame's pixels and
+mapped back to native ones, a capture of a named window focuses it, crops to
+it and makes it the target, and input outside the target is refused with the
+window's native box instead of landing in the tile next door. The ruler over
+a capture, the downscale to a capture width, the wl-copy paste fallback for
+text a command line would read as an option, the super-is-logo key alias and
+the wtype -M/-k/-m argv are the Python's own, in Common Lisp. Every CLI call
+is the fixed argv the Python built: grim -g, hyprctl clients/monitors/repl,
+wtype, wl-copy, magick and the pointer helper's hitat/drag/scrollat/scroll.
+
+Left out: the plugin's Python packaging, its plugin.yaml manifest, its
+pytest and smoke suites and install.sh, which have no meaning outside Hermes;
+and the C source of the pointer helper itself, which is not vendored here --
+the cell runs the hypr-vinput binary built from the original repository's
+pointer/ folder (the catalog rule that keeps binaries out of the repository),
+named in pointer_bin or found on PATH. Added, because a Nodecode cell is
+called more than one way: one tool with an action field, the nine verbs, a
+/hyprland command that prints the doctor or the windows, (help :hyprland),
+and a section whose members are the settings the Python read from Hermes's
+config (capture_width, grid, ruler_step, scope, enforce_target) plus
+pointer_bin and capture_dir.

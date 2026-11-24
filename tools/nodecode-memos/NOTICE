@@ -1,0 +1,31 @@
+nodecode-memos is a rewrite of Markgatcha's Markgatcha/memos:
+
+  https://github.com/Markgatcha/memos
+  commit af8fa31e01078e4d5e38210b61acdf90f6d70581
+  MIT, Copyright (c) 2026 Markgatcha (LICENSE)
+
+What was rewritten: the plugin is a Hermes Agent plugin -- an MCP server
+entry (.mcp.json, npx @mem-os/sdk mcp), two session hooks and the /mem-os and
+/recall commands -- and this cell is the same surface as a Nodecode cell in
+Common Lisp. The six memos_* verbs it exposes are the original's (store,
+search, context_pack, supersede, forget, history); /memos stands in for
+/mem-os and /recall, with the diagnostics of /mem-os folded into its status
+line; (help :memos) is the skill the plugin left to the host; and the
+SessionStart summary is the memos section's `standing` setting, off by
+default. The facts live in one JSON-lines file under the home (~/.nodecode/
+memos/memories.jsonl unless the section names another), appended one line a
+store, a supersede or a forget, and the history is the fold of those lines --
+the original's SQLite version chain kept as readable data. Nothing is bundled:
+no Node, no npm, no @mem-os/sdk, and no vector store.
+
+What was left out, and why: SQLite (this image keeps its own store, and a
+bundler for a Node module would be the plugin itself), embeddings and
+semantic search (they need a model and a vector index; ranking here is by the
+query's terms, its tags, its type and namespace, and the whole phrase, which
+needs nothing and never leaves the machine), automatic turn capture and the
+SessionEnd consolidation hook (a turn's text is not a fact, and the
+original's own skill tells the model to store deliberately), and
+memos_diagnostics as a tool (its counts are on /memos). The argument names
+are this cell's -- memory_id, memory_type, tokens -- where the original used
+id, type and tokenBudget; the verbs, the types, the [mem:xxxxxxxx] ids and
+what a stored fact means are the same.

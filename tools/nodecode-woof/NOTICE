@@ -1,0 +1,44 @@
+nodecode-woof is a rewrite of recastsystems's recastsystems/hermes-woof:
+
+  https://github.com/recastsystems/hermes-woof
+  commit 2c82b34eb386a490d25439757556f6bab84048af
+  Apache-2.0, Copyright (c) 2026 recastsystems (LICENSE)
+
+What was rewritten: all twelve of the original's tool verbs. The doctor that
+names the command; the catalog that asks WOOF what it offers; the documentation
+search, reimplemented as the original's own BM25 over the pack the original
+ships (docs/index.json and docs/MANIFEST.json here, carried unchanged apart
+from the manifest's unused keys, and built from WOOF 1.0.0's documentation at
+source commit ee21e5d3896bd6e10e3f461d9563921fc149d49f, which is also the
+evaluator commit a one-off score's registration names); the plan that asks WOOF to resolve and
+estimate a run; the launch that starts it detached; the status and the stop
+that read and signal the run's own folder and pid; the show and the compare
+that answer maps as MEDIA: lines; the campaign that sizes a set of arms along
+one axis and runs them one at a time on the one card; the score that puts a
+finished run against MRMS, Stage-IV and ASOS observations under a one-off
+registration; and the report that gathers what a run or a campaign left behind.
+With them: the run folder layout (plan.json, woof.log, events.jsonl, the
+rendered maps, score.json), the campaign folder layout, the section that
+points the cell at the WOOF command and the runs folder, and the manual the
+model reads. The run machinery is Common Lisp calling the `woof` command the
+machine already has; the original's Python is not bundled and none of it runs
+here.
+
+The one part that speaks to WOOF's Python: `woof_score`. The original scores by
+running the platform wheel's own modules -- `tools.obs_fetch_mrms`,
+`tools.obs_fetch_stage4`, `tools.obs_fetch_asos` and `tools.obs_battery_score`
+-- in the WOOF environment, under a registration built by
+`woof.verify.obs.registration`. The rewrite runs the same modules, with the
+same arguments and the same fallbacks, through the interpreter that runs the
+`woof` command, and asks that same registration library for the document in one
+short call. It is WOOF's own code being driven, not the plugin's.
+
+What was left out, and why: the watcher, which polled the run folders in a
+background thread and pushed each event into the chat as a message. Its job is
+done here by polling `woof_status`, so nothing is injected into a turn.
+`hermes woof install`, which pip-installs WOOF into a private virtual
+environment, and the ssh and WSL executors, which drive a GPU host somewhere
+else, are out too: this cell runs the command the machine it is on already has.
+The optional local model server the repository ships (llama.cpp and a GGUF,
+downloaded by its own shell scripts) is not part of the rewrite at all, and
+neither is the plugin's own campaign index, which the campaign folder replaces.

@@ -1,0 +1,24 @@
+// The constraint-vault section: what /settings writes, shown with its usual
+// answers. A present section is enabled; "enabled": false vetoes it.
+{
+  "constraint-vault": {
+    // the JSON file the constraints are kept in; constraint-vault/vault.json
+    // under the home is the usual answer. The tools and /constraints refuse
+    // until it is set.
+    "store_file": "constraint-vault/vault.json",
+
+    // how many constraints may be pinned at once
+    "max_constraints": 50,
+
+    // the most one constraint's text may carry, in characters
+    "max_chars": 2000,
+
+    // whether the pinned constraints are put in front of the model on every
+    // request
+    "inject": true,
+
+    // whether each delivery is appended to the store's -injections.jsonl,
+    // with the SHA-256 of the block that went out
+    "log_injections": true
+  }
+}

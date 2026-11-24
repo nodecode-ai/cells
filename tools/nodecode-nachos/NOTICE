@@ -1,0 +1,27 @@
+nodecode-nachos is a rewrite of Nacho-Labs-LLC's Nacho-Labs-LLC/hermes-plugin-nachos:
+
+  https://github.com/Nacho-Labs-LLC/hermes-plugin-nachos
+  commit 2ad0b272d4fbd2c000713e927a656851dc8787e2
+  MIT License, Copyright (c) 2026 Nacho Labs LLC (LICENSE)
+
+The plugin was a Hermes memory provider and context engine: one titled-markdown
+or SQLite store of memory entries, a manifest injected into every turn, a
+lexical prefetch of the entries a turn's query ranks highest, and three model
+tools to put, recall and remove an entry. This rewrite keeps that shape in
+Common Lisp with no dependency beyond Nodecode: the flat-file markdown format
+is the original's (# category, ## title, first body line as the summary, keys
+as the slug of the title, later duplicates winning, a heading inside a title
+or body refused as structure), the manifest renders every entry and only ever
+shortens summaries under its budget, the prefetch is the same smoothed TF-IDF
+over titles and summaries with the same character budget and the same mark in
+the manifest, and the three tools keep their names, arguments and JSON
+answers. The manifest rides every request as the cell's own harness section;
+the prefetch runs at each round against the turn's own words and hands the
+ranked bodies to that round's request. What was left out: the SQLite store
+(the one markdown file is hand-editable and is what the original defaulted
+flat-file users to), the opt-in semantic scorer and its three embedding
+backends -- the lexical scorer is the default and asks nothing of the network
+-- the pre-compaction snapshot checkpoints, the context-engine compaction
+itself, and the experimental YAML policy plugin, all Hermes-runtime seams
+Nodecode's own context budget and compaction already cover. Nothing of the
+original is vendored: there was no code to vendor, only behaviour to rewrite.

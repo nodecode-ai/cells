@@ -1,0 +1,19 @@
+nodecode-mindhall is a rewrite of jai-srinivas's jai-srinivas/mindhall:
+
+https://github.com/jai-srinivas/mindhall
+commit 9c1965443eed86cca6cc145e5a01aeb747d25f7f
+
+MIT, Copyright (c) 2026 Jai Srinivas (LICENSE)
+
+The four rooms, the five tools, the standing block in front of each turn and the signed
+change log are the original's, reimplemented in Common Lisp against this organism's cell
+contract: the tools are the same five, the block carries the same rooms, a date with the
+same name still moves instead of being duplicated, and every write is still logged with
+who made it and when. The storage changed from a SQLite database to one JSON document, so
+the mind can be read and written by anything that opens a file rather than only by a
+SQLite client, and the write is a whole-file atomic replace instead of a transaction.
+Left out, because the rewrite is a cell rather than a standalone service: the MCP server
+that let ChatGPT, Claude and Cursor share the mind from outside the harness; the small
+web page for editing the rooms by hand; the per-profile settings a Hermes profile read
+from its own `.env`; and Undo, which only the web tables offered. A second harness that
+can read JSON can still share the same file.

@@ -1,0 +1,14 @@
+// The `blueprint` section of ~/.nodecode/config.jsonc: all of it optional.
+// Nothing here gates the cell: a project starts from /blueprint start or blueprint_phase action=start.
+{
+  "blueprint": {
+    // quick 3, standard 6 or deep 10: sourced claims a briefing needs before it is written.
+    "tier": "standard",
+    // The shortest quote that can carry a check mark, in folded characters.
+    "min_quote_chars": 20,
+    // How much of one page the quote check reads, and how long one read may take.
+    "max_fetch_chars": 400000,
+    "timeout_seconds": 30
+    // "state_file": "~/.nodecode/blueprint/state.sexp"  // empty means exactly that
+  }
+}

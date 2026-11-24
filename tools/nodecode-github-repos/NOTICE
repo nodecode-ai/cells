@@ -1,0 +1,23 @@
+nodecode-github-repos is a rewrite of tomekdot's tomekdot/hermes-my-github-plugin:
+
+  https://github.com/tomekdot/hermes-my-github-plugin
+  commit 639f0cf0eb580d209b8bc55bbb05d316501ca77c
+  MIT License, Copyright (c) 2026 tomekdot (LICENSE)
+
+Rewritten: the read side of the dashboard tab as two model-facing tools and a
+command. The GitHub REST endpoint the plugin calls through `gh api`
+(/user/repos, with per_page and affiliation=owner), its pagination up to five
+pages of a hundred repositories, its 60-second cache, its per-repository fields
+(name, full name, description, private, fork, archived, stars, forks, language,
+pushed_at, open_issues_count) and its five sort orders and visibility filters
+are the cell's. Every call is an argv list to `gh`, no shell in between, with a
+timeout and gh's own error text carried to the model; the plugin's UTF-8
+decoding concern is answered by reading gh's output as UTF-8 explicitly. The
+repository's LICENSE is unchanged beside this file.
+
+Left out: the statusbar chip, the palette command, the dashboard tab and its
+table, the CSS and theme variables, and opening a repository in the browser --
+drawing, where a cell answers text. Also left out: the plugin's own
+/api/plugins/my-github routes, the desktop half in plugin.js (React components,
+dialogs, haptics), the client-side JavaScript date formatting (the cell formats
+ages itself), and the dashboard's 403 rate-limit panel.

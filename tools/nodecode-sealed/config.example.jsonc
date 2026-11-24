@@ -1,0 +1,17 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "sealed": {
+    "enabled": true,
+    // the encrypted store; the default is sealed/sealed.store under the home
+    "store": "sealed/sealed.store",
+    // the raw 32-byte key, 0600; /sealed init writes the default file
+    "key_file": "sealed/sealed.key",
+    // refuse to load when either file is readable by other users
+    "strict_permissions": false,
+    // a stored variable overwrites one the process already has
+    "override_existing": true
+  }
+}

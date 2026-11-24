@@ -1,0 +1,12 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "song-gift": {
+    "enabled": true,
+    "endpoint": "https://customsonggift.org/api/mcp",
+    "timeout_seconds": 45,
+    "max_chars": 1200
+  }
+}

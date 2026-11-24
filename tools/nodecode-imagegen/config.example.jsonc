@@ -1,0 +1,15 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell —
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority; this is an illustration
+// of it. A present section is enabled; "enabled": false vetoes it.
+{
+  "imagegen": {
+    "enabled": true,
+    "base_url": "http://127.0.0.1:8317/v1",
+    "api_key_env": "OPENAI_COMPAT_IMAGE_API_KEY",
+    "model": "gpt-image-2",
+    "quality": "medium",
+    "output_dir": "~/.nodecode/images",
+    "timeout": 180
+  }
+}

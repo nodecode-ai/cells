@@ -1,0 +1,25 @@
+nodecode-anyrouter is a rewrite of AnyRouterHQ's AnyRouterHQ/hermes-provider-anyrouter:
+https://github.com/AnyRouterHQ/hermes-provider-anyrouter
+commit ba9fd9c05570800dcbbf6dae4605fd4106880d27
+MIT, Copyright (c) 2026 AnyRouter (LICENSE)
+
+Rewritten for Nodecode: the provider profile (id, display name, base URL, key
+variable, signup page, the fallback route list, the chat lane), its catalog
+filter (only the routes whose capabilities or supported_parameters advertise
+tool calls), its catalog rates (input_per_1m / output_per_1m, carried in the
+Nodecode catalog entry so a round on a priced route is costed by Nodecode
+itself), its session_id, its routing preferences (only, ignore, order, sort,
+allow_fallbacks, max_price), its reasoning passthrough as AnyRouter's own
+`reasoning' object, and its opt-in app-attribution headers, which here name
+Nodecode. The live catalog read from GET /v1/models is the /anyrouter command,
+read on demand and put into /models rather than fetched at load, and the
+catalog is not cached across API keys: the command's list is the one last
+read. Left out: the original's in-memory per-key catalog cache with its
+background audience, its cost hook in Hermes' dashboard shape (Nodecode's
+catalog prices a round from the same rates), its introspection of an older
+Hermes ProviderProfile's fields, and its optional ANYROUTER_BASE_URL and
+ANYROUTER_APP_ATTRIBUTION environment variables, which are the `base_url' and
+`attribution' members of the section here. The original's default reasoning
+object for a reasoning model the caller configured nothing for
+({"enabled": true, "effort": "medium"}) is not forced: an operator who chose
+no effort leaves the model its own default.

@@ -1,0 +1,25 @@
+nodecode-checkup is a rewrite of iap's iap/hermes-guide:
+
+  https://github.com/iap/hermes-guide
+  commit 9690c41665c2de09043fa12f19c7c081247ab831
+
+MIT, Copyright (c) 2019-present, Iko <6572003+iap@users.noreply.github.com> (LICENSE)
+
+Rewritten: the plugin's idea — a read-only self-check that complements the
+harness's own doctor instead of replacing it, finding per surface, each
+finding carrying the reason and the fix — as a Nodecode cell with three
+checks over this organism's own state: a declared config section that is
+still half filled and the member it wants, a cell folder that loaded and
+refused to start or a link whose folder is gone, and the standing notices
+the organism's parts are raising right now. The plugin's command, its
+in-session skill and its terminal command became `/checkup`, the `run_checkup`
+tool and `(checkup:scan)`.
+
+Left out: the plugin's skills tap (31 Hermes troubleshooting playbooks plus
+an install and a configuration guide) and the scopes that read Hermes's own
+layout — versions, MCP, hooks, memories, storage, sessions, update and the
+`git ls-remote` release notice. Nodecode's `/doctor` already reads its
+equivalents (model pin, store, disk, build, sections, keys, a release
+waiting), and a playbook written against Hermes's paths would describe the
+wrong program. Also left out: the plugin's opt-in `proactive` drift check at
+session start and end; the checkup runs when asked.

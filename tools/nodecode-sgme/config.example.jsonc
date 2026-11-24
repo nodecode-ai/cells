@@ -1,0 +1,19 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret.
+// The declaration in cell.lisp is the authority. A present section is
+// enabled; "enabled": false vetoes it.
+{
+  "sgme": {
+    "base_url": "http://127.0.0.1:9910",   // the SGME server; elsewhere needs a key
+    "agent_key_env": "SGME_AGENT_KEY",     // or "agent_key" inline
+    "admin_key_env": "SGME_ADMIN_KEY",     // optional
+    "agent_id": "nodecode",                 // this agent's tag on every append
+    "inject": true,                         // the profile block in each turn
+    "inject_mode": "daily",                // daily, coding, work or full
+    "inject_max_tokens": 800,
+    "search_limit": 5,
+    "capture": true,                        // append each finished turn
+    "refine_on_end": true,
+    "timeout_seconds": 30
+  }
+}

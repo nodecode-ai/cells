@@ -1,0 +1,33 @@
+nodecode-grounder is a rewrite of grounder-labs's grounder-labs/grounder-hermes-plugin:
+
+  https://github.com/grounder-labs/grounder-hermes-plugin
+  commit 4c0e58799b2f2c2258f143d9e97ea7d3ff37ebeb
+
+Apache-2.0, Copyright (c) 2026 Grounder Labs, Inc. (LICENSE)
+
+That repository's LICENSE is here unchanged; its appendix keeps Apache's placeholder
+for the copyright line, and the holder named above is the one its README and NOTICE
+write ("Copyright 2026 Grounder Labs, Inc.").
+
+Rewritten: provider.py's one search, as provider.lisp was: the same POST to
+https://api.grounder.net/v1/search, the same JSON body (query cut to 2000
+characters, top_k clamped to 1-20, text_max_chars at 800), the search key in the
+same bearer header, the same user-agent shape, and the same rows out -- a result's
+title, its url, and a description that is its summary else its text on one line,
+at most 800 characters and marked with an ellipsis when a response ran past the
+budget. Its four failure sentences (a refused key, a rate limit, an HTTP status,
+a body that is not JSON) are here, with the transport failure it caught too. The
+plugin's one contribution -- register() adding the `grounder' web-search provider,
+selected with web.search_backend -- is here the grounder_search tool, the same call
+as the verb (grounder:search ...) from eval and as /grounder, and the one section
+that holds what GROUNDER_API_KEY held and Hermes's own configuration held besides.
+
+Left out: the OAuth sign-in. Hermes stored, refreshed and attached that grant
+(`hermes auth add grounder:grounder`), and the plugin kept no credential of its
+own; a Nodecode cell has no such grant to be handed, so the search key the same
+plugin already accepted is the one way in here, read from the section or from
+GROUNDER_API_KEY. Also left out: Hermes's keyless-fallback retry and its own
+web_extract, which were Hermes's behaviour around the plugin rather than the
+plugin; and the {"success": false, "error": ...} envelope, since a refusal here
+is a condition carrying Grounder's own sentence. Nothing else of the plugin is
+missing: it had no commands, hooks, skills or prompts beyond the provider.

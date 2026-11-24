@@ -322,6 +322,12 @@ by PATCH /rooms/<thread>, as the kit's side table beside a platform holds."
      "a reply carries the id of the message it answers")
     ((nlk:json-object "source" (nlk:json-object "reply_to_message_id" "6")) " [r6]"
      "a reply id alone still names its target"))
+  (let* ((sent (encode-universal-time 0 39 15 10 11 2026))
+         (candidate (test-candidate :message "7" :user "8" :reply-to "6")))
+    (setf (gethash "sent_at" (nck:candidate-source candidate)) (- sent nlk:+unix-epoch+))
+    (is (equal " [m7 u8 r6 Tue 2026-11-10 15:39]" (nck:handle-tag candidate)))
+    (is (equal "alice [m7 u8 r6 Tue 2026-11-10 15:39]: hi"
+               (nck:speaker-line (progn (setf (gethash "text" candidate) "hi") candidate)))))
   (is (null (test-line (test-candidate :text "<@999>"))))
   (is (equal "alice [m1 uu1]: hi" (nck:speaker-line (test-candidate :text " hi "))))
   (let ((long (test-line (test-candidate
@@ -330,6 +336,23 @@ by PATCH /rooms/<thread>, as the kit's side table beside a platform holds."
                          :cap 20)))
     (is (search "..." long) "ambient lines cap")
     (is (null (search (string #\Newline) long)))))
+
+(deftest channel-room-ingress-stamps-when-a-line-was-sent ()
+  ;; The kit stamps a line the adapter left unstamped with the time it
+  ;; arrived, less the minutes a read-back message waited; an adapter's own
+  ;; stamp, the platform's clock, stands (#420).
+  (let ((now (encode-universal-time 0 0 9 11 11 2026))
+        (fresh (test-candidate :message "1" :user "2"))
+        (late (test-candidate :message "3" :user "2"))
+        (stamped (test-candidate :message "4" :user "2")))
+    (setf (gethash "late_minutes" (nck:candidate-source late)) 30
+          (gethash "sent_at" (nck:candidate-source stamped)) 1700000000)
+    (is (= now (nck::stamp-sent-at fresh now)))
+    (is (= (- now 1800) (nck::stamp-sent-at late now)))
+    (is (= (+ nlk:+unix-epoch+ 1700000000) (nck::stamp-sent-at stamped now)))
+    (is (equal " [m1 u2 Wed 2026-11-11 09:00]" (nck:handle-tag fresh)))
+    (is (equal " [m3 u2 Wed 2026-11-11 08:30]" (nck:handle-tag late)))
+    (is (null (nck::stamp-sent-at (nlk:json-object "text" "x") now)))))
 
 (deftest channel-room-speaker-words-never-open-a-line ()
   ;; A participant writes only what follows the colon. A break in it used to
@@ -411,8 +434,9 @@ by PATCH /rooms/<thread>, as the kit's side table beside a platform holds."
       (is (search "one lane of a shared Telegram chat." none))
       (:absent "Where you are"
        "where the lane is rides behind the history, not in the room's standing block")
-      ("[m<message id> u<user id>]"
+      ("[m<message id> u<user id> <day date time>]"
        "the contract explains the handle bracket on every user line")
+      (is (search (format nil "this machine's clock (~a)" (nck::line-clock-zone)) one))
       (let ((api (search "API PRIMER" one))
             (kit (search nck:+channel-seams-primer+ one))
             (own (search "SEAMS PRIMER" one)))
@@ -775,6 +799,26 @@ alice [m9 uu1]: fix it"
     (setf (nck:lane-prompt lane) nil)
     (is (null (nck:write-back lane "an answer")))
     (is (zerop (count-session-events "chat-100" "turn.started")))))
+
+(deftest channel-room-write-back-never-records-an-empty-ask (with-temp-store ())
+  ;; An answer no new message asked for still settles in the room: an exit
+  ;; wake's turn starts on "", and so does a turn a bare mention opened. Its
+  ;; user half is a line saying so, never "": the room's record is the
+  ;; history of every lane forked off it, and a strict chat endpoint refuses a
+  ;; request carrying an empty user message, so one such answer failed every
+  ;; new thread of the room until it was evicted by hand. A thread lane's
+  ;; answer lands so in both rooms.
+  (nlk:create-session :id "chat-100")
+  (nlk:create-session :id "chat-100-t9" :parent "chat-100")
+  (let ((lane (forked-lane (nck:make-lane-table "wb") "chat-100-t9-m1" "chat-100-t9" "")))
+    (nck:write-back lane "the build finished: green")
+    (nck:write-back lane "the tests are green too" :prompt "  ")
+    (dolist (room '("chat-100" "chat-100-t9"))
+      (let ((asks (mapcar (lambda (input) (nlk:json-value input :string "message"))
+                          (nlk:events :session-id room :kind "turn.input_committed" :as :payloads))))
+        (is (= 2 (length asks)))
+        (is (notany (lambda (ask) (zerop (length (nlk:trimmed ask)))) asks))
+        (is (every (lambda (ask) (search "follows on from the exchange above" ask)) asks))))))
 
 (deftest channel-thread-room-write-back-reaches-the-channel-room (with-temp-store ())
   ;; A thread is a room forked off a room. Its settled exchange lands in the

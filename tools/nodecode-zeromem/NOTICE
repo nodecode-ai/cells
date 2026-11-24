@@ -1,0 +1,29 @@
+nodecode-zeromem is a rewrite of ptaranat's ptaranat/zeromem:
+
+  https://github.com/ptaranat/zeromem
+  commit f7e669c47cc0f6c9867829c37af8e4fc2803fe15
+
+MIT, Copyright (c) 2026 Panat Taranat (LICENSE)
+
+What was rewritten, and what was left out. The rewrite keeps the original's
+memory path in Common Lisp: every user and assistant line of every session is
+kept verbatim, with its session, turn, speaker and day, in one local JSONL
+ledger under the home; a model asks for past words through the same three
+tools (zeromem_recall, zeromem_stats, zeromem_forget_session); the turns of
+past sessions that answer a turn's own input ride into its first model
+request without anyone asking; forgetting a session drops it for good; and
+/zeromem import is the operator's own read of a home that already has
+sessions, as `hermes zeromem import` was. Ranking is the original's sparse
+half -- BM25 over content tokens with its K1 and B, plus an exact-phrase
+bonus, newest first on a tie -- and the same stopword list.
+
+Left out: the Rust core's dense embedder (bge-small-en-v1.5 on ONNX, and the
+130MB first-run download that came with it) and, with it, its two-view
+retrieval: the entity graph, the hierarchical windows and episodes, and the
+min-max fusion of the two views. What a query gets here is the lexical view
+alone, which is why an exact name, a date or a quoted phrase is found by
+this rewrite and a merely synonymous one may not be. Also left out: the
+Hermes memory-provider wiring (prefetch threads, read-only contexts,
+session switches), which Nodecode's own turn loop and hook points make
+unnecessary; and `hermes sessions export`, since a Nodecode home's sessions
+are already facts in its own event log, read in place.

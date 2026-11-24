@@ -1,0 +1,17 @@
+// The apple-health cell's section of ~/.nodecode/config.jsonc, as documentation:
+// the folder holds no secret, and nothing here is required beyond export_path.
+{
+  "applehealth": {
+    // The export.xml of an unzipped Apple Health export, or the folder that holds
+    // it. On the iPhone: Health > your profile picture > Export All Health Data,
+    // transfer the archive here and unzip it.
+    "export_path": "~/Health/apple_health_export/export.xml",
+
+    // structured (the default) answers type, value, unit and day; raw adds the
+    // source device or app and the export's own full timestamps.
+    "privacy_mode": "structured",
+
+    // The most records or workouts one list call answers. A call may ask for fewer.
+    "max_records": 25
+  }
+}

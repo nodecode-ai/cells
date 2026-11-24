@@ -1,0 +1,14 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {"resource": {"resourceType": "Observation",
+                  "code": {"text": "Hemoglobin A1c"},
+                  "effectiveDateTime": "2026-01-02T09:00:00Z",
+                  "valueQuantity": {"value": 5.4, "unit": "%"}}},
+    {"resource": {"resourceType": "Observation",
+                  "code": {"text": "Hemoglobin A1c"},
+                  "effectiveDateTime": "2026-04-02T09:00:00Z",
+                  "valueQuantity": {"value": 5.7, "unit": "%"}}}
+  ]
+}

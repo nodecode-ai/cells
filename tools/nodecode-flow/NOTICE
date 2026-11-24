@@ -1,0 +1,23 @@
+nodecode-flow is a rewrite of rewanthtammana's rewanthtammana/hermes-flow:
+https://github.com/rewanthtammana/hermes-flow
+commit 32a0ba9898ac650e5d38b0d22d8222f3d9a44828
+MIT, Copyright (c) 2026 Hermes Flow contributors (LICENSE)
+
+The rewrite keeps what a person used the original for: read the sessions a
+harness already recorded, show each session as an agent with the handoffs and
+lineage that led to it and the tools it called (counts, failures, time), print
+that as a terminal tree or as a mermaid flowchart, write one self-contained
+offline HTML page, and compare a later run with a trusted-paths baseline so a
+new handoff or a tool an agent never used stands out. It is Common Lisp now and
+reads Nodecode's own event log (sessions, created facts, tool-call and
+tool-result facts) through the kernel's session and store API, instead of a
+Python command that opened a SQLite state.db read-only.
+
+Left out: the JSONL/JSON export input (the cell reads this machine's log, not
+a pasted file), the bundled customer_review and live_interactions examples
+that installed a demo plugin and demo skills into a profile and made model
+calls, the deterministic process-agent prototype, and the original's
+multi-file JavaScript graph page (the cell's page is rendered in Lisp and
+fetches nothing). The trusted-paths baseline is the same JSON shape, but its
+connections are built from Nodecode's facts: a session's parent is a handoff
+when the child was spawned and lineage when it was forked.

@@ -1,0 +1,24 @@
+nodecode-little-canary is a rewrite of hermes-labs-ai's hermes-labs-ai/little-canary:
+
+  https://github.com/hermes-labs-ai/little-canary
+  commit 61855a940a66fb8319742756c3ff72c720a89160
+  Apache-2.0, Copyright 2026 Hermes Labs (LICENSE)
+
+Rewritten: the Hermes Agent plugin at integrations/hermes-agent -- its screening
+pipeline, in Common Lisp. The structural family of injection shapes and their
+weights, the baseline system prompt the canary model is given, the behavioural
+reading of its answer, the PASS/FLAG/BLOCK/DEGRADED dispositions with a risk
+score and the signals behind it, the fail-open rule (unexercised coverage
+withholds nothing), and the gate that withdraws a turn's tool calls on a BLOCK
+with a TTL. The canary is the same local Ollama model over the same /api/chat
+wire, and the same "screened text only" rule keeps the conversation out of it.
+
+Left out, and why: the Hermes hook points themselves -- pre_llm_call has no
+Nodecode equivalent, so the screening is a tool the model calls and a /canary
+command the operator types, rather than an automatic pass over every user turn;
+the advisory-only mode and the second LLM judge (an opt-in provider the plugin
+also bundles) because one threshold and one canary answer cover what the tool
+is for; the plugin's optional JSONL audit log, which would write files the
+platform does not need; and the OpenAI-compatible probe, since a keyed
+third-party endpoint is a different product rather than this one. The plugin's
+own copy of the runtime, its CLI and its demo are not carried over.

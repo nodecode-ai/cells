@@ -1,0 +1,23 @@
+nodecode-cloudgpu is a rewrite of mrhy7176's mrhy7176/hermes-cloudgpu:
+
+  https://github.com/mrhy7176/hermes-cloudgpu
+  commit 8094603d776e185cfe362618d353841e6b453189
+  MIT, Copyright (c) 2026 CloudGPU (LICENSE)
+
+Rewritten: the provider profile — the `cloudgpu` id and its one wire, the
+OpenAI-compatible base at https://cloudgpu.app/v1, `CLOUDGPU_API_KEY` sent as
+a bearer key, the `CLOUDGPU_BASE_URL` override, the six `fallback_models` with
+`deepseek-v4.1-flash` leading, and the live model list from `GET /v1/models`,
+which the original leaves to Hermes to read and this cell reads from a
+`/cloudgpu` command that puts the rows in `/models`. In Nodecode the profile is
+a row in the models.dev catalog table, two hooks and one command. The model
+ids and display names are the original's, verbatim.
+
+Left out: the Hermes-side plumbing, which has no Nodecode counterpart and no
+bearing on what a user gets — the `providers.register_provider` call, the
+`ProviderProfile` dataclass fields with no reader here (`aliases`,
+`signup_url`, `default_aux_model`, `auth_type`), the `requires_hermes`
+declaration and the `requires_env` block that the Hermes installer read, and
+the catalog-entry install advice in the README. Hermes's own live `/v1/models`
+fetch is not ported as a background refresh either: Nodecode asks for the list
+when the operator types `/cloudgpu`, so a start makes no request.

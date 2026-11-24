@@ -1,0 +1,28 @@
+nodecode-image-utils is a rewrite of MazenMkhinini's MazenMkhinini/hermes-image-plugin:
+
+  https://github.com/MazenMkhinini/hermes-image-plugin
+  commit c4123fbdb315137b40e4c5b4b5fd3eb2298dae66
+  MIT, Copyright (c) 2026 MazenMkhinini (LICENSE)
+
+What was rewritten: the six tools keep their names, their arguments, their
+refusals and their defaults - the overwrite-and-confirm gate, the
+`<stem>_<operation>.<ext>` name written beside the input, one of
+width/height/percent with the shape kept, a crop box checked against the
+bounds, EXIF orientation handled before an angle, alpha into JPEG needing
+`flatten`, and an optimize that reports the bytes it moved - but every line
+of them is Common Lisp here rather than Python: the decoding and encoding
+sit on the engine's own image codecs (PNG, GIF, WebP and JPEG, the ones a
+vision attachment goes through), and BMP is read and written in the cell.
+Pillow is gone, and with it the resampling vocabulary it named: `lanczos`
+averages every source pixel a result covers, `bicubic` and `bilinear`
+interpolate, `nearest` takes one sample.
+
+What was left out, and why: the original's animated formats (GIF, WebP,
+TIFF, AVIF) are read but not written, because every frame of an animation
+is a palette and a timing this cell would have to encode itself, and it
+writes the three formats a person asks for - PNG, JPEG and BMP - naming the
+others as not written instead of guessing. Interlaced and 16-bit PNG and
+non-baseline JPEG are read through the engine's readers rather than
+re-implemented. The bundled skill and the install.sh helper have no
+counterpart: a Nodecode cell needs neither, since its tools are registered
+with the harness and its folder is the install.

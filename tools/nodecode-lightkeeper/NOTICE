@@ -1,0 +1,27 @@
+nodecode-lightkeeper is a rewrite of Light5566's Light5566/claude-lightkeeper:
+
+  https://github.com/Light5566/claude-lightkeeper
+  commit 5126b570feb4a4365e9b3308bcb1029e4822f972
+  MIT License, Copyright (c) 2026 Light5566 (LICENSE)
+
+What was rewritten: the vault reader and the four hook scripts behind the
+plugin's hooks. lib/vaultlib.py's note parser (frontmatter, the `What it is`
+one-liner, the `Where it lives` paths, and `[[links]]` with their reasons) is
+cell.lisp's vault section; lib/find.py's tiered search (name, then tag, then
+the matching body lines) and its reverse path lookup (exact path, then a
+claimed folder, then a basename) are `lightkeeper_find`; lib/hooks/
+session_start.py's primer and file_guard.py's edit pointer are the :ROUND and
+:TOOL hooks, and the plugin's `claude-vault-` session state is three tables in
+memory. The retrieval is the same; the shapes are Nodecode's — three tools
+with JSON schemas, one command, two hooks that fail open.
+
+What was left out, and why: the writing side and the maintenance CLI. The
+original's vault init, check, tidy, sync and release scripts, its git hooks,
+its `vault` launcher on PATH, the World.canvas generator, the HTML export and
+the demo vault all build and police the map — a job for the operator's own
+editor and git, not for every turn of a session. Also left out: the
+`_meta/index.json` cache (this cell rebuilds the index from the notes on each
+call, so a note edited a second ago is already visible), the per-session
+JSON state file (three in-memory tables instead), and the adapter's
+rewriting of the five command files into skills (a Nodecode cell registers
+its command directly).

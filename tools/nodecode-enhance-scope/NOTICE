@@ -1,0 +1,27 @@
+nodecode-enhance-scope is a rewrite of wufeng0105's wufeng0105/dsh-enhance:
+
+  https://github.com/wufeng0105/dsh-enhance
+  commit cdb615a37ca7a453bd5859aef4dbf9accfcc330b
+  MIT, Copyright (c) 2026 wufeng0105 (LICENSE)
+
+What was rewritten: the three things the plugin gives a user — a text file
+appended to the end of every system prompt, the opening identity line of the
+prompt kept, dropped or replaced with the user's own, and a switch deciding
+what happens to a call that exceeds the current setting. The plugin did it by
+registering prompt sections with DeepSeek Harness's prompt registry and by
+answering that host's out-of-scope approval requests from its settings page;
+the rewrite does it through Nodecode's own seams, in Common Lisp: the content
+text rides every request as one harness section (the function a cell's standing
+sections come from), the opening line is rewritten by advising the one function
+that reads the system prompt, and the approval switch is the `:tool` point —
+`deny` refuses the tool names the section lists. The texts stay files, read at
+every request as the original's were; a file that cannot be read falls back to
+the default sentence rather than taking the prompt down.
+
+What was left out: the settings page (a cell has no page; the switches are
+the config section and the verbs are a slash command), the host's local HTTP
+route it served, the "Enhanced" permission preset written into a profile patch,
+the third registration that hides the host's own notes about its working
+directory and web surface (Nodecode's prompt carries no such passages), and the
+session-log check, done here by composing the next request's system message
+instead of reading a log back.

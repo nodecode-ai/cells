@@ -1,0 +1,13 @@
+{
+  // memory-shield: what the agent may add, correct or delete in memory.
+  // The defaults below are what the cell ships with; keep only what you change.
+  "memory-shield": {
+    // off | no_delete | owner_edits | append_only | read_only
+    "profile": "owner_edits",       // memories of :type :user: corrected only by you, never deleted
+    "notes": "no_delete",           // the agent's own notes and skills
+    "shared": "read_only",          // applied on top of both, inside a channel chat
+    "mode": "block",                // or "observe": let it run and say what would have been stopped
+    "trusted_sessions": [],         // session ids judged like a direct chat
+    "folders": []                   // knowledge folders to judge; empty asks the kernel
+  }
+}

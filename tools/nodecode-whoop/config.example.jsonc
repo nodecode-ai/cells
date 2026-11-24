@@ -1,0 +1,14 @@
+// The whoop section of ~/.nodecode/config.jsonc, as an example. Secrets are
+// named, never written here: the client secret and the refresh token live in
+// environment variables, or the refresh token in a file only you can read.
+{
+  "whoop": {
+    "client_id": "your WHOOP developer app's client id",
+    "client_secret_env": "WHOOP_CLIENT_SECRET",
+    "refresh_token_env": "WHOOP_REFRESH_TOKEN",
+    // "refresh_token_file": "~/.whoop-mcp/tokens.json",  // instead of refresh_token_env
+    "api_base": "https://api.prod.whoop.com/developer",
+    "token_url": "https://api.prod.whoop.com/oauth/oauth2/token",
+    "timeout": 20
+  }
+}

@@ -1,0 +1,26 @@
+// The section ~/.nodecode/config.jsonc may carry for this cell --
+// documentation, not config: the folder gets pushed and holds no secret. A
+// present section is enabled; "enabled": false vetoes it.
+{
+  "pulldown": {
+    "enabled": true,
+
+    // The pulldown program: its name on PATH (pip install pulldown in a venv
+    // of its own, with that venv's bin on PATH), or a path to the executable
+    // in the environment it was installed into. A cell that cannot find it
+    // refuses to start and says so.
+    "program": "pulldown",
+
+    // How long one page may take to be read, in seconds: 5 through 120. A
+    // program past it is killed and the call answers ERROR: PULLDOWN-ERROR.
+    "timeout_seconds": 60,
+
+    // Keep fetched pages on disk for an hour and answer a repeat read from
+    // them. Rendering bypasses the cache.
+    "cache": true,
+
+    // Where those pages are kept: the cell's own folder under the Nodecode
+    // home when this is empty.
+    "cache_dir": ""
+  }
+}

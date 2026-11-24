@@ -1,0 +1,40 @@
+nodecode-pr-studio is a rewrite of Murali-lns's Murali-lns/hermes-pr-studio:
+
+  https://github.com/Murali-lns/hermes-pr-studio
+  commit b9ba1c6bb567a8aeeff60fb4cfd17abebc0fa95f
+  MIT License, Copyright (c) 2026 Murali-lns (LICENSE)
+
+Rewritten: the reading and writing the pane does, as six model-facing tools and
+a command instead of a window. The inbox keeps the original's three GitHub
+searches in their order -- review-requested:@me, author:@me, involves:@me,
+open only, most recently updated first -- and its rule that a pull request
+appears in the first group that holds it, with an optional repository scope.
+One pull request is read through the same fields the pane's query asks
+for: size, branches, head, draft, review decision, mergeable state, labels,
+checks, description, commits, comments and reviews merged into one timeline.
+The diff keeps the pane's per-file churn summary and its character budget,
+and its thread list keeps the path, line, side, resolved and outdated flags
+and the comment ids, which is what a reply needs. The three writes are the
+pane's: an issue comment, a reply inside a review thread, and a review of
+COMMENT, APPROVE or REQUEST_CHANGES carrying comments on lines of the diff,
+with the same refusals (an empty body, a path that climbs out of the
+repository, a line below 1, a side that is not LEFT or RIGHT, request changes
+with nothing to say). Every call is the user's own gh CLI with an argument
+list and no shell, exactly as the Python backend ran it: gh search prs, gh pr
+view, gh pr diff and gh api, one timeout each. No token is read or stored,
+and gh authenticates itself. Two things are new because a model, not a pane,
+is reading: a read_only switch that refuses every write, and one text budget
+per answer, so a long patch is cut with a note saying where. The
+repository's LICENSE is unchanged beside this file.
+
+Left out: everything that is drawing rather than computing -- the tile and
+the status-bar chip, the split and unified diff views, syntax colours, the
+line-number gutter and click-to-comment, the image viewer and the proxying of
+private-repo images, the persisted open view, the draft queue and the review
+bar, and the model picker for "review in a new chat". Also left out: the
+per-60-second watcher and its notifications (the model calls the inbox or
+reads a PR when asked instead), the HTML allowlist sanitiser and the
+GitHub-rendered bodies it cleaned (a model reads markdown, so the plain body
+is what these tools answer), the repository dropdown built from gh repo list,
+and the "Send to Hermes" prompts, which a cell does not need: the model is
+already in the chat the review is being written in.

@@ -1,0 +1,23 @@
+{
+  // The section, a sibling of "index" and "cron" in ~/.nodecode/config.jsonc.
+  "enhance-scope": {
+    // The master switch: off detaches both texts and the tool veto.
+    "enabled": true,
+    // Whether the content file's text rides at the end of every system prompt.
+    "content": true,
+    // The file whose text is appended. Empty reads enhance/content-scope.txt
+    // under the Nodecode home, seeded with the default sentence on first start.
+    "content_file": "",
+    // keep / remove / custom: the opening line of the system prompt.
+    "identity": "keep",
+    // The text that replaces the opening line when identity is custom.
+    // Empty reads enhance/identity.txt under the Nodecode home.
+    "identity_file": "",
+    // ask lets every tool call through; deny answers a failure for the tools
+    // the list below names, and nothing runs.
+    "approval": "ask",
+    // The tool names refused when approval is deny, spelled as the model's
+    // tool payload spells them: ["eval", "bash"].
+    "tools": []
+  }
+}

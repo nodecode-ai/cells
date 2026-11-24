@@ -162,11 +162,17 @@ no board carries."
     (or (find tag +board-kinds+ :test #'string=)
         (error "a board carries ~{~(~a~)~^, ~} posts, not ~s" +board-kinds+ kind))))
 
+(defparameter +board-head-scanner+
+  (ppcre:create-scanner "^\\s*(?:\\*\\*[A-Za-z]+\\*\\*\\s+)?s\\d+\\s*·\\s*")
+  "A head TEXT may open with that BOARD-LINE writes itself: [**KIND**] sN ·.")
+
 (defun board-line (kind slot text &key score scorer)
   "The words one post shows: **KIND** sN, its score when it carries one, the
-key of the scorer that measured it or that it posts, then TEXT."
+key of the scorer that measured it or that it posts, then TEXT -- less a slot
+it opens with, which the line names once."
   (format nil "**~a** s~d~@[ · score ~a~]~@[ · scorer ~a~] · ~a" kind slot score scorer
-          (nlk:clip (nlk:trimmed text) +board-post-cap+ :ellipsis "…")))
+          (nlk:clip (nlk:trimmed (ppcre:regex-replace +board-head-scanner+ text ""))
+                    +board-post-cap+ :ellipsis "…")))
 
 (defun parse-board-line (text)
   "(values KIND SLOT SCORE WORDS SCORER) of TEXT when it is a board post, else
@@ -551,14 +557,13 @@ it works. => T when it steered."
     (when (and lane (lane-active-turn-id lane)
                (steering-line-p host candidate)
                (not (heard-after-final-p host candidate)))
-      ;; A peer's untagged line is what the next answer builds on: it goes up
-      ;; as a reply to it (DELIVER-ANSWER). A board post is a status line, and
-      ;; a person's line said to someone else is theirs.
-      (nlk:when-let (id (and (candidate-bot-p candidate)
-                             (null (parse-board-line (gethash "text" candidate)))
-                             (source-field candidate "message_id")))
-        (setf (lane-heard-line lane) (cons id (lane-active-turn-id lane))))
-      (continue-lane host lane (heard-ask host candidate lane))
+      ;; A peer's untagged line is what the answer of the turn it steers in
+      ;; builds on: it goes up as a reply to it (DELIVER-ANSWER). A board post
+      ;; is a status line, and a person's line said to someone else is theirs.
+      (continue-lane host lane (heard-ask host candidate lane)
+                     :heard (and (candidate-bot-p candidate)
+                                 (null (parse-board-line (gethash "text" candidate)))
+                                 (source-field candidate "message_id")))
       t)))
 
 ;;; --- the brief -------------------------------------------------------------------
@@ -582,8 +587,8 @@ note. When the ask is one task with a measurable outcome, work it this way. ~
 the command in backticks; an ask of several tasks gets one SCORER each. A score comes only ~
 from (nck:board-verify ~s :command \"...\" :directory \"<your working copy>\"), which runs ~
 your task's scorer and puts your score on your card. ~
-The scorer prints the score on its last line, higher is better: N/M, or a number (negate a ~
-time or a size). ~
+The scorer prints the score alone on its last line, higher is better: N/M, or a number (negate a ~
+time or a size); its stderr is never read. ~
 3. Post only measured progress: FINDING when your score improved -- what changed and why it ~
 works -- and FAIL for an idea ruled out, so no peer retries it. No chatter, and no ~
 @mentions: a mention asks a peer for a turn. ~
@@ -617,14 +622,56 @@ answers you here. ~a"
   (or (find platform *hosts* :key #'host-id :test #'string-equal)
       (error "no ~a channel is running" platform)))
 
-(defun post-on-board (host lane thread-id kind text &key score scorer)
-  "Post one KIND line as this bot on THREAD-ID's board from LANE, naming the
-key SCORER when it carries one, and keep it there. => (:POSTED :MESSAGE :LINE)."
-  (let* ((slot (or (slot-of host thread-id (host-self-id host))
+(defun board-lane (host thread-id)
+  "HOST's lane in THREAD-ID: the one running a turn there, else the one active
+there last; NIL when HOST has none there."
+  (let ((found '()))
+    (map-lanes (host-lanes host)
+               (lambda (lane &aux (target (lane-target lane)))
+                 (when (or (equal (getf target :thread-id) thread-id)
+                           (equal (getf target :channel-id) thread-id))
+                   (push lane found))))
+    (or (find-if #'lane-active-turn-id found)
+        (first (sort found #'> :key #'lane-last-active-ms)))))
+
+(defun stored-thread-room (host thread-id)
+  "The room session the store keeps for THREAD-ID on HOST's platform -- the
+one active last -- or NIL."
+  (when (nlk:store-open-p)
+    (let ((prefix (platform-session-prefix (host-platform host)))
+          (mark (format nil "-t~a" thread-id)))
+      (loop for session in (nlk:list-sessions)
+            for id = (getf session :id)
+            for target = (and (stringp id) (search mark id) (session-target prefix id))
+            when (equal (getf target :thread-id) thread-id)
+              return (target-room-id prefix target)))))
+
+(defun board-target (host thread-id)
+  "(values TARGET ROOM): where a post on THREAD-ID's board goes, and the room
+session its slots are kept in -- a lane of HOST's there (BOARD-LANE), else the
+thread's room as the store keeps it. An error when HOST has neither."
+  ;; Never the turn running there: 2026-11-18, a cron job told to post a
+  ;; SCORER on a thread's board ran in its own session after the reaper had
+  ;; let the thread's lane go, and the post failed `no lane answers' -- the
+  ;; bot held its slot and the thread was open. A post needs the surface and
+  ;; the slot, and the thread's room names both.
+  (let ((prefix (platform-session-prefix (host-platform host)))
+        (lane (board-lane host thread-id)))
+    (if lane
+        (values (lane-target lane) (target-room-id prefix (lane-target lane)))
+        (let ((room (or (stored-thread-room host thread-id)
+                        (error "no lane or room of this bot's is in ~a" thread-id))))
+          (values (session-target prefix room) room)))))
+
+(defun post-on-board (host target thread-id kind text &key score scorer room)
+  "Post one KIND line as this bot on THREAD-ID's board, to TARGET, naming the
+key SCORER when it carries one, and keep it there; ROOM is the room session
+the thread's slots are kept in. => (:POSTED :MESSAGE :LINE)."
+  (let* ((slot (or (slot-of host thread-id (host-self-id host) room)
                    (error "this bot holds no slot on the board of ~a" thread-id)))
          (line (board-line kind slot text :score score :scorer scorer)))
     (multiple-value-bind (posted ids failure)
-        (post-message host (lane-target lane) line :ping nil
+        (post-message host target line :ping nil
                       :what (format nil "~(~a~) post on ~a's board" kind thread-id))
       (when posted
         (note-thread-spoken thread-id)
@@ -639,14 +686,15 @@ key SCORER when it carries one, and keep it there. => (:POSTED :MESSAGE :LINE)."
 
 (defun board-post (thread kind text &key (platform "discord"))
   "Post one KIND line -- :claim, :scorer, :finding, :fail, :adopt, :solved --
-as this bot on THREAD's board, from the turn running there. A FINDING, ADOPT
-or SOLVED carries this bot's newest verified score, never a typed one, and the
-key of the scorer that measured it; a SCORER, its own command's key. SOLVED
-only after a verify reached the target."
+as this bot on THREAD's board, from any turn or none -- a cron job's, a turn
+in another room. A FINDING, ADOPT or SOLVED carries this bot's newest verified
+score, never a typed one, and the key of the scorer that measured it; a
+SCORER, its own command's key. SOLVED only after a verify reached the target."
   ;; Stamped an act first: it posts, so the snippet calling it is never
   ;; watched and run again (NLE:RECEIPT).
   (nle:receipt "calls" (list :verb "board-post"))
-  (multiple-value-bind (host lane) (running-answer "board-post" platform nil thread nil)
+  (nlk:bind ((host (board-host platform))
+             ((target room) (board-target host thread)))
     (let* ((kind (board-kind kind))
            (newest (first (board-scores host thread)))
            (scored (member kind +scored-kinds+ :test #'string=))
@@ -656,8 +704,8 @@ only after a verify reached the target."
                                kind thread)))))
       (when (and (string= kind "SOLVED") (not (getf newest :solved)))
         (error "SOLVED takes a verify that reached the target; the newest measured ~a" score))
-      (post-on-board host lane thread kind text
-                     :score score
+      (post-on-board host target thread kind text
+                     :score score :room room
                      :scorer (cond (scored (getf newest :scorer))
                                    ((string= kind "SCORER") (scorer-key (scorer-command text))))))))
 
@@ -665,37 +713,47 @@ only after a verify reached the target."
   "How long one scorer run may take before BOARD-VERIFY calls it failed.")
 
 (defun run-scorer (command directory timeout)
-  "(values OUTPUT EXIT-CODE) of COMMAND run by bash in DIRECTORY, cut off
-after TIMEOUT seconds."
-  (multiple-value-bind (output error-output code)
-      (uiop:run-program (list "timeout" (princ-to-string timeout) "bash" "-c" command)
-                        :directory (and directory (uiop:ensure-directory-pathname directory))
-                        :output :string :error-output :output :ignore-error-status t)
-    (declare (ignore error-output))
-    (values (or output "") code)))
+  "(values OUTPUT EXIT-CODE SHOWN) of COMMAND run by bash in DIRECTORY, cut
+off after TIMEOUT seconds: OUTPUT what it printed, the only text its score is
+read from, EXIT-CODE :TIMEOUT when the cut fell, and SHOWN that with what it
+wrote to stderr under a stderr line."
+  ;; NLK:RUN-BOUNDED, never UIOP:RUN-PROGRAM under `timeout': the scorer
+  ;; leads a process group of its own, so the cut takes its whole tree, and
+  ;; an evaluation that unwinds -- (eval-interrupt), a stopped turn -- takes
+  ;; it down too. Under UIOP the scorer ran on after both, holding the shared
+  ;; box lock it had taken, with nobody to read its score.
+  (multiple-value-bind (output errors code)
+      (nlk:run-bounded (list "bash" "-c" command) :seconds timeout :directory directory)
+    (let ((output (or output "")))
+      (values output code (if (plusp (length (nlk:trimmed (or errors ""))))
+                              (format nil "~a~&stderr:~%~a" output errors)
+                              output)))))
 
 (defun scorer-cut-p (code)
-  "Whether exit CODE says the scorer never reached its last line: TIMEOUT's
-124 when the cut fell, or 128+N when a signal ended it."
-  (and (integerp code) (or (= code 124) (> code 128))))
+  "Whether exit CODE says the scorer never reached its last line: :TIMEOUT
+when the cut fell (124 from a `timeout' inside the command), or 128+N when
+a signal ended it."
+  (or (eq code :timeout)
+      (and (integerp code) (or (= code 124) (> code 128)))))
 
 (defun scorer-score (output)
-  "The score OUTPUT ends on: the last `score: S' (or `score=S') it prints,
-`score' a word of its own, else the last N/M or number on its last line that
-holds one; NIL when it prints none."
+  "The score OUTPUT, a scorer's stdout, ends on: the last `score: S' (or
+`score=S') it prints, `score' a word of its own, else its last line that is
+not blank when that line is wholly N/M or a number; NIL for anything else,
+a score with no value such as N/0 among it."
   ;; The colon or equals sign is required and `score' must start a word: a
   ;; progress line naming a path like /scratch/score-141/7 is not a score.
+  ;; The last line must be the score alone: a number taken from a line like
+  ;; `cat: /proc/2714128/environ' is a pid, and higher is better, so a bogus
+  ;; score would stand as the best over every real run after it.
   (let ((said nil))
     (ppcre:do-register-groups (score) ("(?i)\\bscore\\s*[:=]\\s*(-?[0-9]+(?:\\.[0-9]+)?(?:/[0-9]+(?:\\.[0-9]+)?)?)" output)
       (setf said score))
-    (or said
-        (loop for line in (reverse (uiop:split-string output :separator '(#\Newline)))
-              for found = (let ((last nil))
-                            (ppcre:do-matches-as-strings
-                                (match "-?[0-9]+(?:\\.[0-9]+)?(?:/[0-9]+(?:\\.[0-9]+)?)?" line)
-                              (setf last match))
-                            last)
-              when found return found))))
+    (let ((score (or said
+                     (find-if (lambda (line) (plusp (length line)))
+                              (mapcar #'nlk:trimmed (uiop:split-string output :separator '(#\Newline)))
+                              :from-end t))))
+      (and score (score-value score) score))))
 
 (defun card-score-line (host thread-id)
   "The row a lane's card shows for this bot on THREAD-ID's board: its newest
@@ -730,15 +788,18 @@ one. => (:SCORE :IMPROVED :BEST :SOLVED :PLATEAU :LEADER :SCORER :EXIT :OUTPUT).
     (let* ((command (or command (board-scorer host thread)
                         (error "no scorer: pass :command, or post the command as SCORER first")))
            (scorer (verify-scorer host thread command)))
-      (multiple-value-bind (output code) (run-scorer command directory timeout)
+      ;; Only what it printed is read for the score: its stderr -- an EXIT
+      ;; trap's complaint, a warning -- lands after its last line.
+      (multiple-value-bind (output code shown) (run-scorer command directory timeout)
         ;; A cut run printed only what came before the cut: an early part's
         ;; N/M is not the score the whole run ends on, so it scores nothing.
         (when (scorer-cut-p code)
-          (error "the scorer was cut off (exit ~a) before its last line, so it scores nothing:~%~a"
-                 code (text-end output 1200)))
+          (error "the scorer was cut off (~a) before its last line, so it scores nothing:~%~a"
+                 (if (eq code :timeout) (format nil "at its ~a s bound" timeout) (format nil "exit ~a" code))
+                 (text-end shown 1200)))
         (let* ((score (or (scorer-score output)
-                          (error "the scorer printed no score (exit ~a):~%~a" code
-                                 (text-end output 1200))))
+                          (error "the scorer printed no score (exit ~a): its last line must be N/M or a number alone, and stderr is not read:~%~a"
+                                 code (text-end shown 1200))))
                (value (score-value score))
                (before (best-entry (board-scores-under host thread scorer)))
                (improved (or (null before) (> value (getf before :value))))
@@ -760,7 +821,7 @@ one. => (:SCORE :IMPROVED :BEST :SOLVED :PLATEAU :LEADER :SCORER :EXIT :OUTPUT).
                   :leader (and leader (format nil "s~d ~a" (getf leader :slot) (getf leader :score)))
                   :scorer scorer
                   :exit code
-                  :output (text-end output 1500))))))))
+                  :output (text-end shown 1500))))))))
 
 (defun board-read (thread &key (platform "discord"))
   "THREAD's board as this bot's kit holds it: the slots, the first scorer and

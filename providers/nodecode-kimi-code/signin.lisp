@@ -151,7 +151,7 @@ out when ENTRY is NIL, keeping every other field."
   (let ((token (nlk:json-value entry :text "refresh_token")))
     (unless token
       (error 'nle:credential-error
-             :detail "the Kimi Code sign-in expired and holds no refresh token; run /kimi-code login"))
+             :detail "the Kimi Code sign-in expired and holds no refresh token; /kimi-code signs in again"))
     (multiple-value-bind (body status)
         (exchange (token-url)
                   `(("grant_type" . "refresh_token")
@@ -160,7 +160,7 @@ out when ENTRY is NIL, keeping every other field."
                   (client-headers))
       (unless (ok-p status)
         (error 'nle:credential-error
-               :detail (format nil "kimi-code token refresh failed: ~a ~a; run /kimi-code login"
+               :detail (format nil "kimi-code token refresh failed: ~a ~a; /kimi-code signs in again"
                                status (excerpt body))))
       (token-entry body entry))))
 
@@ -328,22 +328,39 @@ on a thread of its own."
              (format nil "Kimi Code: signed in~@[ as ~a~]; the token ~:[expired, and is refreshed at the next round~;expires in ~:*~d min~]"
                      (nlk:json-value entry :string "account_id")
                      (and (plusp left) (ceiling left 60)))))
-          (t "Kimi Code: not signed in; /kimi-code login starts the sign-in"))))
+          (t "Kimi Code: not signed in; /kimi-code starts the sign-in"))))
+
+(defun panel-run (label line &rest keys)
+  "A row of the panel whose Enter runs LINE, KEYS the rest of a dialog row's
+words. Written out here rather than asked of NLE:RUN-ROW, so a release from
+before it still loads this cell."
+  (list* :label label :run (list :enter line) keys))
+
+(defun panel-ask (label ask line &key placeholder verb detail)
+  "A row of the panel whose Enter asks for one line of text under ASK, then
+runs LINE with the text after it; PLACEHOLDER what the empty field says, VERB
+the word Enter does there. Written out here, as PANEL-RUN is."
+  (list* :label label
+         :ask (list :label ask :line line :placeholder (or placeholder "") :verb (or verb ""))
+         (and detail (list :detail detail))))
+
+(defun panel (summary)
+  "The dialog bare /kimi-code answers: SUMMARY, the sign-in as it stands, over a
+row for each thing to do about it."
+  (nle:list-dialog
+   :title "Kimi Code" :summary summary
+   :rows (list (panel-run "Sign in" "/kimi-code login" :detail "with a device code, at Kimi")
+               (panel-run "Sign out" "/kimi-code logout" :detail "forget the kept sign-in, or end one in progress"))))
 
 (defun run-command (args session-id)
-  "/kimi-code ARGS: login, logout or status."
+  "/kimi-code typed alone answers its panel; a row runs one of its lines."
   (declare (ignore session-id))
   (let ((verb (string-downcase (or (first (uiop:split-string (nlk:trimmed (or args ""))
                                                              :separator '(#\Space #\Tab)))
                                    ""))))
     (cond ((equal verb "login") (login))
           ((equal verb "logout") (logout))
-          ((member verb '("" "status") :test #'equal) (status))
-          (t "usage: /kimi-code login | logout | status"))))
+          ((equal verb "") (let ((text (status))) (values text (panel text))))
+          ((string-equal verb "status") (status))
+          (t (values (format nil "kimi-code: ~a is not one of its choices" verb) (panel (status)))))))
 
-(defun complete-command (text session-id)
-  "What /kimi-code's argument completes to while TEXT is typed."
-  (declare (ignore session-id))
-  (loop for verb in '("login" "logout" "status")
-        when (uiop:string-prefix-p (string-downcase (nlk:trimmed (or text ""))) verb)
-          collect (list :name verb :value verb)))
