@@ -231,3 +231,19 @@
       (is (search "\"Type\":4" send) "the outside recipient is a clear package")
       (is (search "\"BodyKey\"" send) "with the session key in the clear")
       (is (search "aes256" send) "named by its algorithm"))))
+
+(deftest protonmail-cell-a-printed-session-never-shows-its-secret ()
+  ;; A printed session rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never a token or the mailbox passphrase.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-protonmail::make-session
+                :uid (format nil "~a-uid" secret) :username "me@proton.me"
+                :token (format nil "~a-token" secret)
+                :refresh (format nil "~a-refresh" secret)
+                :passphrase (format nil "~a-passphrase" secret)))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the session shows a token or the mailbox passphrase")
+    (is (search "SESSION" (first shown)) "the printed session names its type")))

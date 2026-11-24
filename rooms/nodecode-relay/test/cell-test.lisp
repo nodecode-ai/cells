@@ -193,3 +193,16 @@
   (:stopped (is (not (nodecode-relay::running-p)) "stop closes the socket"))
   (:refused ("port" 0) ("harness_port" 0))
   (:idle nodecode-relay::relay-error (nodecode-relay::run-slash "pair phone" nil)))
+
+(deftest relay-cell-a-printed-store-never-shows-its-secret ()
+  ;; A printed store rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never the password or the signing key.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-relay::make-store :password (format nil "~a-password" secret)
+                                           :key (format nil "~a-key" secret)))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the store shows the password or the signing key")
+    (is (search "STORE" (first shown)) "the printed store names its type")))

@@ -66,6 +66,12 @@ it stopped on.")
   (tools nil)
   (cursor nil))
 
+(defmethod print-object ((session session) stream)
+  ;; Never the slots: KEY is the account's API key. A printed session rides
+  ;; every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (session stream :type t :identity t)
+    (format stream "~a" (session-url session))))
+
 (defvar *session* nil
   "The one session this cell holds open: built on the first call, dropped on
 stop, re-initialized when the server says it expired.")

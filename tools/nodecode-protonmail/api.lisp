@@ -63,6 +63,13 @@
 (defstruct (session (:constructor make-session))
   uid token refresh username passphrase)
 
+(defmethod print-object ((session session) stream)
+  ;; Never the slots: UID, TOKEN and REFRESH are the signed-in session, and
+  ;; PASSPHRASE opens the mailbox's keys. A printed session rides every
+  ;; condition, backtrace and eval result that holds one.
+  (print-unreadable-object (session stream :type t :identity t)
+    (format stream "~@[~a~]" (session-username session))))
+
 (defun login ()
   "Log in with the settings' address and password, and keep the session."
   (let* ((username (conf :username))
