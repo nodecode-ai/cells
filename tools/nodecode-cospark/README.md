@@ -13,6 +13,8 @@ Cospark is a hosted service: it makes ad creative on your own Cospark account, a
 1. **A sign-in you already have.** Add the server in `/mcp` as `{"url": "https://api.cospark.so/mcp"}` and finish its browser login. The shipped mcp cell keeps that token and this cell reuses it; nothing else is needed.
 2. **A token.** Paste one into the `cospark` section's `token` member in `/settings`, name an environment variable in `token_env`, or write it into a file and name that file in `token_file`.
 
+The [official Cospark connection guide](https://www.cospark.so/mcp) is where to get a Cospark account and see the browser sign-in step by step. It is written for ChatGPT, Claude, Codex and Cursor; the two ways above are how Nodecode takes that sign-in.
+
 `server_url` defaults to `https://api.cospark.so/mcp`. `/cospark login` says, in words, where the sign-in in use came from, and never prints it.
 
 ## Use it
