@@ -76,6 +76,12 @@ takes a fraction of a second and a guess costs the same.")
   (key (random-hex 32))
   (attempts nil))
 
+(defmethod print-object ((store store) stream)
+  ;; Never the slots: PASSWORD and KEY are the relay's credentials. A printed
+  ;; store rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (store stream :type t :identity t)
+    (format stream "~d paired device~:p" (length (store-devices store)))))
+
 (defun new-store ()
   (make-store :key (random-hex 32)))
 

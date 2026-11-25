@@ -268,6 +268,12 @@ answer frame as a hash table, or a TRACEKIT-ERROR."
   (denied 0)
   (completed 0))
 
+(defmethod print-object ((run run) stream)
+  ;; Never the slots: TOKEN is the run's credential. A printed run rides every
+  ;; condition, backtrace and eval result that holds one.
+  (print-unreadable-object (run stream :type t :identity t)
+    (format stream "~a" (run-id run))))
+
 (defvar *run* nil "The Tracekit run of this Nodecode process, registered at its first decided call.")
 (defvar *last-refusal* nil "The last words the model read instead of a call, for /tracekit.")
 

@@ -186,3 +186,15 @@
            (is (nck:channel-status "pidgeon") "and reports a state"))
       (when (functionp stop) (funcall stop)))
     (is (eq :stopped (getf (nck:channel-status "pidgeon") :state)) "and stops")))
+
+(deftest pidgeon-cell-a-printed-adapter-never-shows-its-secret ()
+  ;; The adapter rides conditions, backtraces and eval results: printed any
+  ;; way, it names itself and never the API key.
+  (let* ((token "secret-that-must-never-print-0123456789")
+         (adapter (npi::make-pidgeon-adapter :base-url "https://pidgeon.example" :key token))
+         (shown (list (prin1-to-string adapter)
+                      (princ-to-string adapter)
+                      (princ-to-string (make-condition 'type-error :datum adapter
+                                                       :expected-type 'nck:channel-host)))))
+    (is (notany (lambda (text) (search token text)) shown) "no printing of the adapter shows the API key")
+    (is (search "PIDGEON-ADAPTER" (first shown)) "the printed adapter names its type")))

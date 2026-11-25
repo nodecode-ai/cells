@@ -148,3 +148,15 @@
          (is (search "changes" text) "a direction typed as an argument is taken as one"))
     (nodecode-music-jam::close-server nodecode-music-jam::*server*)
     (setf nodecode-music-jam::*server* nil nodecode-music-jam::*jam* nil)))
+
+(deftest music-jam-cell-a-printed-band-server-never-shows-its-secret ()
+  ;; A printed band server rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never its token.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-music-jam::%make-server :port 4712 :token secret))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the band server shows its token")
+    (is (search "BAND-SERVER" (first shown)) "the printed band server names its type")))

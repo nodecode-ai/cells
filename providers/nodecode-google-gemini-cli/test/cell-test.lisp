@@ -486,3 +486,15 @@ POSTS and GETS collect (URL HEADERS CONTENT); the loopback callback is dialled f
           (is (equal '("/google-gemini-cli code")
                      (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
       (is (search "not one of its choices" (cell-entry "nodecode-google-gemini-cli" "google-gemini-cli" "frobnicate"))))))
+
+(deftest google-gemini-cli-cell-a-printed-round-never-shows-its-secret ()
+  ;; A printed round rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never the round's access token.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-google-gemini-cli::make-round :model "gemini-2.5-pro" :token secret))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the round shows the round's access token")
+    (is (search "CCA-ROUND" (first shown)) "the printed round names its type")))

@@ -722,3 +722,15 @@ adapter and the fake gateway have stopped."
                                         :responses (list (reply 403 "message" "Missing Access")))
                                        "app-1")))))
     (is (null ncd:*card-marks*))))
+
+(deftest channel-discord-a-printed-adapter-never-shows-its-secret ()
+  ;; The adapter rides conditions, backtraces and eval results: printed any
+  ;; way, it names itself and never the bot token.
+  (let* ((token "secret-that-must-never-print-0123456789")
+         (adapter (ncd::%make-discord-adapter :token token))
+         (shown (list (prin1-to-string adapter)
+                      (princ-to-string adapter)
+                      (princ-to-string (make-condition 'type-error :datum adapter
+                                                       :expected-type 'nck:channel-host)))))
+    (is (notany (lambda (text) (search token text)) shown) "no printing of the adapter shows the bot token")
+    (is (search "DISCORD-ADAPTER" (first shown)) "the printed adapter names its type")))
