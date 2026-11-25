@@ -3173,7 +3173,7 @@
     {
       "name": "nodecode-cospark",
       "git": "https://github.com/nodecode-ai/cells",
-      "commit": "3123ac32244dc986b34d3d1d2db8428d8b9b26ac",
+      "commit": "75e9c97a15cae8bf261a919b10ec2a3b315f9e4f",
       "path": "tools/nodecode-cospark",
       "description": "Cospark: research ad references and make images, video ads and voiceovers through its hosted MCP server",
       "license": "MIT",
