@@ -28,6 +28,12 @@
   (refresh-token nil)
   (path nil))
 
+(defmethod print-object ((book xchat-book) stream)
+  ;; Never the slots: TOKEN and REFRESH-TOKEN are the account's credentials,
+  ;; and a printed book rides every condition, backtrace and eval result.
+  (print-unreadable-object (book stream :type t :identity t)
+    (format stream "~d cursor~:p" (hash-table-count (xchat-book-cursors book)))))
+
 (defun make-xchat-book (&key path token refresh-token)
   "A book at PATH (read back when it exists)."
   (let ((book (%make-xchat-book :token token :refresh-token refresh-token)))

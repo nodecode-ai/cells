@@ -46,6 +46,13 @@ content type the transport sets itself.")
   (thread nil)
   (stopping nil))
 
+(defmethod print-object ((relay relay) stream)
+  ;; Never the slots: TOKEN is the secret in the admit path every request
+  ;; through it carries. A printed relay rides every condition, backtrace and
+  ;; eval result that holds one.
+  (print-unreadable-object (relay stream :type t :identity t)
+    (format stream "port ~d" (relay-port relay))))
+
 (defun hex-token (count)
   "COUNT bytes of entropy as lowercase hex."
   (format nil "~(~{~2,'0x~}~)" (coerce (nlk:random-bytes count) 'list)))

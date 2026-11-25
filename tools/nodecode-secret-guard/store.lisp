@@ -32,6 +32,12 @@ stored secret can be the environment variable a tool reads.")
 said about it (FINGERPRINT, LENGTH, CREATED) without the value."
   name value source fingerprint length created)
 
+(defmethod print-object ((held held-secret) stream)
+  ;; Never the slots: VALUE is the secret itself. A printed held secret rides
+  ;; every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (held stream :type t :identity t)
+    (format stream "~a" (held-secret-name held))))
+
 (defvar *store-path* nil
   "The file the secrets are kept in, or NIL while the cell is not running.")
 (defvar *secrets* (make-hash-table :test #'equal)

@@ -151,6 +151,12 @@ A refused status is COLAB-ERROR; the message is what the operator repairs."
 (defstruct (runtime (:constructor make-runtime (&key endpoint accelerator url token)))
   endpoint accelerator url token)
 
+(defmethod print-object ((runtime runtime) stream)
+  ;; Never the slots: TOKEN is the runtime's proxy credential. A printed
+  ;; runtime rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (runtime stream :type t :identity t)
+    (format stream "~@[~a~]" (runtime-accelerator runtime))))
+
 (defun runtime-of (data accelerator)
   "The runtime an assignment DATA describes."
   (let ((info (nlk:json-value data :object "runtimeProxyInfo")))

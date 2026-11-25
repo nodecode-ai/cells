@@ -76,6 +76,12 @@ environment variable the section names."
   "Where the person's opencode server listens, and how to reach it."
   url username password prefix timeout)
 
+(defmethod print-object ((server server) stream)
+  ;; Never the slots: PASSWORD is the opencode server's credential. A printed
+  ;; server rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (server stream :type t :identity t)
+    (format stream "~a" (server-url server))))
+
 (defun server ()
   "The server the running settings describe."
   (let ((prefix (or (nonblank (setting :api-prefix)) "/api")))

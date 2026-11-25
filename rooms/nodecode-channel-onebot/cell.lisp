@@ -259,6 +259,12 @@ it has read to."
   (poll-seconds 5 :type integer)
   (catch-up-seconds +max-catchup-seconds+ :type integer))
 
+(defmethod print-object ((adapter onebot-adapter) stream)
+  ;; Never the slots: TOKEN is the bridge's access token, and a printed adapter
+  ;; rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (adapter stream :type t :identity t)
+    (format stream "self ~a" (onebot-adapter-self-id adapter))))
+
 (defvar *onebot-adapter* nil "The live lane, or NIL when it is stopped.")
 
 (defun onebot-headers (adapter)

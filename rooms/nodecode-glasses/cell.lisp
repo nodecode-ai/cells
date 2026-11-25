@@ -84,6 +84,12 @@
   (device "default" :type string)
   (token "" :type string))
 
+(defmethod print-object ((pair pair) stream)
+  ;; Never the slots: TOKEN is the device's credential. A printed pair rides
+  ;; every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (pair stream :type t :identity t)
+    (format stream "~a on ~a" (pair-user pair) (pair-device pair))))
+
 (defvar *pairs* '()
   "The PAIRs of the section, parsed at start: one PAIR per device token.")
 

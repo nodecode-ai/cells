@@ -454,3 +454,15 @@ call; the tool's result with the answer and FINISHED."
           (is (equal '("/gitlab-duo-agent code")
                      (remove nil (map 'list (lambda (row) (nle::json-value row :text "ask" "line")) rows))))))
       (is (search "not one of its choices" (cell-entry "nodecode-gitlab-duo-agent" "gitlab-duo-agent" "frobnicate"))))))
+
+(deftest gitlab-duo-agent-cell-a-printed-session-never-shows-its-secret ()
+  ;; A printed session rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never the workflow's token.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-gitlab-duo-agent::make-session "workflow-1" 0 nil "https://gitlab.example" secret))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the session shows the workflow's token")
+    (is (search "SESSION" (first shown)) "the printed session names its type")))

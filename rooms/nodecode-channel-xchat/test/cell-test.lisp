@@ -108,3 +108,15 @@
            (setf stop nil))
       (when stop (ignore-errors (funcall stop)))
       (sb-posix:setenv "XCHAT_TEST_TOKEN" "" 1))))
+
+(deftest channel-xchat-a-printed-book-never-shows-its-secret ()
+  ;; The book rides conditions, backtraces and eval results: printed any
+  ;; way, it names itself and never the tokens.
+  (let* ((token "secret-that-must-never-print-0123456789")
+         (book (ncxc:make-xchat-book :token token :refresh-token token))
+         (shown (list (prin1-to-string book)
+                      (princ-to-string book)
+                      (princ-to-string (make-condition 'type-error :datum book
+                                                       :expected-type 'nck:channel-host)))))
+    (is (notany (lambda (text) (search token text)) shown) "no printing of the book shows the tokens")
+    (is (search "XCHAT-BOOK" (first shown)) "the printed book names its type")))
