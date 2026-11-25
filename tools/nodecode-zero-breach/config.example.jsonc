@@ -1,0 +1,32 @@
+{
+  // The section a cell reads at boot. Every field is optional.
+  "zero-breach": {
+    // quick: browsers, host, startup items (the file fingerprints are skipped
+    //   and reported as a gap); standard: adds them, the vendor's own advice;
+    // full: adds raw web caches and more file types; browser: profiles only.
+    "scope": "quick",
+
+    // Seconds one scan may take before it is stopped.
+    "timeout": 1800,
+
+    // The interpreter that runs the scanner (3.8 or newer, standard library only).
+    "python": "python3",
+
+    // Point at another copy of the toolkit's scan folder; "" means the copy
+    // vendored inside this cell.
+    "toolkit": "",
+
+    // Use indicator sets downloaded with the toolkit's own --update as well as
+    // the bundled set. Off means a scan uses the bundled set alone.
+    "feeds": false,
+
+    // One more indicator file to scan with (the curated tab-separated format,
+    // or a STIX 2 bundle). Set it through the settings page; "" means none.
+    "iocs": "",
+
+    // Where a scan's JSON reports are kept. "" means this profile's
+    // zero-breach folder. A report carries paths and browsing details, so it
+    // belongs outside the repository.
+    "report_directory": ""
+  }
+}
