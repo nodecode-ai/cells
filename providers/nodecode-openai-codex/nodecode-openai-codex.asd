@@ -24,6 +24,8 @@
   :components ((:file "package")
                (:file "provider")
                (:file "signin")
+               (:file "pi-auth")
+               (:static-file "pi-auth.mjs")
                (:file "cell"))
   :in-order-to ((test-op (test-op "nodecode-openai-codex/test"))))
 
@@ -33,6 +35,16 @@
   :depends-on ("nodecode-openai-codex" "nodecode/test")
   :pathname "test/"
   :serial t
-  :components ((:file "cell-test"))
+  :components ((:file "cell-test")
+               (:file "pi-test")
+               (:file "pi-discovery-test"))
   :perform (test-op (operation component)
                     (uiop:symbol-call '#:nodecode.test '#:run-openai-codex-tests)))
+
+(defsystem "nodecode-openai-codex/pi-integration-test"
+  :description "Explicit installed-Pi compatibility checks, synthetic credentials only"
+  :license "MIT"
+  :depends-on ("nodecode-openai-codex/test")
+  :components ((:file "test/pi-integration-test"))
+  :perform (test-op (operation component)
+                    (uiop:symbol-call '#:nodecode.test '#:run-openai-codex-pi-integration-tests)))
