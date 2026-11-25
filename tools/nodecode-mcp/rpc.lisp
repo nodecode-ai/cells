@@ -103,7 +103,8 @@ seconds."))
   (list-changed-p nil)
   (stale-count 0 :type integer)
   server-info
-  protocol-version)
+  protocol-version
+  instructions)
 
 (defun check-frame (text)
   "Refuse TEXT when it is past +FRAME-LIMIT+: the frame is not sent."
@@ -177,11 +178,19 @@ seconds."))
 
 ;;; --- the MCP lifecycle ----------------------------------------------------
 
+(defun result-instructions (result)
+  "The instructions an initialize RESULT carries -- the server's own word on
+how to use it and its tools (spec 2025-03-26 on) -- trimmed; NIL when it
+carries none, or only blanks."
+  (nlk:when-let (text (nlk:json-value result :string "instructions"))
+    (let ((text (string-trim '(#\Space #\Tab #\Newline #\Return) text)))
+      (and (plusp (length text)) text))))
+
 (defun handshake (client deadline &optional result)
   "initialize, then notifications/initialized. RESULT is initialize's answer
 when a wait for it was taken up again (a sign-in held it)."
-  ;; Returns the initialize result; the server's info and protocol version are
-  ;; kept on the client.
+  ;; Returns the initialize result; the server's info, protocol version and
+  ;; instructions are kept on the client.
   (let ((result (or result
                     (rpc-request
                      client "initialize"
@@ -193,7 +202,8 @@ when a wait for it was taken up again (a sign-in held it)."
                      deadline))))
     (setf client.server-info (nlk:json-value result :object "serverInfo")
           client.protocol-version
-          (nlk:json-value result :string "protocolVersion"))
+          (nlk:json-value result :string "protocolVersion")
+          client.instructions (result-instructions result))
     (send-message client (nlk:json-object "jsonrpc" "2.0" "method" "notifications/initialized"
                                           "params" (nlk:make-json-object))
                   deadline)

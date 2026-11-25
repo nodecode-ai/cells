@@ -13,9 +13,10 @@
 ;;;; Lisp function in the MCP package, (mcp:files/read-file :path "x"),
 ;;;; generated from the server's tools/list with a real &key lambda list and
 ;;;; the description as its docstring, over one chokepoint (mcp:call ...).
-;;;; A <harness key="mcp"> block carrying the live catalog teaches the model
-;;;; the vocabulary in every session; it is injected live, never stored, so
-;;;; removing the folder leaves nothing behind.
+;;;; (help :mcp) teaches the model the vocabulary: the live catalog and each
+;;;; server's own instructions, with one line naming the servers in every
+;;;; request's help section; it is set live, never stored, so removing the
+;;;; folder leaves nothing behind.
 ;;;;
 ;;;; Two transports, as the Zig client had: stdio (a child process, newline
 ;;;; delimited JSON-RPC) and streamable HTTP (one POST per message, JSON or

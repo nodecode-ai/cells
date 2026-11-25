@@ -256,6 +256,25 @@ call form with its arguments, required ones starred, and the description."
                                    (format nil "  ~a" (tool-line (server-name server) tool)))
                                  (getf snapshot :tools))))))
 
+(defun instructions (&optional server-name)
+  "What every server (or SERVER-NAME's) said about using it and its tools in
+its initialize answer, whole: its name on a line, then its words. One that
+said nothing, or has not been reached yet, says which."
+  (let ((servers (if server-name
+                     (list (find-server server-name))
+                     (registry-servers (running-registry)))))
+    (clip (format nil "~{~a~^~%~%~}"
+                  (loop for server in servers
+                        collect (destructuring-bind (&key name state tool-count instructions
+                                                     &allow-other-keys)
+                                    (server-snapshot server)
+                                  (cond (instructions (format nil "~a:~%~a" name instructions))
+                                        ((or (plusp tool-count) (member state '(:ready :idle)))
+                                         (format nil "~a: none given" name))
+                                        (t (format nil "~a: not reached yet (~(~a~)) - (mcp:status) says why"
+                                                   name state))))))
+          *result-limit*)))
+
 (defun schema (server-name tool-name)
   "The full inputSchema of TOOL-NAME on SERVER-NAME, as JSON text."
   (let* ((server (find-server server-name))

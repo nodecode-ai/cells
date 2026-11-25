@@ -9,9 +9,15 @@
 ;;;; naming the configured servers, which changes with the config alone, so
 ;;;; the prompt prefix holds while servers come and go.
 ;;;;
-;;;; Three tiers under one budget: every tool with arguments; then names
-;;;; only per server with a pointer to (mcp:tools); then counts. The first
-;;;; tier that fits wins.
+;;;; Beneath the catalog, each server's instructions: what its initialize
+;;;; said about using it and its tools, a usage contract no single tool
+;;;; description carries, up to *INSTRUCTIONS-LIMIT* each, the whole text
+;;;; one (mcp:instructions NAME) away.
+;;;;
+;;;; Four tiers under one budget: every tool with arguments; then names
+;;;; only per server with a pointer to (mcp:tools); then counts; then counts
+;;;; with each server's instructions as a pointer too. The first tier that
+;;;; fits wins.
 ;;;;
 ;;;; Nothing is written to any store, so removing the folder leaves no
 ;;;; trace — the CELLS.md rule that presence is the whole switch.
@@ -26,6 +32,10 @@
   "The help section's line for (help :mcp), a format string over the
 configured servers' names.")
 
+(defparameter *instructions-limit* 2048
+  "Characters of one server's instructions the manual carries; past them it
+cuts between two words and points at (mcp:instructions NAME).")
+
 (defvar *primer-lock* (bt2:make-lock :name "mcp-primer"))
 
 ;;; Vocabulary here is the contract surface.lisp and wrappers.lisp keep;
@@ -38,6 +48,7 @@ tool is a Lisp function in the mcp: package, called through eval; every function
   (mcp:call \"files\" \"read_file\" :path \"x\")    the same call by name; string keys pass verbatim: \"per_page\" 5
   (mcp:tools)  (mcp:tools \"files\")             every tool: call form, arguments (required ones starred), description
   (mcp:schema \"files\" \"read_file\")            the tool's full JSON input schema
+  (mcp:instructions \"files\")                  the server's own instructions for its tools, whole
   (mcp:status)                                 every server: state, tool count, transport, last error, stderr log
   (mcp:restart \"files\")                        reconnect one server
   (mcp:login \"docs\")                           sign in to a server that needs one: an address for the user to open
@@ -100,17 +111,54 @@ Catalog:"
           (t
            (format out "~%  ~a: ~d tool~:p - (mcp:tools ~s)" name (length tools) name)))))))
 
+(defun instructions-lines (out text)
+  "TEXT to OUT four spaces in, a line at a time; a blank line stays bare."
+  (dolist (line (uiop:split-string text :separator '(#\Newline)))
+    (let ((line (string-right-trim '(#\Space #\Tab #\Return) line)))
+      (format out "~%~:[    ~a~;~]" (zerop (length line)) line))))
+
+(defun instructions-block (snapshots whole-p)
+  "Each server's instructions under one heading: its text up to
+*INSTRUCTIONS-LIMIT* when WHOLE-P, else one line saying how long it is and
+where to read it. Empty when no server gave any."
+  (with-output-to-string (out)
+    (let ((given (remove-if-not (lambda (snapshot) (getf snapshot :instructions)) snapshots)))
+      (when given
+        (format out "~%~%Server instructions, each server's own word on using its tools:")
+        (dolist (snapshot given)
+          (destructuring-bind (&key name instructions &allow-other-keys) snapshot
+            (let ((length (length instructions)))
+              (cond
+                ((not whole-p)
+                 (format out "~%  ~a: ~:d characters - (mcp:instructions ~s)" name length name))
+                ((<= length *instructions-limit*)
+                 (format out "~%  ~a:" name)
+                 (instructions-lines out instructions))
+                (t
+                 (format out "~%  ~a:" name)
+                 ;; Cut between two words, so the last one read is whole.
+                 (instructions-lines out (subseq instructions 0
+                                                 (or (position-if (lambda (char)
+                                                                    (member char '(#\Space #\Tab #\Newline)))
+                                                                  instructions
+                                                                  :end *instructions-limit* :from-end t)
+                                                     *instructions-limit*)))
+                 (format out "~%    ... (mcp:instructions ~s) reads all ~:d characters" name length))))))))))
+
 (defun refresh-primer (&aux (registry *registry*))
   "Rebuild (help :mcp) from the live registry; no topic without servers."
   (bt2:with-lock-held (*primer-lock*)
     (if (and registry registry.servers (not registry.stopping-p))
         (nle:set-help-topic
          :mcp (format nil *help-summary* (registry-server-names registry))
-         ;; The whole manual at the first tier that fits the budget.
+         ;; The whole manual at the first tier that fits the budget: the
+         ;; catalog degrades first, the instructions last, as they have
+         ;; no other line in the manual.
          (loop with snapshots = (mapcar #'server-snapshot registry.servers)
-               for tier from 1 to 3
-               for text = (concatenate 'string +preamble+ (catalog-tier snapshots tier))
-               when (or (= tier 3) (<= (length text) *primer-budget*))
+               for (tier whole-p) in '((1 t) (2 t) (3 t) (3 nil))
+               for text = (concatenate 'string +preamble+ (catalog-tier snapshots tier)
+                                       (instructions-block snapshots whole-p))
+               when (or (not whole-p) (<= (length text) *primer-budget*))
                  return text))
         (nle:set-help-topic :mcp nil))))
 

@@ -66,6 +66,7 @@
   (mcp::handshake client (mcp::deadline-after 5000))
   (is (equal "memory" (nlk:json-value (mcp::client-server-info client) :string "name")))
   (is (equal "2025-06-18" (mcp::client-protocol-version client)) "so is the protocol version")
+  (is (equal "Ask memory first." (mcp::client-instructions client)) "and its instructions, trimmed")
   (let ((sent (mcp-sent-messages transport)))
     (is (equal "notifications/initialized" (gethash "method" (second sent))))
     (is (null (nth-value 1 (gethash "id" (second sent)))) "as a notification")

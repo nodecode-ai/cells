@@ -123,7 +123,8 @@ server NAME, tools/list over TOOLS, anything else method-not-found."
   (cond ((equal method "initialize")
          (list "result" (nlk:json-object
                          "protocolVersion" "2025-06-18"
-                         "serverInfo" (nlk:json-object "name" name "version" "1"))))
+                         "serverInfo" (nlk:json-object "name" name "version" "1")
+                         "instructions" (format nil "  Ask ~a first.~%" name))))
         ((equal method "tools/list") (list "result" (nlk:json-object "tools" tools)))
         (t (list "error" (nlk:json-object "code" -32601 "message" "nope")))))
 

@@ -12,6 +12,7 @@ description as its docstring.
 (mcp:call "files" "read_file" :path "x")   ; the same by name; use this inside kept definitions
 (mcp:tools)  (mcp:tools "files")           ; every tool and its arguments
 (mcp:schema "files" "read_file")           ; a tool's input schema
+(mcp:instructions "files")                 ; the server's own instructions, whole
 (mcp:status)                               ; each server's state, tools, transport, last error
 (mcp:restart "files")                      ; reconnect one server
 ```
@@ -39,7 +40,9 @@ machine lands on a `localhost` page that does not load: paste that address
 back under its **Paste where the browser landed** in `/mcp`, and the cell hands it to the command.
 
 The model learns all this from `(help :mcp)`, which adds a live catalog of the
-tools. `/mcp` answers one line and a row per server, whose own panel turns it on or
+tools and, beneath it, each server's instructions: the usage contract a server
+answers `initialize` with (`instructions`, MCP 2025-03-26 on), up to 2048
+characters each in the manual and whole from `(mcp:instructions NAME)`. `/mcp` answers one line and a row per server, whose own panel turns it on or
 off, restarts it, lists its tools, and signs it in or out. The web page's Control > MCP tab adds, removes, restarts and tests
 servers through `/api/mcp`, and its Catalog fills the form from
 `catalog.json`, a list of known servers whose recipes come from each
@@ -83,7 +86,7 @@ at start, so the gateway never waits.
 ## Idle until called
 
 Every catalog a server lists is kept as `~/.nodecode/mcp/NAME.tools.json`,
-keyed by how the server is reached (its command and args, or its URL; never a
+with its instructions, keyed by how the server is reached (its command and args, or its URL; never a
 secret). The next start publishes that catalog -- the functions and the
 `(help :mcp)` lines -- and starts no process: the server reads `idle`, and its
 first call starts it inside that call's deadline. A session that calls no MCP
