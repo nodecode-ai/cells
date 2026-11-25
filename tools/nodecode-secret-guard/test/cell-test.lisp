@@ -123,3 +123,15 @@
   (multiple-value-bind (answer ran) (guard-call "eval" "form" (format nil "(sh \"~a\")" +credential-path+))
     (is (equal "the call answered" answer) "an allow pattern exempts the call")
     (is (equal t ran) "so it runs"))))
+
+(deftest secret-guard-cell-a-printed-held-secret-never-shows-its-secret ()
+  ;; A printed held secret rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never its value.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-secret-guard::make-held-secret :name "deploy-key" :value secret :fingerprint "sha256:ab12" :length 39))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the held secret shows its value")
+    (is (search "HELD-SECRET" (first shown)) "the printed held secret names its type")))

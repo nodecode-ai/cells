@@ -52,6 +52,12 @@
   (first-lap t)
   (require-mention t))
 
+(defmethod print-object ((adapter chatto-adapter) stream)
+  ;; Never the slots: TOKEN is the bot's session token, and a printed adapter
+  ;; rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (adapter stream :type t :identity t)
+    (princ (chatto-adapter-login adapter) stream)))
+
 (defvar *chatto-adapter* nil "The live lane, or NIL when it is stopped.")
 
 ;;; --- text -----------------------------------------------------------------------

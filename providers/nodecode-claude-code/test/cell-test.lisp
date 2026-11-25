@@ -509,3 +509,15 @@ started."
                                              (get-universal-time) (nle::provider-listing-base "claude-code")))
             (is (eql 1000000 (nle::model-capability-context-tokens (nle::resolve-model-capability "claude-new-9" "claude-code"))) "a model shipped today has the window its listing names")
             (is (eql 200000 (nle::model-capability-context-tokens (nle::resolve-model-capability "claude-haiku-4-5" "claude-code"))) "Anthropic's own row still answers for one it knows")))))))
+
+(deftest claude-code-cell-a-printed-relay-never-shows-its-secret ()
+  ;; A printed relay rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never the relay's token.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-claude-code::make-relay :port 4711 :token secret))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the relay shows the relay's token")
+    (is (search "RELAY" (first shown)) "the printed relay names its type")))

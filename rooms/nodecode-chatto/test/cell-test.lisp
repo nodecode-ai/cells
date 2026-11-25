@@ -138,3 +138,15 @@
                 nil)
             (error (condition) (princ-to-string condition)))))
     (is (and refused (search "refuses to start open" refused)) "no allowlist, no lane")))
+
+(deftest chatto-cell-a-printed-adapter-never-shows-its-secret ()
+  ;; The adapter rides conditions, backtraces and eval results: printed any
+  ;; way, it names itself and never the session token.
+  (let* ((token "secret-that-must-never-print-0123456789")
+         (adapter (chatto::make-chatto-adapter :base-url "https://chatto.example" :login "bot" :token token))
+         (shown (list (prin1-to-string adapter)
+                      (princ-to-string adapter)
+                      (princ-to-string (make-condition 'type-error :datum adapter
+                                                       :expected-type 'nck:channel-host)))))
+    (is (notany (lambda (text) (search token text)) shown) "no printing of the adapter shows the session token")
+    (is (search "CHATTO-ADAPTER" (first shown)) "the printed adapter names its type")))

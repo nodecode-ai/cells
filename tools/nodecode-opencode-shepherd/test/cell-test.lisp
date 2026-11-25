@@ -294,3 +294,15 @@ CONTENT HEADERS), oldest first."
                      ("/session" (values (sessions-json) 200)))
       (let ((text (nodecode-opencode-shepherd::run-opencode nil nil)))
         (is (search "nothing in opencode waits" text) "/opencode says silence plainly")))))
+
+(deftest opencode-shepherd-cell-a-printed-server-never-shows-its-secret ()
+  ;; A printed server rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never the server's password.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-opencode-shepherd::make-server :url "http://127.0.0.1:4096" :username "opencode" :password secret))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the server shows the server's password")
+    (is (search "SERVER" (first shown)) "the printed server names its type")))

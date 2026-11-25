@@ -142,3 +142,15 @@
                             "list_runs {\"site_id\": \"s1\"}" "botsee-cell-1")))
     (is (cl:search "3 completed runs" answer) "/botsee <tool> [json] calls one"))))
 
+
+(deftest botsee-cell-a-printed-session-never-shows-its-secret ()
+  ;; A printed session rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never the API key.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-botsee::%make-session :url "https://botsee.example/mcp" :key secret))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the session shows the API key")
+    (is (search "SESSION" (first shown)) "the printed session names its type")))

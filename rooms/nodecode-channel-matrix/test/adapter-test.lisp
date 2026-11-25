@@ -177,3 +177,15 @@ The sync token is kept in a scratch folder."
         (is (equal '(("!dm:fake" . "DM with kim") ("!room:fake" . "General") ("!secret:fake" . "Secret"))
                    (ncm:probe-channel-choices section)))
         (is (equal '(("@kim:fake" . "kim") ("@lee:fake" . "lee")) (ncm:probe-user-choices section)))))))
+
+(deftest channel-matrix-a-printed-adapter-never-shows-its-secret ()
+  ;; The adapter rides conditions, backtraces and eval results: printed any
+  ;; way, it names itself and never the access token.
+  (let* ((token "secret-that-must-never-print-0123456789")
+         (adapter (ncm::%make-matrix-adapter :homeserver "https://matrix.example" :token token))
+         (shown (list (prin1-to-string adapter)
+                      (princ-to-string adapter)
+                      (princ-to-string (make-condition 'type-error :datum adapter
+                                                       :expected-type 'nck:channel-host)))))
+    (is (notany (lambda (text) (search token text)) shown) "no printing of the adapter shows the access token")
+    (is (search "MATRIX-ADAPTER" (first shown)) "the printed adapter names its type")))

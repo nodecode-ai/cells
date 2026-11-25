@@ -265,3 +265,15 @@ away that no test waits on it, and every address stubbed."
         (let ((answer (cell-entry "nodecode-ando" "ando" "")))
           (is (search "Scout" answer))
           (is (search "Launch" answer)))))))
+
+(deftest ando-cell-a-printed-connection-never-shows-its-secret ()
+  ;; A printed connection rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never the invitation's API key.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-ando::make-connection :api-key secret :workspace-id "workspace-1"))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the connection shows the invitation's API key")
+    (is (search "ANDO-CONNECTION" (first shown)) "the printed connection names its type")))

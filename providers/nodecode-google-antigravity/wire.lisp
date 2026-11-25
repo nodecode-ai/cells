@@ -60,6 +60,12 @@ requires a signature.")
   (block nil) (thinking-signature nil) (text-signature nil)
   (finished nil) (response-id nil))
 
+(defmethod print-object ((round cca-round) stream)
+  ;; Never the slots: TOKEN is the Google access token. A printed round rides
+  ;; every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (round stream :type t :identity t)
+    (format stream "~@[~a~]" (round-model round))))
+
 (defvar *round* nil
   "The Cloud Code Assist round running on this thread, or NIL.")
 

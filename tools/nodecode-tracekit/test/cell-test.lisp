@@ -106,3 +106,15 @@
       (let ((text (cell-entry "nodecode-tracekit" "tracekit" "")))
         (is (search "Tracekit: signer http://127.0.0.1:" text) "the signer's address")
         (is (search "run run-1: 1 allowed" text) "and what this run decided")))))
+
+(deftest tracekit-cell-a-printed-run-never-shows-its-secret ()
+  ;; A printed run rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never the run's token.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-tracekit::make-run :id "run-1" :token secret))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the run shows the run's token")
+    (is (search "RUN" (first shown)) "the printed run names its type")))

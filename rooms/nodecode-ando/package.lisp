@@ -27,3 +27,9 @@ MCP URL it names, and the session that URL answered."
   (session-id nil)
   (initialized-p nil)
   (next-id 0))
+
+(defmethod print-object ((connection ando-connection) stream)
+  ;; Never the slots: API-KEY is the invitation's key. A printed connection
+  ;; rides every condition, backtrace and eval result that holds one.
+  (print-unreadable-object (connection stream :type t :identity t)
+    (format stream "workspace ~a" (ando-connection-workspace-id connection))))

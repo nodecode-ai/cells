@@ -244,3 +244,15 @@ and every ask answered as *ANSWER* says (unbound: nobody answers)."
                                            "base_url" "https://purse.example"))
           (is (search "AGENTPURSE_TEST_KEY_UNSET"
                       (refusal-text purse:agentpurse-error (purse:get-budget))) "the refusal names the variable to set"))))))
+
+(deftest agentpurse-cell-a-printed-client-never-shows-its-secret ()
+  ;; A printed client rides conditions, backtraces and eval results: printed
+  ;; any way, it names itself and never the API key.
+  (let* ((secret "secret-that-must-never-print-0123456789")
+         (held (nodecode-agentpurse::make-client "https://agentpurse.example" secret))
+         (shown (list (prin1-to-string held)
+                      (princ-to-string held)
+                      (princ-to-string (make-condition 'type-error :datum held
+                                                       :expected-type 'string)))))
+    (is (notany (lambda (text) (search secret text)) shown) "no printing of the client shows the API key")
+    (is (search "CLIENT" (first shown)) "the printed client names its type")))
