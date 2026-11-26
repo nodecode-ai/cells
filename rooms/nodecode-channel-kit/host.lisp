@@ -2540,8 +2540,9 @@ never silently — and gives the slot back."
   "CANDIDATE's text as the model reads it: our own mention stripped, trimmed."
   (nlk:trimmed (if strip (funcall strip raw) raw)))
 
-(defun host-speaker-line (host candidate &key cap attachments reply-context)
-  "(values TEXT ANCHORS): the candidate's room line."
+(defun host-speaker-line (host candidate &key cap attachments reply-context ask)
+  "(values TEXT ANCHORS): the candidate's room line; ASK makes it the line of
+a message addressed to the lane, which always has one (SPEAKER-LINE)."
   ;; REPLY-CONTEXT also
   ;; renders the message it answers under it — the ask must carry what was said
   ;; to it, and what it carried: a voice note's words, a picture, a file.
@@ -2551,6 +2552,7 @@ never silently — and gives the slot back."
   (let* ((line (speaker-line candidate
                              :cap cap
                              :attachments attachments
+                             :ask ask
                              :operator-p (candidate-operator-p host candidate)
                              :strip (platform-strip-mention host.platform)))
          (reply (and reply-context (candidate-reply candidate)))
@@ -2645,7 +2647,8 @@ answered and the line it said. NIL for a message, whose id is its own key."
          (ambient (drain-ambient host (or ambient-room room))))
     (multiple-value-bind (ask-line line-anchors)
         (host-speaker-line host candidate :attachments (candidate-attachments candidate)
-                                          :reply-context t)
+                                          :reply-context t
+                                          :ask t)
       (multiple-value-bind (prompt anchors)
           (compose-prompt (ambient-without ambient (reduce #'append line-anchors :key #'cdr))
                           (or ask-line "")

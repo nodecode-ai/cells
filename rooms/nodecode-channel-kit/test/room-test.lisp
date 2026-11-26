@@ -554,6 +554,26 @@ alice [m9 uu1]: fix it"
     ;; reject outright.
     (is (null (nck:drain-ambient host "chat-100")))))
 
+(deftest channel-room-a-bare-mention-is-an-ask-with-its-line (let ((host (test-host))))
+  ;; A message that is only the mention that routed it -- or carries no words
+  ;; at all -- is still somebody speaking to the lane: its line reaches the
+  ;; prompt like any other, saying it has no words, so the turn it opens can
+  ;; tell a ping from no message.
+  (nck:observe-candidate host (test-candidate :text "the deploy is red" :user-name "bob"))
+  (let ((ask (nck:build-ask host (test-candidate :text "<@999>" :message "9" :user-name "alice")
+                            "chat-100-m9" nil)))
+    (is (equal "bob [m1 uu1]: the deploy is red
+alice [m9 uu1]: [a mention with no words]"
+               (nck:ask-prompt ask))))
+  (let ((padded (test-candidate :text "  <@999> " :message "9")))
+    (is (equal "alice [m9 uu1]: [a mention with no words]" (nck:ask-prompt (nck:build-ask host padded "chat-100-m9" nil))) "blanks around the mention are no words"))
+  (is (equal "alice [m9 uu1]: [a message with no words]"
+             (nck:ask-prompt (nck:build-ask host (test-candidate :text "" :message "9")
+                                            "chat-100-m9" nil))))
+  ;; Chatter with no words stays out of the record, as it always has.
+  (nck:observe-candidate host (test-candidate :text "" :user-name "carol"))
+  (is (null (nck:drain-ambient host "chat-100"))))
+
 (deftest channel-room-ambient-caps (let ((host (test-host))))
   (dotimes (index (+ 5 nck:+room-ambient-lines+))
     (nck:observe-candidate host (test-candidate
