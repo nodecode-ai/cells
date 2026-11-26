@@ -243,16 +243,28 @@ verdict — the one thing in a speaker label the speaker did not write."
         (operator-p (format nil "~a ~a" clean +operator-mark+))
         (t clean)))
 
-(defun speaker-line (candidate &key (cap nil) operator-p strip attachments)
+(defparameter +bare-mention-words+ "[a mention with no words]"
+  "What an ask's line says for a message that was only the mention that
+routed it.")
+
+(defparameter +wordless-message-words+ "[a message with no words]"
+  "What an ask's line says for a message that carried no words at all.")
+
+(defun speaker-line (candidate &key (cap nil) operator-p strip attachments ask)
   "One line of room record: \"<speaker> [m<message> u<user>]: <what they
 said>\", the bracket also carrying r<replied-to> when the line answers
-another message, capped when the line is ambient rather than an ask."
+another message, capped when the line is ambient rather than an ask.
+ASK makes it the line of a message addressed to the lane, which always has
+one."
   ;; OPERATOR-P marks the speaker label. STRIP is the platform's mention
   ;; stripper over the text — the model should read the ask, not the entity
   ;; reference that routed it. The cap binds the text, not the prefix.
   ;; ATTACHMENTS are the files the message carries (CANDIDATE-ATTACHMENTS): a
   ;; message without words still has a line when it carries one, and a
   ;; recording's line ends at the colon, where its transcript is read in.
+  ;; An ASK has a line whatever it carries: a bare mention is somebody
+  ;; speaking to the lane, and without its line the turn it opens reads as
+  ;; no message at all -- so a message with no words says so.
   (let* ((raw (or (and (hash-table-p candidate) (gethash "text" candidate))
                   ""))
          (body (nlk:trimmed (if strip (funcall strip raw) raw)))
@@ -263,7 +275,11 @@ another message, capped when the line is ambient rather than an ask."
          ;; line exists and the ask reaches its lane.
          (body (cond ((plusp (length body)) body)
                      ((some #'image-attachment-p attachments)
-                      "[an image is attached to this message]")))
+                      "[an image is attached to this message]")
+                     ((and ask (null attachments))
+                      (if (plusp (length (nlk:trimmed raw)))
+                          +bare-mention-words+
+                          +wordless-message-words+))))
          ;; A message read back after the bot was away says how late it is,
          ;; so an answer can own the wait.
          (late (gethash "late_minutes" (candidate-source candidate)))
@@ -564,7 +580,7 @@ once it holds more than BUDGET; NIL or 0 bounds nothing."
 (defparameter +unasked-prompt+
   "[no new message: this answer follows on from the exchange above]"
   "The user half a room records for an answer whose turn began on no words:
-an exit wake's, or one a bare mention opened.")
+an exit wake's. A bare mention's turn begins on its own line (SPEAKER-LINE).")
 
 (defun write-back (lane answer &key prompt (room lane.parent-session-id) budget)
   "Fold LANE's settled exchange into ROOM — the lane's own room, unless the
