@@ -565,10 +565,8 @@ alice [m9 uu1]: fix it"
     (is (equal "bob [m1 uu1]: the deploy is red
 alice [m9 uu1]: [a mention with no words]"
                (nck:ask-prompt ask))))
-  (is (equal "alice [m9 uu1]: [a mention with no words]"
-             (nck:ask-prompt (nck:build-ask host (test-candidate :text "  <@999> " :message "9")
-                                            "chat-100-m9" nil)))
-      "blanks around the mention are no words")
+  (let ((padded (test-candidate :text "  <@999> " :message "9")))
+    (is (equal "alice [m9 uu1]: [a mention with no words]" (nck:ask-prompt (nck:build-ask host padded "chat-100-m9" nil))) "blanks around the mention are no words"))
   (is (equal "alice [m9 uu1]: [a message with no words]"
              (nck:ask-prompt (nck:build-ask host (test-candidate :text "" :message "9")
                                             "chat-100-m9" nil))))
