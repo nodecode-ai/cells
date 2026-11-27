@@ -33,6 +33,8 @@ pings no one) and edited in place. It appears when:
 - the turn calls its first tool;
 - a message is waiting behind the turn;
 - the model fell back to another model;
+- earlier turns left the model's context to make room (a quick answer
+  then gets its card at the finish, above the answer);
 - the turn has run for 8 seconds while the model only thinks, or for 20
   seconds in any case.
 
@@ -81,6 +83,10 @@ deepseek/deepseek-flash (high) · 4 steps         (small type: the numbers)
   the upload, the marks are text (`✓`, `›`, `×`) and the bot logs why.
 - `fell back to MODEL (reason)` appears under the thought when the provider
   failed over.
+- `dropped N earlier turns from the model's context to fit its window`
+  appears when the turn's history no longer fit and Nodecode cut its oldest
+  turns, as the terminal's eviction divider shows. Unlike the fallback line,
+  it stays on the settled card, beside the reason a failed turn ended.
 - What the model says on its way shows under the thought, in its own words:
   see [what the turn says](#what-the-turn-says-on-its-way).
 - A picture the model looked at (`look`) joins the card's gallery, the

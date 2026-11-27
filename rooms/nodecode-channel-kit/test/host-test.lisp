@@ -728,6 +728,53 @@ message of ours."
       (is (search "fell back to deepseek-v4-flash-free (overloaded)"
                   (plan-content post))))))
 
+(deftest channel-host-says-when-earlier-turns-left-the-context ()
+  ;; A durable session.context.evicted fact folds onto the card as one line
+  ;; counting the earlier turns that left the model's context, the room's half
+  ;; of the TUI's eviction divider: the window governor's cut is never
+  ;; silent, and a turn that fails after it keeps the line beside its refusal.
+  ;; The fact names no turn; it is the running turn's.
+  (with-digest-host (host lane :responses (replies "s1"))
+    (fact "turn.started" (nlk:json-object))
+    (dotimes (i 2)
+      (fact "session.context.evicted"
+            (nlk:json-object "evicted-turn-count" 1 "reason" "budget_fill") nil))
+    (nck:flush-now host lane)
+    (is-present (post (first (plans))) "the cut opens the line"
+      (is (search "dropped 2 earlier turns from the model's context to fit its window"
+                  (plan-content post))))
+    (fact "session.context.evicted"
+          (nlk:json-object "evicted-turn-count" 3 "reason" "budget_fill") nil)
+    (fact "turn.failed" (nlk:json-object "detail" "this request leaves 0 tokens for output"))
+    (is-present (settle (await-plan executor :content "Failed at")) "the failure settles the line"
+      (is-carrying (content (plan-content settle))
+        "> this request leaves 0 tokens for output"
+        "> dropped 5 earlier turns from the model's context to fit its window"))))
+
+(deftest channel-host-a-quick-answer-still-says-earlier-turns-left ()
+  ;; A one-round answer publishes the governor's cut together with its
+  ;; completion, so no tick ever showed a running card: the card posts at the
+  ;; finish, above the answer, to say so. A quick answer with no cut stays
+  ;; the answer alone.
+  (with-digest-host (host lane :responses (replies "s1" "s2"))
+    (fact "turn.started" (nlk:json-object))
+    (fact "session.context.evicted"
+          (nlk:json-object "evicted-turn-count" 4 "reason" "budget_fill") nil)
+    (said "done")
+    (fact "turn.completed" (nlk:json-object))
+    (is-present (answer (await-plan executor :ping t)) "the answer posts"
+      (is-plan answer "content" "done"))
+    (is-present (card (first (plans))) "the card went up first"
+      (is-carrying (content (plan-content card))
+        "Done in"
+        "> dropped 4 earlier turns from the model's context to fit its window")))
+  (with-digest-host (host lane :responses (replies "s1"))
+    (fact "turn.started" (nlk:json-object))
+    (said "done")
+    (fact "turn.completed" (nlk:json-object))
+    (is (await-plan executor :ping t))
+    (is (= 1 (length (plans))) "no cut, no card")))
+
 (deftest channel-host-a-sentence-carrying-the-silence-word-is-spoken ()
   ;; Only the sentinel itself is silent: the same word inside a sentence is
   ;; the answer, said out loud.
