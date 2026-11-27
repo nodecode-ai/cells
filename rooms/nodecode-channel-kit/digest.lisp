@@ -172,12 +172,6 @@ and a model a line.")
   ;; The newest failover note (`fell back to alt-model (overloaded)'), shown
   ;; until the turn settles.
   (fallback-text nil :type (or null string))
-  ;; How many earlier turns left the model's context while this turn ran, and
-  ;; whether its window was why (DIGEST-NOTE-EVICTED): the room's half of the
-  ;; TUI's eviction divider. Kept on the settled card, as the history stays
-  ;; gone.
-  (evicted-turns 0 :type (integer 0))
-  (evicted-to-fit-p nil :type boolean)
   ;; The controls the card was last delivered with, or :CLEAR once a settle
   ;; retired them: the card may stand still while a button moves, and a moved
   ;; button is its own reason to edit.
@@ -193,6 +187,15 @@ and a model a line.")
   (waiting-words '() :type list))
 
 (nlk:access (digest turn-digest) (fresh turn-digest))
+
+;;; Live-only fold state, like *RECORDED-TURNS* (host.lisp): a table rather
+;;; than a digest slot, so an image that loads this file over a running host
+;;; redefines no structure it already holds instances of.
+(defvar *digest-evictions* (make-hash-table :test #'eq :weakness :key :synchronized t)
+  "DIGEST -> (TURNS TO-FIT-P): how many earlier turns left the model's context
+while its turn ran (session.context.evicted, DIGEST-NOTE-EVICTED), and whether
+the window was why: the room's half of the TUI's eviction divider, kept on the
+settled card, as the history stays gone.")
 
 ;;; --- what the turn is doing, in words ----------------------------------------
 ;;; The card says what the turn is doing in the same words the TUI's cards
@@ -215,8 +218,8 @@ is waiting on the provider.")
 that takes the digest over starts from nothing."
   (when digest
     (setf digest.steps '() digest.visible-at-ms 0 digest.usage '() digest.context '()
-          digest.fallback-text nil digest.said '() digest.writing nil digest.controls nil
-          digest.evicted-turns 0 digest.evicted-to-fit-p nil))
+          digest.fallback-text nil digest.said '() digest.writing nil digest.controls nil)
+    (remhash digest *digest-evictions*))
   digest)
 
 (defun step-words (activity &key running)
@@ -509,17 +512,24 @@ running turn, REASON the session.context.evicted fact's: budget_fill (the
 window governor) or provider_rejected (a refusal's recovery) cut them to fit
 the window; operator_requested is someone's /evict."
   (when (and (integerp turns) (plusp turns))
-    (incf digest.evicted-turns turns)
-    (when (member reason '("budget_fill" "provider_rejected") :test #'equal)
-      (setf digest.evicted-to-fit-p t)))
+    (destructuring-bind (&optional (count 0) to-fit-p) (gethash digest *digest-evictions*)
+      (setf (gethash digest *digest-evictions*)
+            (list (+ count turns)
+                  (or to-fit-p
+                      (and (member reason '("budget_fill" "provider_rejected") :test #'equal) t))))))
   digest)
 
-(defun digest-evicted-line (digest &aux (turns digest.evicted-turns))
+(defun digest-evicted-turns (digest)
+  "How many earlier turns left the model's context while DIGEST's turn ran."
+  (or (first (gethash digest *digest-evictions*)) 0))
+
+(defun digest-evicted-line (digest)
   "The card's line for the earlier turns that left the model's context while
 DIGEST's turn ran, or NIL when none did."
-  (when (plusp turns)
-    (format nil "dropped ~d earlier turn~:p from the model's context~:[~; to fit its window~]"
-            turns digest.evicted-to-fit-p)))
+  (destructuring-bind (&optional (turns 0) to-fit-p) (gethash digest *digest-evictions*)
+    (when (plusp turns)
+      (format nil "dropped ~d earlier turn~:p from the model's context~:[~; to fit its window~]"
+              turns to-fit-p))))
 
 (defun note-join (&rest notes)
   "NOTES that say something, one per line, or NIL when none does."
@@ -1093,7 +1103,7 @@ in a block, cut from the front when it is long."
       ;; the model's context, which its answer does not say (FINISH-TURN).
       ((or (eq phase :steered)
            (and (eq phase :completed)
-                (or status-id (zerop digest.evicted-turns))))
+                (or status-id (zerop (digest-evicted-turns digest)))))
        (values :skip nil))
       ;; A live turn earns its card at once, or after a thinking or stall window.
       ((and live
@@ -1101,7 +1111,7 @@ in a block, cut from the front when it is long."
                      (turn-digest-pending digest)
                      (plusp (turn-digest-tool-calls digest))
                      digest.fallback-text
-                     (plusp digest.evicted-turns)
+                     (plusp (digest-evicted-turns digest))
                      status-id
                      (>= (- now (turn-digest-started-at-ms digest))
                          (if (or (turn-digest-thinking digest) (turn-digest-writing digest))

@@ -2019,7 +2019,7 @@ background work in flight, is what it ended on (POST-WAITING-WORD)."
          ;; one-round answer publishes the cut with its completion, before
          ;; any tick. The card posts now, above the answer, and settles with
          ;; it.
-         (when (and (null digest.status-id) (plusp digest.evicted-turns))
+         (when (and (null digest.status-id) (plusp (digest-evicted-turns digest)))
            (flush-now host lane))
          (answer-tables-into-files lane digest host.platform)
          (multiple-value-bind (answer typed-room posted) (deliver-answer host lane digest)
