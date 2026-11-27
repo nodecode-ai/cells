@@ -172,6 +172,12 @@ and a model a line.")
   ;; The newest failover note (`fell back to alt-model (overloaded)'), shown
   ;; until the turn settles.
   (fallback-text nil :type (or null string))
+  ;; How many earlier turns left the model's context while this turn ran, and
+  ;; whether its window was why (DIGEST-NOTE-EVICTED): the room's half of the
+  ;; TUI's eviction divider. Kept on the settled card, as the history stays
+  ;; gone.
+  (evicted-turns 0 :type (integer 0))
+  (evicted-to-fit-p nil :type boolean)
   ;; The controls the card was last delivered with, or :CLEAR once a settle
   ;; retired them: the card may stand still while a button moves, and a moved
   ;; button is its own reason to edit.
@@ -209,7 +215,8 @@ is waiting on the provider.")
 that takes the digest over starts from nothing."
   (when digest
     (setf digest.steps '() digest.visible-at-ms 0 digest.usage '() digest.context '()
-          digest.fallback-text nil digest.said '() digest.writing nil digest.controls nil))
+          digest.fallback-text nil digest.said '() digest.writing nil digest.controls nil
+          digest.evicted-turns 0 digest.evicted-to-fit-p nil))
   digest)
 
 (defun step-words (activity &key running)
@@ -495,6 +502,34 @@ it lands), and its newest sighting (DIGEST-SEEN-MS) otherwise."
 (defun digest-note-tool-call (digest)
   (incf digest.tool-calls)
   digest)
+
+(defun digest-note-evicted (digest turns reason)
+  "Count TURNS more earlier turns out of the model's context for DIGEST's
+running turn, REASON the session.context.evicted fact's: budget_fill (the
+window governor) or provider_rejected (a refusal's recovery) cut them to fit
+the window; operator_requested is someone's /evict."
+  (when (and (integerp turns) (plusp turns))
+    (incf digest.evicted-turns turns)
+    (when (member reason '("budget_fill" "provider_rejected") :test #'equal)
+      (setf digest.evicted-to-fit-p t)))
+  digest)
+
+(defun digest-evicted-line (digest &aux (turns digest.evicted-turns))
+  "The card's line for the earlier turns that left the model's context while
+DIGEST's turn ran, or NIL when none did."
+  (when (plusp turns)
+    (format nil "dropped ~d earlier turn~:p from the model's context~:[~; to fit its window~]"
+            turns digest.evicted-to-fit-p)))
+
+(defun note-join (&rest notes)
+  "NOTES that say something, one per line, or NIL when none does."
+  (let ((said (remove-if (lambda (note) (or (null note) (equal "" note))) notes)))
+    (and said (format nil "~{~a~^~%~}" said))))
+
+(defun settled-note (digest)
+  "What a stopped, failed or paused card says under its headline: why it
+ended, then the earlier turns that left the model's context on the way."
+  (note-join digest.detail (digest-evicted-line digest)))
 
 (defun digest-thinking-tail (text &aux (size (length text)))
   "TEXT bounded to the newest +DIGEST-THINKING-CAP+ characters."
@@ -919,17 +954,18 @@ for a turn a steer cut short: the next turn raises its own."
                      (t (flowing-headline "Working" digest now)))
                :thought (thought-headline digest.thinking)
                ;; On a team's board the card is the bot's score row (TEAM.LISP).
-               :note (or digest.fallback-text (board-card-line digest.session-id))
+               :note (or (note-join digest.fallback-text (digest-evicted-line digest))
+                         (board-card-line digest.session-id))
                :pending (pending-lines digest)
                :said (if (plusp (length writing))
                          (concatenate 'string (text-end writing +card-said-cap+) +digest-writing-cursor+)
                          said)))
         ;; Settled, a card says what the turn said only when no answer stands
         ;; below it to say more; what a round was still writing goes.
-        (:completed (card :done (format nil "Done in ~a" elapsed)))
-        (:cancelled (card :stopped (format nil "Stopped at ~a" elapsed) :note digest.detail :said said))
-        (:failed (card :failed (format nil "Failed at ~a" elapsed) :note digest.detail :said said))
-        (:paused (card :paused (format nil "Paused at ~a" elapsed) :note digest.detail :said said))
+        (:completed (card :done (format nil "Done in ~a" elapsed) :note (digest-evicted-line digest)))
+        (:cancelled (card :stopped (format nil "Stopped at ~a" elapsed) :note (settled-note digest) :said said))
+        (:failed (card :failed (format nil "Failed at ~a" elapsed) :note (settled-note digest) :said said))
+        (:paused (card :paused (format nil "Paused at ~a" elapsed) :note (settled-note digest) :said said))
         (:steered nil)))))
 
 (defun step-mark (mark)
@@ -1052,13 +1088,20 @@ in a block, cut from the front when it is long."
          (live (member phase '(:queued :running)))
          (status-id digest.status-id))
     (cond
-      ((member phase '(:completed :steered)) (values :skip nil))
+      ;; A completed turn's card settles above its answer (DELIVER-ANSWER); a
+      ;; turn that never earned one earns it only to say earlier turns left
+      ;; the model's context, which its answer does not say (FINISH-TURN).
+      ((or (eq phase :steered)
+           (and (eq phase :completed)
+                (or status-id (zerop digest.evicted-turns))))
+       (values :skip nil))
       ;; A live turn earns its card at once, or after a thinking or stall window.
       ((and live
             (not (or (eq phase :queued)
                      (turn-digest-pending digest)
                      (plusp (turn-digest-tool-calls digest))
                      digest.fallback-text
+                     (plusp digest.evicted-turns)
                      status-id
                      (>= (- now (turn-digest-started-at-ms digest))
                          (if (or (turn-digest-thinking digest) (turn-digest-writing digest))

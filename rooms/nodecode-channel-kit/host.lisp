@@ -2015,6 +2015,12 @@ background work in flight, is what it ended on (POST-WAITING-WORD)."
                             (cons lane.target
                                   (lane-reference lane (or digest.ask-id
                                                            lane.trigger-message-id))))))
+         ;; Earlier turns left the model's context and no card said so: a
+         ;; one-round answer publishes the cut with its completion, before
+         ;; any tick. The card posts now, above the answer, and settles with
+         ;; it.
+         (when (and (null digest.status-id) (plusp digest.evicted-turns))
+           (flush-now host lane))
          (answer-tables-into-files lane digest host.platform)
          (multiple-value-bind (answer typed-room posted) (deliver-answer host lane digest)
            ;; A thread lane's first exchange settles in the room the ask was
@@ -2214,6 +2220,18 @@ enqueueing a reaction step."
                                     (digest-note-provider
                                      digest (nlk:json-value payload :string "to-provider"))
                                     (digest-note-round-over digest)))))
+     ;; Earlier turns left the model's context: the session's history floor
+     ;; moved, the window governor's cut before a round or a refusal's
+     ;; recovery. The card counts them, the visible half of the fact the
+     ;; TUI draws as its eviction divider; without it a room saw only the
+     ;; refusal that can follow. The fact names no turn: it is the running
+     ;; one's, and a cut between turns (an operator's /evict) answers itself.
+    ("session.context.evicted" (with-lane-digest (digest lane)
+                                  (when (eq :running (turn-digest-phase digest))
+                                    (digest-note-evicted
+                                     digest
+                                     (nlk:json-value payload :integer "evicted-turn-count")
+                                     (nlk:json-value payload :string "reason")))))
      ;; The provider's own count of what the round read, cached, wrote and
      ;; thought, its price, and what it ran on: the card's footer, as the
      ;; TUI's meter and finish divider read the same fact.
