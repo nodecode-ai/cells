@@ -32,9 +32,9 @@ pings no one) and edited in place. It appears when:
 - the ask has to wait for a free slot (see [the queue](#the-queue));
 - the turn calls its first tool;
 - a message is waiting behind the turn;
-- the model fell back to another model;
-- earlier turns left the model's context to make room (a quick answer
-  then gets its card at the finish, above the answer);
+- the model fell back to another model, or earlier turns left the model's
+  context to make room (a quick answer then gets its card at the finish,
+  above the answer);
 - the turn has run for 8 seconds while the model only thinks, or for 20
   seconds in any case.
 
@@ -81,11 +81,14 @@ deepseek/deepseek-flash (high) · 4 steps         (small type: the numbers)
   them to its application from the cell's `emoji/` folder (nothing more
   than the token is needed) and uses them in every server. If Discord refuses
   the upload, the marks are text (`✓`, `›`, `×`) and the bot logs why.
-- `fell back to MODEL (reason)` appears under the thought when the provider
-  failed over.
+- `fell back from MODEL to MODEL (reason)` appears under the thought when the
+  provider failed over: the model the turn left, the one it moved to, and
+  why (a refusal reads `(refusal)`). It stays on the settled card above the
+  answer, and on a stopped or paused one; a failed card's reason already
+  names every model the turn tried.
 - `dropped N earlier turns from the model's context to fit its window`
   appears when the turn's history no longer fit and Nodecode cut its oldest
-  turns, as the terminal's eviction divider shows. Unlike the fallback line,
+  turns, as the terminal's eviction divider shows. Like the fallback line,
   it stays on the settled card, beside the reason a failed turn ended.
 - What the model says on its way shows under the thought, in its own words:
   see [what the turn says](#what-the-turn-says-on-its-way).

@@ -536,10 +536,17 @@ DIGEST's turn ran, or NIL when none did."
   (let ((said (remove-if (lambda (note) (or (null note) (equal "" note))) notes)))
     (and said (format nil "~{~a~^~%~}" said))))
 
+(defun digest-owes-a-card-p (digest)
+  "Whether DIGEST's turn knows what its answer does not say: earlier turns
+left the model's context, or the round moved to another model."
+  (or (plusp (digest-evicted-turns digest)) (and digest.fallback-text t)))
+
 (defun settled-note (digest)
   "What a stopped, failed or paused card says under its headline: why it
-ended, then the earlier turns that left the model's context on the way."
-  (note-join digest.detail (digest-evicted-line digest)))
+ended, the model the round moved to unless a failure's detail names every
+model it tried, then the earlier turns that left the model's context."
+  (note-join digest.detail (unless (eq digest.phase :failed) digest.fallback-text)
+             (digest-evicted-line digest)))
 
 (defun digest-thinking-tail (text &aux (size (length text)))
   "TEXT bounded to the newest +DIGEST-THINKING-CAP+ characters."
@@ -972,7 +979,8 @@ for a turn a steer cut short: the next turn raises its own."
                          said)))
         ;; Settled, a card says what the turn said only when no answer stands
         ;; below it to say more; what a round was still writing goes.
-        (:completed (card :done (format nil "Done in ~a" elapsed) :note (digest-evicted-line digest)))
+        (:completed (card :done (format nil "Done in ~a" elapsed)
+                          :note (note-join digest.fallback-text (digest-evicted-line digest))))
         (:cancelled (card :stopped (format nil "Stopped at ~a" elapsed) :note (settled-note digest) :said said))
         (:failed (card :failed (format nil "Failed at ~a" elapsed) :note (settled-note digest) :said said))
         (:paused (card :paused (format nil "Paused at ~a" elapsed) :note (settled-note digest) :said said))
@@ -1099,11 +1107,12 @@ in a block, cut from the front when it is long."
          (status-id digest.status-id))
     (cond
       ;; A completed turn's card settles above its answer (DELIVER-ANSWER); a
-      ;; turn that never earned one earns it only to say earlier turns left
-      ;; the model's context, which its answer does not say (FINISH-TURN).
+      ;; turn that never earned one earns it only to say what its answer does
+      ;; not: earlier turns left the model's context, or the round moved to
+      ;; another model (FINISH-TURN).
       ((or (eq phase :steered)
            (and (eq phase :completed)
-                (or status-id (zerop (digest-evicted-turns digest)))))
+                (or status-id (not (digest-owes-a-card-p digest)))))
        (values :skip nil))
       ;; A live turn earns its card at once, or after a thinking or stall window.
       ((and live

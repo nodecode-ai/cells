@@ -712,8 +712,8 @@ message of ours."
 
 (deftest channel-host-says-when-the-model-moved ()
   ;; A durable turn.provider_fallback folds onto the card as one line naming
-  ;; the model the turn moved to and why — the room's half of the engine's
-  ;; failover fact, never a second post.
+  ;; the model the turn moved from, the one it moved to, and why: the room's
+  ;; half of the engine's failover fact, never a second post.
   (with-digest-host (host lane :responses (replies "s1"))
     (fact "turn.started" (nlk:json-object))
     (fact "turn.provider_fallback"
@@ -725,8 +725,29 @@ message of ours."
                            "status" 503))
     (nck:flush-now host lane)
     (is-present (post (first (plans))) "the failover opens the line"
-      (is (search "fell back to deepseek-v4-flash-free (overloaded)"
+      (is (search "fell back from deepseek-flash to deepseek-v4-flash-free (overloaded)"
                   (plan-content post))))))
+
+(deftest channel-host-an-answer-keeps-the-model-move ()
+  ;; A refusal that moved the round to another model is the operator's to
+  ;; know when the answer lands: a quick answer earns its card for the move
+  ;; alone, and the settled card keeps saying which model answered and why,
+  ;; never a bare `Done in' over words the picked model did not write.
+  (with-digest-host (host lane :responses (replies "s1" "s2"))
+    (fact "turn.started" (nlk:json-object))
+    (fact "turn.provider_fallback"
+          (nlk:json-object "from-provider" "anthropic" "from-model" "claude-opus"
+                           "to-provider" "deepseek" "to-model" "deepseek-flash"
+                           "reason" "refusal"))
+    (said "done")
+    (fact "turn.completed" (nlk:json-object))
+    (is-present (answer (await-plan executor :ping t)) "the answer posts"
+      (is-plan answer "content" "done"))
+    (is-present (card (first (plans))) "the card went up first"
+      (is (search "> fell back from claude-opus to deepseek-flash (refusal)" (plan-content card))))
+    (is-present (settle (await-plan executor :label "edit_message" :content "Done in"))
+      "the settled card keeps the move"
+      (is (search "> fell back from claude-opus to deepseek-flash (refusal)" (plan-content settle))))))
 
 (deftest channel-host-says-when-earlier-turns-left-the-context ()
   ;; A durable session.context.evicted fact folds onto the card as one line
