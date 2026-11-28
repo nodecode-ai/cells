@@ -2015,11 +2015,11 @@ background work in flight, is what it ended on (POST-WAITING-WORD)."
                             (cons lane.target
                                   (lane-reference lane (or digest.ask-id
                                                            lane.trigger-message-id))))))
-         ;; Earlier turns left the model's context and no card said so: a
-         ;; one-round answer publishes the cut with its completion, before
-         ;; any tick. The card posts now, above the answer, and settles with
-         ;; it.
-         (when (and (null digest.status-id) (plusp (digest-evicted-turns digest)))
+         ;; Earlier turns left the model's context, or the round moved to
+         ;; another model, and no card said so: a one-round answer publishes
+         ;; the fact with its completion, before any tick. The card posts now,
+         ;; above the answer, and settles with it.
+         (when (and (null digest.status-id) (digest-owes-a-card-p digest))
            (flush-now host lane))
          (answer-tables-into-files lane digest host.platform)
          (multiple-value-bind (answer typed-room posted) (deliver-answer host lane digest)
@@ -2206,15 +2206,16 @@ enqueueing a reaction step."
                             (with-turn-digest (digest lane turn-id now :part t)
                               (digest-note-call-result digest call-id now :metadata metadata
                                                                           :output output :failed failed)))))
-     ;; The round moved to another model: the card says so, with the
-     ;; reason, until the turn settles — the visible half of the durable
-     ;; fact the engine's failover policy records.
-    ("turn.provider_fallback" (let ((to (nlk:json-value payload :string "to-model"))
+     ;; The round moved to another model: the card says from which, to
+     ;; which and why, and keeps saying it once the turn settles: the
+     ;; visible half of the durable fact the engine's failover policy records.
+    ("turn.provider_fallback" (let ((from (nlk:json-value payload :string "from-model"))
+                                    (to (nlk:json-value payload :string "to-model"))
                                     (reason (nlk:json-value payload :string "reason")))
                                 (when to
                                   (with-turn-digest (digest lane turn-id now :part t)
                                     (setf (turn-digest-fallback-text digest)
-                                          (format nil "fell back to ~a~@[ (~a)~]" to
+                                          (format nil "fell back ~@[from ~a ~]to ~a~@[ (~a)~]" from to
                                                   (and reason (substitute #\Space #\_ reason))))
                                     ;; The round starts over on the candidate.
                                     (digest-note-provider

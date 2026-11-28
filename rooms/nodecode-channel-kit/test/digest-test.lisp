@@ -491,6 +491,22 @@ it now" (nck:digest-final-text digest)))
   (is (eq :post (status-kind digest 2000)))
   (is (search "> fell back to alt-model (overloaded)" (card-at digest 2000))))
 
+(deftest channel-digest-a-settled-card-keeps-the-model-move (with-digest ())
+  ;; The move outlives the run: an answer, or the words a stop or a pause
+  ;; left, came from the model the turn moved to, so the settled card keeps
+  ;; saying so. A completed turn that never earned a card earns one for the
+  ;; move, as it does for earlier turns leaving the context. A failed card's
+  ;; detail already names every model its walked chain tried.
+  (setf (nck:turn-digest-fallback-text digest) "fell back from opus to flash (refusal)")
+  (nck:digest-note-terminal digest :completed nil 30000)
+  (is (eq :post (status-kind digest 30500)) "the move earns a quick answer its card")
+  (is-carrying (text (card-at digest 30500)) "Done in 30s" "> fell back from opus to flash (refusal)")
+  (dolist (phase '(:cancelled :paused))
+    (setf (nck:turn-digest-phase digest) phase)
+    (is (search "> fell back from opus to flash (refusal)" (card-at digest 30500)) "a stop or a pause keeps it"))
+  (setf (nck:turn-digest-phase digest) :failed (nck:turn-digest-detail digest) "every model failed")
+  (is (not (search "fell back" (card-at digest 30500))) "a failure says it once, in its detail"))
+
 (deftest channel-digest-meters-the-turn (with-digest (:evals 1))
   ;; The footer's second line is the TUI's run line: the provider's counts
   ;; summed across rounds in the finish divider's meter, the prompt the newest
