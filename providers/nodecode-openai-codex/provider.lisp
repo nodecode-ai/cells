@@ -95,20 +95,6 @@ the whole /codex/responses."
           ((uiop:string-suffix-p base "/codex") base)
           (t (concatenate 'string base "/codex")))))
 
-(defun catalog-row (&optional prior)
-  "openai-codex as a models.dev provider: this cell's lane, the section's
-base, the token variable, and the bundled models over PRIOR's."
-  (let ((models (make-hash-table :test 'equal)))
-    (alexandria:when-let (published (nlk:json-value prior :object "models"))
-      (maphash (lambda (id model) (setf (gethash id models) model)) published))
-    (loop for row across +models+
-          do (setf (gethash (nlk:json-value row :string "id") models) (catalog-model row)))
-    (nlk:json-object "name" "ChatGPT Plus/Pro (Codex Subscription)"
-                     "npm" +key+
-                     "api" (codex-base (setting :base-url))
-                     "env" (coerce +env+ 'vector)
-                     "models" models)))
-
 (defun make-lane ()
   "The Codex lane: the Responses fold (CALL-RESPONSES-STREAMING), under this
 provider's name and a family of its own."
@@ -204,6 +190,8 @@ omp's getCodexResidency."
 
 (defvar *threads* (make-hash-table :test 'equal :synchronized t)
   "Session id -> its THREAD; \"\" for rounds outside any turn.")
+
+(defvar *round-provider* nil "The provider id of the round being walked.")
 
 (defvar *installation* (uuid)
   "The installation id a sign-in that saved none is sent under: this process's.")
@@ -330,7 +318,7 @@ createCodexHeaders); the account and residency ride on the credential."
     (let ((installation (installation-id config)))
       `(("OpenAI-Beta" . "responses=experimental")
         ("originator" . ,(setting :originator))
-        ("version" . ,+client-version+)
+        ("version" . ,(round-version config))
         ("x-codex-routing-hint" . ,(format nil "model=~a" (nle::effective-provider-config-model config)))
         ("accept" . "text/event-stream")
         ,@(when session
@@ -360,7 +348,8 @@ response headers to; only the Codex backend sends these two."
           (when (and state (null (thread-turn-state thread)))
             (setf (thread-turn-state thread) state))
           (when etag
-            (setf (thread-models-etag thread) etag)))))))
+            (setf (thread-models-etag thread) etag)
+            (note-models-etag *round-provider* etag)))))))
 
 (defun failure-frame (frame)
   "The error frame a response.failed FRAME means: its error's code and words,

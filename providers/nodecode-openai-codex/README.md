@@ -84,6 +84,46 @@ lane. While this cell runs, the provider rides the `openai-codex` lane, so a
 round is shaped once. If you set `base_url` in one section, set it in the
 other too.
 
+## Models
+
+The models offered are the ones the Codex backend lists for the signed-in
+account: `GET <codex base>/models?client_version=V`, with the account's own
+bearer. `models.json` is the fallback before the first answer and when the
+backend cannot be reached; it is not the list.
+
+- **What is asked.** The backend withholds a model from a client older than
+  the model's `minimal_client_version`, without an error. The listing
+  therefore asks with a ceiling version (`99.0.0`, or `client_version` when
+  set), so a new model appears without a source change. A round names the
+  version the cell was written against (`0.159.0`), or the chosen model's
+  `minimal_client_version` when that is newer.
+- **What is offered.** Rows with `visibility: list`. Hidden rows are not
+  offered. Context window, reasoning efforts and input kinds come from the
+  row; prices come from `models.json` where it knows the model. The image
+  model is not in the backend's list and stays bundled.
+- **Whose list.** One snapshot per provider id and account. A slot signed in
+  to another account drops the earlier account's snapshot and the host's
+  listing cache for that id; an answer that arrives after the switch is
+  discarded. Only a digest of the account id is kept on disk
+  (`openai-codex-catalogue.json` beside the host's provider-models cache,
+  mode 600, no token).
+- **When it is asked.** By the host's own listing refresh (`/models`, 600 s;
+  `/models refresh` asks now). A round's `x-models-etag` that differs from
+  the one the previous round carried drops the host's listing cache, so the
+  host's next refresh asks. A round on a model that neither the snapshot
+  nor `models.json` holds asks first, at most once a minute.
+- **Where the bearer goes.** The cell lists only at
+  `https://chatgpt.com/backend-api/codex`, never follows redirects, and
+  refuses a different base before resolving a credential. A custom
+  `base_url` still applies to rounds; it does not receive listing credentials.
+- **When it fails.** The listing answers no rows and the reason; the host
+  keeps the rows it had and shows the reason. `/openai-codex status` says
+  per provider whether the catalogue is live or bundled, when it was asked
+  and the last failure.
+
+Not observed: a chat round on a model whose `minimal_client_version` is above
+`0.159.0`. The version sent for it follows the backend's own row.
+
 ## Install
 
 Copy this folder into `~/.nodecode/cells/nodecode-openai-codex/` and restart
@@ -99,7 +139,9 @@ Optional. The section is on unless it says `"enabled": false`:
     // the Codex backend: its root, its /codex, or its /codex/responses
     "base_url": "https://chatgpt.com/backend-api",
     // the client name the sign-in and every request carry
-    "originator": "codex_cli_rs"
+    "originator": "codex_cli_rs",
+    // the client_version the model listing is asked with; empty asks with a ceiling
+    "client_version": ""
   }
 }
 ```
@@ -124,10 +166,9 @@ billed per token.
   an attestation provider (DeviceCheck), and Nodecode has none.
 - Provider-native compaction (`openai-codex-compaction.ts`, the remote
   compaction route). Nodecode shrinks its own context.
-- Live model discovery (`/models?client_version=`). The models are omp's
-  bundled rows in `models.json`. The core's own listing asks
-  `<base>/codex/models`, which the backend may refuse. If it does, the
-  bundled rows still serve.
+- The npm lookup omp uses to learn the newest Codex release. The listing
+  asks with a ceiling `client_version` instead (see Models above), so no
+  second network source decides what is offered.
 - Effort carried as `configuration_update` items (GPT-6 Astra's stable
   effort). Each request sends its own effort.
 
