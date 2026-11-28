@@ -428,7 +428,7 @@ origin noted — ORIGIN the keys past the three that place it."
         (nlk:with-cleanup ((nle:unhook 'nle::read-live-sections "wake-where"))
         (flet ((lane () (nck:find-lane (nck:host-lanes host) "chat-100-t42-m5")))
           (thread-ask host "<@999> watch the gate")
-          (is (await (:timeout 10) (and (lane) (not (nck::lane-live-p (lane))))))
+          (is (await (:timeout 10) (lane-answered-p host "chat-100-t42-m5")))
           (is-carrying (asked (or (first seen) ""))
             "Where you are: test room 42"
             (:absent "woke this lane"))
@@ -452,6 +452,19 @@ origin noted — ORIGIN the keys past the three that place it."
             "Another lane of yours is running in it now, on the ask m9."
             "Read the thread's newest messages before you act"
             (:absent "(withdrawn)"))))))))
+
+(defun lane-answered-p (host session-id)
+  "Whether HOST's lane SESSION-ID has answered a turn and runs none now."
+  ;; LANE-LIVE-P is false for a lane still on its way in -- interned, its
+  ;; digest not yet opened while its room and session are made -- as for one
+  ;; whose turn settled. Read alone, it took an ask for answered before it ran:
+  ;; the test let the lane go mid-admission, the ask's turn then took it back
+  ;; (ADOPT-LANE), and the next line in the thread steered that turn instead of
+  ;; opening a lane of its own (2026-11-28, 1 of 2 runs of the channel suite).
+  (let ((lane (nck:find-lane (nck:host-lanes host) session-id)))
+    (and lane
+         (plusp (count-session-events session-id "turn.completed"))
+         (not (nck::lane-live-p lane)))))
 
 (defun wake-test-thread-lane (host superseded)
   "HOST's lane in thread 42 other than SUPERSEDED's, or NIL."
@@ -487,9 +500,7 @@ semaphore."
                                  :require-mention t :mention-target "999"
                                  :mention-test #'nck:discord-mention-p))
            (thread-ask ,host "<@999> watch the gate")
-           (is (await (:timeout 10)
-                 (let ((lane (nck:find-lane (nck:host-lanes ,host) "chat-100-t42-m5")))
-                   (and lane (not (nck::lane-live-p lane))))) "the ask was answered")
+           (is (await (:timeout 10) (lane-answered-p ,host "chat-100-t42-m5")) "the ask was answered")
            ;; The reaper lets the lane go; a line in the thread forks another.
            (nck:remove-lane (nck:host-lanes ,host) "chat-100-t42-m5")
            (is (eq :answer (nck:handle-candidate
@@ -529,7 +540,7 @@ semaphore."
 (deftest channel-thread-a-wake-for-a-superseded-lane-is-the-idle-current-lanes-next-turn ()
   ;; The lane working in the thread is idle: the wake is its next turn.
   (with-superseded-thread-lane (host current)
-    (is (await (:timeout 10) (not (nck::lane-live-p current))) "the line was answered")
+    (is (await (:timeout 10) (lane-answered-p host (nck:lane-session-id current))) "the line was answered")
     (let ((admission (nle:submit "chat-100-t42-m5" "[cron \"gate-watch\" fired]: GATE CHANGED"
                                  :source "cron" :source-id "gate-watch")))
       (is (eq :started (nlk::active-input-admission-disposition admission)) "the wake starts a turn"))
